@@ -32,7 +32,7 @@ public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
     super(
       oAuthExternal,
       GoogleAuth.create(
-        oAuthExternal.getTowerApp().getApexDomain().getHttpServer().getServer().getVertx(),
+        oAuthExternal.getFlow().getApp().getApexDomain().getHttpServer().getServer().getVertx(),
         clientId,
         clientSecret,
         new HttpClientOptions())

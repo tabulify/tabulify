@@ -11,6 +11,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.flow.WebFlow;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -45,13 +46,13 @@ public class OAuthExternal {
    */
   public static final String STATE_SESSION_KEY = PREFIX + "state";
 
-  private final TowerApp towerApp;
+  private final OAuthExternalCodeFlow flow;
   private final String pathMount;
 
   private final List<Handler<AuthContext>> authHandlers;
 
-  public OAuthExternal(TowerApp towerApp, String pathMount, List<Handler<AuthContext>> authHandlers) throws ConfigIllegalException {
-    this.towerApp = towerApp;
+  public OAuthExternal(OAuthExternalCodeFlow flow, String pathMount, List<Handler<AuthContext>> authHandlers) throws ConfigIllegalException {
+    this.flow = flow;
     this.pathMount = pathMount;
     addExternalProvider(OAuthExternalGithub.GITHUB_TENANT);
     addExternalProvider(OAuthExternalGoogle.GOOGLE_TENANT);
@@ -63,13 +64,14 @@ public class OAuthExternal {
     /**
      * Auth Provider
      */
-    String clientIdConf = towerApp.getAppConfName() + ".oauth." + provider + ".client.id";
-    ConfigAccessor configAccessor = towerApp.getApexDomain().getHttpServer().getServer().getConfigAccessor();
+    TowerApp app = flow.getApp();
+    String clientIdConf = app.getAppConfName() + ".oauth." + provider + ".client.id";
+    ConfigAccessor configAccessor = app.getApexDomain().getHttpServer().getServer().getConfigAccessor();
     String clientId = configAccessor.getString(clientIdConf);
     if (clientId == null) {
       throw new ConfigIllegalException("The client id configuration (" + clientIdConf + ") was not found");
     }
-    String clientSecretKey = towerApp.getAppConfName() + ".oauth." + provider + ".client.secret";
+    String clientSecretKey = app.getAppConfName() + ".oauth." + provider + ".client.secret";
     String clientSecret = configAccessor.getString(clientSecretKey);
     if (clientSecret == null) {
       throw new ConfigIllegalException("The client secret configuration (" + clientSecretKey + ") was not found");
@@ -112,7 +114,7 @@ public class OAuthExternal {
             .create(PermissionBasedAuthorization.create(OAuthExternalGithub.USER_EMAIL_SCOPE))
             .addAuthorizationProvider(ScopeAuthorization.create(" "))
         );
-      LOGGER.info("Oauth Callback for provider (" + authExternalProvider + ") added at (" + towerApp.getOperationUriForLocalhost(callbackLocalRouterPath) + " , " + towerApp.getOperationUriForPublicHost(callbackLocalRouterPath) + ")");
+      LOGGER.info("Oauth Callback for provider (" + authExternalProvider + ") added at (" + flow.getApp().getOperationUriForLocalhost(callbackLocalRouterPath) + " , " + flow.getApp().getOperationUriForPublicHost(callbackLocalRouterPath) + ")");
     }
   }
 
@@ -125,9 +127,6 @@ public class OAuthExternal {
     return oauth;
   }
 
-  public TowerApp getTowerApp() {
-    return this.towerApp;
-  }
 
   public String getPathMount() {
     return this.pathMount;
@@ -136,5 +135,10 @@ public class OAuthExternal {
 
   public List<Handler<AuthContext>> getOAuthSessionAuthenticationHandlers() {
     return this.authHandlers;
+  }
+
+
+  public WebFlow getFlow() {
+    return this.flow;
   }
 }

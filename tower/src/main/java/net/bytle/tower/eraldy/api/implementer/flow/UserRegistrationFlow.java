@@ -26,6 +26,7 @@ import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.auth.OAuthInternalSession;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
+import net.bytle.vertx.flow.WebFlowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +51,11 @@ public class UserRegistrationFlow extends WebFlowAbs {
   @Override
   public EraldyApiApp getApp() {
     return (EraldyApiApp) super.getApp();
+  }
+
+  @Override
+  public WebFlowType getFlowType() {
+    return WebFlowType.USER_REGISTRATION;
   }
 
   /**
@@ -217,15 +223,15 @@ public class UserRegistrationFlow extends WebFlowAbs {
           // Possible causes:
           // * The user has clicked two times on the validation link received by email
           // * The user tries to register again
-          new AuthContext(getApp(), ctx, authUserFromGet, AuthState.createEmpty())
+          new AuthContext(this, ctx, authUserFromGet, AuthState.createEmpty())
             .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(authUserFromGet.getSubject()))
             .authenticateSession();
           return;
         }
         authProvider
-          .insertUserFromLoginAuthUserClaims(authUserAsClaims, ctx)
+          .insertUserFromLoginAuthUserClaims(authUserAsClaims, ctx, this)
           .onFailure(ctx::fail)
-          .onSuccess(authUserInserted -> new AuthContext(getApp(), ctx, authUserInserted, AuthState.createEmpty())
+          .onSuccess(authUserInserted -> new AuthContext(this, ctx, authUserInserted, AuthState.createEmpty())
             .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(authUserInserted.getSubject()))
             .authenticateSession()
           );
@@ -291,7 +297,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           if (authUserForSession == null) {
             futureFinalAuthUserForSession = this.getApp()
               .getAuthProvider()
-              .insertUserFromLoginAuthUserClaims(authUserClaims, authContext.getRoutingContext());
+              .insertUserFromLoginAuthUserClaims(authUserClaims, authContext.getRoutingContext(), this);
           } else {
             futureFinalAuthUserForSession = Future.succeededFuture(authUserForSession);
           }

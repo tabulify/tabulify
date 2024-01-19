@@ -67,6 +67,7 @@ public class EraldyApiApp extends TowerApp {
    * until there is no space on the VPS ...
    */
   private final Path runtimeDataDirectory;
+  private PasswordLoginFlow passwordLoginFlow;
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
     super(apexDomain);
@@ -106,6 +107,7 @@ public class EraldyApiApp extends TowerApp {
     this.userRegistrationFlow = new UserRegistrationFlow(this);
     this.userListRegistrationFlow = new ListRegistrationFlow(this);
     this.emailLoginFlow = new EmailLoginFlow(this);
+    this.passwordLoginFlow = new PasswordLoginFlow(this);
     List<Handler<AuthContext>> authHandlers = new ArrayList<>();
     authHandlers.add(this.userRegistrationFlow.handleOAuthAuthentication());
     authHandlers.add(this.userListRegistrationFlow.handleStepOAuthAuthentication());
@@ -418,5 +420,9 @@ public class EraldyApiApp extends TowerApp {
   public Path getRuntimeDataDirectory() {
 
     return this.runtimeDataDirectory;
+  }
+
+  public PasswordLoginFlow getPasswordLoginFlow() {
+    return this.passwordLoginFlow;
   }
 }

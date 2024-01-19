@@ -201,7 +201,7 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
           ctx.fail(err);
         })
         .onSuccess(authUser -> new AuthContext(
-          this.oAuthExternalProvider.getOAuthExternal().getTowerApp(),
+          this.oAuthExternalProvider.getOAuthExternal().getFlow(),
           ctx,
           authUser,
           authState
@@ -210,5 +210,7 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
           .authenticateSession());
     });
   }
+
+
 
 }

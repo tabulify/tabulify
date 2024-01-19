@@ -10,10 +10,9 @@ import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
-import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
-import net.bytle.vertx.analytics.AnalyticsEventName;
+import net.bytle.vertx.flow.WebFlow;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,15 +32,15 @@ public class AuthContext {
   private final RoutingContext ctx;
   private AuthUser authUser;
   private final AuthState authState;
-  private final TowerApp towerApp;
+  private final WebFlow flow;
   private List<Handler<AuthContext>> handlers = new ArrayList<>();
   private int handlerIndex = -1;
 
-  public AuthContext(TowerApp towerApp, RoutingContext ctx, AuthUser user, AuthState authState) {
+  public AuthContext(WebFlow flow, RoutingContext ctx, AuthUser user, AuthState authState) {
     this.ctx = ctx;
     this.authUser = user;
     this.authState = authState;
-    this.towerApp = towerApp;
+    this.flow = flow;
   }
 
 
@@ -211,12 +210,16 @@ public class AuthContext {
         session.regenerateId();
       }
 
-      this.towerApp
+      SignInEvent signInEvent = new SignInEvent();
+      signInEvent.setFlowId(this.flow.getFlowType().getValue());
+
+      this.flow
+        .getApp()
         .getApexDomain()
         .getHttpServer()
         .getServer()
         .getTrackerAnalytics()
-        .eventBuilderForServerEvent(AnalyticsEventName.SIGN_IN)
+        .eventBuilderForServerEvent(signInEvent)
         .setUser(authUser)
         .setRoutingContext(this.getRoutingContext())
         .sendEventAsync();

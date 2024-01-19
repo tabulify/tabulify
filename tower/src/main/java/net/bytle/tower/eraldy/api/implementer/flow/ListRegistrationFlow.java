@@ -29,6 +29,7 @@ import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
+import net.bytle.vertx.flow.WebFlowType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -65,6 +66,11 @@ public class ListRegistrationFlow extends WebFlowAbs {
   @Override
   public EraldyApiApp getApp() {
     return (EraldyApiApp) super.getApp();
+  }
+
+  @Override
+  public WebFlowType getFlowType() {
+    return WebFlowType.LIST_REGISTRATION;
   }
 
   /**
@@ -320,7 +326,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         if (authUserForSession != null) {
           futureFinaleAuthSessionUser = Future.succeededFuture(authUserForSession);
         } else {
-          futureFinaleAuthSessionUser = authProvider.insertUserFromLoginAuthUserClaims(authUserAsClaims, ctx);
+          futureFinaleAuthSessionUser = authProvider.insertUserFromLoginAuthUserClaims(authUserAsClaims, ctx, this);
         }
         futureFinaleAuthSessionUser
           .onFailure(ctx::fail)
@@ -330,7 +336,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
               if (ctx.user() == null) {
                 addRegistrationConfirmationCookieData(ctx, registration);
                 UriEnhanced redirectUri = getRegistrationConfirmationOperationPath(registration);
-                new AuthContext(this.getApp(), ctx, finalAuthSessionUser, AuthState.createEmpty())
+                new AuthContext(this, ctx, finalAuthSessionUser, AuthState.createEmpty())
                   .redirectViaHttp(redirectUri)
                   .authenticateSession();
               }

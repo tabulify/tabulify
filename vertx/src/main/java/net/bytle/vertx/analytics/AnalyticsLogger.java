@@ -180,11 +180,21 @@ public class AnalyticsLogger {
     // Event Name
     String eventName = analyticsEvent.getName();
     if (eventName == null) {
-      throw new IllegalStructure("The event name is mandatory");
+      /**
+       * The easy solution is to park this event.
+       * There is nothing to do
+       */
+      eventName = "unknown";
+      ANALYTICS_LOGGER.error("The event name is mandatory");
     }
-    String realmIdFromEvent = analyticsEvent.getAppRealmId();
+    String realmIdFromEvent = analyticsEvent.getApp().getAppRealmId();
     if (realmIdFromEvent == null) {
-      throw new IllegalStructure("The realm id is mandatory");
+      /**
+       * The easy solution is to park this event.
+       * There is nothing to do
+       */
+      realmIdFromEvent = "unknown";
+      ANALYTICS_LOGGER.error("The realm id is mandatory");
     }
 
     /**

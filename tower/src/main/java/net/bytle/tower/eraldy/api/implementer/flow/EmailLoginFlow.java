@@ -21,6 +21,7 @@ import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.auth.OAuthInternalSession;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
+import net.bytle.vertx.flow.WebFlowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +38,11 @@ public class EmailLoginFlow extends WebFlowAbs {
   @Override
   public EraldyApiApp getApp() {
     return (EraldyApiApp) super.getApp();
+  }
+
+  @Override
+  public WebFlowType getFlowType() {
+    return WebFlowType.EMAIL_LOGIN;
   }
 
   public UserLoginEmailCallback getCallback() {

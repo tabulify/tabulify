@@ -67,7 +67,7 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
       .getAuthProvider()
       .getAuthUserForSessionByEmailNotNull(bMailInternetAddress, realmIdentifier)
       .onFailure(ctx::fail)
-      .onSuccess(authUserForSession -> new AuthContext(this.getWebFlow().getApp(), ctx, authUserForSession, AuthState.createEmpty())
+      .onSuccess(authUserForSession -> new AuthContext(this.getWebFlow(), ctx, authUserForSession, AuthState.createEmpty())
         .redirectViaHttp(apiApp.getMemberAppUri().setPath(FRONT_END_UPDATE_OPERATION_PATH))
         .authenticateSession());
 

@@ -19,6 +19,7 @@ import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
 import net.bytle.vertx.flow.WebFlowEmailCallback;
+import net.bytle.vertx.flow.WebFlowType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,6 +41,11 @@ public class PasswordResetFlow extends WebFlowAbs {
   @Override
   public EraldyApiApp getApp() {
     return (EraldyApiApp) super.getApp();
+  }
+
+  @Override
+  public WebFlowType getFlowType() {
+    return WebFlowType.PASSWORD_RESET;
   }
 
   public Future<ApiResponse<Void>> step1SendEmail(RoutingContext routingContext, EmailIdentifier emailIdentifier) {

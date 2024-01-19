@@ -64,12 +64,15 @@ public class AnalyticsMixPanel {
     /**
      * $device_id: The anonymous / device id
      */
-    props.put("$device_id", event.getDeviceId());
+    String appId = event.getApp().getAppId();
+    if(appId!=null) {
+      props.put("$device_id", appId);
+    }
 
     /**
      * $user_id
      */
-    String userId = event.getUserId();
+    String userId = event.getUser().getUserId();
     if (userId != null) {
       props.put("$user_id", userId);
     }
@@ -85,17 +88,9 @@ public class AnalyticsMixPanel {
      * Geolocation is by default turned on
      * https://docs.mixpanel.com/docs/tracking/how-tos/privacy-friendly-tracking#disabling-geolocation
      */
-    String ip = event.getRemoteIp();
+    String ip = event.getRequest().getRemoteIp();
     if (ip != null) {
       props.put("ip", ip);
-    }
-
-    /**
-     * $os: OS of the event sender.
-     */
-    String osName = event.getOsName();
-    if (osName != null) {
-      props.put("$os", osName);
     }
 
     /**
@@ -112,7 +107,7 @@ public class AnalyticsMixPanel {
     /**
      * Timestamp
      */
-    props.put("creationTime", Timestamp.createFromLocalDateTime(event.getCreationTime()).toIsoString());
+    props.put("creationTime", Timestamp.createFromLocalDateTime(event.getTime().getCreationTime()).toIsoString());
 
     /**
      * Additional properties along with events
@@ -146,10 +141,10 @@ public class AnalyticsMixPanel {
    * @return the user id
    */
   protected static String toMixPanelUserDistinctId(AnalyticsEvent event) {
-    String userId = event.getUserId();
+    String userId = event.getUser().getUserId();
     if (userId != null) {
       return userId;
     }
-    return event.getDeviceId();
+    return event.getApp().getAppId();
   }
 }

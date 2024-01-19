@@ -64,7 +64,7 @@ public class UserLoginEmailCallback extends WebFlowEmailCallbackAbs {
       .getAuthProvider()
       .getAuthUserForSessionByEmailNotNull(bMailInternetAddress, realmHandle)
       .onFailure(ctx::fail)
-      .onSuccess(authUserForSession -> new AuthContext(apiApp, ctx, authUserForSession, AuthState.createEmpty())
+      .onSuccess(authUserForSession -> new AuthContext(this.getWebFlow(), ctx, authUserForSession, AuthState.createEmpty())
         .redirectViaHttpWithAuthRedirectUriAsUri()
         .authenticateSession());
 

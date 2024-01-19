@@ -11,9 +11,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.vertx.*;
-import net.bytle.vertx.analytics.model.AnalyticsEvent;
-import net.bytle.vertx.analytics.model.AnalyticsEventSource;
-import net.bytle.vertx.analytics.model.AnalyticsUser;
+import net.bytle.vertx.analytics.model.*;
 import net.bytle.vertx.auth.AuthUser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -128,7 +126,7 @@ public class AnalyticsTracker {
     List<AnalyticsEvent> eventInBatch = new ArrayList<>();
     for (AnalyticsEvent event : this.eventsQueue.values()) {
 
-      event.setSendingTime(DateTimeUtil.getNowUtc());
+      event.getTime().setSendingTime(DateTimeUtil.getNowUtc());
       JsonObject props = AnalyticsMixPanel.toMixpanelPropsWithoutUserId(event);
 
       // Create an event
@@ -178,10 +176,9 @@ public class AnalyticsTracker {
     return this;
   }
 
-  public ServerEventBuilder eventBuilderForServerEvent(AnalyticsEventName eventName) {
+  public ServerEventBuilder eventBuilderForServerEvent(AnalyticsEvent eventName) {
 
-    return new ServerEventBuilder(eventName)
-      .setSource(AnalyticsEventSource.SERVER);
+    return new ServerEventBuilder(eventName);
 
   }
 
@@ -194,17 +191,12 @@ public class AnalyticsTracker {
 
   public ServerEventBuilder eventBuilderFromApi(AnalyticsEvent analyticsEvent) {
 
-    AnalyticsEventName eventName = AnalyticsEventName.createFromEvent(analyticsEvent.getName());
-    analyticsEvent.setName(eventName.toString()); // normalize
-    ServerEventBuilder serverEventBuilder = new ServerEventBuilder(eventName);
-    serverEventBuilder.analyticsEvent = analyticsEvent;
-    serverEventBuilder.setSource(AnalyticsEventSource.API);
-    return serverEventBuilder;
+    return new ServerEventBuilder(analyticsEvent);
 
   }
 
   public class ServerEventBuilder {
-    private final AnalyticsEventName eventName;
+
     private AuthUser authUser;
 
     AnalyticsEvent analyticsEvent;
@@ -215,13 +207,13 @@ public class AnalyticsTracker {
      * The context may be therefore null
      */
     private RoutingContext routingContext;
-    private AnalyticsEventSource source;
+
 
     private String organizationId;
     private String realmId;
 
-    public ServerEventBuilder(AnalyticsEventName eventName) {
-      this.eventName = eventName;
+    public ServerEventBuilder(AnalyticsEvent eventName) {
+      this.analyticsEvent = eventName;
     }
 
 
@@ -247,49 +239,79 @@ public class AnalyticsTracker {
 
     public AnalyticsEvent buildEvent() {
 
+      /**
+       * Normalize event name
+       */
+      String name = analyticsEvent.getName();
+      if(name==null){
+        throw new InternalException("An event should have a name. The event ("+analyticsEvent.getClass().getSimpleName()+") has no name");
+      }
+      AnalyticsEventName eventName = AnalyticsEventName.createFromEvent(name);
+      analyticsEvent.setName(eventName.toString());
 
-      if (analyticsEvent == null) {
-
-        /**
-         * Server Event (not event from the API)
-         */
-        analyticsEvent = new AnalyticsEvent();
-        analyticsEvent.setName(this.eventName.toCamelCase());
-
-
-        if (this.authUser != null) {
-          analyticsEvent.setUserId(authUser.getSubject());
-          analyticsEvent.setUserEmail(authUser.getSubjectEmail());
-          analyticsEvent.setAppRealmId(authUser.getAudience());
-          analyticsEvent.setAppOrganisationId(authUser.getGroup());
-        }
-
-        /**
-         * Context
-         */
-        this.buildContext(routingContext, analyticsEvent);
-
-        /**
-         * OS
-         */
-        analyticsEvent.setOsName(System.getProperty("os.name"));
-        analyticsEvent.setOsVersion(System.getProperty("os.version"));
-        analyticsEvent.setOsArch(System.getProperty("os.arch"));
-
-
+      /**
+       * Create the event sub-objects if absent
+       */
+      AnalyticsEventUser analyticsEventUser = analyticsEvent.getUser();
+      if (analyticsEventUser == null) {
+        analyticsEventUser = new AnalyticsEventUser();
+        analyticsEvent.setUser(analyticsEventUser);
+      }
+      AnalyticsEventApp analyticsEventApp = analyticsEvent.getApp();
+      if (analyticsEventApp == null) {
+        analyticsEventApp = new AnalyticsEventApp();
+        analyticsEvent.setApp(analyticsEventApp);
+      }
+      AnalyticsEventTime analyticsEventTime = analyticsEvent.getTime();
+      if (analyticsEventTime == null) {
+        analyticsEventTime = new AnalyticsEventTime();
+        analyticsEvent.setTime(analyticsEventTime);
+      }
+      AnalyticsEventRequest analyticsEventRequest = analyticsEvent.getRequest();
+      if (analyticsEventRequest == null) {
+        analyticsEventRequest = new AnalyticsEventRequest();
+        analyticsEvent.setRequest(analyticsEventRequest);
       }
 
-      if (this.realmId != null) {
-        analyticsEvent.setAppRealmId(this.realmId);
-      }
-      if (this.organizationId != null) {
-        analyticsEvent.setAppOrganisationId(this.realmId);
+
+      /**
+       * Add user data
+       */
+      if (this.authUser != null) {
+
+        analyticsEventUser.setUserId(authUser.getSubject());
+        analyticsEventUser.setUserEmail(authUser.getSubjectEmail());
+
+        /**
+         * App data if any
+         */
+        analyticsEventApp.setAppRealmId(authUser.getAudience());
+        analyticsEventApp.setAppOrganisationId(authUser.getGroup());
       }
 
       /**
-       * General
+       * App data
        */
-      analyticsEvent.setSource(this.source);
+      if (this.realmId != null) {
+        analyticsEventApp.setAppRealmId(this.realmId);
+      }
+      if (this.organizationId != null) {
+        analyticsEventApp.setAppOrganisationId(this.realmId);
+      }
+
+      /**
+       * Request
+       */
+      if (routingContext != null) {
+        try {
+          analyticsEventRequest.setRemoteIp(HttpRequestUtil.getRealRemoteClientIp(routingContext.request()));
+        } catch (NotFoundException e) {
+          //
+        }
+      }
+
+
+
 
       /**
        * Creation time and uuid time part should be the same
@@ -298,12 +320,14 @@ public class AnalyticsTracker {
        * (ie extract time from uuid, select on creation time
        * to partition)
        */
+      LocalDateTime creationTime = analyticsEventTime.getCreationTime();
+      if (creationTime == null) {
+        creationTime = DateTimeUtil.getNowUtc();
+        analyticsEventTime.setCreationTime(creationTime);
+      }
       if (analyticsEvent.getId() == null) {
 
-        LocalDateTime nowUtc = DateTimeUtil.getNowUtc();
-        analyticsEvent.setCreationTime(nowUtc);
-
-        long timestamp = nowUtc.toEpochSecond(ZoneOffset.UTC);
+        long timestamp = creationTime.toEpochSecond(ZoneOffset.UTC);
         UUID uuid = Generators.timeBasedEpochGenerator().construct(timestamp);
         analyticsEvent.setId(uuid.toString());
 
@@ -312,21 +336,7 @@ public class AnalyticsTracker {
       return analyticsEvent;
     }
 
-    private void buildContext(RoutingContext routingContext, AnalyticsEvent analyticsEventContext) {
-      if (routingContext == null) {
-        return;
-      }
-      try {
-        analyticsEventContext.setRemoteIp(HttpRequestUtil.getRealRemoteClientIp(routingContext.request()));
-      } catch (NotFoundException e) {
-        //
-      }
-    }
 
-    public ServerEventBuilder setSource(AnalyticsEventSource source) {
-      this.source = source;
-      return this;
-    }
 
     public ServerEventBuilder setOrganizationId(String organizationId) {
       this.organizationId = organizationId;

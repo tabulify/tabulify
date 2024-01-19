@@ -22,6 +22,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.tower.eraldy.event.SignUpEvent;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithRealm;
@@ -34,8 +35,8 @@ import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.PasswordHashManager;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.*;
-import net.bytle.vertx.analytics.AnalyticsEventName;
 import net.bytle.vertx.auth.AuthUser;
+import net.bytle.vertx.flow.WebFlowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,12 +175,14 @@ public class UserProvider {
     return this
       .insertUser(user)
       .compose(insertedUser -> {
+        SignUpEvent signUpEvent = new SignUpEvent();
+        signUpEvent.setFlowId(WebFlowType.LIST_IMPORT.getValue());
         this.apiApp
           .getApexDomain()
           .getHttpServer()
           .getServer()
           .getTrackerAnalytics()
-          .eventBuilderForServerEvent(AnalyticsEventName.SIGN_UP_VIA_IMPORT)
+          .eventBuilderForServerEvent(signUpEvent)
           .setUser(this.apiApp.getAuthProvider().toAuthUser(user))
           .sendEventAsync();
         return Future.succeededFuture(insertedUser);
@@ -189,7 +192,7 @@ public class UserProvider {
 
   /**
    * Package Private,
-   * for creation with login/signup, the insertion should be driven by {@link AuthProvider#insertUserFromLoginAuthUserClaims(AuthUser, RoutingContext)}
+   * for creation with login/signup, the insertion should be driven by {@link AuthProvider#insertUserFromLoginAuthUserClaims(AuthUser, RoutingContext, net.bytle.vertx.flow.WebFlow)}
    * for creation via import, the insertion should be driven by {@link #insertUserFromImport(User)}
    *
    * @param user - the user to insert (sign-up or import)

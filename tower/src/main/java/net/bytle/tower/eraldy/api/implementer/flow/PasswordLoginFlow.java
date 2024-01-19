@@ -1,0 +1,45 @@
+package net.bytle.tower.eraldy.api.implementer.flow;
+
+import io.vertx.core.Future;
+import io.vertx.ext.web.RoutingContext;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.auth.AuthContext;
+import net.bytle.vertx.auth.AuthState;
+import net.bytle.vertx.flow.WebFlow;
+import net.bytle.vertx.flow.WebFlowType;
+
+public class PasswordLoginFlow implements WebFlow {
+  private final EraldyApiApp apiApp;
+
+  public PasswordLoginFlow(EraldyApiApp apiApp) {
+    this.apiApp = apiApp;
+  }
+
+  @Override
+  public TowerApp getApp() {
+    return apiApp;
+  }
+
+  @Override
+  public WebFlowType getFlowType() {
+    return WebFlowType.PASSWORD_LOGIN;
+  }
+
+  public Future<Void> login(String realmIdentifier, String handle, String password, RoutingContext routingContext) {
+    return this.apiApp
+      .getRealmProvider()
+      .getRealmFromIdentifier(realmIdentifier)
+      .onFailure(err -> FailureStatic.failRoutingContextWithTrace(err, routingContext))
+      .compose(realm -> apiApp.getAuthProvider()
+        .getAuthUserForSessionByPasswordNotNull(handle, password, realm)
+        .onFailure(err -> FailureStatic.failRoutingContextWithTrace(err, routingContext))
+        .compose(authUserForSession -> {
+          new AuthContext(this, routingContext, authUserForSession, AuthState.createEmpty())
+            .redirectViaClient()
+            .authenticateSession();
+          return Future.succeededFuture();
+        }));
+  }
+}

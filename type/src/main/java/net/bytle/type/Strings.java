@@ -544,4 +544,37 @@ public class Strings {
     return this.stringBuilderField.substring(0, length) + suffix;
 
   }
+
+
+  /**
+   * Replace double/triple/N whitespaces to one whitespace
+   */
+  public Strings normalizeWhiteSpaceToOnlyOneConsecutive() {
+
+    List<Integer> whiteSpaceToDelete = new ArrayList<>();
+    boolean whiteSpaceonPreviousCharacter = false;
+    for (int i = 0; i < stringBuilderField.length(); i++) {
+
+      char c = stringBuilderField.charAt(i);
+
+      /**
+       * White space handling
+       */
+      if (Character.isWhitespace(c)) {
+        if (whiteSpaceonPreviousCharacter) {
+          // double whitespace
+          whiteSpaceToDelete.add(i);
+        }
+        whiteSpaceonPreviousCharacter = true;
+      } else {
+        whiteSpaceonPreviousCharacter = false;
+      }
+
+    }
+    for (int i : whiteSpaceToDelete) {
+      stringBuilderField.delete(i, i);
+    }
+    return this;
+
+  }
 }

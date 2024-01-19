@@ -11,12 +11,13 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationUser;
 import net.bytle.tower.eraldy.auth.AuthScope;
+import net.bytle.tower.eraldy.event.SignUpEvent;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
-import net.bytle.vertx.analytics.AnalyticsEventName;
 import net.bytle.vertx.auth.AuthUser;
+import net.bytle.vertx.flow.WebFlow;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -354,21 +355,24 @@ public class AuthProvider {
   /**
    * @param authUserAsClaims - the claims as auth user
    * @param routingContext   - the routing context for analytics (Maybe null when loading user without HTTP call, for instance for test
+   * @param webFlow
    * @return a user suitable
    */
-  public Future<AuthUser> insertUserFromLoginAuthUserClaims(AuthUser authUserAsClaims, RoutingContext routingContext) {
+  public Future<AuthUser> insertUserFromLoginAuthUserClaims(AuthUser authUserAsClaims, RoutingContext routingContext, WebFlow webFlow) {
     User user = toBaseModelUser(authUserAsClaims);
     return this.apiApp
       .getUserProvider()
       .insertUser(user)
       .compose(insertedUser -> toAuthUserForSession(user)
         .compose(authUserForSession -> {
+          SignUpEvent signUpEvent = new SignUpEvent();
+          signUpEvent.setFlowId(webFlow.getFlowType().getValue());
           this.apiApp
             .getApexDomain()
             .getHttpServer()
             .getServer()
             .getTrackerAnalytics()
-            .eventBuilderForServerEvent(AnalyticsEventName.SIGN_UP)
+            .eventBuilderForServerEvent(signUpEvent)
             .setUser(authUserForSession)
             .setRoutingContext(routingContext)
             .sendEventAsync();

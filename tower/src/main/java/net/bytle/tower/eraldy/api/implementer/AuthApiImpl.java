@@ -196,23 +196,22 @@ public class AuthApiImpl implements AuthApi {
     if (password == null) {
       throw IllegalArgumentExceptions.createWithInputNameAndValue("The password cannot be null", "password", null);
     }
+
     String handle = passwordCredentials.getLoginHandle();
     if (handle == null) {
       throw IllegalArgumentExceptions.createWithInputNameAndValue("The handle cannot be null", "handle", null);
     }
+
+    String realmIdentifier = passwordCredentials.getLoginRealm();
+    if (realmIdentifier == null) {
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("The realm cannot be null", "realmIdentifier", null);
+    }
+
     return this.apiApp
-      .getRealmProvider()
-      .getRealmFromIdentifier(passwordCredentials.getLoginRealm())
-      .onFailure(err -> FailureStatic.failRoutingContextWithTrace(err, routingContext))
-      .compose(realm -> apiApp.getAuthProvider()
-        .getAuthUserForSessionByPasswordNotNull(handle, password, realm)
-        .onFailure(err -> FailureStatic.failRoutingContextWithTrace(err, routingContext))
-        .compose(authUserForSession -> {
-          new AuthContext(this.apiApp, routingContext, authUserForSession, AuthState.createEmpty())
-            .redirectViaClient()
-            .authenticateSession();
-          return Future.succeededFuture(new ApiResponse<>());
-        }));
+      .getPasswordLoginFlow()
+      .login(realmIdentifier,handle, password, routingContext)
+      .compose(v->Future.succeededFuture(new ApiResponse<>()));
+
 
   }
 

@@ -9,6 +9,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.flow.WebFlowAbs;
+import net.bytle.vertx.flow.WebFlowType;
 
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
 
   public OAuthExternalCodeFlow(TowerApp towerApp, String pathMount, List<Handler<AuthContext>> authHandlers) throws ConfigIllegalException {
     super(towerApp);
-    this.oauthExternal = new OAuthExternal(towerApp, pathMount, authHandlers);
+    this.oauthExternal = new OAuthExternal(this, pathMount, authHandlers);
   }
 
   /**
@@ -101,4 +102,8 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
 
   }
 
+  @Override
+  public WebFlowType getFlowType() {
+    return WebFlowType.EXTERNAL_OAUTH;
+  }
 }

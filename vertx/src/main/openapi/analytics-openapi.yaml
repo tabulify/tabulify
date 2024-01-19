@@ -6,33 +6,20 @@ info:
   version: "v2023-06-18"
 components:
   schemas:
-    AnalyticsEvent:
-      description: |
-        The event. They are the things that happen in our product.
-
-        We follow a mix of
-        * the <a href="https://segment.com/docs/connections/spec/common/">Segment Spec</a>
-        * the <a href="https://segment.com/docs/connections/spec/common/">MixPanel Spec</a>
-
-        All properties are on the same level, no hierarchy (as MixPanel do)
-
-        The extended property should have as prefix, the name of the event
-        Example: for signUp, signUpFlowId
+    AnalyticsEventUser:
+      description: The user properties
       type: object
       properties:
-        id:
+        userId:
           type: string
-          description: |
-            A unique identifier for each event.
-
-            It allows to delete duplicate.
-
-            It's known for:
-            * segment as messageId
-            * mixpanel as $insert_id
-        name:
+          description: A unique identifier
+        userEmail:
           type: string
-          description: the event name
+          description: the user email
+    AnalyticsEventApp:
+      description: The properties of the app that created this event
+      type: object
+      properties:
         appId:
           type: string
           description: The app id that has created this event
@@ -44,39 +31,36 @@ components:
         appOrganisationId:
           type: string
           description: the organization id (the billing logical unit, known also as the group id)
-        properties:
-          description: The additional event properties
-          additionalProperties:
-            type: object # may be number, string, boolean
-        deviceId:
+    AnalyticsEventRequest:
+      description: The request/remote identifiers of an event
+      type: object
+      properties:
+        agentId:
           type: string
+          description: The agent id
+        remoteIp:
+          type: string
+          description: The ip (the remote client ip)
+          example: 143.176.206.76
+        originUri:
+          type: string
+          format: uri
           description: |
-            The device id (a uuid4 or a fingerprint for instance)
-
-            It's also known as the user anonymous id because this is the user identifier
-            when the user is unknown.
-
-            When you send a message, a userId or a deviceId is required in order to identify a user.
-
-            We prefer the term device id (mixpanel) over anonymous id (segment) because it's
-            more meaningful. We track the device.
-
-            It's created on the client side and stored by the client more permanently
-            (via a cookie for the browser and stored in local storage for durability).
-
-            It's not the same as a session id because:
-            * a session id may be regenerated (when the user sign in for instance).
-            * the device id does not have any security feature. You can't login
-        userId:
+            The origin uri (from where the request originate inside the app)
+            For a browser, the uri in the address bar or a iframe uri
+            For a gui app, an uri that represents a page
+    AnalyticsEventTime:
+      description: The times of the status
+      type: object
+      properties:
+        creationTime:
           type: string
-          description: A unique identifier
-        userEmail:
-          type: string
-          description: the user email
+          format: date-time
+          description: The timestamp when the event has happend (ie when the object was created)
         receptionTime:
           type: string
           format: date-time
-          description: The timestamp of when a message was received (if created and send by a client)
+          description: The timestamp of when a message was received on the API (if created and send by a client)
         sendingTime:
           type: string
           format: date-time
@@ -84,50 +68,17 @@ components:
             The timestamp of when a message was sent to the analytics endpoint api
             Time: With Ga, you cannot set the time, It uses the notion of queue
             https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#qt
-        creationTime:
-          type: string
-          format: date-time
-          description: The timestamp when the object was created
-        osName:
-          type: string
-          description: the OS name
-        osVersion:
-          type: string
-          description: the OS version
-        osArch:
-          type: string
-          description: the OS architecture
-        originUri:
-          type: string
-          format: uri
-          description: |
-            The origin address uri
-            The uri in the address bar in the browser or a iframe uri
-        referrerUri:
-          type: string
-          format: uri
-          description: |
-            The `document.referrer`
-            Note that Google Analytics will use "utm_referrer" over "document.referrer"
-            if set as document.referrer is only the domain/authority part
-        timezoneId:
-          type: string
-          description: the timezone id (ie Europe/London)
-        locale:
-          type: string
-          description: the locale (in a browser, this is the language setting)
-        remoteIp:
-          type: string
-          description: The ip (the remote client ip)
-          example: 143.176.206.76
-        userAgent:
-          type: string
-          description: The user agent string
-        # The UTM data
-        #        See:
-        #        * <a href="https://datacadamia.com/marketing/analytics/utm">UTM</a>
-        #        * <a href="https://ga-dev-tools.google/campaign-url-builder/">UTM builder</a>
-        #        * <a href="https://support.google.com/analytics/answer/10917952">[GA4] URL builders: Collect campaign data with custom URLs</a>
+    AnalyticsEventChannel:
+      description: |
+        The data that permits to derive the channel (ie how the
+        user came in).
+        Mostly UTM (Urchin Tracking Module) data with the document referer.
+            See:
+            * <a href="https://datacadamia.com/marketing/analytics/utm">UTM</a>
+            * <a href="https://ga-dev-tools.google/campaign-url-builder/">UTM builder</a>
+            * <a href="https://support.google.com/analytics/answer/10917952">[GA4] URL builders: Collect campaign data with custom URLs</a>
+      type: object
+      properties:
         utmCampaignId:
           type: string
           description: |
@@ -169,6 +120,104 @@ components:
             and therefore not available in the `document.referrer` attribute
             Google Analytics will use "utm_referrer" over "document.referrer" set in AnalyticsBrowser
             utm_source is also a referer but in a named format
+        documentReferrer:
+          type: string
+          format: uri
+          description: |
+            The `document.referrer`
+            Note that Google Analytics will use "utm_referrer" over "document.referrer"
+            if set as document.referrer is only the domain/authority part
+    AnalyticsAgent:
+      description: The properties of a user agent
+      type: object
+      properties:
+        agentId:
+          type: string
+          description: |
+            The user agent/device id (a uuid4 or a fingerprint for instance)
+
+            It's also known as the user anonymous id because this is the user identifier
+            when the user is unknown.
+
+            When you send a message, a userId or a deviceId is required in order to identify a user.
+
+            We prefer the term device id (mixpanel) over anonymous id (segment) because it's
+            more meaningful. We track the device.
+
+            It's created on the client side and stored by the client more permanently
+            (via a cookie for the browser and stored in local storage for durability).
+
+            It's not the same as a session id because:
+            * a session id may be regenerated (when the user sign in for instance).
+            * the device id does not have any security feature. You can't login
+        agentString:
+          type: string
+          description: The user agent string
+        agentTimezone:
+          type: string
+          description: the timezone id (ie Europe/London)
+        agentLocale:
+          type: string
+          description: the locale (in a browser, this is the language setting)
+        agentOsName:
+          type: string
+          description: the OS name
+        agentOsVersion:
+          type: string
+          description: the OS version
+        agentOsArch:
+          type: string
+          description: the OS architecture
+    AnalyticsEvent:
+      description: |
+        The event. They are the things that happen in our product.
+
+        We follow a mix of
+        * the <a href="https://segment.com/docs/connections/spec/common/">Segment Spec</a>
+        * the <a href="https://segment.com/docs/connections/spec/common/">MixPanel Spec</a>
+
+        Every event type will extend this object and add its properties.
+
+        We try to follow the element of a sequential diagram with the following participants:
+        * user: the user
+        * agent: the agent that the user is using
+        * request: the request
+        * time: the state times
+        * channel: the channel properties (how the user came in)
+
+      type: object
+      properties:
+        id:
+          type: string
+          description: |
+            A unique identifier for each event.
+
+            It allows to delete duplicate.
+
+            It's a timestamp based UUID
+            where the timestamp is the value of the creation time.
+            (It permits to quickly retrieve via partition an event)
+
+            It's known for:
+            * segment as messageId
+            * mixpanel as $insert_id
+        name:
+          type: string
+          description: the event name
+        time:
+          $ref: '#/components/schemas/AnalyticsEventTime'
+        app:
+          $ref: '#/components/schemas/AnalyticsEventApp'
+        user:
+          $ref: '#/components/schemas/AnalyticsEventUser'
+        request:
+          $ref: '#/components/schemas/AnalyticsEventRequest'
+        channel:
+          $ref: '#/components/schemas/AnalyticsEventChannel'
+        properties:
+          description: The additional unknown event properties
+          additionalProperties:
+            type: object # may be number, string, boolean
     AnalyticsUser:
       description: The user
       type: object
