@@ -8,7 +8,10 @@ import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import net.bytle.vertx.analytics.model.AnalyticsUser;
 import net.bytle.vertx.auth.AuthUserUtils;
 
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -65,7 +68,7 @@ public class AnalyticsMixPanel {
      * $device_id: The anonymous / device id
      */
     String appId = event.getApp().getAppId();
-    if(appId!=null) {
+    if (appId != null) {
       props.put("$device_id", appId);
     }
 
@@ -94,21 +97,65 @@ public class AnalyticsMixPanel {
     }
 
     /**
-     * Session
-     * <a href="https://docs.mixpanel.com/docs/analysis/advanced/sessions'>Session</a>
+     * Request
+     * Session Properties
+     * <a href="https://docs.mixpanel.com/docs/features/sessions#session-properties'>Session</a>
      */
+    String sessionId = event.getRequest().getSessionId();
+    if (sessionId != null) {
+      props.put("session_id", sessionId);
+    }
+    URI originUri = event.getRequest().getOriginUri();
+    if (originUri != null) {
+      try {
+        props.put("$current_url", originUri.toURL().toString());
+      } catch (MalformedURLException e) {
+        // not an url
+      }
+    }
 
     /**
      * Channel (Paid Search, ..)
      * https://docs.mixpanel.com/docs/features/custom-properties#grouping-marketing-channels
-     * props.put("channel", );
+     * props.put("channel");
+     * Utm comes from <a href="https://docs.mixpanel.com/docs/features/sessions#session-properties'>Session Properties</a>
      */
+    String utmCampagne = event.getChannel().getUtmCampaignName();
+    if (utmCampagne != null) {
+      props.put("utm_campaign", utmCampagne);
+    }
+    String utmContent = event.getChannel().getUtmContent();
+    if (utmContent != null) {
+      props.put("utm_content", utmContent);
+    }
+    String utmSource = event.getChannel().getUtmSource();
+    if (utmSource != null) {
+      props.put("utm_source", utmSource);
+    }
 
     /**
      * Timestamp
      */
     props.put("creationTime", Timestamp.createFromLocalDateTime(event.getTime().getCreationTime()).toIsoString());
 
+    /**
+     * The event type property
+     * They are added at the root
+     */
+    Map<String, Object> jsonObjectAsMap = JsonObject.mapFrom(event).getMap();
+    for (Map.Entry<String, Object> entry : jsonObjectAsMap.entrySet()) {
+      String key = entry.getKey();
+      if (Arrays.asList("id", "name").contains(key)) {
+        // already taken into account
+        continue;
+      }
+      Object value = entry.getValue();
+      // Json Object, Json Array are implemented as Map and List
+      if (value == null || value instanceof Map || value instanceof Collection) {
+        continue;
+      }
+      props.put(key, value.toString());
+    }
     /**
      * Additional properties along with events
      */

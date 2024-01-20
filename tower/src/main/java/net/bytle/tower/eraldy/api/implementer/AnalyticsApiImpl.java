@@ -66,7 +66,7 @@ public class AnalyticsApiImpl implements AnalyticsApi {
       .setRoutingContext(routingContext)
       .setOrganizationId(authRealm.getOrganization().getGuid())
       .setRealmId(authRealm.getGuid())
-      .sendEventAsync();
+      .addEventToQueue();
     return Future.succeededFuture(new ApiResponse<>());
 
   }

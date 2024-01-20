@@ -17,6 +17,8 @@ public class AnalyticsEventRequest   {
 
   protected String remoteIp;
 
+  protected String sessionId;
+
   protected URI originUri;
 
   /**
@@ -61,6 +63,22 @@ public class AnalyticsEventRequest   {
   }
 
   /**
+  * @return sessionId The session id (a nonce)
+  */
+  @JsonProperty("sessionId")
+  public String getSessionId() {
+    return sessionId;
+  }
+
+  /**
+  * @param sessionId The session id (a nonce)
+  */
+  @SuppressWarnings("unused")
+  public void setSessionId(String sessionId) {
+    this.sessionId = sessionId;
+  }
+
+  /**
   * @return originUri The origin uri (from where the request originate inside the app) For a browser, the uri in the address bar or a iframe uri For a gui app, an uri that represents a page
   */
   @JsonProperty("originUri")
@@ -88,12 +106,12 @@ public class AnalyticsEventRequest   {
     AnalyticsEventRequest analyticsEventRequest = (AnalyticsEventRequest) o;
     return
 
-            Objects.equals(agentId, analyticsEventRequest.agentId) && Objects.equals(remoteIp, analyticsEventRequest.remoteIp) && Objects.equals(originUri, analyticsEventRequest.originUri);
+            Objects.equals(agentId, analyticsEventRequest.agentId) && Objects.equals(remoteIp, analyticsEventRequest.remoteIp) && Objects.equals(sessionId, analyticsEventRequest.sessionId) && Objects.equals(originUri, analyticsEventRequest.originUri);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(agentId, remoteIp, originUri);
+    return Objects.hash(agentId, remoteIp, sessionId, originUri);
   }
 
   @Override

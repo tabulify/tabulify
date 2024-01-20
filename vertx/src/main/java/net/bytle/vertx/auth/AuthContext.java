@@ -222,7 +222,7 @@ public class AuthContext {
         .eventBuilderForServerEvent(signInEvent)
         .setUser(authUser)
         .setRoutingContext(this.getRoutingContext())
-        .sendEventAsync();
+        .addEventToQueue();
 
     }
 

@@ -146,7 +146,7 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>(open
   /**
    * The location of the spec file
    */
-  inputSpec.set("$projectDir/src/main/openapi/analytics-openapi.yaml")
+  inputSpec.set("$projectDir/src/main/openapi/openapi-analytics.yaml")
 
   /**
    * Common is not a valid spec

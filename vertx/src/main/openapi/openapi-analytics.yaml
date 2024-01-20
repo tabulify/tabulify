@@ -42,6 +42,9 @@ components:
           type: string
           description: The ip (the remote client ip)
           example: 143.176.206.76
+        sessionId:
+          type: string
+          description: The session id (a nonce)
         originUri:
           type: string
           format: uri
@@ -185,6 +188,9 @@ components:
         * time: the state times
         * channel: the channel properties (how the user came in)
 
+        All properties that are tied only to the event type/name
+        are properties added at the root with a primary datatype.
+
       type: object
       properties:
         id:
@@ -203,7 +209,7 @@ components:
             * mixpanel as $insert_id
         name:
           type: string
-          description: the event name
+          description: the event name/type
         time:
           $ref: '#/components/schemas/AnalyticsEventTime'
         app:

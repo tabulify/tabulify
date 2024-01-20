@@ -375,7 +375,7 @@ public class AuthProvider {
             .eventBuilderForServerEvent(signUpEvent)
             .setUser(authUserForSession)
             .setRoutingContext(routingContext)
-            .sendEventAsync();
+            .addEventToQueue();
           return Future.succeededFuture(authUserForSession);
         }));
 

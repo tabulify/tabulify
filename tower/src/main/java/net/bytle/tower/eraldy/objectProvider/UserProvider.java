@@ -184,7 +184,7 @@ public class UserProvider {
           .getTrackerAnalytics()
           .eventBuilderForServerEvent(signUpEvent)
           .setUser(this.apiApp.getAuthProvider().toAuthUser(user))
-          .sendEventAsync();
+          .addEventToQueue();
         return Future.succeededFuture(insertedUser);
       });
 

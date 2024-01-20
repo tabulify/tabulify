@@ -6,7 +6,7 @@ import com.mixpanel.mixpanelapi.MessageBuilder;
 import com.mixpanel.mixpanelapi.MixpanelAPI;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.exception.IllegalStructure;
+import io.vertx.ext.web.Session;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
@@ -126,27 +126,32 @@ public class AnalyticsTracker {
     List<AnalyticsEvent> eventInBatch = new ArrayList<>();
     for (AnalyticsEvent event : this.eventsQueue.values()) {
 
-      event.getTime().setSendingTime(DateTimeUtil.getNowUtc());
-      JsonObject props = AnalyticsMixPanel.toMixpanelPropsWithoutUserId(event);
+      try {
 
-      // Create an event
-      // https://docs.mixpanel.com/docs/tracking/how-tos/identifying-users#what-is-distinct-id
-      // https://docs.mixpanel.com/docs/tracking/reference/distinct-id-limits
-      // The purpose of distinct_id is to provide a single, unified identifier for a user across devices and sessions.
-      // This helps Mixpanel compute metrics like Daily Active Users accurately: when two events have the same value of distinct_id, they are considered as being performed by 1 unique user.
-      JSONObject mixpanelEvent = messageBuilder.event(
-        AnalyticsMixPanel.toMixPanelUserDistinctId(event),
-        event.getName(),
-        new JSONObject(props.getMap())
-      );
-      if (!delivery.isValidMessage(mixpanelEvent)) {
-        continue;
+        event.getTime().setSendingTime(DateTimeUtil.getNowUtc());
+        JsonObject props = AnalyticsMixPanel.toMixpanelPropsWithoutUserId(event);
+
+        // Create an event
+        // https://docs.mixpanel.com/docs/tracking/how-tos/identifying-users#what-is-distinct-id
+        // https://docs.mixpanel.com/docs/tracking/reference/distinct-id-limits
+        // The purpose of distinct_id is to provide a single, unified identifier for a user across devices and sessions.
+        // This helps Mixpanel compute metrics like Daily Active Users accurately: when two events have the same value of distinct_id, they are considered as being performed by 1 unique user.
+        JSONObject mixpanelEvent = messageBuilder.event(
+          AnalyticsMixPanel.toMixPanelUserDistinctId(event),
+          event.getName(),
+          new JSONObject(props.getMap())
+        );
+        if (!delivery.isValidMessage(mixpanelEvent)) {
+          continue;
+        }
+        delivery.addMessage(mixpanelEvent);
+        if (this.logEventDelivery) {
+          LOGGER.info("The event " + event + " was added for delivery");
+        }
+        eventInBatch.add(event);
+      } catch (Exception e) {
+        this.handleFatalError(e, event);
       }
-      delivery.addMessage(mixpanelEvent);
-      if (this.logEventDelivery) {
-        LOGGER.info("The event " + event + " was added for delivery");
-      }
-      eventInBatch.add(event);
     }
 
 
@@ -154,21 +159,18 @@ public class AnalyticsTracker {
       // https://developer.mixpanel.com/reference/import-events
       mixpanel.deliver(delivery);
     } catch (IOException e) {
-      // Example: Here it's `Can't communicate with Mixpanel` https://github.com/mixpanel/mixpanel-java/blob/master/src/demo/java/com/mixpanel/mixpanelapi/demo/MixpanelAPIDemo.java#L57C45-L57C77
+      // Example: Here it's `Can't communicate with Mixpanel`
+      // https://github.com/mixpanel/mixpanel-java/blob/master/src/demo/java/com/mixpanel/mixpanelapi/demo/MixpanelAPIDemo.java#L57C45-L57C77
       // Do we get the error?
       // https://developer.mixpanel.com/reference/import-events#example-of-a-validation-error
       // See impl: https://github.com/mixpanel/mixpanel-java/blob/master/src/main/java/com/mixpanel/mixpanelapi/MixpanelAPI.java#L195
-      throw new RuntimeException(e);
+      return this;
     }
     for (AnalyticsEvent event : eventInBatch) {
       try {
         AnalyticsLogger.log(event);
-      } catch (IllegalStructure e) {
-        if (JavaEnvs.IS_DEV) {
-          // otherwise we get continuously an email error
-          this.eventsQueue.remove(event.getId());
-        }
-        throw new InternalException("Error on event " + event.getName(), e);
+      } catch (Exception e) {
+        this.handleFatalError(e, event);
       }
       this.eventsQueue.remove(event.getId());
     }
@@ -176,18 +178,25 @@ public class AnalyticsTracker {
     return this;
   }
 
-  public ServerEventBuilder eventBuilderForServerEvent(AnalyticsEvent eventName) {
+  /**
+   * Handle fatal error
+   * <p>
+   * A fatal error may be solved when retried (ie timeout for instance)
+   * but only a maximum
+   *
+   */
+  private void handleFatalError(Exception e, AnalyticsEvent event) {
+    LOGGER.error("The event (" + event.getName() + ") could not be sent", e);
+    // we remove the event otherwise it will repeat
+    this.eventsQueue.remove(event.getId());
+  }
 
-    return new ServerEventBuilder(eventName);
+  public ServerEventBuilder eventBuilderForServerEvent(AnalyticsEvent analyticsEvent) {
+
+    return new ServerEventBuilder(analyticsEvent);
 
   }
 
-//  public <T> ServerEventBuilder eventBuilderForServerEvent(Class<T> aClass) {
-//
-//    return new ServerEventBuilder(eventName)
-//      .setSource(AnalyticsEventChannel.SERVER);
-//
-//  }
 
   public ServerEventBuilder eventBuilderFromApi(AnalyticsEvent analyticsEvent) {
 
@@ -221,9 +230,10 @@ public class AnalyticsTracker {
      * Send the event to the queue
      * (the event is processed async)
      */
-    public void sendEventAsync() {
+    public void addEventToQueue() {
 
-      AnalyticsTracker.this.addEventToQueue(buildEvent());
+      AnalyticsEvent analyticsEvent = buildEvent();
+      AnalyticsTracker.this.addEventToQueue(analyticsEvent);
 
     }
 
@@ -243,8 +253,8 @@ public class AnalyticsTracker {
        * Normalize event name
        */
       String name = analyticsEvent.getName();
-      if(name==null){
-        throw new InternalException("An event should have a name. The event ("+analyticsEvent.getClass().getSimpleName()+") has no name");
+      if (name == null) {
+        throw new InternalException("An event should have a name. The event (" + analyticsEvent.getClass().getSimpleName() + ") has no name");
       }
       AnalyticsEventName eventName = AnalyticsEventName.createFromEvent(name);
       analyticsEvent.setName(eventName.toString());
@@ -271,6 +281,11 @@ public class AnalyticsTracker {
       if (analyticsEventRequest == null) {
         analyticsEventRequest = new AnalyticsEventRequest();
         analyticsEvent.setRequest(analyticsEventRequest);
+      }
+      AnalyticsEventChannel analyticsEventChannel = analyticsEvent.getChannel();
+      if (analyticsEventChannel == null) {
+        analyticsEventChannel = new AnalyticsEventChannel();
+        analyticsEvent.setChannel(analyticsEventChannel);
       }
 
 
@@ -308,9 +323,11 @@ public class AnalyticsTracker {
         } catch (NotFoundException e) {
           //
         }
+        Session session = routingContext.session();
+        if (session != null) {
+          analyticsEventRequest.setSessionId(session.id());
+        }
       }
-
-
 
 
       /**
@@ -335,7 +352,6 @@ public class AnalyticsTracker {
 
       return analyticsEvent;
     }
-
 
 
     public ServerEventBuilder setOrganizationId(String organizationId) {

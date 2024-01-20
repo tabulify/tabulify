@@ -394,13 +394,29 @@ public class ListProvider {
           .compose(mapper -> {
 
             JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
-            if (aClass.equals(ListItemAnalytics.class)) {
+            T listItem = Json.decodeValue(jsonAppData.toBuffer(), aClass);
+            if (listItem instanceof ListItemAnalytics) {
+              ListItemAnalytics listItemAnalytics = (ListItemAnalytics) listItem;
               JsonObject jsonAnalytics = Postgres.getFromJsonB(row, ANALYTICS_COLUMN);
               if (jsonAnalytics != null) {
-                jsonAppData = jsonAppData.mergeIn(jsonAnalytics);
+                /**
+                 * Note that we could have merged the Data and Analytics Json together
+                 * before decoding
+                 * but because the Analytics data is created manually via SQL, we prefer assume that the Analytics data is not safe
+                 */
+                Integer userCount = jsonAnalytics.getInteger("userCount");
+                if (userCount == null) {
+                  LOGGER.error("The userCount property was not found in the list analytics property");
+                }
+                listItemAnalytics.setUserCount(userCount);
+                Integer userInCount = jsonAnalytics.getInteger("userInCount");
+                if (userInCount == null) {
+                  LOGGER.error("The userInCount property was not found in the list analytics property");
+                }
+                listItemAnalytics.setUserInCount(userInCount);
               }
             }
-            T listItem = Json.decodeValue(jsonAppData.toBuffer(), aClass);
+
 
             listItem.setLocalId(listId);
             listItem.setRealm(realmResult);
@@ -490,7 +506,7 @@ public class ListProvider {
 
     return this.apiApp.getRealmProvider()
       .getRealmFromId(listGuid.getRealmOrOrganizationId())
-      .compose(realm -> getListById(listGuid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm,ListItem.class));
+      .compose(realm -> getListById(listGuid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm, ListItem.class));
   }
 
   public Future<java.util.List<ListSummary>> getListsSummary(Realm realm) {
@@ -776,6 +792,6 @@ public class ListProvider {
   }
 
   public Future<Void> deleteByList(ListItem listItem) {
-    return deleteById(listItem.getLocalId(),listItem.getRealm());
+    return deleteById(listItem.getLocalId(), listItem.getRealm());
   }
 }
