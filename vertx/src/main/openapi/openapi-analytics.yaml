@@ -52,6 +52,13 @@ components:
             The origin uri (from where the request originate inside the app)
             For a browser, the uri in the address bar or a iframe uri
             For a gui app, an uri that represents a page
+        referrerUri:
+          type: string
+          format: uri
+          description: |
+            The http `referrer` header or javascript `document.referrer`
+            Note that Google Analytics will use "utm_referrer" over "document.referrer"
+            if set as document.referrer is only the domain/authority part
     AnalyticsEventTime:
       description: The times of the status
       type: object
@@ -71,11 +78,11 @@ components:
             The timestamp of when a message was sent to the analytics endpoint api
             Time: With Ga, you cannot set the time, It uses the notion of queue
             https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#qt
-    AnalyticsEventChannel:
+    AnalyticsEventUtm:
       description: |
         The data that permits to derive the channel (ie how the
         user came in).
-        Mostly UTM (Urchin Tracking Module) data with the document referer.
+        UTM (Urchin Tracking Module) data with the document referer.
             See:
             * <a href="https://datacadamia.com/marketing/analytics/utm">UTM</a>
             * <a href="https://ga-dev-tools.google/campaign-url-builder/">UTM builder</a>
@@ -88,10 +95,10 @@ components:
             The Campaign ID is used to identify a specific ad campaign or promotion
             Known as utm_id, this is a required key for GA4 data import.
           example: summer-sale, abc.123
-        utmCampaignName:
+        utmCampaign:
           type: string
-          description: Product, slogan, promo code
-          example: spring_sale
+          description: The Utm Campaign Name (utm_campaign)
+          example: spring_sale, Product, slogan, promo code
         utmSource:
           type: string
           description: |
@@ -121,15 +128,8 @@ components:
           description: |
             Identifies the referrer URL as it's not passed by default by browser HTTP request
             and therefore not available in the `document.referrer` attribute
-            Google Analytics will use "utm_referrer" over "document.referrer" set in AnalyticsBrowser
+            Google Analytics will use "utm_referrer" over "http header / javascript document.referrer"
             utm_source is also a referer but in a named format
-        documentReferrer:
-          type: string
-          format: uri
-          description: |
-            The `document.referrer`
-            Note that Google Analytics will use "utm_referrer" over "document.referrer"
-            if set as document.referrer is only the domain/authority part
     AnalyticsAgent:
       description: The properties of a user agent
       type: object
@@ -218,8 +218,8 @@ components:
           $ref: '#/components/schemas/AnalyticsEventUser'
         request:
           $ref: '#/components/schemas/AnalyticsEventRequest'
-        channel:
-          $ref: '#/components/schemas/AnalyticsEventChannel'
+        utm:
+          $ref: '#/components/schemas/AnalyticsEventUtm'
         properties:
           description: The additional unknown event properties
           additionalProperties:

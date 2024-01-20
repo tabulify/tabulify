@@ -47,7 +47,7 @@ public class AuthUser {
     try {
       optInUri = routingContextWrapper.getReferer();
       claims.put(AuthUserJwtClaims.CUSTOM_ORIGIN_REFERER.toString(), optInUri);
-    } catch (NotFoundException ignored) {
+    } catch (NotFoundException | IllegalStructure ignored) {
     }
 
     return this;

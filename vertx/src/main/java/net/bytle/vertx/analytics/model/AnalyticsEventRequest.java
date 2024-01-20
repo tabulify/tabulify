@@ -21,6 +21,8 @@ public class AnalyticsEventRequest   {
 
   protected URI originUri;
 
+  protected URI referrerUri;
+
   /**
   * The empty constructor is
   * needed for the construction of the pojo
@@ -94,6 +96,22 @@ public class AnalyticsEventRequest   {
     this.originUri = originUri;
   }
 
+  /**
+  * @return referrerUri The http `referrer` header or javascript `document.referrer` Note that Google Analytics will use \"utm_referrer\" over \"document.referrer\" if set as document.referrer is only the domain/authority part
+  */
+  @JsonProperty("referrerUri")
+  public URI getReferrerUri() {
+    return referrerUri;
+  }
+
+  /**
+  * @param referrerUri The http `referrer` header or javascript `document.referrer` Note that Google Analytics will use \"utm_referrer\" over \"document.referrer\" if set as document.referrer is only the domain/authority part
+  */
+  @SuppressWarnings("unused")
+  public void setReferrerUri(URI referrerUri) {
+    this.referrerUri = referrerUri;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -106,12 +124,12 @@ public class AnalyticsEventRequest   {
     AnalyticsEventRequest analyticsEventRequest = (AnalyticsEventRequest) o;
     return
 
-            Objects.equals(agentId, analyticsEventRequest.agentId) && Objects.equals(remoteIp, analyticsEventRequest.remoteIp) && Objects.equals(sessionId, analyticsEventRequest.sessionId) && Objects.equals(originUri, analyticsEventRequest.originUri);
+            Objects.equals(agentId, analyticsEventRequest.agentId) && Objects.equals(remoteIp, analyticsEventRequest.remoteIp) && Objects.equals(sessionId, analyticsEventRequest.sessionId) && Objects.equals(originUri, analyticsEventRequest.originUri) && Objects.equals(referrerUri, analyticsEventRequest.referrerUri);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(agentId, remoteIp, sessionId, originUri);
+    return Objects.hash(agentId, remoteIp, sessionId, originUri, referrerUri);
   }
 
   @Override

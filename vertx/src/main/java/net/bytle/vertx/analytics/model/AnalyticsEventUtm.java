@@ -7,15 +7,15 @@ import java.net.URI;
 import java.util.Objects;
 
 /**
- * The data that permits to derive the channel (ie how the user came in). Mostly UTM (Urchin Tracking Module) data with the document referer.     See:     * &lt;a href&#x3D;\&quot;https://datacadamia.com/marketing/analytics/utm\&quot;&gt;UTM&lt;/a&gt;     * &lt;a href&#x3D;\&quot;https://ga-dev-tools.google/campaign-url-builder/\&quot;&gt;UTM builder&lt;/a&gt;     * &lt;a href&#x3D;\&quot;https://support.google.com/analytics/answer/10917952\&quot;&gt;[GA4] URL builders: Collect campaign data with custom URLs&lt;/a&gt;
+ * The data that permits to derive the channel (ie how the user came in). UTM (Urchin Tracking Module) data with the document referer.     See:     * &lt;a href&#x3D;\&quot;https://datacadamia.com/marketing/analytics/utm\&quot;&gt;UTM&lt;/a&gt;     * &lt;a href&#x3D;\&quot;https://ga-dev-tools.google/campaign-url-builder/\&quot;&gt;UTM builder&lt;/a&gt;     * &lt;a href&#x3D;\&quot;https://support.google.com/analytics/answer/10917952\&quot;&gt;[GA4] URL builders: Collect campaign data with custom URLs&lt;/a&gt;
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AnalyticsEventChannel   {
+public class AnalyticsEventUtm   {
 
 
   protected String utmCampaignId;
 
-  protected String utmCampaignName;
+  protected String utmCampaign;
 
   protected String utmSource;
 
@@ -27,15 +27,13 @@ public class AnalyticsEventChannel   {
 
   protected URI utmReferrer;
 
-  protected URI documentReferrer;
-
   /**
   * The empty constructor is
   * needed for the construction of the pojo
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public AnalyticsEventChannel () {
+  public AnalyticsEventUtm () {
   }
 
   /**
@@ -55,19 +53,19 @@ public class AnalyticsEventChannel   {
   }
 
   /**
-  * @return utmCampaignName Product, slogan, promo code
+  * @return utmCampaign The Utm Campaign Name (utm_campaign)
   */
-  @JsonProperty("utmCampaignName")
-  public String getUtmCampaignName() {
-    return utmCampaignName;
+  @JsonProperty("utmCampaign")
+  public String getUtmCampaign() {
+    return utmCampaign;
   }
 
   /**
-  * @param utmCampaignName Product, slogan, promo code
+  * @param utmCampaign The Utm Campaign Name (utm_campaign)
   */
   @SuppressWarnings("unused")
-  public void setUtmCampaignName(String utmCampaignName) {
-    this.utmCampaignName = utmCampaignName;
+  public void setUtmCampaign(String utmCampaign) {
+    this.utmCampaign = utmCampaign;
   }
 
   /**
@@ -135,7 +133,7 @@ public class AnalyticsEventChannel   {
   }
 
   /**
-  * @return utmReferrer Identifies the referrer URL as it's not passed by default by browser HTTP request and therefore not available in the `document.referrer` attribute Google Analytics will use \"utm_referrer\" over \"document.referrer\" set in AnalyticsBrowser utm_source is also a referer but in a named format
+  * @return utmReferrer Identifies the referrer URL as it's not passed by default by browser HTTP request and therefore not available in the `document.referrer` attribute Google Analytics will use \"utm_referrer\" over \"http header / javascript document.referrer\" utm_source is also a referer but in a named format
   */
   @JsonProperty("utmReferrer")
   public URI getUtmReferrer() {
@@ -143,27 +141,11 @@ public class AnalyticsEventChannel   {
   }
 
   /**
-  * @param utmReferrer Identifies the referrer URL as it's not passed by default by browser HTTP request and therefore not available in the `document.referrer` attribute Google Analytics will use \"utm_referrer\" over \"document.referrer\" set in AnalyticsBrowser utm_source is also a referer but in a named format
+  * @param utmReferrer Identifies the referrer URL as it's not passed by default by browser HTTP request and therefore not available in the `document.referrer` attribute Google Analytics will use \"utm_referrer\" over \"http header / javascript document.referrer\" utm_source is also a referer but in a named format
   */
   @SuppressWarnings("unused")
   public void setUtmReferrer(URI utmReferrer) {
     this.utmReferrer = utmReferrer;
-  }
-
-  /**
-  * @return documentReferrer The `document.referrer` Note that Google Analytics will use \"utm_referrer\" over \"document.referrer\" if set as document.referrer is only the domain/authority part
-  */
-  @JsonProperty("documentReferrer")
-  public URI getDocumentReferrer() {
-    return documentReferrer;
-  }
-
-  /**
-  * @param documentReferrer The `document.referrer` Note that Google Analytics will use \"utm_referrer\" over \"document.referrer\" if set as document.referrer is only the domain/authority part
-  */
-  @SuppressWarnings("unused")
-  public void setDocumentReferrer(URI documentReferrer) {
-    this.documentReferrer = documentReferrer;
   }
 
 
@@ -175,15 +157,15 @@ public class AnalyticsEventChannel   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AnalyticsEventChannel analyticsEventChannel = (AnalyticsEventChannel) o;
+    AnalyticsEventUtm analyticsEventUtm = (AnalyticsEventUtm) o;
     return
 
-            Objects.equals(utmCampaignId, analyticsEventChannel.utmCampaignId) && Objects.equals(utmCampaignName, analyticsEventChannel.utmCampaignName) && Objects.equals(utmSource, analyticsEventChannel.utmSource) && Objects.equals(utmMedium, analyticsEventChannel.utmMedium) && Objects.equals(utmTerm, analyticsEventChannel.utmTerm) && Objects.equals(utmContent, analyticsEventChannel.utmContent) && Objects.equals(utmReferrer, analyticsEventChannel.utmReferrer) && Objects.equals(documentReferrer, analyticsEventChannel.documentReferrer);
+            Objects.equals(utmCampaignId, analyticsEventUtm.utmCampaignId) && Objects.equals(utmCampaign, analyticsEventUtm.utmCampaign) && Objects.equals(utmSource, analyticsEventUtm.utmSource) && Objects.equals(utmMedium, analyticsEventUtm.utmMedium) && Objects.equals(utmTerm, analyticsEventUtm.utmTerm) && Objects.equals(utmContent, analyticsEventUtm.utmContent) && Objects.equals(utmReferrer, analyticsEventUtm.utmReferrer);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(utmCampaignId, utmCampaignName, utmSource, utmMedium, utmTerm, utmContent, utmReferrer, documentReferrer);
+    return Objects.hash(utmCampaignId, utmCampaign, utmSource, utmMedium, utmTerm, utmContent, utmReferrer);
   }
 
   @Override

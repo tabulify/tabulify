@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * The event. They are the things that happen in our product.  We follow a mix of * the &lt;a href&#x3D;\&quot;https://segment.com/docs/connections/spec/common/\&quot;&gt;Segment Spec&lt;/a&gt; * the &lt;a href&#x3D;\&quot;https://segment.com/docs/connections/spec/common/\&quot;&gt;MixPanel Spec&lt;/a&gt;  Every event type will extend this object and add its properties.  We try to follow the element of a sequential diagram with the following participants: * user: the user * agent: the agent that the user is using * request: the request * time: the state times * channel: the channel properties (how the user came in)
+ * The event. They are the things that happen in our product.  We follow a mix of * the &lt;a href&#x3D;\&quot;https://segment.com/docs/connections/spec/common/\&quot;&gt;Segment Spec&lt;/a&gt; * the &lt;a href&#x3D;\&quot;https://segment.com/docs/connections/spec/common/\&quot;&gt;MixPanel Spec&lt;/a&gt;  Every event type will extend this object and add its properties.  We try to follow the element of a sequential diagram with the following participants: * user: the user * agent: the agent that the user is using * request: the request * time: the state times * channel: the channel properties (how the user came in)  All properties that are tied only to the event type/name are properties added at the root with a primary datatype.
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AnalyticsEvent   {
@@ -26,7 +26,7 @@ public class AnalyticsEvent   {
 
   protected AnalyticsEventRequest request;
 
-  protected AnalyticsEventChannel channel;
+  protected AnalyticsEventUtm utm;
 
   protected Map<String, Object> properties = new HashMap<>();
 
@@ -56,7 +56,7 @@ public class AnalyticsEvent   {
   }
 
   /**
-  * @return name the event name
+  * @return name the event name/type
   */
   @JsonProperty("name")
   public String getName() {
@@ -64,7 +64,7 @@ public class AnalyticsEvent   {
   }
 
   /**
-  * @param name the event name
+  * @param name the event name/type
   */
   @SuppressWarnings("unused")
   public void setName(String name) {
@@ -136,19 +136,19 @@ public class AnalyticsEvent   {
   }
 
   /**
-  * @return channel
+  * @return utm
   */
-  @JsonProperty("channel")
-  public AnalyticsEventChannel getChannel() {
-    return channel;
+  @JsonProperty("utm")
+  public AnalyticsEventUtm getUtm() {
+    return utm;
   }
 
   /**
-  * @param channel Set channel
+  * @param utm Set utm
   */
   @SuppressWarnings("unused")
-  public void setChannel(AnalyticsEventChannel channel) {
-    this.channel = channel;
+  public void setUtm(AnalyticsEventUtm utm) {
+    this.utm = utm;
   }
 
   /**
@@ -179,12 +179,12 @@ public class AnalyticsEvent   {
     AnalyticsEvent analyticsEvent = (AnalyticsEvent) o;
     return
 
-            Objects.equals(id, analyticsEvent.id) && Objects.equals(name, analyticsEvent.name) && Objects.equals(time, analyticsEvent.time) && Objects.equals(app, analyticsEvent.app) && Objects.equals(user, analyticsEvent.user) && Objects.equals(request, analyticsEvent.request) && Objects.equals(channel, analyticsEvent.channel) && Objects.equals(properties, analyticsEvent.properties);
+            Objects.equals(id, analyticsEvent.id) && Objects.equals(name, analyticsEvent.name) && Objects.equals(time, analyticsEvent.time) && Objects.equals(app, analyticsEvent.app) && Objects.equals(user, analyticsEvent.user) && Objects.equals(request, analyticsEvent.request) && Objects.equals(utm, analyticsEvent.utm) && Objects.equals(properties, analyticsEvent.properties);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name, time, app, user, request, channel, properties);
+    return Objects.hash(id, name, time, app, user, request, utm, properties);
   }
 
   @Override

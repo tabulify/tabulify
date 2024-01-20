@@ -8,11 +8,9 @@ import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.validation.RequestParameter;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
-import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +56,7 @@ public class RoutingContextWrapper {
     return HttpRequestUtil.getRealRemoteClientIp(this.ctx.request());
   }
 
-  public URI getReferer() throws NotFoundException {
+  public URI getReferer() throws NotFoundException, IllegalStructure {
 
     String refererValue = this.ctx.request().getHeader(HttpHeaders.REFERER);
     if (refererValue == null) {
@@ -67,13 +65,8 @@ public class RoutingContextWrapper {
     try {
       return UriEnhanced.createFromString(refererValue).toUri();
     } catch (IllegalStructure e) {
-      if (JavaEnvs.IS_DEV) {
-        throw ValidationException.create("The referer header is not a valid uri. Error:" + e.getMessage(), HttpHeaders.REFERER, refererValue);
-      } else {
-        String msg = "The referer header is not a valid uri (" + refererValue + "). Error:" + e.getMessage();
-        LOGGER.warn(msg);
-        throw new NotFoundException(msg);
-      }
+      String msg = "The referer header is not a valid uri (" + refererValue + "). Error:" + e.getMessage();
+      throw new IllegalStructure(msg);
     }
   }
 
@@ -238,11 +231,11 @@ public class RoutingContextWrapper {
 
   public RequestParameter getRequestPathParameter(String parameterName) throws NotFoundException {
     if (requestParameters == null) {
-      throw new NotFoundException("No requests parameters was found. We can't therefore return the value for the parameter ("+parameterName+")");
+      throw new NotFoundException("No requests parameters was found. We can't therefore return the value for the parameter (" + parameterName + ")");
     }
     RequestParameter requestPathParameter = requestParameters.pathParameter(parameterName);
-    if(requestPathParameter == null){
-      throw new NotFoundException("The parameter "+parameterName+" was not found");
+    if (requestPathParameter == null) {
+      throw new NotFoundException("The parameter " + parameterName + " was not found");
     }
     return requestPathParameter;
   }

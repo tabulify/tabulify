@@ -4,9 +4,11 @@ import com.fasterxml.uuid.Generators;
 import com.mixpanel.mixpanelapi.ClientDelivery;
 import com.mixpanel.mixpanelapi.MessageBuilder;
 import com.mixpanel.mixpanelapi.MixpanelAPI;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
+import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
@@ -20,6 +22,7 @@ import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -282,10 +285,10 @@ public class AnalyticsTracker {
         analyticsEventRequest = new AnalyticsEventRequest();
         analyticsEvent.setRequest(analyticsEventRequest);
       }
-      AnalyticsEventChannel analyticsEventChannel = analyticsEvent.getChannel();
-      if (analyticsEventChannel == null) {
-        analyticsEventChannel = new AnalyticsEventChannel();
-        analyticsEvent.setChannel(analyticsEventChannel);
+      AnalyticsEventUtm analyticsEventUtm = analyticsEvent.getUtm();
+      if (analyticsEventUtm == null) {
+        analyticsEventUtm = new AnalyticsEventUtm();
+        analyticsEvent.setUtm(analyticsEventUtm);
       }
 
 
@@ -318,8 +321,12 @@ public class AnalyticsTracker {
        * Request
        */
       if (routingContext != null) {
+
+
+        HttpServerRequest request = routingContext.request();
+        RoutingContextWrapper routingContextWrapper = new RoutingContextWrapper(routingContext);
         try {
-          analyticsEventRequest.setRemoteIp(HttpRequestUtil.getRealRemoteClientIp(routingContext.request()));
+          analyticsEventRequest.setRemoteIp(HttpRequestUtil.getRealRemoteClientIp(request));
         } catch (NotFoundException e) {
           //
         }
@@ -327,6 +334,53 @@ public class AnalyticsTracker {
         if (session != null) {
           analyticsEventRequest.setSessionId(session.id());
         }
+        try {
+          URI requestReferrer = routingContextWrapper.getReferer();
+          analyticsEventRequest.setReferrerUri(requestReferrer);
+        } catch (NotFoundException | IllegalStructure e) {
+          // bad data
+        }
+
+        /**
+         * UTM
+         */
+        // &utm_campaign=SavedSearches#distanceMeters:9000|searchInTitleAndDescription:true|Language:nl-NL|offeredSince:1705597578000|asSavedSearch:true
+        String utmCampaign = request.getParam("utm_campaign");
+        if (utmCampaign != null) {
+          analyticsEventUtm.setUtmCampaign(utmCampaign);
+        }
+        String utmCampaignId = request.getParam("utm_campaign_id");
+        if (utmCampaignId != null) {
+          analyticsEventUtm.setUtmCampaignId(utmCampaign);
+        }
+        // &utm_source=systemmail
+        String utmSource = request.getParam("utm_source");
+        if (utmSource != null) {
+          analyticsEventUtm.setUtmSource(utmSource);
+        }
+        // &utm_medium=email
+        String utmMedium = request.getParam("utm_medium");
+        if (utmMedium != null) {
+          analyticsEventUtm.setUtmMedium(utmMedium);
+        }
+        // example: utm_content=button
+        String utmContent = request.getParam("utm_content");
+        if (utmContent != null) {
+          analyticsEventUtm.setUtmContent(utmContent);
+        }
+        String utmTerm = request.getParam("utm_term");
+        if (utmTerm != null) {
+          analyticsEventUtm.setUtmTerm(utmTerm);
+        }
+        String utmReferrer = request.getParam("utm_referrer");
+        if (utmReferrer != null) {
+          try {
+            analyticsEventUtm.setUtmReferrer(URI.create(utmReferrer));
+          } catch (Exception e) {
+            // bad data
+          }
+        }
+
       }
 
 
