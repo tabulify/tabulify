@@ -36,7 +36,7 @@ public class SequenceProvider {
       "RETURNING " + LAST_ID_COLUMN;
     return sqlConnection.preparedQuery(updateSql)
       .execute(Tuple.of(
-        DateTimeUtil.getNowUtc(),
+        DateTimeUtil.getNowInUtc(),
         tableName,
         realmId
       ))
@@ -58,7 +58,7 @@ public class SequenceProvider {
               realmId,
               tableName,
               nextId,
-              DateTimeUtil.getNowUtc()
+              DateTimeUtil.getNowInUtc()
             ))
             .onFailure(t -> LOGGER.error("Error while executing the following sql:\n" + insertSql, t))
             .compose(ok -> Future.succeededFuture(nextId));

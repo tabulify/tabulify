@@ -218,7 +218,7 @@ public class ServiceProvider {
       service.getType(),
       this.getDatabaseObject(service),
       service.getImpersonatedUser() != null ? service.getImpersonatedUser().getLocalId() : null,
-      DateTimeUtil.getNowUtc(),
+      DateTimeUtil.getNowInUtc(),
       service.getRealm().getLocalId(),
       service.getUri()
     );
@@ -258,7 +258,7 @@ public class ServiceProvider {
             service.getType(),
             this.getDatabaseObject(service),
             service.getImpersonatedUser() != null ? service.getImpersonatedUser().getLocalId() : null,
-            DateTimeUtil.getNowUtc()
+            DateTimeUtil.getNowInUtc()
           );
           return sqlConnection
             .preparedQuery(insertSql)

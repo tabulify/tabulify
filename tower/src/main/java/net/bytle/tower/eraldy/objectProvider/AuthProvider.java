@@ -372,7 +372,7 @@ public class AuthProvider {
             .getHttpServer()
             .getServer()
             .getTrackerAnalytics()
-            .eventBuilderForServerEvent(signUpEvent)
+            .eventBuilder(signUpEvent)
             .setUser(authUserForSession)
             .setRoutingContext(routingContext)
             .addEventToQueue();

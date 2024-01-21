@@ -182,7 +182,7 @@ public class UserProvider {
           .getHttpServer()
           .getServer()
           .getTrackerAnalytics()
-          .eventBuilderForServerEvent(signUpEvent)
+          .eventBuilder(signUpEvent)
           .setUser(this.apiApp.getAuthProvider().toAuthUser(user))
           .addEventToQueue();
         return Future.succeededFuture(insertedUser);
@@ -232,7 +232,7 @@ public class UserProvider {
                   user.getLocalId(),
                   emailAddressNormalized,
                   databaseJsonString,
-                  DateTimeUtil.getNowUtc()
+                  DateTimeUtil.getNowInUtc()
                 )
               );
           },
@@ -328,7 +328,7 @@ public class UserProvider {
         .execute(Tuple.of(
           user.getEmail().toLowerCase(),
           pgJsonString,
-          DateTimeUtil.getNowUtc(),
+          DateTimeUtil.getNowInUtc(),
           user.getLocalId(),
           user.getRealm().getLocalId()
         ))
@@ -372,7 +372,7 @@ public class UserProvider {
       .preparedQuery(updateSql)
       .execute(Tuple.of(
         dataJsonString,
-        DateTimeUtil.getNowUtc(),
+        DateTimeUtil.getNowInUtc(),
         user.getEmail().toLowerCase(),
         user.getRealm().getLocalId()
       ))
@@ -800,7 +800,7 @@ public class UserProvider {
       .preparedQuery(sql)
       .execute(Tuple.of(
         passwordHashed,
-        DateTimeUtil.getNowUtc(),
+        DateTimeUtil.getNowInUtc(),
         userLocalId,
         realmLocalId
       ))

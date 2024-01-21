@@ -81,7 +81,7 @@ public class DmarcMilter implements SmtpMilter {
     errorJson.put("message", e.getMessage());
     errorJson.put("code", e.getClass().getName());
     errorJsonWithDataObject.put("error", errorJson);
-    Timestamp now = Timestamp.createFromNow();
+    Timestamp now = Timestamp.createFromNowLocalSystem();
     String errorName = now.toString(ISO_DATE_FORMAT);
     String partition = now.toString("yyyy-MM");
     return new SmtpMessage() {

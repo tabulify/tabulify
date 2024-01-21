@@ -1,9 +1,9 @@
 package net.bytle.vertx.auth;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.vertx.analytics.model.AnalyticsEvent;
+import net.bytle.vertx.analytics.AnalyticsServerEvent;
 
-public class SignInEvent extends AnalyticsEvent {
+public class SignInEvent extends AnalyticsServerEvent {
 
 
   private Integer flowId;

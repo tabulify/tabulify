@@ -13,6 +13,8 @@ import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.flow.WebFlow;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +31,7 @@ import java.util.List;
  */
 public class AuthContext {
 
+  static Logger LOGGER = LogManager.getLogger(AuthContext.class);
   private final RoutingContext ctx;
   private AuthUser authUser;
   private final AuthState authState;
@@ -213,13 +216,18 @@ public class AuthContext {
       SignInEvent signInEvent = new SignInEvent();
       signInEvent.setFlowId(this.flow.getFlowType().getValue());
 
+      /**
+       * You need to log out to come to this point in the code.
+       * If you log in while already logged in,
+       * we don't upgrade the session.
+       */
       this.flow
         .getApp()
         .getApexDomain()
         .getHttpServer()
         .getServer()
         .getTrackerAnalytics()
-        .eventBuilderForServerEvent(signInEvent)
+        .eventBuilder(signInEvent)
         .setUser(authUser)
         .setRoutingContext(this.getRoutingContext())
         .addEventToQueue();

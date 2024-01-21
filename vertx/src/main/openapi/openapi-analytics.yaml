@@ -59,23 +59,24 @@ components:
             The http `referrer` header or javascript `document.referrer`
             Note that Google Analytics will use "utm_referrer" over "document.referrer"
             if set as document.referrer is only the domain/authority part
-    AnalyticsEventTime:
-      description: The times of the status
+    AnalyticsEventState:
+      description: |
+        The times of the status (in UTC)
       type: object
       properties:
         creationTime:
           type: string
           format: date-time
-          description: The timestamp when the event has happend (ie when the object was created)
+          description: The date-time in UTC when the event has happend (ie when the object was created)
         receptionTime:
           type: string
           format: date-time
-          description: The timestamp of when a message was received on the API (if created and send by a client)
+          description: The date-time in UTC of when a message was received on the API (if created and send by a client)
         sendingTime:
           type: string
           format: date-time
           description: |
-            The timestamp of when a message was sent to the analytics endpoint api
+            The date-time in UTC of when a message was sent to the analytics endpoint api
             Time: With Ga, you cannot set the time, It uses the notion of queue
             https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#qt
     AnalyticsEventUtm:
@@ -209,9 +210,12 @@ components:
             * mixpanel as $insert_id
         name:
           type: string
-          description: the event name/type
-        time:
-          $ref: '#/components/schemas/AnalyticsEventTime'
+          description: |
+            The event name (known also as type)
+            An human readable name that will be normalized
+          example: `Sign up`, `Purchase`
+        state:
+          $ref: '#/components/schemas/AnalyticsEventState'
         app:
           $ref: '#/components/schemas/AnalyticsEventApp'
         user:
@@ -220,8 +224,8 @@ components:
           $ref: '#/components/schemas/AnalyticsEventRequest'
         utm:
           $ref: '#/components/schemas/AnalyticsEventUtm'
-        properties:
-          description: The additional unknown event properties
+        attr:
+          description: The attributes for the event type
           additionalProperties:
             type: object # may be number, string, boolean
     AnalyticsUser:

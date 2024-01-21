@@ -68,7 +68,7 @@ public class TransferWorkerMetricsViewer implements Runnable {
       Tabulars.drop(dataPath);
     }
     Tabulars.create(dataPath);
-    java.sql.Timestamp run = Timestamp.createFromNow().toSqlTimestamp();
+    java.sql.Timestamp run = Timestamp.createFromNowLocalSystem().toSqlTimestamp();
     try (InsertStream insertStream = dataPath.getInsertStream()) {
 
       int n = 0;
@@ -96,7 +96,7 @@ public class TransferWorkerMetricsViewer implements Runnable {
 
         n++;
 
-        java.sql.Timestamp now = Timestamp.createFromNow().toSqlTimestamp();
+        java.sql.Timestamp now = Timestamp.createFromNowLocalSystem().toSqlTimestamp();
 
         long count = buffer.getCount();
         insertStream.insert(run, now, BUFFER_SIZE, count, MAIN_THREAD);

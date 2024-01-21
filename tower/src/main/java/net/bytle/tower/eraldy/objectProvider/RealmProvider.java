@@ -226,7 +226,7 @@ public class RealmProvider {
         realm.getOrganization().getLocalId(),
         pgJsonObject,
         realm.getOwnerUser().getLocalId(),
-        DateTimeUtil.getNowUtc()))
+        DateTimeUtil.getNowInUtc()))
       .onFailure(t -> LOGGER.error("Error while executing the following sql:\n" + sql, t))
       .compose(rows -> {
         Long realmId = rows.iterator().next().getLong(REALM_ID_COLUMN);
@@ -261,7 +261,7 @@ public class RealmProvider {
             realm.getHandle(),
             realm.getOrganization().getLocalId(),
             pgJsonObject,
-            DateTimeUtil.getNowUtc(),
+            DateTimeUtil.getNowInUtc(),
             realm.getLocalId()
           )
         )
@@ -319,7 +319,7 @@ public class RealmProvider {
       .execute(Tuple.of(
         organization.getLocalId(),
         pgJsonObject,
-        DateTimeUtil.getNowUtc(),
+        DateTimeUtil.getNowInUtc(),
         realm.getHandle()
       ))
       .onFailure(e -> LOGGER.error("Error while updating the realm by handle. Sql: \n" + sql, e));

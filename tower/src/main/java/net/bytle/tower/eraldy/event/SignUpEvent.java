@@ -1,12 +1,16 @@
 package net.bytle.tower.eraldy.event;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.vertx.analytics.model.AnalyticsEvent;
+import net.bytle.vertx.analytics.AnalyticsServerEvent;
 
-public class SignUpEvent extends AnalyticsEvent {
+public class SignUpEvent extends AnalyticsServerEvent {
 
 
   private Integer flowId;
+
+  public static SignUpEvent create() {
+    return new SignUpEvent();
+  }
 
   @Override
   public String getName() {

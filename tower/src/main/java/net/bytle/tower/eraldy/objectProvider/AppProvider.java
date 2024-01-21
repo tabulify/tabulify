@@ -197,7 +197,7 @@ public class AppProvider {
                   app.getHandle(),
                   app.getUser().getLocalId(),
                   this.getDatabaseJsonObject(app),
-                  DateTimeUtil.getNowUtc()
+                  DateTimeUtil.getNowInUtc()
                 )
               );
           })

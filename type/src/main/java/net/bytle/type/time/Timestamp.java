@@ -15,11 +15,19 @@ import java.util.TimeZone;
 /**
  * A wrapper around a {@link LocalDateTime local date time}
  * to represent a date with time (ie SQL Timestamp definition)
+ * The now local date time is created in the UTC timezone (Z)
  */
 public class Timestamp {
 
-  public static final ZoneId DEFAULT_ZONE_ID = ZoneId.systemDefault();
+  /**
+   * UTC to be international for the user
+   * (If the time needs to be local to the system,
+   * use {@link ZoneId#systemDefault()}
+   */
+  public static final ZoneId DEFAULT_ZONE_ID = ZoneOffset.UTC;
   private static final int DATE_TIME_STRING_LENGTH = 19;
+
+
   LocalDateTime localDateTime;
 
 
@@ -69,9 +77,10 @@ public class Timestamp {
 
   }
 
-  public static Timestamp createFromNow() {
-    return new Timestamp(LocalDateTime.now());
+  public static Timestamp createFromNowLocalSystem() {
+    return createFromLocalDateTime(LocalDateTime.now(ZoneId.systemDefault()));
   }
+
 
   public static Timestamp createFromObject(Object sourceObject) throws CastException {
     if (sourceObject == null) {
@@ -159,6 +168,7 @@ public class Timestamp {
   public String toIsoString() {
     return localDateTime.toString();
   }
+
 
   public String toString(String format) {
     SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.getDefault());

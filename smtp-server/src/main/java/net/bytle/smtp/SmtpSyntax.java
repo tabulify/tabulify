@@ -35,6 +35,6 @@ public class SmtpSyntax {
   static final String MAIL_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss Z (z)";
 
   public static String getCurrentDateInMailFormat() {
-    return Timestamp.createFromNow().toString(MAIL_DATE_FORMAT);
+    return Timestamp.createFromNowLocalSystem().toString(MAIL_DATE_FORMAT);
   }
 }

@@ -3,24 +3,29 @@ package net.bytle.vertx.analytics;
 import io.vertx.core.json.JsonObject;
 import jakarta.mail.internet.AddressException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.java.JavaEnvs;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import net.bytle.vertx.analytics.model.AnalyticsUser;
 import net.bytle.vertx.auth.AuthUserUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Map;
 
 /**
+ * MixPanel - modify the time based on the project time zone!
+ * Be sure to have UTC
+ * <p>
  * Mixpanel utility class
  * based on:
  * <a href="https://github.com/mixpanel/mixpanel-java/blob/master/src/demo/java/com/mixpanel/mixpanelapi/demo/MixpanelAPIDemo.java"></a>
  */
 public class AnalyticsMixPanel {
 
+  static Logger LOGGER = LogManager.getLogger(AnalyticsMixPanel.class);
 
   /**
    * @param user - the user
@@ -56,7 +61,8 @@ public class AnalyticsMixPanel {
    * <a href="https://docs.mixpanel.com/docs/tracking/reference/default-properties">MixPanel Properties</a>
    * and
    * <a href="https://docs.mixpanel.com/docs/other-bits/tutorials/developers/mixpanel-for-developers-fundamentals">For Developers</a>
-   *
+   * and
+   * <a href="https://docs.mixpanel.com/docs/tracking-methods/sdks/java">Java Example</a>
    * @param event the event
    * @return the JSON for Mixpanel without the user id (ie distinct id) because it's mandatory to add it in the event function signature of Mixpanel
    */
@@ -67,9 +73,10 @@ public class AnalyticsMixPanel {
     /**
      * $device_id: The anonymous / device id
      */
-    String appId = event.getApp().getAppId();
-    if (appId != null) {
-      props.put("$device_id", appId);
+
+    String agentId = event.getRequest().getAgentId();
+    if (agentId != null) {
+      props.put("$device_id", agentId);
     }
 
     /**
@@ -78,6 +85,10 @@ public class AnalyticsMixPanel {
     String userId = event.getUser().getUserId();
     if (userId != null) {
       props.put("$user_id", userId);
+    }
+    String userEmail = event.getUser().getUserEmail();
+    if (userEmail != null) {
+      props.put("user_email", userEmail);
     }
 
     /**
@@ -120,51 +131,70 @@ public class AnalyticsMixPanel {
      * props.put("channel");
      * Utm comes from <a href="https://docs.mixpanel.com/docs/features/sessions#session-properties'>Session Properties</a>
      */
-    String utmCampagne = event.getChannel().getUtmCampaignName();
+    String utmCampagne = event.getUtm().getUtmCampaign();
     if (utmCampagne != null) {
       props.put("utm_campaign", utmCampagne);
     }
-    String utmContent = event.getChannel().getUtmContent();
+    String utmContent = event.getUtm().getUtmContent();
     if (utmContent != null) {
       props.put("utm_content", utmContent);
     }
-    String utmSource = event.getChannel().getUtmSource();
+    String utmSource = event.getUtm().getUtmSource();
     if (utmSource != null) {
       props.put("utm_source", utmSource);
     }
 
     /**
-     * Timestamp
+     * State and time
+     * A date can in Epoch Sec or in Iso String
+     * <p>
+     * Note: The iso string date is changed based on the project timezone.
+     * If the date in the data is not good, verify that the timezone of the project is UTC.
      */
-    props.put("creationTime", Timestamp.createFromLocalDateTime(event.getTime().getCreationTime()).toIsoString());
+    /**
+     * Creation Time is known as $time in PixPanel
+     * The Value example given in the help when selecting an event is 2011-01T00:00:00Z
+     * ie Timestamp.createFromLocalDateTime(event.getState().getCreationTime()).toIsoString()+"Z";
+     * The event is processed successfully
+     * <p>
+     * BUT the gui is not happy.
+     * We have discovered that ultimately they store all date in Epoch Sec (a downalod give you epoch data)
+     * Setting it as Epoch, it just works.
+     */
+    Long creationTimeIso = Timestamp.createFromLocalDateTime(event.getState().getCreationTime()).toEpochSec();
+    props.put("$time", creationTimeIso);
 
     /**
-     * The event type property
-     * They are added at the root
+     * Group Analytics is an add-on
+     * We use for now custom properties
+     * https://docs.mixpanel.com/docs/tracking-methods/sdks/java#group-analytics
+     * https://docs.mixpanel.com/docs/data-structure/advanced/group-analytics
      */
-    Map<String, Object> jsonObjectAsMap = JsonObject.mapFrom(event).getMap();
-    for (Map.Entry<String, Object> entry : jsonObjectAsMap.entrySet()) {
-      String key = entry.getKey();
-      if (Arrays.asList("id", "name").contains(key)) {
-        // already taken into account
-        continue;
-      }
-      Object value = entry.getValue();
-      // Json Object, Json Array are implemented as Map and List
-      if (value == null || value instanceof Map || value instanceof Collection) {
-        continue;
-      }
-      props.put(key, value.toString());
-    }
+    String appId = event.getApp().getAppId();
+    props.put("app_id", appId);
+    props.put("app_realm_id", event.getApp().getAppRealmId());
+    props.put("app_organization_id", event.getApp().getAppOrganisationId());
+
     /**
      * Additional properties along with events
      */
-    for (Map.Entry<String, Object> entry : event.getProperties().entrySet()) {
+    for (Map.Entry<String, Object> entry : event.getAttr().entrySet()) {
       /**
        * Does the `toString` work with MixPanel Data???
        * https://docs.mixpanel.com/docs/other-bits/tutorials/developers/mixpanel-for-developers-fundamentals#supported-data-types
        */
-      props.put(entry.getKey(), entry.getValue().toString());
+      Object value = entry.getValue();
+      if (value == null) {
+        if (JavaEnvs.IS_DEV) {
+          LOGGER.error("The value of the key (" + entry.getKey() + ") for the event (" + event.getName() + ") is null. The value was ignored.");
+        }
+        continue;
+      }
+      String valueString = value.toString();
+      if (valueString.isBlank()) {
+        continue;
+      }
+      props.put(entry.getKey(), valueString);
     }
     return props;
 

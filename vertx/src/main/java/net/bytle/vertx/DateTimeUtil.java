@@ -54,7 +54,7 @@ public class DateTimeUtil {
   /**
    * @return the now time in UTC
    */
-  public static LocalDateTime getNowUtc() {
+  public static LocalDateTime getNowInUtc() {
     return Timestamp.createFromNowUtc().toLocalDateTime();
   }
 

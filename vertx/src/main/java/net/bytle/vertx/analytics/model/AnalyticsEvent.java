@@ -18,7 +18,7 @@ public class AnalyticsEvent   {
 
   protected String name;
 
-  protected AnalyticsEventTime time;
+  protected AnalyticsEventState state;
 
   protected AnalyticsEventApp app;
 
@@ -28,7 +28,7 @@ public class AnalyticsEvent   {
 
   protected AnalyticsEventUtm utm;
 
-  protected Map<String, Object> properties = new HashMap<>();
+  protected Map<String, Object> attr = new HashMap<>();
 
   /**
   * The empty constructor is
@@ -72,19 +72,19 @@ public class AnalyticsEvent   {
   }
 
   /**
-  * @return time
+  * @return state
   */
-  @JsonProperty("time")
-  public AnalyticsEventTime getTime() {
-    return time;
+  @JsonProperty("state")
+  public AnalyticsEventState getState() {
+    return state;
   }
 
   /**
-  * @param time Set time
+  * @param state Set state
   */
   @SuppressWarnings("unused")
-  public void setTime(AnalyticsEventTime time) {
-    this.time = time;
+  public void setState(AnalyticsEventState state) {
+    this.state = state;
   }
 
   /**
@@ -152,19 +152,19 @@ public class AnalyticsEvent   {
   }
 
   /**
-  * @return properties The additional unknown event properties
+  * @return attr The attributes for the event type
   */
-  @JsonProperty("properties")
-  public Map<String, Object> getProperties() {
-    return properties;
+  @JsonProperty("attr")
+  public Map<String, Object> getAttr() {
+    return attr;
   }
 
   /**
-  * @param properties The additional unknown event properties
+  * @param attr The attributes for the event type
   */
   @SuppressWarnings("unused")
-  public void setProperties(Map<String, Object> properties) {
-    this.properties = properties;
+  public void setAttr(Map<String, Object> attr) {
+    this.attr = attr;
   }
 
 
@@ -179,12 +179,12 @@ public class AnalyticsEvent   {
     AnalyticsEvent analyticsEvent = (AnalyticsEvent) o;
     return
 
-            Objects.equals(id, analyticsEvent.id) && Objects.equals(name, analyticsEvent.name) && Objects.equals(time, analyticsEvent.time) && Objects.equals(app, analyticsEvent.app) && Objects.equals(user, analyticsEvent.user) && Objects.equals(request, analyticsEvent.request) && Objects.equals(utm, analyticsEvent.utm) && Objects.equals(properties, analyticsEvent.properties);
+            Objects.equals(id, analyticsEvent.id) && Objects.equals(name, analyticsEvent.name) && Objects.equals(state, analyticsEvent.state) && Objects.equals(app, analyticsEvent.app) && Objects.equals(user, analyticsEvent.user) && Objects.equals(request, analyticsEvent.request) && Objects.equals(utm, analyticsEvent.utm) && Objects.equals(attr, analyticsEvent.attr);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name, time, app, user, request, utm, properties);
+    return Objects.hash(id, name, state, app, user, request, utm, attr);
   }
 
   @Override

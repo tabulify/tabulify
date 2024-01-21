@@ -211,7 +211,7 @@ public class ListUserProvider {
       .execute(Tuple.of(
         listUser.getStatus(),
         this.getDatabaseObject(listUser),
-        DateTimeUtil.getNowUtc(),
+        DateTimeUtil.getNowInUtc(),
         listUser.getList().getRealm().getLocalId(),
         listUser.getList().getLocalId(),
         listUser.getUser().getLocalId()
@@ -241,7 +241,7 @@ public class ListUserProvider {
         listUser.getUser().getLocalId(),
         this.getDatabaseObject(listUser),
         OK_STATUS,
-        DateTimeUtil.getNowUtc()
+        DateTimeUtil.getNowInUtc()
       ))
       .onFailure(e -> LOGGER.error("Registration Insert Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e))
       .compose(rows -> {

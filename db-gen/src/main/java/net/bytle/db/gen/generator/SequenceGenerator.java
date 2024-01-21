@@ -162,7 +162,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
       step = -1;
       offset = -1;
     } else if (clazz == java.sql.Timestamp.class) {
-      start = Timestamp.createFromNow().toSqlTimestamp();
+      start = Timestamp.createFromNowLocalSystem().toSqlTimestamp();
       step = DEFAULT_TIMESTAMP_STEP; // ms
     } else if (clazz == BigDecimal.class) {
       start = new BigDecimal(0);

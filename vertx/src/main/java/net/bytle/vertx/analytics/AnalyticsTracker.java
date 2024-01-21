@@ -27,7 +27,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Managed the tracking with:
@@ -73,7 +75,7 @@ public class AnalyticsTracker {
 
   }
 
-  public static AnalyticsTracker createFromJsonObject(Server server) throws ConfigIllegalException {
+  public static AnalyticsTracker createFromServer(Server server) throws ConfigIllegalException {
 
     return new AnalyticsTracker(server);
 
@@ -131,7 +133,7 @@ public class AnalyticsTracker {
 
       try {
 
-        event.getTime().setSendingTime(DateTimeUtil.getNowUtc());
+        event.getState().setSendingTime(DateTimeUtil.getNowInUtc());
         JsonObject props = AnalyticsMixPanel.toMixpanelPropsWithoutUserId(event);
 
         // Create an event
@@ -194,20 +196,49 @@ public class AnalyticsTracker {
     this.eventsQueue.remove(event.getId());
   }
 
-  public ServerEventBuilder eventBuilderForServerEvent(AnalyticsEvent analyticsEvent) {
+  /**
+   * @param analyticsServerEvent - an internal server event
+   */
+  public EventBuilder eventBuilder(AnalyticsServerEvent analyticsServerEvent) {
+    AnalyticsEvent analyticsEvent = new AnalyticsEvent();
 
-    return new ServerEventBuilder(analyticsEvent);
+    Map<String, Object> jsonObjectMap = JsonObject.mapFrom(analyticsServerEvent).getMap();
+    String eventNameKey = "name";
+    String name = (String) jsonObjectMap.get(eventNameKey);
+    if (name == null) {
+      throw new InternalException("The event name is null but is mandatory");
+    }
+    analyticsEvent.setName(name);
+    jsonObjectMap.remove(eventNameKey);
+
+    /**
+     * No null or blank value
+     */
+    Map<String, Object> jsonObjectMapTarget = jsonObjectMap
+      .entrySet()
+      .stream()
+      .filter(e -> e.getValue() != null && !e.getValue().toString().isBlank())
+      .collect(Collectors.toMap(
+        Map.Entry::getKey,
+        Map.Entry::getValue
+      ));
+
+    analyticsEvent.setAttr(jsonObjectMapTarget);
+    return new EventBuilder(analyticsEvent);
 
   }
 
 
-  public ServerEventBuilder eventBuilderFromApi(AnalyticsEvent analyticsEvent) {
+  /**
+   * @param externalAnalyticsEvent - an external analytics received from the API
+   */
+  public EventBuilder eventBuilder(AnalyticsEvent externalAnalyticsEvent) {
 
-    return new ServerEventBuilder(analyticsEvent);
+    return new EventBuilder(externalAnalyticsEvent);
 
   }
 
-  public class ServerEventBuilder {
+  public class EventBuilder {
 
     private AuthUser authUser;
 
@@ -224,8 +255,8 @@ public class AnalyticsTracker {
     private String organizationId;
     private String realmId;
 
-    public ServerEventBuilder(AnalyticsEvent eventName) {
-      this.analyticsEvent = eventName;
+    private EventBuilder(AnalyticsEvent analyticsEvent) {
+      this.analyticsEvent = analyticsEvent;
     }
 
 
@@ -240,12 +271,12 @@ public class AnalyticsTracker {
 
     }
 
-    public ServerEventBuilder setUser(AuthUser authUser) {
+    public EventBuilder setUser(AuthUser authUser) {
       this.authUser = authUser;
       return this;
     }
 
-    public ServerEventBuilder setRoutingContext(RoutingContext routingContext) {
+    public EventBuilder setRoutingContext(RoutingContext routingContext) {
       this.routingContext = routingContext;
       return this;
     }
@@ -255,7 +286,7 @@ public class AnalyticsTracker {
       /**
        * Normalize event name
        */
-      String name = analyticsEvent.getName();
+      String name = this.analyticsEvent.getName();
       if (name == null) {
         throw new InternalException("An event should have a name. The event (" + analyticsEvent.getClass().getSimpleName() + ") has no name");
       }
@@ -275,10 +306,10 @@ public class AnalyticsTracker {
         analyticsEventApp = new AnalyticsEventApp();
         analyticsEvent.setApp(analyticsEventApp);
       }
-      AnalyticsEventTime analyticsEventTime = analyticsEvent.getTime();
-      if (analyticsEventTime == null) {
-        analyticsEventTime = new AnalyticsEventTime();
-        analyticsEvent.setTime(analyticsEventTime);
+      AnalyticsEventState analyticsEventState = analyticsEvent.getState();
+      if (analyticsEventState == null) {
+        analyticsEventState = new AnalyticsEventState();
+        analyticsEvent.setState(analyticsEventState);
       }
       AnalyticsEventRequest analyticsEventRequest = analyticsEvent.getRequest();
       if (analyticsEventRequest == null) {
@@ -391,10 +422,10 @@ public class AnalyticsTracker {
        * (ie extract time from uuid, select on creation time
        * to partition)
        */
-      LocalDateTime creationTime = analyticsEventTime.getCreationTime();
+      LocalDateTime creationTime = analyticsEventState.getCreationTime();
       if (creationTime == null) {
-        creationTime = DateTimeUtil.getNowUtc();
-        analyticsEventTime.setCreationTime(creationTime);
+        creationTime = DateTimeUtil.getNowInUtc();
+        analyticsEventState.setCreationTime(creationTime);
       }
       if (analyticsEvent.getId() == null) {
 
@@ -408,12 +439,12 @@ public class AnalyticsTracker {
     }
 
 
-    public ServerEventBuilder setOrganizationId(String organizationId) {
+    public EventBuilder setOrganizationId(String organizationId) {
       this.organizationId = organizationId;
       return this;
     }
 
-    public ServerEventBuilder setRealmId(String realmId) {
+    public EventBuilder setRealmId(String realmId) {
       this.realmId = realmId;
       return this;
     }

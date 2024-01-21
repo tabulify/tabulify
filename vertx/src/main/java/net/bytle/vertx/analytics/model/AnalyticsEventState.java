@@ -10,7 +10,7 @@ import java.util.Objects;
  * The times of the status
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AnalyticsEventTime   {
+public class AnalyticsEventState   {
 
 
   protected LocalDateTime creationTime;
@@ -25,7 +25,7 @@ public class AnalyticsEventTime   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public AnalyticsEventTime () {
+  public AnalyticsEventState () {
   }
 
   /**
@@ -85,10 +85,10 @@ public class AnalyticsEventTime   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AnalyticsEventTime analyticsEventTime = (AnalyticsEventTime) o;
+    AnalyticsEventState analyticsEventState = (AnalyticsEventState) o;
     return
 
-            Objects.equals(creationTime, analyticsEventTime.creationTime) && Objects.equals(receptionTime, analyticsEventTime.receptionTime) && Objects.equals(sendingTime, analyticsEventTime.sendingTime);
+            Objects.equals(creationTime, analyticsEventState.creationTime) && Objects.equals(receptionTime, analyticsEventState.receptionTime) && Objects.equals(sendingTime, analyticsEventState.sendingTime);
   }
 
   @Override

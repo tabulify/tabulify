@@ -191,7 +191,7 @@ public class ListProvider {
                 this.getDatabaseJsonObject(listItem),
                 listItem.getOwnerApp().getLocalId(),
                 listItem.getOwnerUser() != null ? listItem.getOwnerUser().getLocalId() : null,
-                DateTimeUtil.getNowUtc()
+                DateTimeUtil.getNowInUtc()
               ))
               .onFailure(e -> LOGGER.error("Insert List: Sql Error " + e.getMessage() + ". With Sql" + insertSql, e));
           })
@@ -244,7 +244,7 @@ public class ListProvider {
           this.getDatabaseJsonObject(listItem),
           listItem.getOwnerApp().getLocalId(),
           listItem.getOwnerUser() != null ? listItem.getOwnerUser().getLocalId() : null,
-          DateTimeUtil.getNowUtc(),
+          DateTimeUtil.getNowInUtc(),
           listItem.getLocalId(),
           listItem.getRealm().getLocalId()
         ))
@@ -289,7 +289,7 @@ public class ListProvider {
         this.getDatabaseJsonObject(listItem),
         listItem.getOwnerApp().getLocalId(),
         listItem.getOwnerUser() != null ? listItem.getOwnerUser().getLocalId() : null,
-        DateTimeUtil.getNowUtc(),
+        DateTimeUtil.getNowInUtc(),
         listItem.getHandle(),
         listItem.getRealm().getLocalId()
       ))

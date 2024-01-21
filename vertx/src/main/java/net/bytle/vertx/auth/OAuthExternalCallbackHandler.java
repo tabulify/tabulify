@@ -201,16 +201,16 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
           ctx.fail(err);
         })
         .onSuccess(authUser -> new AuthContext(
-          this.oAuthExternalProvider.getOAuthExternal().getFlow(),
-          ctx,
-          authUser,
-          authState
-        )
-          .setHandlers(oAuthExternalProvider.getOAuthExternal().getOAuthSessionAuthenticationHandlers())
-          .authenticateSession());
+            this.oAuthExternalProvider.getOAuthExternal().getFlow(),
+            ctx,
+            authUser,
+            authState
+          )
+            .setHandlers(oAuthExternalProvider.getOAuthExternal().getOAuthSessionAuthenticationHandlers())
+            .authenticateSession()
+        );
     });
   }
-
 
 
 }

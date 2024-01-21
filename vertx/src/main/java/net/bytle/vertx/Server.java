@@ -401,7 +401,7 @@ public class Server implements AutoCloseable {
 
       if (this.enableAnalytics) {
         LOGGER.info("Analytics tracker enabled");
-        server.analyticsTracker = AnalyticsTracker.createFromJsonObject(server);
+        server.analyticsTracker = AnalyticsTracker.createFromServer(server);
       } else {
         LOGGER.info("Analytics tracker disabled");
       }

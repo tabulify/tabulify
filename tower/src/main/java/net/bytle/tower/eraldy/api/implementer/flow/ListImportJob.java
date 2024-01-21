@@ -59,7 +59,7 @@ public class ListImportJob {
     this.listImportFlow = builder.listImportFlow;
     this.list = builder.list;
     this.uploadedCsvFile = Paths.get(builder.fileUpload.uploadedFileName());
-    Timestamp creationTime = Timestamp.createFromNow();
+    Timestamp creationTime = Timestamp.createFromNowLocalSystem();
     this.originalFileName = Path.of(builder.fileUpload.fileName());
     // time + list make the job unique
     this.jobId = creationTime.toFileSystemString();

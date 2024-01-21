@@ -98,7 +98,7 @@ public class ListRegistrationValidationToken {
     }
 
     public config setOptInTimeAsNow() {
-      this.token.optInTime = Timestamp.createFromNow().toIsoString();
+      this.token.optInTime = Timestamp.createFromNowLocalSystem().toIsoString();
       return this;
     }
 
