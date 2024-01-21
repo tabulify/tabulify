@@ -167,7 +167,7 @@ public class RealmProvider {
         }
       }
       sql = "select " + ID_COLUMN +
-        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+        " from " + QUALIFIED_TABLE_NAME +
         " where " + ID_COLUMN + " = ?";
       futureResponse = this.jdbcPool
         .preparedQuery(sql)
@@ -201,7 +201,7 @@ public class RealmProvider {
 
 
     String sql = "INSERT INTO\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
+      QUALIFIED_TABLE_NAME + " (\n" +
       "  " + REALM_HANDLE_COLUMN + ",\n" +
       "  " + REALM_ORGA_ID + ",\n" +
       "  " + DATA_COLUMN + ",\n" +
@@ -232,7 +232,7 @@ public class RealmProvider {
 
     if (realm.getLocalId() != null) {
       String sql = "update\n" +
-        JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
+        QUALIFIED_TABLE_NAME + "\n" +
         "set \n" +
         "  " + REALM_HANDLE_COLUMN + " = $1,\n" +
         "  " + REALM_ORGA_ID + " = $2,\n" +
@@ -439,9 +439,10 @@ public class RealmProvider {
     this.getGuidFromLong(realm);
     Long orgaId = row.getLong(REALM_ORGA_ID);
     Future<Organization> futureOrganization = apiApp.getOrganizationProvider().getById(orgaId);
-    Long realmIdContactColumn = row.getLong(REALM_OWNER_ID_COLUMN);
+    Long ownerUserLocalId = row.getLong(REALM_OWNER_ID_COLUMN);
     Realm eraldyRealm = EraldyRealm.get().getRealm();
-    Future<User> futureOwnerUser = apiApp.getUserProvider().getUserByLocalId(realmIdContactColumn, eraldyRealm.getLocalId(), User.class, eraldyRealm);
+    Future<OrganizationUser> futureOwnerUser = apiApp.getOrganizationUserProvider()
+      .getOrganizationUserByLocalId(ownerUserLocalId, eraldyRealm.getLocalId(), eraldyRealm);
     Long defaultAppId = row.getLong(REALM_DEFAULT_APP_ID);
     Future<App> futureApp;
     if (defaultAppId == null) {
