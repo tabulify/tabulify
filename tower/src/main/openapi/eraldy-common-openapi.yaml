@@ -32,7 +32,7 @@ components:
       required:
         - guid
       properties:
-        id:
+        localId:
           format: int64
           type: integer
           description: The service id in the realm
@@ -187,20 +187,29 @@ components:
           description: |
             The handle of the app.
             The handle is unique for all apps on the realm.
-            For instance, you may choose an authentication uri without the scheme (ie no parameters and anchor)
+            It follows the DNS name constraint
           example:
-            - 'doe.com'
-            - 'doe.com/doc'
-          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"uri"})'
+            - 'doe'
         name:
           type: string
           description: The name of the app
           example: 'Doe'
+        uri:
+          type: string
+          format: uri
+          description: |
+            An authentication url identifier
+            It has no query string nor fragment.
+            If you use the member authentication module, this URL should not be empty.
+          example: "https://app.doe.com"
         home:
           type: string
           format: uri
-          description: The home url
-          example: "https://doe.com"
+          description: |
+            The home URL of the app
+            This is a app branding element
+            that adds an URL to any app communication footer
+          example: "https://doe.com/landing"
         slogan:
           type: string
           description: The slogan of the app
@@ -216,7 +225,7 @@ components:
           example: "#3498db"
         user:
           description: The user uses for all app level communications, the face of the app
-          $ref: '#/components/schemas/User'
+          $ref: '#/components/schemas/OrganizationUser'
         realm:
           $ref: '#/components/schemas/Realm'
         terms:
@@ -752,22 +761,35 @@ components:
         appGuid:
           type: string
           description: The guid of an existing app (to update the uri if necessary)
+        appHandle:
+          type: string
+          description: |
+            An unique name of the app
+          maxLength: 30
+          example: "doe"
         appUri:
           type: string
-          description: An unique uri name of the app
-          example: "doe.com/doc"
+          format: uri
+          description: |
+            The Authentication URI of the App
+            (where the app can be found and where the auth redirection should occurs)
+          example: "https://app.doe.com"
+        appHome:
+          type: string
+          format: uri
+          description: |
+            The Home URL of the App
+            This is an element of branding
+          example: "https://doe.com/landing"
         realmIdentifier:
           type: string
           description: the realm identifier (Guid or handle)
-        userGuid:
+        userIdentifier:
           type: string
-          description: The guid of the public app user
-          example: 'xLOKKMmm'
-        userEmail:
-          type: string
-          format: email
-          description: The email of the public app user
-          example: 'john@doe.com'
+          description: The user identifier of the public app user (a guid or an email)
+          example:
+            - 'user-xLOKKMmm'
+            - 'john@doe.com'
         appName:
           type: string
           description: A shortname
@@ -776,11 +798,6 @@ components:
           type: string
           description: The app slogan
           example: "Doe, be you"
-        appHome:
-          type: string
-          format: uri
-          description: The url of the app
-          example: "https://doe.com"
         appLogo:
           type: string
           format: uri
@@ -893,7 +910,7 @@ components:
           $ref: '#/components/schemas/Organization'
           description: The organization owner
         ownerUser:
-          $ref: '#/components/schemas/User'
+          $ref: '#/components/schemas/OrganizationUser'
           description: |
             The owner user owns and supports the realm.
             It's advertised on the auth pages (login, reset, ...)
@@ -933,7 +950,9 @@ components:
     OrganizationUser:
       description: |
         A user in the organization
-        They are the users of the Eraldy realm that own Realms
+        They are the users of the Eraldy realm
+        that are part of an organization.
+        They may own Realms, App, List.
       type: object
       x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(
                     generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,

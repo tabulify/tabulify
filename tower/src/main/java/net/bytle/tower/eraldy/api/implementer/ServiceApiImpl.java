@@ -18,7 +18,6 @@ import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ServiceApiImpl implements ServiceApi {
 
@@ -42,8 +41,7 @@ public class ServiceApiImpl implements ServiceApi {
         if (service == null) {
           return Future.succeededFuture(new ApiResponse<>(HttpResponseStatus.NOT_FOUND.code()));
         }
-        serviceProvider.toPublicClone(service);
-        return Future.succeededFuture(new ApiResponse<>(service));
+        return Future.succeededFuture(new ApiResponse<>(service).setMapper(serviceProvider.getApiMapper()));
       });
 
   }
@@ -122,10 +120,10 @@ public class ServiceApiImpl implements ServiceApi {
         return serviceProvider.upsertService(serviceToUpsert);
       })
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(service -> {
-        serviceProvider.toPublicClone(service);
-        return Future.succeededFuture(new ApiResponse<>(service));
-      });
+      .compose(service -> Future.succeededFuture(
+        new ApiResponse<>(service)
+          .setMapper(serviceProvider.getApiMapper()))
+      );
   }
 
 
@@ -138,15 +136,10 @@ public class ServiceApiImpl implements ServiceApi {
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(serviceProvider::getServices)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(services -> {
-        List<Service> publicServices = services
-          .stream()
-          .map(serviceProvider::toPublicClone)
-          .peek(service -> service.setData(null))
-          .collect(Collectors.toList());
-        ApiResponse<List<Service>> apiResponse = new ApiResponse<>(publicServices);
-        return Future.succeededFuture(apiResponse);
-      });
+      .compose(services -> Future.succeededFuture(
+        new ApiResponse<>(services)
+          .setMapper(serviceProvider.getApiMapper())
+      ));
 
   }
 }

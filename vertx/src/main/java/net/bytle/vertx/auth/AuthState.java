@@ -15,7 +15,13 @@ import static net.bytle.vertx.auth.AuthQueryProperty.REALM_IDENTIFIER;
 public class AuthState {
 
 
+  /**
+   * The list guid
+   */
   private static final String LIST_GUID = "listGuid";
+  /**
+   * The random value to stop any replay
+   */
   private static final String RANDOM_VALUE = "randomValue";
   private final JsonObject jsonObject;
 

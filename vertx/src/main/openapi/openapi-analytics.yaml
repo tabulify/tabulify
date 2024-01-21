@@ -213,7 +213,7 @@ components:
           description: |
             The event name (known also as type)
             An human readable name that will be normalized
-          example: `Sign up`, `Purchase`
+          example: '`Sign up`, `Purchase`'
         state:
           $ref: '#/components/schemas/AnalyticsEventState'
         app:

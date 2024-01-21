@@ -1,12 +1,13 @@
 package net.bytle.tower.eraldy.model.openapi;
 
-import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.net.URI;
+import java.util.Objects;
 
 /**
- * App creation, modification If:   * the guid is defined, it will be used to update the existing app.   * not, the uri is used instead. The user (guid or email) is mandatory (the public face of the app) The realm (guid or handle) is also mandatory 
+ * App creation, modification If:   * the guid is defined, it will be used to update the existing app.   * not, the uri is used instead. The user (guid or email) is mandatory (the public face of the app) The realm (guid or handle) is also mandatory
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AppPostBody   {
@@ -14,19 +15,19 @@ public class AppPostBody   {
 
   protected String appGuid;
 
-  protected String appUri;
+  protected String appHandle;
+
+  protected URI appUri;
+
+  protected URI appHome;
 
   protected String realmIdentifier;
 
-  protected String userGuid;
-
-  protected String userEmail;
+  protected String userIdentifier;
 
   protected String appName;
 
   protected String appSlogan;
-
-  protected URI appHome;
 
   protected URI appLogo;
 
@@ -60,19 +61,51 @@ public class AppPostBody   {
   }
 
   /**
-  * @return appUri An unique uri name of the app
+  * @return appHandle An unique name of the app
+  */
+  @JsonProperty("appHandle")
+  public String getAppHandle() {
+    return appHandle;
+  }
+
+  /**
+  * @param appHandle An unique name of the app
+  */
+  @SuppressWarnings("unused")
+  public void setAppHandle(String appHandle) {
+    this.appHandle = appHandle;
+  }
+
+  /**
+  * @return appUri The Authentication URI of the App (where the app can be found and where the auth redirection should occurs)
   */
   @JsonProperty("appUri")
-  public String getAppUri() {
+  public URI getAppUri() {
     return appUri;
   }
 
   /**
-  * @param appUri An unique uri name of the app
+  * @param appUri The Authentication URI of the App (where the app can be found and where the auth redirection should occurs)
   */
   @SuppressWarnings("unused")
-  public void setAppUri(String appUri) {
+  public void setAppUri(URI appUri) {
     this.appUri = appUri;
+  }
+
+  /**
+  * @return appHome The Home URL of the App This is an element of branding
+  */
+  @JsonProperty("appHome")
+  public URI getAppHome() {
+    return appHome;
+  }
+
+  /**
+  * @param appHome The Home URL of the App This is an element of branding
+  */
+  @SuppressWarnings("unused")
+  public void setAppHome(URI appHome) {
+    this.appHome = appHome;
   }
 
   /**
@@ -92,35 +125,19 @@ public class AppPostBody   {
   }
 
   /**
-  * @return userGuid The guid of the public app user
+  * @return userIdentifier The user identifier of the public app user (a guid or an email)
   */
-  @JsonProperty("userGuid")
-  public String getUserGuid() {
-    return userGuid;
+  @JsonProperty("userIdentifier")
+  public String getUserIdentifier() {
+    return userIdentifier;
   }
 
   /**
-  * @param userGuid The guid of the public app user
+  * @param userIdentifier The user identifier of the public app user (a guid or an email)
   */
   @SuppressWarnings("unused")
-  public void setUserGuid(String userGuid) {
-    this.userGuid = userGuid;
-  }
-
-  /**
-  * @return userEmail The email of the public app user
-  */
-  @JsonProperty("userEmail")
-  public String getUserEmail() {
-    return userEmail;
-  }
-
-  /**
-  * @param userEmail The email of the public app user
-  */
-  @SuppressWarnings("unused")
-  public void setUserEmail(String userEmail) {
-    this.userEmail = userEmail;
+  public void setUserIdentifier(String userIdentifier) {
+    this.userIdentifier = userIdentifier;
   }
 
   /**
@@ -153,22 +170,6 @@ public class AppPostBody   {
   @SuppressWarnings("unused")
   public void setAppSlogan(String appSlogan) {
     this.appSlogan = appSlogan;
-  }
-
-  /**
-  * @return appHome The url of the app
-  */
-  @JsonProperty("appHome")
-  public URI getAppHome() {
-    return appHome;
-  }
-
-  /**
-  * @param appHome The url of the app
-  */
-  @SuppressWarnings("unused")
-  public void setAppHome(URI appHome) {
-    this.appHome = appHome;
   }
 
   /**
@@ -229,17 +230,17 @@ public class AppPostBody   {
       return false;
     }
     AppPostBody appPostBody = (AppPostBody) o;
-    return 
-            
-            Objects.equals(appGuid, appPostBody.appGuid) && Objects.equals(appUri, appPostBody.appUri) && Objects.equals(realmIdentifier, appPostBody.realmIdentifier) && Objects.equals(userGuid, appPostBody.userGuid) && Objects.equals(userEmail, appPostBody.userEmail) && Objects.equals(appName, appPostBody.appName) && Objects.equals(appSlogan, appPostBody.appSlogan) && Objects.equals(appHome, appPostBody.appHome) && Objects.equals(appLogo, appPostBody.appLogo) && Objects.equals(appPrimaryColor, appPostBody.appPrimaryColor) && Objects.equals(appTerms, appPostBody.appTerms);
+    return
+
+            Objects.equals(appGuid, appPostBody.appGuid) && Objects.equals(appHandle, appPostBody.appHandle) && Objects.equals(appUri, appPostBody.appUri) && Objects.equals(appHome, appPostBody.appHome) && Objects.equals(realmIdentifier, appPostBody.realmIdentifier) && Objects.equals(userIdentifier, appPostBody.userIdentifier) && Objects.equals(appName, appPostBody.appName) && Objects.equals(appSlogan, appPostBody.appSlogan) && Objects.equals(appLogo, appPostBody.appLogo) && Objects.equals(appPrimaryColor, appPostBody.appPrimaryColor) && Objects.equals(appTerms, appPostBody.appTerms);
   }
 
   @Override
-  public int hashCode() { 
-    return Objects.hash(appGuid, appUri, realmIdentifier, userGuid, userEmail, appName, appSlogan, appHome, appLogo, appPrimaryColor, appTerms);
+  public int hashCode() {
+    return Objects.hash(appGuid, appHandle, appUri, appHome, realmIdentifier, userIdentifier, appName, appSlogan, appLogo, appPrimaryColor, appTerms);
   }
 
-  @Override 
+  @Override
   public String toString() {
     return super.toString();
   }

@@ -21,7 +21,7 @@ public class Realm   {
 
   protected Organization organization;
 
-  protected User ownerUser;
+  protected OrganizationUser ownerUser;
 
   protected String handle;
 
@@ -104,7 +104,7 @@ public class Realm   {
   * @return ownerUser
   */
   @JsonProperty("ownerUser")
-  public User getOwnerUser() {
+  public OrganizationUser getOwnerUser() {
     return ownerUser;
   }
 
@@ -112,7 +112,7 @@ public class Realm   {
   * @param ownerUser Set ownerUser
   */
   @SuppressWarnings("unused")
-  public void setOwnerUser(User ownerUser) {
+  public void setOwnerUser(OrganizationUser ownerUser) {
     this.ownerUser = ownerUser;
   }
 

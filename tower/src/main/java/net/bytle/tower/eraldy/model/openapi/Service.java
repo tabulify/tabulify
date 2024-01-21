@@ -38,8 +38,8 @@ public class Service   {
   /**
   * @return id The service id in the realm
   */
-  @JsonProperty("id")
-  public Long getId() {
+  @JsonProperty("localId")
+  public Long getLocalId() {
     return id;
   }
 
@@ -47,7 +47,7 @@ public class Service   {
   * @param id The service id in the realm
   */
   @SuppressWarnings("unused")
-  public void setId(Long id) {
+  public void setLocalId(Long id) {
     this.id = id;
   }
 

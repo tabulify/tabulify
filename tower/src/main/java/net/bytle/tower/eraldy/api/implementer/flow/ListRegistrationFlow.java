@@ -55,12 +55,12 @@ public class ListRegistrationFlow extends WebFlowAbs {
    */
   private static final String FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH = "/register/list/confirmation/" + REGISTRATION_GUID_PARAM;
   private final ListRegistrationEmailCallback callback;
-  private final FrontEndCookie<ListUser> cookieData;
+  private final FrontEndCookie<String> cookieData;
 
   public ListRegistrationFlow(EraldyApiApp eraldyApiApp) {
     super(eraldyApiApp);
     this.callback = new ListRegistrationEmailCallback(this);
-    this.cookieData = FrontEndCookie.createCookieData(ListUser.class);
+    this.cookieData = FrontEndCookie.createCookieData(String.class);
   }
 
   @Override
@@ -125,9 +125,11 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param listUser   - the registration
    */
   public void addRegistrationConfirmationCookieData(RoutingContext routingContext, ListUser listUser) {
-    ListUser templateClone = this.getApp().getListRegistrationProvider()
-      .toTemplateClone(listUser);
-    this.cookieData.setValue(templateClone, routingContext);
+
+
+      String listUserAsJson = this.getApp().getListRegistrationProvider().toTemplateJson(listUser);
+
+      this.cookieData.setValue(listUserAsJson, routingContext);
   }
 
   /**

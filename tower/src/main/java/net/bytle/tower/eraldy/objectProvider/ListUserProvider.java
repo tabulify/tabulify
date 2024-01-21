@@ -1,6 +1,7 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
@@ -13,6 +14,7 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.ListItemMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
@@ -80,55 +82,6 @@ public class ListUserProvider {
       throw new InternalException("The registration by search sql was not found in the resource path (" + registrationPath + ")");
     }
 
-  }
-
-
-  /**
-   * @param listUser - the publication to make public
-   * @return the publication without id, realm and with a guid
-   */
-  public ListUser toPublicClone(ListUser listUser) {
-
-    return toClone(listUser, false);
-  }
-
-  /**
-   * @param listUser - the registration
-   * @param forTemplate      - if true, the data have default (for instance, the username would never be empty)
-   */
-  private ListUser toClone(ListUser listUser, boolean forTemplate) {
-
-    ListUser listUserClone = JsonObject.mapFrom(listUser).mapTo(ListUser.class);
-
-    /**
-     * User
-     */
-    User subscriberUser = listUser.getUser();
-    if (subscriberUser != null) {
-      User publicCloneWithoutRealm;
-      UserProvider userProvider = this.apiApp.getUserProvider();
-      if (!forTemplate) {
-        publicCloneWithoutRealm = userProvider.toPublicCloneWithoutRealm(subscriberUser);
-      } else {
-        publicCloneWithoutRealm = userProvider.toTemplateCloneWithoutRealm(subscriberUser);
-      }
-      listUserClone.setUser(publicCloneWithoutRealm);
-    }
-
-    /**
-     * List
-     */
-    ListProvider listProvider = this.apiApp.getListProvider();
-    ListItem listItem = listUser.getList();
-    if (!forTemplate) {
-      listItem = listProvider.toPublicClone(listItem);
-    } else {
-      listItem = listProvider.toTemplateClone(listItem);
-    }
-    listUserClone.setList(listItem);
-
-
-    return listUserClone;
   }
 
 
@@ -273,7 +226,7 @@ public class ListUserProvider {
 
         Long userId = row.getLong(USER_ID_COLUMN);
         Future<User> publisherFuture = apiApp.getUserProvider()
-          .getUserById(userId, realm.getLocalId(), User.class, realm);
+          .getUserByLocalId(userId, realm.getLocalId(), User.class, realm);
 
         return Future
           .all(publicationFuture, publisherFuture)
@@ -520,12 +473,20 @@ public class ListUserProvider {
 
   }
 
-
-  public ListUser toTemplateClone(ListUser listUser) {
-    return toClone(listUser, true);
-  }
-
   public ObjectMapper getApiMapper() {
     return this.apiMapper;
+  }
+
+  public String toTemplateJson(ListUser listUser) {
+    JsonObject jsonObject = JsonObject.mapFrom(listUser);
+    /**
+     * TODO: replace the name
+     * {@link UsersUtil.getNameOrNameFromEmail(user)}
+     */
+    try {
+      return this.getApiMapper().writeValueAsString(jsonObject);
+    } catch (JsonProcessingException e) {
+      throw new InternalException("The list User (" + listUser + ") could not be transformed as Json. ", e);
+    }
   }
 }

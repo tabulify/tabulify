@@ -70,7 +70,7 @@ public class UserApiImpl implements UserApi {
       .compose(realmChecked -> {
         Future<User> futureUser;
         if (finalUserGuid != null) {
-          futureUser = userProvider.getUserById(
+          futureUser = userProvider.getUserByLocalId(
             finalUserGuid.validateRealmAndGetFirstObjectId(realmChecked.getLocalId()),
             realmChecked.getLocalId(),
             User.class,
@@ -164,10 +164,10 @@ public class UserApiImpl implements UserApi {
         return userProvider.upsertUser(userRequested);
       })
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(userUpserted -> {
-        userProvider.toPublicCloneWithoutRealm(userUpserted);
-        return Future.succeededFuture(new ApiResponse<>(userUpserted));
-      });
+      .compose(userUpserted -> Future.succeededFuture(
+        new ApiResponse<>(userUpserted)
+          .setMapper(userProvider.getApiMapper()))
+      );
 
   }
 

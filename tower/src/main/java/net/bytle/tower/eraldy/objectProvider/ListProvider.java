@@ -29,7 +29,6 @@ import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -76,18 +75,7 @@ public class ListProvider {
   }
 
 
-  /**
-   * @param listItem - the list to make public
-   * @return the publication without id, realm and with a guid
-   */
-  public ListItem toPublicClone(ListItem listItem) {
-
-
-    return toClone(listItem, false);
-
-  }
-
-  /**
+    /**
    * This function was created to be sure that the data is consistent
    * between guid and (id and realm id)
    *
@@ -383,7 +371,7 @@ public class ListProvider {
         Future<User> ownerFuture = Future.succeededFuture();
         if (ownerId != null) {
           ownerFuture = apiApp.getUserProvider()
-            .getUserById(ownerId, realmResult.getLocalId(), User.class, realmResult);
+            .getUserByLocalId(ownerId, realmResult.getLocalId(), User.class, realmResult);
         }
 
         return Future
@@ -483,7 +471,7 @@ public class ListProvider {
     Future<User> futureUser = Future.succeededFuture(null);
     if (ownerIdentifier != null) {
       UserProvider userProvider = apiApp.getUserProvider();
-      futureUser = userProvider.getUserByIdentifier(ownerIdentifier, app.getRealm());
+      futureUser = userProvider.getUserByIdentifier(ownerIdentifier, app.getRealm(), User.class);
     }
 
     return futureUser
@@ -618,53 +606,6 @@ public class ListProvider {
       });
   }
 
-  public ListItem toTemplateClone(ListItem list) {
-    return toClone(list, true);
-  }
-
-  private ListItem toClone(ListItem listItem, boolean template) {
-    ListItem listClone = JsonObject.mapFrom(listItem).mapTo(ListItem.class);
-
-
-    App ownerApp = listClone.getOwnerApp();
-    AppProvider appProvider = apiApp.getAppProvider();
-    if (template) {
-      ownerApp = appProvider.toTemplateClone(ownerApp);
-    } else {
-      ownerApp = appProvider.toPublicClone(ownerApp);
-    }
-    listClone.setOwnerApp(ownerApp);
-
-    User ownerUser = listClone.getOwnerUser();
-    if (ownerUser == null && template) {
-      // owner user is the user app
-      ownerUser = listItem.getOwnerApp().getUser();
-    }
-    UserProvider userProvider = apiApp.getUserProvider();
-    if (ownerUser != null) {
-      if (template) {
-        ownerUser = userProvider.toTemplateCloneWithoutRealm(ownerUser);
-      } else {
-        ownerUser = userProvider.toPublicCloneWithoutRealm(ownerUser);
-      }
-      listClone.setOwnerUser(ownerUser);
-    }
-
-//    URI registrationUrl = EraldyMemberApp
-//      .get()
-//      .getPublicRequestUriForOperationPath(ListRegistrationFlow.getRegistrationOperationPath(registrationList))
-//      .addQueryProperty(OAuthQueryProperty.REALM_GUID, registrationList.getRealm().getGuid())
-//      .toUri();
-    URI registrationUrl = URI.create("https://example.com/todo/registration");
-    listClone.setRegistrationUrl(registrationUrl);
-
-    /**
-     * Realm and id null
-     */
-    listClone.setLocalId(null);
-    listClone.setRealm(null);
-    return listClone;
-  }
 
   public ObjectMapper getApiMapper() {
     return this.apiMapper;

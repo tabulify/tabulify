@@ -22,6 +22,8 @@ public class App   {
 
   protected String name;
 
+  protected URI uri;
+
   protected URI home;
 
   protected String slogan;
@@ -30,7 +32,7 @@ public class App   {
 
   protected String primaryColor;
 
-  protected User user;
+  protected OrganizationUser user;
 
   protected Realm realm;
 
@@ -78,16 +80,15 @@ public class App   {
   }
 
   /**
-  * @return handle The handle of the app. The handle is unique for all apps on the realm. For instance, you may choose an authentication uri without the scheme (ie no parameters and anchor)
+  * @return handle The handle of the app. The handle is unique for all apps on the realm. It follows the DNS name constraint
   */
-  @com.fasterxml.jackson.annotation.JsonAlias({"uri"})
   @JsonProperty("handle")
   public String getHandle() {
     return handle;
   }
 
   /**
-  * @param handle The handle of the app. The handle is unique for all apps on the realm. For instance, you may choose an authentication uri without the scheme (ie no parameters and anchor)
+  * @param handle The handle of the app. The handle is unique for all apps on the realm. It follows the DNS name constraint
   */
   @SuppressWarnings("unused")
   public void setHandle(String handle) {
@@ -111,7 +112,23 @@ public class App   {
   }
 
   /**
-  * @return home The home url
+  * @return uri An authentication url identifier It has no query string nor fragment. If you use the member authentication module, this URL should not be empty.
+  */
+  @JsonProperty("uri")
+  public URI getUri() {
+    return uri;
+  }
+
+  /**
+  * @param uri An authentication url identifier It has no query string nor fragment. If you use the member authentication module, this URL should not be empty.
+  */
+  @SuppressWarnings("unused")
+  public void setUri(URI uri) {
+    this.uri = uri;
+  }
+
+  /**
+  * @return home The home URL of the app This is a app branding element that adds an URL to any app communication footer
   */
   @JsonProperty("home")
   public URI getHome() {
@@ -119,7 +136,7 @@ public class App   {
   }
 
   /**
-  * @param home The home url
+  * @param home The home URL of the app This is a app branding element that adds an URL to any app communication footer
   */
   @SuppressWarnings("unused")
   public void setHome(URI home) {
@@ -178,7 +195,7 @@ public class App   {
   * @return user
   */
   @JsonProperty("user")
-  public User getUser() {
+  public OrganizationUser getUser() {
     return user;
   }
 
@@ -186,7 +203,7 @@ public class App   {
   * @param user Set user
   */
   @SuppressWarnings("unused")
-  public void setUser(User user) {
+  public void setUser(OrganizationUser user) {
     this.user = user;
   }
 

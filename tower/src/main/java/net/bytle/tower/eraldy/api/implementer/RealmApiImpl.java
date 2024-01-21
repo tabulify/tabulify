@@ -124,7 +124,7 @@ public class RealmApiImpl implements RealmApi {
   @Override
   public Future<ApiResponse<List<Realm>>> realmsOwnedByGet(RoutingContext routingContext, String userGuid) {
     return apiApp.getOrganizationUserProvider()
-      .getOrganizationUserByGuid(userGuid)
+      .getOrganizationUserByIdentifier(userGuid, null)
       .compose(user -> this.apiApp.getRealmProvider()
         .getRealmsForOwner(user, Realm.class)
         .compose(realms -> Future.succeededFuture(new ApiResponse<>(new ArrayList<>(realms)))));

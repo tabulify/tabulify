@@ -1,6 +1,8 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
@@ -14,15 +16,12 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.model.openapi.App;
-import net.bytle.tower.eraldy.model.openapi.AppPostBody;
-import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
+import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
+import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
-import net.bytle.vertx.DateTimeUtil;
-import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.JdbcSchemaManager;
+import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,21 +57,25 @@ public class AppProvider {
   public static final String GUID = "guid";
 
 
-  public static final String HANDLE_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + URI;
+  public static final String HANDLE_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + "handle";
+  public static final String URI_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + URI;
   private static final String CREATION_TIME = COLUMN_PREFIX + COLUMN_PART_SEP + CREATION_TIME_COLUMN_SUFFIX;
 
   private final EraldyApiApp apiApp;
   private final PgPool jdbcPool;
+  private final JsonMapper apiMapper;
 
 
   public AppProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
     this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
+    this.apiMapper = apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
+      .jsonMapperBuilder()
+      .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
+      .addMixIn(Realm.class, RealmPublicMixin.class)
+      .build();
   }
 
-  public App toPublicClone(App app) {
-    return toClone(app, false);
-  }
 
   /**
    * @param uri the authentication scope (an uri)
@@ -296,9 +299,9 @@ public class AppProvider {
           app.getLocalId())
         );
     } else {
-      String appUri = app.getHandle();
-      if (appUri == null) {
-        String failureMessage = "An id, or uri should be given to check the existence of an app";
+      String appHandle = app.getHandle();
+      if (appHandle == null) {
+        String failureMessage = "An id, or handle should be given to check the existence of an app";
         InternalException internalException = new InternalException(failureMessage);
         return Future.failedFuture(internalException);
       }
@@ -311,13 +314,11 @@ public class AppProvider {
         .preparedQuery(sql)
         .execute(Tuple.of(
           app.getRealm().getLocalId(),
-          appUri
+          appHandle
         ));
     }
     return futureResponse
-      .onFailure(e -> {
-        throw new InternalException(e);
-      })
+      .recover(e -> Future.failedFuture(new InternalException("App exists error with the following sql: " + sql, e)))
       .compose(rows -> {
         if (rows.size() == 1) {
           return Future.succeededFuture(true);
@@ -376,8 +377,9 @@ public class AppProvider {
 
   private Future<App> getFromRow(Row row, Realm realm) {
     Long userId = row.getLong(USER_COLUMN);
-    Future<User> userFuture = apiApp.getUserProvider()
-      .getUserById(userId, realm.getLocalId(), User.class, realm);
+    Future<OrganizationUser> userFuture = apiApp
+      .getOrganizationUserProvider()
+      .getOrganizationUserByLocalId(userId, realm.getLocalId(), realm);
     Future<Realm> realmFuture;
     Long realmId = row.getLong(REALM_ID_COLUMN);
     RealmProvider realmProvider = this.apiApp.getRealmProvider();
@@ -389,24 +391,18 @@ public class AppProvider {
         InternalException internalException = new InternalException("The realm in the database (" + realmId + ") is inconsistent with the realm provided (" + realm.getLocalId() + ")");
         return Future.failedFuture(internalException);
       }
-      // We clone the realm to avoid a recursion in Jackson
-      // through reference chain:
-      // net.bytle.tower.eraldy.model.openapi.User["realm"]
-      //->net.bytle.tower.eraldy.model.openapi.Realm["defaultApp"]
-      //->net.bytle.tower.eraldy.model.openapi.App["user"]
-      //->net.bytle.tower.eraldy.model.openapi.User["realm"]
-      //Realm realmClone = realmProvider.clone(realm);
       realmFuture = Future.succeededFuture(realm);
     }
-    return Future.all(userFuture, realmFuture)
-      .onFailure(t -> LOGGER.error("AppProvider getFromRows Error", t))
+    return Future
+      .all(userFuture, realmFuture)
+      .recover(t -> Future.failedFuture(new InternalException("AppProvider getFromRows Error", t)))
       .compose(compositeFuture -> {
-        User user = compositeFuture.resultAt(0);
+        OrganizationUser organizationUser = compositeFuture.resultAt(0);
         Realm realmResult = compositeFuture.resultAt(1);
         String uri = row.getString(HANDLE_COLUMN);
         JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
         App app = Json.decodeValue(jsonAppData.toBuffer(), App.class);
-        app.setUser(user);
+        app.setUser(organizationUser);
         app.setHandle(uri);
         app.setRealm(realmResult);
         Long appId = row.getLong(APP_ID_COLUMN);
@@ -443,69 +439,64 @@ public class AppProvider {
 
   /**
    * @param appPostBody - the post object
+   * @param realm
    * @return the app in a future
    */
-  public Future<App> postApp(AppPostBody appPostBody) {
+  public Future<App> postApp(AppPostBody appPostBody, Realm realm) {
 
 
-    App requestedApp = new App();
-    requestedApp.setGuid(appPostBody.getAppGuid());
-    requestedApp.setHandle(appPostBody.getAppUri());
+    App app = new App();
+    app.setGuid(appPostBody.getAppGuid());
+    app.setHandle(appPostBody.getAppHandle());
+    URI appUri = appPostBody.getAppHome();
+    try {
+      validateDomainUri(appUri);
+    } catch (IllegalStructure e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setMessage("The App Uri (" + appUri + ") is not a valid URI identifier. " + e.getMessage())
+        // request is good data is not
+        .setType(TowerFailureTypeEnum.BAD_STRUCTURE_422)
+        .setCauseException(e)
+        .build()
+      );
+    }
+    app.setUri(appUri);
+    app.setName(appPostBody.getAppName());
+    app.setHome(appPostBody.getAppHome());
+    app.setLogo(appPostBody.getAppLogo());
+    app.setPrimaryColor(appPostBody.getAppPrimaryColor());
+    app.setTerms(appPostBody.getAppTerms());
+    app.setRealm(realm);
+    String appGuid = app.getGuid();
 
-    String realmIdentifier = appPostBody.getRealmIdentifier();
-    return apiApp.getAppProvider()
-      .getRealmAndUpdateIdEventuallyFromRequested(realmIdentifier, requestedApp)
-      .onFailure(FailureStatic::failFutureWithTrace)
-      .compose(realm -> {
-
-        if (realm == null) {
-          throw ValidationException.create("A realm was not found with the identifier (" + realmIdentifier + ")", "realmIdentifier", realmIdentifier);
+    if (appGuid != null) {
+      app.setGuid(appGuid);
+      long appId;
+      try {
+        appId = this.getGuid(appGuid)
+          .validateRealmAndGetFirstObjectId(realm.getLocalId());
+      } catch (CastException e) {
+        throw ValidationException.create("The app guid is not valid", "appGuid", appGuid);
+      }
+      app.setLocalId(appId);
+    }
+    /**
+     * User
+     */
+    String userIdentifier = appPostBody.getUserIdentifier();
+    Future<OrganizationUser> futureOrgUser;
+    if (userIdentifier == null) {
+      futureOrgUser = Future.succeededFuture();
+    } else {
+      futureOrgUser = apiApp.getOrganizationUserProvider()
+        .getOrganizationUserByIdentifier(userIdentifier, realm);
+    }
+    return futureOrgUser
+      .compose(organizationUser -> {
+        if (organizationUser != null) {
+          app.setUser(organizationUser);
         }
-
-        App app = new App();
-        app.setHandle(appPostBody.getAppUri());
-        app.setName(appPostBody.getAppName());
-        app.setLogo(appPostBody.getAppLogo());
-        app.setHome(appPostBody.getAppHome());
-        app.setPrimaryColor(appPostBody.getAppPrimaryColor());
-        app.setTerms(appPostBody.getAppTerms());
-        app.setRealm(realm);
-        String appGuid = app.getGuid();
-
-        if (appGuid != null) {
-          app.setGuid(appGuid);
-          long appId;
-          try {
-            appId = this.getGuid(appGuid)
-              .validateRealmAndGetFirstObjectId(realm.getLocalId());
-          } catch (CastException e) {
-            throw ValidationException.create("The app guid is not valid", "appGuid", appGuid);
-          }
-          app.setLocalId(appId);
-        }
-        /**
-         * User
-         */
-        Long userId = null;
-        String userEmail = appPostBody.getUserEmail();
-        String userGuid = appPostBody.getUserGuid();
-        if (userGuid != null) {
-          try {
-            userId = apiApp.getUserProvider().getGuidFromHash(userGuid).validateRealmAndGetFirstObjectId(realm.getLocalId());
-          } catch (CastException e) {
-            throw ValidationException.create("The user guid is not valid", "userGuid", userGuid);
-          }
-        }
-        User userToGetOrCreate = new User();
-        userToGetOrCreate.setLocalId(userId);
-        userToGetOrCreate.setEmail(userEmail);
-        userToGetOrCreate.setRealm(realm);
-        return apiApp.getUserProvider()
-          .getOrCreateUserFromEmail(userToGetOrCreate)
-          .compose(user -> {
-            app.setUser(user);
-            return upsertApp(app);
-          }, err -> Future.failedFuture(new InternalException("Error on app upsert", err)));
+        return upsertApp(app);
       });
 
   }
@@ -579,29 +570,17 @@ public class AppProvider {
       });
   }
 
-  public App toTemplateClone(App app) {
-    return toClone(app, true);
-  }
 
-  private App toClone(App app, boolean template) {
-    App cloneApp = JsonObject.mapFrom(app).mapTo(App.class);
-    cloneApp.setLocalId(null);
-    UserProvider userProvider = apiApp.getUserProvider();
-    User owner = app.getUser();
-    if (template) {
-      owner = userProvider.toTemplateCloneWithoutRealm(owner);
-    } else {
-      owner = userProvider.toPublicCloneWithoutRealm(owner);
-    }
-    cloneApp.setUser(owner);
-    cloneApp.setRealm(null);
-    return cloneApp;
-  }
+
 
   public boolean isGuid(String appIdentifier) {
     if (appIdentifier.startsWith(APP_GUID_PREFIX + Guid.GUID_SEPARATOR)) {
       return true;
     }
     return false;
+  }
+
+  public ObjectMapper getApiMapper() {
+    return this.apiMapper;
   }
 }

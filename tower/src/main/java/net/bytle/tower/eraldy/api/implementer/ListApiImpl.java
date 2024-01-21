@@ -296,7 +296,7 @@ public class ListApiImpl implements ListApi {
           if (ownerIdentifier.isEmpty()) {
             futureOwner = Future.succeededFuture(null);
           } else {
-            Future<User> futureOwnerByIdentifier = this.apiApp.getUserProvider().getUserByIdentifier(ownerIdentifier, list.getRealm());
+            Future<User> futureOwnerByIdentifier = this.apiApp.getUserProvider().getUserByIdentifier(ownerIdentifier, list.getRealm(), User.class);
             if (actualOwnerUser == null) {
               futureOwner = futureOwnerByIdentifier;
             } else if (!(actualOwnerUser.getGuid().equals(ownerIdentifier) || actualOwnerUser.getEmail().equals(ownerIdentifier))) {

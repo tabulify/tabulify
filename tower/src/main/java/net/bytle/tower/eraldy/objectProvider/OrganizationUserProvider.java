@@ -51,10 +51,10 @@ public class OrganizationUserProvider {
   }
 
 
-  public Future<OrganizationUser> getOrganizationUserByGuid(String guid) {
+  public Future<OrganizationUser> getOrganizationUserByIdentifier(String identifier, Realm realm) {
 
     return apiApp.getUserProvider()
-      .getUserByGuid(guid, OrganizationUser.class, null)
+      .getUserByIdentifier(identifier, realm, OrganizationUser.class)
       .compose(user -> {
         if (user == null) {
           return Future.succeededFuture();
@@ -77,7 +77,7 @@ public class OrganizationUserProvider {
    */
   private Future<OrganizationUser> buildOrgUserFromDb(OrganizationUser organizationUser) {
 
-    if(organizationUser.getOrganization()!=null){
+    if (organizationUser.getOrganization() != null) {
       return Future.succeededFuture(organizationUser);
     }
 
@@ -151,7 +151,7 @@ public class OrganizationUserProvider {
   private Future<OrganizationUser> buildUserAsOrganizationUserById(Long userId) {
 
     Realm eraldyRealm = EraldyRealm.get().getRealm();
-    return this.apiApp.getUserProvider().getUserById(userId, eraldyRealm.getLocalId(), OrganizationUser.class, eraldyRealm);
+    return this.apiApp.getUserProvider().getUserByLocalId(userId, eraldyRealm.getLocalId(), OrganizationUser.class, eraldyRealm);
 
   }
 
@@ -175,7 +175,7 @@ public class OrganizationUserProvider {
           Realm eraldyRealm = this.apiApp.getEraldyRealm();
           for (Row row : userRows) {
             Long userId = row.getLong(ORGA_USER_USER_ID_COLUMN);
-            users.add(this.apiApp.getUserProvider().getUserById(userId, eraldyRealm.getLocalId(), User.class, eraldyRealm));
+            users.add(this.apiApp.getUserProvider().getUserByLocalId(userId, eraldyRealm.getLocalId(), User.class, eraldyRealm));
           }
           // all: stop on the first failure
           return Future.all(users);
@@ -187,5 +187,28 @@ public class OrganizationUserProvider {
         err -> Future.failedFuture(new InternalException("Unable to build the org users for the organization (" + organization + "). Message:" + err.getMessage(), err))
       );
 
+  }
+
+  public Future<OrganizationUser> getOrganizationUserByLocalId(Long userId, Long realmId, Realm realm) {
+    return apiApp.getUserProvider()
+      .getUserByLocalId(userId, realmId, OrganizationUser.class, realm)
+      .compose(user -> {
+        if (user == null) {
+          return Future.succeededFuture();
+        }
+        return buildOrgUserFromDb(user);
+      });
+  }
+
+  public Future<OrganizationUser> upsertUserAndBuildOrgUser(OrganizationUser ownerUser) {
+
+    return apiApp.getUserProvider()
+      .upsertUser(ownerUser)
+      .compose(user -> {
+        if (user == null) {
+          return Future.succeededFuture();
+        }
+        return buildOrgUserFromDb(user);
+      });
   }
 }

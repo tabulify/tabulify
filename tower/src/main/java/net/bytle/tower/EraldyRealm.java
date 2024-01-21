@@ -1,12 +1,11 @@
 package net.bytle.tower;
 
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonObject;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Organization;
+import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.vertx.TowerApexDomain;
 
 import java.net.URI;
@@ -47,23 +46,23 @@ public class EraldyRealm {
     realm.setLocalId(apexDomain.getRealmLocalId());
     realm.setOrganization(organization);
     // TODO: create the user and role on organization level
-    User ownerUser = new User();
+    OrganizationUser ownerUser = new OrganizationUser();
     ownerUser.setGivenName(apexDomain.getOwnerName());
     ownerUser.setEmail(apexDomain.getOwnerEmail());
-    Realm clone = JsonObject.mapFrom(realm).mapTo(Realm.class);
-    ownerUser.setRealm(clone); // to avoid recursion on com.fasterxml.jackson.databind
+    ownerUser.setRealm(realm);
     try {
       ownerUser.setAvatar(new URI("https://2.gravatar.com/avatar/cbc56a3848d90024bdc76629a1cfc1d9"));
     } catch (URISyntaxException e) {
       throw new InternalException("The eraldy owner URL is not valid", e);
     }
-    return apiApp.getUserProvider()
-      .upsertUser(ownerUser)
+    return apiApp
+      .getOrganizationUserProvider()
+      .upsertUserAndBuildOrgUser(ownerUser)
       .onFailure(t -> {
         throw new InternalException("Error while creating the eraldy owner realm", t);
       })
-      .compose(ownerDb -> {
-        realm.setOwnerUser(ownerDb);
+      .compose(organizationUser -> {
+        realm.setOwnerUser(organizationUser);
         return this.apiApp.getRealmProvider()
           .upsertRealm(realm)
           .onFailure(t -> {

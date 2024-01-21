@@ -19,9 +19,7 @@ import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.AssertionException;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.event.SignUpEvent;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
@@ -101,9 +99,7 @@ public class UserProvider {
   }
 
 
-  public User toPublicCloneWithoutRealm(User user) {
-    return toPublicClone(user);
-  }
+
 
   private User toPublicClone(User user) {
     User userClone = JsonObject.mapFrom(user).mapTo(User.class);
@@ -118,10 +114,10 @@ public class UserProvider {
    * Otherwise, it will try to update it by email.
    * If the update is not successful, the user is {@link #insertUser(User)  inserted}.
    *
-   * @param user the user to upsert
+   * @param user      the user to upsert
    * @return the user
    */
-  public Future<User> upsertUser(User user) {
+  public <T extends User> Future<T> upsertUser(T user) {
 
     Realm userRealm = user.getRealm();
     Long userId = user.getLocalId();
@@ -195,10 +191,10 @@ public class UserProvider {
    * for creation with login/signup, the insertion should be driven by {@link AuthProvider#insertUserFromLoginAuthUserClaims(AuthUser, RoutingContext, net.bytle.vertx.flow.WebFlow)}
    * for creation via import, the insertion should be driven by {@link #insertUserFromImport(User)}
    *
-   * @param user - the user to insert (sign-up or import)
+   * @param user      - the user to insert (sign-up or import)
    * @return a user
    */
-  Future<User> insertUser(User user) {
+  <T extends User> Future<T> insertUser(T user) {
 
     String sql = "INSERT INTO\n" +
       QUALIFIED_TABLE_NAME + " (\n" +
@@ -305,10 +301,10 @@ public class UserProvider {
    * Replace the database user with the new user object
    * You use {@link #patchUserIfPropertyValueIsNull(User, User)}
    *
-   * @param user - the new user data
+   * @param user      - the new user data
    * @return the user
    */
-  private Future<User> updateUser(User user) {
+  private <T extends User> Future<T> updateUser(T user) {
     String sql;
 
     if (user.getLocalId() != null) {
@@ -352,7 +348,7 @@ public class UserProvider {
       });
   }
 
-  private Future<RowSet<Row>> updateUserByEmailAndReturnRowSet(User user) {
+  private <T extends User> Future<RowSet<Row>> updateUserByEmailAndReturnRowSet(T user) {
     String email = user.getEmail();
     if (email == null) {
       InternalException internalException = new InternalException("A email is mandatory");
@@ -494,7 +490,7 @@ public class UserProvider {
   }
 
 
-  private void computeGuid(User user) {
+  private <T extends User> void computeGuid(T user) {
     if (user.getGuid() != null) {
       return;
     }
@@ -513,7 +509,7 @@ public class UserProvider {
    * @param realm     - an optional realm to use when building the user (Maybe null)
    * @return the user or null if not found
    */
-  public <T extends User> Future<T> getUserById(Long userId, Long realmId, Class<T> userClass, Realm realm) {
+  public <T extends User> Future<T> getUserByLocalId(Long userId, Long realmId, Class<T> userClass, Realm realm) {
 
     assert userId != null;
     assert realmId != null;
@@ -636,7 +632,7 @@ public class UserProvider {
 
     Future<User> userFuture;
     if (userId != null) {
-      userFuture = this.getUserById(userId, realm.getLocalId(), User.class, realm);
+      userFuture = this.getUserByLocalId(userId, realm.getLocalId(), User.class, realm);
     } else {
       userFuture = this.getUserByEmail(userEmail, realm.getLocalId(), User.class, realm);
     }
@@ -653,7 +649,7 @@ public class UserProvider {
     if (identifier == null) {
       identifier = userEmail;
     }
-    return getUserByIdentifier(identifier, realm);
+    return getUserByIdentifier(identifier, realm, User.class);
   }
 
   public <T extends User> Future<T> getUserByGuid(String guid, Class<T> userClass, Realm realm) {
@@ -679,7 +675,7 @@ public class UserProvider {
         if (realmResult == null) {
           return Future.failedFuture(new InternalException("The realm was not found"));
         }
-        return this.getUserById(guidObject.validateRealmAndGetFirstObjectId(realmResult.getLocalId()), realmResult.getLocalId(), userClass, realmResult);
+        return this.getUserByLocalId(guidObject.validateRealmAndGetFirstObjectId(realmResult.getLocalId()), realmResult.getLocalId(), userClass, realmResult);
       });
 
 
@@ -848,16 +844,6 @@ public class UserProvider {
 
   }
 
-  public User toTemplateCloneWithoutRealm(User user) {
-    User templateClone = toPublicCloneWithoutRealm(user);
-    try {
-      templateClone.setGivenName(UsersUtil.getNameOrNameFromEmail(user));
-    } catch (NotFoundException | AddressException e) {
-      // should not happen
-      throw new InternalException(e);
-    }
-    return templateClone;
-  }
 
 
   @SuppressWarnings("unused")
@@ -885,10 +871,10 @@ public class UserProvider {
     return identifier.startsWith(USR_GUID_PREFIX + Guid.GUID_SEPARATOR);
   }
 
-  public Future<User> getUserByIdentifier(String identifier, Realm realm) {
+  public <T extends User> Future<T> getUserByIdentifier(String identifier, Realm realm, Class<T> userClass) {
 
     if (this.isGuid(identifier)) {
-      return getUserByGuid(identifier, User.class, realm);
+      return getUserByGuid(identifier, userClass, realm);
     } else {
       if (realm == null) {
         return Future.failedFuture(new InternalException("With a user email (" + identifier + ") as user identifier, the realm should be provided"));
@@ -903,7 +889,7 @@ public class UserProvider {
           .build()
         );
       }
-      return getUserByEmail(email, realm.getLocalId(), User.class, realm);
+      return getUserByEmail(email, realm.getLocalId(), userClass, realm);
     }
   }
 

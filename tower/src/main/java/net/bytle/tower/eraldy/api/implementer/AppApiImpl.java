@@ -15,6 +15,7 @@ import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
+import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.*;
@@ -81,7 +82,7 @@ public class AppApiImpl implements AppApi {
       })
       .compose(futureRealm -> {
         if (finalGuid != null) {
-          return this.apiApp.getAppProvider().getAppById(finalGuid.validateRealmAndGetFirstObjectId(futureRealm.getLocalId()),futureRealm);
+          return this.apiApp.getAppProvider().getAppById(finalGuid.validateRealmAndGetFirstObjectId(futureRealm.getLocalId()), futureRealm);
         }
         return this.apiApp.getAppProvider().getAppByHandle(finalAppIdentifier, futureRealm);
       })
@@ -176,14 +177,23 @@ public class AppApiImpl implements AppApi {
       throw ValidationException.create("A realm identifier should be given", "realmIdentifier", null);
     }
     AppProvider appProvider = apiApp.getAppProvider();
+    AuthProvider authProvider = apiApp.getAuthProvider();
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(appPostBody.getRealmIdentifier(), Realm.class)
-      .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(realm -> appProvider.postApp(appPostBody))
-      .compose(app -> {
-        appProvider.toPublicClone(app);
-        return Future.succeededFuture(new ApiResponse<>(app));
-      });
+      .compose(realm -> {
+        if (realm == null) {
+          return Future.failedFuture(
+            TowerFailureException
+              .builder()
+              .setMessage("The realm (" + appPostBody.getRealmIdentifier() + ") was not found")
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+              .build()
+          );
+        }
+        return authProvider.checkRealmAuthorization(routingContext, realm, AuthScope.APP_CREATE);
+      })
+      .compose(realm -> appProvider.postApp(appPostBody, realm))
+      .compose(app -> Future.succeededFuture(new ApiResponse<>(app).setMapper(appProvider.getApiMapper())));
 
   }
 

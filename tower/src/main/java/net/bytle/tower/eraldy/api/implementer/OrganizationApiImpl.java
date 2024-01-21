@@ -88,7 +88,7 @@ public class OrganizationApiImpl implements OrganizationApi {
 
     return this.apiApp
       .getOrganizationUserProvider()
-      .getOrganizationUserByGuid(signedInUser.getSubject())
+      .getOrganizationUserByIdentifier(signedInUser.getSubject(), null)
       .compose(orgUser -> {
         if (orgUser == null) {
           return Future.failedFuture(

@@ -552,7 +552,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '../../../../vertx/src/main/openapi/analytics-openapi.yaml#/components/schemas/AnalyticsEvent'
+                  $ref: '../../../../vertx/src/main/openapi/openapi-analytics.yaml#/components/schemas/AnalyticsEvent'
         '403':
           description: "Not authenticated"
   /csp/report:

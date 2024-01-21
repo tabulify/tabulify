@@ -1,7 +1,6 @@
 package net.bytle.vertx.auth;
 
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.exception.IllegalStructure;
 import net.bytle.type.UriEnhanced;
 
 /**
@@ -37,12 +36,8 @@ public class OAuthInternalSession {
   @SuppressWarnings("unused")
   public static final String RESPONSE_TYPE_KEY = PREFIX + "response-type";
 
-  public static void addRedirectUri(RoutingContext routingContext, String uri) throws IllegalStructure {
-    UriEnhanced redirectUri = UriEnhanced.createFromString(uri);
-    addRedirectUri(routingContext, redirectUri);
-  }
-
   public static void addRedirectUri(RoutingContext routingContext, UriEnhanced redirectUri) {
     routingContext.session().put(OAuthInternalSession.REDIRECT_URI_KEY, redirectUri.toString());
   }
+
 }

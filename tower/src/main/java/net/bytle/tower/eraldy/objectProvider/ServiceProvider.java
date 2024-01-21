@@ -1,6 +1,7 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
@@ -12,6 +13,7 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.mixin.ServicePublicMixinWithRealm;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.Service;
 import net.bytle.tower.eraldy.model.openapi.ServiceSmtp;
@@ -56,29 +58,19 @@ public class ServiceProvider {
 
   private final EraldyApiApp apiApp;
   private final PgPool jdbcPool;
+  private ObjectMapper apiMapper;
 
 
   public ServiceProvider(EraldyApiApp apiApp) {
 
     this.apiApp = apiApp;
     this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
-
+    this.apiMapper = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager().jsonMapperBuilder()
+      .addMixIn(Service.class, ServicePublicMixinWithRealm.class)
+      .build();
   }
 
 
-  public Service toPublicClone(Service service) {
-
-    Service serviceClone = JsonObject.mapFrom(service).mapTo(Service.class);
-    serviceClone.setRealm(null);
-    serviceClone.setId(null);
-
-    User impersonatedUser = service.getImpersonatedUser();
-    if (impersonatedUser != null) {
-      serviceClone.setImpersonatedUser(apiApp.getUserProvider().toPublicCloneWithoutRealm(impersonatedUser));
-    }
-
-    return serviceClone;
-  }
 
   /**
    * This function is apart to be sure that the data are consistent
@@ -93,7 +85,7 @@ public class ServiceProvider {
   }
 
   private Guid getGuidFromService(Service service) {
-    return this.apiApp.createGuidFromRealmAndObjectId(SRV_GUID_PREFIX, service.getRealm(), service.getId());
+    return this.apiApp.createGuidFromRealmAndObjectId(SRV_GUID_PREFIX, service.getRealm(), service.getLocalId());
   }
 
   /**
@@ -123,7 +115,7 @@ public class ServiceProvider {
     }
 
 
-    if (service.getId() != null) {
+    if (service.getLocalId() != null) {
 
       return updateService(service);
 
@@ -139,7 +131,7 @@ public class ServiceProvider {
           return Future.failedFuture(internalException);
         }
         Long serviceId = rowSet.iterator().next().getLong(ID_COLUMN);
-        service.setId(serviceId);
+        service.setLocalId(serviceId);
         return Future.succeededFuture(service);
       });
 
@@ -147,7 +139,7 @@ public class ServiceProvider {
 
   private Future<Service> updateService(Service service) {
 
-    if (service.getId() != null) {
+    if (service.getLocalId() != null) {
       String insertSql = "UPDATE \n" +
         JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
         "set \n" +
@@ -165,7 +157,7 @@ public class ServiceProvider {
         this.getDatabaseObject(service),
         service.getImpersonatedUser() != null ? service.getImpersonatedUser().getLocalId() : null,
         service.getRealm().getLocalId(),
-        service.getId()
+        service.getLocalId()
       );
       return jdbcPool
         .preparedQuery(insertSql)
@@ -195,7 +187,7 @@ public class ServiceProvider {
           return Future.failedFuture(internalException);
         }
         Long serviceId = rowSet.iterator().next().getLong(ID_COLUMN);
-        service.setId(serviceId);
+        service.setLocalId(serviceId);
         return Future.succeededFuture(service);
       });
   }
@@ -250,10 +242,10 @@ public class ServiceProvider {
       .withTransaction(sqlConnection -> SequenceProvider.getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, service.getRealm().getLocalId())
         .onFailure(error -> LOGGER.error("ServiceProvider: Error on next sequence id" + error.getMessage(), error))
         .compose(serviceId -> {
-          service.setId(serviceId);
+          service.setLocalId(serviceId);
           Tuple parameters = Tuple.of(
             service.getRealm().getLocalId(),
-            service.getId(),
+            service.getLocalId(),
             service.getUri(),
             service.getType(),
             this.getDatabaseObject(service),
@@ -312,7 +304,7 @@ public class ServiceProvider {
     Future<User> futureImpersonatedUser = Future.succeededFuture();
     if (impersonatedUserId != null) {
       futureImpersonatedUser = apiApp.getUserProvider()
-        .getUserById(impersonatedUserId, realm.getLocalId(), User.class, realm);
+        .getUserByLocalId(impersonatedUserId, realm.getLocalId(), User.class, realm);
     }
     Future<Realm> realmFuture = Future.succeededFuture(realm);
     if (realm == null) {
@@ -335,7 +327,7 @@ public class ServiceProvider {
         JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
 
         Service service = new Service();
-        service.setId(serviceId);
+        service.setLocalId(serviceId);
         service.setUri(serviceUri);
         service.setType(serviceType);
         if (impersonatedUser != null) {
@@ -441,4 +433,7 @@ public class ServiceProvider {
   }
 
 
+  public ObjectMapper getApiMapper() {
+    return this.apiMapper;
+  }
 }

@@ -2034,43 +2034,47 @@ components:
         * the <a href="https://segment.com/docs/connections/spec/common/">Segment Spec</a>
         * the <a href="https://segment.com/docs/connections/spec/common/">MixPanel Spec</a>
 
-        The segment spec separates the event property from the context as we do.
+        Every event type will extend this object and add its properties.
+
+        We try to follow the element of a sequential diagram with the following participants:
+        * user: the user
+        * agent: the agent that the user is using
+        * request: the request
+        * time: the state times
+        * channel: the channel properties (how the user came in)
+
+        All properties that are tied only to the event type/name
+        are properties added at the root with a primary datatype.
       example:
-        creationTime: 2000-01-23T04:56:07.000+00:00
-        name: name
-        context:
-          os:
-            name: name
-            arch: arch
-            version: version
-          timezone: timezone
-          ip: 143.176.206.76
-          browser:
-            referrer: https://openapi-generator.tech
-            uri: https://openapi-generator.tech
-          channel: null
-          userAgent: userAgent
-          locale: locale
-          utm:
-            referrer: https://openapi-generator.tech
-            campaign: spring_sale
-            term: term
-            id: "summer-sale, abc.123"
-            source: summer-mailer
-            medium: email
-            content: content
+        app:
+          appRealmId: appRealmId
+          appId: appId
+          appOrganisationId: appOrganisationId
+        request:
+          agentId: agentId
+          referrerUri: https://openapi-generator.tech
+          remoteIp: 143.176.206.76
+          originUri: https://openapi-generator.tech
+          sessionId: sessionId
+        name: "`Sign up`, `Purchase`"
         id: id
-        receptionTime: 2000-01-23T04:56:07.000+00:00
-        deviceId: deviceId
-        user:
+        state:
           creationTime: 2000-01-23T04:56:07.000+00:00
-          givenName: givenName
-          id: id
-          avatar: https://openapi-generator.tech
-          email: email
-        properties:
+          receptionTime: 2000-01-23T04:56:07.000+00:00
+          sendingTime: 2000-01-23T04:56:07.000+00:00
+        attr:
           key: "{}"
-        sendingTime: 2000-01-23T04:56:07.000+00:00
+        user:
+          userEmail: userEmail
+          userId: userId
+        utm:
+          utmSource: summer-mailer
+          utmReferrer: https://openapi-generator.tech
+          utmCampaignId: "summer-sale, abc.123"
+          utmTerm: utmTerm
+          utmContent: utmContent
+          utmMedium: email
+          utmCampaign: "spring_sale, Product, slogan, promo code"
       properties:
         id:
           description: |
@@ -2078,231 +2082,186 @@ components:
 
             It allows to delete duplicate.
 
+            It's a timestamp based UUID
+            where the timestamp is the value of the creation time.
+            (It permits to quickly retrieve via partition an event)
+
             It's known for:
             * segment as messageId
             * mixpanel as $insert_id
           type: string
         name:
-          description: the event name
+          description: |
+            The event name (known also as type)
+            An human readable name that will be normalized
+          example: "`Sign up`, `Purchase`"
           type: string
-        properties:
+        state:
+          $ref: '#/components/schemas/AnalyticsEventState'
+        app:
+          $ref: '#/components/schemas/AnalyticsEventApp'
+        user:
+          $ref: '#/components/schemas/AnalyticsEventUser'
+        request:
+          $ref: '#/components/schemas/AnalyticsEventRequest'
+        utm:
+          $ref: '#/components/schemas/AnalyticsEventUtm'
+        attr:
           additionalProperties:
             type: object
-          description: The additional event properties
+          description: The attributes for the event type
           type: object
-        deviceId:
-          description: |
-            The device id (a uuid4 or a fingerprint for instance)
-
-            It's also known as the user anonymous id because this is the user identifier
-            when the user is unknown.
-
-            When you send a message, a userId or a deviceId is required in order to identify a user.
-
-            We prefer the term device id (mixpanel) over anonymous id (segment) because it's
-            more meaningful. We track the device.
-
-            It's created on the client side and stored by the client more permanently
-            (via a cookie for the browser and stored in local storage for durability).
-
-            It's not the same as a session id because:
-            * a session id may be regenerated (when the user sign in for instance).
-            * the device id does not have any security feature. You can't login
+      type: object
+    AnalyticsEventState:
+      description: |
+        The times of the status (in UTC)
+      example:
+        creationTime: 2000-01-23T04:56:07.000+00:00
+        receptionTime: 2000-01-23T04:56:07.000+00:00
+        sendingTime: 2000-01-23T04:56:07.000+00:00
+      properties:
+        creationTime:
+          description: The date-time in UTC when the event has happend (ie when the
+            object was created)
+          format: date-time
           type: string
-        user:
-          $ref: '#/components/schemas/AnalyticsUser'
-        context:
-          $ref: '#/components/schemas/AnalyticsEventContext'
         receptionTime:
-          description: The timestamp of when a message was received (if created and
-            send by a client)
+          description: The date-time in UTC of when a message was received on the
+            API (if created and send by a client)
           format: date-time
           type: string
         sendingTime:
           description: |
-            The timestamp of when a message was sent to the analytics endpoint api
+            The date-time in UTC of when a message was sent to the analytics endpoint api
             Time: With Ga, you cannot set the time, It uses the notion of queue
             https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#qt
           format: date-time
           type: string
-        creationTime:
-          description: The timestamp when the object was created
-          format: date-time
+      type: object
+    AnalyticsEventApp:
+      description: The properties of the app that created this event
+      example:
+        appRealmId: appRealmId
+        appId: appId
+        appOrganisationId: appOrganisationId
+      properties:
+        appId:
+          description: The app id that has created this event
+          type: string
+        appRealmId:
+          description: |
+            The realm of the app
+            If the user is not anonymous, it is the user audience.
+          type: string
+        appOrganisationId:
+          description: "the organization id (the billing logical unit, known also\
+            \ as the group id)"
           type: string
       type: object
-    AnalyticsUser:
-      description: The user
+    AnalyticsEventUser:
+      description: The user properties
       example:
-        creationTime: 2000-01-23T04:56:07.000+00:00
-        givenName: givenName
-        id: id
-        avatar: https://openapi-generator.tech
-        email: email
+        userEmail: userEmail
+        userId: userId
       properties:
-        id:
+        userId:
           description: A unique identifier
           type: string
-        givenName:
-          description: the user given name
-          type: string
-        email:
+        userEmail:
           description: the user email
           type: string
-        avatar:
-          description: the user avatar
-          format: uri
-          type: string
-        creationTime:
-          description: The timestamp when the user was created
-          format: date-time
-          type: string
       type: object
-    AnalyticsEventContext:
-      description: |
-        The event context
-        A dictionary of extra information that provides useful context about a event
-        We follow https://segment.com/docs/connections/spec/common/#context
+    AnalyticsEventRequest:
+      description: The request/remote identifiers of an event
       example:
-        os:
-          name: name
-          arch: arch
-          version: version
-        timezone: timezone
-        ip: 143.176.206.76
-        browser:
-          referrer: https://openapi-generator.tech
-          uri: https://openapi-generator.tech
-        channel: null
-        userAgent: userAgent
-        locale: locale
-        utm:
-          referrer: https://openapi-generator.tech
-          campaign: spring_sale
-          term: term
-          id: "summer-sale, abc.123"
-          source: summer-mailer
-          medium: email
-          content: content
+        agentId: agentId
+        referrerUri: https://openapi-generator.tech
+        remoteIp: 143.176.206.76
+        originUri: https://openapi-generator.tech
+        sessionId: sessionId
       properties:
-        timezone:
-          description: the timezone id (ie Europe/London)
+        agentId:
+          description: The agent id
           type: string
-        locale:
-          description: "the locale (in a browser, this is the language setting)"
-          type: string
-        ip:
+        remoteIp:
           description: The ip (the remote client ip)
           example: 143.176.206.76
           type: string
-        userAgent:
-          description: The user agent string
+        sessionId:
+          description: The session id (a nonce)
           type: string
-        channel:
-          $ref: '#/components/schemas/AnalyticsEventChannel'
-        os:
-          $ref: '#/components/schemas/AnalyticsOperatingSystem'
-        utm:
-          $ref: '#/components/schemas/AnalyticsUrchinTrackingModule'
-        browser:
-          $ref: '#/components/schemas/AnalyticsBrowser'
-      type: object
-    AnalyticsEventChannel:
-      description: "where the request originated from server, browser or mobile"
-      enum:
-      - server
-      - browser
-      - mobile
-      type: string
-    AnalyticsOperatingSystem:
-      description: The os data
-      example:
-        name: name
-        arch: arch
-        version: version
-      properties:
-        name:
-          description: the name
+        originUri:
+          description: |
+            The origin uri (from where the request originate inside the app)
+            For a browser, the uri in the address bar or a iframe uri
+            For a gui app, an uri that represents a page
+          format: uri
           type: string
-        version:
-          description: the version
-          type: string
-        arch:
-          description: the architecture
+        referrerUri:
+          description: |
+            The http `referrer` header or javascript `document.referrer`
+            Note that Google Analytics will use "utm_referrer" over "document.referrer"
+            if set as document.referrer is only the domain/authority part
+          format: uri
           type: string
       type: object
-    AnalyticsUrchinTrackingModule:
+    AnalyticsEventUtm:
       description: |
-        The UTM data
-        See:
-        * <a href="https://datacadamia.com/marketing/analytics/utm">UTM</a>
-        * <a href="https://ga-dev-tools.google/campaign-url-builder/">UTM builder</a>
-        * <a href="https://support.google.com/analytics/answer/10917952">[GA4] URL builders: Collect campaign data with custom URLs</a>
+        The data that permits to derive the channel (ie how the
+        user came in).
+        UTM (Urchin Tracking Module) data with the document referer.
+            See:
+            * <a href="https://datacadamia.com/marketing/analytics/utm">UTM</a>
+            * <a href="https://ga-dev-tools.google/campaign-url-builder/">UTM builder</a>
+            * <a href="https://support.google.com/analytics/answer/10917952">[GA4] URL builders: Collect campaign data with custom URLs</a>
       example:
-        referrer: https://openapi-generator.tech
-        campaign: spring_sale
-        term: term
-        id: "summer-sale, abc.123"
-        source: summer-mailer
-        medium: email
-        content: content
+        utmSource: summer-mailer
+        utmReferrer: https://openapi-generator.tech
+        utmCampaignId: "summer-sale, abc.123"
+        utmTerm: utmTerm
+        utmContent: utmContent
+        utmMedium: email
+        utmCampaign: "spring_sale, Product, slogan, promo code"
       properties:
-        id:
+        utmCampaignId:
           description: |
             The Campaign ID is used to identify a specific ad campaign or promotion
-            This is a required key for GA4 data import.
+            Known as utm_id, this is a required key for GA4 data import.
           example: "summer-sale, abc.123"
           type: string
-        campaign:
-          description: "Product, slogan, promo code"
-          example: spring_sale
+        utmCampaign:
+          description: The Utm Campaign Name (utm_campaign)
+          example: "spring_sale, Product, slogan, promo code"
           type: string
-        source:
+        utmSource:
           description: |
             Referrer.
             Identifies which site sent the traffic, and is a required parameter
             Example: the referrer (e.g. google, newsletter)
           example: summer-mailer
           type: string
-        medium:
+        utmMedium:
           description: |
             Marketing medium (e.g. cpc, banner, email)
             Identifies what type of link was used, such as cost per click or email.
           example: email
           type: string
-        term:
+        utmTerm:
           description: |
             Identifies search terms, the paid keywords
           type: string
-        content:
+        utmContent:
           description: |
             Identifies what specifically was clicked to bring the user to the site,
             such as a banner ad or a text link.
             It is often used for A/B testing and content-targeted ads
           type: string
-        referrer:
+        utmReferrer:
           description: |
             Identifies the referrer URL as it's not passed by default by browser HTTP request
             and therefore not available in the `document.referrer` attribute
-            Google Analytics will use "utm_referrer" over "document.referrer" set in AnalyticsBrowser
+            Google Analytics will use "utm_referrer" over "http header / javascript document.referrer"
             utm_source is also a referer but in a named format
-          format: uri
-          type: string
-      type: object
-    AnalyticsBrowser:
-      description: Track browser specific information
-      example:
-        referrer: https://openapi-generator.tech
-        uri: https://openapi-generator.tech
-      properties:
-        uri:
-          description: the address uri in the browser
-          format: uri
-          type: string
-        referrer:
-          description: |
-            The `document.referrer`
-            Note that Google Analytics will use "utm_referrer" over "document.referrer"
-            if set as document.referrer is only the domain/authority part
           format: uri
           type: string
       type: object
@@ -2510,7 +2469,7 @@ components:
         organization:
           $ref: '#/components/schemas/Organization'
         ownerUser:
-          $ref: '#/components/schemas/User'
+          $ref: '#/components/schemas/OrganizationUser'
         handle:
           description: |
             The handle is a name unique identifier.
@@ -2554,6 +2513,22 @@ components:
           description: Organization name
           type: string
       type: object
+    OrganizationUser:
+      allOf:
+      - $ref: '#/components/schemas/User'
+      - properties:
+          organization:
+            $ref: '#/components/schemas/Organization'
+        type: object
+      description: |
+        A user in the organization
+        They are the users of the Eraldy realm
+        that are part of an organization.
+        They may own Realms, App, List.
+      type: object
+      x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
+        \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
+        \ property = \"guid\", scope = User.class)"
     App:
       description: "An app is the container for branding elements (such as logo, color)"
       example:
@@ -2562,7 +2537,7 @@ components:
         primaryColor: '#3498db'
         guid: xmmmN
         logo: https://doe.com/_media/android-chrome-192x192.png
-        handle: "[\"doe.com\",\"doe.com/doc\"]"
+        handle: "[\"doe\"]"
         realm:
           defaultApp: ""
           ownerUser: null
@@ -2575,35 +2550,10 @@ components:
           handle: handle
           localId: 0
         localId: 1
+        uri: https://app.doe.com
         slogan: "Doe, Be You"
-        user:
-          disabledReason: disabledReason
-          website: https://mywebsite
-          creationTime: 2000-01-23T04:56:07.000+00:00
-          givenName: John
-          bio: bio
-          handle: foo
-          avatar: https://en.gravatar.com/userimage/john.doe.png
-          title: Chief Executive Officer
-          localId: 1
-          modificationTime: 2000-01-23T04:56:07.000+00:00
-          familyName: Doe
-          guid: xmmmN
-          disabled: true
-          location: The world
-          realm:
-            defaultApp: ""
-            ownerUser: null
-            organization:
-              name: name
-              guid: org-xmmmN
-              localId: 1
-            name: name
-            guid: guid
-            handle: handle
-            localId: 0
-          email: john@doe.com
-        home: https://doe.com
+        user: null
+        home: https://doe.com/landing
       properties:
         localId:
           description: "The app identifier in the realm (without the realm, the id\
@@ -2619,18 +2569,27 @@ components:
           description: |
             The handle of the app.
             The handle is unique for all apps on the realm.
-            For instance, you may choose an authentication uri without the scheme (ie no parameters and anchor)
-          example: "[\"doe.com\",\"doe.com/doc\"]"
+            It follows the DNS name constraint
+          example: "[\"doe\"]"
           type: string
-          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
-            uri\"})"
         name:
           description: The name of the app
           example: Doe
           type: string
+        uri:
+          description: |
+            An authentication url identifier
+            It has no query string nor fragment.
+            If you use the member authentication module, this URL should not be empty.
+          example: https://app.doe.com
+          format: uri
+          type: string
         home:
-          description: The home url
-          example: https://doe.com
+          description: |
+            The home URL of the app
+            This is a app branding element
+            that adds an URL to any app communication footer
+          example: https://doe.com/landing
           format: uri
           type: string
         slogan:
@@ -2647,7 +2606,7 @@ components:
           example: '#3498db'
           type: string
         user:
-          $ref: '#/components/schemas/User'
+          $ref: '#/components/schemas/OrganizationUser'
         realm:
           $ref: '#/components/schemas/Realm'
         terms:
@@ -2933,35 +2892,46 @@ components:
         The realm (guid or handle) is also mandatory
       example:
         appPrimaryColor: '#3498db'
+        userIdentifier: "[\"user-xLOKKMmm\",\"john@doe.com\"]"
         appLogo: https://doe.com/_media/android-chrome-192x192.png
         appName: Doe
-        appHome: https://doe.com
-        userEmail: john@doe.com
-        userGuid: xLOKKMmm
+        appHome: https://doe.com/landing
+        appHandle: doe
         appSlogan: "Doe, be you"
         appTerms: https://doe.com/terms
         appGuid: appGuid
-        appUri: doe.com/doc
+        appUri: https://app.doe.com
         realmIdentifier: realmIdentifier
       properties:
         appGuid:
           description: The guid of an existing app (to update the uri if necessary)
           type: string
+        appHandle:
+          description: |
+            An unique name of the app
+          example: doe
+          maxLength: 30
+          type: string
         appUri:
-          description: An unique uri name of the app
-          example: doe.com/doc
+          description: |
+            The Authentication URI of the App
+            (where the app can be found and where the auth redirection should occurs)
+          example: https://app.doe.com
+          format: uri
+          type: string
+        appHome:
+          description: |
+            The Home URL of the App
+            This is an element of branding
+          example: https://doe.com/landing
+          format: uri
           type: string
         realmIdentifier:
           description: the realm identifier (Guid or handle)
           type: string
-        userGuid:
-          description: The guid of the public app user
-          example: xLOKKMmm
-          type: string
-        userEmail:
-          description: The email of the public app user
-          example: john@doe.com
-          format: email
+        userIdentifier:
+          description: The user identifier of the public app user (a guid or an email)
+          example: "[\"user-xLOKKMmm\",\"john@doe.com\"]"
           type: string
         appName:
           description: A shortname
@@ -2970,11 +2940,6 @@ components:
         appSlogan:
           description: The app slogan
           example: "Doe, be you"
-          type: string
-        appHome:
-          description: The url of the app
-          example: https://doe.com
-          format: uri
           type: string
         appLogo:
           description: The uri of a logo
@@ -3036,20 +3001,6 @@ components:
           type: string
       title: A post to modify a user
       type: object
-    OrganizationUser:
-      allOf:
-      - $ref: '#/components/schemas/User'
-      - properties:
-          organization:
-            $ref: '#/components/schemas/Organization'
-        type: object
-      description: |
-        A user in the organization
-        They are the users of the Eraldy realm that own Realms
-      type: object
-      x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
-        \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
-        \ property = \"guid\", scope = User.class)"
     JsonObject:
       additionalProperties: true
       description: A Json object
@@ -3124,7 +3075,7 @@ components:
           primaryColor: '#3498db'
           guid: xmmmN
           logo: https://doe.com/_media/android-chrome-192x192.png
-          handle: "[\"doe.com\",\"doe.com/doc\"]"
+          handle: "[\"doe\"]"
           realm:
             defaultApp: ""
             ownerUser: null
@@ -3137,35 +3088,10 @@ components:
             handle: handle
             localId: 0
           localId: 1
+          uri: https://app.doe.com
           slogan: "Doe, Be You"
-          user:
-            disabledReason: disabledReason
-            website: https://mywebsite
-            creationTime: 2000-01-23T04:56:07.000+00:00
-            givenName: John
-            bio: bio
-            handle: foo
-            avatar: https://en.gravatar.com/userimage/john.doe.png
-            title: Chief Executive Officer
-            localId: 1
-            modificationTime: 2000-01-23T04:56:07.000+00:00
-            familyName: Doe
-            guid: xmmmN
-            disabled: true
-            location: The world
-            realm:
-              defaultApp: ""
-              ownerUser: null
-              organization:
-                name: name
-                guid: org-xmmmN
-                localId: 1
-              name: name
-              guid: guid
-              handle: handle
-              localId: 0
-            email: john@doe.com
-          home: https://doe.com
+          user: null
+          home: https://doe.com/landing
       properties:
         localId:
           description: "The list identifier in the realm scope. Without the realm,\
@@ -3338,7 +3264,7 @@ components:
             primaryColor: '#3498db'
             guid: xmmmN
             logo: https://doe.com/_media/android-chrome-192x192.png
-            handle: "[\"doe.com\",\"doe.com/doc\"]"
+            handle: "[\"doe\"]"
             realm:
               defaultApp: ""
               ownerUser: null
@@ -3351,35 +3277,10 @@ components:
               handle: handle
               localId: 0
             localId: 1
+            uri: https://app.doe.com
             slogan: "Doe, Be You"
-            user:
-              disabledReason: disabledReason
-              website: https://mywebsite
-              creationTime: 2000-01-23T04:56:07.000+00:00
-              givenName: John
-              bio: bio
-              handle: foo
-              avatar: https://en.gravatar.com/userimage/john.doe.png
-              title: Chief Executive Officer
-              localId: 1
-              modificationTime: 2000-01-23T04:56:07.000+00:00
-              familyName: Doe
-              guid: xmmmN
-              disabled: true
-              location: The world
-              realm:
-                defaultApp: ""
-                ownerUser: null
-                organization:
-                  name: name
-                  guid: org-xmmmN
-                  localId: 1
-                name: name
-                guid: guid
-                handle: handle
-                localId: 0
-              email: john@doe.com
-            home: https://doe.com
+            user: null
+            home: https://doe.com/landing
         inOptInConfirmationIp: inOptInConfirmationIp
         modificationTime: 2000-01-23T04:56:07.000+00:00
         outOptOutTime: 2000-01-23T04:56:07.000+00:00

@@ -100,15 +100,7 @@ public class RealmProvider {
   }
 
 
-  public <T extends Realm> T toPublicClone(T realm) {
-    // uses unchecked or unsafe operations.
-    JsonObject entries = JsonObject.mapFrom(realm);
-    T clone = (T) entries.mapTo(realm.getClass());
-    clone.setLocalId(null);
-    clone.setOrganization(apiApp.getOrganizationProvider().toPublicClone(realm.getOrganization()));
-    clone.setOwnerUser(this.apiApp.getUserProvider().toPublicCloneWithoutRealm(realm.getOwnerUser()));
-    return clone;
-  }
+
 
 
   /**
@@ -449,7 +441,7 @@ public class RealmProvider {
     Future<Organization> futureOrganization = apiApp.getOrganizationProvider().getById(orgaId);
     Long realmIdContactColumn = row.getLong(REALM_OWNER_ID_COLUMN);
     Realm eraldyRealm = EraldyRealm.get().getRealm();
-    Future<User> futureOwnerUser = apiApp.getUserProvider().getUserById(realmIdContactColumn, eraldyRealm.getLocalId(), User.class, eraldyRealm);
+    Future<User> futureOwnerUser = apiApp.getUserProvider().getUserByLocalId(realmIdContactColumn, eraldyRealm.getLocalId(), User.class, eraldyRealm);
     Long defaultAppId = row.getLong(REALM_DEFAULT_APP_ID);
     Future<App> futureApp;
     if (defaultAppId == null) {
