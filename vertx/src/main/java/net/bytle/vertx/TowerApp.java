@@ -221,6 +221,7 @@ public abstract class TowerApp {
   }
 
   public Future<Void> mount() {
+
     return mountOnRouter();
   }
 
@@ -265,7 +266,7 @@ public abstract class TowerApp {
     if (httpServer.isHttpsEnabled()) {
       String pathMount = this.getPathMount();
       Route route;
-      if (!pathMount.equals("")) {
+      if (!pathMount.isEmpty()) {
         route = rootRouter.route(pathMount);
       } else {
         route = rootRouter.route();
@@ -372,14 +373,14 @@ public abstract class TowerApp {
      * if this is not mounted to root
      */
     if (
-      !pathMount.equals("")
+      !pathMount.isEmpty()
         && !pathMount.equals("/")
     ) {
       rootRouter
         .get(pathMount)
         .handler(ctx -> {
           String publicDefaultOperationPath = this.getDefaultOperationPath();
-          if (publicDefaultOperationPath == null || publicDefaultOperationPath.equals("")) {
+          if (publicDefaultOperationPath == null || publicDefaultOperationPath.isEmpty()) {
             ctx.next();
             return;
           }

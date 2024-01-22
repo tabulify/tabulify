@@ -1,19 +1,23 @@
 package net.bytle.tower.eraldy.api;
 
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
-import net.bytle.tower.EraldyRealm;
+import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.implementer.flow.*;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
+import net.bytle.tower.util.Env;
+import net.bytle.tower.util.EraldySubRealmModel;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
@@ -67,7 +71,9 @@ public class EraldyApiApp extends TowerApp {
    * until there is no space on the VPS ...
    */
   private final Path runtimeDataDirectory;
-  private PasswordLoginFlow passwordLoginFlow;
+  private final PasswordLoginFlow passwordLoginFlow;
+  private final EraldyModel eraldyModel;
+  private final EraldySubRealmModel eraldySubRealmModel;
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
     super(apexDomain);
@@ -75,13 +81,16 @@ public class EraldyApiApp extends TowerApp {
 
     // data directory
     Path runtime = Paths.get("data/runtime");
-    if(JavaEnvs.IS_DEV){
+    if (JavaEnvs.IS_DEV) {
       // put it in the build
-      runtime = Paths.get("build/"+this.getAppName().toLowerCase()+"/data/runtime");
+      runtime = Paths.get("build/" + this.getAppName().toLowerCase() + "/data/runtime");
     }
     this.runtimeDataDirectory = configAccessor.getPath(RUNTIME_DATA_DIR_CONF, runtime);
     Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
 
+    /**
+     * DataBase Provider/Manager
+     */
     this.realmProvider = new RealmProvider(this);
     this.userProvider = new UserProvider(this);
     this.listProvider = new ListProvider(this);
@@ -92,6 +101,12 @@ public class EraldyApiApp extends TowerApp {
     this.serviceProvider = new ServiceProvider(this);
     this.organizationUserProvider = new OrganizationUserProvider(this);
     this.hashIds = this.getApexDomain().getHttpServer().getServer().getHashId();
+
+    /**
+     * Model
+     */
+    this.eraldyModel = new EraldyModel(this);
+    this.eraldySubRealmModel = EraldySubRealmModel.getOrCreate(this);
 
     String memberUri = configAccessor.getString(MEMBER_APP_URI_CONF, "https://member." + apexDomain.getApexNameWithPort());
     try {
@@ -335,12 +350,6 @@ public class EraldyApiApp extends TowerApp {
 
   }
 
-  public Guid createGuidStringFromRealmAndTwoObjectId(String shortPrefix, Realm realm, Long id1, Long id2) {
-
-    return createGuidStringFromRealmAndTwoObjectId(shortPrefix, realm.getLocalId(), id1, id2);
-
-  }
-
   public Guid createGuidStringFromRealmAndTwoObjectId(String shortPrefix, Long realmId, Long id1, Long id2) {
 
     return Guid.builder(this.hashIds, shortPrefix)
@@ -350,7 +359,6 @@ public class EraldyApiApp extends TowerApp {
       .build();
 
   }
-
 
   public OrganizationProvider getOrganizationProvider() {
     return this.organizationProvider;
@@ -394,11 +402,11 @@ public class EraldyApiApp extends TowerApp {
   }
 
   public Realm getEraldyRealm() {
-    return EraldyRealm.get().getRealm();
+    return this.eraldyModel.getRealm();
   }
 
   public boolean isEraldyRealm(Long localId) {
-    return getEraldyRealm().getLocalId().equals(localId);
+    return this.eraldyModel.isEraldyRealm(localId);
   }
 
   public EmailAddressValidator getEmailAddressValidator() {
@@ -425,4 +433,25 @@ public class EraldyApiApp extends TowerApp {
   public PasswordLoginFlow getPasswordLoginFlow() {
     return this.passwordLoginFlow;
   }
+
+  @Override
+  public Future<Void> mount() {
+
+
+    Future<Void> eraldyOrg = eraldyModel.insertModelInDatabase();
+    Future<Void> parentMount = super.mount();
+
+    return Future
+      .all(eraldyOrg, parentMount)
+      .recover(err -> Future.failedFuture(new InternalException("One of the Api App mount future has failed", err)))
+      .compose(v -> {
+        Future<Void> datacadamiaModel = Future.succeededFuture();
+        if (Env.IS_DEV) {
+          // Add a sub-realm for test/purpose only
+          datacadamiaModel = eraldySubRealmModel.insertModelInDatabase();
+        }
+        return datacadamiaModel;
+      });
+  }
+
 }

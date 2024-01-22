@@ -100,7 +100,7 @@ public class JacksonMapperManager {
          */
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
       }
-      if (this.mixins.size() != 0) {
+      if (!this.mixins.isEmpty()) {
         for (Map.Entry<Class<?>, Class<?>> entry : this.mixins.entrySet()) {
           mapper.addMixIn(entry.getKey(), entry.getValue());
         }

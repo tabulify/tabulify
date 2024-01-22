@@ -8,9 +8,6 @@ import io.vertx.ext.web.Router;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthRealmHandler;
 import net.bytle.tower.eraldy.auth.AuthSessionHandler;
-import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.util.DatacadamiaDomain;
-import net.bytle.tower.util.Env;
 import net.bytle.tower.util.GlobalUtilityObjectsCreation;
 import net.bytle.vertx.*;
 import org.apache.logging.log4j.LogManager;
@@ -100,13 +97,6 @@ public class VerticleApi extends AbstractVerticle {
              */
             Future<Void> publicApiFuture = apiApp.mount();
             httpServer.addFutureToExecuteOnBuild(publicApiFuture);
-            Future<Realm> eraldyRealm = EraldyRealm.create(apiApp).getFutureRealm(); // Eraldy creation
-            httpServer.addFutureToExecuteOnBuild(eraldyRealm);
-            if (Env.IS_DEV) {
-              // Add the realm for datacadamia for test/purpose only
-              Future<Realm> realm = DatacadamiaDomain.getOrCreate(this).createRealm();
-              httpServer.addFutureToExecuteOnBuild(realm);
-            }
 
             /**
              * Create the server

@@ -9,7 +9,7 @@ import static net.bytle.vertx.auth.AuthQueryProperty.REALM_IDENTIFIER;
 /**
  * A pojo to:
  * * define authentication state
- * * encode the auth state for OAuth
+ * * encode the auth state for OAuth to pass around
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthState {

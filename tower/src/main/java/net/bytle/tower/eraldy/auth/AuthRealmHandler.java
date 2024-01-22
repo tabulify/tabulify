@@ -8,7 +8,6 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
-import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.util.FrontEndCookie;
 import net.bytle.tower.eraldy.model.openapi.Realm;
@@ -104,7 +103,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
     /**
      * Eraldy realm has default
      */
-    return Future.succeededFuture(EraldyRealm.get().getRealm());
+    return Future.succeededFuture(this.apiApp.getEraldyRealm());
 
 
   }

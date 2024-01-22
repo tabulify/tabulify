@@ -1,7 +1,9 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
@@ -13,19 +15,12 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
-import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
-import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
-import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
+import net.bytle.tower.eraldy.mixin.*;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
-import net.bytle.vertx.DateTimeUtil;
-import net.bytle.vertx.JdbcSchemaManager;
-import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,19 +67,23 @@ public class RealmProvider {
    * double realm information
    */
   private final ObjectMapper publicRealmJsonMapper;
+  private final JsonMapper databaseMapper;
 
   public RealmProvider(EraldyApiApp apiApp) {
     this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
     this.apiApp = apiApp;
-    this.publicRealmJsonMapper = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
+    JacksonMapperManager jacksonMapperManager = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager();
+    this.publicRealmJsonMapper = jacksonMapperManager
       .jsonMapperBuilder()
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(RealmAnalytics.class, RealmPublicMixin.class)
       .addMixIn(Organization.class, OrganizationPublicMixin.class)
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
-      .build()
-    ;
+      .build();
+    this.databaseMapper = jacksonMapperManager.jsonMapperBuilder()
+      .addMixIn(Realm.class, RealmDatabaseMixin.class)
+      .build();
   }
 
 
@@ -100,16 +99,13 @@ public class RealmProvider {
   }
 
 
-
-
-
   /**
    * Compute the guid. This is another function
    * to be sure that the object id and guid are consistent
    *
    * @param realm - the realm
    */
-  private void getGuidFromLong(Realm realm) {
+  private void updateGuid(Realm realm) {
     if (realm.getGuid() != null) {
       return;
     }
@@ -143,7 +139,7 @@ public class RealmProvider {
         }
         Long realmId = rowSet.iterator().next().getLong(REALM_ID_COLUMN);
         realm.setLocalId(realmId);
-        this.getGuidFromLong(realm);
+        this.updateGuid(realm);
         return Future.succeededFuture(realm);
       });
   }
@@ -210,7 +206,7 @@ public class RealmProvider {
       "  )\n" +
       " values ($1, $2, $3, $4, $5)\n" +
       " returning " + REALM_ID_COLUMN;
-    JsonObject pgJsonObject = this.getRealmAsJsonObject(realm);
+    String pgJsonObject = this.toDatabaseJsonString(realm);
     return this.jdbcPool
       .preparedQuery(sql)
       .execute(Tuple.of(
@@ -242,9 +238,9 @@ public class RealmProvider {
         "  " + ID_COLUMN + " = $5\n";
 
       /**
-       * JsonB object
+       * Json String
        */
-      JsonObject pgJsonObject = this.getRealmAsJsonObject(realm);
+      String pgJsonObject = this.toDatabaseJsonString(realm);
 
       return this.jdbcPool
         .preparedQuery(sql)
@@ -262,7 +258,7 @@ public class RealmProvider {
             // Compute the guid: A realm may have an id without guid
             // This is the case for the Eraldy realm where the database id is known
             // as instantiation but not the guid
-            this.getGuidFromLong(realm);
+            this.updateGuid(realm);
             return Future.succeededFuture(realm);
           }
         );
@@ -278,7 +274,7 @@ public class RealmProvider {
       .compose(rows -> {
         Long realmId = rows.iterator().next().getLong(REALM_ID_COLUMN);
         realm.setLocalId(realmId);
-        this.getGuidFromLong(realm);
+        this.updateGuid(realm);
         return Future.succeededFuture(realm);
       });
 
@@ -302,9 +298,9 @@ public class RealmProvider {
       "RETURNING " + REALM_ID_COLUMN;
 
     /**
-     * JsonB object
+     * Json String
      */
-    JsonObject pgJsonObject = this.getRealmAsJsonObject(realm);
+    String pgJsonObject = this.toDatabaseJsonString(realm);
 
     return this.jdbcPool
       .preparedQuery(sql)
@@ -317,10 +313,12 @@ public class RealmProvider {
       .onFailure(e -> LOGGER.error("Error while updating the realm by handle. Sql: \n" + sql, e));
   }
 
-  private JsonObject getRealmAsJsonObject(Realm realm) {
-    JsonObject data = JsonObject.mapFrom(realm);
-    data.remove(Guid.GUID);
-    return data;
+  private String toDatabaseJsonString(Realm realm) {
+    try {
+      return this.databaseMapper.writeValueAsString(realm);
+    } catch (JsonProcessingException e) {
+      throw new InternalException("Problem during the serialization of the realm (" + realm + ")", e);
+    }
   }
 
   /**
@@ -436,11 +434,11 @@ public class RealmProvider {
 
     realm.setHandle(realmHandle);
     realm.setLocalId(realmId);
-    this.getGuidFromLong(realm);
+    this.updateGuid(realm);
     Long orgaId = row.getLong(REALM_ORGA_ID);
     Future<Organization> futureOrganization = apiApp.getOrganizationProvider().getById(orgaId);
     Long ownerUserLocalId = row.getLong(REALM_OWNER_ID_COLUMN);
-    Realm eraldyRealm = EraldyRealm.get().getRealm();
+    Realm eraldyRealm = this.apiApp.getEraldyRealm();
     Future<OrganizationUser> futureOwnerUser = apiApp.getOrganizationUserProvider()
       .getOrganizationUserByLocalId(ownerUserLocalId, eraldyRealm.getLocalId(), eraldyRealm);
     Long defaultAppId = row.getLong(REALM_DEFAULT_APP_ID);

@@ -1,7 +1,6 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
@@ -40,12 +39,6 @@ public class OrganizationProvider {
     this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
   }
 
-
-  public Organization toPublicClone(Organization organization) {
-    Organization organizationClone = JsonObject.mapFrom(organization).mapTo(Organization.class);
-    organizationClone.setLocalId(null);
-    return organizationClone;
-  }
 
   public Future<Organization> getById(Long orgaId) {
     return getById(orgaId,Organization.class);
@@ -95,4 +88,8 @@ public class OrganizationProvider {
     return apiApp.createGuidFromHashWithOneId(GUID_PREFIX,guid);
   }
 
+  public void updateGuid(Organization organization) {
+    Guid guid = this.computeGuid(organization);
+    organization.setGuid(guid.toString());
+  }
 }

@@ -6,12 +6,12 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.AssertionException;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +34,7 @@ import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
 public class OrganizationUserProvider {
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(OrganizationUserProvider.class);
+  private static final int OWNER_ROLE_ID = 1;
 
   private final EraldyApiApp apiApp;
   private static final String TABLE_NAME = "organization_user";
@@ -41,6 +42,8 @@ public class OrganizationUserProvider {
   private static final String TABLE_PREFIX = "orga_user";
   public static final String ORGA_USER_USER_ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   public static final String ORGA_USER_ORGA_ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN;
+
+  public static final String ORGA_USER_ORGA_ROLE_ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "orga_role_id";
   public static final String ORGA_USER_CREATION_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   public static final String ORGA_USER_MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private final PgPool jdbcPool;
@@ -59,13 +62,25 @@ public class OrganizationUserProvider {
         if (user == null) {
           return Future.succeededFuture();
         }
-        return buildOrgUserFromDb(user);
+        return setOrganizationFromDb(user);
       });
   }
 
-  public Future<OrganizationUser> getOrganizationUserByUser(OrganizationUser orgUser) {
+  public Future<OrganizationUser> getOrganizationUserByUser(OrganizationUser organizationUser) {
 
-    return buildOrgUserFromDb(orgUser);
+    if (organizationUser.getOrganization() != null) {
+      return Future.succeededFuture(organizationUser);
+    }
+
+    return this.getOrganizationRowForUser(organizationUser)
+      .compose(row -> {
+          if (row == null) {
+            return Future.succeededFuture();
+          }
+          return this.setOrganizationFromDatabaseRow(row, organizationUser, null);
+        }
+      );
+
 
   }
 
@@ -75,33 +90,54 @@ public class OrganizationUserProvider {
    *
    * @param organizationUser - the organization user to add extra info
    */
-  private Future<OrganizationUser> buildOrgUserFromDb(OrganizationUser organizationUser) {
+  private Future<OrganizationUser> setOrganizationFromDb(OrganizationUser organizationUser) {
 
     if (organizationUser.getOrganization() != null) {
       return Future.succeededFuture(organizationUser);
     }
 
+    return this.getOrganizationRowForUser(organizationUser)
+      .compose(row -> {
+          if (row == null) {
+            return Future.failedFuture("The user (" + organizationUser + ") does not exist as organization user in the database");
+          }
+          return this.setOrganizationFromDatabaseRow(row, organizationUser, null);
+        }
+      );
+
+  }
+
+  private Future<Row> getOrganizationRowForUser(OrganizationUser organizationUser) {
+
+    try {
+      this.checkOrganizationUserRealmId(OrganizationUser.class, organizationUser.getRealm().getLocalId());
+    } catch (AssertionException e) {
+      throw new InternalException("This user has not the Eraldy realm. He cannot be an organization user.", e);
+    }
+
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " + ORGA_USER_USER_ID_COLUMN + " = $1";
+    Long localId = organizationUser.getLocalId();
     return jdbcPool.preparedQuery(sql)
-      .execute(Tuple.of(organizationUser.getLocalId()))
-      .onFailure(e -> LOGGER.error("Error: " + e.getMessage() + ", while retrieving the orga user by user id with the sql\n" + sql, e))
+      .execute(Tuple.of(localId))
+      .recover(e -> Future.failedFuture(new InternalException("Error: " + e.getMessage() + ", while retrieving the orga user by user id with the sql\n" + sql, e)))
       .compose(userRows -> {
 
         if (userRows.size() == 0) {
+          // null
           return Future.succeededFuture();
         }
 
-        if (userRows.size() != 1) {
-          return Future.failedFuture(new InternalException("There is more than one orga user with the id (" + organizationUser.getLocalId() + ")"));
+        if (userRows.size() != OWNER_ROLE_ID) {
+          return Future.failedFuture(new InternalException("There is more than one orga user with the id (" + localId + ")"));
         }
         Row row = userRows.iterator().next();
-        return this.buildOrgaUserFromDatabaseRow(row, organizationUser, null);
+        return Future.succeededFuture(row);
       });
   }
 
-  private Future<OrganizationUser> buildOrgaUserFromDatabaseRow(Row row, OrganizationUser user, Organization organization) {
+  private Future<OrganizationUser> setOrganizationFromDatabaseRow(Row row, OrganizationUser user, Organization organization) {
 
     Future<OrganizationUser> futureUser;
     Long userId;
@@ -110,37 +146,35 @@ public class OrganizationUserProvider {
       userId = user.getLocalId();
     } else {
       userId = row.getLong(ORGA_USER_USER_ID_COLUMN);
-      futureUser = this.buildUserAsOrganizationUserById(userId);
+      futureUser = this.getOrganisationUserWithoutOrganizationByLocalId(userId);
     }
 
     return futureUser
-      .compose(
-        userFromFuture -> {
-          if (userFromFuture == null) {
-            return Future.failedFuture(new InternalException("The organization user with the id (" + userId + ") was not found"));
-          }
-          Future<Organization> futureOrganization;
-          Long orgaId = row.getLong(ORGA_USER_ORGA_ID_COLUMN);
-          if (organization != null) {
-            futureOrganization = Future.succeededFuture(organization);
-          } else {
-            futureOrganization = apiApp
-              .getOrganizationProvider()
-              .getById(orgaId);
-          }
-          return futureOrganization
+      .compose(resUser -> {
+        if (resUser == null) {
+          return Future.failedFuture(new InternalException("The organization user with the id (" + userId + ") was not found"));
+        }
+        Future<Organization> futureOrganization;
+        Long orgaId = row.getLong(ORGA_USER_ORGA_ID_COLUMN);
+        if (organization != null) {
+          futureOrganization = Future.succeededFuture(organization);
+        } else {
+          futureOrganization = apiApp
+            .getOrganizationProvider()
+            .getById(orgaId);
+        }
+        return futureOrganization
+          .compose(resOrganization -> {
+            if (resOrganization == null) {
+              return Future.failedFuture(new InternalException("The organization with the identifier (" + orgaId + ") was not found"));
+            }
+            resUser.setOrganization(resOrganization);
+            resUser.setCreationTime(row.getLocalDateTime(ORGA_USER_CREATION_COLUMN));
+            resUser.setModificationTime(row.getLocalDateTime(ORGA_USER_MODIFICATION_TIME_COLUMN));
+            return Future.succeededFuture(resUser);
 
-            .compose(resOrganization -> {
-              if (resOrganization == null) {
-                return Future.failedFuture(new InternalException("The organization with the identifier (" + orgaId + ") was not found"));
-              }
-              userFromFuture.setOrganization(resOrganization);
-              userFromFuture.setCreationTime(row.getLocalDateTime(ORGA_USER_CREATION_COLUMN));
-              userFromFuture.setModificationTime(row.getLocalDateTime(ORGA_USER_MODIFICATION_TIME_COLUMN));
-              return Future.succeededFuture(userFromFuture);
-
-            });
-        });
+          });
+      });
 
   }
 
@@ -148,10 +182,15 @@ public class OrganizationUserProvider {
    * Build a  OrganizationUser object
    * without organization data
    */
-  private Future<OrganizationUser> buildUserAsOrganizationUserById(Long userId) {
+  private Future<OrganizationUser> getOrganisationUserWithoutOrganizationByLocalId(Long userId) {
 
-    Realm eraldyRealm = EraldyRealm.get().getRealm();
-    return this.apiApp.getUserProvider().getUserByLocalId(userId, eraldyRealm.getLocalId(), OrganizationUser.class, eraldyRealm);
+    return this.apiApp.getUserProvider()
+      .getUserByLocalId(
+        userId,
+        this.apiApp.getEraldyRealm().getLocalId(),
+        OrganizationUser.class,
+        this.apiApp.getEraldyRealm()
+      );
 
   }
 
@@ -196,19 +235,69 @@ public class OrganizationUserProvider {
         if (user == null) {
           return Future.succeededFuture();
         }
-        return buildOrgUserFromDb(user);
+        return setOrganizationFromDb(user);
       });
   }
 
-  public Future<OrganizationUser> upsertUserAndBuildOrgUser(OrganizationUser ownerUser) {
+  public Future<OrganizationUser> upsertUser(OrganizationUser organizationUser) {
 
     return apiApp.getUserProvider()
-      .upsertUser(ownerUser)
-      .compose(user -> {
-        if (user == null) {
-          return Future.succeededFuture();
+      .upsertUser(organizationUser)
+      .compose(resultUser -> {
+        if (resultUser == null) {
+          return Future.failedFuture(new InternalException("The result user should not be null for the user (" + organizationUser + ")"));
         }
-        return buildOrgUserFromDb(user);
+        return getOrganizationUserByUser(resultUser);
+      })
+      .compose(resultOrganizationUser -> {
+        if (resultOrganizationUser == null) {
+          return insertOrganizationUser(organizationUser);
+        }
+        return Future.succeededFuture(resultOrganizationUser);
+      });
+  }
+
+  private Future<OrganizationUser> insertOrganizationUser(OrganizationUser organizationUser) {
+
+    try {
+      this.checkOrganizationUserRealmId(OrganizationUser.class, organizationUser.getRealm().getLocalId());
+    } catch (AssertionException e) {
+      return Future.failedFuture(new InternalException("This user has not the Eraldy realm. He cannot be an organization user.", e));
+    }
+
+    Organization organization = organizationUser.getOrganization();
+    if(organization==null){
+      return Future.failedFuture(new InternalException("The organization should not be null when inserting an organization user"));
+    }
+    Long organizationLocalId = organization.getLocalId();
+    if(organizationLocalId==null){
+      return Future.failedFuture(new InternalException("The organization id should not be null when inserting an organization user"));
+    }
+    Long userLocalId = organizationUser.getLocalId();
+    if(userLocalId==null){
+      return Future.failedFuture(new InternalException("The user id should not be null when inserting an organization user"));
+    }
+
+    String sql = "INSERT INTO\n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
+      "  " + ORGA_USER_USER_ID_COLUMN + ",\n" +
+      "  " + ORGA_USER_ORGA_ID_COLUMN + ",\n" +
+      "  " + ORGA_USER_ORGA_ROLE_ID_COLUMN + ",\n" +
+      "  " + ORGA_USER_CREATION_COLUMN + "\n" +
+      "  )\n" +
+      " values ($1, $2, $3, $4)\n";
+
+    return jdbcPool.preparedQuery(sql)
+      .execute(Tuple.of(
+        userLocalId,
+        organizationLocalId,
+        OWNER_ROLE_ID,
+        DateTimeUtil.getNowInUtc()
+      ))
+      .recover(e -> Future.failedFuture(new InternalException("Error: " + e.getMessage() + ", while inserting the orga user with the sql\n" + sql, e)))
+      .compose(userRows -> {
+        Row row = userRows.iterator().next();
+        return setOrganizationFromDatabaseRow(row,organizationUser, null);
       });
   }
 }

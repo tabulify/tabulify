@@ -329,11 +329,11 @@ components:
         creationTime:
           type: string
           format: date-time
-          description: The creation time of the user
+          description: The creation time of the user in UTC
         modificationTime:
           type: string
           format: date-time
-          description: The last modification time of the user
+          description: The last modification time of the user in UTC
         realm:
           $ref: '#/components/schemas/Realm'
     UserPostBody:

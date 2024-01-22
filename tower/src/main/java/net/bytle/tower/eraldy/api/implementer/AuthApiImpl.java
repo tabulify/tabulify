@@ -69,10 +69,7 @@ public class AuthApiImpl implements AuthApi {
         provider,
         authState
       )
-      .compose(
-        v -> Future.succeededFuture(new ApiResponse<>()),
-        Future::failedFuture
-      );
+      .compose(v -> Future.succeededFuture(new ApiResponse<>()));
 
 
   }
@@ -209,8 +206,8 @@ public class AuthApiImpl implements AuthApi {
 
     return this.apiApp
       .getPasswordLoginFlow()
-      .login(realmIdentifier,handle, password, routingContext)
-      .compose(v->Future.succeededFuture(new ApiResponse<>()));
+      .login(realmIdentifier, handle, password, routingContext)
+      .compose(v -> Future.succeededFuture(new ApiResponse<>()));
 
 
   }
@@ -294,7 +291,6 @@ public class AuthApiImpl implements AuthApi {
   public Future<ApiResponse<Void>> authRegisterListListIdentifierGet(RoutingContext routingContext, String listIdentifier) {
     throw new InternalException("Not yet implemented");
   }
-
 
 
   @Override

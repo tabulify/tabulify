@@ -99,16 +99,6 @@ public class UserProvider {
   }
 
 
-
-
-  private User toPublicClone(User user) {
-    User userClone = JsonObject.mapFrom(user).mapTo(User.class);
-    userClone.setRealm(null);
-    userClone.setLocalId(null);
-    return userClone;
-  }
-
-
   /**
    * This function will update the user of the userId is known
    * Otherwise, it will try to update it by email.
@@ -239,15 +229,13 @@ public class UserProvider {
               .build()
           )
         ))
-
-      .compose(
-        rows -> Future.succeededFuture(user),
-        error -> Future.failedFuture(
-          TowerFailureException.builder()
-            .setCauseException(error)
-            .setMessage("Insert User Error:" + error.getMessage() + ". Sql: " + sql)
-            .build()
-        ));
+      .recover(error -> Future.failedFuture(
+        TowerFailureException.builder()
+          .setCauseException(error)
+          .setMessage("Insert User Error:" + error.getMessage() + ". Sql: " + sql)
+          .build()
+      ))
+      .compose(rows -> Future.succeededFuture(user));
   }
 
   @SuppressWarnings("unused")
@@ -585,60 +573,6 @@ public class UserProvider {
 
   }
 
-  /**
-   * @param user the user to retrieve or to insert with at minimal:
-   *             * id or email
-   *             * and the realm
-   * @return the user by id if given or by email, create the user if it does not exist with the provided email
-   */
-  public Future<User> getOrCreateUserFromEmail(User user) {
-
-    Long userId = user.getLocalId();
-    String userEmail = user.getEmail();
-    Realm realm = user.getRealm();
-    BMailInternetAddress bMailInternetAddress;
-    try {
-      bMailInternetAddress = BMailInternetAddress.of(userEmail);
-    } catch (AddressException e) {
-      return Future.failedFuture(TowerFailureException
-        .builder()
-        .setMessage("The user email (" + userEmail + ") is not valid.")
-        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-        .build()
-      );
-    }
-    return getUserFromIdOrEmail(userId, bMailInternetAddress, realm)
-      .compose(dbUser -> {
-        if (dbUser != null) {
-          return Future.succeededFuture(dbUser);
-        }
-
-        if (userId != null) {
-          throw ValidationException.create("The user with the id was not found", "id", userId);
-        }
-
-        return this.upsertUser(user);
-
-      });
-  }
-
-  public Future<User> getUserFromIdOrEmail(Long userId, BMailInternetAddress userEmail, Realm realm) {
-    if (userId == null && userEmail == null) {
-      throw new IllegalArgumentException("The user email and id cannot be both null");
-    }
-    if (realm == null || realm.getLocalId() == null) {
-      throw new IllegalArgumentException("The realm local id cannot be null");
-    }
-
-    Future<User> userFuture;
-    if (userId != null) {
-      userFuture = this.getUserByLocalId(userId, realm.getLocalId(), User.class, realm);
-    } else {
-      userFuture = this.getUserByEmail(userEmail, realm.getLocalId(), User.class, realm);
-    }
-    return userFuture;
-  }
-
   public Future<User> getUserFromGuidOrEmail(String userGuid, String userEmail, Realm realm) {
 
     if (userGuid == null && userEmail == null) {
@@ -843,7 +777,6 @@ public class UserProvider {
       );
 
   }
-
 
 
   @SuppressWarnings("unused")

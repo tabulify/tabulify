@@ -16,6 +16,12 @@ import java.time.LocalDateTime;
  */
 public abstract class UserDatabaseMixin {
 
+  // Because Guid is part of the object identity
+  // we can't ignore it
+  // otherwise we get
+  // com.fasterxml.jackson.databind.exc.InvalidDefinitionException: Invalid Object Id definition, cannot find property with name `guid`
+  @JsonProperty("guid")
+  abstract String getGuid();
 
   @JsonIgnore
   @JsonProperty("localId")
