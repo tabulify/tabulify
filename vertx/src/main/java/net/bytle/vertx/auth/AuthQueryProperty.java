@@ -29,14 +29,6 @@ public enum AuthQueryProperty {
    */
   RESPONSE_TYPE("response_type"),
 
-  /**
-   * Custom URL properties
-   */
-
-  /**
-   * The realm identifier (guid or handle)
-   */
-  REALM_IDENTIFIER("realm_identifier"),
 
   /**
    * The list guid

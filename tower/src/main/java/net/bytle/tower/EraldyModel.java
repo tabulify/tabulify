@@ -3,10 +3,14 @@ package net.bytle.tower;
 import io.vertx.core.Future;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.TowerApexDomain;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -18,12 +22,27 @@ import java.util.Objects;
  */
 public class EraldyModel {
 
+  private static final Logger LOGGER = LogManager.getLogger(EraldyModel.class);
+
+  /**
+   * The URI of the interact app
+   */
+  private static final String INTERACT_APP_URI_CONF = "interact.app.uri";
   private final EraldyApiApp apiApp;
+  private final URI interactAppUri;
 
   Realm realm;
+  private App interactApp;
 
-  public EraldyModel(EraldyApiApp eraldyDomain) {
-    this.apiApp = eraldyDomain;
+  public EraldyModel(EraldyApiApp apiApp) throws ConfigIllegalException {
+    this.apiApp = apiApp;
+    String interactUri = apiApp.getApexDomain().getHttpServer().getServer().getConfigAccessor().getString(INTERACT_APP_URI_CONF, "https://interact." + apiApp.getApexDomain().getApexNameWithPort());
+    try {
+      this.interactAppUri = URI.create(interactUri);
+      LOGGER.info("The interact app URI was set to ({}) via the conf ({})", interactUri, INTERACT_APP_URI_CONF);
+    } catch (Exception e) {
+      throw new ConfigIllegalException("The member app value (" + interactUri + ") of the conf (" + INTERACT_APP_URI_CONF + ") is not a valid URI", e);
+    }
   }
 
 
@@ -75,6 +94,27 @@ public class EraldyModel {
       .recover(t -> Future.failedFuture(new InternalException("Error while upserting the eraldy realm", t)))
       .compose(realmCompo -> {
         realm = realmCompo;
+        App interactApp = new App();
+        interactApp.setLocalId(1L);
+        interactApp.setName("Interact");
+        interactApp.setHandle("interact");
+        interactApp.setHome(URI.create("https://eraldy.com"));
+        interactApp.setUser(realm.getOwnerUser()); // mandatory in the database (not null)
+        interactApp.setRealm(realm);
+        return this.apiApp.getAppProvider()
+          .upsertApp(interactApp);
+      }).
+      compose(resApp->{
+        this.interactApp = resApp;
+        /**
+         * Create a client for the App
+         */
+        ApiClient interactClient = new ApiClient();
+        interactClient.setLocalId(1L);
+        interactClient.setApp(this.interactApp);
+        interactClient.addUri(this.interactAppUri);
+        this.apiApp.getApiClientProvider()
+          .setInteractAppClient(interactClient);
         return Future.succeededFuture();
       });
   }

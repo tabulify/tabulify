@@ -14,9 +14,8 @@ import net.bytle.vertx.flow.WebFlow;
 import net.bytle.vertx.flow.WebFlowEmailCallbackAbs;
 
 /**
- * The letter (in HTML format)
- * that is sent by email to log a user
- * by clicking on a login link
+ * The end point for the login link
+ * sends via email
  */
 public class UserLoginEmailCallback extends WebFlowEmailCallbackAbs {
 

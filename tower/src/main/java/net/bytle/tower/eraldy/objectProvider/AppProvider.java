@@ -58,7 +58,6 @@ public class AppProvider {
 
 
   public static final String HANDLE_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + "handle";
-  public static final String URI_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + URI;
   private static final String CREATION_TIME = COLUMN_PREFIX + COLUMN_PART_SEP + CREATION_TIME_COLUMN_SUFFIX;
 
   private final EraldyApiApp apiApp;
@@ -213,14 +212,14 @@ public class AppProvider {
 
     if (app.getLocalId() != null) {
       String updateSqlById = "UPDATE \n" +
-        JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
-        "set " +
+        JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
+        "set\n" +
         "  " + HANDLE_COLUMN + " = $1,\n" +
         "  " + USER_COLUMN + " = $2, \n" +
         "  " + DATA_COLUMN + " = $3 \n" +
         "where\n" +
-        "  " + REALM_ID_COLUMN + "= $4" +
-        " AND" + APP_ID_COLUMN + "= $5";
+        "  " + REALM_ID_COLUMN + "= $4\n" +
+        " AND " + APP_ID_COLUMN + "= $5";
 
       JsonObject databaseJsonObject = this.getDatabaseJsonObject(app);
       return jdbcPool
@@ -232,9 +231,7 @@ public class AppProvider {
           app.getRealm().getLocalId(),
           app.getLocalId())
         )
-        .onFailure(e -> {
-          throw new InternalException("Error on app update by Id:" + e.getMessage() + ". Sql: " + updateSqlById, e);
-        })
+        .recover(e -> Future.failedFuture(new InternalException("Error on app update by Id:" + e.getMessage() + ". Sql: " + updateSqlById, e)))
         .compose(ok -> Future.succeededFuture(app));
     }
 
@@ -439,7 +436,7 @@ public class AppProvider {
 
   /**
    * @param appPostBody - the post object
-   * @param realm
+   * @param realm - the realm
    * @return the app in a future
    */
   public Future<App> postApp(AppPostBody appPostBody, Realm realm) {
@@ -505,40 +502,6 @@ public class AppProvider {
     return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(APP_GUID_PREFIX, appGuid);
   }
 
-  private Future<Realm> getRealmAndUpdateIdEventuallyFromRequested(String realmIdentifier, App requestedApp) {
-    String appGuid = requestedApp.getGuid();
-    String appUri = requestedApp.getHandle();
-    Future<Realm> realmFuture;
-    if (appGuid == null) {
-      if (appUri == null) {
-        throw ValidationException.create("The appGuid and the appUri cannot be both null", "appGuid", null);
-      }
-      if (realmIdentifier == null) {
-        throw ValidationException.create("With the appUri, a realm identifier should be given", "realmIdentifier", null);
-      }
-      realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromIdentifier(realmIdentifier);
-    } else {
-
-      Guid guid;
-      try {
-        guid = apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(APP_GUID_PREFIX, appGuid);
-      } catch (CastException e) {
-        return Future.failedFuture(new IllegalArgumentException("The app guid is not valid (" + appGuid + ")"));
-      }
-
-      long realmId = guid.getRealmOrOrganizationId();
-
-      realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromId(realmId);
-
-      long userIdFromGuid = guid.validateRealmAndGetFirstObjectId(realmId);
-      requestedApp.setLocalId(userIdFromGuid);
-
-    }
-    return realmFuture;
-  }
-
   public Future<App> getAppByGuid(String appGuid) {
     Guid guid;
     try {
@@ -570,17 +533,8 @@ public class AppProvider {
       });
   }
 
-
-
-
-  public boolean isGuid(String appIdentifier) {
-    if (appIdentifier.startsWith(APP_GUID_PREFIX + Guid.GUID_SEPARATOR)) {
-      return true;
-    }
-    return false;
-  }
-
   public ObjectMapper getApiMapper() {
     return this.apiMapper;
   }
+
 }

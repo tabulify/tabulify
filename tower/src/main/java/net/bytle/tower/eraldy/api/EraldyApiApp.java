@@ -10,6 +10,7 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
+import net.bytle.tower.ApiClient;
 import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.implementer.flow.*;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
@@ -44,7 +45,11 @@ public class EraldyApiApp extends TowerApp {
 
 
   private static final String RUNTIME_DATA_DIR_CONF = "data.runtime.dir.path";
+
   static Logger LOGGER = LogManager.getLogger(EraldyApiApp.class);
+  /**
+   * The URI of the member app
+   */
   private static final String MEMBER_APP_URI_CONF = "member.app.uri";
   private final UserProvider userProvider;
   private final RealmProvider realmProvider;
@@ -56,7 +61,7 @@ public class EraldyApiApp extends TowerApp {
   private final ServiceProvider serviceProvider;
   @SuppressWarnings({"FieldCanBeLocal", "unused"})
   private final OrganizationUserProvider organizationUserProvider;
-  private final URI memberApp;
+  private final URI memberAppUri;
   private final UserRegistrationFlow userRegistrationFlow;
   private final ListRegistrationFlow userListRegistrationFlow;
   private final EmailLoginFlow emailLoginFlow;
@@ -74,6 +79,7 @@ public class EraldyApiApp extends TowerApp {
   private final PasswordLoginFlow passwordLoginFlow;
   private final EraldyModel eraldyModel;
   private final EraldySubRealmModel eraldySubRealmModel;
+  private final ApiClientProvider apiClientProvider;
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
     super(apexDomain);
@@ -101,6 +107,7 @@ public class EraldyApiApp extends TowerApp {
     this.serviceProvider = new ServiceProvider(this);
     this.organizationUserProvider = new OrganizationUserProvider(this);
     this.hashIds = this.getApexDomain().getHttpServer().getServer().getHashId();
+    this.apiClientProvider = new ApiClientProvider(this);
 
     /**
      * Model
@@ -108,14 +115,18 @@ public class EraldyApiApp extends TowerApp {
     this.eraldyModel = new EraldyModel(this);
     this.eraldySubRealmModel = EraldySubRealmModel.getOrCreate(this);
 
+    /**
+     * For redirect
+     */
     String memberUri = configAccessor.getString(MEMBER_APP_URI_CONF, "https://member." + apexDomain.getApexNameWithPort());
     try {
-      this.memberApp = URI.create(memberUri);
+      this.memberAppUri = URI.create(memberUri);
       LOGGER.info("The member app URI was set to ({}) via the conf ({})", memberUri, MEMBER_APP_URI_CONF);
     } catch (Exception e) {
       throw new ConfigIllegalException("The member app value (" + memberUri + ") of the conf (" + MEMBER_APP_URI_CONF + ") is not a valid URI", e);
     }
-    this.emailAddressValidator = new EmailAddressValidator(this);
+
+
     /**
      * Flow management
      */
@@ -128,7 +139,11 @@ public class EraldyApiApp extends TowerApp {
     authHandlers.add(this.userListRegistrationFlow.handleStepOAuthAuthentication());
     this.oauthExternalFlow = new OAuthExternalCodeFlow(this, "/auth/oauth", authHandlers);
 
+    /**
+     * Utility
+     */
     new SqlAnalytics(this);
+    this.emailAddressValidator = new EmailAddressValidator(this);
 
   }
 
@@ -279,17 +294,17 @@ public class EraldyApiApp extends TowerApp {
    * @return the login uri used for redirection in case of non-authentication
    * For an API, it's a no-sense but yeah
    */
-  public UriEnhanced getMemberLoginUri(String redirectUri, String realmIdentifier) {
+  public UriEnhanced getMemberLoginUri(UriEnhanced redirectUri, ApiClient apiClient) {
 
     return this.getMemberAppUri()
       .setPath("/login")
-      .addQueryProperty(AuthQueryProperty.REDIRECT_URI, redirectUri)
-      .addQueryProperty(AuthQueryProperty.REALM_IDENTIFIER, realmIdentifier);
+      .addQueryProperty(AuthQueryProperty.REDIRECT_URI, redirectUri.toString())
+      .addQueryProperty(AuthQueryProperty.CLIENT_ID, apiClient.getGuid());
   }
 
   public UriEnhanced getMemberAppUri() {
 
-    return UriEnhanced.createFromUri(this.memberApp);
+    return UriEnhanced.createFromUri(this.memberAppUri);
   }
 
   public RealmProvider getRealmProvider() {
@@ -454,4 +469,7 @@ public class EraldyApiApp extends TowerApp {
       });
   }
 
+  public ApiClientProvider getApiClientProvider() {
+     return this.apiClientProvider;
+  }
 }

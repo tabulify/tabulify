@@ -41,6 +41,18 @@ public abstract class AnalyticsServerEvent {
     return this.appOrganizationId;
   }
 
+  public void setAppId(String appId){
+    this.appId = appId;
+  }
+
+  public void setAppRealmId(String appRealmId){
+    this.appRealmId = appRealmId;
+  }
+
+  public void setAppOrganizationId(String appOrganizationId){
+    this.appOrganizationId = appOrganizationId;
+  }
+
 
   /**
    * The flow of sign-up

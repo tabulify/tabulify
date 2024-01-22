@@ -5,9 +5,10 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import net.bytle.exception.IllegalArgumentExceptions;
+import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NotAuthorizedException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.ApiClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
@@ -43,24 +44,53 @@ public class AuthApiImpl implements AuthApi {
      */
     listGuid = routingContext.request().getParam(AuthQueryProperty.LIST_GUID.toString());
 
+    redirectUri = routingContext.request().getParam(AuthQueryProperty.REDIRECT_URI.toString());
+    if (redirectUri == null) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The redirect URL query property  (" + AuthQueryProperty.REDIRECT_URI + ") is mandatory.")
+          .buildWithContextFailing(routingContext)
+      );
+    }
+    UriEnhanced uriEnhanced;
+    try {
+      uriEnhanced = UriEnhanced.createFromString(redirectUri);
+    } catch (IllegalStructure e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The redirect URL (" + redirectUri + ") is not a valid URI.")
+          .setCauseException(e)
+          .buildWithContextFailing(routingContext)
+      );
+    }
+
+    ApiClient apiClient;
+    try {
+      apiClient = this.apiApp.getApiClientProvider()
+        .getClientFromRedirectUri(uriEnhanced);
+    } catch (NotFoundException e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The api client was not found with the redirect uri (" + redirectUri + ")")
+          .setCauseException(e)
+          .buildWithContextFailing(routingContext)
+      );
+    }
+
     /**
      * Auth Realm is mandatory
      * To be sure that we have the good realm
      * in {@link AuthRealmHandler#getAuthRealmCookie(RoutingContext)}
      */
-    realmIdentifier = routingContext.request().getParam(AuthQueryProperty.REALM_IDENTIFIER.toString());
-    if (realmIdentifier == null) {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-          .setMessage("A realm query property identifier (" + AuthQueryProperty.REALM_IDENTIFIER + ") is mandatory.")
-          .buildWithContextFailing(routingContext)
-      );
-    }
-
-    AuthState authState = AuthState.createEmpty();
-    authState.setListGuid(listGuid);
-    authState.setRealmIdentifier(realmIdentifier);
+    AuthState authState = AuthState
+      .createEmpty()
+      .setListGuid(listGuid)
+      .setAppIdentifier(apiClient.getApp().getGuid())
+      .setRealmIdentifier(apiClient.getApp().getRealm().getGuid())
+      .setOrganisationIdentifier(apiClient.getApp().getRealm().getOrganization().getGuid());
 
     return this.apiApp
       .getOauthFlow()
@@ -94,24 +124,21 @@ public class AuthApiImpl implements AuthApi {
       );
     }
 
-    /**
-     * Realm is only eraldy for now
-     */
+    ApiClient apiClient;
     try {
-      this.utilValidateRealmFromRedirectUri(redirectUriEnhanced);
-    } catch (NotAuthorizedException e) {
+      apiClient = this.apiApp.getApiClientProvider()
+        .getClientFromRedirectUri(redirectUriEnhanced);
+    } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
-          .setMessage("The redirect uri (" + redirectUri + ") is unknown")
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("A api client was not found for the redirect uri (" + redirectUriEnhanced + ")")
           .setMimeToHtml()
           .buildWithContextFailing(routingContext)
       );
     }
 
     Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext);
-
-
     try {
       AuthUser authSignedInUser = this.apiApp.getAuthProvider().getSignedInAuthUser(routingContext);
       /**
@@ -128,23 +155,14 @@ public class AuthApiImpl implements AuthApi {
     /**
      * Not signed-in or realm different
      */
-    UriEnhanced url = this.apiApp.getMemberLoginUri(redirectUri, authRealm.getHandle());
+    UriEnhanced url = this.apiApp.getMemberLoginUri(redirectUriEnhanced, apiClient);
     routingContext.redirect(url.toString());
     return Future.succeededFuture();
 
   }
 
-  private void utilValidateRealmFromRedirectUri(UriEnhanced redirectUriEnhanced) throws NotAuthorizedException {
-    TowerApexDomain eraldyApexDomain = this.apiApp.getApexDomain();
-    if (!(redirectUriEnhanced.getApexWithoutPort().equals("localhost") || redirectUriEnhanced.getApexWithoutPort().equals(eraldyApexDomain.getApexNameWithoutPort()))) {
-      throw new NotAuthorizedException();
-    }
-  }
-
-
   @Override
   public Future<ApiResponse<Void>> authLoginEmailPost(RoutingContext routingContext, AuthEmailPost authEmailPost) {
-
 
     return this.apiApp.getUserEmailLoginFlow()
       .handleStep1SendEmail(routingContext, authEmailPost);
@@ -273,14 +291,23 @@ public class AuthApiImpl implements AuthApi {
           .buildWithContextFailing(routingContext)
       );
     }
-
-    Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext);
+    ApiClient apiClient;
+    try {
+      apiClient = this.apiApp.getApiClientProvider().getClientFromRedirectUri(redirectUriEnhanced);
+    } catch (NotFoundException e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("A client could not be found with the redirect uri (" + redirectUriEnhanced + ")")
+          .setMimeToHtml()
+          .buildWithContextFailing(routingContext)
+      );
+    }
 
     String redirect = this.apiApp
-      .getMemberLoginUri(redirectUriEnhanced.toString(), authRealm.getHandle())
+      .getMemberLoginUri(redirectUriEnhanced, apiClient)
       .toUrl()
       .toString();
-
     routingContext.redirect(redirect);
 
     return Future.succeededFuture(new ApiResponse<>());

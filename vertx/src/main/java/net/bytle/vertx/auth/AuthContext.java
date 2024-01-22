@@ -13,6 +13,7 @@ import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.flow.WebFlow;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -210,8 +211,7 @@ public class AuthContext {
         session.regenerateId();
       }
 
-      SignInEvent signInEvent = new SignInEvent();
-      signInEvent.setFlowId(this.flow.getFlowType().getValue());
+      SignInEvent signInEvent = getSignInEvent();
 
       /**
        * You need to log out to come to this point in the code.
@@ -260,6 +260,20 @@ public class AuthContext {
       default:
         throw new InternalException("The redirection method (" + this.redirectVia + ") is unknown");
     }
+  }
+
+  @NotNull
+  private SignInEvent getSignInEvent() {
+    SignInEvent signInEvent = new SignInEvent();
+    signInEvent.setFlowId(this.flow.getFlowType().getValue());
+    String appIdentifier = this.authState.getAppIdentifier();
+    if (appIdentifier == null && JavaEnvs.IS_DEV) {
+      throw new InternalException("The app Identifier is unknown for the Sign-in with the flow ("+this.flow.getClass().getSimpleName()+")");
+    }
+    signInEvent.setAppId(appIdentifier);
+    signInEvent.setAppRealmId(this.authState.getRealmIdentifier());
+    signInEvent.setAppOrganizationId(this.authState.getOrgIdentifier());
+    return signInEvent;
   }
 
   /**

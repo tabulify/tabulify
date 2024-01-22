@@ -4,12 +4,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.vertx.core.json.JsonObject;
 import net.bytle.type.Base64Utility;
 
-import static net.bytle.vertx.auth.AuthQueryProperty.REALM_IDENTIFIER;
-
 /**
  * A pojo to:
  * * define authentication state
- * * encode the auth state for OAuth to pass around
+ * * encode the auth state for OAuth to pass around and enhance the user profile
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthState {
@@ -23,6 +21,9 @@ public class AuthState {
    * The random value to stop any replay
    */
   private static final String RANDOM_VALUE = "randomValue";
+  private static final String REALM_IDENTIFIER = "realmIdentifier";
+  private static final String APP_IDENTIFIER = "appIdentifier";
+  private static final String ORG_IDENTIFIER = "orgIdentifier";
   private final JsonObject jsonObject;
 
   public static AuthState createFromStateString(String state) {
@@ -47,8 +48,9 @@ public class AuthState {
    *
    * @param listGuid - the list id
    */
-  public void setListGuid(String listGuid) {
+  public AuthState setListGuid(String listGuid) {
     this.jsonObject.put(LIST_GUID, listGuid);
+    return this;
   }
 
   public String getListGuid() {
@@ -68,12 +70,41 @@ public class AuthState {
     return Base64Utility.stringToBase64UrlString(this.jsonObject.toString());
   }
 
-  public void setRealmIdentifier(String realmIdentifier) {
-    this.jsonObject.put(REALM_IDENTIFIER.toString(), realmIdentifier);
+  /**
+   * @param realmIdentifier - the realm Identifier (used in analytics and to control the realm)
+   */
+  public AuthState setRealmIdentifier(String realmIdentifier) {
+    this.jsonObject.put(REALM_IDENTIFIER, realmIdentifier);
+    return this;
   }
 
   public String getRealmIdentifier() {
-    return this.jsonObject.getString(REALM_IDENTIFIER.toString());
+    return this.jsonObject.getString(REALM_IDENTIFIER);
   }
+
+  /**
+   * @param appIdentifier - an identifier for the app (used in analytics)
+   */
+  public AuthState setAppIdentifier(String appIdentifier) {
+    this.jsonObject.put(APP_IDENTIFIER, appIdentifier);
+    return this;
+  }
+
+  public String getAppIdentifier() {
+    return this.jsonObject.getString(APP_IDENTIFIER);
+  }
+
+  /**
+   * @param orgIdentifier - an identifier for the org (used in analytics)
+   */
+  public AuthState setOrganisationIdentifier(String orgIdentifier) {
+    this.jsonObject.put(ORG_IDENTIFIER, orgIdentifier);
+    return this;
+  }
+
+  public String getOrgIdentifier() {
+    return this.jsonObject.getString(ORG_IDENTIFIER);
+  }
+
 
 }

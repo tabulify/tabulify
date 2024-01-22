@@ -16,12 +16,16 @@ import net.bytle.tower.util.Guid;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApexDomain;
 import net.bytle.vertx.TowerFailureTypeEnum;
-import net.bytle.vertx.auth.AuthQueryProperty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 
 /**
+ * The auth realm of the browser.
+ * <p>
+ * Do we really need that? As the realm is generally taken from query parameters or form post object,
+ * and you can also take it from the user logged in.
+ * <p>
  * The cookie session is at the realm level.
  * <p>
  * This handler determines the authentication realm of the request.
@@ -38,6 +42,11 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
    */
   private static final String AUTH_REALM_CONTEXT_KEY = "auth-realm-context-key";
   private static final String X_AUTH_REALM_IDENTIFIER = "X-AUTH-REALM-IDENTIFIER";
+
+  /**
+   * The realm identifier (guid or handle)
+   */
+  private static final String REALM_IDENTIFIER = "realm_identifier";
 
   private final EraldyApiApp apiApp;
   private final FrontEndCookie<Realm> authRealmCookie;
@@ -72,7 +81,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
     /**
      * From Query String
      */
-    String realmIdentifier = request.getParam(AuthQueryProperty.REALM_IDENTIFIER.toString());
+    String realmIdentifier = request.getParam(REALM_IDENTIFIER);
     if (realmIdentifier != null) {
       return this.getAuthRealmFromDatabaseOrCookie(realmIdentifier, routingContext);
     }
