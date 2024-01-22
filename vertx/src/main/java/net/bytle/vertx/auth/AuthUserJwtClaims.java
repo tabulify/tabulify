@@ -57,6 +57,12 @@ public enum AuthUserJwtClaims {
   AUDIENCE("aud"),
 
   /**
+   * The app at the origin of the
+   * login request
+   */
+  CUSTOM_CLIENT_ID("client"),
+
+  /**
    * Don't use before a time
    * <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.5">Ref</a>
    */

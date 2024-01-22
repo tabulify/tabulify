@@ -74,7 +74,7 @@ public class JwtAuthManager {
 
   public String generateTokenFromUser(AuthUser user, Integer expirationMinutes, RoutingContext routingContext) {
     JsonObject claims = user
-      .addRoutingClaims( routingContext)
+      .addRequestClaims( routingContext)
       .toClaimsWithExpiration(expirationMinutes);
     JWTOptions jwtOptions = new JWTOptions();
     return provider.generateToken(claims, jwtOptions);

@@ -9,6 +9,7 @@ import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.ApiClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.UserLoginEmailCallback;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
@@ -54,6 +55,10 @@ public class EmailLoginFlow extends WebFlowAbs {
 
     String redirectUri = authEmailPost.getRedirectUri();
     UriEnhanced redirectUriEnhanced = ValidationUtil.validateAndGetRedirectUriAsUri(redirectUri);
+    /**
+     * By making the redirect URI part of the session,
+     * the link can't be used 2 times
+     */
     OAuthInternalSession.addRedirectUri(routingContext, redirectUriEnhanced);
     String userEmail = authEmailPost.getUserEmail();
     BMailInternetAddress bMailInternetAddress;
@@ -67,8 +72,21 @@ public class EmailLoginFlow extends WebFlowAbs {
         .build()
       );
     }
+    ApiClient apiClient;
+      try {
+          apiClient = this.getApp()
+            .getApiClientProvider()
+            .getClientFromRedirectUri(redirectUriEnhanced);
+      } catch (NotFoundException e) {
+        return Future.failedFuture(TowerFailureException
+          .builder()
+          .setMessage("No Api client could be found for the URL (" + redirectUriEnhanced + ").")
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .build()
+        );
+      }
 
-    return getApp()
+      return getApp()
       .getUserProvider()
       .getUserByEmail(bMailInternetAddress, authEmailPost.getRealmIdentifier())
       .onFailure(routingContext::fail)
@@ -84,7 +102,11 @@ public class EmailLoginFlow extends WebFlowAbs {
         }
         String realmNameOrHandle = RealmProvider.getNameOrHandle(userToLogin.getRealm());
 
-        AuthUser jwtClaims = getApp().getAuthProvider().toAuthUser(userToLogin).addRoutingClaims(routingContext);
+        AuthUser jwtClaims = getApp()
+          .getAuthProvider()
+          .toAuthUser(userToLogin)
+          .addRequestClaims(routingContext)
+          .setClient(apiClient.getApp().getGuid());
 
         /**
          * Recipient

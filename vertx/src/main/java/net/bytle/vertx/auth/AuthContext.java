@@ -267,8 +267,11 @@ public class AuthContext {
     SignInEvent signInEvent = new SignInEvent();
     signInEvent.setFlowId(this.flow.getFlowType().getValue());
     String appIdentifier = this.authState.getAppIdentifier();
-    if (appIdentifier == null && JavaEnvs.IS_DEV) {
-      throw new InternalException("The app Identifier is unknown for the Sign-in with the flow ("+this.flow.getClass().getSimpleName()+")");
+    if (appIdentifier == null) {
+      appIdentifier = this.authUser.getClient();
+      if (appIdentifier == null && JavaEnvs.IS_DEV) {
+        throw new InternalException("The app Identifier was not found (in the AuthUser or AuthState) for the Sign-in with the flow (" + this.flow.getClass().getSimpleName() + ")");
+      }
     }
     signInEvent.setAppId(appIdentifier);
     signInEvent.setAppRealmId(this.authState.getRealmIdentifier());

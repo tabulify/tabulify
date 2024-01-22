@@ -166,7 +166,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
         AuthUser jwtClaims = getApp().getAuthProvider()
           .toAuthUser(user)
-          .addRoutingClaims(routingContext)
+          .addRequestClaims(routingContext)
           .setListGuidClaim(listGuidHash);
 
         SmtpSender sender = UsersUtil.toSenderUser(registrationList.getOwnerUser());

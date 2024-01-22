@@ -33,7 +33,7 @@ public class AuthUser {
     claims.put(AuthUserJwtClaims.ISSUER.toString(), ERALDY_ISSUER_VALUE);
   }
 
-  public AuthUser addRoutingClaims(RoutingContext routingContext) {
+  public AuthUser addRequestClaims(RoutingContext routingContext) {
 
 
     RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
@@ -196,6 +196,15 @@ public class AuthUser {
     claims.put(AuthUserJwtClaims.CUSTOM_AUDIENCE_HANDLE.toString(), audienceHandle);
   }
 
+  /**
+   * @param client - the client id (for us, the app guid)
+   */
+  public AuthUser setClient(String client) {
+    claims.put(AuthUserJwtClaims.CUSTOM_CLIENT_ID.toString(), client);
+    return this;
+  }
+
+
   public User toVertxUser() {
 
     /**
@@ -324,6 +333,13 @@ public class AuthUser {
 
   public void put(String key, Object obj) {
     claims.put(key, obj);
+  }
+
+  /**
+   * The client id (for us the app guid for now)
+   */
+  public String getClient() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_CLIENT_ID.toString());
   }
 
 }

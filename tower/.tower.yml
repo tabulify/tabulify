@@ -68,7 +68,8 @@ eraldy.apex.domain: 'localhost'
 
 ## The member frontend (in prod: https://member.eraldy.com)
 member.app.uri: 'https://localhost:5175'
-# the combo app is at 5176
+## The interact/combo app uri (in prod: https://interact.eraldy.com)
+interact.app.uri: 'https://localhost:5176'
 
 # Proxy all request through fiddler for debugging purpose
 # By default off, set this to true and starts fiddler to see the internal
