@@ -187,17 +187,17 @@ public class OrganizationUserProvider {
     return this.apiApp.getUserProvider()
       .getUserByLocalId(
         userId,
-        this.apiApp.getEraldyRealm().getLocalId(),
+        this.apiApp.getEraldyModel().getRealm().getLocalId(),
         OrganizationUser.class,
-        this.apiApp.getEraldyRealm()
+        this.apiApp.getEraldyModel().getRealm()
       );
 
   }
 
 
   <T extends User> void checkOrganizationUserRealmId(Class<T> userClass, Long localId) throws AssertionException {
-    if (userClass.equals(OrganizationUser.class) && !this.apiApp.isEraldyRealm(localId)) {
-      Realm eraldyRealm = this.apiApp.getEraldyRealm();
+    if (userClass.equals(OrganizationUser.class) && !this.apiApp.getEraldyModel().isRealmLocalId(localId)) {
+      Realm eraldyRealm = this.apiApp.getEraldyModel().getRealm();
       throw new AssertionException("Organizational user are users from the realm id (" + eraldyRealm.getLocalId() + ") not from the realm id (" + localId + ")");
     }
   }
@@ -211,7 +211,7 @@ public class OrganizationUserProvider {
       .compose(
         userRows -> {
           List<Future<User>> users = new ArrayList<>();
-          Realm eraldyRealm = this.apiApp.getEraldyRealm();
+          Realm eraldyRealm = this.apiApp.getEraldyModel().getRealm();
           for (Row row : userRows) {
             Long userId = row.getLong(ORGA_USER_USER_ID_COLUMN);
             users.add(this.apiApp.getUserProvider().getUserByLocalId(userId, eraldyRealm.getLocalId(), User.class, eraldyRealm));
@@ -251,13 +251,13 @@ public class OrganizationUserProvider {
       })
       .compose(resultOrganizationUser -> {
         if (resultOrganizationUser == null) {
-          return insertOrganizationUser(organizationUser);
+          return insertUser(organizationUser);
         }
         return Future.succeededFuture(resultOrganizationUser);
       });
   }
 
-  private Future<OrganizationUser> insertOrganizationUser(OrganizationUser organizationUser) {
+  public Future<OrganizationUser> insertUser(OrganizationUser organizationUser) {
 
     try {
       this.checkOrganizationUserRealmId(OrganizationUser.class, organizationUser.getRealm().getLocalId());
@@ -266,15 +266,15 @@ public class OrganizationUserProvider {
     }
 
     Organization organization = organizationUser.getOrganization();
-    if(organization==null){
+    if (organization == null) {
       return Future.failedFuture(new InternalException("The organization should not be null when inserting an organization user"));
     }
     Long organizationLocalId = organization.getLocalId();
-    if(organizationLocalId==null){
+    if (organizationLocalId == null) {
       return Future.failedFuture(new InternalException("The organization id should not be null when inserting an organization user"));
     }
     Long userLocalId = organizationUser.getLocalId();
-    if(userLocalId==null){
+    if (userLocalId == null) {
       return Future.failedFuture(new InternalException("The user id should not be null when inserting an organization user"));
     }
 
@@ -297,7 +297,25 @@ public class OrganizationUserProvider {
       .recover(e -> Future.failedFuture(new InternalException("Error: " + e.getMessage() + ", while inserting the orga user with the sql\n" + sql, e)))
       .compose(userRows -> {
         Row row = userRows.iterator().next();
-        return setOrganizationFromDatabaseRow(row,organizationUser, null);
+        return setOrganizationFromDatabaseRow(row, organizationUser, null);
+      });
+  }
+
+
+  /**
+   * Getsert: Get or insert the user
+   */
+  public Future<OrganizationUser> getsert(OrganizationUser organizationUser) {
+    return this.getOrganizationUserByUser(organizationUser)
+      .recover(t -> Future.failedFuture(new InternalException("Error while selecting the eraldy owner realm", t)))
+      .compose(selectedOrganizationUser -> {
+        Future<OrganizationUser> futureOrganizationUser;
+        if (selectedOrganizationUser != null) {
+          futureOrganizationUser = Future.succeededFuture(selectedOrganizationUser);
+        } else {
+          futureOrganizationUser = this.insertUser(organizationUser);
+        }
+        return futureOrganizationUser;
       });
   }
 }

@@ -335,15 +335,15 @@ public class RealmProvider {
     realm.setLocalId(id);
   }
 
-  public Future<Realm> getRealmFromId(Long realmId) {
-    return getRealmFromId(realmId, Realm.class);
+  public Future<Realm> getRealmFromLocalId(Long realmId) {
+    return getRealmFromLocalId(realmId, Realm.class);
   }
 
   /**
    * @param realmId - the realmId
    * @return the realm
    */
-  private <T extends Realm> Future<T> getRealmFromId(Long realmId, Class<T> clazz) {
+  private <T extends Realm> Future<T> getRealmFromLocalId(Long realmId, Class<T> clazz) {
 
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
@@ -438,9 +438,13 @@ public class RealmProvider {
     Long orgaId = row.getLong(REALM_ORGA_ID);
     Future<Organization> futureOrganization = apiApp.getOrganizationProvider().getById(orgaId);
     Long ownerUserLocalId = row.getLong(REALM_OWNER_ID_COLUMN);
-    Realm eraldyRealm = this.apiApp.getEraldyRealm();
+    // We get the realm local id and not the realm object
+    // because the eraldy realm is not build
+    // when we use this function on first mount
+    Long eraldyRealmLocalId = this.apiApp.getEraldyModel().getRealmLocalId();
+    Realm eraldyRealm = this.apiApp.getEraldyModel().getRealm();
     Future<OrganizationUser> futureOwnerUser = apiApp.getOrganizationUserProvider()
-      .getOrganizationUserByLocalId(ownerUserLocalId, eraldyRealm.getLocalId(), eraldyRealm);
+      .getOrganizationUserByLocalId(ownerUserLocalId, eraldyRealmLocalId, eraldyRealm);
     Long defaultAppId = row.getLong(REALM_DEFAULT_APP_ID);
     Future<App> futureApp;
     if (defaultAppId == null) {
@@ -467,7 +471,7 @@ public class RealmProvider {
     } catch (CastException e) {
       return Future.failedFuture(e);
     }
-    return getRealmFromId(realmId, clazz);
+    return getRealmFromLocalId(realmId, clazz);
   }
 
   public Guid getGuidFromHash(String guid) throws CastException {
@@ -581,4 +585,29 @@ public class RealmProvider {
       });
   }
 
+  /**
+   * Getsert: get or insert a realm with a local id or a handle
+   */
+  public Future<Realm> getsert(Realm realm) {
+    Future<Realm> selectRealmFuture;
+    if (realm.getLocalId() != null) {
+      selectRealmFuture = this.getRealmFromLocalId(realm.getLocalId());
+    } else {
+      String realmHandle = realm.getHandle();
+      if (realmHandle == null) {
+        return Future.failedFuture(new InternalException("The realm to getsert should have an identifier (id, or handle)"));
+      }
+      selectRealmFuture = this.getRealmFromHandle(realmHandle, Realm.class);
+    }
+    return selectRealmFuture
+      .compose(selectedRealm -> {
+        Future<Realm> futureRealm;
+        if (selectedRealm != null) {
+          futureRealm = Future.succeededFuture(selectedRealm);
+        } else {
+          futureRealm = this.insertRealm(realm);
+        }
+        return futureRealm;
+      });
+  }
 }

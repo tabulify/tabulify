@@ -348,7 +348,7 @@ public class ListProvider {
     Long realmId = row.getLong(REALM_COLUMN);
     if (appRealm == null) {
       realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromId(realmId);
+        .getRealmFromLocalId(realmId);
     } else {
       if (!Objects.equals(appRealm.getLocalId(), realmId)) {
         InternalException internalException = new InternalException("The realms between the row (" + realmId + ") and the known app or realm (" + appRealm.getLocalId() + ") are inconsistent ");
@@ -493,7 +493,7 @@ public class ListProvider {
   public Future<ListItem> getListByGuidObject(Guid listGuid) {
 
     return this.apiApp.getRealmProvider()
-      .getRealmFromId(listGuid.getRealmOrOrganizationId())
+      .getRealmFromLocalId(listGuid.getRealmOrOrganizationId())
       .compose(realm -> getListById(listGuid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm, ListItem.class));
   }
 
@@ -636,41 +636,7 @@ public class ListProvider {
       );
   }
 
-  public boolean isGuid(String listIdentifier) {
-    try {
-      getGuidObject(listIdentifier);
-      return true;
-    } catch (CastException e) {
-      return false;
-    }
 
-  }
-
-  public Future<Void> deleteByHandle(String listIdentifier, Realm realm) {
-
-    final String deleteSql = "DELETE FROM\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
-      " WHERE \n" +
-      " " + HANDLE_COLUMN + " = $1 " +
-      " AND " + REALM_COLUMN + " = $2";
-    Tuple parameters = Tuple.of(listIdentifier, realm.getLocalId());
-    return jdbcPool
-      .preparedQuery(deleteSql)
-      .execute(parameters)
-      .compose(
-        res -> Future.succeededFuture(),
-        err -> {
-          Throwable cause;
-          if (this.apiApp.addDebugInfo()) {
-            cause = new InternalException("SQL executed:\n" + deleteSql, err);
-          } else {
-            cause = err;
-          }
-          return Future.failedFuture(new InternalException("Could not delete the list by handle. Error: " + err.getMessage(), cause));
-        }
-      );
-
-  }
 
   /**
    * Utility function to return a list via a Guid identifier
@@ -705,7 +671,7 @@ public class ListProvider {
     Future<Realm> futureRealm;
     try {
       listGuid = listProvider.getGuidObject(listIdentifier);
-      futureRealm = realmProvider.getRealmFromId(listGuid.getRealmOrOrganizationId());
+      futureRealm = realmProvider.getRealmFromLocalId(listGuid.getRealmOrOrganizationId());
     } catch (CastException e) {
       if (realmIdentifier == null) {
         return Future.failedFuture(TowerFailureException.builder()

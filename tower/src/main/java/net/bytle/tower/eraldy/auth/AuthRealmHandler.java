@@ -112,7 +112,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
     /**
      * Eraldy realm has default
      */
-    return Future.succeededFuture(this.apiApp.getEraldyRealm());
+    return Future.succeededFuture(this.apiApp.getEraldyModel().getRealm());
 
 
   }

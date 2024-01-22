@@ -412,18 +412,6 @@ public class EraldyApiApp extends TowerApp {
     return this.authProvider;
   }
 
-  public boolean isEraldyRealm(Realm realm) {
-    return getEraldyRealm().getLocalId().equals(realm.getLocalId());
-  }
-
-  public Realm getEraldyRealm() {
-    return this.eraldyModel.getRealm();
-  }
-
-  public boolean isEraldyRealm(Long localId) {
-    return this.eraldyModel.isEraldyRealm(localId);
-  }
-
   public EmailAddressValidator getEmailAddressValidator() {
     return this.emailAddressValidator;
   }
@@ -471,5 +459,9 @@ public class EraldyApiApp extends TowerApp {
 
   public ApiClientProvider getApiClientProvider() {
      return this.apiClientProvider;
+  }
+
+  public EraldyModel getEraldyModel() {
+    return this.eraldyModel;
   }
 }

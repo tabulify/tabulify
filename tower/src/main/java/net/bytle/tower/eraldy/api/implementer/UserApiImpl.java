@@ -40,7 +40,7 @@ public class UserApiImpl implements UserApi {
     Guid userGuid = null;
     try {
       userGuid = userProvider.getGuidFromHash(userIdentifier);
-      realmFuture = realmProvider.getRealmFromId(userGuid.getRealmOrOrganizationId());
+      realmFuture = realmProvider.getRealmFromLocalId(userGuid.getRealmOrOrganizationId());
     } catch (CastException e) {
       if (realmIdentifier == null) {
         return Future.failedFuture(

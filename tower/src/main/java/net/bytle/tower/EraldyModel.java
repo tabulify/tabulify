@@ -7,6 +7,7 @@ import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.objectProvider.OrganizationUserProvider;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.TowerApexDomain;
 import org.apache.logging.log4j.LogManager;
@@ -66,7 +67,7 @@ public class EraldyModel {
     Realm localRealm = new Realm();
     localRealm.setHandle(apexDomain.getRealmHandle());
     localRealm.setName(apexDomain.getName());
-    localRealm.setLocalId(apexDomain.getRealmLocalId());
+    localRealm.setLocalId(this.getRealmLocalId());
     localRealm.setOrganization(organization);
 
     /**
@@ -77,21 +78,21 @@ public class EraldyModel {
     ownerUser.setGivenName(apexDomain.getOwnerName());
     ownerUser.setEmail(apexDomain.getOwnerEmail());
     ownerUser.setRealm(localRealm);
+    apiApp.getUserProvider().updateGuid(ownerUser);
     try {
       ownerUser.setAvatar(new URI("https://2.gravatar.com/avatar/cbc56a3848d90024bdc76629a1cfc1d9"));
     } catch (URISyntaxException e) {
       throw new InternalException("The eraldy owner URL is not valid", e);
     }
-    return apiApp
-      .getOrganizationUserProvider()
-      .upsertUser(ownerUser)
-      .recover(t -> Future.failedFuture(new InternalException("Error while creating the eraldy owner realm", t)))
+    OrganizationUserProvider organizationUserProvider = apiApp.getOrganizationUserProvider();
+    return organizationUserProvider
+      .getsert(ownerUser)
+      .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner realm", t)))
       .compose(organizationUser -> {
         localRealm.setOwnerUser(organizationUser);
-        return this.apiApp.getRealmProvider()
-          .upsertRealm(localRealm);
+        return this.apiApp.getRealmProvider().getsert(localRealm);
       })
-      .recover(t -> Future.failedFuture(new InternalException("Error while upserting the eraldy realm", t)))
+      .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy realm", t)))
       .compose(realmCompo -> {
         realm = realmCompo;
         App interactApp = new App();
@@ -101,10 +102,10 @@ public class EraldyModel {
         interactApp.setHome(URI.create("https://eraldy.com"));
         interactApp.setUser(realm.getOwnerUser()); // mandatory in the database (not null)
         interactApp.setRealm(realm);
-        return this.apiApp.getAppProvider()
-          .upsertApp(interactApp);
-      }).
-      compose(resApp->{
+        return this.apiApp.getAppProvider().getsert(interactApp);
+      })
+      .recover(t -> Future.failedFuture(new InternalException("Error while getserting the interact app", t)))
+      .compose(resApp -> {
         this.interactApp = resApp;
         /**
          * Create a client for the App
@@ -119,11 +120,22 @@ public class EraldyModel {
       });
   }
 
+  public Long getRealmLocalId() {
+    return this.apiApp.getApexDomain().getRealmLocalId();
+  }
+
   public Realm getRealm() {
     return realm;
   }
 
-  public boolean isEraldyRealm(Long localId) {
+  public boolean isRealmLocalId(Long localId) {
     return Objects.equals(localId, apiApp.getApexDomain().getRealmLocalId());
   }
+
+  public boolean isEraldyRealm(Realm realm) {
+    return this.getRealmLocalId().equals(realm.getLocalId());
+  }
+
+
+
 }

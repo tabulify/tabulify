@@ -19,7 +19,7 @@ public class EraldySubRealmModel {
 
   public Future<Void> insertModelInDatabase() {
 
-    Realm eraldyRealm = this.apiApp.getEraldyRealm();
+    Realm eraldyRealm = this.apiApp.getEraldyModel().getRealm();
     Realm datacadamiaRealm = new Realm();
     datacadamiaRealm.setHandle(REALM_HANDLE);
     datacadamiaRealm.setName(REALM_HANDLE + " Realm");

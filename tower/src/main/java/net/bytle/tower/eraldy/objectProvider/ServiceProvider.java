@@ -58,7 +58,7 @@ public class ServiceProvider {
 
   private final EraldyApiApp apiApp;
   private final PgPool jdbcPool;
-  private ObjectMapper apiMapper;
+  private final ObjectMapper apiMapper;
 
 
   public ServiceProvider(EraldyApiApp apiApp) {
@@ -310,7 +310,7 @@ public class ServiceProvider {
     if (realm == null) {
       Long realmId = row.getLong(TABLE_NAME + COLUMN_PART_SEP + RealmProvider.TABLE_NAME + COLUMN_PART_SEP + RealmProvider.ID);
       realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromId(realmId);
+        .getRealmFromLocalId(realmId);
     }
     return Future.all(futureImpersonatedUser, realmFuture)
       .onFailure(FailureStatic::failFutureWithTrace)

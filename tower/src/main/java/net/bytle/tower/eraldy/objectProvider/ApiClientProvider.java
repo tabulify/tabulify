@@ -21,7 +21,7 @@ public class ApiClientProvider {
     if (redirectUriEnhanced.getHostWithPort().equals(interactAppUri.getHostWithPort())) {
       return this.interactApiClient;
     }
-    throw new NotFoundException("The client api was not found for the redirect URI (" + redirectUriEnhanced + ")");
+    throw new NotFoundException("The client api could not found for the redirect URI (" + redirectUriEnhanced + ")");
 
   }
 

@@ -451,7 +451,7 @@ public class UserProvider {
       realmFuture = Future.succeededFuture(knownRealm);
     } else {
       realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromId(userRealmId);
+        .getRealmFromLocalId(userRealmId);
     }
     return realmFuture
       .onFailure(FailureStatic::failFutureWithTrace)
@@ -529,7 +529,7 @@ public class UserProvider {
       .onFailure(err -> LOGGER.error("getUserByEmail: Error while trying to retrieve the realm", err))
       .compose(realm -> {
           Class<? extends User> userClass;
-          if (this.apiApp.isEraldyRealm(realm)) {
+          if (this.apiApp.getEraldyModel().isEraldyRealm(realm)) {
             userClass = OrganizationUser.class;
           } else {
             userClass = User.class;
@@ -602,7 +602,7 @@ public class UserProvider {
       futureRealm = Future.succeededFuture(realm);
     } else {
       futureRealm = this.apiApp.getRealmProvider()
-        .getRealmFromId(guidObject.getRealmOrOrganizationId());
+        .getRealmFromLocalId(guidObject.getRealmOrOrganizationId());
     }
     return futureRealm
       .compose(realmResult -> {
@@ -648,7 +648,7 @@ public class UserProvider {
 
       realmFuture = this.apiApp
         .getRealmProvider()
-        .getRealmFromId(realmId);
+        .getRealmFromLocalId(realmId);
 
       long userIdFromGuid = guid.validateRealmAndGetFirstObjectId(realmId);
       userRequested.setLocalId(userIdFromGuid);
@@ -762,7 +762,7 @@ public class UserProvider {
             return Future.succeededFuture();
           }
           Class<? extends User> userClass;
-          if (this.apiApp.isEraldyRealm(realm)) {
+          if (this.apiApp.getEraldyModel().isEraldyRealm(realm)) {
             userClass = OrganizationUser.class;
           } else {
             userClass = User.class;
@@ -829,5 +829,10 @@ public class UserProvider {
 
   public Guid createUserGuid(long realmId, Long userId) {
     return this.apiApp.createGuidFromRealmAndObjectId(USR_GUID_PREFIX, realmId, userId);
+  }
+
+  public <T extends User> void updateGuid(T user) {
+    Guid guid = this.createUserGuid(user.getRealm().getLocalId(),user.getLocalId());
+    user.setGuid(guid.toString());
   }
 }

@@ -49,7 +49,7 @@ public class AppApiImpl implements AppApi {
     Guid guid = null;
     try {
       guid = this.apiApp.getAppProvider().getGuid(appIdentifier);
-      realmFuture = this.apiApp.getRealmProvider().getRealmFromId(guid.getRealmOrOrganizationId());
+      realmFuture = this.apiApp.getRealmProvider().getRealmFromLocalId(guid.getRealmOrOrganizationId());
     } catch (CastException e) {
       if (realmIdentifier == null) {
         throw ValidationException.create("An realm identifier (handle or guid) should be given when the app identifier (" + appIdentifier + ") is a handle", "realmIdentifier", null);
@@ -105,7 +105,7 @@ public class AppApiImpl implements AppApi {
     Guid appGuid = null;
     try {
       appGuid = this.apiApp.getAppProvider().getGuid(appIdentifier);
-      futureRealm = this.apiApp.getRealmProvider().getRealmFromId(appGuid.getRealmOrOrganizationId());
+      futureRealm = this.apiApp.getRealmProvider().getRealmFromLocalId(appGuid.getRealmOrOrganizationId());
     } catch (CastException e) {
       if (realmIdentifier == null) {
         return Future.failedFuture(

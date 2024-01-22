@@ -218,7 +218,7 @@ public class ListUserProvider {
     Long realmId = row.getLong(REALM_COLUMN);
 
     return this.apiApp.getRealmProvider()
-      .getRealmFromId(realmId)
+      .getRealmFromLocalId(realmId)
       .compose(realm -> {
 
         Long listId = row.getLong(LIST_ID_COLUMN);
@@ -414,49 +414,6 @@ public class ListUserProvider {
       });
   }
 
-  public Future<ListUser> getRegistrationByListGuidAndSubscriberEmail(String listGuid, String subscriberEmail) {
-    Guid listGuidObject;
-    try {
-      listGuidObject = apiApp.getListProvider().getGuidObject(listGuid);
-    } catch (CastException e) {
-      throw ValidationException.create("The listGuid is not valid", "listGuid", listGuid);
-    }
-
-    String sql = "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
-      + " JOIN cs_realms." + UserProvider.TABLE_NAME + " userTable"
-      + " ON userTable.user_id = cs_realms.realm_list_user.list_user_user_id"
-      + " WHERE "
-      + " list_user_realm_id = $1 "
-      + "AND list_user_list_id = $2 "
-      + "and userTable.user_email = $3";
-    long realmId = listGuidObject.getRealmOrOrganizationId();
-    Tuple parameters = Tuple.of(
-      realmId,
-      listGuidObject.validateRealmAndGetFirstObjectId(realmId),
-      subscriberEmail
-    );
-    return jdbcPool
-      .preparedQuery(sql)
-      .execute(parameters)
-      .recover(e -> Future.failedFuture(TowerFailureException.builder()
-        .setMessage("Get users of a list by list guid and subscriber email error with the sql " + sql)
-        .setCauseException(e)
-        .build())
-      )
-      .compose(userRows -> {
-
-        if (userRows.size() == 0) {
-          return Future.succeededFuture();
-        }
-
-        if (userRows.size() > 1) {
-          return Future.failedFuture(new InternalError("Too much registration for list (" + listGuidObject + "), email (" + subscriberEmail + ")"));
-        }
-
-        Row row = userRows.iterator().next();
-        return getListUserFromDatabaseRow(row);
-      });
-  }
 
   private Guid getGuidObjectFromHash(String listUserGuid) throws CastException {
     return apiApp.createGuidFromHashWithOneRealmIdAndTwoObjectId(GUID_PREFIX, listUserGuid);

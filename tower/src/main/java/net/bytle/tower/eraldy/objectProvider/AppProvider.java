@@ -102,7 +102,7 @@ public class AppProvider {
    * The function is created to be sure that the
    * identifier data (id) and the guid are consistent in the app object
    */
-  private void computeTheGuid(App app) {
+  private void updateGuid(App app) {
     if (app.getGuid() != null) {
       return;
     }
@@ -156,10 +156,10 @@ public class AppProvider {
      * but the identifier sequence has been taken)
      * See the identifier.md file for more info.
      */
-    return updateAppByUriAndGetRowSet(app)
+    return updateAppByHandle(app)
       .compose(rowSet -> {
 
-        if (rowSet.size() != 1) {
+        if (rowSet.size() == 0) {
           return insertApp(app);
         }
 
@@ -232,14 +232,17 @@ public class AppProvider {
           app.getLocalId())
         )
         .recover(e -> Future.failedFuture(new InternalException("Error on app update by Id:" + e.getMessage() + ". Sql: " + updateSqlById, e)))
-        .compose(ok -> Future.succeededFuture(app));
+        .compose(ok -> {
+          this.updateGuid(app);
+          return Future.succeededFuture(app);
+        });
     }
 
     if (app.getHandle() == null) {
-      InternalException internalException = new InternalException("The app id or uri is mandatory to update an app");
+      InternalException internalException = new InternalException("The app id or handle is mandatory to update an app");
       return Future.failedFuture(internalException);
     }
-    return updateAppByUriAndGetRowSet(app)
+    return updateAppByHandle(app)
       .compose(rowSet -> {
           if (rowSet.size() != 1) {
             InternalException internalException = new InternalException("No app was updated with the uri (" + app.getHandle() + ") and realm (" + app.getRealm().getHandle() + ")");
@@ -247,12 +250,15 @@ public class AppProvider {
           }
           Long appId = rowSet.iterator().next().getLong(APP_ID_COLUMN);
           app.setLocalId(appId);
+          this.updateGuid(app);
           return Future.succeededFuture(app);
         }
       );
   }
 
-  private Future<RowSet<Row>> updateAppByUriAndGetRowSet(App app) {
+
+
+  private Future<RowSet<Row>> updateAppByHandle(App app) {
     String updateSqlByUri = "UPDATE \n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
       "set \n" +
@@ -382,7 +388,7 @@ public class AppProvider {
     RealmProvider realmProvider = this.apiApp.getRealmProvider();
     //noinspection ConstantConditions
     if (realm == null) {
-      realmFuture = realmProvider.getRealmFromId(realmId);
+      realmFuture = realmProvider.getRealmFromLocalId(realmId);
     } else {
       if (!Objects.equals(realmId, realm.getLocalId())) {
         InternalException internalException = new InternalException("The realm in the database (" + realmId + ") is inconsistent with the realm provided (" + realm.getLocalId() + ")");
@@ -404,7 +410,7 @@ public class AppProvider {
         app.setRealm(realmResult);
         Long appId = row.getLong(APP_ID_COLUMN);
         app.setLocalId(appId);
-        this.computeTheGuid(app);
+        this.updateGuid(app);
         return Future.succeededFuture(app);
       });
 
@@ -510,7 +516,7 @@ public class AppProvider {
       throw ValidationException.create("The appGuid is not valid", "appGuid", appGuid);
     }
     return this.apiApp.getRealmProvider()
-      .getRealmFromId(guid.getRealmOrOrganizationId())
+      .getRealmFromLocalId(guid.getRealmOrOrganizationId())
       .compose(realm -> getAppById(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm));
   }
 
@@ -537,4 +543,26 @@ public class AppProvider {
     return this.apiMapper;
   }
 
+  /**
+   * Getsert: get or insert an app with a local id
+   */
+  public Future<App> getsert(App app) {
+    Future<App> selectApp;
+    if(app.getLocalId()!=null){
+      selectApp = this.getAppById(app.getLocalId(), app.getRealm());
+    } else {
+      String handle = app.getHandle();
+      if(handle==null){
+        return Future.failedFuture(new InternalException("The app to getsert should have an identifier (local id, or handle)"));
+      }
+      selectApp = this.getAppByHandle(handle, app.getRealm());
+    }
+    return selectApp
+      .compose(selectedApp->{
+        if(selectedApp!=null){
+          return Future.succeededFuture(selectedApp);
+        }
+        return this.insertApp(app);
+    });
+  }
 }
