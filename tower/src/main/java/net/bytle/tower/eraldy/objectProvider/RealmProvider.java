@@ -15,6 +15,7 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.mixin.*;
 import net.bytle.tower.eraldy.model.openapi.*;
@@ -438,13 +439,19 @@ public class RealmProvider {
     Long orgaId = row.getLong(REALM_ORGA_ID);
     Future<Organization> futureOrganization = apiApp.getOrganizationProvider().getById(orgaId);
     Long ownerUserLocalId = row.getLong(REALM_OWNER_ID_COLUMN);
-    // We get the realm local id and not the realm object
-    // because the eraldy realm is not build
-    // when we use this function on first mount
-    Long eraldyRealmLocalId = this.apiApp.getEraldyModel().getRealmLocalId();
-    Realm eraldyRealm = this.apiApp.getEraldyModel().getRealm();
+
+    EraldyModel eraldyModel = this.apiApp.getEraldyModel();
+    Realm eraldyRealm;
+    if (eraldyModel.isRealmLocalId(realmId)) {
+      // Special case when we build the eraldy realm itself
+      // on start
+      // otherwise we got a recursion
+      eraldyRealm = realm;
+    } else {
+      eraldyRealm = eraldyModel.getRealm();
+    }
     Future<OrganizationUser> futureOwnerUser = apiApp.getOrganizationUserProvider()
-      .getOrganizationUserByLocalId(ownerUserLocalId, eraldyRealmLocalId, eraldyRealm);
+      .getOrganizationUserByLocalId(ownerUserLocalId, eraldyRealm.getLocalId(), eraldyRealm);
     Long defaultAppId = row.getLong(REALM_DEFAULT_APP_ID);
     Future<App> futureApp;
     if (defaultAppId == null) {

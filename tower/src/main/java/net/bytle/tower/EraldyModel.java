@@ -49,6 +49,8 @@ public class EraldyModel {
 
   public Future<Void> insertModelInDatabase() {
 
+    LOGGER.info("Get/Inserting the Eraldy model");
+
     /**
      * Update the Eraldy Model in the database
      * Note: The eraldy organisation and realm rows already exists thanks to the database migration script
@@ -89,6 +91,7 @@ public class EraldyModel {
       .getsert(ownerUser)
       .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner realm", t)))
       .compose(organizationUser -> {
+        LOGGER.info("Owner User get/inserted");
         localRealm.setOwnerUser(organizationUser);
         return this.apiApp.getRealmProvider().getsert(localRealm);
       })

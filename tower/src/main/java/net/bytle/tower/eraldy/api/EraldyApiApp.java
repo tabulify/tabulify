@@ -440,7 +440,6 @@ public class EraldyApiApp extends TowerApp {
   @Override
   public Future<Void> mount() {
 
-
     Future<Void> eraldyOrg = eraldyModel.insertModelInDatabase();
     Future<Void> parentMount = super.mount();
 
