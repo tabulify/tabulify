@@ -1,8 +1,9 @@
-package net.bytle.vertx.analytics;
+package net.bytle.vertx.analytics.sink;
 
 import com.mixpanel.mixpanelapi.ClientDelivery;
 import com.mixpanel.mixpanelapi.MessageBuilder;
 import com.mixpanel.mixpanelapi.MixpanelAPI;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import jakarta.mail.internet.AddressException;
 import net.bytle.exception.CastException;
@@ -13,17 +14,25 @@ import net.bytle.type.Enums;
 import net.bytle.type.KeyNameNormalizer;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.ConfigIllegalException;
+import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.MapDb;
 import net.bytle.vertx.Server;
+import net.bytle.vertx.analytics.AnalyticsDelivery;
+import net.bytle.vertx.analytics.event.SignInEvent;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import net.bytle.vertx.analytics.model.AnalyticsUser;
 import net.bytle.vertx.auth.AuthUserUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
+import org.mapdb.HTreeMap;
+import org.mapdb.Serializer;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,16 +43,29 @@ import java.util.Map;
  * based on:
  * <a href="https://github.com/mixpanel/mixpanel-java/blob/master/src/demo/java/com/mixpanel/mixpanelapi/demo/MixpanelAPIDemo.java"></a>
  */
-public class AnalyticsMixPanel {
+public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
 
   private static final String MIX_PANEL_PROJECT_TOKEN = "eraldy.mixpanel.project.token";
   private static final String MIXPANEL_KEY_CASE_CONF = "mixpanel.key.case";
   private final KeyNameNormalizer.WordCase keyCase;
-  static Logger LOGGER = LogManager.getLogger(AnalyticsMixPanel.class);
+  static Logger LOGGER = LogManager.getLogger(AnalyticsMixPanelSink.class);
 
   private final MixpanelAPI mixpanel;
   private final MessageBuilder messageBuilder;
-  public AnalyticsMixPanel(Server server) throws ConfigIllegalException {
+
+  /**
+   * The event queue
+   */
+  private final HTreeMap<String, AnalyticsEvent> eventsQueue;
+
+  private final MapDb mapDb;
+  private boolean isRunning = false;
+
+
+  public AnalyticsMixPanelSink(AnalyticsDelivery analyticsDelivery) throws ConfigIllegalException {
+    super(analyticsDelivery);
+
+    Server server = analyticsDelivery.getServer();
     String keyCase = server.getConfigAccessor().getString(MIXPANEL_KEY_CASE_CONF,KeyNameNormalizer.WordCase.SNAKE.toString());
       KeyNameNormalizer.WordCase wordCase;
       try {
@@ -61,6 +83,14 @@ public class AnalyticsMixPanel {
     // Use an instance of MixpanelAPI to send the messages
     // to Mixpanel's servers.
     this.mixpanel = new MixpanelAPI();
+
+    this.mapDb = server.getMapDb();
+    this.eventsQueue = mapDb
+      .hashMapWithJsonValueObject("event_queue", Serializer.STRING, AnalyticsEvent.class)
+      .createOrOpen();
+
+
+
   }
 
   /**
@@ -263,6 +293,31 @@ public class AnalyticsMixPanel {
   }
 
 
+  /**
+   * @param user - the user
+   * @param ip   - the ip when the user was created for geo-localization
+   * @return the analytics tracker
+   * You make an Identify call:
+   * <p>
+   * * After a user first registers {@link net.bytle.vertx.analytics.event.SignUpEvent}
+   * * After a user logs in {@link SignInEvent}
+   * * When a user updates their info (for example, they change or add a new address) {@link net.bytle.vertx.analytics.event.UserProfileUpdateEvent}
+   */
+  @SuppressWarnings("unused")
+  @Override
+  public AnalyticsMixPanelSink deliverUser(AnalyticsUser user, String ip) {
+    //noinspection unused
+    JsonObject props = this.toMixPanelUser(user, ip);
+    return this;
+  }
+
+  /**
+   * GROUP_ID = Organisation
+   * <a href="https://www.june.so/docs/quickstart/identify#companies">Company</a>
+   */
+  @SuppressWarnings("unused")
+  public void deliverOrganization() {
+  }
 
   public JSONObject buildEvent(AnalyticsEvent event) {
     JsonObject vertxJsonObject = this.toMixpanelPropsWithoutUserId(event);
@@ -276,7 +331,132 @@ public class AnalyticsMixPanel {
     );
   }
 
-  public void deliver(ClientDelivery delivery) throws IOException {
-    this.mixpanel.deliver(delivery);
+
+
+
+
+  @Override
+  public Integer getQueueSize() {
+    return this.eventsQueue.size();
   }
+
+  @Override
+  public Future<Void> processQueue() {
+
+    synchronized (this){
+      if (this.eventsQueue.isEmpty()) {
+        return Future.succeededFuture();
+      }
+      if(this.isRunning){
+        return Future.succeededFuture();
+      }
+      this.isRunning = true;
+    }
+
+    try {
+
+      // Gather together a bunch of messages into a single
+      // ClientDelivery. This can happen in a separate thread
+      // or process from the call to MessageBuilder.event()
+      ClientDelivery delivery = new ClientDelivery();
+
+      /**
+       * The error of the API returns the id of the inserted
+       * message.
+       * https://developer.mixpanel.com/reference/import-events#example-of-a-validation-error
+       * Therefore, we create a list
+       */
+      List<AnalyticsEvent> eventInBatch = new ArrayList<>();
+      List<AnalyticsEvent> badEvents = new ArrayList<>();
+      /**
+       * Max 2000 events per batch
+       */
+      for (AnalyticsEvent event : this.eventsQueue.values()) {
+
+        try {
+
+          /**
+           * It should never happen but this
+           * is enough to get a difficult error
+           * to debug from MixPanel
+           */
+          if (event.getName() == null) {
+            badEvents.add(event);
+            continue;
+          }
+
+          event.getState().setSendingTime(DateTimeUtil.getNowInUtc());
+
+          // Create an event
+          // https://docs.mixpanel.com/docs/tracking/how-tos/identifying-users#what-is-distinct-id
+          // https://docs.mixpanel.com/docs/tracking/reference/distinct-id-limits
+          // The purpose of distinct_id is to provide a single, unified identifier for a user across devices and sessions.
+          // This helps Mixpanel compute metrics like Daily Active Users accurately: when two events have the same value of distinct_id, they are considered as being performed by 1 unique user.
+          JSONObject mixpanelEvent = this.buildEvent(event);
+          if (!delivery.isValidMessage(mixpanelEvent)) {
+            continue;
+          }
+          delivery.addMessage(mixpanelEvent);
+          if (this.getAnalyticsDelivery().getLogEventDelivery()) {
+            LOGGER.info("The event " + event + " was added for delivery");
+          }
+          eventInBatch.add(event);
+        } catch (Exception e) {
+          this.handleFatalError(e, event);
+        }
+      }
+
+      /**
+       * Process bad event
+       * (Should be stored elsewhere)
+       */
+      for (AnalyticsEvent event : badEvents) {
+        LOGGER.error("The event was deleted (" + event.getName() + "," + event.getId() + ")");
+        this.eventsQueue.remove(event.getId());
+      }
+
+      try {
+        // https://developer.mixpanel.com/reference/import-events
+        this.mixpanel.deliver(delivery);
+      } catch (IOException e) {
+        // Example: Here it's `Can't communicate with Mixpanel`
+        // https://github.com/mixpanel/mixpanel-java/blob/master/src/demo/java/com/mixpanel/mixpanelapi/demo/MixpanelAPIDemo.java#L57C45-L57C77
+        // Do we get the error?
+        // https://developer.mixpanel.com/reference/import-events#example-of-a-validation-error
+        // See impl: https://github.com/mixpanel/mixpanel-java/blob/master/src/main/java/com/mixpanel/mixpanelapi/MixpanelAPI.java#L195
+        return Future.failedFuture(e);
+      }
+
+      for (AnalyticsEvent event : eventInBatch) {
+        this.eventsQueue.remove(event.getId());
+      }
+
+      this.mapDb.commit();
+      return Future.succeededFuture();
+    } finally {
+
+      this.isRunning = false;
+
+    }
+
+  }
+
+  @Override
+  public void addDelivery(AnalyticsEvent analyticsEvent) {
+    this.eventsQueue.put(analyticsEvent.getId(), analyticsEvent);
+  }
+
+  /**
+   * Handle fatal error
+   * <p>
+   * A fatal error may be solved when retried (ie timeout for instance)
+   * but only a maximum
+   *
+   */
+  private void handleFatalError(Exception e, AnalyticsEvent event) {
+    LOGGER.error("The event (" + event.getName() + ") could not be sent", e);
+    // we remove the event otherwise it will repeat
+    this.eventsQueue.remove(event.getId());
+  }
+
 }

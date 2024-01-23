@@ -11,11 +11,11 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationUser;
 import net.bytle.tower.eraldy.auth.AuthScope;
-import net.bytle.tower.eraldy.event.SignUpEvent;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.analytics.event.SignUpEvent;
 import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlow;
@@ -376,7 +376,7 @@ public class AuthProvider {
             .eventBuilder(signUpEvent)
             .setUser(authUserForSession)
             .setRoutingContext(routingContext)
-            .addEventToQueue();
+            .addToDeliveryQueue();
           return Future.succeededFuture(authUserForSession);
         }));
 

@@ -1,6 +1,4 @@
-package net.bytle.vertx.auth;
-
-import net.bytle.vertx.analytics.AnalyticsServerEvent;
+package net.bytle.vertx.analytics.event;
 
 public class SignInEvent extends AnalyticsServerEvent {
 

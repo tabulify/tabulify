@@ -90,7 +90,7 @@ public class AnalyticsApiImpl implements AnalyticsApi {
       .setRoutingContext(routingContext)
       .setOrganizationId(organizationId)
       .setRealmId(realmId)
-      .addEventToQueue();
+      .addToDeliveryQueue();
     return Future.succeededFuture(new ApiResponse<>());
 
   }

@@ -1,7 +1,6 @@
 package net.bytle.vertx.analytics;
 
 import com.fasterxml.uuid.Generators;
-import com.mixpanel.mixpanelapi.ClientDelivery;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -9,23 +8,15 @@ import io.vertx.ext.web.Session;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.java.JavaEnvs;
 import net.bytle.type.KeyNameNormalizer;
 import net.bytle.vertx.*;
+import net.bytle.vertx.analytics.event.AnalyticsServerEvent;
 import net.bytle.vertx.analytics.model.*;
 import net.bytle.vertx.auth.AuthUser;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
-import org.mapdb.HTreeMap;
-import org.mapdb.Serializer;
 
-import java.io.IOException;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -39,31 +30,14 @@ import java.util.stream.Collectors;
  */
 public class AnalyticsTracker {
 
-  static Logger LOGGER = LogManager.getLogger(AnalyticsTracker.class);
 
-  private final HTreeMap<String, AnalyticsEvent> eventsQueue;
 
-  private final MapDb mapDb;
-  private boolean logEventDelivery = false;
-  private final AnalyticsMixPanel analyticsMixPanel;
+  private final AnalyticsDelivery analyticsDelivery;
 
   public AnalyticsTracker(Server server) throws ConfigIllegalException {
 
 
-    this.analyticsMixPanel = new AnalyticsMixPanel(server);
-
-    this.mapDb = server.getMapDb();
-    this.eventsQueue = mapDb
-      .hashMapWithJsonValueObject("event_queue", Serializer.STRING, AnalyticsEvent.class)
-      .createOrOpen();
-
-    int sec10 = 10000;
-    server.getVertx().setPeriodic(sec10, sec10, jobId -> sendEventsInQueue());
-
-
-    if (JavaEnvs.IS_DEV) {
-      this.logEventDelivery = true;
-    }
+    this.analyticsDelivery = new AnalyticsDelivery(server);
 
   }
 
@@ -73,137 +47,10 @@ public class AnalyticsTracker {
 
   }
 
-  public AnalyticsTracker addEventToQueue(AnalyticsEvent analyticsEvent) {
-    this.eventsQueue.put(analyticsEvent.getId(), analyticsEvent);
-    this.mapDb.commit();
-    return this;
-  }
-
-  /**
-   * @param user - the user
-   * @param ip   - the ip when the user was created for geo-localization
-   * @return the analytics tracker
-   * Segment recommends that you make an Identify call:
-   * <p>
-   * * After a user first registers
-   * * After a user logs in
-   * * When a user updates their info (for example, they change or add a new address)
-   */
-  @SuppressWarnings("unused")
-  public AnalyticsTracker deliverUser(AnalyticsUser user, String ip) {
-    //noinspection unused
-    JsonObject props = this.analyticsMixPanel.toMixPanelUser(user, ip);
-    return this;
-  }
-
-  /**
-   * GROUP_ID = Organisation
-   * <a href="https://www.june.so/docs/quickstart/identify#companies">Company</a>
-   */
-  @SuppressWarnings("unused")
-  public AnalyticsTracker deliverOrganization() {
-    return this;
-  }
 
 
-  public AnalyticsTracker sendEventsInQueue() {
 
-    if (this.eventsQueue.isEmpty()) {
-      return this;
-    }
 
-    // Gather together a bunch of messages into a single
-    // ClientDelivery. This can happen in a separate thread
-    // or process from the call to MessageBuilder.event()
-    ClientDelivery delivery = new ClientDelivery();
-
-    /**
-     * The error of the API returns the id of the inserted
-     * message.
-     * https://developer.mixpanel.com/reference/import-events#example-of-a-validation-error
-     * Therefore, we create a list
-     */
-    List<AnalyticsEvent> eventInBatch = new ArrayList<>();
-    List<AnalyticsEvent> badEvents = new ArrayList<>();
-    for (AnalyticsEvent event : this.eventsQueue.values()) {
-
-      try {
-
-        event.getState().setSendingTime(DateTimeUtil.getNowInUtc());
-
-        /**
-         * It should never happen but this
-         * is enough to get a difficult error
-         * to debug from MixPanel
-         */
-        if (event.getName() == null) {
-          badEvents.add(event);
-          continue;
-        }
-
-        // Create an event
-        // https://docs.mixpanel.com/docs/tracking/how-tos/identifying-users#what-is-distinct-id
-        // https://docs.mixpanel.com/docs/tracking/reference/distinct-id-limits
-        // The purpose of distinct_id is to provide a single, unified identifier for a user across devices and sessions.
-        // This helps Mixpanel compute metrics like Daily Active Users accurately: when two events have the same value of distinct_id, they are considered as being performed by 1 unique user.
-        JSONObject mixpanelEvent = this.analyticsMixPanel.buildEvent(event);
-        if (!delivery.isValidMessage(mixpanelEvent)) {
-          continue;
-        }
-        delivery.addMessage(mixpanelEvent);
-        if (this.logEventDelivery) {
-          LOGGER.info("The event " + event + " was added for delivery");
-        }
-        eventInBatch.add(event);
-      } catch (Exception e) {
-        this.handleFatalError(e, event);
-      }
-    }
-
-    /**
-     * Process bad event
-     * (Should be stored elsewhere)
-     */
-    for (AnalyticsEvent event : badEvents) {
-      LOGGER.error("The event was deleted (" + event.getName() + "," + event.getId() + ")");
-      this.eventsQueue.remove(event.getId());
-    }
-
-    try {
-      // https://developer.mixpanel.com/reference/import-events
-      this.analyticsMixPanel.deliver(delivery);
-    } catch (IOException e) {
-      // Example: Here it's `Can't communicate with Mixpanel`
-      // https://github.com/mixpanel/mixpanel-java/blob/master/src/demo/java/com/mixpanel/mixpanelapi/demo/MixpanelAPIDemo.java#L57C45-L57C77
-      // Do we get the error?
-      // https://developer.mixpanel.com/reference/import-events#example-of-a-validation-error
-      // See impl: https://github.com/mixpanel/mixpanel-java/blob/master/src/main/java/com/mixpanel/mixpanelapi/MixpanelAPI.java#L195
-      return this;
-    }
-    for (AnalyticsEvent event : eventInBatch) {
-      try {
-        AnalyticsLogger.log(event);
-      } catch (Exception e) {
-        this.handleFatalError(e, event);
-      }
-      this.eventsQueue.remove(event.getId());
-    }
-    this.mapDb.commit();
-    return this;
-  }
-
-  /**
-   * Handle fatal error
-   * <p>
-   * A fatal error may be solved when retried (ie timeout for instance)
-   * but only a maximum
-   *
-   */
-  private void handleFatalError(Exception e, AnalyticsEvent event) {
-    LOGGER.error("The event (" + event.getName() + ") could not be sent", e);
-    // we remove the event otherwise it will repeat
-    this.eventsQueue.remove(event.getId());
-  }
 
   /**
    * @param analyticsServerEvent - an internal server event
@@ -211,19 +58,30 @@ public class AnalyticsTracker {
   public EventBuilder eventBuilder(AnalyticsServerEvent analyticsServerEvent) {
     AnalyticsEvent analyticsEvent = new AnalyticsEvent();
 
-    Map<String, Object> jsonObjectMap = JsonObject.mapFrom(analyticsServerEvent).getMap();
-    String eventNameKey = "name";
-    String name = (String) jsonObjectMap.get(eventNameKey);
-    if (name == null) {
+
+    String eventName = analyticsServerEvent.getName();
+    if (eventName == null) {
       throw new InternalException("The event name is null but is mandatory");
     }
-    analyticsEvent.setName(name);
-    jsonObjectMap.remove(eventNameKey);
+    analyticsEvent.setName(eventName);
 
     /**
+     * App Id
+     */
+    AnalyticsEventApp analyticsEventApp = new AnalyticsEventApp();
+    analyticsEvent.setApp(analyticsEventApp);
+    analyticsEventApp.setAppId(analyticsServerEvent.getAppId());
+    analyticsEventApp.setAppRealmId(analyticsServerEvent.getAppRealmId());
+    analyticsEventApp.setAppOrganisationId(analyticsServerEvent.getAppOrganizationId());
+
+
+    /**
+     * The primitive server name (ie event name, appId, ...)
+     * processed above are ignored
+     * when creating the Json object
      * No null or blank value
      */
-    Map<String, Object> jsonObjectMapTarget = jsonObjectMap
+    Map<String, Object> jsonObjectMapTarget = JsonObject.mapFrom(analyticsServerEvent).getMap()
       .entrySet()
       .stream()
       .filter(e -> e.getValue() != null && !e.getValue().toString().isBlank())
@@ -231,7 +89,6 @@ public class AnalyticsTracker {
         Map.Entry::getKey,
         Map.Entry::getValue
       ));
-
     analyticsEvent.setAttr(jsonObjectMapTarget);
     return new EventBuilder(analyticsEvent);
 
@@ -273,10 +130,10 @@ public class AnalyticsTracker {
      * Send the event to the queue
      * (the event is processed async)
      */
-    public void addEventToQueue() {
+    public void addToDeliveryQueue() {
 
       AnalyticsEvent analyticsEvent = buildEvent();
-      AnalyticsTracker.this.addEventToQueue(analyticsEvent);
+      analyticsDelivery.addEventToDelivery(analyticsEvent);
 
     }
 

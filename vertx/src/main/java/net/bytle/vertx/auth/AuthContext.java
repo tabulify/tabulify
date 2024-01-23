@@ -12,6 +12,7 @@ import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.analytics.event.SignInEvent;
 import net.bytle.vertx.flow.WebFlow;
 import org.jetbrains.annotations.NotNull;
 
@@ -237,7 +238,7 @@ public class AuthContext {
         .eventBuilder(signInEvent)
         .setUser(authUser)
         .setRoutingContext(this.getRoutingContext())
-        .addEventToQueue();
+        .addToDeliveryQueue();
 
     }
 

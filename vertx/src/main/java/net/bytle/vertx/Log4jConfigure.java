@@ -2,7 +2,7 @@ package net.bytle.vertx;
 
 import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.exception.InternalException;
-import net.bytle.vertx.analytics.AnalyticsLogger;
+import net.bytle.vertx.analytics.sink.AnalyticsFileSystemLogger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
@@ -23,7 +23,7 @@ public class Log4jConfigure {
 
       Log4jRootLogger.configure(log4JXmlConfiguration);
 
-      AnalyticsLogger.configure(log4JXmlConfiguration);
+      AnalyticsFileSystemLogger.configure(log4JXmlConfiguration);
 
       ContextFailureLogger.configure(log4JXmlConfiguration);
 

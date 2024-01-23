@@ -1,4 +1,4 @@
-package net.bytle.vertx.analytics;
+package net.bytle.vertx.analytics.sink;
 
 import io.vertx.core.json.JsonObject;
 import net.bytle.exception.IllegalStructure;
@@ -26,10 +26,10 @@ import java.util.Map;
  * Manage the writing of analytics to log file
  * <p>
  */
-public class AnalyticsLogger {
+public class AnalyticsFileSystemLogger {
 
 
-  private static final String LOG4J_LOGGER_NAME = AnalyticsLogger.class.getName();
+  private static final String LOG4J_LOGGER_NAME = AnalyticsFileSystemLogger.class.getName();
   private static final String FILE_SYSTEM_LOGGER_NAME = "analytics";
 
   private static final Logger ANALYTICS_LOGGER = LogManager.getLogger(LOG4J_LOGGER_NAME);

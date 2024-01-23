@@ -1,5 +1,6 @@
-package net.bytle.vertx.analytics;
+package net.bytle.vertx.analytics.event;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -27,16 +28,20 @@ public abstract class AnalyticsServerEvent {
   /**
    * @return the name/type of the event
    */
+  @JsonIgnore()
   public abstract String getName();
 
+  @JsonIgnore()
   public String getAppId(){
     return this.appId;
   }
 
+  @JsonIgnore()
   public String getAppRealmId(){
     return this.appRealmId;
   }
 
+  @JsonIgnore()
   public String getAppOrganizationId(){
     return this.appOrganizationId;
   }
@@ -67,5 +72,6 @@ public abstract class AnalyticsServerEvent {
   public void setFlowId(Integer flowId) {
     this.flowId = flowId;
   }
+
 
 }

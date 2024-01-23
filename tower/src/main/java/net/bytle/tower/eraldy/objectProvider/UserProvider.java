@@ -20,7 +20,6 @@ import net.bytle.exception.AssertionException;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.event.SignUpEvent;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithRealm;
@@ -33,6 +32,7 @@ import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.PasswordHashManager;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.*;
+import net.bytle.vertx.analytics.event.SignUpEvent;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlowType;
 import org.slf4j.Logger;
@@ -170,7 +170,7 @@ public class UserProvider {
           .getTrackerAnalytics()
           .eventBuilder(signUpEvent)
           .setUser(this.apiApp.getAuthProvider().toAuthUser(user))
-          .addEventToQueue();
+          .addToDeliveryQueue();
         return Future.succeededFuture(insertedUser);
       });
 
