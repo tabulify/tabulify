@@ -1,16 +1,27 @@
 package net.bytle.vertx.analytics;
 
+import com.mixpanel.mixpanelapi.ClientDelivery;
+import com.mixpanel.mixpanelapi.MessageBuilder;
+import com.mixpanel.mixpanelapi.MixpanelAPI;
 import io.vertx.core.json.JsonObject;
 import jakarta.mail.internet.AddressException;
+import net.bytle.exception.CastException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
+import net.bytle.type.Casts;
+import net.bytle.type.Enums;
+import net.bytle.type.KeyNameNormalizer;
 import net.bytle.type.time.Timestamp;
+import net.bytle.vertx.ConfigIllegalException;
+import net.bytle.vertx.Server;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import net.bytle.vertx.analytics.model.AnalyticsUser;
 import net.bytle.vertx.auth.AuthUserUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Map;
@@ -25,14 +36,39 @@ import java.util.Map;
  */
 public class AnalyticsMixPanel {
 
+  private static final String MIX_PANEL_PROJECT_TOKEN = "eraldy.mixpanel.project.token";
+  private static final String MIXPANEL_KEY_CASE_CONF = "mixpanel.key.case";
+  private final KeyNameNormalizer.WordCase keyCase;
   static Logger LOGGER = LogManager.getLogger(AnalyticsMixPanel.class);
+
+  private final MixpanelAPI mixpanel;
+  private final MessageBuilder messageBuilder;
+  public AnalyticsMixPanel(Server server) throws ConfigIllegalException {
+    String keyCase = server.getConfigAccessor().getString(MIXPANEL_KEY_CASE_CONF,KeyNameNormalizer.WordCase.SNAKE.toString());
+      KeyNameNormalizer.WordCase wordCase;
+      try {
+          wordCase = Casts.cast(keyCase, KeyNameNormalizer.WordCase.class);
+      } catch (CastException e) {
+          throw new ConfigIllegalException("The value ("+keyCase+") from the configuration ("+MIXPANEL_KEY_CASE_CONF+") is not valid. The possibles values are: "+ Enums.toConstantAsStringCommaSeparated(KeyNameNormalizer.WordCase.class),e);
+      }
+      this.keyCase = wordCase;
+    String projectToken = server.getConfigAccessor().getString(MIX_PANEL_PROJECT_TOKEN);
+    if (projectToken == null) {
+      throw new ConfigIllegalException("MixPanelTracker: A project token is mandatory to send the event. Add one in the conf file with the attribute (" + MIX_PANEL_PROJECT_TOKEN + ")");
+    }
+    this.messageBuilder = new MessageBuilder(projectToken);
+
+    // Use an instance of MixpanelAPI to send the messages
+    // to Mixpanel's servers.
+    this.mixpanel = new MixpanelAPI();
+  }
 
   /**
    * @param user - the user
    * @param ip   - the ip when the user was created for geo-localization
    * @return the json mixpanel object
    */
-  public static JsonObject toMixPanelUser(AnalyticsUser user, String ip) {
+  public JsonObject toMixPanelUser(AnalyticsUser user, String ip) {
     JsonObject props = new JsonObject();
     props.put("$distinct_id", user.getId());
     // $group_id, the group identifier, for group profiles, as these are the canonical identifiers in Mixpanel.
@@ -66,7 +102,7 @@ public class AnalyticsMixPanel {
    * @param event the event
    * @return the JSON for Mixpanel without the user id (ie distinct id) because it's mandatory to add it in the event function signature of Mixpanel
    */
-  protected static JsonObject toMixpanelPropsWithoutUserId(AnalyticsEvent event) {
+  protected JsonObject toMixpanelPropsWithoutUserId(AnalyticsEvent event) {
 
     JsonObject props = new JsonObject();
 
@@ -194,7 +230,8 @@ public class AnalyticsMixPanel {
       if (valueString.isBlank()) {
         continue;
       }
-      props.put(entry.getKey(), valueString);
+      String snakeCaseKey = KeyNameNormalizer.createFromString(entry.getKey()).toWordCase(keyCase);
+      props.put(snakeCaseKey, valueString);
     }
     return props;
 
@@ -217,11 +254,29 @@ public class AnalyticsMixPanel {
    * @param event - the event
    * @return the user id
    */
-  protected static String toMixPanelUserDistinctId(AnalyticsEvent event) {
+  protected String toMixPanelUserDistinctId(AnalyticsEvent event) {
     String userId = event.getUser().getUserId();
     if (userId != null) {
       return userId;
     }
     return event.getApp().getAppId();
+  }
+
+
+
+  public JSONObject buildEvent(AnalyticsEvent event) {
+    JsonObject vertxJsonObject = this.toMixpanelPropsWithoutUserId(event);
+    JSONObject mixPanelJsonObject = new JSONObject(vertxJsonObject.getMap());
+    String mixPanelUserDistinctId = this.toMixPanelUserDistinctId(event);
+    String name = event.getName();
+    return this.messageBuilder.event(
+      mixPanelUserDistinctId,
+      name,
+      mixPanelJsonObject
+    );
+  }
+
+  public void deliver(ClientDelivery delivery) throws IOException {
+    this.mixpanel.deliver(delivery);
   }
 }

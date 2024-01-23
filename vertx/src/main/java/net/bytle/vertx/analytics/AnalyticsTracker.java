@@ -2,8 +2,6 @@ package net.bytle.vertx.analytics;
 
 import com.fasterxml.uuid.Generators;
 import com.mixpanel.mixpanelapi.ClientDelivery;
-import com.mixpanel.mixpanelapi.MessageBuilder;
-import com.mixpanel.mixpanelapi.MixpanelAPI;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -12,6 +10,7 @@ import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
+import net.bytle.type.KeyNameNormalizer;
 import net.bytle.vertx.*;
 import net.bytle.vertx.analytics.model.*;
 import net.bytle.vertx.auth.AuthUser;
@@ -42,20 +41,16 @@ public class AnalyticsTracker {
 
   static Logger LOGGER = LogManager.getLogger(AnalyticsTracker.class);
 
-  private static final String PROJECT_TOKEN = "eraldy.mixpanel.project.token";
-  private final MessageBuilder messageBuilder;
   private final HTreeMap<String, AnalyticsEvent> eventsQueue;
-  private final MixpanelAPI mixpanel;
+
   private final MapDb mapDb;
   private boolean logEventDelivery = false;
+  private final AnalyticsMixPanel analyticsMixPanel;
 
   public AnalyticsTracker(Server server) throws ConfigIllegalException {
 
-    String projectToken = server.getConfigAccessor().getString(PROJECT_TOKEN);
-    if (projectToken == null) {
-      throw new ConfigIllegalException("MixPanelTracker: A project token is mandatory to send the event. Add one in the conf file with the attribute (" + PROJECT_TOKEN + ")");
-    }
-    this.messageBuilder = new MessageBuilder(projectToken);
+
+    this.analyticsMixPanel = new AnalyticsMixPanel(server);
 
     this.mapDb = server.getMapDb();
     this.eventsQueue = mapDb
@@ -65,9 +60,6 @@ public class AnalyticsTracker {
     int sec10 = 10000;
     server.getVertx().setPeriodic(sec10, sec10, jobId -> sendEventsInQueue());
 
-    // Use an instance of MixpanelAPI to send the messages
-    // to Mixpanel's servers.
-    this.mixpanel = new MixpanelAPI();
 
     if (JavaEnvs.IS_DEV) {
       this.logEventDelivery = true;
@@ -97,8 +89,10 @@ public class AnalyticsTracker {
    * * After a user logs in
    * * When a user updates their info (for example, they change or add a new address)
    */
+  @SuppressWarnings("unused")
   public AnalyticsTracker deliverUser(AnalyticsUser user, String ip) {
-    JsonObject props = AnalyticsMixPanel.toMixPanelUser(user, ip);
+    //noinspection unused
+    JsonObject props = this.analyticsMixPanel.toMixPanelUser(user, ip);
     return this;
   }
 
@@ -106,6 +100,7 @@ public class AnalyticsTracker {
    * GROUP_ID = Organisation
    * <a href="https://www.june.so/docs/quickstart/identify#companies">Company</a>
    */
+  @SuppressWarnings("unused")
   public AnalyticsTracker deliverOrganization() {
     return this;
   }
@@ -129,23 +124,29 @@ public class AnalyticsTracker {
      * Therefore, we create a list
      */
     List<AnalyticsEvent> eventInBatch = new ArrayList<>();
+    List<AnalyticsEvent> badEvents = new ArrayList<>();
     for (AnalyticsEvent event : this.eventsQueue.values()) {
 
       try {
 
         event.getState().setSendingTime(DateTimeUtil.getNowInUtc());
-        JsonObject props = AnalyticsMixPanel.toMixpanelPropsWithoutUserId(event);
+
+        /**
+         * It should never happen but this
+         * is enough to get a difficult error
+         * to debug from MixPanel
+         */
+        if (event.getName() == null) {
+          badEvents.add(event);
+          continue;
+        }
 
         // Create an event
         // https://docs.mixpanel.com/docs/tracking/how-tos/identifying-users#what-is-distinct-id
         // https://docs.mixpanel.com/docs/tracking/reference/distinct-id-limits
         // The purpose of distinct_id is to provide a single, unified identifier for a user across devices and sessions.
         // This helps Mixpanel compute metrics like Daily Active Users accurately: when two events have the same value of distinct_id, they are considered as being performed by 1 unique user.
-        JSONObject mixpanelEvent = messageBuilder.event(
-          AnalyticsMixPanel.toMixPanelUserDistinctId(event),
-          event.getName(),
-          new JSONObject(props.getMap())
-        );
+        JSONObject mixpanelEvent = this.analyticsMixPanel.buildEvent(event);
         if (!delivery.isValidMessage(mixpanelEvent)) {
           continue;
         }
@@ -159,10 +160,18 @@ public class AnalyticsTracker {
       }
     }
 
+    /**
+     * Process bad event
+     * (Should be stored elsewhere)
+     */
+    for (AnalyticsEvent event : badEvents) {
+      LOGGER.error("The event was deleted (" + event.getName() + "," + event.getId() + ")");
+      this.eventsQueue.remove(event.getId());
+    }
 
     try {
       // https://developer.mixpanel.com/reference/import-events
-      mixpanel.deliver(delivery);
+      this.analyticsMixPanel.deliver(delivery);
     } catch (IOException e) {
       // Example: Here it's `Can't communicate with Mixpanel`
       // https://github.com/mixpanel/mixpanel-java/blob/master/src/demo/java/com/mixpanel/mixpanelapi/demo/MixpanelAPIDemo.java#L57C45-L57C77
@@ -290,8 +299,8 @@ public class AnalyticsTracker {
       if (name == null) {
         throw new InternalException("An event should have a name. The event (" + analyticsEvent.getClass().getSimpleName() + ") has no name");
       }
-      AnalyticsEventName eventName = AnalyticsEventName.createFromEvent(name);
-      analyticsEvent.setName(eventName.toString());
+      KeyNameNormalizer eventName = KeyNameNormalizer.createFromString(name);
+      analyticsEvent.setName(eventName.toEventCase());
 
       /**
        * Create the event sub-objects if absent

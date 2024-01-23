@@ -3,6 +3,7 @@ package net.bytle.vertx.analytics;
 import io.vertx.core.json.JsonObject;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
+import net.bytle.type.KeyNameNormalizer;
 import net.bytle.vertx.Log4JXmlConfiguration;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import org.apache.logging.log4j.Level;
@@ -202,8 +203,8 @@ public class AnalyticsLogger {
      * See MDC
      * https://logging.apache.org/log4j/2.x/manual/thread-context.html
      */
-    AnalyticsEventName analyticsEventName = AnalyticsEventName.createFromEvent(eventName);
-    String eventFileSystemName = analyticsEventName.toFileSystemName();
+    KeyNameNormalizer keyNameNormalizer = KeyNameNormalizer.createFromString(eventName);
+    String eventFileSystemName = keyNameNormalizer.toFileCase();
     ThreadContext.put(LOOKUP_VARIABLE_EVENT_SLUG, eventFileSystemName);
     ThreadContext.put(LOOKUP_VARIABLE_REALM_GUID, realmIdFromEvent);
     String jsonString = JsonObject.mapFrom(analyticsEvent).toString();
