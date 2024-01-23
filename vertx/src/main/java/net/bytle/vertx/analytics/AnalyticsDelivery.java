@@ -8,11 +8,11 @@ import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import net.bytle.vertx.analytics.sink.AnalyticsFileSystemSink;
 import net.bytle.vertx.analytics.sink.AnalyticsMixPanelSink;
 import net.bytle.vertx.analytics.sink.AnalyticsSink;
+import net.bytle.vertx.future.TowerFutureComposite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Manage the queue to deliver the events to {@link AnalyticsSink}
@@ -21,9 +21,21 @@ public class AnalyticsDelivery {
 
   static Logger LOGGER = LogManager.getLogger(AnalyticsDelivery.class);
 
-  private final List<AnalyticsSink> sinks;
+  /**
+   * The event queue
+   * (Don't use MapDb, when you iterate over the HTreeMap
+   * it will create a new object instance each time for each value)
+   */
+  private final HashMap<String, AnalyticsEventDeliveryStatus> eventsQueue = new HashMap<>();
+
+
+  private final List<AnalyticsSink> sinks = new ArrayList<>();
+
+
   private final Server server;
+  private final Set<String> sinksName = new HashSet<>();
   private boolean logEventDelivery = false;
+  private boolean isRunning = false;
 
   public AnalyticsDelivery(Server server) throws ConfigIllegalException {
 
@@ -32,20 +44,33 @@ public class AnalyticsDelivery {
       this.logEventDelivery = true;
     }
 
-    this.sinks = new ArrayList<>();
-    AnalyticsMixPanelSink analyticsMixPanelSink = new AnalyticsMixPanelSink(this);
-    this.sinks.add(analyticsMixPanelSink);
-    AnalyticsFileSystemSink analyticsFileSystemSink = new AnalyticsFileSystemSink(this);
-    this.sinks.add(analyticsFileSystemSink);
+    /**
+     * Sinks
+     */
+
+    List<AnalyticsSink> sinks = List.of(
+      new AnalyticsMixPanelSink(this),
+      new AnalyticsFileSystemSink(this)
+    );
+    for (AnalyticsSink analyticsSink : sinks) {
+      this.sinks.add(analyticsSink);
+      this.sinksName.add(analyticsSink.getName());
+    }
 
     int sec10 = 10000;
     server.getVertx().setPeriodic(sec10, sec10, jobId -> processSink());
-
 
   }
 
   public void processSink() {
 
+
+    synchronized (this){
+      if(this.isRunning){
+        return;
+      }
+      this.isRunning = true;
+    }
     List<Future<Void>> processesQueue = new ArrayList<>();
     for (AnalyticsSink analyticsSink : this.sinks) {
       processesQueue.add(analyticsSink.processQueue());
@@ -57,12 +82,18 @@ public class AnalyticsDelivery {
     this.server.getFutureSchedulers()
       .createSequentialScheduler(Void.class)
       .join(processesQueue, null)
-      .onFailure(err->LOGGER.error("The analytics processSink method has failed. Err:"+err.getMessage(), err))
-      .onSuccess(async -> {
-        if (async.hasFailed()) {
-          String failedSinkName = this.sinks.get(async.getFailureIndex()).getClass().getSimpleName();
-          Throwable err = async.getFailure();
-          LOGGER.error("The analytics processSink ("+ failedSinkName + ") has failed. Err:"+err.getMessage(), err);
+      .onComplete(async->{
+        this.isRunning = false;
+        if(async.failed()){
+          Throwable err = async.cause();
+          LOGGER.error("The analytics processSink method has failed. Err:" + err.getMessage(), err);
+          return;
+        }
+        TowerFutureComposite<Void> composite = async.result();
+        if (composite.hasFailed()) {
+          String failedSinkName = this.sinks.get(composite.getFailureIndex()).getClass().getSimpleName();
+          Throwable err = composite.getFailure();
+          LOGGER.error("The analytics processSink (" + failedSinkName + ") has failed. Err:" + err.getMessage(), err);
         }
       });
 
@@ -70,9 +101,18 @@ public class AnalyticsDelivery {
 
 
   public AnalyticsDelivery addEventToDelivery(AnalyticsEvent analyticsEvent) {
-    for (AnalyticsSink sync : this.sinks) {
-      sync.addDelivery(analyticsEvent);
+
+    /**
+     * It should never happen but this
+     * is enough to get a difficult error
+     * to debug from MixPanel
+     */
+    if (analyticsEvent.getName() == null) {
+      LOGGER.error("The analytics event has no name (" + analyticsEvent + ")");
+      return this;
     }
+    AnalyticsEventDeliveryStatus analyticsEventDeliveryStatus = new AnalyticsEventDeliveryStatus(analyticsEvent, this.sinksName);
+    this.eventsQueue.put(analyticsEvent.getId(), analyticsEventDeliveryStatus);
     return this;
   }
 
@@ -83,6 +123,39 @@ public class AnalyticsDelivery {
 
   public boolean getLogEventDelivery() {
     return this.logEventDelivery;
+  }
+
+
+  /**
+   *
+   * @param batchNumber - the maximum number of element to return
+   * @param sinkName - the name of the sink
+   * @return a collection to deliver
+   */
+  public List<AnalyticsEventDeliveryExecution> pullEventsToDeliver(int batchNumber, String sinkName) {
+
+    List<AnalyticsEventDeliveryExecution> pulled = new ArrayList<>();
+    List<AnalyticsEventDeliveryStatus> completedDelivery = new ArrayList<>();
+    for(AnalyticsEventDeliveryStatus analyticsEventDeliveryStatus: this.eventsQueue.values()) {
+
+      if (analyticsEventDeliveryStatus.isComplete()) {
+        completedDelivery.add(analyticsEventDeliveryStatus);
+        continue;
+      }
+      if (analyticsEventDeliveryStatus.isDeliveredForSink(sinkName)) {
+        continue;
+      }
+
+      pulled.add(new AnalyticsEventDeliveryExecution(analyticsEventDeliveryStatus, sinkName));
+      if (pulled.size() >= batchNumber) {
+        break;
+      }
+
+    }
+    for(AnalyticsEventDeliveryStatus analyticsEventDeliveryStatus: completedDelivery){
+      this.eventsQueue.remove(analyticsEventDeliveryStatus.getAnalyticsEvent().getId());
+    }
+    return pulled;
   }
 
 }

@@ -1,19 +1,17 @@
 package net.bytle.vertx.analytics.sink;
 
 import io.vertx.core.Future;
-import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import net.bytle.vertx.analytics.model.AnalyticsUser;
 
 public interface AnalyticsSink {
 
+  /**
+   * @return a name identifier
+   */
+  String getName();
 
   @SuppressWarnings("unused")
   AnalyticsMixPanelSink deliverUser(AnalyticsUser user, String ip);
-
-  /**
-   * @return the number of event to deliver
-   */
-  Integer getQueueSize();
 
 
   /**
@@ -23,10 +21,6 @@ public interface AnalyticsSink {
    */
   Future<Void> processQueue();
 
-  /**
-   * Add an event to deliver
-   * @param analyticsEvent - the event to deliver
-   */
-  void addDelivery(AnalyticsEvent analyticsEvent);
+
 
 }

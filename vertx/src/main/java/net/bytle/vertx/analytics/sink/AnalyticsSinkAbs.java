@@ -1,8 +1,11 @@
 package net.bytle.vertx.analytics.sink;
 
 import net.bytle.vertx.analytics.AnalyticsDelivery;
+import net.bytle.vertx.analytics.AnalyticsEventDeliveryExecution;
 
-public abstract class AnalyticsSinkAbs implements AnalyticsSink{
+import java.util.List;
+
+public abstract class AnalyticsSinkAbs implements AnalyticsSink {
 
 
   private final AnalyticsDelivery analyticsDelivery;
@@ -14,4 +17,11 @@ public abstract class AnalyticsSinkAbs implements AnalyticsSink{
   public AnalyticsDelivery getAnalyticsDelivery() {
     return analyticsDelivery;
   }
+
+  public List<AnalyticsEventDeliveryExecution> pullEventToDeliver(int batchNumber) {
+
+    return this.analyticsDelivery.pullEventsToDeliver(batchNumber,this.getName());
+
+  }
+
 }
