@@ -29,11 +29,11 @@ import org.slf4j.LoggerFactory;
 public class EmailLoginFlow extends WebFlowAbs {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EmailLoginFlow.class);
-  private final UserLoginEmailCallback callback;
+  private final UserLoginEmailCallback step2Callback;
 
   public EmailLoginFlow(TowerApp towerApp) {
     super(towerApp);
-    this.callback = new UserLoginEmailCallback(this);
+    this.step2Callback = new UserLoginEmailCallback(this);
   }
 
   @Override
@@ -46,8 +46,8 @@ public class EmailLoginFlow extends WebFlowAbs {
     return WebFlowType.EMAIL_LOGIN;
   }
 
-  public UserLoginEmailCallback getCallback() {
-    return this.callback;
+  public UserLoginEmailCallback getStep2Callback() {
+    return this.step2Callback;
   }
 
 
@@ -80,7 +80,7 @@ public class EmailLoginFlow extends WebFlowAbs {
       } catch (NotFoundException e) {
         return Future.failedFuture(TowerFailureException
           .builder()
-          .setMessage("No Api client could be found for the URL (" + redirectUriEnhanced + ").")
+          .setMessage("No Api client could be found for the redirection URL (" + redirectUriEnhanced + ").")
           .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
           .build()
         );
@@ -89,7 +89,6 @@ public class EmailLoginFlow extends WebFlowAbs {
       return getApp()
       .getUserProvider()
       .getUserByEmail(bMailInternetAddress, authEmailPost.getRealmIdentifier())
-      .onFailure(routingContext::fail)
       .compose(userToLogin -> {
 
         /**
@@ -104,9 +103,9 @@ public class EmailLoginFlow extends WebFlowAbs {
 
         AuthUser jwtClaims = getApp()
           .getAuthProvider()
-          .toAuthUser(userToLogin)
+          .toJwtClaims(userToLogin)
           .addRequestClaims(routingContext)
-          .setClient(apiClient.getApp().getGuid());
+          .setAppGuid(apiClient.getApp().getGuid());
 
         /**
          * Recipient
@@ -122,7 +121,7 @@ public class EmailLoginFlow extends WebFlowAbs {
         SmtpSender sender = UsersUtil.toSenderUser(userToLogin.getRealm().getOwnerUser());
         BMailTransactionalTemplate letter = getApp()
           .getUserEmailLoginFlow()
-          .getCallback()
+          .getStep2Callback()
           .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims)
           .addIntroParagraph(
             "I just got a login request to <mark>" + realmNameOrHandle + "</mark> with your email.")

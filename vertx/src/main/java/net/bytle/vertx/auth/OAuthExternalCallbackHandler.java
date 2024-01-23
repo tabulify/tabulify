@@ -79,7 +79,7 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
     // Handle the callback of the flow
     final String code = ctx.request().getParam(AuthQueryProperty.CODE.toString());
 
-    // code is a require value
+    // code is a required value
     if (code == null) {
       ctx.fail(400, new IllegalStateException("Missing code parameter"));
       return;
@@ -204,7 +204,8 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
             this.oAuthExternalProvider.getOAuthExternal().getFlow(),
             ctx,
             authUser,
-            authState
+            authState,
+            AuthJwtClaims.createEmptyClaims()
           )
             .setHandlers(oAuthExternalProvider.getOAuthExternal().getOAuthSessionAuthenticationHandlers())
             .authenticateSession()

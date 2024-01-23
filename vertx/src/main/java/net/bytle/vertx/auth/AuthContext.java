@@ -31,17 +31,27 @@ import java.util.List;
 public class AuthContext {
 
   private final RoutingContext ctx;
+  private final AuthJwtClaims jwtClaims;
   private AuthUser authUser;
   private final AuthState authState;
   private final WebFlow flow;
   private List<Handler<AuthContext>> handlers = new ArrayList<>();
   private int handlerIndex = -1;
 
-  public AuthContext(WebFlow flow, RoutingContext ctx, AuthUser user, AuthState authState) {
+  /**
+   *
+   * @param flow - the flow that log the user in
+   * @param ctx - the context
+   * @param user - the user to set on the session
+   * @param authState - the auth state from an external oauth endpoint
+   * @param jwtClaims - the context claims from a link on an email or for a direct login
+   */
+  public AuthContext(WebFlow flow, RoutingContext ctx, AuthUser user, AuthState authState, AuthJwtClaims jwtClaims) {
     this.ctx = ctx;
     this.authUser = user;
     this.authState = authState;
     this.flow = flow;
+    this.jwtClaims = jwtClaims;
   }
 
 
@@ -173,7 +183,7 @@ public class AuthContext {
     if (contextUser != null) {
 
       JsonObject principal = contextUser.principal();
-      sessionUser = AuthUser.createFromClaims(principal);
+      sessionUser = AuthUser.createUserFromJsonClaims(principal);
 
     }
 
@@ -268,7 +278,7 @@ public class AuthContext {
     signInEvent.setFlowId(this.flow.getFlowType().getValue());
     String appIdentifier = this.authState.getAppIdentifier();
     if (appIdentifier == null) {
-      appIdentifier = this.authUser.getClient();
+      appIdentifier = this.jwtClaims.getAppGuid();
       if (appIdentifier == null && JavaEnvs.IS_DEV) {
         throw new InternalException("The app Identifier was not found (in the AuthUser or AuthState) for the Sign-in with the flow (" + this.flow.getClass().getSimpleName() + ")");
       }

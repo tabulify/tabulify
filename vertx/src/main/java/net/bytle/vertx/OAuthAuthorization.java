@@ -12,7 +12,7 @@ import net.bytle.vertx.auth.AuthUser;
 public class OAuthAuthorization {
 
   private String redirectUri;
-  private AuthUser user;
+  private AuthUser authUser;
 
   public void setRedirectUri(String redirectUri) {
     this.redirectUri = redirectUri;
@@ -22,12 +22,12 @@ public class OAuthAuthorization {
     return redirectUri;
   }
 
-  public AuthUser getUser() {
-    return user;
+  public AuthUser getAuthUser() {
+    return authUser;
   }
 
-  public void setAuthUser(AuthUser contextUser) {
-    this.user = contextUser;
+  public void setAuthUser(AuthUser authUser) {
+    this.authUser = authUser;
   }
 
 }

@@ -60,7 +60,7 @@ public enum AuthUserJwtClaims {
    * The app at the origin of the
    * login request
    */
-  CUSTOM_CLIENT_ID("client"),
+  CUSTOM_APP_ID("app"),
 
   /**
    * Don't use before a time

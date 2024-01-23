@@ -12,6 +12,7 @@ import net.bytle.exception.NullValueException;
 import net.bytle.type.Booleans;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
+import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.AuthUser;
 
 import java.net.MalformedURLException;
@@ -126,12 +127,12 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
    * @return the claims
    * @throws IllegalStructure if the claims object is not valid
    */
-  protected AuthUser getAndValidateJwtClaims(RoutingContext ctx, String linkName) throws IllegalStructure, TowerFailureException {
+  protected AuthJwtClaims getAndValidateJwtClaims(RoutingContext ctx, String linkName) throws IllegalStructure, TowerFailureException {
     OAuthAccessTokenResponse accessTokenResponse = getCallbackData(ctx, OAuthAccessTokenResponse.class);
-    JsonObject jwtClaims = jsonToken.decrypt(accessTokenResponse.getAccessToken(), DATA_CIPHER);
-    AuthUser authUser = AuthUser.createFromClaims(jwtClaims);
+    JsonObject jsonJwtClaims = jsonToken.decrypt(accessTokenResponse.getAccessToken(), DATA_CIPHER);
+    AuthJwtClaims jwtClaims = AuthJwtClaims.createJwtClaimsFromJson(jsonJwtClaims);
     try {
-      authUser.checkValidityAndExpiration();
+      jwtClaims.checkValidityAndExpiration();
     } catch (IllegalStructure e) {
       throw TowerFailureException
         .builder()
@@ -144,7 +145,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
     } catch (ExpiredException e) {
       String message = "This <b>" + linkName + "</b> link has expired.";
       try {
-        URI originReferer = authUser.getOriginReferer();
+        URI originReferer = jwtClaims.getOriginReferer();
         message += " Click <a href=\"" + originReferer.toURL() + "\">here</a> to ask for a new one.";
       } catch (NullValueException | IllegalStructure | MalformedURLException ignored) {
       }
@@ -156,7 +157,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
         .setMimeToHtml()
         .buildWithContextFailing(ctx);
     }
-    return authUser;
+    return jwtClaims;
   }
 
   @Override

@@ -15,7 +15,7 @@ import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.AuthUser;
+import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
 import net.bytle.vertx.flow.WebFlowEmailCallback;
@@ -89,7 +89,7 @@ public class PasswordResetFlow extends WebFlowAbs {
             .buildWithContextFailing(routingContext)
           );
         }
-        AuthUser jwtClaims = getApp().getAuthProvider().toAuthUser(userToResetPassword).addRequestClaims(routingContext);
+        AuthJwtClaims jwtClaims = getApp().getAuthProvider().toJwtClaims(userToResetPassword).addRequestClaims(routingContext);
 
         BMailTransactionalTemplate letter = this.step2Callback
           .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims)

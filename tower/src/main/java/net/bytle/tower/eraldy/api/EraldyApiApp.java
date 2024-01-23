@@ -228,7 +228,7 @@ public class EraldyApiApp extends TowerApp {
      * Add the email login validation callback
      */
     getUserEmailLoginFlow()
-      .getCallback()
+      .getStep2Callback()
       .addCallback(router);
 
     /**

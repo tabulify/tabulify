@@ -23,10 +23,7 @@ import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.AuthContext;
-import net.bytle.vertx.auth.AuthState;
-import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.auth.OAuthExternalCodeFlow;
+import net.bytle.vertx.auth.*;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
 import net.bytle.vertx.flow.WebFlowType;
@@ -164,10 +161,10 @@ public class ListRegistrationFlow extends WebFlowAbs {
         user.setRealm(listRealm);
 
 
-        AuthUser jwtClaims = getApp().getAuthProvider()
-          .toAuthUser(user)
+        AuthJwtClaims jwtClaims = getApp().getAuthProvider()
+          .toJwtClaims(user)
           .addRequestClaims(routingContext)
-          .setListGuidClaim(listGuidHash);
+          .setListGuid(listGuidHash);
 
         SmtpSender sender = UsersUtil.toSenderUser(registrationList.getOwnerUser());
         String subscriberRecipientName;
@@ -272,26 +269,26 @@ public class ListRegistrationFlow extends WebFlowAbs {
       });
   }
 
-  public void handleStep2EmailValidationLinkClick(RoutingContext ctx, AuthUser authUserAsClaims) {
+  public void handleStep2EmailValidationLinkClick(RoutingContext ctx, AuthJwtClaims jwtClaims) {
 
 
     String listGuid;
     try {
-      listGuid = authUserAsClaims.getListGuid();
+      listGuid = jwtClaims.getListGuid();
     } catch (NullValueException e) {
       ctx.fail(new InternalException("No guid was in the claims for a user list registration"));
       return;
     }
-    LocalDateTime optInTime = authUserAsClaims.getIssuedAt().toLocalDateTime();
+    LocalDateTime optInTime = jwtClaims.getIssuedAt().toLocalDateTime();
     String optInIp;
     try {
-      optInIp = authUserAsClaims.getOriginClientIp();
+      optInIp = jwtClaims.getOriginClientIp();
     } catch (NullValueException e) {
       LOGGER.error("The opt-in ip of the Jwt Claims is null");
       optInIp = "";
     }
 
-    String subjectEmail = authUserAsClaims.getSubjectEmail();
+    String subjectEmail = jwtClaims.getSubjectEmail();
     BMailInternetAddress bMailInternetAddress;
     try {
       bMailInternetAddress = BMailInternetAddress.of(subjectEmail);
@@ -321,14 +318,14 @@ public class ListRegistrationFlow extends WebFlowAbs {
     AuthProvider authProvider = getApp().getAuthProvider();
 
     authProvider
-      .getAuthUserForSessionByEmail(bMailInternetAddress, authUserAsClaims.getAudience())
+      .getAuthUserForSessionByEmail(bMailInternetAddress, jwtClaims.getAudience())
       .onFailure(ctx::fail)
       .onSuccess(authUserForSession -> {
         Future<AuthUser> futureFinaleAuthSessionUser;
         if (authUserForSession != null) {
           futureFinaleAuthSessionUser = Future.succeededFuture(authUserForSession);
         } else {
-          futureFinaleAuthSessionUser = authProvider.insertUserFromLoginAuthUserClaims(authUserAsClaims, ctx, this);
+          futureFinaleAuthSessionUser = authProvider.insertUserFromLoginAuthUserClaims(jwtClaims, ctx, this);
         }
         futureFinaleAuthSessionUser
           .onFailure(ctx::fail)
@@ -338,7 +335,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
               if (ctx.user() == null) {
                 addRegistrationConfirmationCookieData(ctx, registration);
                 UriEnhanced redirectUri = getRegistrationConfirmationOperationPath(registration);
-                new AuthContext(this, ctx, finalAuthSessionUser, AuthState.createEmpty())
+                new AuthContext(this, ctx, finalAuthSessionUser, AuthState.createEmpty(), jwtClaims)
                   .redirectViaHttp(redirectUri)
                   .authenticateSession();
               }

@@ -62,7 +62,7 @@ public class OrganizationUserProvider {
         if (user == null) {
           return Future.succeededFuture();
         }
-        return setOrganizationFromDb(user);
+        return getOrganizationUserFromDb(user);
       });
   }
 
@@ -89,8 +89,9 @@ public class OrganizationUserProvider {
    * and add organization information only such as the organization object from the database
    *
    * @param organizationUser - the organization user to add extra info
+   * @return null or the organizationUser enriched with the organization
    */
-  private Future<OrganizationUser> setOrganizationFromDb(OrganizationUser organizationUser) {
+  private Future<OrganizationUser> getOrganizationUserFromDb(OrganizationUser organizationUser) {
 
     if (organizationUser.getOrganization() != null) {
       return Future.succeededFuture(organizationUser);
@@ -99,7 +100,8 @@ public class OrganizationUserProvider {
     return this.getOrganizationRowForUser(organizationUser)
       .compose(row -> {
           if (row == null) {
-            return Future.failedFuture("The user (" + organizationUser + ") does not exist as organization user in the database");
+            // No error, we need to tell that the user is not an organization user
+            return Future.succeededFuture();
           }
           return this.setOrganizationFromDatabaseRow(row, organizationUser, null);
         }
@@ -137,6 +139,7 @@ public class OrganizationUserProvider {
       });
   }
 
+  @SuppressWarnings("SameParameterValue")
   private Future<OrganizationUser> setOrganizationFromDatabaseRow(Row row, OrganizationUser user, Organization organization) {
 
     Future<OrganizationUser> futureUser;
@@ -235,7 +238,7 @@ public class OrganizationUserProvider {
         if (user == null) {
           return Future.succeededFuture();
         }
-        return setOrganizationFromDb(user);
+        return getOrganizationUserFromDb(user);
       });
   }
 

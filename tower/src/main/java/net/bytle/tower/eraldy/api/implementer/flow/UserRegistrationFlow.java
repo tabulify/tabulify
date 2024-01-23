@@ -20,10 +20,7 @@ import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.AuthContext;
-import net.bytle.vertx.auth.AuthState;
-import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.auth.OAuthInternalSession;
+import net.bytle.vertx.auth.*;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
 import net.bytle.vertx.flow.WebFlowType;
@@ -90,7 +87,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         String realmNameOrHandle = RealmProvider.getNameOrHandle(realm);
 
         SmtpSender realmOwnerSender = UsersUtil.toSenderUser(realm.getOwnerUser());
-        AuthUser jwtClaims = getApp().getAuthProvider().toAuthUser(newUser).addRequestClaims(routingContext);
+        AuthJwtClaims jwtClaims = getApp().getAuthProvider().toJwtClaims(newUser).addRequestClaims(routingContext);
         String newUserName;
         try {
           newUserName = UsersUtil.getNameOrNameFromEmail(newUser);
@@ -196,11 +193,11 @@ public class UserRegistrationFlow extends WebFlowAbs {
    * Second steps:
    *
    * @param ctx              - the context
-   * @param authUserAsClaims - the claims
+   * @param jwtClaims - the claims
    */
-  public void handleStep2ClickOnEmailValidationLink(RoutingContext ctx, AuthUser authUserAsClaims) {
+  public void handleStep2ClickOnEmailValidationLink(RoutingContext ctx, AuthJwtClaims jwtClaims) {
 
-    String subjectEmail = authUserAsClaims.getSubjectEmail();
+    String subjectEmail = jwtClaims.getSubjectEmail();
     BMailInternetAddress bMailInternetAddress;
     try {
       bMailInternetAddress = BMailInternetAddress.of(subjectEmail);
@@ -215,7 +212,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
     AuthProvider authProvider = getApp().getAuthProvider();
 
     authProvider
-      .getAuthUserForSessionByEmailNotNull(bMailInternetAddress, authUserAsClaims.getRealmIdentifier())
+      .getAuthUserForSessionByEmailNotNull(bMailInternetAddress, jwtClaims.getRealmIdentifier())
       .onFailure(ctx::fail)
       .onSuccess(authUserFromGet -> {
         if (authUserFromGet != null) {
@@ -223,15 +220,15 @@ public class UserRegistrationFlow extends WebFlowAbs {
           // Possible causes:
           // * The user has clicked two times on the validation link received by email
           // * The user tries to register again
-          new AuthContext(this, ctx, authUserFromGet, AuthState.createEmpty())
+          new AuthContext(this, ctx, authUserFromGet, AuthState.createEmpty(), jwtClaims)
             .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(authUserFromGet.getSubject()))
             .authenticateSession();
           return;
         }
         authProvider
-          .insertUserFromLoginAuthUserClaims(authUserAsClaims, ctx, this)
+          .insertUserFromLoginAuthUserClaims(jwtClaims, ctx, this)
           .onFailure(ctx::fail)
-          .onSuccess(authUserInserted -> new AuthContext(this, ctx, authUserInserted, AuthState.createEmpty())
+          .onSuccess(authUserInserted -> new AuthContext(this, ctx, authUserInserted, AuthState.createEmpty(), jwtClaims)
             .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(authUserInserted.getSubject()))
             .authenticateSession()
           );
@@ -274,7 +271,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           .getRealmProvider()
           .isRealmGuidIdentifier(realmIdentifier)
       ) {
-        authUserClaims.setAudience(realmIdentifier);
+        authUserClaims.setRealm(realmIdentifier);
       } else {
         authUserClaims.setAudienceHandle(realmIdentifier);
       }

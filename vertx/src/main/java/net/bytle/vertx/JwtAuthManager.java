@@ -8,6 +8,7 @@ import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.NoSecretException;
+import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.AuthUser;
 
 /**
@@ -67,13 +68,14 @@ public class JwtAuthManager {
   }
 
   private String generateTokenFromAuthorization(OAuthAuthorization authorization, RoutingContext routingContext) {
-    AuthUser user = authorization.getUser();
+    AuthUser user = authorization.getAuthUser();
     int delay60daysInMinutes = 60 * 60 * 24;
-    return generateTokenFromUser(user, delay60daysInMinutes, routingContext);
+    AuthJwtClaims jwtClaims = AuthJwtClaims.createFromAuthUser(user);
+    return generateTokenFromClaims(jwtClaims, delay60daysInMinutes, routingContext);
   }
 
-  public String generateTokenFromUser(AuthUser user, Integer expirationMinutes, RoutingContext routingContext) {
-    JsonObject claims = user
+  public String generateTokenFromClaims(AuthJwtClaims jwtClaims, Integer expirationMinutes, RoutingContext routingContext) {
+    JsonObject claims = jwtClaims
       .addRequestClaims( routingContext)
       .toClaimsWithExpiration(expirationMinutes);
     JWTOptions jwtOptions = new JWTOptions();

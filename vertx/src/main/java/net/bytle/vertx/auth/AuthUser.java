@@ -3,11 +3,9 @@ package net.bytle.vertx.auth;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
-import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.*;
 import net.bytle.type.Casts;
 import net.bytle.type.time.Timestamp;
-import net.bytle.vertx.RoutingContextWrapper;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -16,53 +14,31 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A JWT claims object that represents a auth user with extra environment claims
+ * A JWT claims object that identifies a user
  * This is a user object in a AUTH scope
  * <p>
- * Claims may be created for user registration, meaning that the user
+ * A AuthUser Claims may be created for user registration, meaning that the user
  * does not exist in the database yet and has therefore no id
  */
 public class AuthUser {
 
 
   private static final String ERALDY_ISSUER_VALUE = "eraldy.com";
-  private final JsonObject claims;
+  protected final JsonObject claims;
 
   public AuthUser() {
     this.claims = new JsonObject();
     claims.put(AuthUserJwtClaims.ISSUER.toString(), ERALDY_ISSUER_VALUE);
   }
 
-  public AuthUser addRequestClaims(RoutingContext routingContext) {
-
-
-    RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
-    String clientIp;
-    try {
-      clientIp = routingContextWrapper.getRealRemoteClientIp();
-      claims.put(AuthUserJwtClaims.CUSTOM_ORIGIN_CLIENT_IP.toString(), clientIp);
-    } catch (NotFoundException ignored) {
-    }
-    URI optInUri;
-    try {
-      optInUri = routingContextWrapper.getReferer();
-      claims.put(AuthUserJwtClaims.CUSTOM_ORIGIN_REFERER.toString(), optInUri);
-    } catch (NotFoundException | IllegalStructure ignored) {
-    }
-
-    return this;
-
-  }
-
-  public static AuthUser createFromClaims(JsonObject jwtClaims) {
-
+  public static AuthUser createUserFromJsonClaims(JsonObject jsonObject) {
     AuthUser authUser = new AuthUser();
-    authUser.mergeClaims(jwtClaims);
+    authUser.claims.mergeIn(jsonObject);
     return authUser;
-
   }
 
-  private void mergeClaims(JsonObject jwtClaims) {
+
+  protected void mergeClaims(JsonObject jwtClaims) {
     this.claims.mergeIn(jwtClaims);
   }
 
@@ -119,34 +95,7 @@ public class AuthUser {
     return claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_EMAIL.getJwtKey());
   }
 
-  @SuppressWarnings("unused")
-  public String getOriginClientIp() throws NullValueException {
-    String clientIp = claims.getString(AuthUserJwtClaims.CUSTOM_ORIGIN_CLIENT_IP.getJwtKey());
-    if (clientIp == null) {
-      throw new NullValueException();
-    }
-    return clientIp;
-  }
 
-  public URI getOriginReferer() throws NullValueException, IllegalStructure {
-    String referer = claims.getString(AuthUserJwtClaims.CUSTOM_ORIGIN_REFERER.getJwtKey());
-    if (referer == null) {
-      throw new NullValueException();
-    }
-    try {
-      return new URI(referer);
-    } catch (URISyntaxException e) {
-      throw new IllegalStructure(referer + " is not a valid uri");
-    }
-  }
-
-  public String getListGuid() throws NullValueException {
-    String listGuid = claims.getString(AuthUserJwtClaims.CUSTOM_LIST_GUID.toString());
-    if (listGuid == null) {
-      throw new NullValueException("No list guid");
-    }
-    return listGuid;
-  }
 
   /**
    * @return the date
@@ -159,10 +108,7 @@ public class AuthUser {
     return Timestamp.createFromEpochSec(issuedAtInSec);
   }
 
-  public AuthUser setListGuidClaim(String listGuid) {
-    claims.put(AuthUserJwtClaims.CUSTOM_LIST_GUID.toString(), listGuid);
-    return this;
-  }
+
 
   /**
    * @param subject - a subject/user identifier for the audience
@@ -188,7 +134,7 @@ public class AuthUser {
   /**
    * @param audience - a namespace where the subject is unique (an application, a realm, ...)
    */
-  public void setAudience(String audience) {
+  public void setRealm(String audience) {
     claims.put(AuthUserJwtClaims.AUDIENCE.toString(), audience);
   }
 
@@ -196,13 +142,7 @@ public class AuthUser {
     claims.put(AuthUserJwtClaims.CUSTOM_AUDIENCE_HANDLE.toString(), audienceHandle);
   }
 
-  /**
-   * @param client - the client id (for us, the app guid)
-   */
-  public AuthUser setClient(String client) {
-    claims.put(AuthUserJwtClaims.CUSTOM_CLIENT_ID.toString(), client);
-    return this;
-  }
+
 
 
   public User toVertxUser() {
@@ -335,11 +275,6 @@ public class AuthUser {
     claims.put(key, obj);
   }
 
-  /**
-   * The client id (for us the app guid for now)
-   */
-  public String getClient() {
-    return claims.getString(AuthUserJwtClaims.CUSTOM_CLIENT_ID.toString());
-  }
+
 
 }

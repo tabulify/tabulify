@@ -8,8 +8,8 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.auth.AuthContext;
+import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.AuthState;
-import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlow;
 import net.bytle.vertx.flow.WebFlowEmailCallbackAbs;
 
@@ -39,13 +39,13 @@ public class UserLoginEmailCallback extends WebFlowEmailCallbackAbs {
    */
   public void handle(RoutingContext ctx) {
 
-    AuthUser authUser;
+    AuthJwtClaims jwtClaims;
     try {
-      authUser = getAndValidateJwtClaims(ctx, "login");
+      jwtClaims = getAndValidateJwtClaims(ctx, "login");
     } catch (IllegalStructure | TowerFailureException e) {
       return;
     }
-    String email = authUser.getSubjectEmail();
+    String email = jwtClaims.getSubjectEmail();
     BMailInternetAddress bMailInternetAddress;
     try {
       bMailInternetAddress = BMailInternetAddress.of(email);
@@ -57,13 +57,13 @@ public class UserLoginEmailCallback extends WebFlowEmailCallbackAbs {
         .buildWithContextFailingTerminal(ctx);
       return;
     }
-    String realmHandle = authUser.getRealmIdentifier();
+    String realmHandle = jwtClaims.getRealmIdentifier();
     EraldyApiApp apiApp = (EraldyApiApp) this.getWebFlow().getApp();
     apiApp
       .getAuthProvider()
       .getAuthUserForSessionByEmailNotNull(bMailInternetAddress, realmHandle)
       .onFailure(ctx::fail)
-      .onSuccess(authUserForSession -> new AuthContext(this.getWebFlow(), ctx, authUserForSession, AuthState.createEmpty())
+      .onSuccess(authUserForSession -> new AuthContext(this.getWebFlow(), ctx, authUserForSession, AuthState.createEmpty(), jwtClaims)
         .redirectViaHttpWithAuthRedirectUriAsUri()
         .authenticateSession());
 

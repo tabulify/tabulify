@@ -16,6 +16,7 @@ import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlow;
 
@@ -76,7 +77,7 @@ public class AuthProvider {
     if (user == null) {
       throw new NotFoundException();
     }
-    return AuthUser.createFromClaims(user.principal().mergeIn(user.attributes()));
+    return AuthUser.createUserFromJsonClaims(user.principal().mergeIn(user.attributes()));
 
 
   }
@@ -338,7 +339,7 @@ public class AuthProvider {
     authUserClaims.setSubject(user.getGuid());
     authUserClaims.setSubjectHandle(user.getHandle());
     authUserClaims.setSubjectEmail(user.getEmail());
-    authUserClaims.setAudience(user.getRealm().getGuid());
+    authUserClaims.setRealm(user.getRealm().getGuid());
     authUserClaims.setAudienceHandle(user.getRealm().getHandle());
     if (user instanceof OrganizationUser) {
       Organization organization = ((OrganizationUser) user).getOrganization();
@@ -355,7 +356,7 @@ public class AuthProvider {
   /**
    * @param authUserAsClaims - the claims as auth user
    * @param routingContext   - the routing context for analytics (Maybe null when loading user without HTTP call, for instance for test
-   * @param webFlow
+   * @param webFlow - the flow that creates this user
    * @return a user suitable
    */
   public Future<AuthUser> insertUserFromLoginAuthUserClaims(AuthUser authUserAsClaims, RoutingContext routingContext, WebFlow webFlow) {
@@ -478,4 +479,10 @@ public class AuthProvider {
     return this.checkRealmAuthorization(routingContext, list.getRealm(), authScope)
       .compose(realm -> Future.succeededFuture(list));
   }
+
+  public AuthJwtClaims toJwtClaims(User userToLogin) {
+    AuthUser authUser = toAuthUser(userToLogin);
+    return AuthJwtClaims.createFromAuthUser(authUser);
+  }
+
 }

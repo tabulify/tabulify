@@ -9,8 +9,8 @@ import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.auth.AuthContext;
+import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.AuthState;
-import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlowEmailCallbackAbs;
 
 /**
@@ -41,14 +41,14 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
    */
   public void handle(RoutingContext ctx) {
 
-    AuthUser authUser;
+    AuthJwtClaims jwtClaims;
     try {
-      authUser = getAndValidateJwtClaims(ctx, "password reset");
+      jwtClaims = getAndValidateJwtClaims(ctx, "password reset");
     } catch (IllegalStructure | TowerFailureException e) {
       return;
     }
 
-    String email = authUser.getSubjectEmail();
+    String email = jwtClaims.getSubjectEmail();
     BMailInternetAddress bMailInternetAddress;
     try {
       bMailInternetAddress = BMailInternetAddress.of(email);
@@ -61,13 +61,13 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
       return;
     }
 
-    String realmIdentifier = authUser.getRealmIdentifier();
+    String realmIdentifier = jwtClaims.getRealmIdentifier();
     EraldyApiApp apiApp = (EraldyApiApp) this.getWebFlow().getApp();
     apiApp
       .getAuthProvider()
       .getAuthUserForSessionByEmailNotNull(bMailInternetAddress, realmIdentifier)
       .onFailure(ctx::fail)
-      .onSuccess(authUserForSession -> new AuthContext(this.getWebFlow(), ctx, authUserForSession, AuthState.createEmpty())
+      .onSuccess(authUserForSession -> new AuthContext(this.getWebFlow(), ctx, authUserForSession, AuthState.createEmpty(), jwtClaims)
         .redirectViaHttp(apiApp.getMemberAppUri().setPath(FRONT_END_UPDATE_OPERATION_PATH))
         .authenticateSession());
 
