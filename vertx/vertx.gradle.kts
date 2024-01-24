@@ -9,6 +9,7 @@ val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
 val caffeineVersion = rootProject.ext.get("caffeineVersion").toString()
 val mapdbVersion = rootProject.ext.get("mapdbVersion").toString()
 val uuidVersion: String by project
+val infinispanVersion: String by project
 
 dependencies {
 
@@ -36,8 +37,13 @@ dependencies {
   // other health check
   implementation("io.vertx:vertx-health-check:$vertxVersion")
 
-  // mapdb
+  // mapdb (deprecated)
   implementation("org.mapdb:mapdb:$mapdbVersion")
+
+  // Infinispan (Cache)
+  // https://infinispan.org/docs/stable/titles/embedding/embedding.html
+  implementation("org.infinispan:infinispan-bom:$infinispanVersion")
+  implementation("org.infinispan:infinispan-core:$infinispanVersion")
 
 
   // Resilience (Rate limiting, ...)

@@ -12,6 +12,14 @@ import org.mapdb.Serializer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * Mapdb is old techno,
+ * it will return a new instance when you iterate over the values of
+ * a cache. Meaning that you can't pass status update that
+ * will persist over a simple loop.
+ * The project was not updated for a couple of years.
+ */
+@Deprecated
 public class MapDb implements AutoCloseable {
 
   private static final String MAPDB_FILE_HOME_CONF = "mapdb.file.home";
@@ -68,7 +76,9 @@ public class MapDb implements AutoCloseable {
       }
     }
     mapDb = mapDbTemp;
-    mapper = server.getJacksonMapperManager().jsonMapperBuilder()
+    mapper = server
+      .getJacksonMapperManager()
+      .jsonMapperBuilder()
       .setDisableFailOnUnknownProperties()
       .build();
   }

@@ -47,7 +47,6 @@ public class AnalyticsDelivery {
     /**
      * Sinks
      */
-
     List<AnalyticsSink> sinks = List.of(
       new AnalyticsMixPanelSink(this),
       new AnalyticsFileSystemSink(this)
