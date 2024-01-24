@@ -309,7 +309,7 @@ public class HttpServer implements AutoCloseable {
 
       }
       if (this.enableMetrics) {
-        VertxPrometheusMetrics.mountOnRouter(router, VertxPrometheusMetrics.DEFAULT_METRICS_PATH);
+        MainLauncher.prometheus.mountOnRouter(router, VertxPrometheusMetrics.DEFAULT_METRICS_PATH);
       }
       if (this.fakeErrorHandler) {
         /**

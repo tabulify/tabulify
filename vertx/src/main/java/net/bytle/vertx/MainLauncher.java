@@ -29,9 +29,12 @@ public class MainLauncher extends io.vertx.core.Launcher {
 
   static final Logger LOGGER;
 
+  public static final VertxPrometheusMetrics prometheus;
+
   static {
     Log4JManager.setConfigurationProperties();
     LOGGER = LogManager.getLogger(MainLauncher.class);
+    prometheus = new VertxPrometheusMetrics();
   }
 
 
@@ -40,7 +43,7 @@ public class MainLauncher extends io.vertx.core.Launcher {
     super.beforeStartingVertx(options);
     LOGGER.info("Enabling Metrics");
     options
-      .setMetricsOptions(VertxPrometheusMetrics.getInitMetricsOptions());
+      .setMetricsOptions(prometheus.getInitMetricsOptions());
     LOGGER.info("Workers default max execution time");
     options
       .setMaxWorkerExecuteTime(30) // default 60 seconds
@@ -52,9 +55,9 @@ public class MainLauncher extends io.vertx.core.Launcher {
     super.afterStartingVertx(vertx);
     try {
       LOGGER.info("Enabling Histogram Metrics");
-      VertxPrometheusMetrics.configEnableHistogramBuckets();
+      prometheus.configEnableHistogramBuckets();
       LOGGER.info("Enabling Jvm Metrics");
-      VertxPrometheusMetrics.configEnableJvm();
+      prometheus.configEnableJvm();
     } catch (IllegalConfiguration e) {
       throw new InternalException(e);
     }
@@ -71,6 +74,5 @@ public class MainLauncher extends io.vertx.core.Launcher {
     new MainLauncher().dispatch(args);
 
   }
-
 
 }

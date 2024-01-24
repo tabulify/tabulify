@@ -70,6 +70,7 @@ public class Server implements AutoCloseable {
   private MapDb mapDb;
   private final List<AutoCloseable> closeableServices = new ArrayList<>();
   private TowerDnsClient dnsClient;
+  private EmbeddedInfiniSpan embeddedInfinispan;
 
   Server(builder builder) {
 
@@ -173,7 +174,7 @@ public class Server implements AutoCloseable {
   }
 
   public PrometheusMeterRegistry getMetricsRegistry() {
-    return VertxPrometheusMetrics.getRegistry();
+    return MainLauncher.prometheus.getRegistry();
   }
 
 
@@ -212,6 +213,7 @@ public class Server implements AutoCloseable {
 
   @Override
   public void close() throws Exception {
+    MainLauncher.prometheus.close();
     for (AutoCloseable closable : this.closeableServices) {
       LOGGER.info("Closing " + closable.getClass().getSimpleName());
       closable.close();
@@ -236,6 +238,18 @@ public class Server implements AutoCloseable {
 
   }
 
+  /**
+   *
+   * @return an embedded infini span
+   */
+  @SuppressWarnings("unused")
+  public EmbeddedInfiniSpan getEmbeddedInfinispan() {
+    if (this.embeddedInfinispan == null) {
+      throw new InternalException("Embedded Infinispan is not enabled");
+    }
+    return this.embeddedInfinispan;
+  }
+
   public static class builder {
     private final String name;
     private final Vertx vertx;
@@ -257,6 +271,7 @@ public class Server implements AutoCloseable {
     private boolean enableMapdb = false;
     private boolean enableDnsClient = false;
     private ServerHealth serverHealth;
+    private boolean enableEmbeddedInfiniSpan = false;
 
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
@@ -410,6 +425,9 @@ public class Server implements AutoCloseable {
         server.dnsClient = new TowerDnsClient(server);
       }
 
+      if (this.enableEmbeddedInfiniSpan) {
+        server.embeddedInfinispan = EmbeddedInfiniSpan.config().setServer(server).build();
+      }
 
       return server;
     }
@@ -447,6 +465,16 @@ public class Server implements AutoCloseable {
      */
     public Server.builder enableApiKeyAuth() {
       this.addApiKeyAuth = true;
+      return this;
+    }
+
+    /**
+     * Infinispan is a cache manager
+     * with persistence capability
+     */
+    @SuppressWarnings("unused")
+    public Server.builder enableEmbeddedInfiniSpanCache() {
+      this.enableEmbeddedInfiniSpan = true;
       return this;
     }
 

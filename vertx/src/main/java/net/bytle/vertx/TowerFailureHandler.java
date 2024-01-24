@@ -1,6 +1,7 @@
 package net.bytle.vertx;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.vertx.core.Handler;
 import io.vertx.ext.mail.MailMessage;
 import net.bytle.exception.Exceptions;
@@ -18,9 +19,15 @@ public class TowerFailureHandler implements Handler<Throwable> {
   public TowerFailureHandler(Server server) {
 
 
-    failureCounter = server
-      .getMetricsRegistry()
-      .counter("vertx_failure");
+    PrometheusMeterRegistry metricsRegistry;
+    Counter failureCounterTemp;
+
+      metricsRegistry = server
+        .getMetricsRegistry();
+      failureCounterTemp = metricsRegistry
+        .counter("vertx_failure");
+
+    failureCounter = failureCounterTemp;
     this.mailProvider = server.getSmtpClient();
 
 
@@ -32,7 +39,9 @@ public class TowerFailureHandler implements Handler<Throwable> {
   @Override
   public void handle(Throwable thrown) {
 
-    this.failureCounter.increment();
+    if (this.failureCounter != null) {
+      this.failureCounter.increment();
+    }
 
     /**
      * <p>

@@ -13,13 +13,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- * Mapdb is old techno,
- * it will return a new instance when you iterate over the values of
+ * Mapdb is a techno that permits to manage
+ * value in a map that is backed by a persistent storage
+ * <p>
+ * We use now to persist the sessions.
+ * <p>
+ * Weakness: Hold techno. It will return a new instance when you iterate over the values of
  * a cache. Meaning that you can't pass status update that
  * will persist over a simple loop.
  * The project was not updated for a couple of years.
  */
-@Deprecated
 public class MapDb implements AutoCloseable {
 
   private static final String MAPDB_FILE_HOME_CONF = "mapdb.file.home";
@@ -88,6 +91,7 @@ public class MapDb implements AutoCloseable {
     mapDb.close();
   }
 
+  @SuppressWarnings("unused")
   public <K, V> DB.HashMapMaker<K, V> hashMapWithJsonValueObject(String name, Serializer<K> keySerializer, Class<V> valueClass) {
 
     MapDbJacksonSerializer<V> valueSerializer = new MapDbJacksonSerializer<>(valueClass, mapper);

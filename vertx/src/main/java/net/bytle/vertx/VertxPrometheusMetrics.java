@@ -31,13 +31,14 @@ import org.apache.logging.log4j.Logger;
  * To create metrics, you get the {@link #getRegistry()} and add micrometer metrics
  * See <a href="https://micrometer.io/docs/concepts#_registry">...</a>
  */
-public class VertxPrometheusMetrics {
+public class VertxPrometheusMetrics implements AutoCloseable {
 
   private static final Logger LOGGER = LogManager.getLogger(VertxPrometheusMetrics.class);
   private static final String REGISTRY_NAME = "tower";
   public static final String DEFAULT_METRICS_PATH = "/metrics";
+  private JvmGcMetrics jvmGcMetrics;
 
-  public static MetricsOptions getInitMetricsOptions() {
+  public MetricsOptions getInitMetricsOptions() {
 
     return new MicrometerMetricsOptions()
       .setEnabled(true)
@@ -49,14 +50,14 @@ public class VertxPrometheusMetrics {
   /**
    * Get the registry
    */
-  public static PrometheusMeterRegistry getRegistry() {
+  public PrometheusMeterRegistry getRegistry() {
     /**
      * By default, a unique registry is used and is shared across the Vert.x instances of the JVM.
      * We just show how to get another registry
      */
     MeterRegistry registry = BackendRegistries.getNow(REGISTRY_NAME);
     if (registry == null) {
-      throw new InternalException("The registry (" + REGISTRY_NAME + ") was not found. Did you start with the MainLauncher or the test Vertx?");
+      throw new InternalException("The registry (" + REGISTRY_NAME + ") was not found. Did you start with the MainLauncher or the test Vertx with Registry?");
     }
     return (PrometheusMeterRegistry) registry;
   }
@@ -64,7 +65,7 @@ public class VertxPrometheusMetrics {
   /**
    * Expose the metrics
    */
-  public static void mountOnRouter(Router router, String path) {
+  public void mountOnRouter(Router router, String path) {
 
     if (path == null) {
       // the default prometheus
@@ -82,7 +83,7 @@ public class VertxPrometheusMetrics {
    * By default, histogram-kind metrics will not contain averages or quantile stats.
    * See <a href="https://vertx.io/docs/vertx-micrometer-metrics/java/#_averages_and_quantiles_in_prometheus">Ref</a>
    */
-  public static void configEnableHistogramBuckets() throws IllegalConfiguration {
+  public void configEnableHistogramBuckets() throws IllegalConfiguration {
     LOGGER.info("Enable Prometheus Histogram Buckets");
     PrometheusMeterRegistry registry = getRegistry();
     registry.config().meterFilter(
@@ -101,12 +102,21 @@ public class VertxPrometheusMetrics {
    * <a href="https://vertx.io/docs/vertx-micrometer-metrics/java/#_jvm_or_other_instrumentations">...</a>
    * <a href="https://micrometer.io/docs/ref/jvm">...</a>
    */
-  public static void configEnableJvm() throws IllegalConfiguration {
+  public void configEnableJvm() throws IllegalConfiguration {
     PrometheusMeterRegistry registry = getRegistry();
     new ClassLoaderMetrics().bindTo(registry);
     new JvmMemoryMetrics().bindTo(registry);
-    new JvmGcMetrics().bindTo(registry);
+
+    this.jvmGcMetrics = new JvmGcMetrics();
+    jvmGcMetrics.bindTo(registry);
     new ProcessorMetrics().bindTo(registry);
     new JvmThreadMetrics().bindTo(registry);
+  }
+
+  @Override
+  public void close() throws Exception {
+    if(this.jvmGcMetrics!=null){
+      this.jvmGcMetrics.close();
+    }
   }
 }
