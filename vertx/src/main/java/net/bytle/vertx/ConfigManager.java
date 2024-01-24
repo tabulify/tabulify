@@ -134,7 +134,7 @@ public class ConfigManager {
       .compose(jsonObject -> {
         ConfigAccessor result;
         try {
-          result = ConfigAccessor.init(this.configName, jsonObject);
+          result = ConfigAccessor.createManually(this.configName, jsonObject);
         } catch (ConfigIllegalException e) {
           return Future.failedFuture(e);
         }
@@ -270,7 +270,7 @@ public class ConfigManager {
 
     private final String name;
     private final Vertx vertx;
-    public JsonObject jsonConfig;
+    private final JsonObject jsonConfig;
     private Path confSecretFilePath;
     private Path confFilePath;
 

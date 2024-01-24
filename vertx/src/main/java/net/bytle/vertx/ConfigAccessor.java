@@ -53,7 +53,7 @@ public class ConfigAccessor {
     this.keys = keys;
   }
 
-  public static ConfigAccessor init(String key, JsonObject jsonObject) throws ConfigIllegalException {
+  public static ConfigAccessor createManually(String key, JsonObject jsonObject) throws ConfigIllegalException {
     return new ConfigAccessor(Collections.singletonList(key), jsonObject, null);
   }
 

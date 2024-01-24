@@ -40,11 +40,6 @@ dependencies {
   // mapdb (deprecated)
   implementation("org.mapdb:mapdb:$mapdbVersion")
 
-  // Infinispan (Cache)
-  // https://infinispan.org/docs/stable/titles/embedding/embedding.html
-  implementation("org.infinispan:infinispan-bom:$infinispanVersion")
-  implementation("org.infinispan:infinispan-core:$infinispanVersion")
-
 
   // Resilience (Rate limiting, ...)
   // https://how-to.vertx.io/resilience4j-howto/ (9k)

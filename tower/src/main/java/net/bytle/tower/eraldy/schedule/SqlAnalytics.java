@@ -135,7 +135,7 @@ public class SqlAnalytics implements Handler<Long> {
       this.isRunning = true;
     }
 
-    PgPool jdbcPool = this.apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
+    PgPool jdbcPool = this.apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool();
 
     List<Future<RowSet<Row>>> futures = new ArrayList<>();
     this.executedPaths = new ArrayList<>();

@@ -87,7 +87,7 @@ public class UserProvider {
 
     this.apiApp = apiApp;
     Server server = this.apiApp.getApexDomain().getHttpServer().getServer();
-    this.jdbcPool = server.getJdbcPool();
+    this.jdbcPool = server.getPostgresDatabaseConnectionPool();
     this.databaseMapper = server.getJacksonMapperManager().jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .build();

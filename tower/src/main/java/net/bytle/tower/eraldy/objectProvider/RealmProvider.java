@@ -71,7 +71,7 @@ public class RealmProvider {
   private final JsonMapper databaseMapper;
 
   public RealmProvider(EraldyApiApp apiApp) {
-    this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
+    this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool();
     this.apiApp = apiApp;
     JacksonMapperManager jacksonMapperManager = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager();
     this.publicRealmJsonMapper = jacksonMapperManager

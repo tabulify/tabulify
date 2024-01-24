@@ -4,7 +4,6 @@ import io.vertx.core.Vertx;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
-import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
 
 import java.util.HashMap;
@@ -23,20 +22,6 @@ public class JdbcPostgresPool {
 
   private static PgPool jdbcPool = null;
 
-
-  /**
-   * @return the JDBCPool
-   * @throws InternalException - a runtime internal error if not found
-   *                           we don't throw an Exception at compile time because it should not happen
-   * @deprecated use {@link Server#getJdbcPool() instead}
-   */
-  @Deprecated
-  public static PgPool getJdbcPool() {
-    if (jdbcPool == null) {
-      throw new InternalException("No Jdbc Pool found");
-    }
-    return jdbcPool;
-  }
 
 
   public static PgPool create(Vertx vertx, JdbcConnectionInfo jdbcConnectionInfo) {
@@ -71,5 +56,6 @@ public class JdbcPostgresPool {
       poolOptions
     );
     return jdbcPool;
+
   }
 }

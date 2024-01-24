@@ -3,13 +3,13 @@
 # If you want to put real secret such as for the oauth, you should copy the value
 # into the file .tower.secret.yml
 ---
-jdbc.pool_size: 5
-jdbc.url: jdbc:postgresql://localhost:5433/postgres
-jdbc.password: welcome
-jdbc.user: postgres
+pg.pool_size: 5
+pg.url: jdbc:postgresql://localhost:5433/postgres
+pg.password: welcome
+pg.user: postgres
 # https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-SEARCH-PATH
 # comma-separated list of schema names
-jdbc.schema_path: 'cs_realms, cs_ip'
+pg.schema_path: 'cs_realms, cs_ip'
 # a test value used in the test
 test: test
 test.secret: test
@@ -89,7 +89,9 @@ jwt.auth.secret: 'welcome'
 # if this value change all users need to change their password
 password.hash.salt: 'welcome'
 
-# Deprecated: API does not have any CSRF
+# Deprecated for now: API does not have any CSRF
+# Once the front end redirect to the API if there is no CSRF
+# we may enable it
 # The secret that sign the CSRF token
 # Higher than 8 bytes
 # csrf.secret: 'welcome123'

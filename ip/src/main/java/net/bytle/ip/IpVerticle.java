@@ -42,7 +42,7 @@ public class IpVerticle extends AbstractVerticle {
         vertx.executeBlocking(() -> Server
             .create(IP_SERVER_NAME, vertx, configAccessor)
             .setFromConfigAccessorWithPort(PORT_DEFAULT)
-            .enableJdbcPool("pg") // postgres
+            .enablePostgresDatabase()
             .addIpGeolocation() // ip geolocation
             .enableApiKeyAuth() // Api Key Auth
             .build()

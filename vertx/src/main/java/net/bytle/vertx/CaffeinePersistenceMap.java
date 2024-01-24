@@ -12,16 +12,20 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * A caffeine persistent map
+ * write through implementation
+ * against the database
  */
 public class CaffeinePersistenceMap <K,V> extends AbstractMap<K,V>
   implements Map<K,V> {
 
 
   private final Cache<K, V> cache;
+  private final CaffeinePersistenceManager.MapConfig<K, V> mapConfig;
 
-  public CaffeinePersistenceMap() {
 
+  public CaffeinePersistenceMap(CaffeinePersistenceManager.MapConfig<K, V> mapConfig) {
 
+    this.mapConfig = mapConfig;
     cache = Caffeine.newBuilder()
       .expireAfterWrite(1, TimeUnit.MINUTES)
       .maximumSize(1000)
@@ -31,14 +35,17 @@ public class CaffeinePersistenceMap <K,V> extends AbstractMap<K,V>
         }
       })
       .build();
-
   }
+
+
+
 
   @NotNull
   @Override
   public Set<Entry<K, V>> entrySet() {
     return cache.asMap().entrySet();
   }
+
 
 
 }

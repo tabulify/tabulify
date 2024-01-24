@@ -1,0 +1,11 @@
+# Because Vertx is a utility package,
+# this file is used for dev and testing purpose only
+---
+jdbc.pool_size: 5
+jdbc.url: jdbc:postgresql://localhost:5433/postgres
+jdbc.password:  badpassword
+#jdbc.password: welcome
+jdbc.user: postgres
+# https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-SEARCH-PATH
+# comma-separated list of schema names
+jdbc.schema_path: 'cs_realms, cs_ip'

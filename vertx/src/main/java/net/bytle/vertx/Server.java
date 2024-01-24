@@ -55,7 +55,7 @@ public class Server implements AutoCloseable {
 
 
   private final builder builder;
-  private PgPool jdbcPool;
+  private PgPool pgDatabaseConnectionPool;
   private JdbcConnectionInfo jdbcConnectionInfo;
   private IpGeolocation ipGeolocation;
   private JdbcSchemaManager jdbcManager;
@@ -70,7 +70,6 @@ public class Server implements AutoCloseable {
   private MapDb mapDb;
   private final List<AutoCloseable> closeableServices = new ArrayList<>();
   private TowerDnsClient dnsClient;
-  private EmbeddedInfiniSpan embeddedInfinispan;
 
   Server(builder builder) {
 
@@ -130,11 +129,11 @@ public class Server implements AutoCloseable {
     return this.builder.configAccessor;
   }
 
-  public PgPool getJdbcPool() {
-    if (this.jdbcPool == null) {
-      throw new InternalException("No Jdbc Pool for the server");
+  public PgPool getPostgresDatabaseConnectionPool() {
+    if (this.pgDatabaseConnectionPool == null) {
+      throw new InternalException("No Pg Jdbc Pool for the server");
     }
-    return this.jdbcPool;
+    return this.pgDatabaseConnectionPool;
   }
 
   public IpGeolocation getIpGeolocation() {
@@ -238,17 +237,6 @@ public class Server implements AutoCloseable {
 
   }
 
-  /**
-   *
-   * @return an embedded infini span
-   */
-  @SuppressWarnings("unused")
-  public EmbeddedInfiniSpan getEmbeddedInfinispan() {
-    if (this.embeddedInfinispan == null) {
-      throw new InternalException("Embedded Infinispan is not enabled");
-    }
-    return this.embeddedInfinispan;
-  }
 
   public static class builder {
     private final String name;
@@ -271,8 +259,6 @@ public class Server implements AutoCloseable {
     private boolean enableMapdb = false;
     private boolean enableDnsClient = false;
     private ServerHealth serverHealth;
-    private boolean enableEmbeddedInfiniSpan = false;
-
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
       this.name = name;
@@ -349,12 +335,12 @@ public class Server implements AutoCloseable {
       if (this.poolName != null) {
         LOGGER.info("Start creation of JDBC Pool (" + this.poolName + ")");
         server.jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(this.poolName, server.getConfigAccessor());
-        server.jdbcPool = JdbcPostgresPool.create(server.getVertx(), server.jdbcConnectionInfo);
+        server.pgDatabaseConnectionPool = JdbcPostgresPool.create(server.getVertx(), server.jdbcConnectionInfo);
         server.jdbcManager = JdbcSchemaManager.create(server.jdbcConnectionInfo);
       }
       if (this.enableIpGeoLocation) {
         try {
-          server.ipGeolocation = IpGeolocation.create(server.jdbcPool, server.jdbcManager);
+          server.ipGeolocation = IpGeolocation.create(server.pgDatabaseConnectionPool, server.jdbcManager);
         } catch (DbMigrationException e) {
           throw new ConfigIllegalException("Ip geolocation bad schema migration", e);
         }
@@ -425,18 +411,21 @@ public class Server implements AutoCloseable {
         server.dnsClient = new TowerDnsClient(server);
       }
 
-      if (this.enableEmbeddedInfiniSpan) {
-        server.embeddedInfinispan = EmbeddedInfiniSpan.config().setServer(server).build();
-      }
-
       return server;
     }
 
     /**
-     * @param name - the name is used in the configuration as prefix
+     * Enable a database where all prefix starts with jdbc
      */
-    public builder enableJdbcPool(String name) {
-      this.poolName = name;
+    public builder enablePostgresDatabase() {
+      this.enablePostgresDatabase("pg");
+      return this;
+    }
+    /**
+     * @param prefixName - the name is used in the configuration as prefix
+     */
+    public builder enablePostgresDatabase(String prefixName) {
+      this.poolName = prefixName;
       return this;
     }
 
@@ -520,6 +509,11 @@ public class Server implements AutoCloseable {
 
     public Server.builder enableMapDb() {
       this.enableMapdb = true;
+      return this;
+    }
+
+    public Server.builder enableSmtpClient() {
+      enableSmtpClient("Eraldy.com");
       return this;
     }
 

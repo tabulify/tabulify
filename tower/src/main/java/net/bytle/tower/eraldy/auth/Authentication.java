@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.auth;
 
 import io.vertx.core.Vertx;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
-import io.vertx.ext.auth.sqlclient.SqlAuthentication;
 import io.vertx.ext.auth.sqlclient.SqlAuthenticationOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.APIKeyHandler;
@@ -10,9 +9,7 @@ import io.vertx.ext.web.handler.BasicAuthHandler;
 import io.vertx.ext.web.handler.ChainAuthHandler;
 import io.vertx.ext.web.handler.RedirectAuthHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
-import io.vertx.pgclient.PgPool;
 import net.bytle.vertx.ConfigAccessor;
-import net.bytle.vertx.JdbcPostgresPool;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
 
@@ -46,10 +43,10 @@ public class Authentication {
      */
     SqlAuthenticationOptions options = new SqlAuthenticationOptions()
       .setAuthenticationQuery("");
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
-    AuthenticationProvider authenticationProvider = SqlAuthentication.create(jdbcPool, options);
-    FormAuthenticationHandler formAuthHandler = FormAuthenticationHandler.create(authenticationProvider);
-    router.route("/login").handler(formAuthHandler);
+    // PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
+    // AuthenticationProvider authenticationProvider = SqlAuthentication.create(jdbcPool, options);
+    //FormAuthenticationHandler formAuthHandler = FormAuthenticationHandler.create(authenticationProvider);
+    //router.route("/login").handler(formAuthHandler);
 
 
 
