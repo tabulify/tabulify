@@ -12,19 +12,19 @@ import java.util.Objects;
 public class AnalyticsAgent   {
 
 
-  protected String agentId;
+  protected String id;
 
-  protected String agentString;
+  protected String string;
 
-  protected String agentTimezone;
+  protected String timezoneId;
 
-  protected String agentLocale;
+  protected String locale;
 
-  protected String agentOsName;
+  protected String osName;
 
-  protected String agentOsVersion;
+  protected String osVersion;
 
-  protected String agentOsArch;
+  protected String osArch;
 
   /**
   * The empty constructor is
@@ -36,115 +36,115 @@ public class AnalyticsAgent   {
   }
 
   /**
-  * @return agentId The user agent/device id (a uuid4 or a fingerprint for instance)  It's also known as the user anonymous id because this is the user identifier when the user is unknown.  When you send a message, a userId or a deviceId is required in order to identify a user.  We prefer the term device id (mixpanel) over anonymous id (segment) because it's more meaningful. We track the device.  It's created on the client side and stored by the client more permanently (via a cookie for the browser and stored in local storage for durability).  It's not the same as a session id because: * a session id may be regenerated (when the user sign in for instance). * the device id does not have any security feature. You can't login
+  * @return id The user agent/device id (a uuid4 or a fingerprint for instance)  It's also known as the user anonymous id because this is the user identifier when the user is unknown.  When you send a message, a userId or a deviceId is required in order to identify a user.  We prefer the term device id (mixpanel) over anonymous id (segment) because it's more meaningful. We track the device.  It's created on the client side and stored by the client more permanently (via a cookie for the browser and stored in local storage for durability).  It's not the same as a session id because: * a session id may be regenerated (when the user sign in for instance). * the device id does not have any security feature. You can't login
   */
-  @JsonProperty("agentId")
-  public String getAgentId() {
-    return agentId;
+  @JsonProperty("id")
+  public String getId() {
+    return id;
   }
 
   /**
-  * @param agentId The user agent/device id (a uuid4 or a fingerprint for instance)  It's also known as the user anonymous id because this is the user identifier when the user is unknown.  When you send a message, a userId or a deviceId is required in order to identify a user.  We prefer the term device id (mixpanel) over anonymous id (segment) because it's more meaningful. We track the device.  It's created on the client side and stored by the client more permanently (via a cookie for the browser and stored in local storage for durability).  It's not the same as a session id because: * a session id may be regenerated (when the user sign in for instance). * the device id does not have any security feature. You can't login
+  * @param id The user agent/device id (a uuid4 or a fingerprint for instance)  It's also known as the user anonymous id because this is the user identifier when the user is unknown.  When you send a message, a userId or a deviceId is required in order to identify a user.  We prefer the term device id (mixpanel) over anonymous id (segment) because it's more meaningful. We track the device.  It's created on the client side and stored by the client more permanently (via a cookie for the browser and stored in local storage for durability).  It's not the same as a session id because: * a session id may be regenerated (when the user sign in for instance). * the device id does not have any security feature. You can't login
   */
   @SuppressWarnings("unused")
-  public void setAgentId(String agentId) {
-    this.agentId = agentId;
+  public void setId(String id) {
+    this.id = id;
   }
 
   /**
-  * @return agentString The user agent string
+  * @return string The user agent string
   */
-  @JsonProperty("agentString")
-  public String getAgentString() {
-    return agentString;
+  @JsonProperty("string")
+  public String getString() {
+    return string;
   }
 
   /**
-  * @param agentString The user agent string
-  */
-  @SuppressWarnings("unused")
-  public void setAgentString(String agentString) {
-    this.agentString = agentString;
-  }
-
-  /**
-  * @return agentTimezone the timezone id (ie Europe/London)
-  */
-  @JsonProperty("agentTimezone")
-  public String getAgentTimezone() {
-    return agentTimezone;
-  }
-
-  /**
-  * @param agentTimezone the timezone id (ie Europe/London)
+  * @param string The user agent string
   */
   @SuppressWarnings("unused")
-  public void setAgentTimezone(String agentTimezone) {
-    this.agentTimezone = agentTimezone;
+  public void setString(String string) {
+    this.string = string;
   }
 
   /**
-  * @return agentLocale the locale (in a browser, this is the language setting)
+  * @return timezoneId the timezone id (ie Europe/London)
   */
-  @JsonProperty("agentLocale")
-  public String getAgentLocale() {
-    return agentLocale;
+  @JsonProperty("timezoneId")
+  public String getTimezoneId() {
+    return timezoneId;
   }
 
   /**
-  * @param agentLocale the locale (in a browser, this is the language setting)
-  */
-  @SuppressWarnings("unused")
-  public void setAgentLocale(String agentLocale) {
-    this.agentLocale = agentLocale;
-  }
-
-  /**
-  * @return agentOsName the OS name
-  */
-  @JsonProperty("agentOsName")
-  public String getAgentOsName() {
-    return agentOsName;
-  }
-
-  /**
-  * @param agentOsName the OS name
+  * @param timezoneId the timezone id (ie Europe/London)
   */
   @SuppressWarnings("unused")
-  public void setAgentOsName(String agentOsName) {
-    this.agentOsName = agentOsName;
+  public void setTimezoneId(String timezoneId) {
+    this.timezoneId = timezoneId;
   }
 
   /**
-  * @return agentOsVersion the OS version
+  * @return locale the locale (in a browser, this is the language setting)
   */
-  @JsonProperty("agentOsVersion")
-  public String getAgentOsVersion() {
-    return agentOsVersion;
+  @JsonProperty("locale")
+  public String getLocale() {
+    return locale;
   }
 
   /**
-  * @param agentOsVersion the OS version
-  */
-  @SuppressWarnings("unused")
-  public void setAgentOsVersion(String agentOsVersion) {
-    this.agentOsVersion = agentOsVersion;
-  }
-
-  /**
-  * @return agentOsArch the OS architecture
-  */
-  @JsonProperty("agentOsArch")
-  public String getAgentOsArch() {
-    return agentOsArch;
-  }
-
-  /**
-  * @param agentOsArch the OS architecture
+  * @param locale the locale (in a browser, this is the language setting)
   */
   @SuppressWarnings("unused")
-  public void setAgentOsArch(String agentOsArch) {
-    this.agentOsArch = agentOsArch;
+  public void setLocale(String locale) {
+    this.locale = locale;
+  }
+
+  /**
+  * @return osName the OS name
+  */
+  @JsonProperty("osName")
+  public String getOsName() {
+    return osName;
+  }
+
+  /**
+  * @param osName the OS name
+  */
+  @SuppressWarnings("unused")
+  public void setOsName(String osName) {
+    this.osName = osName;
+  }
+
+  /**
+  * @return osVersion the OS version
+  */
+  @JsonProperty("osVersion")
+  public String getOsVersion() {
+    return osVersion;
+  }
+
+  /**
+  * @param osVersion the OS version
+  */
+  @SuppressWarnings("unused")
+  public void setOsVersion(String osVersion) {
+    this.osVersion = osVersion;
+  }
+
+  /**
+  * @return osArch the OS architecture
+  */
+  @JsonProperty("osArch")
+  public String getOsArch() {
+    return osArch;
+  }
+
+  /**
+  * @param osArch the OS architecture
+  */
+  @SuppressWarnings("unused")
+  public void setOsArch(String osArch) {
+    this.osArch = osArch;
   }
 
 
@@ -159,12 +159,12 @@ public class AnalyticsAgent   {
     AnalyticsAgent analyticsAgent = (AnalyticsAgent) o;
     return
 
-            Objects.equals(agentId, analyticsAgent.agentId) && Objects.equals(agentString, analyticsAgent.agentString) && Objects.equals(agentTimezone, analyticsAgent.agentTimezone) && Objects.equals(agentLocale, analyticsAgent.agentLocale) && Objects.equals(agentOsName, analyticsAgent.agentOsName) && Objects.equals(agentOsVersion, analyticsAgent.agentOsVersion) && Objects.equals(agentOsArch, analyticsAgent.agentOsArch);
+            Objects.equals(id, analyticsAgent.id) && Objects.equals(string, analyticsAgent.string) && Objects.equals(timezoneId, analyticsAgent.timezoneId) && Objects.equals(locale, analyticsAgent.locale) && Objects.equals(osName, analyticsAgent.osName) && Objects.equals(osVersion, analyticsAgent.osVersion) && Objects.equals(osArch, analyticsAgent.osArch);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(agentId, agentString, agentTimezone, agentLocale, agentOsName, agentOsVersion, agentOsArch);
+    return Objects.hash(id, string, timezoneId, locale, osName, osVersion, osArch);
   }
 
   @Override

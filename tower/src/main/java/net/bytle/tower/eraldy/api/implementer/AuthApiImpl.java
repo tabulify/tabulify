@@ -85,12 +85,17 @@ public class AuthApiImpl implements AuthApi {
      * To be sure that we have the good realm
      * in {@link AuthRealmHandler#getAuthRealmCookie(RoutingContext)}
      */
+    App app = apiClient.getApp();
     AuthState authState = AuthState
       .createEmpty()
       .setListGuid(listGuid)
-      .setAppIdentifier(apiClient.getApp().getGuid())
-      .setRealmIdentifier(apiClient.getApp().getRealm().getGuid())
-      .setOrganisationIdentifier(apiClient.getApp().getRealm().getOrganization().getGuid());
+      .setAppIdentifier(app.getGuid())
+      .setAppHandle(app.getHandle())
+      .setRealmIdentifier(app.getRealm().getGuid())
+      .setRealmHandle(app.getRealm().getHandle())
+      .setOrganisationIdentifier(app.getRealm().getOrganization().getGuid())
+      .setOrganisationHandle(app.getRealm().getOrganization().getHandle())
+      ;
 
     return this.apiApp
       .getOauthFlow()

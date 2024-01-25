@@ -12,7 +12,7 @@ import java.util.Objects;
 public class Service   {
 
 
-  protected Long id;
+  protected Long localId;
 
   protected String guid;
 
@@ -36,19 +36,19 @@ public class Service   {
   }
 
   /**
-  * @return id The service id in the realm
+  * @return localId The service id in the realm
   */
   @JsonProperty("localId")
   public Long getLocalId() {
-    return id;
+    return localId;
   }
 
   /**
-  * @param id The service id in the realm
+  * @param localId The service id in the realm
   */
   @SuppressWarnings("unused")
-  public void setLocalId(Long id) {
-    this.id = id;
+  public void setLocalId(Long localId) {
+    this.localId = localId;
   }
 
   /**

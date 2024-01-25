@@ -42,4 +42,5 @@ public class AnalyticsEventDeliveryExecution {
       LOGGER.info(JsonObject.mapFrom(analyticsEvent).toString());
     }
   }
+
 }

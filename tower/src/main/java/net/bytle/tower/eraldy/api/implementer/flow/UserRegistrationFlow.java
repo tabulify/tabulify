@@ -271,9 +271,9 @@ public class UserRegistrationFlow extends WebFlowAbs {
           .getRealmProvider()
           .isRealmGuidIdentifier(realmIdentifier)
       ) {
-        authUserClaims.setRealm(realmIdentifier);
+        authUserClaims.setRealmGuid(realmIdentifier);
       } else {
-        authUserClaims.setAudienceHandle(realmIdentifier);
+        authUserClaims.setRealmHandle(realmIdentifier);
       }
 
       /**

@@ -5,7 +5,7 @@ import net.bytle.java.JavaEnvs;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
-import net.bytle.vertx.analytics.sink.AnalyticsFileSystemSink;
+import net.bytle.vertx.analytics.sink.AnalyticsLocalFileSystemSink;
 import net.bytle.vertx.analytics.sink.AnalyticsMixPanelSink;
 import net.bytle.vertx.analytics.sink.AnalyticsSink;
 import net.bytle.vertx.future.TowerFutureComposite;
@@ -49,7 +49,7 @@ public class AnalyticsDelivery {
      */
     List<AnalyticsSink> sinks = List.of(
       new AnalyticsMixPanelSink(this),
-      new AnalyticsFileSystemSink(this)
+      new AnalyticsLocalFileSystemSink(this)
     );
     for (AnalyticsSink analyticsSink : sinks) {
       this.sinks.add(analyticsSink);

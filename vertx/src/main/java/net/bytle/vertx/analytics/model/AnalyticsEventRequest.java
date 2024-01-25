@@ -15,6 +15,10 @@ public class AnalyticsEventRequest   {
 
   protected String agentId;
 
+  protected String flowId;
+
+  protected String flowHandle;
+
   protected String remoteIp;
 
   protected String sessionId;
@@ -33,7 +37,7 @@ public class AnalyticsEventRequest   {
   }
 
   /**
-  * @return agentId The agent id
+  * @return agentId The agent id The Analytics Agent is an object that has all properties
   */
   @JsonProperty("agentId")
   public String getAgentId() {
@@ -41,11 +45,43 @@ public class AnalyticsEventRequest   {
   }
 
   /**
-  * @param agentId The agent id
+  * @param agentId The agent id The Analytics Agent is an object that has all properties
   */
   @SuppressWarnings("unused")
   public void setAgentId(String agentId) {
     this.agentId = agentId;
+  }
+
+  /**
+  * @return flowId The flow id is the immutable id of the flow A flow is also known as a navigation flow or process that leads to a event creation
+  */
+  @JsonProperty("flowId")
+  public String getFlowId() {
+    return flowId;
+  }
+
+  /**
+  * @param flowId The flow id is the immutable id of the flow A flow is also known as a navigation flow or process that leads to a event creation
+  */
+  @SuppressWarnings("unused")
+  public void setFlowId(String flowId) {
+    this.flowId = flowId;
+  }
+
+  /**
+  * @return flowHandle The flow handle is the human identifier for the flow (rarely mutable)
+  */
+  @JsonProperty("flowHandle")
+  public String getFlowHandle() {
+    return flowHandle;
+  }
+
+  /**
+  * @param flowHandle The flow handle is the human identifier for the flow (rarely mutable)
+  */
+  @SuppressWarnings("unused")
+  public void setFlowHandle(String flowHandle) {
+    this.flowHandle = flowHandle;
   }
 
   /**
@@ -124,12 +160,12 @@ public class AnalyticsEventRequest   {
     AnalyticsEventRequest analyticsEventRequest = (AnalyticsEventRequest) o;
     return
 
-            Objects.equals(agentId, analyticsEventRequest.agentId) && Objects.equals(remoteIp, analyticsEventRequest.remoteIp) && Objects.equals(sessionId, analyticsEventRequest.sessionId) && Objects.equals(originUri, analyticsEventRequest.originUri) && Objects.equals(referrerUri, analyticsEventRequest.referrerUri);
+            Objects.equals(agentId, analyticsEventRequest.agentId) && Objects.equals(flowId, analyticsEventRequest.flowId) && Objects.equals(flowHandle, analyticsEventRequest.flowHandle) && Objects.equals(remoteIp, analyticsEventRequest.remoteIp) && Objects.equals(sessionId, analyticsEventRequest.sessionId) && Objects.equals(originUri, analyticsEventRequest.originUri) && Objects.equals(referrerUri, analyticsEventRequest.referrerUri);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(agentId, remoteIp, sessionId, originUri, referrerUri);
+    return Objects.hash(agentId, flowId, flowHandle, remoteIp, sessionId, originUri, referrerUri);
   }
 
   @Override

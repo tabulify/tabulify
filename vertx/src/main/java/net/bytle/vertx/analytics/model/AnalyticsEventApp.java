@@ -14,9 +14,15 @@ public class AnalyticsEventApp   {
 
   protected String appId;
 
+  protected String appHandle;
+
   protected String appRealmId;
 
+  protected String appRealmHandle;
+
   protected String appOrganisationId;
+
+  protected String appOrganisationHandle;
 
   /**
   * The empty constructor is
@@ -28,7 +34,7 @@ public class AnalyticsEventApp   {
   }
 
   /**
-  * @return appId The app id that has created this event
+  * @return appId The app id that has created this event (never change)
   */
   @JsonProperty("appId")
   public String getAppId() {
@@ -36,11 +42,27 @@ public class AnalyticsEventApp   {
   }
 
   /**
-  * @param appId The app id that has created this event
+  * @param appId The app id that has created this event (never change)
   */
   @SuppressWarnings("unused")
   public void setAppId(String appId) {
     this.appId = appId;
+  }
+
+  /**
+  * @return appHandle The app name identifier (human identifier, may change)
+  */
+  @JsonProperty("appHandle")
+  public String getAppHandle() {
+    return appHandle;
+  }
+
+  /**
+  * @param appHandle The app name identifier (human identifier, may change)
+  */
+  @SuppressWarnings("unused")
+  public void setAppHandle(String appHandle) {
+    this.appHandle = appHandle;
   }
 
   /**
@@ -60,7 +82,23 @@ public class AnalyticsEventApp   {
   }
 
   /**
-  * @return appOrganisationId the organization id (the billing logical unit, known also as the group id)
+  * @return appRealmHandle The realm human identifier (may change)
+  */
+  @JsonProperty("appRealmHandle")
+  public String getAppRealmHandle() {
+    return appRealmHandle;
+  }
+
+  /**
+  * @param appRealmHandle The realm human identifier (may change)
+  */
+  @SuppressWarnings("unused")
+  public void setAppRealmHandle(String appRealmHandle) {
+    this.appRealmHandle = appRealmHandle;
+  }
+
+  /**
+  * @return appOrganisationId the organisation id (the billing logical unit, known also as the group id)
   */
   @JsonProperty("appOrganisationId")
   public String getAppOrganisationId() {
@@ -68,11 +106,27 @@ public class AnalyticsEventApp   {
   }
 
   /**
-  * @param appOrganisationId the organization id (the billing logical unit, known also as the group id)
+  * @param appOrganisationId the organisation id (the billing logical unit, known also as the group id)
   */
   @SuppressWarnings("unused")
   public void setAppOrganisationId(String appOrganisationId) {
     this.appOrganisationId = appOrganisationId;
+  }
+
+  /**
+  * @return appOrganisationHandle the organisation handle (human identifier, may change)
+  */
+  @JsonProperty("appOrganisationHandle")
+  public String getAppOrganisationHandle() {
+    return appOrganisationHandle;
+  }
+
+  /**
+  * @param appOrganisationHandle the organisation handle (human identifier, may change)
+  */
+  @SuppressWarnings("unused")
+  public void setAppOrganisationHandle(String appOrganisationHandle) {
+    this.appOrganisationHandle = appOrganisationHandle;
   }
 
 
@@ -87,12 +141,12 @@ public class AnalyticsEventApp   {
     AnalyticsEventApp analyticsEventApp = (AnalyticsEventApp) o;
     return
 
-            Objects.equals(appId, analyticsEventApp.appId) && Objects.equals(appRealmId, analyticsEventApp.appRealmId) && Objects.equals(appOrganisationId, analyticsEventApp.appOrganisationId);
+            Objects.equals(appId, analyticsEventApp.appId) && Objects.equals(appHandle, analyticsEventApp.appHandle) && Objects.equals(appRealmId, analyticsEventApp.appRealmId) && Objects.equals(appRealmHandle, analyticsEventApp.appRealmHandle) && Objects.equals(appOrganisationId, analyticsEventApp.appOrganisationId) && Objects.equals(appOrganisationHandle, analyticsEventApp.appOrganisationHandle);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(appId, appRealmId, appOrganisationId);
+    return Objects.hash(appId, appHandle, appRealmId, appRealmHandle, appOrganisationId, appOrganisationHandle);
   }
 
   @Override

@@ -22,8 +22,11 @@ public class AuthState {
    */
   private static final String RANDOM_VALUE = "randomValue";
   private static final String REALM_IDENTIFIER = "realmIdentifier";
+  private static final String REALM_HANDLE = "realmHandle";
   private static final String APP_IDENTIFIER = "appIdentifier";
+  private static final String APP_HANDLE = "appHandle";
   private static final String ORG_IDENTIFIER = "orgIdentifier";
+  private static final String ORG_HANDLE = "orgHandle";
   private final JsonObject jsonObject;
 
   public static AuthState createFromStateString(String state) {
@@ -106,5 +109,40 @@ public class AuthState {
     return this.jsonObject.getString(ORG_IDENTIFIER);
   }
 
+  /**
+   * @param orgHandle - an identifier handle for the org (used in analytics)
+   */
+  public AuthState setOrganisationHandle(String orgHandle) {
+    this.jsonObject.put(ORG_HANDLE, orgHandle);
+    return this;
+  }
+
+  public String getOrgHandle() {
+    return this.jsonObject.getString(ORG_HANDLE);
+  }
+
+  /**
+   * @param appHandle - an identifier handle for the app (used in analytics)
+   */
+  public AuthState setAppHandle(String appHandle) {
+    this.jsonObject.put(APP_HANDLE, appHandle);
+    return this;
+  }
+
+  public String getAppHandle() {
+    return this.jsonObject.getString(APP_HANDLE);
+  }
+
+  /**
+   * @param realmHandle - an identifier handle for the realm (used in analytics)
+   */
+  public AuthState setRealmHandle(String realmHandle) {
+    this.jsonObject.put(REALM_HANDLE, realmHandle);
+    return this;
+  }
+
+  public String getRealmHandle() {
+    return this.jsonObject.getString(REALM_HANDLE);
+  }
 
 }

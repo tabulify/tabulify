@@ -133,13 +133,16 @@ public class AuthUser {
 
   /**
    * @param audience - a namespace where the subject is unique (an application, a realm, ...)
+   * @return
    */
-  public void setRealm(String audience) {
+  public AuthUser setRealmGuid(String audience) {
     claims.put(AuthUserJwtClaims.AUDIENCE.toString(), audience);
+    return this;
   }
 
-  public void setAudienceHandle(String audienceHandle) {
+  public AuthUser setRealmHandle(String audienceHandle) {
     claims.put(AuthUserJwtClaims.CUSTOM_AUDIENCE_HANDLE.toString(), audienceHandle);
+    return this;
   }
 
 
@@ -276,5 +279,24 @@ public class AuthUser {
   }
 
 
+  public AuthUser setOrganizationGuid(String orgGuid) {
+    claims.put(AuthUserJwtClaims.CUSTOM_ORG_GUID.toString(), orgGuid);
+    return this;
+  }
+  public AuthUser setOrganizationHandle(String orgHandle) {
+    claims.put(AuthUserJwtClaims.CUSTOM_ORG_HANDLE.toString(), orgHandle);
+    return this;
+  }
+  public String  getOrganizationHandle() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_ORG_HANDLE.toString());
+
+  }
+  public String getOrganizationGuid() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_ORG_GUID.toString());
+  }
+
+  public String getRealmHandle() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_HANDLE.toString());
+  }
 
 }

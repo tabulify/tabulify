@@ -268,7 +268,7 @@ public class User   {
   }
 
   /**
-  * @return creationTime The creation time of the user
+  * @return creationTime The creation time of the user in UTC
   */
   @JsonProperty("creationTime")
   public LocalDateTime getCreationTime() {
@@ -276,7 +276,7 @@ public class User   {
   }
 
   /**
-  * @param creationTime The creation time of the user
+  * @param creationTime The creation time of the user in UTC
   */
   @SuppressWarnings("unused")
   public void setCreationTime(LocalDateTime creationTime) {
@@ -284,7 +284,7 @@ public class User   {
   }
 
   /**
-  * @return modificationTime The last modification time of the user
+  * @return modificationTime The last modification time of the user in UTC
   */
   @JsonProperty("modificationTime")
   public LocalDateTime getModificationTime() {
@@ -292,7 +292,7 @@ public class User   {
   }
 
   /**
-  * @param modificationTime The last modification time of the user
+  * @param modificationTime The last modification time of the user in UTC
   */
   @SuppressWarnings("unused")
   public void setModificationTime(LocalDateTime modificationTime) {

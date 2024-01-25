@@ -71,7 +71,7 @@ public class AnalyticsApiImpl implements AnalyticsApi {
       state = new AnalyticsEventState();
       analyticsEvent.setState(state);
     }
-    state.setReceptionTime(DateTimeUtil.getNowInUtc());
+    state.setEventReceptionTime(DateTimeUtil.getNowInUtc());
 
     /**
      * We don't path the Realm Object but the realm id and organization id

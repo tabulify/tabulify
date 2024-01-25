@@ -1,9 +1,9 @@
 package net.bytle.vertx.analytics.sink;
 
-import io.vertx.core.json.JsonObject;
-import net.bytle.exception.IllegalStructure;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import net.bytle.exception.InternalException;
-import net.bytle.type.KeyNameNormalizer;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.vertx.Log4JXmlConfiguration;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import org.apache.logging.log4j.Level;
@@ -68,7 +68,7 @@ public class AnalyticsFileSystemLogger {
     if (analyticsLogger == null) {
       /**
        * We don't create one dynamically because it's a nightmare
-        */
+       */
       throw new InternalException("The appender " + APPENDER_NAME + " was not found in the log4j configuration.");
     }
 
@@ -95,7 +95,6 @@ public class AnalyticsFileSystemLogger {
      */
     analyticsEventLogger.addAppender(analyticsLogger, Level.INFO, null);
     config.addLogger(analyticsEventLogger.getName(), analyticsEventLogger);
-
 
 
   }
@@ -142,8 +141,8 @@ public class AnalyticsFileSystemLogger {
      */
     Node rollingFileAppenderNode = rootNodeChildrens.get(0);
     Class<?> rollingFileAppenderNodeClass = rollingFileAppenderNode.getType().getPluginClass();
-    if(!rollingFileAppenderNodeClass.equals(RollingFileAppender.class)){
-      throw new InternalException("The first rootNode childrens of the routing appender is not a rolling file appender but a "+rollingFileAppenderNodeClass.getName());
+    if (!rollingFileAppenderNodeClass.equals(RollingFileAppender.class)) {
+      throw new InternalException("The first rootNode childrens of the routing appender is not a rolling file appender but a " + rollingFileAppenderNodeClass.getName());
     }
     /**
      * An error is triggered when trying to build the object with {@link PluginBuilder}
@@ -175,7 +174,7 @@ public class AnalyticsFileSystemLogger {
 
   }
 
-  static public void log(AnalyticsEvent analyticsEvent) throws IllegalStructure {
+  static public void log(AnalyticsEvent analyticsEvent, JsonMapper jsonMapper) throws Exception {
 
 
     // Event Name
@@ -203,11 +202,16 @@ public class AnalyticsFileSystemLogger {
      * See MDC
      * https://logging.apache.org/log4j/2.x/manual/thread-context.html
      */
-    KeyNameNormalizer keyNameNormalizer = KeyNameNormalizer.createFromString(eventName);
-    String eventFileSystemName = keyNameNormalizer.toFileCase();
+    KeyNormalizer keyNormalizer = KeyNormalizer.createFromString(eventName);
+    String eventFileSystemName = keyNormalizer.toFileCase();
     ThreadContext.put(LOOKUP_VARIABLE_EVENT_SLUG, eventFileSystemName);
     ThreadContext.put(LOOKUP_VARIABLE_REALM_GUID, realmIdFromEvent);
-    String jsonString = JsonObject.mapFrom(analyticsEvent).toString();
+    String jsonString;
+    try {
+      jsonString = jsonMapper.writeValueAsString(analyticsEvent);
+    } catch (JsonProcessingException e) {
+      throw new InternalException("The event could not transformed as Json string", e);
+    }
     ANALYTICS_LOGGER.info(jsonString);
     ThreadContext.clearAll();
 

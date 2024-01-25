@@ -56,7 +56,7 @@ public class AnalyticsEvent   {
   }
 
   /**
-  * @return name the event name/type
+  * @return name The event name (known also as type) An human readable name that will be normalized
   */
   @JsonProperty("name")
   public String getName() {
@@ -64,7 +64,7 @@ public class AnalyticsEvent   {
   }
 
   /**
-  * @param name the event name/type
+  * @param name The event name (known also as type) An human readable name that will be normalized
   */
   @SuppressWarnings("unused")
   public void setName(String name) {
@@ -152,7 +152,7 @@ public class AnalyticsEvent   {
   }
 
   /**
-  * @return attr The attributes for the event type
+  * @return attr The custom attributes for the event type
   */
   @JsonProperty("attr")
   public Map<String, Object> getAttr() {
@@ -160,7 +160,7 @@ public class AnalyticsEvent   {
   }
 
   /**
-  * @param attr The attributes for the event type
+  * @param attr The custom attributes for the event type
   */
   @SuppressWarnings("unused")
   public void setAttr(Map<String, Object> attr) {

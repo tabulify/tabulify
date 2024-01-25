@@ -339,8 +339,8 @@ public class AuthProvider {
     authUserClaims.setSubject(user.getGuid());
     authUserClaims.setSubjectHandle(user.getHandle());
     authUserClaims.setSubjectEmail(user.getEmail());
-    authUserClaims.setRealm(user.getRealm().getGuid());
-    authUserClaims.setAudienceHandle(user.getRealm().getHandle());
+    authUserClaims.setRealmGuid(user.getRealm().getGuid());
+    authUserClaims.setRealmHandle(user.getRealm().getHandle());
     if (user instanceof OrganizationUser) {
       Organization organization = ((OrganizationUser) user).getOrganization();
       // An organization user object is
@@ -367,7 +367,8 @@ public class AuthProvider {
       .compose(insertedUser -> toAuthUserForSession(user)
         .compose(authUserForSession -> {
           SignUpEvent signUpEvent = new SignUpEvent();
-          signUpEvent.setFlowId(webFlow.getFlowType().getValue());
+          signUpEvent.getRequest().setFlowId(webFlow.getFlowType().getId().toString());
+          signUpEvent.getRequest().setFlowHandle(webFlow.getFlowType().getHandle());
           this.apiApp
             .getApexDomain()
             .getHttpServer()

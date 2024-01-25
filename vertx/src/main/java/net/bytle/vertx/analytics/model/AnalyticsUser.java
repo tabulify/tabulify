@@ -66,7 +66,7 @@ public class AnalyticsUser   {
   }
 
   /**
-  * @return email the user email
+  * @return email the user email (the human identifier, ie same as an handle, may change for the id)
   */
   @JsonProperty("email")
   public String getEmail() {
@@ -74,7 +74,7 @@ public class AnalyticsUser   {
   }
 
   /**
-  * @param email the user email
+  * @param email the user email (the human identifier, ie same as an handle, may change for the id)
   */
   @SuppressWarnings("unused")
   public void setEmail(String email) {

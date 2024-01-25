@@ -31,7 +31,7 @@ public class OrganizationProvider {
   public static final String ORGA_ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "id";
   private static final String GUID_PREFIX = "org";
   private final EraldyApiApp apiApp;
-  public static final String ORGA_NAME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "name";
+  public static final String ORGA_HANDLE_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "handle";
   private final PgPool jdbcPool;
 
   public OrganizationProvider(EraldyApiApp apiApp) {
@@ -67,12 +67,12 @@ public class OrganizationProvider {
   }
 
   private <T extends Organization> Future<T> getOrganizationFromDatabaseRow(Row row, Class<T> clazz) {
-    String orgaName = row.getString(ORGA_NAME_COLUMN);
+    String orgaHandle = row.getString(ORGA_HANDLE_COLUMN);
     Long orgaId = row.getLong(ORGA_ID_COLUMN);
 
     Organization organization = new Organization();
     organization.setLocalId(orgaId);
-    organization.setName(orgaName);
+    organization.setHandle(orgaHandle);
     organization.setGuid(this.computeGuid(organization).toString());
 
     return Future.succeededFuture(clazz.cast(organization));

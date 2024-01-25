@@ -1,14 +1,16 @@
 package net.bytle.vertx.analytics;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.uuid.Generators;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.type.KeyNameNormalizer;
+import net.bytle.type.KeyCase;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.vertx.*;
 import net.bytle.vertx.analytics.event.AnalyticsServerEvent;
 import net.bytle.vertx.analytics.model.*;
@@ -31,13 +33,23 @@ import java.util.stream.Collectors;
 public class AnalyticsTracker {
 
 
-
   private final AnalyticsDelivery analyticsDelivery;
+  private final JsonMapper jacksonMapperThatAllowEmptyBean;
 
   public AnalyticsTracker(Server server) throws ConfigIllegalException {
 
 
     this.analyticsDelivery = new AnalyticsDelivery(server);
+
+    /**
+     * Server event may have only the name of the event
+     * that is not a property. The bean may then be empty
+     * By default, Jackson failed, we disable it
+     */
+    this.jacksonMapperThatAllowEmptyBean = server.getJacksonMapperManager()
+      .jsonMapperBuilder()
+      .disableFailOnEmptyBeans()
+      .build();
 
   }
 
@@ -48,14 +60,11 @@ public class AnalyticsTracker {
   }
 
 
-
-
-
-
   /**
    * @param analyticsServerEvent - an internal server event
    */
   public EventBuilder eventBuilder(AnalyticsServerEvent analyticsServerEvent) {
+
     AnalyticsEvent analyticsEvent = new AnalyticsEvent();
 
 
@@ -66,14 +75,10 @@ public class AnalyticsTracker {
     analyticsEvent.setName(eventName);
 
     /**
-     * App Id
+     * App and request
      */
-    AnalyticsEventApp analyticsEventApp = new AnalyticsEventApp();
-    analyticsEvent.setApp(analyticsEventApp);
-    analyticsEventApp.setAppId(analyticsServerEvent.getAppId());
-    analyticsEventApp.setAppRealmId(analyticsServerEvent.getAppRealmId());
-    analyticsEventApp.setAppOrganisationId(analyticsServerEvent.getAppOrganizationId());
-
+    analyticsEvent.setApp(analyticsServerEvent.getApp());
+    analyticsEvent.setRequest(analyticsServerEvent.getRequest());
 
     /**
      * The primitive server name (ie event name, appId, ...)
@@ -81,7 +86,10 @@ public class AnalyticsTracker {
      * when creating the Json object
      * No null or blank value
      */
-    Map<String, Object> jsonObjectMapTarget = JsonObject.mapFrom(analyticsServerEvent).getMap()
+    Map<String, Object> jsonObjectMapTarget = this.jacksonMapperThatAllowEmptyBean.convertValue(
+        analyticsServerEvent,
+        new TypeReference<Map<String, Object>>() {
+        })
       .entrySet()
       .stream()
       .filter(e -> e.getValue() != null && !e.getValue().toString().isBlank())
@@ -125,7 +133,6 @@ public class AnalyticsTracker {
       this.analyticsEvent = analyticsEvent;
     }
 
-
     /**
      * Send the event to the queue
      * (the event is processed async)
@@ -156,8 +163,9 @@ public class AnalyticsTracker {
       if (name == null) {
         throw new InternalException("An event should have a name. The event (" + analyticsEvent.getClass().getSimpleName() + ") has no name");
       }
-      KeyNameNormalizer eventName = KeyNameNormalizer.createFromString(name);
-      analyticsEvent.setName(eventName.toEventCase());
+      KeyCase eventHandleCase = KeyCase.HANDLE;
+      KeyNormalizer eventName = KeyNormalizer.createFromString(name);
+      analyticsEvent.setName(eventName.toCase(eventHandleCase));
 
       /**
        * Create the event sub-objects if absent
@@ -186,6 +194,26 @@ public class AnalyticsTracker {
       if (analyticsEventUtm == null) {
         analyticsEventUtm = new AnalyticsEventUtm();
         analyticsEvent.setUtm(analyticsEventUtm);
+      }
+
+      /**
+       * Next to the event name, normalize the other handle
+       */
+      String appHandle = analyticsEventApp.getAppHandle();
+      if (appHandle != null) {
+        analyticsEventApp.setAppHandle(KeyNormalizer.createFromString(appHandle).toCase(eventHandleCase));
+      }
+      String appRealmHandle = analyticsEventApp.getAppRealmHandle();
+      if (appRealmHandle != null) {
+        analyticsEventApp.setAppRealmHandle(KeyNormalizer.createFromString(appRealmHandle).toCase(eventHandleCase));
+      }
+      String appOrganisationHandle = analyticsEventApp.getAppOrganisationHandle();
+      if (appOrganisationHandle != null) {
+        analyticsEventApp.setAppOrganisationHandle(KeyNormalizer.createFromString(appOrganisationHandle).toCase(eventHandleCase));
+      }
+      String flowHandle = analyticsEventRequest.getFlowHandle();
+      if (flowHandle != null) {
+        analyticsEventRequest.setFlowHandle(KeyNormalizer.createFromString(flowHandle).toCase(eventHandleCase));
       }
 
 
@@ -288,10 +316,10 @@ public class AnalyticsTracker {
        * (ie extract time from uuid, select on creation time
        * to partition)
        */
-      LocalDateTime creationTime = analyticsEventState.getCreationTime();
+      LocalDateTime creationTime = analyticsEventState.getEventCreationTime();
       if (creationTime == null) {
         creationTime = DateTimeUtil.getNowInUtc();
-        analyticsEventState.setCreationTime(creationTime);
+        analyticsEventState.setEventCreationTime(creationTime);
       }
       if (analyticsEvent.getId() == null) {
 

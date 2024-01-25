@@ -103,10 +103,24 @@ public class AuthJwtClaims extends AuthUser {
   }
 
   /**
-   * The app
+   * The app id
    */
   public String getAppGuid() {
     return claims.getString(AuthUserJwtClaims.CUSTOM_APP_ID.toString());
   }
+
+  /**
+   * @param appHandle - the app handle
+   */
+  public AuthJwtClaims setAppHandle(String appHandle) {
+    claims.put(AuthUserJwtClaims.CUSTOM_APP_HANDLE.toString(), appHandle);
+    return this;
+  }
+
+  public String getAppHandle() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_APP_HANDLE.toString());
+  }
+
+
 
 }

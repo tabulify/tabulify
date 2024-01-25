@@ -7,17 +7,17 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * The times of the status
+ * The times of the status (in UTC)
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AnalyticsEventState   {
 
 
-  protected LocalDateTime creationTime;
+  protected LocalDateTime eventCreationTime;
 
-  protected LocalDateTime receptionTime;
+  protected LocalDateTime eventReceptionTime;
 
-  protected LocalDateTime sendingTime;
+  protected LocalDateTime eventSendingTime;
 
   /**
   * The empty constructor is
@@ -29,51 +29,51 @@ public class AnalyticsEventState   {
   }
 
   /**
-  * @return creationTime The timestamp when the event has happend (ie when the object was created)
+  * @return eventCreationTime The date-time in UTC when the event has happend (ie when the object was created)
   */
-  @JsonProperty("creationTime")
-  public LocalDateTime getCreationTime() {
-    return creationTime;
+  @JsonProperty("eventCreationTime")
+  public LocalDateTime getEventCreationTime() {
+    return eventCreationTime;
   }
 
   /**
-  * @param creationTime The timestamp when the event has happend (ie when the object was created)
+  * @param eventCreationTime The date-time in UTC when the event has happend (ie when the object was created)
   */
   @SuppressWarnings("unused")
-  public void setCreationTime(LocalDateTime creationTime) {
-    this.creationTime = creationTime;
+  public void setEventCreationTime(LocalDateTime eventCreationTime) {
+    this.eventCreationTime = eventCreationTime;
   }
 
   /**
-  * @return receptionTime The timestamp of when a message was received on the API (if created and send by a client)
+  * @return eventReceptionTime The date-time in UTC of when a message was received on the API (if created and send by a client)
   */
-  @JsonProperty("receptionTime")
-  public LocalDateTime getReceptionTime() {
-    return receptionTime;
+  @JsonProperty("eventReceptionTime")
+  public LocalDateTime getEventReceptionTime() {
+    return eventReceptionTime;
   }
 
   /**
-  * @param receptionTime The timestamp of when a message was received on the API (if created and send by a client)
-  */
-  @SuppressWarnings("unused")
-  public void setReceptionTime(LocalDateTime receptionTime) {
-    this.receptionTime = receptionTime;
-  }
-
-  /**
-  * @return sendingTime The timestamp of when a message was sent to the analytics endpoint api Time: With Ga, you cannot set the time, It uses the notion of queue https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#qt
-  */
-  @JsonProperty("sendingTime")
-  public LocalDateTime getSendingTime() {
-    return sendingTime;
-  }
-
-  /**
-  * @param sendingTime The timestamp of when a message was sent to the analytics endpoint api Time: With Ga, you cannot set the time, It uses the notion of queue https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#qt
+  * @param eventReceptionTime The date-time in UTC of when a message was received on the API (if created and send by a client)
   */
   @SuppressWarnings("unused")
-  public void setSendingTime(LocalDateTime sendingTime) {
-    this.sendingTime = sendingTime;
+  public void setEventReceptionTime(LocalDateTime eventReceptionTime) {
+    this.eventReceptionTime = eventReceptionTime;
+  }
+
+  /**
+  * @return eventSendingTime The date-time in UTC of when a message was sent to the analytics endpoint api Time: With Ga, you cannot set the time, It uses the notion of queue https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#qt
+  */
+  @JsonProperty("eventSendingTime")
+  public LocalDateTime getEventSendingTime() {
+    return eventSendingTime;
+  }
+
+  /**
+  * @param eventSendingTime The date-time in UTC of when a message was sent to the analytics endpoint api Time: With Ga, you cannot set the time, It uses the notion of queue https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#qt
+  */
+  @SuppressWarnings("unused")
+  public void setEventSendingTime(LocalDateTime eventSendingTime) {
+    this.eventSendingTime = eventSendingTime;
   }
 
 
@@ -88,12 +88,12 @@ public class AnalyticsEventState   {
     AnalyticsEventState analyticsEventState = (AnalyticsEventState) o;
     return
 
-            Objects.equals(creationTime, analyticsEventState.creationTime) && Objects.equals(receptionTime, analyticsEventState.receptionTime) && Objects.equals(sendingTime, analyticsEventState.sendingTime);
+            Objects.equals(eventCreationTime, analyticsEventState.eventCreationTime) && Objects.equals(eventReceptionTime, analyticsEventState.eventReceptionTime) && Objects.equals(eventSendingTime, analyticsEventState.eventSendingTime);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(creationTime, receptionTime, sendingTime);
+    return Objects.hash(eventCreationTime, eventReceptionTime, eventSendingTime);
   }
 
   @Override

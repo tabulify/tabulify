@@ -1,11 +1,12 @@
 package net.bytle.tower.eraldy.model.openapi;
 
-import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Objects;
+
 /**
- * Organization for the users using the Combostrap product (Not from the user of other Realm) 
+ * Organization for the users using the Combostrap product (Not from the user of other Realm)
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Organization   {
@@ -14,6 +15,8 @@ public class Organization   {
   protected String guid;
 
   protected Long localId;
+
+  protected String handle;
 
   protected String name;
 
@@ -60,6 +63,22 @@ public class Organization   {
   }
 
   /**
+  * @return handle Organization Handle (a human identifier)
+  */
+  @JsonProperty("handle")
+  public String getHandle() {
+    return handle;
+  }
+
+  /**
+  * @param handle Organization Handle (a human identifier)
+  */
+  @SuppressWarnings("unused")
+  public void setHandle(String handle) {
+    this.handle = handle;
+  }
+
+  /**
   * @return name Organization name
   */
   @JsonProperty("name")
@@ -85,17 +104,17 @@ public class Organization   {
       return false;
     }
     Organization organization = (Organization) o;
-    return 
-            
-            Objects.equals(guid, organization.guid) && Objects.equals(localId, organization.localId) && Objects.equals(name, organization.name);
+    return
+
+            Objects.equals(guid, organization.guid) && Objects.equals(localId, organization.localId) && Objects.equals(handle, organization.handle) && Objects.equals(name, organization.name);
   }
 
   @Override
-  public int hashCode() { 
-    return Objects.hash(guid, localId, name);
+  public int hashCode() {
+    return Objects.hash(guid, localId, handle, name);
   }
 
-  @Override 
+  @Override
   public String toString() {
     return super.toString();
   }

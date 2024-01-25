@@ -61,6 +61,10 @@ public enum AuthUserJwtClaims {
    * login request
    */
   CUSTOM_APP_ID("app"),
+  /**
+   * The app handle at the origin of the request
+   */
+  CUSTOM_APP_HANDLE("appHandle"),
 
   /**
    * Don't use before a time
@@ -134,8 +138,10 @@ public enum AuthUserJwtClaims {
    * The group is the group id at the organizational level
    * For us, this is the organization level
    */
-  CUSTOM_GROUP("group");
-
+  CUSTOM_GROUP("group"),
+  CUSTOM_ORG_GUID("orgGuid"),
+  CUSTOM_ORG_HANDLE("orgHandle")
+  ;
   private final String jwtKey;
 
   AuthUserJwtClaims(String jwtKey) {

@@ -6,7 +6,8 @@ import net.bytle.vertx.analytics.model.AnalyticsUser;
 public interface AnalyticsSink {
 
   /**
-   * @return a name identifier
+   * @return a name identifier for the sink (equivalent to the scheme in an uri)
+   *
    */
   String getName();
 

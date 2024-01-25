@@ -105,7 +105,14 @@ public class EmailLoginFlow extends WebFlowAbs {
           .getAuthProvider()
           .toJwtClaims(userToLogin)
           .addRequestClaims(routingContext)
-          .setAppGuid(apiClient.getApp().getGuid());
+          .setAppGuid(apiClient.getApp().getGuid())
+          .setAppHandle(apiClient.getApp().getHandle())
+          .setRealmGuid(apiClient.getApp().getRealm().getGuid())
+          .setRealmHandle(apiClient.getApp().getRealm().getHandle())
+          .setOrganizationGuid(apiClient.getApp().getRealm().getOrganization().getGuid())
+          .setOrganizationHandle(apiClient.getApp().getRealm().getOrganization().getHandle())
+          ;
+
 
         /**
          * Recipient

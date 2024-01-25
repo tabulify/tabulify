@@ -33,25 +33,26 @@ public enum WebFlowType {
    */
   PASSWORD_LOGIN(6);
 
-  private final Integer value;
+  private final Integer id;
 
-  WebFlowType(Integer value) {
-    this.value = value;
+  WebFlowType(Integer id) {
+    this.id = id;
   }
 
   @JsonValue
-  public Integer getValue() {
-    return value;
+  public Integer getId() {
+    return id;
   }
 
-  @Override
-  public String toString() {
-    return String.valueOf(value);
+  @JsonValue
+  public String getHandle() {
+    return toString();
   }
+
 
   public static WebFlowType fromValue(Integer value) {
     for (WebFlowType b : WebFlowType.values()) {
-      if (b.value.equals(value)) {
+      if (b.id.equals(value)) {
         return b;
       }
     }

@@ -2,6 +2,7 @@ package net.bytle.vertx;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.json.jackson.DatabindCodec;
@@ -81,6 +82,7 @@ public class JacksonMapperManager {
 
     private boolean disableFailOnUnknownProperties = false;
     private final HashMap<Class<?>, Class<?>> mixins = new HashMap<>();
+    private boolean disableFailOnEmptyBeans = false;
 
     public JsonMapperBuilder setDisableFailOnUnknownProperties() {
       this.disableFailOnUnknownProperties = true;
@@ -100,6 +102,14 @@ public class JacksonMapperManager {
          */
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
       }
+      if (disableFailOnEmptyBeans) {
+        /**
+         * When the bean/pojo is empty, the default behaviour is to failed
+         * It may happen with a server event because the name is a property hard coded
+         * in a class
+         */
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+      }
       if (!this.mixins.isEmpty()) {
         for (Map.Entry<Class<?>, Class<?>> entry : this.mixins.entrySet()) {
           mapper.addMixIn(entry.getKey(), entry.getValue());
@@ -115,6 +125,11 @@ public class JacksonMapperManager {
      */
     public JsonMapperBuilder addMixIn(Class<?> originalClass, Class<?> mixinClass) {
       this.mixins.put(originalClass, mixinClass);
+      return this;
+    }
+
+    public JsonMapperBuilder disableFailOnEmptyBeans() {
+      this.disableFailOnEmptyBeans = true;
       return this;
     }
   }

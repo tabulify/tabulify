@@ -12,7 +12,8 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.Casts;
 import net.bytle.type.Enums;
-import net.bytle.type.KeyNameNormalizer;
+import net.bytle.type.KeyCase;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.DateTimeUtil;
@@ -23,6 +24,8 @@ import net.bytle.vertx.analytics.event.SignInEvent;
 import net.bytle.vertx.analytics.event.SignUpEvent;
 import net.bytle.vertx.analytics.event.UserProfileUpdateEvent;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
+import net.bytle.vertx.analytics.model.AnalyticsEventApp;
+import net.bytle.vertx.analytics.model.AnalyticsEventRequest;
 import net.bytle.vertx.analytics.model.AnalyticsUser;
 import net.bytle.vertx.auth.AuthUserUtils;
 import org.apache.logging.log4j.LogManager;
@@ -55,24 +58,40 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
    * as stated in the doc
    */
   private static final int MAX_BATCH_SIZE = 2000;
-  private final KeyNameNormalizer.WordCase keyCase;
+  private final KeyCase keyCase;
   static Logger LOGGER = LogManager.getLogger(AnalyticsMixPanelSink.class);
 
   private final MixpanelAPI mixpanel;
   private final MessageBuilder messageBuilder;
   private final Integer deliveryBatchSize;
+  private final String customPropertyAppHandleKey;
+  private final String customPropertyRealmHandle;
+  private final String customPropertyOrganizationHandle;
+  private final String customPropertyUserEmailKeyNormalized;
+  private final String customPropertyAppIdKey;
+  private final String customPropertyRealmId;
+  private final String customPropertyOrganizationId;
+  private final String customPropertyFlowId;
+  private final String customPropertyFlowHandle;
 
 
   public AnalyticsMixPanelSink(AnalyticsDelivery analyticsDelivery) throws ConfigIllegalException {
     super(analyticsDelivery);
 
     Server server = analyticsDelivery.getServer();
-    String keyCase = server.getConfigAccessor().getString(MIXPANEL_KEY_CASE_CONF, KeyNameNormalizer.WordCase.SNAKE.toString());
-    KeyNameNormalizer.WordCase wordCase;
+
+    /**
+     * When sending the key to mixpanel,
+     * it will show you it has name
+     * We normalize them then as Handle so that it's easier for human
+     * to read them
+     */
+    String keyCase = server.getConfigAccessor().getString(MIXPANEL_KEY_CASE_CONF, KeyCase.HANDLE.toString());
+    KeyCase wordCase;
     try {
-      wordCase = Casts.cast(keyCase, KeyNameNormalizer.WordCase.class);
+      wordCase = Casts.cast(keyCase, KeyCase.class);
     } catch (CastException e) {
-      throw new ConfigIllegalException("The value (" + keyCase + ") from the configuration (" + MIXPANEL_KEY_CASE_CONF + ") is not valid. The possibles values are: " + Enums.toConstantAsStringCommaSeparated(KeyNameNormalizer.WordCase.class), e);
+      throw new ConfigIllegalException("The value (" + keyCase + ") from the configuration (" + MIXPANEL_KEY_CASE_CONF + ") is not valid. The possibles values are: " + Enums.toConstantAsStringCommaSeparated(KeyCase.class), e);
     }
     this.keyCase = wordCase;
     String projectToken = server.getConfigAccessor().getString(MIX_PANEL_PROJECT_TOKEN);
@@ -90,6 +109,18 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
       throw new ConfigIllegalException("MixPanel: The delivery batch size value (" + this.deliveryBatchSize + ") from the configuration (" + MIX_PANEL_PROJECT_TOKEN + ") s greater than " + MAX_BATCH_SIZE);
     }
 
+    /**
+     * The property customized
+     */
+    this.customPropertyUserEmailKeyNormalized = KeyNormalizer.createFromString("User Email").toCase(this.keyCase);
+    this.customPropertyAppIdKey = KeyNormalizer.createFromString("App Id").toCase(this.keyCase);
+    this.customPropertyAppHandleKey = KeyNormalizer.createFromString("App Handle").toCase(this.keyCase);
+    this.customPropertyRealmId = KeyNormalizer.createFromString("Realm Id").toCase(this.keyCase);
+    this.customPropertyRealmHandle = KeyNormalizer.createFromString("Realm Handle").toCase(this.keyCase);
+    this.customPropertyOrganizationId = KeyNormalizer.createFromString("Organization Id").toCase(this.keyCase);
+    this.customPropertyOrganizationHandle = KeyNormalizer.createFromString("Organization Handle").toCase(this.keyCase);
+    this.customPropertyFlowId = KeyNormalizer.createFromString("Flow Id").toCase(this.keyCase);
+    this.customPropertyFlowHandle = KeyNormalizer.createFromString("Flow Handle").toCase(this.keyCase);
 
   }
 
@@ -139,8 +170,8 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
     /**
      * $device_id: The anonymous / device id
      */
-
-    String agentId = event.getRequest().getAgentId();
+    AnalyticsEventRequest request = event.getRequest();
+    String agentId = request.getAgentId();
     if (agentId != null) {
       props.put("$device_id", agentId);
     }
@@ -154,7 +185,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
     }
     String userEmail = event.getUser().getUserEmail();
     if (userEmail != null) {
-      props.put("user_email", userEmail);
+      props.put(this.customPropertyUserEmailKeyNormalized, userEmail);
     }
 
     /**
@@ -168,7 +199,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      * Geolocation is by default turned on
      * https://docs.mixpanel.com/docs/tracking/how-tos/privacy-friendly-tracking#disabling-geolocation
      */
-    String ip = event.getRequest().getRemoteIp();
+    String ip = request.getRemoteIp();
     if (ip != null) {
       props.put("ip", ip);
     }
@@ -178,17 +209,29 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      * Session Properties
      * <a href="https://docs.mixpanel.com/docs/features/sessions#session-properties'>Session</a>
      */
-    String sessionId = event.getRequest().getSessionId();
+    String sessionId = request.getSessionId();
     if (sessionId != null) {
       props.put("session_id", sessionId);
     }
-    URI originUri = event.getRequest().getOriginUri();
+    URI originUri = request.getOriginUri();
     if (originUri != null) {
       try {
         props.put("$current_url", originUri.toURL().toString());
       } catch (MalformedURLException e) {
         // not an url
       }
+    }
+
+    /**
+     * Flow
+     */
+    String flowId = request.getFlowId();
+    if (flowId != null) {
+      props.put(customPropertyFlowId, flowId);
+    }
+    String flowHandle = request.getFlowHandle();
+    if (flowHandle != null) {
+      props.put(customPropertyFlowHandle, flowHandle);
     }
 
     /**
@@ -224,11 +267,12 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      * The event is processed successfully
      * <p>
      * BUT the gui is not happy.
-     * We have discovered that ultimately they store all date in Epoch Sec (a downalod give you epoch data)
+     * We have discovered that ultimately they store all date in Epoch Sec (a download give you epoch data)
      * Setting it as Epoch, it just works.
      */
-    Long creationTimeIso = Timestamp.createFromLocalDateTime(event.getState().getCreationTime()).toEpochSec();
+    Long creationTimeIso = Timestamp.createFromLocalDateTime(event.getState().getEventCreationTime()).toEpochSec();
     props.put("$time", creationTimeIso);
+
 
     /**
      * Group Analytics is an add-on
@@ -236,10 +280,34 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      * https://docs.mixpanel.com/docs/tracking-methods/sdks/java#group-analytics
      * https://docs.mixpanel.com/docs/data-structure/advanced/group-analytics
      */
-    String appId = event.getApp().getAppId();
-    props.put("app_id", appId);
-    props.put("app_realm_id", event.getApp().getAppRealmId());
-    props.put("app_organization_id", event.getApp().getAppOrganisationId());
+    AnalyticsEventApp app = event.getApp();
+    String appId = app.getAppId();
+    if (appId != null) {
+      props.put(customPropertyAppIdKey, appId);
+    }
+    String appHandle = app.getAppHandle();
+    if (appHandle != null) {
+      props.put(customPropertyAppHandleKey, appHandle);
+    }
+    // realm and orga info are always set on the app
+    // ie if a user is known they are updated
+    String realmId = app.getAppRealmId();
+    if (realmId != null) {
+      props.put(customPropertyRealmId, realmId);
+    }
+    String realmHandle = app.getAppRealmHandle();
+    if (realmHandle != null) {
+      props.put(customPropertyRealmHandle, realmHandle);
+    }
+    String organisationId = app.getAppOrganisationId();
+    if (organisationId != null) {
+      props.put(customPropertyOrganizationId, organisationId);
+    }
+    String organisationHandle = app.getAppOrganisationHandle();
+    if (organisationHandle != null) {
+      props.put(customPropertyOrganizationHandle, organisationHandle);
+    }
+
 
     /**
      * Additional properties along with events
@@ -260,7 +328,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
       if (valueString.isBlank()) {
         continue;
       }
-      String snakeCaseKey = KeyNameNormalizer.createFromString(entry.getKey()).toWordCase(keyCase);
+      String snakeCaseKey = KeyNormalizer.createFromString(entry.getKey()).toCase(keyCase);
       props.put(snakeCaseKey, valueString);
     }
     return props;
@@ -361,7 +429,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
 
         AnalyticsEvent event = eventDelivery.getEvent();
 
-        event.getState().setSendingTime(DateTimeUtil.getNowInUtc());
+        event.getState().setEventSendingTime(DateTimeUtil.getNowInUtc());
 
         // Create an event
         // https://docs.mixpanel.com/docs/tracking/how-tos/identifying-users#what-is-distinct-id

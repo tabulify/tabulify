@@ -7,37 +7,66 @@ info:
 components:
   schemas:
     AnalyticsEventUser:
-      description: The user properties
+      description: |
+        The user properties for the event
+        They are only the identifier.
+        The AnalyticsUser object has all properties
+        and is used to create a profile
       type: object
       properties:
+        # the properties have all user as prefix to make them globally unique on all event properties
         userId:
           type: string
           description: A unique identifier
         userEmail:
           type: string
-          description: the user email
+          description: the user email (the user handle, may change for the id)
     AnalyticsEventApp:
       description: The properties of the app that created this event
       type: object
       properties:
+        # the properties have all app as prefix to make them unique on the event
+        # to make the difference with a user (for instance userRealmId)
         appId:
           type: string
-          description: The app id that has created this event
+          description: The app id that has created this event (never change)
+        appHandle:
+          type: string
+          description: The app name identifier (human identifier, may change)
         appRealmId:
           type: string
           description: |
             The realm of the app
             If the user is not anonymous, it is the user audience.
+        appRealmHandle:
+          type: string
+          description: The realm human identifier (may change)
         appOrganisationId:
           type: string
-          description: the organization id (the billing logical unit, known also as the group id)
+          description: the organisation id (the billing logical unit, known also as the group id)
+        appOrganisationHandle:
+          type: string
+          description: the organisation handle (human identifier, may change)
     AnalyticsEventRequest:
       description: The request/remote identifiers of an event
       type: object
       properties:
+        # these properties do not need a prefix to make them unique on the event
         agentId:
           type: string
-          description: The agent id
+          description: |
+            The agent id
+            The Analytics Agent is an object that has all properties
+        flowId:
+          type: string
+          description: |
+            The flow id is the immutable id of the flow
+            A flow is also known as a navigation flow or process that leads to a event creation
+          example: Sign in by email, Sign in by OAuth, ...
+        flowHandle:
+          type: string
+          description: |
+            The flow handle is the human identifier for the flow (rarely mutable)
         remoteIp:
           type: string
           description: The ip (the remote client ip)
@@ -64,15 +93,16 @@ components:
         The times of the status (in UTC)
       type: object
       properties:
-        creationTime:
+        # these properties have a prefix to make them unique on the event
+        eventCreationTime:
           type: string
           format: date-time
           description: The date-time in UTC when the event has happend (ie when the object was created)
-        receptionTime:
+        eventReceptionTime:
           type: string
           format: date-time
           description: The date-time in UTC of when a message was received on the API (if created and send by a client)
-        sendingTime:
+        eventSendingTime:
           type: string
           format: date-time
           description: |
@@ -90,6 +120,7 @@ components:
             * <a href="https://support.google.com/analytics/answer/10917952">[GA4] URL builders: Collect campaign data with custom URLs</a>
       type: object
       properties:
+        # the properties have all utm as prefix to make them unique on the event and clear that they are utm data
         utmCampaignId:
           type: string
           description: |
@@ -135,7 +166,7 @@ components:
       description: The properties of a user agent
       type: object
       properties:
-        agentId:
+        id:
           type: string
           description: |
             The user agent/device id (a uuid4 or a fingerprint for instance)
@@ -154,22 +185,22 @@ components:
             It's not the same as a session id because:
             * a session id may be regenerated (when the user sign in for instance).
             * the device id does not have any security feature. You can't login
-        agentString:
+        string:
           type: string
           description: The user agent string
-        agentTimezone:
+        timezoneId:
           type: string
           description: the timezone id (ie Europe/London)
-        agentLocale:
+        locale:
           type: string
           description: the locale (in a browser, this is the language setting)
-        agentOsName:
+        osName:
           type: string
           description: the OS name
-        agentOsVersion:
+        osVersion:
           type: string
           description: the OS version
-        agentOsArch:
+        osArch:
           type: string
           description: the OS architecture
     AnalyticsEvent:
@@ -194,6 +225,9 @@ components:
 
       type: object
       properties:
+        ## rules
+        ## minimal 2 words by properties name
+        ## except for the properties directly attached to the event (ie id and name)
         id:
           type: string
           description: |
@@ -225,7 +259,7 @@ components:
         utm:
           $ref: '#/components/schemas/AnalyticsEventUtm'
         attr:
-          description: The attributes for the event type
+          description: The custom attributes for the event type
           additionalProperties:
             type: object # may be number, string, boolean
     AnalyticsUser:
@@ -240,7 +274,7 @@ components:
           description: the user given name
         email:
           type: string
-          description: the user email
+          description: the user email (the human identifier, ie same as an handle, may change for the id)
         avatar:
           type: string
           format: uri

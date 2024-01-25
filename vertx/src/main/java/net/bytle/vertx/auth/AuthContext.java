@@ -13,6 +13,7 @@ import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.analytics.event.SignInEvent;
+import net.bytle.vertx.analytics.model.AnalyticsEventApp;
 import net.bytle.vertx.flow.WebFlow;
 import org.jetbrains.annotations.NotNull;
 
@@ -276,7 +277,8 @@ public class AuthContext {
   @NotNull
   private SignInEvent getSignInEvent() {
     SignInEvent signInEvent = new SignInEvent();
-    signInEvent.setFlowId(this.flow.getFlowType().getValue());
+    signInEvent.getRequest().setFlowId(this.flow.getFlowType().getId().toString());
+    signInEvent.getRequest().setFlowHandle(this.flow.getFlowType().toString());
     String appIdentifier = this.authState.getAppIdentifier();
     if (appIdentifier == null) {
       appIdentifier = this.jwtClaims.getAppGuid();
@@ -284,9 +286,40 @@ public class AuthContext {
         throw new InternalException("The app Identifier was not found (in the AuthUser or AuthState) for the Sign-in with the flow (" + this.flow.getClass().getSimpleName() + ")");
       }
     }
-    signInEvent.setAppId(appIdentifier);
-    signInEvent.setAppRealmId(this.authState.getRealmIdentifier());
-    signInEvent.setAppOrganizationId(this.authState.getOrgIdentifier());
+    /**
+     * App data
+     */
+    AnalyticsEventApp app = signInEvent.getApp();
+    app.setAppId(appIdentifier);
+    String appHandle = this.authState.getAppHandle();
+    if(appHandle==null){
+      appHandle = this.jwtClaims.getAppHandle();
+    }
+    app.setAppHandle(appHandle);
+    String realmIdentifier = this.authState.getRealmIdentifier();
+    if(realmIdentifier==null){
+      realmIdentifier = this.jwtClaims.getRealmIdentifier();
+    }
+    app.setAppRealmId(realmIdentifier);
+
+    String realmHandle = this.authState.getRealmHandle();
+    if(realmHandle==null){
+      realmHandle = this.jwtClaims.getRealmHandle();
+    }
+    app.setAppRealmHandle(realmHandle);
+
+    String orgIdentifier = this.authState.getOrgIdentifier();
+    if(orgIdentifier==null){
+      orgIdentifier = this.jwtClaims.getOrganizationGuid();
+    }
+    app.setAppOrganisationId(orgIdentifier);
+
+    String orgHandle = this.authState.getOrgHandle();
+    if(orgHandle==null){
+      orgHandle = this.jwtClaims.getOrganizationHandle();
+    }
+    app.setAppOrganisationHandle(orgHandle);
+
     return signInEvent;
   }
 

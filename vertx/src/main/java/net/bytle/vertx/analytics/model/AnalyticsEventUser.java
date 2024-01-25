@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 /**
- * The user properties
+ * The user properties for the event They are only the identifier. The AnalyticsUser object has all properties and is used to create a profile
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AnalyticsEventUser   {
@@ -42,7 +42,7 @@ public class AnalyticsEventUser   {
   }
 
   /**
-  * @return userEmail the user email
+  * @return userEmail the user email (the user handle, may change for the id)
   */
   @JsonProperty("userEmail")
   public String getUserEmail() {
@@ -50,7 +50,7 @@ public class AnalyticsEventUser   {
   }
 
   /**
-  * @param userEmail the user email
+  * @param userEmail the user email (the user handle, may change for the id)
   */
   @SuppressWarnings("unused")
   public void setUserEmail(String userEmail) {

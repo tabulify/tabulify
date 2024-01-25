@@ -57,6 +57,7 @@ public class EraldyModel {
      */
     Organization organization = new Organization();
     organization.setLocalId(1L);
+    organization.setHandle("Eraldy");
     organization.setName("Eraldy");
     this.apiApp.getOrganizationProvider().updateGuid(organization);
 

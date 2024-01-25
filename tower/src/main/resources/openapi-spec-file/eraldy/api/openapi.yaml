@@ -2049,19 +2049,24 @@ components:
         app:
           appRealmId: appRealmId
           appId: appId
+          appOrganisationHandle: appOrganisationHandle
+          appHandle: appHandle
+          appRealmHandle: appRealmHandle
           appOrganisationId: appOrganisationId
         request:
           agentId: agentId
           referrerUri: https://openapi-generator.tech
           remoteIp: 143.176.206.76
+          flowHandle: flowHandle
           originUri: https://openapi-generator.tech
           sessionId: sessionId
+          flowId: "Sign in by email, Sign in by OAuth, ..."
         name: "`Sign up`, `Purchase`"
         id: id
         state:
-          creationTime: 2000-01-23T04:56:07.000+00:00
-          receptionTime: 2000-01-23T04:56:07.000+00:00
-          sendingTime: 2000-01-23T04:56:07.000+00:00
+          eventSendingTime: 2000-01-23T04:56:07.000+00:00
+          eventCreationTime: 2000-01-23T04:56:07.000+00:00
+          eventReceptionTime: 2000-01-23T04:56:07.000+00:00
         attr:
           key: "{}"
         user:
@@ -2109,28 +2114,28 @@ components:
         attr:
           additionalProperties:
             type: object
-          description: The attributes for the event type
+          description: The custom attributes for the event type
           type: object
       type: object
     AnalyticsEventState:
       description: |
         The times of the status (in UTC)
       example:
-        creationTime: 2000-01-23T04:56:07.000+00:00
-        receptionTime: 2000-01-23T04:56:07.000+00:00
-        sendingTime: 2000-01-23T04:56:07.000+00:00
+        eventSendingTime: 2000-01-23T04:56:07.000+00:00
+        eventCreationTime: 2000-01-23T04:56:07.000+00:00
+        eventReceptionTime: 2000-01-23T04:56:07.000+00:00
       properties:
-        creationTime:
+        eventCreationTime:
           description: The date-time in UTC when the event has happend (ie when the
             object was created)
           format: date-time
           type: string
-        receptionTime:
+        eventReceptionTime:
           description: The date-time in UTC of when a message was received on the
             API (if created and send by a client)
           format: date-time
           type: string
-        sendingTime:
+        eventSendingTime:
           description: |
             The date-time in UTC of when a message was sent to the analytics endpoint api
             Time: With Ga, you cannot set the time, It uses the notion of queue
@@ -2143,23 +2148,39 @@ components:
       example:
         appRealmId: appRealmId
         appId: appId
+        appOrganisationHandle: appOrganisationHandle
+        appHandle: appHandle
+        appRealmHandle: appRealmHandle
         appOrganisationId: appOrganisationId
       properties:
         appId:
-          description: The app id that has created this event
+          description: The app id that has created this event (never change)
+          type: string
+        appHandle:
+          description: "The app name identifier (human identifier, may change)"
           type: string
         appRealmId:
           description: |
             The realm of the app
             If the user is not anonymous, it is the user audience.
           type: string
+        appRealmHandle:
+          description: The realm human identifier (may change)
+          type: string
         appOrganisationId:
-          description: "the organization id (the billing logical unit, known also\
+          description: "the organisation id (the billing logical unit, known also\
             \ as the group id)"
+          type: string
+        appOrganisationHandle:
+          description: "the organisation handle (human identifier, may change)"
           type: string
       type: object
     AnalyticsEventUser:
-      description: The user properties
+      description: |
+        The user properties for the event
+        They are only the identifier.
+        The AnalyticsUser object has all properties
+        and is used to create a profile
       example:
         userEmail: userEmail
         userId: userId
@@ -2168,7 +2189,7 @@ components:
           description: A unique identifier
           type: string
         userEmail:
-          description: the user email
+          description: "the user email (the user handle, may change for the id)"
           type: string
       type: object
     AnalyticsEventRequest:
@@ -2177,11 +2198,25 @@ components:
         agentId: agentId
         referrerUri: https://openapi-generator.tech
         remoteIp: 143.176.206.76
+        flowHandle: flowHandle
         originUri: https://openapi-generator.tech
         sessionId: sessionId
+        flowId: "Sign in by email, Sign in by OAuth, ..."
       properties:
         agentId:
-          description: The agent id
+          description: |
+            The agent id
+            The Analytics Agent is an object that has all properties
+          type: string
+        flowId:
+          description: |
+            The flow id is the immutable id of the flow
+            A flow is also known as a navigation flow or process that leads to a event creation
+          example: "Sign in by email, Sign in by OAuth, ..."
+          type: string
+        flowHandle:
+          description: |
+            The flow handle is the human identifier for the flow (rarely mutable)
           type: string
         remoteIp:
           description: The ip (the remote client ip)
@@ -2324,6 +2359,7 @@ components:
           organization:
             name: name
             guid: org-xmmmN
+            handle: handle
             localId: 1
           name: name
           guid: guid
@@ -2409,11 +2445,11 @@ components:
           example: The world
           type: string
         creationTime:
-          description: The creation time of the user
+          description: The creation time of the user in UTC
           format: date-time
           type: string
         modificationTime:
-          description: The last modification time of the user
+          description: The last modification time of the user in UTC
           format: date-time
           type: string
         realm:
@@ -2447,6 +2483,7 @@ components:
         organization:
           name: name
           guid: org-xmmmN
+          handle: handle
           localId: 1
         name: name
         guid: guid
@@ -2496,6 +2533,7 @@ components:
       example:
         name: name
         guid: org-xmmmN
+        handle: handle
         localId: 1
       properties:
         guid:
@@ -2509,6 +2547,9 @@ components:
           type: integer
           x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
             id\"})"
+        handle:
+          description: Organization Handle (a human identifier)
+          type: string
         name:
           description: Organization name
           type: string
@@ -2544,6 +2585,7 @@ components:
           organization:
             name: name
             guid: org-xmmmN
+            handle: handle
             localId: 1
           name: name
           guid: guid
@@ -2698,13 +2740,14 @@ components:
           organization:
             name: name
             guid: org-xmmmN
+            handle: handle
             localId: 1
           name: name
           guid: guid
           handle: handle
           localId: 0
-        id: 1
         type: smtp
+        localId: 1
         uri: smtp://user@host:port or user@twitter
         impersonatedUser:
           disabledReason: disabledReason
@@ -2727,6 +2770,7 @@ components:
             organization:
               name: name
               guid: org-xmmmN
+              handle: handle
               localId: 1
             name: name
             guid: guid
@@ -2734,7 +2778,7 @@ components:
             localId: 0
           email: john@doe.com
       properties:
-        id:
+        localId:
           description: The service id in the realm
           example: 1
           format: int64
@@ -3045,6 +3089,7 @@ components:
             organization:
               name: name
               guid: org-xmmmN
+              handle: handle
               localId: 1
             name: name
             guid: guid
@@ -3061,6 +3106,7 @@ components:
           organization:
             name: name
             guid: org-xmmmN
+            handle: handle
             localId: 1
           name: name
           guid: guid
@@ -3082,6 +3128,7 @@ components:
             organization:
               name: name
               guid: org-xmmmN
+              handle: handle
               localId: 1
             name: name
             guid: guid
@@ -3234,6 +3281,7 @@ components:
               organization:
                 name: name
                 guid: org-xmmmN
+                handle: handle
                 localId: 1
               name: name
               guid: guid
@@ -3250,6 +3298,7 @@ components:
             organization:
               name: name
               guid: org-xmmmN
+              handle: handle
               localId: 1
             name: name
             guid: guid
@@ -3271,6 +3320,7 @@ components:
               organization:
                 name: name
                 guid: org-xmmmN
+                handle: handle
                 localId: 1
               name: name
               guid: guid
@@ -3308,6 +3358,7 @@ components:
             organization:
               name: name
               guid: org-xmmmN
+              handle: handle
               localId: 1
             name: name
             guid: guid

@@ -944,6 +944,9 @@ components:
           description: The organization id in the database
           example: 1
           x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"id"})'
+        handle:
+          type: string
+          description: Organization Handle (a human identifier)
         name:
           type: string
           description: Organization name

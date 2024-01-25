@@ -7,39 +7,38 @@ import java.util.stream.Collectors;
 /**
  * A key name normalizer
  */
-public class KeyNameNormalizer {
+public class KeyNormalizer {
 
 
   private final String stringOrigin;
 
 
-
-  public enum WordCase {
-    EVENT,
-    HYPHEN,
-    SNAKE,
-    CAMEL,
-    SQL,
-    FILE
-  }
-
   private final List<String> parts = new ArrayList<>();
 
-  KeyNameNormalizer(String stringOrigin) {
+
+  KeyNormalizer(String stringOrigin) {
 
     this.stringOrigin = stringOrigin;
 
     StringBuilder currentWord = new StringBuilder();
+
     for (char c : stringOrigin.toCharArray()) {
-      // Separator
-      if (Character.isWhitespace(c) || Character.isUpperCase(c)) {
+
+      // Separator (ie whitespace, comma, dollar, underscore, ...)
+      boolean isCharacterSeparator = Character.isWhitespace(c) || !Character.isLetterOrDigit(c);
+      /**
+       * Note that the case separator will not work for an Upper Key Case such as UPPER_SNAKE case
+       * If this is the case, the upper/lower case logic should be added
+       */
+      boolean isCaseSeparator = Character.isUpperCase(c);
+      if (isCharacterSeparator || isCaseSeparator) {
         if (currentWord.length() > 0) {
           parts.add(currentWord.toString());
           currentWord.setLength(0);
         }
       }
-      if (Character.isWhitespace(c)) {
-        // we don't collect whitespace
+      if (isCharacterSeparator) {
+        // we don't collect character separator
         continue;
       }
       currentWord.append(c);
@@ -51,8 +50,8 @@ public class KeyNameNormalizer {
 
   }
 
-  public static KeyNameNormalizer createFromString(String name) {
-    return new KeyNameNormalizer(name);
+  public static KeyNormalizer createFromString(String name) {
+    return new KeyNormalizer(name);
   }
 
   public String toCamelCase() {
@@ -65,7 +64,7 @@ public class KeyNameNormalizer {
    *
    * @return a name in event case. ie camel case with a space between words
    */
-  public String toEventCase() {
+  public String toHandleCase() {
     return this.parts.stream()
       .map(word -> word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase())
       .collect(Collectors.joining(" "));
@@ -96,10 +95,10 @@ public class KeyNameNormalizer {
     return this.toUpperSnakeCase();
   }
 
-  public String toWordCase(WordCase wordCase) {
-    switch (wordCase) {
-      case EVENT:
-        return toEventCase();
+  public String toCase(KeyCase keyCase) {
+    switch (keyCase) {
+      case HANDLE:
+        return toHandleCase();
       case CAMEL:
         return toCamelCase();
       case HYPHEN:
@@ -111,7 +110,7 @@ public class KeyNameNormalizer {
       case SQL:
         return toSqlCase();
       default:
-        throw new IllegalArgumentException("The word-case (" + wordCase + ") is unknown");
+        throw new IllegalArgumentException("The word-case (" + keyCase + ") is unknown");
     }
   }
 

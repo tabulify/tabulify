@@ -1,19 +1,30 @@
 package net.bytle.vertx.analytics.sink;
 
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
 import net.bytle.vertx.analytics.AnalyticsDelivery;
 import net.bytle.vertx.analytics.AnalyticsEventDeliveryExecution;
+import net.bytle.vertx.analytics.model.AnalyticsEventApp;
+import net.bytle.vertx.analytics.model.AnalyticsEventRequest;
 import net.bytle.vertx.analytics.model.AnalyticsUser;
 
-public class AnalyticsFileSystemSink extends AnalyticsSinkAbs {
+public class AnalyticsLocalFileSystemSink extends AnalyticsSinkAbs {
 
-  public AnalyticsFileSystemSink(AnalyticsDelivery analyticsDelivery) {
+  private final JsonMapper noHandleMixin;
+
+  public AnalyticsLocalFileSystemSink(AnalyticsDelivery analyticsDelivery) {
+
     super(analyticsDelivery);
+    this.noHandleMixin = analyticsDelivery.getServer().getJacksonMapperManager()
+      .jsonMapperBuilder()
+      .addMixIn(AnalyticsEventApp.class, AnalyticsEventAppWithoutHandleMixin.class)
+      .addMixIn(AnalyticsEventRequest.class, AnalyticsEventRequestWithoutHandleMixin.class)
+      .build();
   }
 
   @Override
   public String getName() {
-    return "fileSystem";
+    return "file";
   }
 
   @Override
@@ -27,7 +38,7 @@ public class AnalyticsFileSystemSink extends AnalyticsSinkAbs {
 
     for (AnalyticsEventDeliveryExecution eventDeliveryExecution : this.pullEventToDeliver(20)) {
       try {
-        AnalyticsFileSystemLogger.log(eventDeliveryExecution.getEvent());
+        AnalyticsFileSystemLogger.log(eventDeliveryExecution.getEvent(), this.noHandleMixin);
       } catch (Exception e) {
         eventDeliveryExecution.fatalError(e);
         continue;
