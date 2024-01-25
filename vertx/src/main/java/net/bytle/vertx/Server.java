@@ -457,15 +457,6 @@ public class Server implements AutoCloseable {
       return this;
     }
 
-    /**
-     * Infinispan is a cache manager
-     * with persistence capability
-     */
-    @SuppressWarnings("unused")
-    public Server.builder enableEmbeddedInfiniSpanCache() {
-      this.enableEmbeddedInfiniSpan = true;
-      return this;
-    }
 
     /**
      * Disable jackson time handling
