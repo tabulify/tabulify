@@ -1,5 +1,9 @@
 # Design
 
+Goals:
+  * Number 1: Maintainability (easy to maintain, no third party techno, no duplicate code)
+  * Number 2: Usability (no bad position (in the middle, you need translate-middle), not clean and uniform design)
+
 ## Framework
 
 ### Everything is a data resource
