@@ -16,27 +16,41 @@ public class KeyNormalizer {
   private final List<String> parts = new ArrayList<>();
 
 
+  /**
+   * @param stringOrigin - the string to normalize
+   */
   KeyNormalizer(String stringOrigin) {
 
     this.stringOrigin = stringOrigin;
 
     StringBuilder currentWord = new StringBuilder();
 
+    /**
+     * To handle UPPER SNAKE CASE
+     * such as UPPER_SNAKE_CASE
+     * We split on a UPPER case character only if the previous character is not
+     */
+    boolean previousCharacterIsNotUpperCase = false;
     for (char c : stringOrigin.toCharArray()) {
 
       // Separator (ie whitespace, comma, dollar, underscore, ...)
       boolean isCharacterSeparator = Character.isWhitespace(c) || !Character.isLetterOrDigit(c);
+      boolean currentCharacterIsUpperCase = Character.isUpperCase(c);
       /**
-       * Note that the case separator will not work for an Upper Key Case such as UPPER_SNAKE case
-       * If this is the case, the upper/lower case logic should be added
+       * Separate on Uppercase if the previous character is not UPPER Case
+       * For example: to separate UPPER_CASE key in 2 words UPPER and CASE
        */
-      boolean isCaseSeparator = Character.isUpperCase(c);
-      if (isCharacterSeparator || isCaseSeparator) {
+      boolean separateOnCase = currentCharacterIsUpperCase && previousCharacterIsNotUpperCase;
+      if (isCharacterSeparator || separateOnCase) {
         if (currentWord.length() > 0) {
           parts.add(currentWord.toString());
           currentWord.setLength(0);
         }
       }
+      /**
+       * End
+       */
+      previousCharacterIsNotUpperCase = !currentCharacterIsUpperCase;
       if (isCharacterSeparator) {
         // we don't collect character separator
         continue;
@@ -50,8 +64,17 @@ public class KeyNormalizer {
 
   }
 
-  public static KeyNormalizer createFromString(String name) {
-    return new KeyNormalizer(name);
+  /**
+   *
+   * @param key - the name key to normalize
+   * This normalizer accepts all cases.
+   * It will split the key in words that are separated
+   *            by separators characters (not letter or digit)
+   *            by uppercase letter (if not preceded by another uppercase character to handle UPPER_SNAKE_CASE)
+   * The words can then be printed/normalized into a {@link KeyCase}
+   */
+  public static KeyNormalizer createFromString(String key) {
+    return new KeyNormalizer(key);
   }
 
   public String toCamelCase() {
