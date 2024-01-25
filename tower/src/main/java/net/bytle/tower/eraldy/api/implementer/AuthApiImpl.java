@@ -86,14 +86,14 @@ public class AuthApiImpl implements AuthApi {
      * in {@link AuthRealmHandler#getAuthRealmCookie(RoutingContext)}
      */
     App app = apiClient.getApp();
-    AuthState authState = AuthState
+    OAuthState oAuthState = OAuthState
       .createEmpty()
       .setListGuid(listGuid)
       .setAppIdentifier(app.getGuid())
       .setAppHandle(app.getHandle())
       .setRealmIdentifier(app.getRealm().getGuid())
       .setRealmHandle(app.getRealm().getHandle())
-      .setOrganisationIdentifier(app.getRealm().getOrganization().getGuid())
+      .setOrganisationGuid(app.getRealm().getOrganization().getGuid())
       .setOrganisationHandle(app.getRealm().getOrganization().getHandle())
       ;
 
@@ -102,7 +102,7 @@ public class AuthApiImpl implements AuthApi {
       .step1RedirectToExternalIdentityProvider(
         routingContext,
         provider,
-        authState
+        oAuthState
       )
       .compose(v -> Future.succeededFuture(new ApiResponse<>()));
 

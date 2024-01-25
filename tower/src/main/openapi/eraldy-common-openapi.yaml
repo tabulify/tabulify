@@ -924,10 +924,6 @@ components:
             It's used as:
               - basic authentication: "WWW-Authenticate: Basic realm="WallyWorld"
               - database schema, dns name
-        defaultApp:
-          description: The default application of the realm
-          allOf:
-            - $ref: '#/components/schemas/App'
     Organization:
       description: |
         Organization for the users using the Combostrap product

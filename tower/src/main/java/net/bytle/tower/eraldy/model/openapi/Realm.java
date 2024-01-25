@@ -8,7 +8,7 @@ import java.util.Objects;
 /**
  * A realm.  It identifies a protection space where the user and their credentials are stored.  * In a marketing level, it represents a brand. When people log in, they see the realm logo. * In a web/dns level, it would be a domain name (and apps would be subdomain) * In a security level, this is the authentication realm. * In an infrastructure level, this is called a tenant.
  **/
-@com.fasterxml.jackson.annotation.JsonIdentityInfo( generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = Realm.class)
+//@com.fasterxml.jackson.annotation.JsonIdentityInfo( generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = Realm.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Realm   {
 
@@ -24,8 +24,6 @@ public class Realm   {
   protected OrganizationUser ownerUser;
 
   protected String handle;
-
-  protected App defaultApp;
 
   /**
   * The empty constructor is
@@ -130,22 +128,6 @@ public class Realm   {
   @SuppressWarnings("unused")
   public void setHandle(String handle) {
     this.handle = handle;
-  }
-
-  /**
-  * @return defaultApp
-  */
-  @JsonProperty("defaultApp")
-  public App getDefaultApp() {
-    return defaultApp;
-  }
-
-  /**
-  * @param defaultApp Set defaultApp
-  */
-  @SuppressWarnings("unused")
-  public void setDefaultApp(App defaultApp) {
-    this.defaultApp = defaultApp;
   }
 
 

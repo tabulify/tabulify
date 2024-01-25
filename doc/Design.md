@@ -1,8 +1,12 @@
 # Design
 
 Goals:
-  * Number 1: Maintainability (easy to maintain, no third party techno, no duplicate code)
+  * Number 1: Maintainability: easy to maintain,
+    * no third party techno (1 DB),
+    * no duplicate code,
+    * composition (not configuration)
   * Number 2: Usability (no bad position (in the middle, you need translate-middle), not clean and uniform design)
+  * Number 3: Delete is good, see rule 1.
 
 ## Framework
 

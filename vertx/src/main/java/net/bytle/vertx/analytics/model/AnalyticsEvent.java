@@ -14,7 +14,7 @@ import java.util.Objects;
 public class AnalyticsEvent   {
 
 
-  protected String id;
+  protected String guid;
 
   protected String name;
 
@@ -40,19 +40,19 @@ public class AnalyticsEvent   {
   }
 
   /**
-  * @return id A unique identifier for each event.  It allows to delete duplicate.  It's a timestamp based UUID where the timestamp is the value of the creation time. (It permits to quickly retrieve via partition an event)  It's known for: * segment as messageId * mixpanel as $insert_id
+  * @return guid A global unique identifier for each event.  It allows to delete duplicate.  It's a timestamp based UUID where the timestamp is the value of the creation time. (It permits to quickly retrieve via partition an event)  It's known for: * segment as messageId * mixpanel as $insert_id
   */
-  @JsonProperty("id")
-  public String getId() {
-    return id;
+  @JsonProperty("guid")
+  public String getGuid() {
+    return guid;
   }
 
   /**
-  * @param id A unique identifier for each event.  It allows to delete duplicate.  It's a timestamp based UUID where the timestamp is the value of the creation time. (It permits to quickly retrieve via partition an event)  It's known for: * segment as messageId * mixpanel as $insert_id
+  * @param guid A global unique identifier for each event.  It allows to delete duplicate.  It's a timestamp based UUID where the timestamp is the value of the creation time. (It permits to quickly retrieve via partition an event)  It's known for: * segment as messageId * mixpanel as $insert_id
   */
   @SuppressWarnings("unused")
-  public void setId(String id) {
-    this.id = id;
+  public void setGuid(String guid) {
+    this.guid = guid;
   }
 
   /**
@@ -179,12 +179,12 @@ public class AnalyticsEvent   {
     AnalyticsEvent analyticsEvent = (AnalyticsEvent) o;
     return
 
-            Objects.equals(id, analyticsEvent.id) && Objects.equals(name, analyticsEvent.name) && Objects.equals(state, analyticsEvent.state) && Objects.equals(app, analyticsEvent.app) && Objects.equals(user, analyticsEvent.user) && Objects.equals(request, analyticsEvent.request) && Objects.equals(utm, analyticsEvent.utm) && Objects.equals(attr, analyticsEvent.attr);
+            Objects.equals(guid, analyticsEvent.guid) && Objects.equals(name, analyticsEvent.name) && Objects.equals(state, analyticsEvent.state) && Objects.equals(app, analyticsEvent.app) && Objects.equals(user, analyticsEvent.user) && Objects.equals(request, analyticsEvent.request) && Objects.equals(utm, analyticsEvent.utm) && Objects.equals(attr, analyticsEvent.attr);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name, state, app, user, request, utm, attr);
+    return Objects.hash(guid, name, state, app, user, request, utm, attr);
   }
 
   @Override

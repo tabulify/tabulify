@@ -212,7 +212,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
     AuthProvider authProvider = getApp().getAuthProvider();
 
     authProvider
-      .getAuthUserForSessionByEmailNotNull(bMailInternetAddress, jwtClaims.getRealmIdentifier())
+      .getAuthUserForSessionByEmailNotNull(bMailInternetAddress, jwtClaims.getRealmGuid())
       .onFailure(ctx::fail)
       .onSuccess(authUserFromGet -> {
         if (authUserFromGet != null) {
@@ -220,7 +220,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           // Possible causes:
           // * The user has clicked two times on the validation link received by email
           // * The user tries to register again
-          new AuthContext(this, ctx, authUserFromGet, AuthState.createEmpty(), jwtClaims)
+          new AuthContext(this, ctx, authUserFromGet, OAuthState.createEmpty(), jwtClaims)
             .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(authUserFromGet.getSubject()))
             .authenticateSession();
           return;
@@ -228,7 +228,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         authProvider
           .insertUserFromLoginAuthUserClaims(jwtClaims, ctx, this)
           .onFailure(ctx::fail)
-          .onSuccess(authUserInserted -> new AuthContext(this, ctx, authUserInserted, AuthState.createEmpty(), jwtClaims)
+          .onSuccess(authUserInserted -> new AuthContext(this, ctx, authUserInserted, OAuthState.createEmpty(), jwtClaims)
             .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(authUserInserted.getSubject()))
             .authenticateSession()
           );

@@ -54,10 +54,10 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
   /**
    * @param routingContext - the context
    * @param provider       - the provider string
-   * @param authState      - the auth state
+   * @param OAuthState      - the auth state
    * @return redirect to the Oauth provider
    */
-  public Future<Void> step1RedirectToExternalIdentityProvider(RoutingContext routingContext, String provider, AuthState authState) {
+  public Future<Void> step1RedirectToExternalIdentityProvider(RoutingContext routingContext, String provider, OAuthState OAuthState) {
 
 
     /**
@@ -96,7 +96,7 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
       return Future.failedFuture(IllegalArgumentExceptions.createWithInputNameAndValue("The OAuth provider (" + provider + ") is unknown", "provider", provider));
     }
     String redirectUrl = oAuthExternalProvider
-      .getAuthorizeUrl(routingContext, authState);
+      .getAuthorizeUrl(routingContext, OAuthState);
     routingContext.redirect(redirectUrl);
     return Future.succeededFuture();
 
@@ -104,6 +104,6 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
 
   @Override
   public WebFlowType getFlowType() {
-    return WebFlowType.EXTERNAL_OAUTH;
+    return WebFlowType.OAUTH;
   }
 }

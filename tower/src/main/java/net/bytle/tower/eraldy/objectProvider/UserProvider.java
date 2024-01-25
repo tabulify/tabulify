@@ -162,7 +162,7 @@ public class UserProvider {
       .insertUser(user)
       .compose(insertedUser -> {
         SignUpEvent signUpEvent = new SignUpEvent();
-        signUpEvent.getRequest().setFlowId(WebFlowType.LIST_IMPORT.getId().toString());
+        signUpEvent.getRequest().setFlowGuid(WebFlowType.LIST_IMPORT.getId().toString());
         signUpEvent.getRequest().setFlowHandle(WebFlowType.LIST_IMPORT.getHandle());
         this.apiApp
           .getApexDomain()

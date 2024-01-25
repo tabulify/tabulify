@@ -335,7 +335,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
               if (ctx.user() == null) {
                 addRegistrationConfirmationCookieData(ctx, registration);
                 UriEnhanced redirectUri = getRegistrationConfirmationOperationPath(registration);
-                new AuthContext(this, ctx, finalAuthSessionUser, AuthState.createEmpty(), jwtClaims)
+                new AuthContext(this, ctx, finalAuthSessionUser, OAuthState.createEmpty(), jwtClaims)
                   .redirectViaHttp(redirectUri)
                   .authenticateSession();
               }

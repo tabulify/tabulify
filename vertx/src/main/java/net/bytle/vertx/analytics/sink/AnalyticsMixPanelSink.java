@@ -116,13 +116,13 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      * The property customized
      */
     this.customPropertyUserEmailKeyNormalized = KeyNormalizer.createFromString("User Email").toCase(this.keyCase);
-    this.customPropertyAppIdKey = KeyNormalizer.createFromString("App Id").toCase(this.keyCase);
+    this.customPropertyAppIdKey = KeyNormalizer.createFromString("App Guid").toCase(this.keyCase);
     this.customPropertyAppHandleKey = KeyNormalizer.createFromString("App Handle").toCase(this.keyCase);
-    this.customPropertyRealmId = KeyNormalizer.createFromString("Realm Id").toCase(this.keyCase);
+    this.customPropertyRealmId = KeyNormalizer.createFromString("Realm Guid").toCase(this.keyCase);
     this.customPropertyRealmHandle = KeyNormalizer.createFromString("Realm Handle").toCase(this.keyCase);
-    this.customPropertyOrganizationId = KeyNormalizer.createFromString("Organization Id").toCase(this.keyCase);
+    this.customPropertyOrganizationId = KeyNormalizer.createFromString("Organization Guid").toCase(this.keyCase);
     this.customPropertyOrganizationHandle = KeyNormalizer.createFromString("Organization Handle").toCase(this.keyCase);
-    this.customPropertyFlowId = KeyNormalizer.createFromString("Flow Id").toCase(this.keyCase);
+    this.customPropertyFlowId = KeyNormalizer.createFromString("Flow Guid").toCase(this.keyCase);
     this.customPropertyFlowHandle = KeyNormalizer.createFromString("Flow Handle").toCase(this.keyCase);
     this.customPropertySessionId = KeyNormalizer.createFromString("Session Id").toCase(this.keyCase);
 
@@ -135,7 +135,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
    */
   public JsonObject toMixPanelUser(AnalyticsUser user, String ip) {
     JsonObject props = new JsonObject();
-    props.put("$distinct_id", user.getId());
+    props.put("$distinct_id", user.getGuid());
     // $group_id, the group identifier, for group profiles, as these are the canonical identifiers in Mixpanel.
     props.put("$email", user.getEmail());
     try {
@@ -175,7 +175,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      * $device_id: The anonymous / device id
      */
     AnalyticsEventRequest request = event.getRequest();
-    String agentId = request.getAgentId();
+    String agentId = request.getAgentGuid();
     if (agentId != null) {
       props.put("$device_id", agentId);
     }
@@ -183,7 +183,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
     /**
      * $user_id
      */
-    String userId = event.getUser().getUserId();
+    String userId = event.getUser().getUserGuid();
     if (userId != null) {
       props.put("$user_id", userId);
     }
@@ -196,7 +196,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      * $insert_id: A unique identifier for the event,
      * used to deduplicate events that are accidentally sent multiple times.
      */
-    props.put("$insert_id", event.getId());
+    props.put("$insert_id", event.getGuid());
 
     /**
      * IP
@@ -241,7 +241,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
     /**
      * Flow
      */
-    String flowId = request.getFlowId();
+    String flowId = request.getFlowGuid();
     if (flowId != null) {
       props.put(customPropertyFlowId, flowId);
     }
@@ -297,7 +297,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      * https://docs.mixpanel.com/docs/data-structure/advanced/group-analytics
      */
     AnalyticsEventApp app = event.getApp();
-    String appId = app.getAppId();
+    String appId = app.getAppGuid();
     if (appId != null) {
       props.put(customPropertyAppIdKey, appId);
     }
@@ -307,7 +307,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
     }
     // realm and orga info are always set on the app
     // ie if a user is known they are updated
-    String realmId = app.getAppRealmId();
+    String realmId = app.getAppRealmGuid();
     if (realmId != null) {
       props.put(customPropertyRealmId, realmId);
     }
@@ -315,7 +315,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
     if (realmHandle != null) {
       props.put(customPropertyRealmHandle, realmHandle);
     }
-    String organisationId = app.getAppOrganisationId();
+    String organisationId = app.getAppOrganisationGuid();
     if (organisationId != null) {
       props.put(customPropertyOrganizationId, organisationId);
     }
@@ -369,11 +369,11 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
    * @return the user id
    */
   protected String toMixPanelUserDistinctId(AnalyticsEvent event) {
-    String userId = event.getUser().getUserId();
+    String userId = event.getUser().getUserGuid();
     if (userId != null) {
       return userId;
     }
-    return event.getApp().getAppId();
+    return event.getApp().getAppGuid();
   }
 
 

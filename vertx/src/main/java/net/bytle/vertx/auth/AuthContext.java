@@ -35,7 +35,7 @@ public class AuthContext {
   private final RoutingContext ctx;
   private final AuthJwtClaims jwtClaims;
   private AuthUser authUser;
-  private final AuthState authState;
+  private final OAuthState oAuthState;
   private final WebFlow flow;
   private List<Handler<AuthContext>> handlers = new ArrayList<>();
   private int handlerIndex = -1;
@@ -45,13 +45,13 @@ public class AuthContext {
    * @param flow - the flow that log the user in
    * @param ctx - the context
    * @param user - the user to set on the session
-   * @param authState - the auth state from an external oauth endpoint
+   * @param oAuthState - the auth state from an external oauth endpoint
    * @param jwtClaims - the context claims from a link on an email or for a direct login
    */
-  public AuthContext(WebFlow flow, RoutingContext ctx, AuthUser user, AuthState authState, AuthJwtClaims jwtClaims) {
+  public AuthContext(WebFlow flow, RoutingContext ctx, AuthUser user, OAuthState oAuthState, AuthJwtClaims jwtClaims) {
     this.ctx = ctx;
     this.authUser = user;
-    this.authState = authState;
+    this.oAuthState = oAuthState;
     this.flow = flow;
     this.jwtClaims = jwtClaims;
   }
@@ -65,8 +65,8 @@ public class AuthContext {
     return this.ctx;
   }
 
-  public AuthState getAuthState() {
-    return this.authState;
+  public OAuthState getAuthState() {
+    return this.oAuthState;
   }
 
   /**
@@ -277,9 +277,9 @@ public class AuthContext {
   @NotNull
   private SignInEvent getSignInEvent() {
     SignInEvent signInEvent = new SignInEvent();
-    signInEvent.getRequest().setFlowId(this.flow.getFlowType().getId().toString());
+    signInEvent.getRequest().setFlowGuid(this.flow.getFlowType().getId().toString());
     signInEvent.getRequest().setFlowHandle(this.flow.getFlowType().toString());
-    String appIdentifier = this.authState.getAppIdentifier();
+    String appIdentifier = this.oAuthState.getAppGuid();
     if (appIdentifier == null) {
       appIdentifier = this.jwtClaims.getAppGuid();
       if (appIdentifier == null && JavaEnvs.IS_DEV) {
@@ -290,35 +290,47 @@ public class AuthContext {
      * App data
      */
     AnalyticsEventApp app = signInEvent.getApp();
-    app.setAppId(appIdentifier);
-    String appHandle = this.authState.getAppHandle();
-    if(appHandle==null){
+    app.setAppGuid(appIdentifier);
+    String appHandle = this.oAuthState.getAppHandle();
+    if (appHandle == null) {
       appHandle = this.jwtClaims.getAppHandle();
     }
     app.setAppHandle(appHandle);
-    String realmIdentifier = this.authState.getRealmIdentifier();
-    if(realmIdentifier==null){
-      realmIdentifier = this.jwtClaims.getRealmIdentifier();
+    String realmIdentifier = this.oAuthState.getRealmIdentifier();
+    if (realmIdentifier == null) {
+      realmIdentifier = this.jwtClaims.getRealmGuid();
     }
-    app.setAppRealmId(realmIdentifier);
+    app.setAppRealmGuid(realmIdentifier);
 
-    String realmHandle = this.authState.getRealmHandle();
-    if(realmHandle==null){
+    String realmHandle = this.oAuthState.getRealmHandle();
+    if (realmHandle == null) {
       realmHandle = this.jwtClaims.getRealmHandle();
     }
     app.setAppRealmHandle(realmHandle);
 
-    String orgIdentifier = this.authState.getOrgIdentifier();
-    if(orgIdentifier==null){
+    String orgIdentifier = this.oAuthState.getOrganisationGuid();
+    if (orgIdentifier == null) {
       orgIdentifier = this.jwtClaims.getOrganizationGuid();
     }
-    app.setAppOrganisationId(orgIdentifier);
+    app.setAppOrganisationGuid(orgIdentifier);
 
-    String orgHandle = this.authState.getOrgHandle();
-    if(orgHandle==null){
+    String orgHandle = this.oAuthState.getOrgHandle();
+    if (orgHandle == null) {
       orgHandle = this.jwtClaims.getOrganizationHandle();
     }
     app.setAppOrganisationHandle(orgHandle);
+
+    /**
+     * OAuth Data
+     */
+    String oAuthHandle = this.oAuthState.getProviderHandle();
+    if (oAuthHandle != null) {
+      signInEvent.setOAuthProviderHandle(oAuthHandle);
+    }
+    String oAuthId = this.oAuthState.getProviderGuid();
+    if (oAuthId != null) {
+      signInEvent.setOAuthProviderGuid(oAuthId);
+    }
 
     return signInEvent;
   }

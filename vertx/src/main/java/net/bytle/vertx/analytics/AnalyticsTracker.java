@@ -222,24 +222,31 @@ public class AnalyticsTracker {
        */
       if (this.authUser != null) {
 
-        analyticsEventUser.setUserId(authUser.getSubject());
+        analyticsEventUser.setUserGuid(authUser.getSubject());
         analyticsEventUser.setUserEmail(authUser.getSubjectEmail());
 
         /**
          * App data if any
          */
-        analyticsEventApp.setAppRealmId(authUser.getAudience());
-        analyticsEventApp.setAppOrganisationId(authUser.getGroup());
+        analyticsEventApp.setAppRealmGuid(authUser.getRealmGuid());
+        analyticsEventApp.setAppRealmHandle(authUser.getRealmHandle());
+        String organizationGuid = authUser.getOrganizationGuid();
+        if (organizationGuid != null) {
+          // a user may have no organization
+          // an app may not
+          analyticsEventApp.setAppOrganisationGuid(organizationGuid);
+          analyticsEventApp.setAppOrganisationHandle(authUser.getOrganizationHandle());
+        }
       }
 
       /**
        * App data
        */
       if (this.realmId != null) {
-        analyticsEventApp.setAppRealmId(this.realmId);
+        analyticsEventApp.setAppRealmGuid(this.realmId);
       }
       if (this.organizationId != null) {
-        analyticsEventApp.setAppOrganisationId(this.realmId);
+        analyticsEventApp.setAppOrganisationGuid(this.realmId);
       }
 
       /**
@@ -321,11 +328,11 @@ public class AnalyticsTracker {
         creationTime = DateTimeUtil.getNowInUtc();
         analyticsEventState.setEventCreationTime(creationTime);
       }
-      if (analyticsEvent.getId() == null) {
+      if (analyticsEvent.getGuid() == null) {
 
         long timestamp = creationTime.toEpochSecond(ZoneOffset.UTC);
         UUID uuid = Generators.timeBasedEpochGenerator().construct(timestamp);
-        analyticsEvent.setId(uuid.toString());
+        analyticsEvent.setGuid(uuid.toString());
 
       }
 

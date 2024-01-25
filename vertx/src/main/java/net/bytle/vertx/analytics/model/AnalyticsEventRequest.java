@@ -13,9 +13,9 @@ import java.util.Objects;
 public class AnalyticsEventRequest   {
 
 
-  protected String agentId;
+  protected String agentGuid;
 
-  protected String flowId;
+  protected String flowGuid;
 
   protected String flowHandle;
 
@@ -37,35 +37,35 @@ public class AnalyticsEventRequest   {
   }
 
   /**
-  * @return agentId The agent id The Analytics Agent is an object that has all properties
+  * @return agentGuid The agent id The Analytics Agent is an object that has all properties
   */
-  @JsonProperty("agentId")
-  public String getAgentId() {
-    return agentId;
+  @JsonProperty("agentGuid")
+  public String getAgentGuid() {
+    return agentGuid;
   }
 
   /**
-  * @param agentId The agent id The Analytics Agent is an object that has all properties
+  * @param agentGuid The agent id The Analytics Agent is an object that has all properties
   */
   @SuppressWarnings("unused")
-  public void setAgentId(String agentId) {
-    this.agentId = agentId;
+  public void setAgentGuid(String agentGuid) {
+    this.agentGuid = agentGuid;
   }
 
   /**
-  * @return flowId The flow id is the immutable id of the flow A flow is also known as a navigation flow or process that leads to a event creation
+  * @return flowGuid The flow id is the immutable id of the flow A flow is also known as a navigation flow or process that leads to a event creation
   */
-  @JsonProperty("flowId")
-  public String getFlowId() {
-    return flowId;
+  @JsonProperty("flowGuid")
+  public String getFlowGuid() {
+    return flowGuid;
   }
 
   /**
-  * @param flowId The flow id is the immutable id of the flow A flow is also known as a navigation flow or process that leads to a event creation
+  * @param flowGuid The flow id is the immutable id of the flow A flow is also known as a navigation flow or process that leads to a event creation
   */
   @SuppressWarnings("unused")
-  public void setFlowId(String flowId) {
-    this.flowId = flowId;
+  public void setFlowGuid(String flowGuid) {
+    this.flowGuid = flowGuid;
   }
 
   /**
@@ -160,12 +160,12 @@ public class AnalyticsEventRequest   {
     AnalyticsEventRequest analyticsEventRequest = (AnalyticsEventRequest) o;
     return
 
-            Objects.equals(agentId, analyticsEventRequest.agentId) && Objects.equals(flowId, analyticsEventRequest.flowId) && Objects.equals(flowHandle, analyticsEventRequest.flowHandle) && Objects.equals(remoteIp, analyticsEventRequest.remoteIp) && Objects.equals(sessionId, analyticsEventRequest.sessionId) && Objects.equals(originUri, analyticsEventRequest.originUri) && Objects.equals(referrerUri, analyticsEventRequest.referrerUri);
+            Objects.equals(agentGuid, analyticsEventRequest.agentGuid) && Objects.equals(flowGuid, analyticsEventRequest.flowGuid) && Objects.equals(flowHandle, analyticsEventRequest.flowHandle) && Objects.equals(remoteIp, analyticsEventRequest.remoteIp) && Objects.equals(sessionId, analyticsEventRequest.sessionId) && Objects.equals(originUri, analyticsEventRequest.originUri) && Objects.equals(referrerUri, analyticsEventRequest.referrerUri);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(agentId, flowId, flowHandle, remoteIp, sessionId, originUri, referrerUri);
+    return Objects.hash(agentGuid, flowGuid, flowHandle, remoteIp, sessionId, originUri, referrerUri);
   }
 
   @Override

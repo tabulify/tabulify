@@ -134,11 +134,6 @@ public enum AuthUserJwtClaims {
    */
   CUSTOM_SUBJECT_AVATAR("subAvatar"),
   CUSTOM_SUBJECT_FAMILY_NAME("subFamilyName"),
-  /**
-   * The group is the group id at the organizational level
-   * For us, this is the organization level
-   */
-  CUSTOM_GROUP("group"),
   CUSTOM_ORG_GUID("orgGuid"),
   CUSTOM_ORG_HANDLE("orgHandle")
   ;

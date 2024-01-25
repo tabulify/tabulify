@@ -7,7 +7,9 @@ import io.vertx.ext.auth.oauth2.authorization.ScopeAuthorization;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.AuthorizationHandler;
 import io.vertx.ext.web.handler.OAuth2AuthHandler;
+import net.bytle.exception.CastException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.type.Casts;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.TowerApp;
@@ -33,7 +35,7 @@ public class OAuthExternal {
 
   static Logger LOGGER = LogManager.getLogger(OAuthExternal.class);
 
-  private final Map<String, OAuthExternalProvider> OAUTH_PROVIDERS = new HashMap<>();
+  private final Map<OAuthExternalIdentifier, OAuthExternalProvider> OAUTH_PROVIDERS = new HashMap<>();
   /**
    * A prefix to avoid name collision
    */
@@ -54,12 +56,12 @@ public class OAuthExternal {
   public OAuthExternal(OAuthExternalCodeFlow flow, String pathMount, List<Handler<AuthContext>> authHandlers) throws ConfigIllegalException {
     this.flow = flow;
     this.pathMount = pathMount;
-    addExternalProvider(OAuthExternalGithub.GITHUB_TENANT);
-    addExternalProvider(OAuthExternalGoogle.GOOGLE_TENANT);
+    addExternalProvider(OAuthExternalIdentifier.GITHUB);
+    addExternalProvider(OAuthExternalIdentifier.GOOGLE);
     this.authHandlers = authHandlers;
   }
 
-  private OAuthExternal addExternalProvider(String provider) throws ConfigIllegalException {
+  private OAuthExternal addExternalProvider(OAuthExternalIdentifier provider) throws ConfigIllegalException {
 
     /**
      * Auth Provider
@@ -78,10 +80,10 @@ public class OAuthExternal {
     }
     OAuthExternalProvider oauthExternalProvider;
     switch (provider) {
-      case OAuthExternalGithub.GITHUB_TENANT:
+      case GITHUB:
         oauthExternalProvider = new OAuthExternalGithub(this, clientId, clientSecret);
         break;
-      case OAuthExternalGoogle.GOOGLE_TENANT:
+      case GOOGLE:
         oauthExternalProvider = new OAuthExternalGoogle(this, clientId, clientSecret);
         break;
       default:
@@ -120,7 +122,13 @@ public class OAuthExternal {
 
 
   public OAuthExternalProvider getProvider(String oauthProvider) throws NotFoundException {
-    OAuthExternalProvider oauth = OAUTH_PROVIDERS.get(oauthProvider);
+    OAuthExternalIdentifier oauthIdentifier;
+    try {
+      oauthIdentifier = Casts.cast(oauthProvider, OAuthExternalIdentifier.class);
+    } catch (CastException e) {
+      throw new NotFoundException("No provider found with the name (" + oauthProvider + ")");
+    }
+    OAuthExternalProvider oauth = OAUTH_PROVIDERS.get(oauthIdentifier);
     if (oauth == null) {
       throw new NotFoundException("No provider found with the name (" + oauthProvider + ")");
     }

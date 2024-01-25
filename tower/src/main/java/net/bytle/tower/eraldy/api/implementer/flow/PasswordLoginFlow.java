@@ -7,7 +7,7 @@ import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthJwtClaims;
-import net.bytle.vertx.auth.AuthState;
+import net.bytle.vertx.auth.OAuthState;
 import net.bytle.vertx.flow.WebFlow;
 import net.bytle.vertx.flow.WebFlowType;
 
@@ -44,7 +44,7 @@ public class PasswordLoginFlow implements WebFlow {
         .getAuthUserForSessionByPasswordNotNull(handle, password, realm)
         .onFailure(err -> FailureStatic.failRoutingContextWithTrace(err, routingContext))
         .compose(authUserForSession -> {
-          new AuthContext(this, routingContext, authUserForSession, AuthState.createEmpty(), jwtClaims)
+          new AuthContext(this, routingContext, authUserForSession, OAuthState.createEmpty(), jwtClaims)
             .redirectViaClient()
             .authenticateSession();
           return Future.succeededFuture();

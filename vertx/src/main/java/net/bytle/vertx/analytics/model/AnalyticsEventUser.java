@@ -12,7 +12,7 @@ import java.util.Objects;
 public class AnalyticsEventUser   {
 
 
-  protected String userId;
+  protected String userGuid;
 
   protected String userEmail;
 
@@ -26,19 +26,19 @@ public class AnalyticsEventUser   {
   }
 
   /**
-  * @return userId A unique identifier
+  * @return userGuid A unique identifier
   */
-  @JsonProperty("userId")
-  public String getUserId() {
-    return userId;
+  @JsonProperty("userGuid")
+  public String getUserGuid() {
+    return userGuid;
   }
 
   /**
-  * @param userId A unique identifier
+  * @param userGuid A unique identifier
   */
   @SuppressWarnings("unused")
-  public void setUserId(String userId) {
-    this.userId = userId;
+  public void setUserGuid(String userGuid) {
+    this.userGuid = userGuid;
   }
 
   /**
@@ -69,12 +69,12 @@ public class AnalyticsEventUser   {
     AnalyticsEventUser analyticsEventUser = (AnalyticsEventUser) o;
     return
 
-            Objects.equals(userId, analyticsEventUser.userId) && Objects.equals(userEmail, analyticsEventUser.userEmail);
+            Objects.equals(userGuid, analyticsEventUser.userGuid) && Objects.equals(userEmail, analyticsEventUser.userEmail);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(userId, userEmail);
+    return Objects.hash(userGuid, userEmail);
   }
 
   @Override

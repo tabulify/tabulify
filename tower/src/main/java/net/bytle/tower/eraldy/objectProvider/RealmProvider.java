@@ -52,7 +52,6 @@ public class RealmProvider {
   public static final String ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "id";
   private static final String REALM_HANDLE_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "handle";
   private static final String REALM_ORGA_ID = TABLE_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN;
-  private static final String REALM_DEFAULT_APP_ID = TABLE_PREFIX + COLUMN_PART_SEP + "default" + COLUMN_PART_SEP + AppProvider.APP_ID_COLUMN;
   private static final String REALM_OWNER_ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "owner" + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   private static final String DATA_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "data";
   private static final String ANALYTICS_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "analytics";
@@ -452,20 +451,12 @@ public class RealmProvider {
     }
     Future<OrganizationUser> futureOwnerUser = apiApp.getOrganizationUserProvider()
       .getOrganizationUserByLocalId(ownerUserLocalId, eraldyRealm.getLocalId(), eraldyRealm);
-    Long defaultAppId = row.getLong(REALM_DEFAULT_APP_ID);
-    Future<App> futureApp;
-    if (defaultAppId == null) {
-      futureApp = Future.succeededFuture();
-    } else {
-      futureApp = apiApp.getAppProvider()
-        .getAppById(defaultAppId, realm);
-    }
-    return Future.all(futureOrganization, futureOwnerUser, futureApp)
+
+    return Future.all(futureOrganization, futureOwnerUser)
       .onFailure(t -> LOGGER.error("Error while getting the future for building the realm", t))
       .compose(result -> {
         realm.setOrganization(result.resultAt(0));
         realm.setOwnerUser(result.resultAt(1));
-        realm.setDefaultApp(result.resultAt(2));
         return Future.succeededFuture(realm);
       });
 

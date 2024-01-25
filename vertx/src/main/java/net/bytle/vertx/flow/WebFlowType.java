@@ -5,9 +5,9 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum WebFlowType {
 
   /**
-   * User sign-in and sign-up via external OAuth
+   * User sign-in and sign-up via Open Auth.
    */
-  EXTERNAL_OAUTH(0),
+  OAUTH(0),
   /**
    * User registration by email
    */

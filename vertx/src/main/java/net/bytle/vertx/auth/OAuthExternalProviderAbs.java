@@ -70,7 +70,7 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
   }
 
   @Override
-  public String getAuthorizeUrl(RoutingContext context, AuthState authState) {
+  public String getAuthorizeUrl(RoutingContext context, OAuthState OAuthState) {
 
     final Session session = context.session();
     if (session == null) {
@@ -81,8 +81,8 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
      * Add a random value to mitigate replay attacks
      */
     String random = prng.nextString(6);
-    authState.setRandomValue(random);
-    String stateUrlValue = authState.toUrlValue();
+    OAuthState.setRandomValue(random);
+    String stateUrlValue = OAuthState.toUrlValue();
     session.put(STATE_SESSION_KEY, stateUrlValue);
 
     // Pkce
@@ -113,7 +113,7 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
 
   @Override
   public String getCallbackOperationPath() {
-    return towerApp.getPathMount() + oAuthExternal.getPathMount() + "/" + this.getName() + "/callback";
+    return towerApp.getPathMount() + oAuthExternal.getPathMount() + "/" + this.getIdentifier() + "/callback";
   }
 
   @Override
@@ -123,7 +123,7 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
 
   @Override
   public String toString() {
-    return this.getName();
+    return this.getIdentifier().getHandle();
   }
 
 }

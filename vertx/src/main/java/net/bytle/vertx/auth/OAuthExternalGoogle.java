@@ -13,6 +13,8 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 
+import static net.bytle.vertx.auth.OAuthExternalIdentifier.GOOGLE;
+
 /**
  * The Google Oauth
  * <a href="https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid">Setup</a>
@@ -25,7 +27,6 @@ import java.util.List;
 public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
 
 
-  public static final String GOOGLE_TENANT = "google";
 
   public OAuthExternalGoogle(OAuthExternal oAuthExternal, String clientId, String clientSecret) {
 
@@ -108,8 +109,8 @@ public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
   }
 
   @Override
-  public String getName() {
-    return GOOGLE_TENANT;
+  public OAuthExternalIdentifier getIdentifier() {
+    return GOOGLE;
   }
 
 }

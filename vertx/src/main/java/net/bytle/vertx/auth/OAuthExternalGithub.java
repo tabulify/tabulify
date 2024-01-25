@@ -34,7 +34,6 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
    * If the user login is known, we can add the `login` parameter
    */
   public static final String USER_EMAIL_SCOPE = "user:email";
-  public static final String GITHUB_TENANT = "github";
 
   public OAuthExternalGithub(OAuthExternal oAuthExternal, String clientId, String clientSecret) {
 
@@ -170,9 +169,10 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
       });
   }
 
+
   @Override
-  public String getName() {
-    return GITHUB_TENANT;
+  public OAuthExternalIdentifier getIdentifier() {
+    return OAuthExternalIdentifier.GITHUB;
   }
 
 }

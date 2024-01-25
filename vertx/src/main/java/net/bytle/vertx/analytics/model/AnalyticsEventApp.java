@@ -12,15 +12,15 @@ import java.util.Objects;
 public class AnalyticsEventApp   {
 
 
-  protected String appId;
+  protected String appGuid;
 
   protected String appHandle;
 
-  protected String appRealmId;
+  protected String appRealmGuid;
 
   protected String appRealmHandle;
 
-  protected String appOrganisationId;
+  protected String appOrganisationGuid;
 
   protected String appOrganisationHandle;
 
@@ -34,19 +34,19 @@ public class AnalyticsEventApp   {
   }
 
   /**
-  * @return appId The app id that has created this event (never change)
+  * @return appGuid The app id that has created this event (never change)
   */
-  @JsonProperty("appId")
-  public String getAppId() {
-    return appId;
+  @JsonProperty("appGuid")
+  public String getAppGuid() {
+    return appGuid;
   }
 
   /**
-  * @param appId The app id that has created this event (never change)
+  * @param appGuid The app id that has created this event (never change)
   */
   @SuppressWarnings("unused")
-  public void setAppId(String appId) {
-    this.appId = appId;
+  public void setAppGuid(String appGuid) {
+    this.appGuid = appGuid;
   }
 
   /**
@@ -66,19 +66,19 @@ public class AnalyticsEventApp   {
   }
 
   /**
-  * @return appRealmId The realm of the app If the user is not anonymous, it is the user audience.
+  * @return appRealmGuid The realm of the app If the user is not anonymous, it is the user audience.
   */
-  @JsonProperty("appRealmId")
-  public String getAppRealmId() {
-    return appRealmId;
+  @JsonProperty("appRealmGuid")
+  public String getAppRealmGuid() {
+    return appRealmGuid;
   }
 
   /**
-  * @param appRealmId The realm of the app If the user is not anonymous, it is the user audience.
+  * @param appRealmGuid The realm of the app If the user is not anonymous, it is the user audience.
   */
   @SuppressWarnings("unused")
-  public void setAppRealmId(String appRealmId) {
-    this.appRealmId = appRealmId;
+  public void setAppRealmGuid(String appRealmGuid) {
+    this.appRealmGuid = appRealmGuid;
   }
 
   /**
@@ -98,19 +98,19 @@ public class AnalyticsEventApp   {
   }
 
   /**
-  * @return appOrganisationId the organisation id (the billing logical unit, known also as the group id)
+  * @return appOrganisationGuid the organisation id (the billing logical unit, known also as the group id)
   */
-  @JsonProperty("appOrganisationId")
-  public String getAppOrganisationId() {
-    return appOrganisationId;
+  @JsonProperty("appOrganisationGuid")
+  public String getAppOrganisationGuid() {
+    return appOrganisationGuid;
   }
 
   /**
-  * @param appOrganisationId the organisation id (the billing logical unit, known also as the group id)
+  * @param appOrganisationGuid the organisation id (the billing logical unit, known also as the group id)
   */
   @SuppressWarnings("unused")
-  public void setAppOrganisationId(String appOrganisationId) {
-    this.appOrganisationId = appOrganisationId;
+  public void setAppOrganisationGuid(String appOrganisationGuid) {
+    this.appOrganisationGuid = appOrganisationGuid;
   }
 
   /**
@@ -141,12 +141,12 @@ public class AnalyticsEventApp   {
     AnalyticsEventApp analyticsEventApp = (AnalyticsEventApp) o;
     return
 
-            Objects.equals(appId, analyticsEventApp.appId) && Objects.equals(appHandle, analyticsEventApp.appHandle) && Objects.equals(appRealmId, analyticsEventApp.appRealmId) && Objects.equals(appRealmHandle, analyticsEventApp.appRealmHandle) && Objects.equals(appOrganisationId, analyticsEventApp.appOrganisationId) && Objects.equals(appOrganisationHandle, analyticsEventApp.appOrganisationHandle);
+            Objects.equals(appGuid, analyticsEventApp.appGuid) && Objects.equals(appHandle, analyticsEventApp.appHandle) && Objects.equals(appRealmGuid, analyticsEventApp.appRealmGuid) && Objects.equals(appRealmHandle, analyticsEventApp.appRealmHandle) && Objects.equals(appOrganisationGuid, analyticsEventApp.appOrganisationGuid) && Objects.equals(appOrganisationHandle, analyticsEventApp.appOrganisationHandle);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(appId, appHandle, appRealmId, appRealmHandle, appOrganisationId, appOrganisationHandle);
+    return Objects.hash(appGuid, appHandle, appRealmGuid, appRealmHandle, appOrganisationGuid, appOrganisationHandle);
   }
 
   @Override

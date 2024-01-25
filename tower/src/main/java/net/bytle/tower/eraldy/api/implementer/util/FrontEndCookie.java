@@ -95,6 +95,9 @@ public class FrontEndCookie<T> {
     }
     /**
      * Decode Json to Object
+     * We cannot use the JsonMapper of the API
+     * because they exclude the Guid which is the Jackson unique identifier (ie JsonIdentityInfo)
+     * This identifier is needed for the creation of the object
      */
     try {
       return (new JsonObject(json)).mapTo(this.aClass);

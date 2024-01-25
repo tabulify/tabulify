@@ -346,7 +346,8 @@ public class AuthProvider {
       // An organization user object is
       // a Eraldy user with or without an organization
       if (organization != null) {
-        authUserClaims.setGroup(organization.getGuid());
+        authUserClaims.setOrganizationGuid(organization.getGuid());
+        authUserClaims.setOrganizationHandle(organization.getHandle());
       }
     }
     return authUserClaims;
@@ -367,7 +368,7 @@ public class AuthProvider {
       .compose(insertedUser -> toAuthUserForSession(user)
         .compose(authUserForSession -> {
           SignUpEvent signUpEvent = new SignUpEvent();
-          signUpEvent.getRequest().setFlowId(webFlow.getFlowType().getId().toString());
+          signUpEvent.getRequest().setFlowGuid(webFlow.getFlowType().getId().toString());
           signUpEvent.getRequest().setFlowHandle(webFlow.getFlowType().getHandle());
           this.apiApp
             .getApexDomain()
@@ -415,7 +416,8 @@ public class AuthProvider {
           if (orgaUser != null) {
             Organization organization = orgaUser.getOrganization();
             if (organization != null) {
-              authUser.setGroup(organization.getGuid());
+              authUser.setOrganizationGuid(organization.getGuid());
+              authUser.setOrganizationHandle(organization.getHandle());
             }
           }
           return Future.succeededFuture(authUser);
@@ -455,7 +457,7 @@ public class AuthProvider {
   public Future<Void> checkOrgAuthorization(RoutingContext routingContext, String requestedOrgGuid, AuthScope authScope) {
     return this.getSignedInAuthUserOrFail(routingContext)
       .compose(signedInUser -> {
-        String signedInUserGroup = signedInUser.getGroup();
+        String signedInUserGroup = signedInUser.getOrganizationGuid();
         if (signedInUserGroup == null) {
           return Future.failedFuture(
             TowerFailureException.builder()

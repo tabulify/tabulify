@@ -2047,22 +2047,22 @@ components:
         are properties added at the root with a primary datatype.
       example:
         app:
-          appRealmId: appRealmId
-          appId: appId
+          appOrganisationGuid: appOrganisationGuid
           appOrganisationHandle: appOrganisationHandle
           appHandle: appHandle
+          appRealmGuid: appRealmGuid
+          appGuid: appGuid
           appRealmHandle: appRealmHandle
-          appOrganisationId: appOrganisationId
         request:
-          agentId: agentId
           referrerUri: https://openapi-generator.tech
           remoteIp: 143.176.206.76
+          flowGuid: "Sign in by email, Sign in by OAuth, ..."
           flowHandle: flowHandle
+          agentGuid: agentGuid
           originUri: https://openapi-generator.tech
           sessionId: sessionId
-          flowId: "Sign in by email, Sign in by OAuth, ..."
         name: "`Sign up`, `Purchase`"
-        id: id
+        guid: guid
         state:
           eventSendingTime: 2000-01-23T04:56:07.000+00:00
           eventCreationTime: 2000-01-23T04:56:07.000+00:00
@@ -2071,7 +2071,7 @@ components:
           key: "{}"
         user:
           userEmail: userEmail
-          userId: userId
+          userGuid: userGuid
         utm:
           utmSource: summer-mailer
           utmReferrer: https://openapi-generator.tech
@@ -2081,9 +2081,9 @@ components:
           utmMedium: email
           utmCampaign: "spring_sale, Product, slogan, promo code"
       properties:
-        id:
+        guid:
           description: |
-            A unique identifier for each event.
+            A global unique identifier for each event.
 
             It allows to delete duplicate.
 
@@ -2146,20 +2146,20 @@ components:
     AnalyticsEventApp:
       description: The properties of the app that created this event
       example:
-        appRealmId: appRealmId
-        appId: appId
+        appOrganisationGuid: appOrganisationGuid
         appOrganisationHandle: appOrganisationHandle
         appHandle: appHandle
+        appRealmGuid: appRealmGuid
+        appGuid: appGuid
         appRealmHandle: appRealmHandle
-        appOrganisationId: appOrganisationId
       properties:
-        appId:
+        appGuid:
           description: The app id that has created this event (never change)
           type: string
         appHandle:
           description: "The app name identifier (human identifier, may change)"
           type: string
-        appRealmId:
+        appRealmGuid:
           description: |
             The realm of the app
             If the user is not anonymous, it is the user audience.
@@ -2167,7 +2167,7 @@ components:
         appRealmHandle:
           description: The realm human identifier (may change)
           type: string
-        appOrganisationId:
+        appOrganisationGuid:
           description: "the organisation id (the billing logical unit, known also\
             \ as the group id)"
           type: string
@@ -2183,9 +2183,9 @@ components:
         and is used to create a profile
       example:
         userEmail: userEmail
-        userId: userId
+        userGuid: userGuid
       properties:
-        userId:
+        userGuid:
           description: A unique identifier
           type: string
         userEmail:
@@ -2195,20 +2195,20 @@ components:
     AnalyticsEventRequest:
       description: The request/remote identifiers of an event
       example:
-        agentId: agentId
         referrerUri: https://openapi-generator.tech
         remoteIp: 143.176.206.76
+        flowGuid: "Sign in by email, Sign in by OAuth, ..."
         flowHandle: flowHandle
+        agentGuid: agentGuid
         originUri: https://openapi-generator.tech
         sessionId: sessionId
-        flowId: "Sign in by email, Sign in by OAuth, ..."
       properties:
-        agentId:
+        agentGuid:
           description: |
             The agent id
             The Analytics Agent is an object that has all properties
           type: string
-        flowId:
+        flowGuid:
           description: |
             The flow id is the immutable id of the flow
             A flow is also known as a navigation flow or process that leads to a event creation
@@ -2354,7 +2354,6 @@ components:
         disabled: true
         location: The world
         realm:
-          defaultApp: ""
           ownerUser: null
           organization:
             name: name
@@ -2478,7 +2477,6 @@ components:
         * In a security level, this is the authentication realm.
         * In an infrastructure level, this is called a tenant.
       example:
-        defaultApp: ""
         ownerUser: null
         organization:
           name: name
@@ -2514,10 +2512,6 @@ components:
               - basic authentication: "WWW-Authenticate: Basic realm="WallyWorld"
               - database schema, dns name
           type: string
-        defaultApp:
-          allOf:
-          - $ref: '#/components/schemas/App'
-          description: The default application of the realm
       required:
       - guid
       - handle
@@ -2570,102 +2564,6 @@ components:
       x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
         \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
         \ property = \"guid\", scope = User.class)"
-    App:
-      description: "An app is the container for branding elements (such as logo, color)"
-      example:
-        terms: https://openapi-generator.tech
-        name: Doe
-        primaryColor: '#3498db'
-        guid: xmmmN
-        logo: https://doe.com/_media/android-chrome-192x192.png
-        handle: "[\"doe\"]"
-        realm:
-          defaultApp: ""
-          ownerUser: null
-          organization:
-            name: name
-            guid: org-xmmmN
-            handle: handle
-            localId: 1
-          name: name
-          guid: guid
-          handle: handle
-          localId: 0
-        localId: 1
-        uri: https://app.doe.com
-        slogan: "Doe, Be You"
-        user: null
-        home: https://doe.com/landing
-      properties:
-        localId:
-          description: "The app identifier in the realm (without the realm, the id\
-            \ may have duplicate)"
-          example: 1
-          format: int64
-          type: integer
-        guid:
-          description: The global app id (realm id + local app id)
-          example: xmmmN
-          type: string
-        handle:
-          description: |
-            The handle of the app.
-            The handle is unique for all apps on the realm.
-            It follows the DNS name constraint
-          example: "[\"doe\"]"
-          type: string
-        name:
-          description: The name of the app
-          example: Doe
-          type: string
-        uri:
-          description: |
-            An authentication url identifier
-            It has no query string nor fragment.
-            If you use the member authentication module, this URL should not be empty.
-          example: https://app.doe.com
-          format: uri
-          type: string
-        home:
-          description: |
-            The home URL of the app
-            This is a app branding element
-            that adds an URL to any app communication footer
-          example: https://doe.com/landing
-          format: uri
-          type: string
-        slogan:
-          description: The slogan of the app
-          example: "Doe, Be You"
-          type: string
-        logo:
-          description: The uri of the app logo
-          example: https://doe.com/_media/android-chrome-192x192.png
-          format: uri
-          type: string
-        primaryColor:
-          description: The css primary color of the theme (rgb in hexadecimal)
-          example: '#3498db'
-          type: string
-        user:
-          $ref: '#/components/schemas/OrganizationUser'
-        realm:
-          $ref: '#/components/schemas/Realm'
-        terms:
-          description: The location of the terms and conditions document
-          format: uri
-          type: string
-      title: An app
-      type: object
-      x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
-        \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
-        \ property = \"guid\", scope = App.class)"
-      x-fields-identity:
-      - guid
-      x-fields-to-string:
-      - guid
-      - handle
-      x-parent: true
     RealmAnalytics:
       allOf:
       - $ref: '#/components/schemas/Realm'
@@ -2735,7 +2633,6 @@ components:
         data: "{}"
         guid: xmllKD23
         realm:
-          defaultApp: ""
           ownerUser: null
           organization:
             name: name
@@ -2765,7 +2662,6 @@ components:
           disabled: true
           location: The world
           realm:
-            defaultApp: ""
             ownerUser: null
             organization:
               name: name
@@ -3000,6 +2896,100 @@ components:
           format: uri
           type: string
       type: object
+    App:
+      description: "An app is the container for branding elements (such as logo, color)"
+      example:
+        terms: https://openapi-generator.tech
+        name: Doe
+        primaryColor: '#3498db'
+        guid: xmmmN
+        logo: https://doe.com/_media/android-chrome-192x192.png
+        handle: "[\"doe\"]"
+        realm:
+          ownerUser: null
+          organization:
+            name: name
+            guid: org-xmmmN
+            handle: handle
+            localId: 1
+          name: name
+          guid: guid
+          handle: handle
+          localId: 0
+        localId: 1
+        uri: https://app.doe.com
+        slogan: "Doe, Be You"
+        user: null
+        home: https://doe.com/landing
+      properties:
+        localId:
+          description: "The app identifier in the realm (without the realm, the id\
+            \ may have duplicate)"
+          example: 1
+          format: int64
+          type: integer
+        guid:
+          description: The global app id (realm id + local app id)
+          example: xmmmN
+          type: string
+        handle:
+          description: |
+            The handle of the app.
+            The handle is unique for all apps on the realm.
+            It follows the DNS name constraint
+          example: "[\"doe\"]"
+          type: string
+        name:
+          description: The name of the app
+          example: Doe
+          type: string
+        uri:
+          description: |
+            An authentication url identifier
+            It has no query string nor fragment.
+            If you use the member authentication module, this URL should not be empty.
+          example: https://app.doe.com
+          format: uri
+          type: string
+        home:
+          description: |
+            The home URL of the app
+            This is a app branding element
+            that adds an URL to any app communication footer
+          example: https://doe.com/landing
+          format: uri
+          type: string
+        slogan:
+          description: The slogan of the app
+          example: "Doe, Be You"
+          type: string
+        logo:
+          description: The uri of the app logo
+          example: https://doe.com/_media/android-chrome-192x192.png
+          format: uri
+          type: string
+        primaryColor:
+          description: The css primary color of the theme (rgb in hexadecimal)
+          example: '#3498db'
+          type: string
+        user:
+          $ref: '#/components/schemas/OrganizationUser'
+        realm:
+          $ref: '#/components/schemas/Realm'
+        terms:
+          description: The location of the terms and conditions document
+          format: uri
+          type: string
+      title: An app
+      type: object
+      x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
+        \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
+        \ property = \"guid\", scope = App.class)"
+      x-fields-identity:
+      - guid
+      x-fields-to-string:
+      - guid
+      - handle
     UserPostBody:
       description: |
         A user.
@@ -3084,7 +3074,6 @@ components:
           disabled: true
           location: The world
           realm:
-            defaultApp: ""
             ownerUser: null
             organization:
               name: name
@@ -3101,7 +3090,6 @@ components:
         description: The last news ....
         handle: newsletter
         realm:
-          defaultApp: ""
           ownerUser: null
           organization:
             name: name
@@ -3123,7 +3111,6 @@ components:
           logo: https://doe.com/_media/android-chrome-192x192.png
           handle: "[\"doe\"]"
           realm:
-            defaultApp: ""
             ownerUser: null
             organization:
               name: name
@@ -3276,7 +3263,6 @@ components:
             disabled: true
             location: The world
             realm:
-              defaultApp: ""
               ownerUser: null
               organization:
                 name: name
@@ -3293,7 +3279,6 @@ components:
           description: The last news ....
           handle: newsletter
           realm:
-            defaultApp: ""
             ownerUser: null
             organization:
               name: name
@@ -3315,7 +3300,6 @@ components:
             logo: https://doe.com/_media/android-chrome-192x192.png
             handle: "[\"doe\"]"
             realm:
-              defaultApp: ""
               ownerUser: null
               organization:
                 name: name
@@ -3353,7 +3337,6 @@ components:
           disabled: true
           location: The world
           realm:
-            defaultApp: ""
             ownerUser: null
             organization:
               name: name

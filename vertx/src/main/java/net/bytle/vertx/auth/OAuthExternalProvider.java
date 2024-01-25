@@ -31,22 +31,25 @@ public interface OAuthExternalProvider {
    */
   String getCallbackOperationPath();
 
+
+
   /**
    * @return a unique name for the provider
    */
-  String getName();
+  OAuthExternalIdentifier getIdentifier();
 
   /**
    * The URL endpoint of the external provider that
    * we should call with a GET
    */
 
-  String getAuthorizeUrl(RoutingContext context, AuthState authState);
+  String getAuthorizeUrl(RoutingContext context, OAuthState OAuthState);
 
   /**
    *
    * @return a reference to the manager
    */
   OAuthExternal getOAuthExternal();
+
 
 }

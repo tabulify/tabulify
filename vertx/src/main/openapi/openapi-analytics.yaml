@@ -15,7 +15,7 @@ components:
       type: object
       properties:
         # the properties have all user as prefix to make them globally unique on all event properties
-        userId:
+        userGuid:
           type: string
           description: A unique identifier
         userEmail:
@@ -27,13 +27,13 @@ components:
       properties:
         # the properties have all app as prefix to make them unique on the event
         # to make the difference with a user (for instance userRealmId)
-        appId:
+        appGuid:
           type: string
           description: The app id that has created this event (never change)
         appHandle:
           type: string
           description: The app name identifier (human identifier, may change)
-        appRealmId:
+        appRealmGuid:
           type: string
           description: |
             The realm of the app
@@ -41,7 +41,7 @@ components:
         appRealmHandle:
           type: string
           description: The realm human identifier (may change)
-        appOrganisationId:
+        appOrganisationGuid:
           type: string
           description: the organisation id (the billing logical unit, known also as the group id)
         appOrganisationHandle:
@@ -52,12 +52,12 @@ components:
       type: object
       properties:
         # these properties do not need a prefix to make them unique on the event
-        agentId:
+        agentGuid:
           type: string
           description: |
             The agent id
             The Analytics Agent is an object that has all properties
-        flowId:
+        flowGuid:
           type: string
           description: |
             The flow id is the immutable id of the flow
@@ -228,10 +228,10 @@ components:
         ## rules
         ## minimal 2 words by properties name
         ## except for the properties directly attached to the event (ie id and name)
-        id:
+        guid:
           type: string
           description: |
-            A unique identifier for each event.
+            A global unique identifier for each event.
 
             It allows to delete duplicate.
 
@@ -266,9 +266,9 @@ components:
       description: The user
       type: object
       properties:
-        id:
+        guid:
           type: string
-          description: A unique identifier
+          description: A unique global identifier
         givenName:
           type: string
           description: the user given name

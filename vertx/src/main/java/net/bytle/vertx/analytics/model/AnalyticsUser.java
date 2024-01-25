@@ -14,7 +14,7 @@ import java.util.Objects;
 public class AnalyticsUser   {
 
 
-  protected String id;
+  protected String guid;
 
   protected String givenName;
 
@@ -34,19 +34,19 @@ public class AnalyticsUser   {
   }
 
   /**
-  * @return id A unique identifier
+  * @return guid A unique global identifier
   */
-  @JsonProperty("id")
-  public String getId() {
-    return id;
+  @JsonProperty("guid")
+  public String getGuid() {
+    return guid;
   }
 
   /**
-  * @param id A unique identifier
+  * @param guid A unique global identifier
   */
   @SuppressWarnings("unused")
-  public void setId(String id) {
-    this.id = id;
+  public void setGuid(String guid) {
+    this.guid = guid;
   }
 
   /**
@@ -125,12 +125,12 @@ public class AnalyticsUser   {
     AnalyticsUser analyticsUser = (AnalyticsUser) o;
     return
 
-            Objects.equals(id, analyticsUser.id) && Objects.equals(givenName, analyticsUser.givenName) && Objects.equals(email, analyticsUser.email) && Objects.equals(avatar, analyticsUser.avatar) && Objects.equals(creationTime, analyticsUser.creationTime);
+            Objects.equals(guid, analyticsUser.guid) && Objects.equals(givenName, analyticsUser.givenName) && Objects.equals(email, analyticsUser.email) && Objects.equals(avatar, analyticsUser.avatar) && Objects.equals(creationTime, analyticsUser.creationTime);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, givenName, email, avatar, creationTime);
+    return Objects.hash(guid, givenName, email, avatar, creationTime);
   }
 
   @Override

@@ -73,7 +73,7 @@ public class AuthUser {
     return claims.getString(AuthUserJwtClaims.AUDIENCE.toString());
   }
 
-  public String getRealmIdentifier() {
+  public String getRealmGuid() {
     return getAudience();
   }
 
@@ -234,13 +234,7 @@ public class AuthUser {
     return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_HANDLE.toString());
   }
 
-  public void setGroup(String group) {
-    claims.put(AuthUserJwtClaims.CUSTOM_GROUP.toString(), group);
-  }
 
-  public String getGroup() {
-    return claims.getString(AuthUserJwtClaims.CUSTOM_GROUP.toString());
-  }
 
   public <T> Set<T> getSet(String key, Class<T> clazz) {
     JsonArray jsonArray = claims.getJsonArray(key);

@@ -111,7 +111,7 @@ public class AnalyticsDelivery {
       return this;
     }
     AnalyticsEventDeliveryStatus analyticsEventDeliveryStatus = new AnalyticsEventDeliveryStatus(analyticsEvent, this.sinksName);
-    this.eventsQueue.put(analyticsEvent.getId(), analyticsEventDeliveryStatus);
+    this.eventsQueue.put(analyticsEvent.getGuid(), analyticsEventDeliveryStatus);
     return this;
   }
 
@@ -152,7 +152,7 @@ public class AnalyticsDelivery {
 
     }
     for(AnalyticsEventDeliveryStatus analyticsEventDeliveryStatus: completedDelivery){
-      this.eventsQueue.remove(analyticsEventDeliveryStatus.getAnalyticsEvent().getId());
+      this.eventsQueue.remove(analyticsEventDeliveryStatus.getAnalyticsEvent().getGuid());
     }
     return pulled;
   }

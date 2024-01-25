@@ -9,7 +9,7 @@ import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthJwtClaims;
-import net.bytle.vertx.auth.AuthState;
+import net.bytle.vertx.auth.OAuthState;
 import net.bytle.vertx.flow.WebFlow;
 import net.bytle.vertx.flow.WebFlowEmailCallbackAbs;
 
@@ -57,13 +57,13 @@ public class UserLoginEmailCallback extends WebFlowEmailCallbackAbs {
         .buildWithContextFailingTerminal(ctx);
       return;
     }
-    String realmHandle = jwtClaims.getRealmIdentifier();
+    String realmHandle = jwtClaims.getRealmGuid();
     EraldyApiApp apiApp = (EraldyApiApp) this.getWebFlow().getApp();
     apiApp
       .getAuthProvider()
       .getAuthUserForSessionByEmailNotNull(bMailInternetAddress, realmHandle)
       .onFailure(ctx::fail)
-      .onSuccess(authUserForSession -> new AuthContext(this.getWebFlow(), ctx, authUserForSession, AuthState.createEmpty(), jwtClaims)
+      .onSuccess(authUserForSession -> new AuthContext(this.getWebFlow(), ctx, authUserForSession, OAuthState.createEmpty(), jwtClaims)
         .redirectViaHttpWithAuthRedirectUriAsUri()
         .authenticateSession());
 

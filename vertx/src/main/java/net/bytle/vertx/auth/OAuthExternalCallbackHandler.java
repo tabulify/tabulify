@@ -110,7 +110,13 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
       ctx.fail(TowerFailureTypeEnum.NOT_LOGGED_IN_401.getStatusCode(), new IllegalStateException("Invalid oauth2 state"));
       return;
     }
-    AuthState authState = AuthState.createFromStateString(ctxState);
+    OAuthState oAuthState = OAuthState.createFromStateString(ctxState);
+
+    /**
+     * Analytics
+     */
+    oAuthState.setAuthProviderHandle(this.oAuthExternalProvider.getIdentifier().getHandle());
+    oAuthState.setAuthProviderGuid(this.oAuthExternalProvider.getIdentifier().getGuid().toString());
 
 
     // remove the code verifier, from the session as it will be trade for the
@@ -204,7 +210,7 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
             this.oAuthExternalProvider.getOAuthExternal().getFlow(),
             ctx,
             authUser,
-            authState,
+            oAuthState,
             AuthJwtClaims.createEmptyClaims()
           )
             .setHandlers(oAuthExternalProvider.getOAuthExternal().getOAuthSessionAuthenticationHandlers())
