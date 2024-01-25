@@ -56,9 +56,9 @@ public class Server implements AutoCloseable {
 
   private final builder builder;
   private PgPool pgDatabaseConnectionPool;
-  private JdbcConnectionInfo jdbcConnectionInfo;
+  private JdbcConnectionInfo pgConnectionInfo;
   private IpGeolocation ipGeolocation;
-  private JdbcSchemaManager jdbcManager;
+  private JdbcSchemaManager pgSchemaManager;
   private JwtAuthManager jwtAuthManager;
   private ApiKeyAuthenticationProvider apiKeyAuth;
   private HashId hashId;
@@ -237,6 +237,10 @@ public class Server implements AutoCloseable {
 
   }
 
+  public JdbcConnectionInfo getPostgresDatabaseConnectionInfo() {
+    return this.pgConnectionInfo;
+  }
+
 
   public static class builder {
     private final String name;
@@ -246,7 +250,7 @@ public class Server implements AutoCloseable {
     private int publicPort;
     private String listeningHost;
     private Boolean ssl = false;
-    private String poolName;
+    private String postgresPoolName;
     private boolean enableIpGeoLocation = false;
     private boolean addJwt = false;
     private boolean addApiKeyAuth = false;
@@ -332,15 +336,15 @@ public class Server implements AutoCloseable {
        */
       this.serverHealth = new ServerHealth(server);
 
-      if (this.poolName != null) {
-        LOGGER.info("Start creation of JDBC Pool (" + this.poolName + ")");
-        server.jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(this.poolName, server.getConfigAccessor());
-        server.pgDatabaseConnectionPool = JdbcPostgresPool.create(server.getVertx(), server.jdbcConnectionInfo);
-        server.jdbcManager = JdbcSchemaManager.create(server.jdbcConnectionInfo);
+      if (this.postgresPoolName != null) {
+        LOGGER.info("Start creation of JDBC Pool (" + this.postgresPoolName + ")");
+        server.pgConnectionInfo = JdbcConnectionInfo.createFromJson(this.postgresPoolName, server.getConfigAccessor());
+        server.pgDatabaseConnectionPool = JdbcPostgresPool.create(server.getVertx(), server.pgConnectionInfo);
+        server.pgSchemaManager = JdbcSchemaManager.create(server.pgConnectionInfo);
       }
       if (this.enableIpGeoLocation) {
         try {
-          server.ipGeolocation = IpGeolocation.create(server.pgDatabaseConnectionPool, server.jdbcManager);
+          server.ipGeolocation = IpGeolocation.create(server.pgDatabaseConnectionPool, server.pgSchemaManager);
         } catch (DbMigrationException e) {
           throw new ConfigIllegalException("Ip geolocation bad schema migration", e);
         }
@@ -421,17 +425,18 @@ public class Server implements AutoCloseable {
       this.enablePostgresDatabase("pg");
       return this;
     }
+
     /**
      * @param prefixName - the name is used in the configuration as prefix
      */
     public builder enablePostgresDatabase(String prefixName) {
-      this.poolName = prefixName;
+      this.postgresPoolName = prefixName;
       return this;
     }
 
 
     public Server.builder addIpGeolocation() {
-      if (this.poolName == null) {
+      if (this.postgresPoolName == null) {
         throw new InternalException("To enable Ip Geolocation, the jdbc pool service should be enabled first");
       }
       this.enableIpGeoLocation = true;

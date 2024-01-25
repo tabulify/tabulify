@@ -7,6 +7,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
+import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
@@ -439,6 +440,21 @@ public class EraldyApiApp extends TowerApp {
 
   @Override
   public Future<Void> mount() {
+
+    LOGGER.info("EraldyApp Db Migration");
+    JdbcConnectionInfo postgresDatabaseConnectionInfo = this.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionInfo();
+    JdbcSchemaManager jdbcSchemaManager = JdbcSchemaManager.create(postgresDatabaseConnectionInfo);
+    // Realms
+    String schema = JdbcSchemaManager.getSchemaFromHandle("realms");
+    JdbcSchema realmSchema = JdbcSchema.builder()
+      .setLocation("classpath:db/cs-realms")
+      .setSchema(schema)
+      .build();
+    try {
+      jdbcSchemaManager.migrate(realmSchema);
+    } catch (DbMigrationException e) {
+      return Future.failedFuture(new InternalException("The database migration failed", e));
+    }
 
     Future<Void> eraldyOrg = eraldyModel.insertModelInDatabase();
     Future<Void> parentMount = super.mount();

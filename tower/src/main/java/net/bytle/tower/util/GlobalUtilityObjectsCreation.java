@@ -5,7 +5,9 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.NoSecretException;
-import net.bytle.vertx.*;
+import net.bytle.vertx.ConfigAccessor;
+import net.bytle.vertx.ConfigIllegalException;
+import net.bytle.vertx.TemplateEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,23 +35,6 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
   }
 
   public void init() throws DbMigrationException, NoSecretException, ConfigIllegalException {
-
-    INIT_LOGGER.info("Start creation of JDBC Pool");
-    JdbcConnectionInfo jdbcConnectionInfo = JdbcConnectionInfo.createFromJson("jdbc",configAccessor);
-    JdbcPostgresPool.create(vertx,jdbcConnectionInfo);
-
-    INIT_LOGGER.info("Db Migration");
-    JdbcSchemaManager jdbcSchemaManager = JdbcSchemaManager.create(jdbcConnectionInfo);
-    // Realms
-    String schema = JdbcSchemaManager.getSchemaFromHandle("realms");
-    JdbcSchema realmSchema = JdbcSchema.builder()
-      .setLocation("classpath:db/cs-realms")
-      .setSchema(schema)
-      .build();
-    jdbcSchemaManager.migrate(realmSchema);
-
-    INIT_LOGGER.info("Add the SMTP Logger");
-
 
 
     INIT_LOGGER.info("Start Instantiation of Symmetric Secret Data Encryption");
