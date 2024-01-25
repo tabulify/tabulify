@@ -6,6 +6,8 @@ import com.mixpanel.mixpanelapi.MixpanelAPI;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import jakarta.mail.internet.AddressException;
+import net.bytle.dns.DnsException;
+import net.bytle.dns.DnsIp;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
@@ -73,6 +75,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
   private final String customPropertyOrganizationId;
   private final String customPropertyFlowId;
   private final String customPropertyFlowHandle;
+  private final String customPropertySessionId;
 
 
   public AnalyticsMixPanelSink(AnalyticsDelivery analyticsDelivery) throws ConfigIllegalException {
@@ -121,6 +124,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
     this.customPropertyOrganizationHandle = KeyNormalizer.createFromString("Organization Handle").toCase(this.keyCase);
     this.customPropertyFlowId = KeyNormalizer.createFromString("Flow Id").toCase(this.keyCase);
     this.customPropertyFlowHandle = KeyNormalizer.createFromString("Flow Handle").toCase(this.keyCase);
+    this.customPropertySessionId = KeyNormalizer.createFromString("Session Id").toCase(this.keyCase);
 
   }
 
@@ -200,6 +204,18 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      * https://docs.mixpanel.com/docs/tracking/how-tos/privacy-friendly-tracking#disabling-geolocation
      */
     String ip = request.getRemoteIp();
+    if (JavaEnvs.IS_DEV && ip != null) {
+      try {
+        DnsIp dnsIp = DnsIp.createFromString(ip);
+        if (dnsIp.getInetAddress().isLoopbackAddress()) {
+          // just to test that the ip is taken into account
+          // a VietName ip taken from the ip_inet view
+          ip = "2.56.16.1";
+        }
+      } catch (DnsException e) {
+        // should not
+      }
+    }
     if (ip != null) {
       props.put("ip", ip);
     }
@@ -211,7 +227,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      */
     String sessionId = request.getSessionId();
     if (sessionId != null) {
-      props.put("session_id", sessionId);
+      props.put(this.customPropertySessionId, sessionId);
     }
     URI originUri = request.getOriginUri();
     if (originUri != null) {
