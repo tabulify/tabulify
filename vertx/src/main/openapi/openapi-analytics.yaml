@@ -269,9 +269,15 @@ components:
         guid:
           type: string
           description: A unique global identifier
+        name:
+          type: string
+          description: The short name
         givenName:
           type: string
           description: the user given name
+        familyName:
+          type: string
+          description: the user family name
         email:
           type: string
           description: the user email (the human identifier, ie same as an handle, may change for the id)

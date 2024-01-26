@@ -106,10 +106,12 @@ public class AnalyticsDelivery {
      * is enough to get a difficult error
      * to debug from MixPanel
      */
-    if (analyticsEvent.getName() == null) {
+    String name = analyticsEvent.getName();
+    if (name == null) {
       LOGGER.error("The analytics event has no name (" + analyticsEvent + ")");
       return this;
     }
+
     AnalyticsEventDeliveryStatus analyticsEventDeliveryStatus = new AnalyticsEventDeliveryStatus(analyticsEvent, this.sinksName);
     this.eventsQueue.put(analyticsEvent.getGuid(), analyticsEventDeliveryStatus);
     return this;

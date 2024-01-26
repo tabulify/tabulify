@@ -6,7 +6,6 @@ import net.bytle.vertx.analytics.AnalyticsDelivery;
 import net.bytle.vertx.analytics.AnalyticsEventDeliveryExecution;
 import net.bytle.vertx.analytics.model.AnalyticsEventApp;
 import net.bytle.vertx.analytics.model.AnalyticsEventRequest;
-import net.bytle.vertx.analytics.model.AnalyticsUser;
 
 public class AnalyticsLocalFileSystemSink extends AnalyticsSinkAbs {
 
@@ -25,11 +24,6 @@ public class AnalyticsLocalFileSystemSink extends AnalyticsSinkAbs {
   @Override
   public String getName() {
     return "file";
-  }
-
-  @Override
-  public AnalyticsMixPanelSink deliverUser(AnalyticsUser user, String ip) {
-    return null;
   }
 
 

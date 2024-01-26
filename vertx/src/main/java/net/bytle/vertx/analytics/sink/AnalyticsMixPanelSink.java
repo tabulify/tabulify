@@ -5,12 +5,10 @@ import com.mixpanel.mixpanelapi.MessageBuilder;
 import com.mixpanel.mixpanelapi.MixpanelAPI;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
-import jakarta.mail.internet.AddressException;
 import net.bytle.dns.DnsException;
 import net.bytle.dns.DnsIp;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.Casts;
 import net.bytle.type.Enums;
@@ -22,6 +20,7 @@ import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.analytics.AnalyticsDelivery;
 import net.bytle.vertx.analytics.AnalyticsEventDeliveryExecution;
+import net.bytle.vertx.analytics.AnalyticsException;
 import net.bytle.vertx.analytics.event.SignInEvent;
 import net.bytle.vertx.analytics.event.SignUpEvent;
 import net.bytle.vertx.analytics.event.UserProfileUpdateEvent;
@@ -29,7 +28,6 @@ import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import net.bytle.vertx.analytics.model.AnalyticsEventApp;
 import net.bytle.vertx.analytics.model.AnalyticsEventRequest;
 import net.bytle.vertx.analytics.model.AnalyticsUser;
-import net.bytle.vertx.auth.AuthUserUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -60,6 +58,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
    * as stated in the doc
    */
   private static final int MAX_BATCH_SIZE = 2000;
+
   private final KeyCase keyCase;
   static Logger LOGGER = LogManager.getLogger(AnalyticsMixPanelSink.class);
 
@@ -132,28 +131,38 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
    * @param user - the user
    * @param ip   - the ip when the user was created for geo-localization
    * @return the json mixpanel object
+   * <a href="https://docs.mixpanel.com/docs/data-structure/user-profiles#reserved-user-properties">MixPanel User</a>
+   * <a href="https://docs.mixpanel.com/docs/data-structure/user-profiles#reserved-profile-properties">MixPanel built-in</a>
    */
-  public JsonObject toMixPanelUser(AnalyticsUser user, String ip) {
+  public JsonObject toMixPanelUserWithoutId(AnalyticsUser user, String ip) {
+
     JsonObject props = new JsonObject();
-    props.put("$distinct_id", user.getGuid());
     // $group_id, the group identifier, for group profiles, as these are the canonical identifiers in Mixpanel.
     props.put("$email", user.getEmail());
-    try {
-      props.put("$name", AuthUserUtils.getNameOrNameFromEmail(user.getGivenName(), user.getEmail()));
-    } catch (NotFoundException | AddressException e) {
-      // should not
-    }
+    props.put("$name", user.getName());
+    props.put("$last_name", user.getGivenName());
+    props.put("$last_name", user.getFamilyName());
+
     URI avatar = user.getAvatar();
     if (avatar != null) {
       props.put("$avatar", avatar.toString());
     }
-    props.put("$created", user.getCreationTime().toString());
+    /**
+     * first event in Mixpanel
+     * The timezone of the project should be UTC
+     */
+    props.put("$mp_first_event_time", user.getCreationTime().toString());
     /**
      * ip, determine $city, $region, $country_code and $timezone
      */
-    if (ip != null) {
-      props.put("ip", ip);
-    }
+    this.addIp(props, ip);
+
+    // ???
+    //props.put("$ignore_time", "true");
+
+    // Custom
+    // props.put("Plan", "Premium");
+
     return props;
   }
 
@@ -204,21 +213,8 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      * https://docs.mixpanel.com/docs/tracking/how-tos/privacy-friendly-tracking#disabling-geolocation
      */
     String ip = request.getRemoteIp();
-    if (JavaEnvs.IS_DEV && ip != null) {
-      try {
-        DnsIp dnsIp = DnsIp.createFromString(ip);
-        if (dnsIp.getInetAddress().isLoopbackAddress()) {
-          // just to test that the ip is taken into account
-          // a VietName ip taken from the ip_inet view
-          ip = "2.56.16.1";
-        }
-      } catch (DnsException e) {
-        // should not
-      }
-    }
-    if (ip != null) {
-      props.put("ip", ip);
-    }
+    this.addIp(props, ip);
+
 
     /**
      * Request
@@ -352,6 +348,40 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
   }
 
   /**
+   * ip, determine $city, $region, $country_code and $timezone
+   */
+  private void addIp(JsonObject props, String ip) {
+    ip = getIpOrRandomForDev(ip);
+    if (ip == null) {
+      return;
+    }
+    props.put("ip", ip);
+  }
+
+  private String getIpOrRandomForDev(String ip) {
+
+    if (!JavaEnvs.IS_DEV) {
+      return ip;
+    }
+    if (ip == null) {
+      return null;
+    }
+    try {
+      DnsIp dnsIp = DnsIp.createFromString(ip);
+      if (dnsIp.getInetAddress().isLoopbackAddress()) {
+        // just to test that the ip is taken into account
+        // a VietName ip taken from the ip_inet view
+
+        return "2.56.16.1";
+      }
+    } catch (DnsException e) {
+      // should not
+    }
+    return ip;
+
+  }
+
+  /**
    * The doc is here:<a href="https://docs.mixpanel.com/docs/tracking/how-tos/identifying-users">Identifying user and what is distinct Id?</a>
    * <p>
    * What is strange is that it seems that this is the library that does that
@@ -392,11 +422,17 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
    * * After a user logs in {@link SignInEvent}
    * * When a user updates their info (for example, they change or add a new address) {@link UserProfileUpdateEvent}
    */
-  @SuppressWarnings("unused")
-  @Override
-  public AnalyticsMixPanelSink deliverUser(AnalyticsUser user, String ip) {
-    //noinspection unused
-    JsonObject props = this.toMixPanelUser(user, ip);
+  public AnalyticsMixPanelSink deliverUser(AnalyticsUser user, String ip) throws AnalyticsException {
+
+    JsonObject props = this.toMixPanelUserWithoutId(user, ip);
+    JSONObject mixPanelJsonObject = new JSONObject(props.getMap());
+    // https://docs.mixpanel.com/docs/tracking-methods/sdks/java#setting-profile-properties
+    JSONObject update = this.messageBuilder.set(user.getGuid(), mixPanelJsonObject);
+    try {
+      this.mixpanel.sendMessage(update);
+    } catch (IOException e) {
+      throw new AnalyticsException(e);
+    }
     return this;
   }
 
@@ -424,6 +460,17 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
   @Override
   public Future<Void> processQueue() {
 
+
+    processEvent();
+
+    return Future.succeededFuture();
+
+  }
+
+  /**
+   * This function will process the event queue
+   */
+  private void processEvent() {
 
     // Gather together a bunch of messages into a single
     // ClientDelivery. This can happen in a separate thread
@@ -487,9 +534,6 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
       }
       event.delivered();
     }
-
-    return Future.succeededFuture();
-
   }
 
 }

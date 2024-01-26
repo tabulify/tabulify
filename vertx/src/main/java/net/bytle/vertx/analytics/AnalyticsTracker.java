@@ -65,40 +65,9 @@ public class AnalyticsTracker {
    */
   public EventBuilder eventBuilder(AnalyticsServerEvent analyticsServerEvent) {
 
-    AnalyticsEvent analyticsEvent = new AnalyticsEvent();
 
-
-    String eventName = analyticsServerEvent.getName();
-    if (eventName == null) {
-      throw new InternalException("The event name is null but is mandatory");
-    }
-    analyticsEvent.setName(eventName);
-
-    /**
-     * App and request
-     */
-    analyticsEvent.setApp(analyticsServerEvent.getApp());
-    analyticsEvent.setRequest(analyticsServerEvent.getRequest());
-
-    /**
-     * The primitive server name (ie event name, appId, ...)
-     * processed above are ignored
-     * when creating the Json object
-     * No null or blank value
-     */
-    Map<String, Object> jsonObjectMapTarget = this.jacksonMapperThatAllowEmptyBean.convertValue(
-        analyticsServerEvent,
-        new TypeReference<Map<String, Object>>() {
-        })
-      .entrySet()
-      .stream()
-      .filter(e -> e.getValue() != null && !e.getValue().toString().isBlank())
-      .collect(Collectors.toMap(
-        Map.Entry::getKey,
-        Map.Entry::getValue
-      ));
-    analyticsEvent.setAttr(jsonObjectMapTarget);
-    return new EventBuilder(analyticsEvent);
+    return new EventBuilder()
+      .setAnalyticsServerEvent(analyticsServerEvent);
 
   }
 
@@ -108,7 +77,8 @@ public class AnalyticsTracker {
    */
   public EventBuilder eventBuilder(AnalyticsEvent externalAnalyticsEvent) {
 
-    return new EventBuilder(externalAnalyticsEvent);
+    return new EventBuilder()
+      .setClientEvent(externalAnalyticsEvent);
 
   }
 
@@ -116,7 +86,6 @@ public class AnalyticsTracker {
 
     private AuthUser authUser;
 
-    AnalyticsEvent analyticsEvent;
 
     /**
      * The http routing context
@@ -128,21 +97,16 @@ public class AnalyticsTracker {
 
     private String organizationId;
     private String realmId;
-
-    private EventBuilder(AnalyticsEvent analyticsEvent) {
-      this.analyticsEvent = analyticsEvent;
-    }
-
     /**
-     * Send the event to the queue
-     * (the event is processed async)
+     * We keep the server event to check if this a SignUp, SignIn and ProfileUpdate
+     * event to deliver the user profile
      */
-    public void addToDeliveryQueue() {
+    private AnalyticsServerEvent analyticsServerEvent;
+    private AnalyticsEvent analyticsClientEvent;
 
-      AnalyticsEvent analyticsEvent = buildEvent();
-      analyticsDelivery.addEventToDelivery(analyticsEvent);
-
+    private EventBuilder() {
     }
+
 
     public EventBuilder setUser(AuthUser authUser) {
       this.authUser = authUser;
@@ -154,12 +118,79 @@ public class AnalyticsTracker {
       return this;
     }
 
-    public AnalyticsEvent buildEvent() {
+    /**
+     * Process the event
+     * - create the event and add it to the queue
+     * - if the event is a SignIn, SignUp or profile update, create a user and add it to the queue
+     */
+    public void processEvent() {
+
+       /**
+       * Built and send the event to the queue
+       * (the event is processed async)
+       */
+      analyticsDelivery.addEventToDelivery(buildEvent());
+
+      if(this.analyticsServerEvent!=null){
+
+      }
+
+
+    }
+
+    private AnalyticsEvent buildEventFromServerEvent() {
+
+      AnalyticsEvent analyticsEvent = new AnalyticsEvent();
+
+      String eventName = analyticsServerEvent.getName();
+      if (eventName == null) {
+        throw new InternalException("The event name is null but is mandatory");
+      }
+      analyticsEvent.setName(eventName);
+
+      /**
+       * App and request
+       */
+      analyticsEvent.setApp(analyticsServerEvent.getApp());
+      analyticsEvent.setRequest(analyticsServerEvent.getRequest());
+
+      /**
+       * The primitive server name (ie event name, appId, ...)
+       * processed above are ignored
+       * when creating the Json object
+       * No null or blank value
+       */
+      Map<String, Object> jsonObjectMapTarget = jacksonMapperThatAllowEmptyBean.convertValue(
+          analyticsServerEvent,
+          new TypeReference<Map<String, Object>>() {
+          })
+        .entrySet()
+        .stream()
+        .filter(e -> e.getValue() != null && !e.getValue().toString().isBlank())
+        .collect(Collectors.toMap(
+          Map.Entry::getKey,
+          Map.Entry::getValue
+        ));
+      analyticsEvent.setAttr(jsonObjectMapTarget);
+      return analyticsEvent;
+    }
+
+    private AnalyticsEvent buildEvent() {
+
+      AnalyticsEvent analyticsEvent;
+      if (analyticsServerEvent != null) {
+        analyticsEvent = this.buildEventFromServerEvent();
+      } else {
+        if (analyticsClientEvent == null) {
+          throw new InternalException("To build an event a server event or a client event should be given");
+        }
+        analyticsEvent = analyticsClientEvent;
+      }
 
       /**
        * Normalize event name
        */
-      String name = this.analyticsEvent.getName();
+      String name = analyticsEvent.getName();
       if (name == null) {
         throw new InternalException("An event should have a name. The event (" + analyticsEvent.getClass().getSimpleName() + ") has no name");
       }
@@ -315,7 +346,6 @@ public class AnalyticsTracker {
 
       }
 
-
       /**
        * Creation time and uuid time part should be the same
        * to allow retrieval on event id
@@ -337,6 +367,7 @@ public class AnalyticsTracker {
       }
 
       return analyticsEvent;
+
     }
 
 
@@ -347,6 +378,16 @@ public class AnalyticsTracker {
 
     public EventBuilder setRealmId(String realmId) {
       this.realmId = realmId;
+      return this;
+    }
+
+    public EventBuilder setAnalyticsServerEvent(AnalyticsServerEvent analyticsServerEvent) {
+      this.analyticsServerEvent = analyticsServerEvent;
+      return this;
+    }
+
+    public EventBuilder setClientEvent(AnalyticsEvent clientEvent) {
+      this.analyticsClientEvent = clientEvent;
       return this;
     }
   }

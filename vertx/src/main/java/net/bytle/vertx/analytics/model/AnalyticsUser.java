@@ -16,7 +16,11 @@ public class AnalyticsUser   {
 
   protected String guid;
 
+  protected String name;
+
   protected String givenName;
+
+  protected String familyName;
 
   protected String email;
 
@@ -50,6 +54,22 @@ public class AnalyticsUser   {
   }
 
   /**
+  * @return name The short name
+  */
+  @JsonProperty("name")
+  public String getName() {
+    return name;
+  }
+
+  /**
+  * @param name The short name
+  */
+  @SuppressWarnings("unused")
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  /**
   * @return givenName the user given name
   */
   @JsonProperty("givenName")
@@ -63,6 +83,22 @@ public class AnalyticsUser   {
   @SuppressWarnings("unused")
   public void setGivenName(String givenName) {
     this.givenName = givenName;
+  }
+
+  /**
+  * @return familyName the user family name
+  */
+  @JsonProperty("familyName")
+  public String getFamilyName() {
+    return familyName;
+  }
+
+  /**
+  * @param familyName the user family name
+  */
+  @SuppressWarnings("unused")
+  public void setFamilyName(String familyName) {
+    this.familyName = familyName;
   }
 
   /**
@@ -125,12 +161,12 @@ public class AnalyticsUser   {
     AnalyticsUser analyticsUser = (AnalyticsUser) o;
     return
 
-            Objects.equals(guid, analyticsUser.guid) && Objects.equals(givenName, analyticsUser.givenName) && Objects.equals(email, analyticsUser.email) && Objects.equals(avatar, analyticsUser.avatar) && Objects.equals(creationTime, analyticsUser.creationTime);
+            Objects.equals(guid, analyticsUser.guid) && Objects.equals(name, analyticsUser.name) && Objects.equals(givenName, analyticsUser.givenName) && Objects.equals(familyName, analyticsUser.familyName) && Objects.equals(email, analyticsUser.email) && Objects.equals(avatar, analyticsUser.avatar) && Objects.equals(creationTime, analyticsUser.creationTime);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, givenName, email, avatar, creationTime);
+    return Objects.hash(guid, name, givenName, familyName, email, avatar, creationTime);
   }
 
   @Override
