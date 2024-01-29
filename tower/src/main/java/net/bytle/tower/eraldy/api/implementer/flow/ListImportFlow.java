@@ -42,7 +42,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
    * (DNS timeout, DNS servfail error, ...)
    * we retry up to this number (default is 3)
    */
-  private final int rowValidationRetryCount;
+  private final int rowValidationFailureRetryCount;
 
   /**
    * The maximum of jobs to keep by list
@@ -148,11 +148,14 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
 
   }
 
-  public int getRowValidationRetryCount() {
-    return this.rowValidationRetryCount;
+  /**
+   * @return the maximum number of retries in case of failure
+   */
+  public int getRowValidationFailureRetryCount() {
+    return this.rowValidationFailureRetryCount;
   }
 
-  public ListImportJob.Builder buildJob(ListItem list, FileUpload fileBinary, ListImportJobAction action) {
+  public ListImportJob.Builder buildJob(ListItem list, FileUpload fileBinary, ListImportListUserAction action) {
     return ListImportJob.builder(this, list, fileBinary, action);
   }
 
@@ -188,7 +191,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
     this.runtimeDataDirectory = this.apiApp.getRuntimeDataDirectory().resolve("list-import");
     Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
     ConfigAccessor configAccessor = server.getConfigAccessor();
-    this.rowValidationRetryCount = configAccessor.getInteger("list.import.execution.row.validation.retry.count", 3);
+    this.rowValidationFailureRetryCount = configAccessor.getInteger("list.import.execution.row.validation.retry.count", 3);
 
     /**
      * Close running job when the app is stopped
@@ -275,7 +278,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
   }
 
   private void scheduleNextJob() {
-    vertx.setTimer(executionPeriodInMs, jobId -> executeNextJob());
+    vertx.setTimer(executionPeriodInMs, jobId -> step2ExecuteNextJob());
   }
 
   private void purgeJobHistory() {
@@ -329,16 +332,20 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
   }
 
 
-  public void executeNextJob() {
+  public void step2ExecuteNextJob() {
 
     this.executionLastTime = LocalDateTime.now();
-    ListImportJob executingJob = this.importJobQueue.peek();
-    if (executingJob == null) {
+    ListImportJob listImportJob = this.importJobQueue.peek();
+    if (listImportJob == null) {
       this.scheduleNextJob();
       return;
     }
 
-    if (executingJob.isRunning()) {
+    /**
+     * The peek job is deleted at the end of
+     * the execution
+     */
+    if (listImportJob.isRunning()) {
       this.scheduleNextJob();
       return;
     }
@@ -348,7 +355,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
     TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
     WorkerExecutor executor = vertx.createSharedWorkerExecutor("list-import-flow", poolSize, maxExecutionTime, maxExecuteTimeUnit);
     executor
-      .executeBlocking(executingJob::executeSequentially)
+      .executeBlocking(listImportJob::executeSequentially)
       .onComplete(blockingAsyncResult -> {
 
         /**
@@ -357,8 +364,8 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
          */
         if (blockingAsyncResult.failed()) {
           Throwable cause = blockingAsyncResult.cause();
-          executingJob.closeJobWithFatalError(cause, null);
-          this.closeExecutionAndExecuteNextJob(executingJob, executor);
+          listImportJob.closeJobWithFatalError(cause, null);
+          this.closeExecutionAndExecuteNextJob(listImportJob, executor);
           return;
         }
         /**
@@ -368,9 +375,9 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
           if (v.failed()) {
             // timeout
             Throwable cause = v.cause();
-            executingJob.closeJobWithFatalError(cause, null);
+            listImportJob.closeJobWithFatalError(cause, null);
           }
-          this.closeExecutionAndExecuteNextJob(executingJob, executor);
+          this.closeExecutionAndExecuteNextJob(listImportJob, executor);
         });
       });
 
@@ -389,7 +396,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
      *
      * Execute the next one
      */
-    this.executeNextJob();
+    this.step2ExecuteNextJob();
   }
 
 

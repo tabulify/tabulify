@@ -293,7 +293,7 @@ public class UserProvider {
    * @param user      - the new user data
    * @return the user
    */
-  private <T extends User> Future<T> updateUser(T user) {
+  public <T extends User> Future<T> updateUser(T user) {
     String sql;
 
     if (user.getLocalId() != null) {

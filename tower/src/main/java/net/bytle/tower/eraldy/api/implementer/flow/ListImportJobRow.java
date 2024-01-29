@@ -41,10 +41,9 @@ public class ListImportJobRow {
   private String confirmTime;
   private String location;
   private String userGuid;
-  private boolean userAdded = false;
-  private boolean userCreated = false;
-  private boolean userUpdated = false;
-  private String listRegistrationGuid;
+  private ListImportListUserStatus listUserStatus = ListImportListUserStatus.NOTHING;
+  private ListImportUserStatus userStatus = ListImportUserStatus.NOTHING;
+  private String listUserGuid;
 
   public ListImportJobRow(ListImportJob listImportJob, int rowId) {
     this.rowId = rowId;
@@ -113,24 +112,19 @@ public class ListImportJobRow {
           .getUserByEmail(emailInternetAddress, list.getRealm().getLocalId(), User.class, list.getRealm())
           .compose(userFromRegistry -> {
             if (userFromRegistry != null) {
-              if (this.listImportJob.getUpdateExistingUser()) {
-                User patchUser = new User();
-                boolean updateUser = false;
-                if (!this.givenName.isBlank()) {
-                  patchUser.setGivenName(this.givenName);
-                  updateUser = true;
+              if (this.listImportJob.getUserAction() == ListImportUserAction.UPDATE) {
+                boolean userShouldUpdate = false;
+                if (!this.givenName.isBlank() && !userFromRegistry.getGivenName().equals(this.givenName)) {
+                  userFromRegistry.setGivenName(this.givenName);
+                  userShouldUpdate = true;
                 }
-                if (!this.familyName.isBlank()) {
-                  patchUser.setFamilyName(this.familyName);
-                  updateUser = true;
+                if (!this.familyName.isBlank() && !userFromRegistry.getFamilyName().equals(this.familyName)) {
+                  userFromRegistry.setFamilyName(this.familyName);
+                  userShouldUpdate = true;
                 }
-                if (!this.location.isBlank()) {
-                  patchUser.setLocation(this.location);
-                  updateUser = true;
-                }
-                if (updateUser) {
-                  this.userUpdated = true;
-                  return userProvider.patchUserIfPropertyValueIsNull(userFromRegistry, patchUser);
+                if (userShouldUpdate) {
+                  this.userStatus = ListImportUserStatus.UPDATED;
+                  return userProvider.updateUser(userFromRegistry);
                 }
               }
               return Future.succeededFuture(userFromRegistry);
@@ -141,7 +135,7 @@ public class ListImportJobRow {
               newUser.setFamilyName(this.familyName);
               newUser.setLocation(this.location);
               newUser.setRealm(list.getRealm());
-              this.userCreated = true;
+              this.userStatus = ListImportUserStatus.CREATED;
               return userProvider.insertUserFromImport(newUser);
             }
           })
@@ -150,14 +144,16 @@ public class ListImportJobRow {
             ListUserProvider listUserProvider = this.listImportJob.getListImportFlow().getApp().getListRegistrationProvider();
             return listUserProvider.
               getListUsersByListAndUser(list, user)
-              .compose(listRegistration -> {
-                if (listRegistration != null) {
-                  this.userAdded = false;
-                  this.listRegistrationGuid = listRegistration.getGuid();
+              .compose(listUser -> {
+                if (listUser != null) {
+                  this.listUserStatus = ListImportListUserStatus.NOTHING;
+                  this.listUserGuid = listUser.getGuid();
                   return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
                 }
-
-                if (this.listImportJob.getAction() != ListImportJobAction.Register) {
+                /**
+                 * Action OUT not yet implemented
+                 */
+                if (this.listImportJob.getListUserAction() != ListImportListUserAction.IN) {
                   return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
                 }
                 ListUser listUserToInsert = new ListUser();
@@ -207,7 +203,11 @@ public class ListImportJobRow {
                   listUserToInsert.setInOptInConfirmationTime(confirmTimeAsObject);
                 }
                 return listUserProvider.insertRegistration(listUserToInsert)
-                  .compose(listRegistrationInserted -> this.closeExecution(ListImportJobRowStatus.COMPLETED, null));
+                  .compose(listRegistrationInserted -> {
+                    this.listUserStatus = ListImportListUserStatus.ADDED;
+                    this.listUserGuid = listRegistrationInserted.getGuid();
+                   return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
+                  });
               });
           });
 
@@ -232,12 +232,12 @@ public class ListImportJobRow {
     net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus jobRowStatus = new net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus();
     jobRowStatus.setEmailAddress(this.email);
     jobRowStatus.setUserGuid(this.userGuid);
-    jobRowStatus.setListUserGuid(this.listRegistrationGuid);
+    jobRowStatus.setListUserGuid(this.listUserGuid);
     jobRowStatus.setStatusCode(this.statusCode);
     jobRowStatus.setRowId(this.rowId);
-    jobRowStatus.setUserAdded(this.userAdded);
-    jobRowStatus.setUserCreated(this.userCreated);
-    jobRowStatus.setUserUpdated(this.userUpdated);
+    jobRowStatus.setUserStatus(this.userStatus.getCode());
+    jobRowStatus.setListUserStatus(this.listUserStatus.getCode());
+
     String statusMessage = this.statusMessage;
     if (statusCode == EmailAddressValidationStatus.FATAL_ERROR.getStatusCode()) {
       statusMessage += " . After " + this.executionCount + " attempts";

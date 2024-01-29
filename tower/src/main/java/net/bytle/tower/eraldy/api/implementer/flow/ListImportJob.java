@@ -44,7 +44,7 @@ public class ListImportJob {
   private final ListImportJobStatus listImportJobStatus;
 
   private final Integer maxRowCountToProcess;
-  private final ListImportJobAction action;
+  private final ListImportListUserAction listUserAction;
   /**
    * The execution status code
    * We use a runtime variable because
@@ -52,7 +52,7 @@ public class ListImportJob {
    * (ie the client can query on the status to see if the job is really completed)
    */
   private Integer executionStatusCode = TO_PROCESS_STATUS_CODE;
-  private final boolean updateExistingUser;
+  private final ListImportUserAction userAction;
   private final List<ListImportJobRow> resultImportJobRows = new ArrayList<>();
 
   public ListImportJob(Builder builder) {
@@ -74,20 +74,24 @@ public class ListImportJob {
     listImportJobStatus.setCountSuccess(0);
     listImportJobStatus.setCreationTime(creationTime.toLocalDateTime());
     this.maxRowCountToProcess = Objects.requireNonNullElse(builder.maxRowCountToProcess, 5000);
-    this.action = Objects.requireNonNull(builder.action);
-    this.updateExistingUser = Objects.requireNonNullElse(builder.updateExistingUser, false);
+    // list user action
+    this.listUserAction = Objects.requireNonNull(builder.listUserAction);
+    listImportJobStatus.setListUserActionCode(this.listUserAction.getActionCode());
+    // user action
+    this.userAction = Objects.requireNonNullElse(builder.userAction, ListImportUserAction.NOTHING);
+    listImportJobStatus.setUserActionCode(this.userAction.getActionCode());
   }
 
-  public static ListImportJob.Builder builder(ListImportFlow listImportFlow, ListItem list, FileUpload filoeUpload, ListImportJobAction action) {
+  public static ListImportJob.Builder builder(ListImportFlow listImportFlow, ListItem list, FileUpload filoeUpload, ListImportListUserAction action) {
     return new ListImportJob.Builder(listImportFlow, list, filoeUpload, action);
   }
 
-  public boolean getUpdateExistingUser() {
-    return this.updateExistingUser;
+  public ListImportUserAction getUserAction() {
+    return this.userAction;
   }
 
-  public ListImportJobAction getAction() {
-    return this.action;
+  public ListImportListUserAction getListUserAction() {
+    return this.listUserAction;
   }
 
   public static class Builder {
@@ -95,14 +99,14 @@ public class ListImportJob {
     private final ListImportFlow listImportFlow;
     private final ListItem list;
     private Integer maxRowCountToProcess;
-    private final ListImportJobAction action;
-    private Boolean updateExistingUser;
+    private final ListImportListUserAction listUserAction;
+    private ListImportUserAction userAction;
 
-    Builder(ListImportFlow listImportFlow, ListItem list, FileUpload fileUpload, ListImportJobAction action) {
+    Builder(ListImportFlow listImportFlow, ListItem list, FileUpload fileUpload, ListImportListUserAction listUserAction) {
       this.listImportFlow = listImportFlow;
       this.list = list;
       this.fileUpload = fileUpload;
-      this.action = action;
+      this.listUserAction = listUserAction;
     }
 
     public Builder setMaxRowCountToProcess(Integer maxRowCountToProcess) {
@@ -114,8 +118,8 @@ public class ListImportJob {
       return new ListImportJob(this);
     }
 
-    public Builder setUpdateExistingUser(Boolean updateExistingUser) {
-      this.updateExistingUser = updateExistingUser;
+    public Builder setUserAction(ListImportUserAction userAction) {
+      this.userAction = userAction;
       return this;
     }
   }
@@ -145,6 +149,11 @@ public class ListImportJob {
 
   }
 
+  /**
+   *
+   * @param listFutureToExecute - the future to executes
+   * @param iterationCount - the number of times that this job has run (1 = first time, 2 = second time - first retry, ...)
+   */
   private Future<ListImportJob> executeSequentiallyWithRetry(List<Future<ListImportJobRow>> listFutureToExecute, int iterationCount) {
 
 
@@ -160,7 +169,7 @@ public class ListImportJob {
         List<Future<ListImportJobRow>> toRetryFutures = new ArrayList<>();
         for (ListImportJobRow resultListImportJobRow : resultsListImportJobRows) {
           if (
-            iterationCount < this.listImportFlow.getRowValidationRetryCount()
+            iterationCount < this.listImportFlow.getRowValidationFailureRetryCount()
               && resultListImportJobRow.getStatus().equals(FATAL_ERROR.getStatusCode())
           ) {
             toRetryFutures.add(resultListImportJobRow.getExecutableFuture());

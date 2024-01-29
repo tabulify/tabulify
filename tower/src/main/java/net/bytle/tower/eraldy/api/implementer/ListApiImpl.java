@@ -15,7 +15,8 @@ import net.bytle.exception.NullValueException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.ListImportFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListImportJob;
-import net.bytle.tower.eraldy.api.implementer.flow.ListImportJobAction;
+import net.bytle.tower.eraldy.api.implementer.flow.ListImportListUserAction;
+import net.bytle.tower.eraldy.api.implementer.flow.ListImportUserAction;
 import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationConfirmationLetter;
 import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationValidationLetter;
 import net.bytle.tower.eraldy.api.openapi.interfaces.ListApi;
@@ -162,9 +163,9 @@ public class ListApiImpl implements ListApi {
       })
       .compose(list -> {
         ListImportJob importJob = this.apiApp.getListImportFlow()
-          .buildJob(list, fileBinary, ListImportJobAction.Register)
+          .buildJob(list, fileBinary, ListImportListUserAction.IN)
           .setMaxRowCountToProcess(finalRowCountToProcess)
-          .setUpdateExistingUser(true)
+          .setUserAction(ListImportUserAction.UPDATE)
           .build();
         String jobId;
         try {

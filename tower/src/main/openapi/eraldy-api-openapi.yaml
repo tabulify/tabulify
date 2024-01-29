@@ -108,16 +108,6 @@ components:
         emailAddress:
           type: string
           description: The email to import
-        rowId:
-          type: integer
-          format: int32 # integer
-          description: The row id in the input file
-        userGuid:
-          type: string
-          description: The user guid (may be null)
-        listUserGuid:
-          type: string
-          description: The list user guid (may be null if there is an error)
         statusCode:
           description: "The status code"
           type: integer
@@ -125,15 +115,24 @@ components:
         statusMessage:
           type: string
           description: A message
-        userAdded:
-          type: boolean
-          description: True if the user was added to the list
-        userCreated:
-          type: boolean
-          description: True if the user was created in the realm
-        userUpdated:
-          type: boolean
-          description: True if the user profile was updated in the realm
+        rowId:
+          type: integer
+          format: int32 # integer
+          description: The row id in the input file
+        userGuid:
+          type: string
+          description: The user guid (may be null)
+        userStatus:
+          type: integer
+          format: int32 # integer
+          description: The status code of the user (0 - nothing done, 1 - user updated, 2 - user created)
+        listUserGuid:
+          type: string
+          description: The list user guid (may be null if there is an error)
+        listUserStatus:
+          type: integer
+          format: int32 # integer
+          description: The status code of the user in the list (0 - nothing done, 1 - user added)
     ListImportJobStatus:
       type: object
       description: |
@@ -154,6 +153,12 @@ components:
         statusMessage:
           type: string
           description: A description of any fatal error if any
+        listUserActionCode:
+          type: integer
+          description: "The action on the list user: 0: add (in), 1: delete (out)"
+        userActionCode:
+          type: integer
+          description: "The action on the user: 0: no update (create only), 1: update"
         uploadedFileName:
           type: string
           description: The original file name

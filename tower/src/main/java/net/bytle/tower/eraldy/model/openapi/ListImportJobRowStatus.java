@@ -14,21 +14,19 @@ public class ListImportJobRowStatus   {
 
   protected String emailAddress;
 
-  protected Integer rowId;
-
-  protected String userGuid;
-
-  protected String listUserGuid;
-
   protected Integer statusCode;
 
   protected String statusMessage;
 
-  protected Boolean userAdded;
+  protected Integer rowId;
 
-  protected Boolean userCreated;
+  protected String userGuid;
 
-  protected Boolean userUpdated;
+  protected Integer userStatus;
+
+  protected String listUserGuid;
+
+  protected Integer listUserStatus;
 
   /**
   * The empty constructor is
@@ -53,54 +51,6 @@ public class ListImportJobRowStatus   {
   @SuppressWarnings("unused")
   public void setEmailAddress(String emailAddress) {
     this.emailAddress = emailAddress;
-  }
-
-  /**
-  * @return rowId The row id in the input file
-  */
-  @JsonProperty("rowId")
-  public Integer getRowId() {
-    return rowId;
-  }
-
-  /**
-  * @param rowId The row id in the input file
-  */
-  @SuppressWarnings("unused")
-  public void setRowId(Integer rowId) {
-    this.rowId = rowId;
-  }
-
-  /**
-  * @return userGuid The user guid (may be null)
-  */
-  @JsonProperty("userGuid")
-  public String getUserGuid() {
-    return userGuid;
-  }
-
-  /**
-  * @param userGuid The user guid (may be null)
-  */
-  @SuppressWarnings("unused")
-  public void setUserGuid(String userGuid) {
-    this.userGuid = userGuid;
-  }
-
-  /**
-  * @return listUserGuid The list user guid (may be null if there is an error)
-  */
-  @JsonProperty("listUserGuid")
-  public String getListUserGuid() {
-    return listUserGuid;
-  }
-
-  /**
-  * @param listUserGuid The list user guid (may be null if there is an error)
-  */
-  @SuppressWarnings("unused")
-  public void setListUserGuid(String listUserGuid) {
-    this.listUserGuid = listUserGuid;
   }
 
   /**
@@ -136,51 +86,83 @@ public class ListImportJobRowStatus   {
   }
 
   /**
-  * @return userAdded True if the user was added to the list
+  * @return rowId The row id in the input file
   */
-  @JsonProperty("userAdded")
-  public Boolean getUserAdded() {
-    return userAdded;
+  @JsonProperty("rowId")
+  public Integer getRowId() {
+    return rowId;
   }
 
   /**
-  * @param userAdded True if the user was added to the list
+  * @param rowId The row id in the input file
   */
   @SuppressWarnings("unused")
-  public void setUserAdded(Boolean userAdded) {
-    this.userAdded = userAdded;
+  public void setRowId(Integer rowId) {
+    this.rowId = rowId;
   }
 
   /**
-  * @return userCreated True if the user was created in the realm
+  * @return userGuid The user guid (may be null)
   */
-  @JsonProperty("userCreated")
-  public Boolean getUserCreated() {
-    return userCreated;
+  @JsonProperty("userGuid")
+  public String getUserGuid() {
+    return userGuid;
   }
 
   /**
-  * @param userCreated True if the user was created in the realm
-  */
-  @SuppressWarnings("unused")
-  public void setUserCreated(Boolean userCreated) {
-    this.userCreated = userCreated;
-  }
-
-  /**
-  * @return userUpdated True if the user profile was updated in the realm
-  */
-  @JsonProperty("userUpdated")
-  public Boolean getUserUpdated() {
-    return userUpdated;
-  }
-
-  /**
-  * @param userUpdated True if the user profile was updated in the realm
+  * @param userGuid The user guid (may be null)
   */
   @SuppressWarnings("unused")
-  public void setUserUpdated(Boolean userUpdated) {
-    this.userUpdated = userUpdated;
+  public void setUserGuid(String userGuid) {
+    this.userGuid = userGuid;
+  }
+
+  /**
+  * @return userStatus The status code of the user (0 - nothing done, 1 - user updated, 2 - user created)
+  */
+  @JsonProperty("userStatus")
+  public Integer getUserStatus() {
+    return userStatus;
+  }
+
+  /**
+  * @param userStatus The status code of the user (0 - nothing done, 1 - user updated, 2 - user created)
+  */
+  @SuppressWarnings("unused")
+  public void setUserStatus(Integer userStatus) {
+    this.userStatus = userStatus;
+  }
+
+  /**
+  * @return listUserGuid The list user guid (may be null if there is an error)
+  */
+  @JsonProperty("listUserGuid")
+  public String getListUserGuid() {
+    return listUserGuid;
+  }
+
+  /**
+  * @param listUserGuid The list user guid (may be null if there is an error)
+  */
+  @SuppressWarnings("unused")
+  public void setListUserGuid(String listUserGuid) {
+    this.listUserGuid = listUserGuid;
+  }
+
+  /**
+  * @return listUserStatus The status code of the user in the list (0 - nothing done, 1 - user added)
+  */
+  @JsonProperty("listUserStatus")
+  public Integer getListUserStatus() {
+    return listUserStatus;
+  }
+
+  /**
+  * @param listUserStatus The status code of the user in the list (0 - nothing done, 1 - user added)
+  */
+  @SuppressWarnings("unused")
+  public void setListUserStatus(Integer listUserStatus) {
+    this.listUserStatus = listUserStatus;
   }
 
 
@@ -195,12 +177,12 @@ public class ListImportJobRowStatus   {
     ListImportJobRowStatus listImportJobRowStatus = (ListImportJobRowStatus) o;
     return
 
-            Objects.equals(emailAddress, listImportJobRowStatus.emailAddress) && Objects.equals(rowId, listImportJobRowStatus.rowId) && Objects.equals(userGuid, listImportJobRowStatus.userGuid) && Objects.equals(listUserGuid, listImportJobRowStatus.listUserGuid) && Objects.equals(statusCode, listImportJobRowStatus.statusCode) && Objects.equals(statusMessage, listImportJobRowStatus.statusMessage) && Objects.equals(userAdded, listImportJobRowStatus.userAdded) && Objects.equals(userCreated, listImportJobRowStatus.userCreated) && Objects.equals(userUpdated, listImportJobRowStatus.userUpdated);
+            Objects.equals(emailAddress, listImportJobRowStatus.emailAddress) && Objects.equals(statusCode, listImportJobRowStatus.statusCode) && Objects.equals(statusMessage, listImportJobRowStatus.statusMessage) && Objects.equals(rowId, listImportJobRowStatus.rowId) && Objects.equals(userGuid, listImportJobRowStatus.userGuid) && Objects.equals(userStatus, listImportJobRowStatus.userStatus) && Objects.equals(listUserGuid, listImportJobRowStatus.listUserGuid) && Objects.equals(listUserStatus, listImportJobRowStatus.listUserStatus);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(emailAddress, rowId, userGuid, listUserGuid, statusCode, statusMessage, userAdded, userCreated, userUpdated);
+    return Objects.hash(emailAddress, statusCode, statusMessage, rowId, userGuid, userStatus, listUserGuid, listUserStatus);
   }
 
   @Override

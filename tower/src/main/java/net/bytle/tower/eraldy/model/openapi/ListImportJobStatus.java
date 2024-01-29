@@ -19,6 +19,10 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
 
   protected String statusMessage;
 
+  protected Integer listUserActionCode;
+
+  protected Integer userActionCode;
+
   protected String uploadedFileName;
 
   protected Integer countTotal;
@@ -90,6 +94,38 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   @SuppressWarnings("unused")
   public void setStatusMessage(String statusMessage) {
     this.statusMessage = statusMessage;
+  }
+
+  /**
+  * @return listUserActionCode The action on the list user: 0: add (in), 1: delete (out)
+  */
+  @JsonProperty("listUserActionCode")
+  public Integer getListUserActionCode() {
+    return listUserActionCode;
+  }
+
+  /**
+  * @param listUserActionCode The action on the list user: 0: add (in), 1: delete (out)
+  */
+  @SuppressWarnings("unused")
+  public void setListUserActionCode(Integer listUserActionCode) {
+    this.listUserActionCode = listUserActionCode;
+  }
+
+  /**
+  * @return userActionCode The action on the user: 0: no update (create only), 1: update
+  */
+  @JsonProperty("userActionCode")
+  public Integer getUserActionCode() {
+    return userActionCode;
+  }
+
+  /**
+  * @param userActionCode The action on the user: 0: no update (create only), 1: update
+  */
+  @SuppressWarnings("unused")
+  public void setUserActionCode(Integer userActionCode) {
+    this.userActionCode = userActionCode;
   }
 
   /**
