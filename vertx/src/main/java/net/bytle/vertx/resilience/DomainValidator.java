@@ -208,7 +208,7 @@ public class DomainValidator {
 
 
     /**
-     * Composite execution
+     * DNS Checks Composite execution
      */
     CompositeFuture compositeFuture;
     if (failEarly) {
@@ -273,6 +273,7 @@ public class DomainValidator {
           homePageCheckBuilderFuture = Future.failedFuture(
             ValidationTest.WEB_SERVER.createResultBuilder()
               .setMessage("No A records, web server and home page checks skipped.")
+              .skipped()
           );
         }
         return homePageCheckBuilderFuture;

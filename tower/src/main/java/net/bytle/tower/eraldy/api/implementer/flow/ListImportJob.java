@@ -176,7 +176,7 @@ public class ListImportJob {
           }
           /**
            * We build the list first
-           * One retry, the elements will be replaced
+           * On retry, the elements will be replaced
            */
           int rowId = resultListImportJobRow.getRowId();
           if (rowId >= 0 && rowId < resultImportJobRows.size()) {

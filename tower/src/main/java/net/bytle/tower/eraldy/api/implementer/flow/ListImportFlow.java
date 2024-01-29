@@ -40,7 +40,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
   /**
    * If a validation fail with a fatal error
    * (DNS timeout, DNS servfail error, ...)
-   * we retry up to this number (default is 3)
+   * we retry up to this number (default is 2 for a total of 3 attempts)
    */
   private final int rowValidationFailureRetryCount;
 
@@ -191,7 +191,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
     this.runtimeDataDirectory = this.apiApp.getRuntimeDataDirectory().resolve("list-import");
     Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
     ConfigAccessor configAccessor = server.getConfigAccessor();
-    this.rowValidationFailureRetryCount = configAccessor.getInteger("list.import.execution.row.validation.retry.count", 3);
+    this.rowValidationFailureRetryCount = configAccessor.getInteger("list.import.execution.row.validation.retry.count", 2);
 
     /**
      * Close running job when the app is stopped

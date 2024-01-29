@@ -30,11 +30,11 @@ public class ValidationTestResult {
   }
 
   public boolean hasFailed() {
-    return !this.builder.pass;
+    return this.builder.status == ValidationTestStatus.FAILED;
   }
 
   public boolean hasPassed() {
-    return this.builder.pass;
+    return this.builder.status == ValidationTestStatus.PASS;
   }
 
   public ValidationTest getValidation() {
@@ -50,7 +50,11 @@ public class ValidationTestResult {
   }
 
   public boolean hasFatalError() {
-    return this.builder.fatalError != null;
+    return this.builder.status == ValidationTestStatus.FATAL_ERROR;
+  }
+
+  public boolean hasSkipped() {
+    return this.builder.status == ValidationTestStatus.SKIPPED;
   }
 
   /**
@@ -61,8 +65,7 @@ public class ValidationTestResult {
 
     private final ValidationTest validationTest;
     private String message;
-    private Boolean pass;
-    private Throwable fatalError;
+    private ValidationTestStatus status;
 
     public Builder(ValidationTest validationTest) {
       this.validationTest = validationTest;
@@ -83,8 +86,8 @@ public class ValidationTestResult {
     }
 
     public Builder setFatalError(Throwable fatalError, String s) {
-      this.fatalError = fatalError;
-      this.setNonFatalError(fatalError,s);
+      this.setNonFatalError(fatalError, s);
+      this.status = ValidationTestStatus.FATAL_ERROR;
       return this;
     }
 
@@ -92,12 +95,16 @@ public class ValidationTestResult {
     /**
      * Fail and succeed are the final methods
      * because the status should be consistent with the
-     * status of Future.
+     * status of the Future.
      * The status of the validation is then set
      * after the execution of the Future.
      */
     public ValidationTestResult succeed() {
-      this.pass = true;
+      // edge case when the test has been skipped
+      if (this.status == ValidationTestStatus.SKIPPED) {
+        return new ValidationTestResult(this);
+      }
+      this.status = ValidationTestStatus.PASS;
       return new ValidationTestResult(this);
     }
 
@@ -105,12 +112,16 @@ public class ValidationTestResult {
     /**
      * Fail and succeed are the final methods
      * because the status should be consistent with the
-     * status of Future.
+     * status of the Future.
      * The status of the validation is then set
      * after the execution of the Future.
      */
     public ValidationTestResult fail() {
-      this.pass = false;
+      // edge case when the test has been skipped or has a fatal error
+      if (this.status != null) {
+        return new ValidationTestResult(this);
+      }
+      this.status = ValidationTestStatus.FAILED;
       return new ValidationTestResult(this);
     }
 
@@ -125,6 +136,12 @@ public class ValidationTestResult {
       }
       return this;
     }
+
+    public Builder skipped() {
+      this.status = ValidationTestStatus.SKIPPED;
+      return this;
+    }
+
   }
 
 }

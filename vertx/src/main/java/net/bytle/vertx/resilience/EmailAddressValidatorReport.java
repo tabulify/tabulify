@@ -5,10 +5,7 @@ import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class EmailAddressValidatorReport {
@@ -31,25 +28,54 @@ public class EmailAddressValidatorReport {
 
   public JsonObject toJsonObject() {
     JsonObject jsonObject = new JsonObject();
-    jsonObject.put("pass", this.builder.status);
+    jsonObject.put("status", this.builder.status);
     jsonObject.put("email", this.builder.inputEmailAddress);
-    JsonObject jsonObjectMessage = new JsonObject();
-    jsonObject.put("results", jsonObjectMessage);
-    jsonObjectMessage.put("errors", this.getErrors()
+    JsonObject jsonResultsObjectMessage = new JsonObject();
+    jsonObject.put("results", jsonResultsObjectMessage);
+    Map<String, String> failed = this.builder
+      .validationTestResults
       .stream()
+      .filter(ValidationTestResult::hasFailed)
       .collect(Collectors.toMap(
         v -> v.getValidation().getName(),
         ValidationTestResult::getMessage
-      )));
-    jsonObjectMessage.put("success", this.builder
+      ));
+    if (!failed.isEmpty()) {
+      jsonResultsObjectMessage.put("failed", failed);
+    }
+    Map<String, String> failures = this.builder
+      .validationTestResults
+      .stream()
+      .filter(ValidationTestResult::hasFatalError)
+      .collect(Collectors.toMap(
+        v -> v.getValidation().getName(),
+        ValidationTestResult::getMessage
+      ));
+    if (!failures.isEmpty()) {
+      jsonResultsObjectMessage.put("failure", failures);
+    }
+    Map<String, String> passed = this.builder
       .validationTestResults
       .stream()
       .filter(ValidationTestResult::hasPassed)
       .collect(Collectors.toMap(
         v -> v.getValidation().getName(),
         ValidationTestResult::getMessage
-      ))
-    );
+      ));
+    if (!passed.isEmpty()) {
+      jsonResultsObjectMessage.put("passed", passed);
+    }
+    Map<String, String> skipped = this.builder
+      .validationTestResults
+      .stream()
+      .filter(ValidationTestResult::hasSkipped)
+      .collect(Collectors.toMap(
+        v -> v.getValidation().getName(),
+        ValidationTestResult::getMessage
+      ));
+    if (!skipped.isEmpty()) {
+      jsonResultsObjectMessage.put("skipped", skipped);
+    }
     return jsonObject;
   }
 
@@ -61,8 +87,16 @@ public class EmailAddressValidatorReport {
     return emailInternetAddress;
   }
 
+  /**
+   * @return the results that have failed or have a fatal error
+   * (not the skipped and passed results)
+   */
   public List<ValidationTestResult> getErrors() {
-    return this.builder.validationTestResults.stream().filter(ValidationTestResult::hasFailed).collect(Collectors.toList());
+    return this.builder.validationTestResults
+      .stream()
+      // fatal error and failed
+      .filter(res -> res.hasFatalError() || res.hasFailed())
+      .collect(Collectors.toList());
   }
 
 
@@ -88,11 +122,11 @@ public class EmailAddressValidatorReport {
       }
       status = EmailAddressValidationStatus.LEGIT;
       for (ValidationTestResult validationTestResult : validationTestResults) {
+        if (validationTestResult.hasFatalError()) {
+          status = EmailAddressValidationStatus.FATAL_ERROR;
+          break;
+        }
         if (validationTestResult.hasFailed()) {
-          if (validationTestResult.hasFatalError()) {
-            status = EmailAddressValidationStatus.FATAL_ERROR;
-            break;
-          }
           EmailAddressValidationStatus emailAddressValidationStatus = validationTestResult.getValidation().getValidationType();
           if (emailAddressValidationStatus.getOrderOfPrecedence() > status.getOrderOfPrecedence()) {
             status = emailAddressValidationStatus;
