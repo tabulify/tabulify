@@ -144,7 +144,7 @@ public class ListImportJob {
     listImportJobStatus.setStatusCode(executionStatusCode);
 
     return this.buildFutureListToExecute()
-      .compose(futuresToExecute -> this.executeSequentiallyWithRetry(futuresToExecute, 1));
+      .compose(futuresToExecute -> this.executeSequentiallyWithRetry(futuresToExecute, 0));
 
 
   }
@@ -152,9 +152,9 @@ public class ListImportJob {
   /**
    *
    * @param listFutureToExecute - the future to executes
-   * @param iterationCount - the number of times that this job has run (1 = first time, 2 = second time - first retry, ...)
+   * @param iterationIndex - the number of times that this job has run (0 = first time, 1 = second time - first retry, ...)
    */
-  private Future<ListImportJob> executeSequentiallyWithRetry(List<Future<ListImportJobRow>> listFutureToExecute, int iterationCount) {
+  private Future<ListImportJob> executeSequentiallyWithRetry(List<Future<ListImportJobRow>> listFutureToExecute, int iterationIndex) {
 
 
     return this.listImportFlow.getApp().getApexDomain().getHttpServer().getServer().getFutureSchedulers()
@@ -169,7 +169,7 @@ public class ListImportJob {
         List<Future<ListImportJobRow>> toRetryFutures = new ArrayList<>();
         for (ListImportJobRow resultListImportJobRow : resultsListImportJobRows) {
           if (
-            iterationCount < this.listImportFlow.getRowValidationFailureRetryCount()
+            iterationIndex < this.listImportFlow.getRowValidationFailureRetryCount()
               && resultListImportJobRow.getStatus().equals(FATAL_ERROR.getStatusCode())
           ) {
             toRetryFutures.add(resultListImportJobRow.getExecutableFuture());
@@ -186,8 +186,8 @@ public class ListImportJob {
           }
         }
         if (!toRetryFutures.isEmpty()) {
-          int nextIterationCount = iterationCount + 1;
-          return executeSequentiallyWithRetry(toRetryFutures, nextIterationCount);
+          int nextIterationIndex = iterationIndex + 1;
+          return executeSequentiallyWithRetry(toRetryFutures, nextIterationIndex);
         }
         return this.closeJob();
       });
