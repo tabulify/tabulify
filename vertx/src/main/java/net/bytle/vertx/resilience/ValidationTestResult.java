@@ -29,11 +29,11 @@ public class ValidationTestResult {
     return Objects.hash(builder.validationTest);
   }
 
-  public boolean fail() {
+  public boolean hasFailed() {
     return !this.builder.pass;
   }
 
-  public boolean pass() {
+  public boolean hasPassed() {
     return this.builder.pass;
   }
 

@@ -57,15 +57,13 @@ public class ListImportJobRow {
 
   public Future<ListImportJobRow> getExecutableFuture() {
     return this.getExecutableFutureWithoutErrorHandling()
-      .compose(
-        listImportJobRow -> Future.succeededFuture(this),
-        err -> {
-          // database timeout for instance
-          this.closeExecution(ListImportJobRowStatus.FATAL_ERROR, err.getMessage() + " (" + err.getClass().getSimpleName() + ")");
-          LOGGER.error("A fatal error has occurred on the row (" + this.rowId + ", " + this.email + ") with the list import job (" + listImportJob.getList().getGuid() + "," + listImportJob.getStatus().getJobId() + ")", err);
-          return Future.succeededFuture(this);
-        }
-      );
+      .recover(err -> {
+        // database timeout for instance
+        this.closeExecution(ListImportJobRowStatus.FATAL_ERROR, err.getMessage() + " (" + err.getClass().getSimpleName() + ")");
+        LOGGER.error("A fatal error has occurred on the row (" + this.rowId + ", " + this.email + ") with the list import job (" + listImportJob.getList().getGuid() + "," + listImportJob.getStatus().getJobId() + ")", err);
+        return Future.succeededFuture(this);
+      })
+      .compose(listImportJobRow -> Future.succeededFuture(this));
   }
 
   public Future<ListImportJobRow> getExecutableFutureWithoutErrorHandling() {

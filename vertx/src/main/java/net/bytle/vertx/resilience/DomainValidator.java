@@ -11,6 +11,7 @@ import jakarta.mail.MessagingException;
 import net.bytle.dns.*;
 import net.bytle.email.BMailSmtpClient;
 import net.bytle.email.BMailStartTls;
+import net.bytle.exception.NotFoundException;
 import net.bytle.html.HtmlGrading;
 import net.bytle.html.HtmlStructureException;
 import net.bytle.vertx.HttpClientBuilder;
@@ -48,7 +49,7 @@ public class DomainValidator {
     vertx = server.getVertx();
     // At home, the port 25 may be firewalld by the USP
     this.checkPingMx = server.getConfigAccessor().getBoolean(VALIDATOR_DOMAIN_CHECK_PING_MX_CONF, true);
-    LOGGER.info("Ping check Mx ( "+VALIDATOR_DOMAIN_CHECK_PING_MX_CONF+") was set to "+this.checkPingMx+". The validation will try to connect to the SMTP server");
+    LOGGER.info("Ping check Mx ( " + VALIDATOR_DOMAIN_CHECK_PING_MX_CONF + ") was set to " + this.checkPingMx + ". The validation will try to connect to the SMTP server");
 
     /**
      * The known white list that we don't test
@@ -152,27 +153,30 @@ public class DomainValidator {
             });
         }
       }, err -> Future.failedFuture(mxValidCheck.setFatalError(err)));
-    List<Future<ValidationTestResult.Builder>> compositeFutureList = new ArrayList<>();
-    compositeFutureList.add(mxRecords);
+
+    /**
+     * The DNS checks
+     */
+    List<Future<ValidationTestResult.Builder>> dnsChecksFutureTests = new ArrayList<>();
+    dnsChecksFutureTests.add(mxRecords);
 
     /**
      * A records
      */
-    ValidationTestResult.Builder aValidCheck = ValidationTest.A_RECORD.createResultBuilder();
+    ValidationTestResult.Builder aRecordsValidCheck = ValidationTest.A_RECORD.createResultBuilder();
     DnsName apexDomain = dnsName.getApexName();
     Future<ValidationTestResult.Builder> aRecordFuture = dnsClient.resolveA(apexDomain)
       .compose(
         aRecords -> {
-
           if (aRecords.isEmpty()) {
-            return Future.failedFuture(aValidCheck.setMessage("The apex domain (" + apexDomain + ") has no A records"));
+            return Future.failedFuture(aRecordsValidCheck.setMessage("The apex domain (" + apexDomain + ") has no A records"));
           }
-          return Future.succeededFuture(aValidCheck.setMessage("A records were found"));
+          return Future.succeededFuture(aRecordsValidCheck.setMessage("A records were found"));
 
         }
-        , err -> Future.failedFuture(aValidCheck.setFatalError(err))
+        , err -> Future.failedFuture(aRecordsValidCheck.setFatalError(err))
       );
-    compositeFutureList.add(aRecordFuture);
+    dnsChecksFutureTests.add(aRecordFuture);
 
     /**
      * Domain blocked?
@@ -199,14 +203,104 @@ public class DomainValidator {
 
           return Future.succeededFuture(blockListCheck.setMessage("The apex domain (" + apexDomainNameAsString + ") is not blocked by " + dnsBlockListQueryHelper.getBlockList()));
         }, err -> Future.failedFuture(blockListCheck.setFatalError(err)));
-      compositeFutureList.add(futureBlockListCheck);
+      dnsChecksFutureTests.add(futureBlockListCheck);
     }
 
 
     /**
-     * HTML page test
-     * (Certificate)
+     * Composite execution
      */
+    CompositeFuture compositeFuture;
+    if (failEarly) {
+      compositeFuture = Future.all(dnsChecksFutureTests);
+    } else {
+      compositeFuture = Future.join(dnsChecksFutureTests);
+    }
+    return compositeFuture
+      .compose(
+        results ->
+          // the dns checks futures have all succeeded
+          Future.succeededFuture(
+            domainValidatorResult.addTests(results
+              .list()
+              .stream()
+              .map(e -> ((ValidationTestResult.Builder) e).succeed())
+              .collect(Collectors.toSet())
+            ))
+        ,
+        err -> {
+          if (!(err instanceof ValidationTestResult.Builder)) {
+            return Future.failedFuture(err);
+          }
+          // one the future has not succeeded
+          Set<ValidationTestResult> validationTestResults = new HashSet<>();
+          // We add the error to be sure that we register the error
+          // The set make it certain that we don't get 2 validation results
+          ValidationTestResult validationError = ((ValidationTestResult.Builder) err).fail();
+          validationTestResults.add(validationError);
+          for (int i = 0; i < compositeFuture.size(); i++) {
+            if (compositeFuture.failed(i)) {
+              Throwable cause = compositeFuture.cause(i);
+              if (cause instanceof ValidationTestResult.Builder) {
+                ValidationTestResult validationTestResultBuilder = ((ValidationTestResult.Builder) cause).fail();
+                validationTestResults.add(validationTestResultBuilder);
+                continue;
+              }
+              return Future.failedFuture(cause);
+            }
+            if (compositeFuture.succeeded(i)) {
+              ValidationTestResult validationTestResult = ((ValidationTestResult.Builder) compositeFuture.resultAt(i)).succeed();
+              validationTestResults.add(validationTestResult);
+            }
+          }
+          return Future.succeededFuture(domainValidatorResult.addTests(validationTestResults));
+        }
+      )
+      .compose(v -> {
+        // All DNS checks Records test have run
+        // if the A record was positive, we can check the home page and the certificate of the web server
+        boolean aRecordsResultHasPassed;
+        try {
+          aRecordsResultHasPassed = domainValidatorResult.getResult(ValidationTest.A_RECORD).hasPassed();
+        } catch (NotFoundException e) {
+          // should not but yeah
+          aRecordsResultHasPassed = false;
+        }
+        Future<ValidationTestResult.Builder> homePageCheckBuilderFuture;
+        if (aRecordsResultHasPassed) {
+          homePageCheckBuilderFuture = this.getHomePageFutureCheck(apexDomainNameAsString);
+        } else {
+          homePageCheckBuilderFuture = Future.failedFuture(
+            ValidationTest.WEB_SERVER.createResultBuilder()
+              .setMessage("No A records, web server and home page checks skipped.")
+          );
+        }
+        return homePageCheckBuilderFuture;
+      })
+      .compose(
+        homePageCheckBuilderResult -> {
+          // the home page check has succeeded
+          ValidationTestResult homePageCheckResult = homePageCheckBuilderResult.succeed();
+          domainValidatorResult.addTest(homePageCheckResult);
+          return Future.succeededFuture(domainValidatorResult);
+        },
+        err -> {
+          if (!(err instanceof ValidationTestResult.Builder)) {
+            return Future.failedFuture(err);
+          }
+          ValidationTestResult homePageCheckResult = ((ValidationTestResult.Builder) err).fail();
+          domainValidatorResult.addTest(homePageCheckResult);
+          return Future.succeededFuture(domainValidatorResult);
+        });
+  }
+
+  /**
+   * HTML page test
+   * (Certificate)
+   *
+   */
+  private Future<ValidationTestResult.Builder> getHomePageFutureCheck(String apexDomainNameAsString) {
+
     // https with valid certificate at minima
     // content: one image at minima
     // example:
@@ -219,7 +313,7 @@ public class DomainValidator {
     ValidationTestResult.Builder webServer = ValidationTest.WEB_SERVER.createResultBuilder();
     ValidationTestResult.Builder homePage = ValidationTest.HOME_PAGE.createResultBuilder();
 
-    Future<ValidationTestResult.Builder> homePageFuture = this.getPageContent(apexDomainNameAsString)
+    return this.getPageContent(apexDomainNameAsString)
       .compose(response -> {
           try {
             HtmlGrading.grade(response.bodyAsString());
@@ -246,55 +340,6 @@ public class DomainValidator {
             return Future.failedFuture(webServer.setNonFatalError(err, message));
           }
           return Future.failedFuture(webServer.setFatalError(err, message));
-        }
-      );
-    compositeFutureList.add(homePageFuture);
-
-
-    /**
-     * Composite execution
-     */
-    CompositeFuture compositeFuture;
-    if (failEarly) {
-      compositeFuture = Future.all(compositeFutureList);
-    } else {
-      compositeFuture = Future.join(compositeFutureList);
-    }
-    return compositeFuture
-      .compose(
-        results -> Future.succeededFuture(
-          domainValidatorResult.addTests(results
-            .list()
-            .stream()
-            .map(e -> ((ValidationTestResult.Builder) e).succeed())
-            .collect(Collectors.toSet())
-          )
-        ),
-        err -> {
-          if (!(err instanceof ValidationTestResult.Builder)) {
-            return Future.failedFuture(err);
-          }
-          Set<ValidationTestResult> validationTestResults = new HashSet<>();
-          // We add the error to be sure that we register the error
-          // The set make it certain that we don't get 2 validation results
-          ValidationTestResult validationError = ((ValidationTestResult.Builder) err).fail();
-          validationTestResults.add(validationError);
-          for (int i = 0; i < compositeFuture.size(); i++) {
-            if (compositeFuture.failed(i)) {
-              Throwable cause = compositeFuture.cause(i);
-              if (cause instanceof ValidationTestResult.Builder) {
-                ValidationTestResult validationTestResultBuilder = ((ValidationTestResult.Builder) cause).fail();
-                validationTestResults.add(validationTestResultBuilder);
-                continue;
-              }
-              return Future.failedFuture(cause);
-            }
-            if (compositeFuture.succeeded(i)) {
-              ValidationTestResult validationTestResult = ((ValidationTestResult.Builder) compositeFuture.resultAt(i)).succeed();
-              validationTestResults.add(validationTestResult);
-            }
-          }
-          return Future.succeededFuture(domainValidatorResult.addTests(validationTestResults));
         }
       );
   }

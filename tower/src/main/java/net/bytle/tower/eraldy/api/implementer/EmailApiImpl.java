@@ -27,6 +27,12 @@ public class EmailApiImpl implements EmailApi {
 
     return this.apiApp.getEmailAddressValidator()
       .validate(email, failEarly)
+      .recover(err -> Future.failedFuture(TowerFailureException.builder()
+        .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
+        .setMessage("A runtime error has occurred during the email address validation.")
+        .setCauseException(err)
+        .build()
+      ))
       .compose(
         res -> {
           int statusCode = 200;
@@ -34,13 +40,7 @@ public class EmailApiImpl implements EmailApi {
             statusCode = TowerFailureTypeEnum.BAD_STRUCTURE_422.getStatusCode();
           }
           return Future.succeededFuture(new ApiResponse<>(statusCode, res.toJsonObject()));
-        },
-        err -> Future.failedFuture(TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
-          .setMessage("A runtime error has occurred during the email address validation.")
-          .setCauseException(err)
-          .build()
-        )
+        }
       );
 
   }
