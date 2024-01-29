@@ -19,11 +19,8 @@ import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.analytics.AnalyticsDelivery;
-import net.bytle.vertx.analytics.AnalyticsEventDeliveryExecution;
+import net.bytle.vertx.analytics.AnalyticsDeliveryExecution;
 import net.bytle.vertx.analytics.AnalyticsException;
-import net.bytle.vertx.analytics.event.SignInEvent;
-import net.bytle.vertx.analytics.event.SignUpEvent;
-import net.bytle.vertx.analytics.event.UserProfileUpdateEvent;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import net.bytle.vertx.analytics.model.AnalyticsEventApp;
 import net.bytle.vertx.analytics.model.AnalyticsEventRequest;
@@ -35,6 +32,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -129,12 +127,11 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
 
   /**
    * @param user - the user
-   * @param ip   - the ip when the user was created for geo-localization
    * @return the json mixpanel object
    * <a href="https://docs.mixpanel.com/docs/data-structure/user-profiles#reserved-user-properties">MixPanel User</a>
    * <a href="https://docs.mixpanel.com/docs/data-structure/user-profiles#reserved-profile-properties">MixPanel built-in</a>
    */
-  public JsonObject toMixPanelUserWithoutId(AnalyticsUser user, String ip) {
+  public JsonObject toMixPanelUserWithoutId(AnalyticsUser user) {
 
     JsonObject props = new JsonObject();
     // $group_id, the group identifier, for group profiles, as these are the canonical identifiers in Mixpanel.
@@ -151,11 +148,15 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      * first event in Mixpanel
      * The timezone of the project should be UTC
      */
-    props.put("$mp_first_event_time", user.getCreationTime().toString());
+    LocalDateTime creationTime = user.getCreationTime();
+    if (creationTime != null) {
+      props.put("$mp_first_event_time", creationTime.toString());
+    }
+
     /**
      * ip, determine $city, $region, $country_code and $timezone
      */
-    this.addIp(props, ip);
+    this.addIp(props, user.getRemoteIp());
 
     // ???
     //props.put("$ignore_time", "true");
@@ -332,7 +333,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
       Object value = entry.getValue();
       if (value == null) {
         if (JavaEnvs.IS_DEV) {
-          LOGGER.error("The value of the key (" + entry.getKey() + ") for the event (" + event.getName() + ") is null. The value was ignored.");
+          LOGGER.error("The value of the key (" + entry.getKey() + ") for the event (" + event.getTypeName() + ") is null. The value was ignored.");
         }
         continue;
       }
@@ -358,21 +359,26 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
     props.put("ip", ip);
   }
 
+  /**
+   * @param ip - the ip
+   * @return return the IP or a random ip if the IP is a loopback ip in dev
+   */
   private String getIpOrRandomForDev(String ip) {
 
     if (!JavaEnvs.IS_DEV) {
+      // return in production
       return ip;
     }
+    // return random if null
     if (ip == null) {
-      return null;
+      return DnsIp.createRandomIpv4().toString();
     }
     try {
       DnsIp dnsIp = DnsIp.createFromString(ip);
       if (dnsIp.getInetAddress().isLoopbackAddress()) {
-        // just to test that the ip is taken into account
-        // a VietName ip taken from the ip_inet view
-
-        return "2.56.16.1";
+        //
+        // a random ip just to test that the ip is taken into account
+        return DnsIp.createRandomIpv4().toString();
       }
     } catch (DnsException e) {
       // should not
@@ -414,17 +420,10 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
 
   /**
    * @param user - the user
-   * @param ip   - the ip when the user was created for geo-localization
-   * @return the analytics tracker
-   * You make an Identify call:
-   * <p>
-   * * After a user first registers {@link SignUpEvent}
-   * * After a user logs in {@link SignInEvent}
-   * * When a user updates their info (for example, they change or add a new address) {@link UserProfileUpdateEvent}
    */
-  public AnalyticsMixPanelSink deliverUser(AnalyticsUser user, String ip) throws AnalyticsException {
+  public AnalyticsMixPanelSink deliverUser(AnalyticsUser user) throws AnalyticsException {
 
-    JsonObject props = this.toMixPanelUserWithoutId(user, ip);
+    JsonObject props = this.toMixPanelUserWithoutId(user);
     JSONObject mixPanelJsonObject = new JSONObject(props.getMap());
     // https://docs.mixpanel.com/docs/tracking-methods/sdks/java#setting-profile-properties
     JSONObject update = this.messageBuilder.set(user.getGuid(), mixPanelJsonObject);
@@ -448,7 +447,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
     JsonObject vertxJsonObject = this.toMixpanelPropsWithoutUserId(event);
     JSONObject mixPanelJsonObject = new JSONObject(vertxJsonObject.getMap());
     String mixPanelUserDistinctId = this.toMixPanelUserDistinctId(event);
-    String name = event.getName();
+    String name = event.getTypeName();
     return this.messageBuilder.event(
       mixPanelUserDistinctId,
       name,
@@ -458,7 +457,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
 
 
   @Override
-  public Future<Void> processQueue() {
+  public Future<Void> processEventQueue() {
 
 
     processEvent();
@@ -467,8 +466,24 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
 
   }
 
+  @Override
+  public Future<Void> processUserQueue() {
+    for (AnalyticsDeliveryExecution<AnalyticsUser> eventDeliveryExecution : this.pullUserToDeliver(20)) {
+
+      try {
+        this.deliverUser(eventDeliveryExecution.getDeliveryObject());
+      } catch (AnalyticsException e) {
+        eventDeliveryExecution.fatalError(e);
+        continue;
+      }
+      eventDeliveryExecution.delivered();
+
+    }
+    return Future.succeededFuture();
+  }
+
   /**
-   * This function will process the event queue
+   * This function process the event queue
    */
   private void processEvent() {
 
@@ -483,14 +498,14 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      * https://developer.mixpanel.com/reference/import-events#example-of-a-validation-error
      * Therefore, we create a list
      */
-    List<AnalyticsEventDeliveryExecution> eventInBatch = new ArrayList<>();
+    List<AnalyticsDeliveryExecution<AnalyticsEvent>> eventInBatch = new ArrayList<>();
 
-    List<AnalyticsEventDeliveryExecution> analyticsEventDeliveryExecutions = this.pullEventToDeliver(deliveryBatchSize);
-    for (AnalyticsEventDeliveryExecution eventDelivery : analyticsEventDeliveryExecutions) {
+    List<AnalyticsDeliveryExecution<AnalyticsEvent>> analyticsDeliveryExecutions = this.pullEventToDeliver(deliveryBatchSize);
+    for (AnalyticsDeliveryExecution<AnalyticsEvent> eventDelivery : analyticsDeliveryExecutions) {
 
       try {
 
-        AnalyticsEvent event = eventDelivery.getEvent();
+        AnalyticsEvent event = eventDelivery.getDeliveryObject();
 
         event.getState().setEventSendingTime(DateTimeUtil.getNowInUtc());
 
@@ -527,7 +542,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
       mixpanelDeliveryException = e;
     }
 
-    for (AnalyticsEventDeliveryExecution event : eventInBatch) {
+    for (AnalyticsDeliveryExecution<AnalyticsEvent> event : eventInBatch) {
       if (mixpanelDeliveryException != null) {
         event.fatalError(mixpanelDeliveryException);
         continue;

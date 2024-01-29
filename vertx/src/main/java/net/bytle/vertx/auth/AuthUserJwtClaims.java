@@ -134,9 +134,9 @@ public enum AuthUserJwtClaims {
    */
   CUSTOM_SUBJECT_AVATAR("subAvatar"),
   CUSTOM_SUBJECT_FAMILY_NAME("subFamilyName"),
+  CUSTOM_SUBJECT_NAME("subName"),
   CUSTOM_ORG_GUID("orgGuid"),
-  CUSTOM_ORG_HANDLE("orgHandle")
-  ;
+  CUSTOM_ORG_HANDLE("orgHandle");
   private final String jwtKey;
 
   AuthUserJwtClaims(String jwtKey) {
@@ -151,4 +151,5 @@ public enum AuthUserJwtClaims {
   public String toString() {
     return jwtKey;
   }
+
 }

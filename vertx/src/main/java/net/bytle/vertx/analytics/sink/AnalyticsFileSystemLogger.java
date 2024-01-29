@@ -178,7 +178,7 @@ public class AnalyticsFileSystemLogger {
 
 
     // Event Name
-    String eventName = analyticsEvent.getName();
+    String eventName = analyticsEvent.getTypeName();
     if (eventName == null) {
       /**
        * The easy solution is to park this event.

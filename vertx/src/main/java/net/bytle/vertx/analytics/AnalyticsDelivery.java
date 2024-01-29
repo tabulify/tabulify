@@ -5,12 +5,14 @@ import net.bytle.java.JavaEnvs;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
+import net.bytle.vertx.analytics.model.AnalyticsUser;
 import net.bytle.vertx.analytics.sink.AnalyticsLocalFileSystemSink;
 import net.bytle.vertx.analytics.sink.AnalyticsMixPanelSink;
 import net.bytle.vertx.analytics.sink.AnalyticsSink;
 import net.bytle.vertx.future.TowerFutureComposite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -26,8 +28,13 @@ public class AnalyticsDelivery {
    * (Don't use MapDb, when you iterate over the HTreeMap
    * it will create a new object instance each time for each value)
    */
-  private final HashMap<String, AnalyticsEventDeliveryStatus> eventsQueue = new HashMap<>();
+  private final HashMap<String, AnalyticsDeliveryStatus<AnalyticsEvent>> eventsQueue = new HashMap<>();
 
+
+  /**
+   * The user queue
+   */
+  private final HashMap<String, AnalyticsDeliveryStatus<AnalyticsUser>> usersQueue = new HashMap<>();
 
   private final List<AnalyticsSink> sinks = new ArrayList<>();
 
@@ -36,6 +43,7 @@ public class AnalyticsDelivery {
   private final Set<String> sinksName = new HashSet<>();
   private boolean logEventDelivery = false;
   private boolean isRunning = false;
+
 
   public AnalyticsDelivery(Server server) throws ConfigIllegalException {
 
@@ -70,9 +78,11 @@ public class AnalyticsDelivery {
       }
       this.isRunning = true;
     }
+
     List<Future<Void>> processesQueue = new ArrayList<>();
     for (AnalyticsSink analyticsSink : this.sinks) {
-      processesQueue.add(analyticsSink.processQueue());
+      processesQueue.add(analyticsSink.processEventQueue());
+      processesQueue.add(analyticsSink.processUserQueue());
     }
 
     /**
@@ -106,13 +116,13 @@ public class AnalyticsDelivery {
      * is enough to get a difficult error
      * to debug from MixPanel
      */
-    String name = analyticsEvent.getName();
+    String name = analyticsEvent.getTypeName();
     if (name == null) {
       LOGGER.error("The analytics event has no name (" + analyticsEvent + ")");
       return this;
     }
 
-    AnalyticsEventDeliveryStatus analyticsEventDeliveryStatus = new AnalyticsEventDeliveryStatus(analyticsEvent, this.sinksName);
+    AnalyticsDeliveryStatus<AnalyticsEvent> analyticsEventDeliveryStatus = new AnalyticsDeliveryStatus<>(analyticsEvent, this.sinksName);
     this.eventsQueue.put(analyticsEvent.getGuid(), analyticsEventDeliveryStatus);
     return this;
   }
@@ -133,30 +143,52 @@ public class AnalyticsDelivery {
    * @param sinkName - the name of the sink
    * @return a collection to deliver
    */
-  public List<AnalyticsEventDeliveryExecution> pullEventsToDeliver(int batchNumber, String sinkName) {
+  public List<AnalyticsDeliveryExecution<AnalyticsEvent>> pullEventsToDeliver(int batchNumber, String sinkName) {
+    return pullObjectToDeliver(eventsQueue, batchNumber, sinkName);
+  }
 
-    List<AnalyticsEventDeliveryExecution> pulled = new ArrayList<>();
-    List<AnalyticsEventDeliveryStatus> completedDelivery = new ArrayList<>();
-    for(AnalyticsEventDeliveryStatus analyticsEventDeliveryStatus: this.eventsQueue.values()) {
 
+  public AnalyticsDelivery addUserToDelivery(AnalyticsUser analyticsUser, String remoteIp) {
+
+    /**
+     * Ip is the only user request
+     */
+    analyticsUser.setRemoteIp(remoteIp);
+    AnalyticsDeliveryStatus<AnalyticsUser> analyticsEventDeliveryStatus = new AnalyticsDeliveryStatus<>(analyticsUser, this.sinksName);
+    this.usersQueue.put(analyticsUser.getGuid(), analyticsEventDeliveryStatus);
+    return this;
+
+  }
+
+  public List<AnalyticsDeliveryExecution<AnalyticsUser>> pullUsersToDeliver(int batchNumber, String sinkName) {
+    return pullObjectToDeliver(usersQueue, batchNumber, sinkName);
+  }
+
+  @NotNull
+  private <T> List<AnalyticsDeliveryExecution<T>> pullObjectToDeliver(HashMap<String, AnalyticsDeliveryStatus<T>> objectQueue, int batchNumber, String sinkName) {
+    List<AnalyticsDeliveryExecution<T>> pulled = new ArrayList<>();
+    List<String> completedDelivery = new ArrayList<>();
+    for(Map.Entry<String,AnalyticsDeliveryStatus<T>> entry: objectQueue.entrySet()) {
+
+      String guid = entry.getKey();
+      AnalyticsDeliveryStatus<T> analyticsEventDeliveryStatus = entry.getValue();
       if (analyticsEventDeliveryStatus.isComplete()) {
-        completedDelivery.add(analyticsEventDeliveryStatus);
+        completedDelivery.add(guid);
         continue;
       }
       if (analyticsEventDeliveryStatus.isDeliveredForSink(sinkName)) {
         continue;
       }
 
-      pulled.add(new AnalyticsEventDeliveryExecution(analyticsEventDeliveryStatus, sinkName));
+      pulled.add(new AnalyticsDeliveryExecution<>(analyticsEventDeliveryStatus, sinkName));
       if (pulled.size() >= batchNumber) {
         break;
       }
 
     }
-    for(AnalyticsEventDeliveryStatus analyticsEventDeliveryStatus: completedDelivery){
-      this.eventsQueue.remove(analyticsEventDeliveryStatus.getAnalyticsEvent().getGuid());
+    for(String guid: completedDelivery){
+      objectQueue.remove(guid);
     }
     return pulled;
   }
-
 }

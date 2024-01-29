@@ -16,6 +16,7 @@ import net.bytle.tower.util.Guid;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.analytics.event.SignUpEvent;
+import net.bytle.vertx.analytics.model.AnalyticsUser;
 import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlow;
@@ -376,9 +377,9 @@ public class AuthProvider {
             .getServer()
             .getTrackerAnalytics()
             .eventBuilder(signUpEvent)
-            .setUser(authUserForSession)
+            .setAuthUser(authUserForSession)
             .setRoutingContext(routingContext)
-            .addToDeliveryQueue();
+            .processEvent();
           return Future.succeededFuture(authUserForSession);
         }));
 
@@ -488,4 +489,25 @@ public class AuthProvider {
     return AuthJwtClaims.createFromAuthUser(authUser);
   }
 
+  public <T extends User> AnalyticsUser toAnalyticsUser(T user) {
+    AnalyticsUser analyticsUser = new AnalyticsUser();
+    analyticsUser.setGuid(user.getGuid());
+    // user.getHandle(), handle is email
+    analyticsUser.setEmail(user.getEmail());
+    analyticsUser.setGivenName(user.getGivenName());
+    analyticsUser.setFamilyName(user.getFamilyName());
+    analyticsUser.setAvatar(user.getAvatar());
+    analyticsUser.setRealmGuid(user.getRealm().getGuid());
+    analyticsUser.setRealmHandle(user.getRealm().getHandle());
+    if (user instanceof OrganizationUser) {
+      Organization organization = ((OrganizationUser) user).getOrganization();
+      // An organization user object is
+      // a Eraldy user with or without an organization
+      if (organization != null) {
+        analyticsUser.setOrganizationGuid(organization.getGuid());
+        analyticsUser.setOrganizationHandle(organization.getHandle());
+      }
+    }
+    return analyticsUser;
+  }
 }

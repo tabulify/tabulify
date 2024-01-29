@@ -11,7 +11,7 @@ import net.bytle.vertx.analytics.model.AnalyticsEventRequest;
 public abstract class AnalyticsServerEvent {
 
 
-  private AnalyticsEventRequest request;
+  private final AnalyticsEventRequest request;
 
   public AnalyticsServerEvent() {
     /**
@@ -28,12 +28,12 @@ public abstract class AnalyticsServerEvent {
   protected AnalyticsEventApp app;
 
   /**
-   * @return the name/type of the event
+   * @return the type of the event
    * JsonIgnore to indicate that is not a custom event attribute
    * The event builder take care of taking this build-in attributes
    */
   @JsonIgnore()
-  public abstract String getName();
+  public abstract AnalyticsEventType getType();
 
   /**
    * @return app

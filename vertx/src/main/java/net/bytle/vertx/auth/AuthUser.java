@@ -133,7 +133,6 @@ public class AuthUser {
 
   /**
    * @param audience - a namespace where the subject is unique (an application, a realm, ...)
-   * @return
    */
   public AuthUser setRealmGuid(String audience) {
     claims.put(AuthUserJwtClaims.AUDIENCE.toString(), audience);
@@ -293,4 +292,7 @@ public class AuthUser {
     return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_HANDLE.toString());
   }
 
+  public String getSubjectName() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_NAME.toString());
+  }
 }

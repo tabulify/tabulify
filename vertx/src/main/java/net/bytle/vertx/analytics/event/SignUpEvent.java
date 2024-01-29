@@ -8,8 +8,8 @@ public class SignUpEvent extends AnalyticsServerEvent {
   }
 
   @Override
-  public String getName() {
-    return "Sign Up";
+  public AnalyticsEventType getType() {
+    return AnalyticsEventType.SIGN_UP;
   }
 
 

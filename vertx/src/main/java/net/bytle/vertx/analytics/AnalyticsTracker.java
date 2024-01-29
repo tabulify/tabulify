@@ -12,9 +12,12 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.type.KeyCase;
 import net.bytle.type.KeyNormalizer;
 import net.bytle.vertx.*;
+import net.bytle.vertx.analytics.event.AnalyticsEventType;
 import net.bytle.vertx.analytics.event.AnalyticsServerEvent;
 import net.bytle.vertx.analytics.model.*;
 import net.bytle.vertx.auth.AuthUser;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -33,6 +36,7 @@ import java.util.stream.Collectors;
 public class AnalyticsTracker {
 
 
+  static final Logger LOGGER = LogManager.getLogger(AnalyticsTracker.class);
   private final AnalyticsDelivery analyticsDelivery;
   private final JsonMapper jacksonMapperThatAllowEmptyBean;
 
@@ -84,7 +88,7 @@ public class AnalyticsTracker {
 
   public class EventBuilder {
 
-    private AuthUser authUser;
+    private AnalyticsUser analyticsUser;
 
 
     /**
@@ -95,8 +99,8 @@ public class AnalyticsTracker {
     private RoutingContext routingContext;
 
 
-    private String organizationId;
-    private String realmId;
+
+
     /**
      * We keep the server event to check if this a SignUp, SignIn and ProfileUpdate
      * event to deliver the user profile
@@ -108,8 +112,9 @@ public class AnalyticsTracker {
     }
 
 
-    public EventBuilder setUser(AuthUser authUser) {
-      this.authUser = authUser;
+    @SuppressWarnings("unused")
+    public EventBuilder setAnalyticsUser(AnalyticsUser analyticsUser) {
+      this.analyticsUser = analyticsUser;
       return this;
     }
 
@@ -125,14 +130,24 @@ public class AnalyticsTracker {
      */
     public void processEvent() {
 
-       /**
+      /**
        * Built and send the event to the queue
        * (the event is processed async)
        */
-      analyticsDelivery.addEventToDelivery(buildEvent());
+      AnalyticsEvent analyticsEvent = buildEvent();
+      analyticsDelivery.addEventToDelivery(analyticsEvent);
 
-      if(this.analyticsServerEvent!=null){
-
+      /**
+       * User profile update
+       */
+      if (this.analyticsServerEvent != null) {
+        if (this.analyticsServerEvent.getType().isSendUserProfile()) {
+          if (this.analyticsUser != null) {
+            analyticsDelivery.addUserToDelivery(this.analyticsUser, analyticsEvent.getRequest().getRemoteIp());
+          } else {
+            LOGGER.error("The server event (" + this.analyticsServerEvent + ") is an update profile event. The user should be not null");
+          }
+        }
       }
 
 
@@ -142,11 +157,12 @@ public class AnalyticsTracker {
 
       AnalyticsEvent analyticsEvent = new AnalyticsEvent();
 
-      String eventName = analyticsServerEvent.getName();
+      AnalyticsEventType eventName = analyticsServerEvent.getType();
       if (eventName == null) {
         throw new InternalException("The event name is null but is mandatory");
       }
-      analyticsEvent.setName(eventName);
+      analyticsEvent.setTypeName(eventName.getName());
+      analyticsEvent.setTypeGuid(eventName.getGuid().toString());
 
       /**
        * App and request
@@ -190,13 +206,13 @@ public class AnalyticsTracker {
       /**
        * Normalize event name
        */
-      String name = analyticsEvent.getName();
+      String name = analyticsEvent.getTypeName();
       if (name == null) {
         throw new InternalException("An event should have a name. The event (" + analyticsEvent.getClass().getSimpleName() + ") has no name");
       }
       KeyCase eventHandleCase = KeyCase.HANDLE;
       KeyNormalizer eventName = KeyNormalizer.createFromString(name);
-      analyticsEvent.setName(eventName.toCase(eventHandleCase));
+      analyticsEvent.setTypeName(eventName.toCase(eventHandleCase));
 
       /**
        * Create the event sub-objects if absent
@@ -251,33 +267,30 @@ public class AnalyticsTracker {
       /**
        * Add user data
        */
-      if (this.authUser != null) {
+      if (this.analyticsUser != null) {
 
-        analyticsEventUser.setUserGuid(authUser.getSubject());
-        analyticsEventUser.setUserEmail(authUser.getSubjectEmail());
+        analyticsEventUser.setUserGuid(analyticsUser.getGuid());
+        analyticsEventUser.setUserEmail(analyticsUser.getEmail());
 
         /**
-         * App data if any
+         * App data from user if any?
          */
-        analyticsEventApp.setAppRealmGuid(authUser.getRealmGuid());
-        analyticsEventApp.setAppRealmHandle(authUser.getRealmHandle());
-        String organizationGuid = authUser.getOrganizationGuid();
-        if (organizationGuid != null) {
-          // a user may have no organization
-          // an app may not
-          analyticsEventApp.setAppOrganisationGuid(organizationGuid);
-          analyticsEventApp.setAppOrganisationHandle(authUser.getOrganizationHandle());
+        String appRealmGuid = analyticsEventApp.getAppRealmGuid();
+        if (appRealmGuid == null) {
+          analyticsEventApp.setAppRealmGuid(analyticsUser.getRealmGuid());
+          analyticsEventApp.setAppRealmHandle(analyticsUser.getRealmHandle());
         }
-      }
+        String appOrganizationGuid = analyticsEventApp.getAppOrganisationGuid();
+        if (appOrganizationGuid == null) {
+          String organizationGuid = analyticsUser.getOrganizationGuid();
+          if (organizationGuid != null) {
+            // a user may have no organization
+            // an app may not
+            analyticsEventApp.setAppOrganisationGuid(organizationGuid);
+            analyticsEventApp.setAppOrganisationHandle(analyticsUser.getOrganizationHandle());
+          }
+        }
 
-      /**
-       * App data
-       */
-      if (this.realmId != null) {
-        analyticsEventApp.setAppRealmGuid(this.realmId);
-      }
-      if (this.organizationId != null) {
-        analyticsEventApp.setAppOrganisationGuid(this.realmId);
       }
 
       /**
@@ -370,17 +383,6 @@ public class AnalyticsTracker {
 
     }
 
-
-    public EventBuilder setOrganizationId(String organizationId) {
-      this.organizationId = organizationId;
-      return this;
-    }
-
-    public EventBuilder setRealmId(String realmId) {
-      this.realmId = realmId;
-      return this;
-    }
-
     public EventBuilder setAnalyticsServerEvent(AnalyticsServerEvent analyticsServerEvent) {
       this.analyticsServerEvent = analyticsServerEvent;
       return this;
@@ -388,6 +390,21 @@ public class AnalyticsTracker {
 
     public EventBuilder setClientEvent(AnalyticsEvent clientEvent) {
       this.analyticsClientEvent = clientEvent;
+      return this;
+    }
+
+    public EventBuilder setAuthUser(AuthUser authUser) {
+      analyticsUser = new AnalyticsUser();
+      analyticsUser.setGuid(authUser.getSubject());
+      analyticsUser.setEmail(authUser.getSubjectEmail());
+      analyticsUser.setAvatar(authUser.getSubjectAvatar());
+      analyticsUser.setFamilyName(authUser.getSubjectFamilyName());
+      analyticsUser.setGivenName(authUser.getSubjectGivenName());
+      analyticsUser.setName(authUser.getSubjectName());
+      analyticsUser.setRealmGuid(authUser.getRealmGuid());
+      analyticsUser.setRealmHandle(authUser.getRealmHandle());
+      analyticsUser.setOrganizationGuid(authUser.getOrganizationGuid());
+      analyticsUser.setOrganizationHandle(authUser.getOrganizationHandle());
       return this;
     }
   }

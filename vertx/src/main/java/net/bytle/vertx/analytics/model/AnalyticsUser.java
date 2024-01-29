@@ -26,7 +26,17 @@ public class AnalyticsUser   {
 
   protected URI avatar;
 
+  protected String realmGuid;
+
+  protected String realmHandle;
+
+  protected String organizationGuid;
+
+  protected String organizationHandle;
+
   protected LocalDateTime creationTime;
+
+  protected String remoteIp;
 
   /**
   * The empty constructor is
@@ -134,6 +144,70 @@ public class AnalyticsUser   {
   }
 
   /**
+  * @return realmGuid the realm guid
+  */
+  @JsonProperty("realmGuid")
+  public String getRealmGuid() {
+    return realmGuid;
+  }
+
+  /**
+  * @param realmGuid the realm guid
+  */
+  @SuppressWarnings("unused")
+  public void setRealmGuid(String realmGuid) {
+    this.realmGuid = realmGuid;
+  }
+
+  /**
+  * @return realmHandle the realm handle
+  */
+  @JsonProperty("realmHandle")
+  public String getRealmHandle() {
+    return realmHandle;
+  }
+
+  /**
+  * @param realmHandle the realm handle
+  */
+  @SuppressWarnings("unused")
+  public void setRealmHandle(String realmHandle) {
+    this.realmHandle = realmHandle;
+  }
+
+  /**
+  * @return organizationGuid the organization guid
+  */
+  @JsonProperty("organizationGuid")
+  public String getOrganizationGuid() {
+    return organizationGuid;
+  }
+
+  /**
+  * @param organizationGuid the organization guid
+  */
+  @SuppressWarnings("unused")
+  public void setOrganizationGuid(String organizationGuid) {
+    this.organizationGuid = organizationGuid;
+  }
+
+  /**
+  * @return organizationHandle the organization handle
+  */
+  @JsonProperty("organizationHandle")
+  public String getOrganizationHandle() {
+    return organizationHandle;
+  }
+
+  /**
+  * @param organizationHandle the organization handle
+  */
+  @SuppressWarnings("unused")
+  public void setOrganizationHandle(String organizationHandle) {
+    this.organizationHandle = organizationHandle;
+  }
+
+  /**
   * @return creationTime The timestamp when the user was created
   */
   @JsonProperty("creationTime")
@@ -149,6 +223,22 @@ public class AnalyticsUser   {
     this.creationTime = creationTime;
   }
 
+  /**
+  * @return remoteIp The request remote Ip to update the location
+  */
+  @JsonProperty("remoteIp")
+  public String getRemoteIp() {
+    return remoteIp;
+  }
+
+  /**
+  * @param remoteIp The request remote Ip to update the location
+  */
+  @SuppressWarnings("unused")
+  public void setRemoteIp(String remoteIp) {
+    this.remoteIp = remoteIp;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -161,12 +251,12 @@ public class AnalyticsUser   {
     AnalyticsUser analyticsUser = (AnalyticsUser) o;
     return
 
-            Objects.equals(guid, analyticsUser.guid) && Objects.equals(name, analyticsUser.name) && Objects.equals(givenName, analyticsUser.givenName) && Objects.equals(familyName, analyticsUser.familyName) && Objects.equals(email, analyticsUser.email) && Objects.equals(avatar, analyticsUser.avatar) && Objects.equals(creationTime, analyticsUser.creationTime);
+            Objects.equals(guid, analyticsUser.guid) && Objects.equals(name, analyticsUser.name) && Objects.equals(givenName, analyticsUser.givenName) && Objects.equals(familyName, analyticsUser.familyName) && Objects.equals(email, analyticsUser.email) && Objects.equals(avatar, analyticsUser.avatar) && Objects.equals(realmGuid, analyticsUser.realmGuid) && Objects.equals(realmHandle, analyticsUser.realmHandle) && Objects.equals(organizationGuid, analyticsUser.organizationGuid) && Objects.equals(organizationHandle, analyticsUser.organizationHandle) && Objects.equals(creationTime, analyticsUser.creationTime) && Objects.equals(remoteIp, analyticsUser.remoteIp);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, name, givenName, familyName, email, avatar, creationTime);
+    return Objects.hash(guid, name, givenName, familyName, email, avatar, realmGuid, realmHandle, organizationGuid, organizationHandle, creationTime, remoteIp);
   }
 
   @Override

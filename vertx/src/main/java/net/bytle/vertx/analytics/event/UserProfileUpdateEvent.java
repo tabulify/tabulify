@@ -4,8 +4,8 @@ public class UserProfileUpdateEvent extends AnalyticsServerEvent {
 
 
   @Override
-  public String getName() {
-    return "User Profile Update";
+  public AnalyticsEventType getType() {
+    return AnalyticsEventType.USER_UPDATE;
   }
 
 

@@ -12,6 +12,7 @@ import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
+import net.bytle.vertx.analytics.model.AnalyticsEventApp;
 import net.bytle.vertx.analytics.model.AnalyticsEventState;
 
 import java.nio.file.Path;
@@ -74,13 +75,25 @@ public class AnalyticsApiImpl implements AnalyticsApi {
     state.setEventReceptionTime(DateTimeUtil.getNowInUtc());
 
     /**
-     * We don't path the Realm Object but the realm id and organization id
+     * App (client data)
+     * We should get the data from a client id in the future.
+     * <p>
+     * We don't pass the Realm Object but the realm id and organization id
      * because Analytics Tracker does not know the realm object (only the ids)
      * as it's independent of the Eraldy Api App
      */
     Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext);
-    String organizationId = authRealm.getOrganization().getGuid();
-    String realmId = authRealm.getGuid();
+
+    AnalyticsEventApp app = analyticsEvent.getApp();
+    if(app==null){
+      app = new AnalyticsEventApp();
+      analyticsEvent.setApp(app);
+    }
+    app.setAppOrganisationGuid(authRealm.getOrganization().getGuid());
+    app.setAppOrganisationHandle(authRealm.getOrganization().getHandle());
+    app.setAppRealmGuid(authRealm.getGuid());
+    app.setAppRealmHandle(authRealm.getHandle());
+
 
     /**
      * Pass the event
@@ -88,9 +101,7 @@ public class AnalyticsApiImpl implements AnalyticsApi {
     this.apiApp.getApexDomain().getHttpServer().getServer().getTrackerAnalytics()
       .eventBuilder(analyticsEvent)
       .setRoutingContext(routingContext)
-      .setOrganizationId(organizationId)
-      .setRealmId(realmId)
-      .addToDeliveryQueue();
+      .processEvent();
     return Future.succeededFuture(new ApiResponse<>());
 
   }

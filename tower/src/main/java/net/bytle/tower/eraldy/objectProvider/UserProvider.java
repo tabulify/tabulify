@@ -170,8 +170,8 @@ public class UserProvider {
           .getServer()
           .getTrackerAnalytics()
           .eventBuilder(signUpEvent)
-          .setUser(this.apiApp.getAuthProvider().toAuthUser(user))
-          .addToDeliveryQueue();
+          .setAnalyticsUser(this.apiApp.getAuthProvider().toAnalyticsUser(user))
+          .processEvent();
         return Future.succeededFuture(insertedUser);
       });
 

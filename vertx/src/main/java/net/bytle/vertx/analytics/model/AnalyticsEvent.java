@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * The event. They are the things that happen in our product.  We follow a mix of * the &lt;a href&#x3D;\&quot;https://segment.com/docs/connections/spec/common/\&quot;&gt;Segment Spec&lt;/a&gt; * the &lt;a href&#x3D;\&quot;https://segment.com/docs/connections/spec/common/\&quot;&gt;MixPanel Spec&lt;/a&gt;  Every event type will extend this object and add its properties.  We try to follow the element of a sequential diagram with the following participants: * user: the user * agent: the agent that the user is using * request: the request * time: the state times * channel: the channel properties (how the user came in)  All properties that are tied only to the event type/name are properties added at the root with a primary datatype.
+ * The event. They are the things that happen in our product.  Every event type will extend this object and add its properties.  We try to follow the element of a sequential diagram with the following participants: * user: the user * agent: the agent that the user is using * request: the request * time: the state times * channel: the channel properties (how the user came in)  All properties that are tied only to the event type/name are properties added at the root with a primary datatype.
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AnalyticsEvent   {
@@ -16,7 +16,9 @@ public class AnalyticsEvent   {
 
   protected String guid;
 
-  protected String name;
+  protected String typeName;
+
+  protected String typeGuid;
 
   protected AnalyticsEventState state;
 
@@ -56,19 +58,35 @@ public class AnalyticsEvent   {
   }
 
   /**
-  * @return name The event name (known also as type) An human readable name that will be normalized
+  * @return typeName The type name (known also as event name) An human readable name that will be normalized to camel case with space separator
   */
-  @JsonProperty("name")
-  public String getName() {
-    return name;
+  @JsonProperty("typeName")
+  public String getTypeName() {
+    return typeName;
   }
 
   /**
-  * @param name The event name (known also as type) An human readable name that will be normalized
+  * @param typeName The type name (known also as event name) An human readable name that will be normalized to camel case with space separator
   */
   @SuppressWarnings("unused")
-  public void setName(String name) {
-    this.name = name;
+  public void setTypeName(String typeName) {
+    this.typeName = typeName;
+  }
+
+  /**
+  * @return typeGuid A immutable type guid that permit to change the name For now: 0 for sign-up 1 for sign-in 2 for user profile update
+  */
+  @JsonProperty("typeGuid")
+  public String getTypeGuid() {
+    return typeGuid;
+  }
+
+  /**
+  * @param typeGuid A immutable type guid that permit to change the name For now: 0 for sign-up 1 for sign-in 2 for user profile update
+  */
+  @SuppressWarnings("unused")
+  public void setTypeGuid(String typeGuid) {
+    this.typeGuid = typeGuid;
   }
 
   /**
@@ -179,12 +197,12 @@ public class AnalyticsEvent   {
     AnalyticsEvent analyticsEvent = (AnalyticsEvent) o;
     return
 
-            Objects.equals(guid, analyticsEvent.guid) && Objects.equals(name, analyticsEvent.name) && Objects.equals(state, analyticsEvent.state) && Objects.equals(app, analyticsEvent.app) && Objects.equals(user, analyticsEvent.user) && Objects.equals(request, analyticsEvent.request) && Objects.equals(utm, analyticsEvent.utm) && Objects.equals(attr, analyticsEvent.attr);
+            Objects.equals(guid, analyticsEvent.guid) && Objects.equals(typeName, analyticsEvent.typeName) && Objects.equals(typeGuid, analyticsEvent.typeGuid) && Objects.equals(state, analyticsEvent.state) && Objects.equals(app, analyticsEvent.app) && Objects.equals(user, analyticsEvent.user) && Objects.equals(request, analyticsEvent.request) && Objects.equals(utm, analyticsEvent.utm) && Objects.equals(attr, analyticsEvent.attr);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, name, state, app, user, request, utm, attr);
+    return Objects.hash(guid, typeName, typeGuid, state, app, user, request, utm, attr);
   }
 
   @Override

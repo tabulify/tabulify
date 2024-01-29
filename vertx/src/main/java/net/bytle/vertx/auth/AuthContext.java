@@ -237,9 +237,9 @@ public class AuthContext {
         .getServer()
         .getTrackerAnalytics()
         .eventBuilder(signInEvent)
-        .setUser(authUser)
+        .setAuthUser(authUser)
         .setRoutingContext(this.getRoutingContext())
-        .addToDeliveryQueue();
+        .processEvent();
 
     }
 

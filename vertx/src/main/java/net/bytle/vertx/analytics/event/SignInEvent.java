@@ -9,8 +9,8 @@ public class SignInEvent extends AnalyticsServerEvent {
   private String oauthProviderGuid;
 
   @Override
-  public String getName() {
-    return "Sign In";
+  public AnalyticsEventType getType() {
+    return AnalyticsEventType.SIGN_IN;
   }
 
   /**

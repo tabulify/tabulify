@@ -3,7 +3,8 @@ package net.bytle.vertx.analytics.sink;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
 import net.bytle.vertx.analytics.AnalyticsDelivery;
-import net.bytle.vertx.analytics.AnalyticsEventDeliveryExecution;
+import net.bytle.vertx.analytics.AnalyticsDeliveryExecution;
+import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import net.bytle.vertx.analytics.model.AnalyticsEventApp;
 import net.bytle.vertx.analytics.model.AnalyticsEventRequest;
 
@@ -28,11 +29,11 @@ public class AnalyticsLocalFileSystemSink extends AnalyticsSinkAbs {
 
 
   @Override
-  public Future<Void> processQueue() {
+  public Future<Void> processEventQueue() {
 
-    for (AnalyticsEventDeliveryExecution eventDeliveryExecution : this.pullEventToDeliver(20)) {
+    for (AnalyticsDeliveryExecution<AnalyticsEvent> eventDeliveryExecution : this.pullEventToDeliver(20)) {
       try {
-        AnalyticsFileSystemLogger.log(eventDeliveryExecution.getEvent(), this.noHandleMixin);
+        AnalyticsFileSystemLogger.log(eventDeliveryExecution.getDeliveryObject(), this.noHandleMixin);
       } catch (Exception e) {
         eventDeliveryExecution.fatalError(e);
         continue;
@@ -41,6 +42,7 @@ public class AnalyticsLocalFileSystemSink extends AnalyticsSinkAbs {
     }
     return Future.succeededFuture();
   }
+
 
 
 }

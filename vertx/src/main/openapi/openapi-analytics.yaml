@@ -204,16 +204,13 @@ components:
           type: string
           description: the OS architecture
     AnalyticsEvent:
+      # spec in the wild: https://segment.com/docs/connections/spec/common/
       description: |
         The event. They are the things that happen in our product.
 
-        We follow a mix of
-        * the <a href="https://segment.com/docs/connections/spec/common/">Segment Spec</a>
-        * the <a href="https://segment.com/docs/connections/spec/common/">MixPanel Spec</a>
+        Every event type should conform to this object and add its properties in the attr attribute.
 
-        Every event type will extend this object and add its properties.
-
-        We try to follow the element of a sequential diagram with the following participants:
+        We follow the element of a sequential diagram with the following participants:
         * user: the user
         * agent: the agent that the user is using
         * request: the request
@@ -222,7 +219,6 @@ components:
 
         All properties that are tied only to the event type/name
         are properties added at the root with a primary datatype.
-
       type: object
       properties:
         ## rules
@@ -242,12 +238,21 @@ components:
             It's known for:
             * segment as messageId
             * mixpanel as $insert_id
-        name:
+        typeName:
           type: string
           description: |
-            The event name (known also as type)
-            An human readable name that will be normalized
+            The type name (known also as event name)
+            An human readable name that will be normalized to camel case with space separator
           example: '`Sign up`, `Purchase`'
+        typeGuid:
+          type: string
+          description: |
+            A immutable type guid that permit to change the name
+            For now:
+            0 for sign-up
+            1 for sign-in
+            2 for user profile update
+          example: '0, 1, 2'
         state:
           $ref: '#/components/schemas/AnalyticsEventState'
         app:
@@ -285,7 +290,22 @@ components:
           type: string
           format: uri
           description: the user avatar
+        realmGuid:
+          type: string
+          description: the realm guid
+        realmHandle:
+          type: string
+          description: the realm handle
+        organizationGuid:
+          type: string
+          description: the organization guid
+        organizationHandle:
+          type: string
+          description: the organization handle
         creationTime:
           type: string
           format: date-time
           description: The timestamp when the user was created
+        remoteIp:
+          type: string
+          description: The request remote Ip for geo-localization
