@@ -6,8 +6,10 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.web.RoutingContext;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.exception.NullValueException;
 import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.util.FrontEndCookie;
@@ -60,6 +62,12 @@ public class AuthClientHandler implements Handler<RoutingContext> {
   private final FrontEndCookie<Realm> lastAuthRealmCookie;
   private final String realmHandleContextKey;
 
+  /**
+   * oauth callback comes with a code and a state
+   * We store the client id in a cookie for this case.
+   */
+  private final FrontEndCookie<String> lastAuthClientIdCookie;
+
   private AuthClientHandler(Config config) {
 
     this.apiApp = config.apiApp;
@@ -69,6 +77,11 @@ public class AuthClientHandler implements Handler<RoutingContext> {
     this.lastAuthRealmCookie = FrontEndCookie.conf(cookieName, Realm.class)
       .setPath("/") // send back from all pages
       .setJsonMapper(this.apiApp.getRealmProvider().getPublicJsonMapper())
+      .build();
+
+    String clientIdCookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-client-id-last";
+    this.lastAuthClientIdCookie = FrontEndCookie.conf(clientIdCookieName, String.class)
+      .setPath("/") // send back from all pages
       .build();
 
   }
@@ -99,6 +112,22 @@ public class AuthClientHandler implements Handler<RoutingContext> {
       return clientId;
     }
 
+    /**
+     * Oauth special case
+     * The oauth callbacks have only code and state.
+     * https://localhost:8083/auth/oauth/github/callback?code=xxx&state=xxx
+     * To keep the clientId, we may use the last cookie
+     */
+    if (request.path().matches(".*oauth.*callback")) {
+      try {
+        return this.lastAuthClientIdCookie.getValue(routingContext);
+      } catch (NullValueException e) {
+        // should not
+        throw new InternalException("The last client id cookie should have been set for oauth");
+      } catch (CastException e) {
+        throw new InternalException("The last client id cookie could not be read", e);
+      }
+    }
 
     /**
      * Fail
@@ -152,10 +181,16 @@ public class AuthClientHandler implements Handler<RoutingContext> {
           }
 
           /**
-           * We set the realm handle for the session
+           * We set the realm handle for the creation of the session cookie name
+           * in the session handler.
            */
           Realm realm = apiClient.getApp().getRealm();
           context.put(this.realmHandleContextKey, realm.getHandle().toLowerCase());
+
+          /**
+           * We set the last client id for oauth
+           */
+          this.lastAuthClientIdCookie.setValue(apiClient.getGuid(), context);
 
           /**
            * We set the realm in a cookie for the frontend.

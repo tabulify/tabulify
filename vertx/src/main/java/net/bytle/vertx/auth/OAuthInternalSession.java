@@ -1,6 +1,7 @@
 package net.bytle.vertx.auth;
 
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.Session;
 import net.bytle.type.UriEnhanced;
 
 /**
@@ -37,7 +38,8 @@ public class OAuthInternalSession {
   public static final String RESPONSE_TYPE_KEY = PREFIX + "response-type";
 
   public static void addRedirectUri(RoutingContext routingContext, UriEnhanced redirectUri) {
-    routingContext.session().put(OAuthInternalSession.REDIRECT_URI_KEY, redirectUri.toString());
+    Session session = routingContext.session();
+    session.put(OAuthInternalSession.REDIRECT_URI_KEY, redirectUri.toString());
   }
 
 }
