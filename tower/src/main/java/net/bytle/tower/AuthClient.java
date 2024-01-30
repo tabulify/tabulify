@@ -11,11 +11,11 @@ import java.net.URI;
  * This is the same concept as
  * the <a href="https://datacadamia.com/iam/oauth/client">OAuth Client</a>
  */
-public class ApiClient {
-  @SuppressWarnings("unused")
+public class AuthClient {
+
   private String guid;
   private App app;
-  @SuppressWarnings({"FieldCanBeLocal", "unused"})
+
   private long localId;
   private URI uri;
 
@@ -25,9 +25,7 @@ public class ApiClient {
 
 
   public App getApp() {
-
     return this.app;
-
   }
 
   public void setApp(App app) {
@@ -45,4 +43,12 @@ public class ApiClient {
   public URI getUri() {
     return this.uri;
   }
+
+  public Long getLocalId() {
+    return this.localId;
+  }
+  public void setGuid(String guid) {
+    this.guid = guid;
+  }
+
 }

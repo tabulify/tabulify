@@ -7,6 +7,7 @@ import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.tower.eraldy.objectProvider.OrganizationUserProvider;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.TowerApexDomain;
@@ -114,12 +115,16 @@ public class EraldyModel {
         /**
          * Create a client for the App
          */
-        ApiClient interactClient = new ApiClient();
+        AuthClient interactClient = new AuthClient();
         interactClient.setLocalId(1L);
         interactClient.setApp(this.interactApp);
         interactClient.addUri(this.interactAppUri);
-        this.apiApp.getApiClientProvider()
+        AuthClientProvider authClientProvider = this.apiApp
+          .getApiClientProvider();
+        authClientProvider.updateGuid(interactClient);
+        authClientProvider
           .setInteractAppClient(interactClient);
+        LOGGER.info("The client id (" + interactClient.getGuid() + ") for the interact app was created");
         return Future.succeededFuture();
       });
   }
@@ -139,7 +144,6 @@ public class EraldyModel {
   public boolean isEraldyRealm(Realm realm) {
     return this.getRealmLocalId().equals(realm.getLocalId());
   }
-
 
 
 }

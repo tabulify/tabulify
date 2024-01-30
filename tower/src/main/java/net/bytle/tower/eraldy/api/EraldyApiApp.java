@@ -11,10 +11,12 @@ import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
-import net.bytle.tower.ApiClient;
+import net.bytle.tower.AuthClient;
 import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.implementer.flow.*;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
+import net.bytle.tower.eraldy.auth.AuthClientHandler;
+import net.bytle.tower.eraldy.auth.EraldySessionHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
@@ -80,7 +82,9 @@ public class EraldyApiApp extends TowerApp {
   private final PasswordLoginFlow passwordLoginFlow;
   private final EraldyModel eraldyModel;
   private final EraldySubRealmModel eraldySubRealmModel;
-  private final ApiClientProvider apiClientProvider;
+  private final AuthClientProvider authClientProvider;
+  private final AuthClientHandler authClientHandler;
+  private final EraldySessionHandler sessionHandler;
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
     super(apexDomain);
@@ -108,7 +112,7 @@ public class EraldyApiApp extends TowerApp {
     this.serviceProvider = new ServiceProvider(this);
     this.organizationUserProvider = new OrganizationUserProvider(this);
     this.hashIds = this.getApexDomain().getHttpServer().getServer().getHashId();
-    this.apiClientProvider = new ApiClientProvider(this);
+    this.authClientProvider = new AuthClientProvider(this);
 
     /**
      * Model
@@ -146,12 +150,68 @@ public class EraldyApiApp extends TowerApp {
     new SqlAnalytics(this);
     this.emailAddressValidator = new EmailAddressValidator(this);
 
+    /**
+     * Determine the auth client (and therefore the realm)
+     * and put it on the routingContext
+     * As a user can log in to only on realm, the session cookie has the name
+     * of the realm in its name
+     * This handler should then be mounted before the session handler
+     */
+    String realmHandleContextKey = "ey-realm-handle";
+    this.authClientHandler = AuthClientHandler.config(this)
+      .setRealmHandleContextKey(realmHandleContextKey)
+      .build();
+
+
+    /**
+     * Reconnect once every
+     */
+    int cookieMaxAgeOneWeekInSec = 60 * 60 * 24 * 7;
+    /**
+     * Delete the session if not accessed within this timeout
+     */
+    int idleSessionTimeoutMs = cookieMaxAgeOneWeekInSec * 1000;
+    this.sessionHandler = EraldySessionHandler
+      .createWithDomain(this.getApexDomain())
+      .setSessionTimeout(idleSessionTimeoutMs)
+      .setRealmHandleContextKey(realmHandleContextKey)
+      .setCookieMaxAge(cookieMaxAgeOneWeekInSec);
+
   }
 
 
   public static EraldyApiApp create(TowerApexDomain topLevelDomain) throws ConfigIllegalException {
 
     return new EraldyApiApp(topLevelDomain);
+
+  }
+
+  /**
+   * A handler that maintains a {@link io.vertx.ext.web.Session} for each browser session
+   * with a cookie
+   * <p>
+   * It looks up the session for each request based on a session cookie called `vertx-web.session`
+   * which contains a session ID. It stores the session when the response is ended in the session store.
+   * <p>
+   * The session is available on the routing context with {@link RoutingContext#session()}
+   * <p>
+   * Get: Integer cnt = session.get("hitcount");
+   * Put: session.put("hitcount", cnt);
+   * <p>
+   * Doc: <a href="https://vertx.io/docs/vertx-web/java/#_handling_sessions">...</a>
+   * <a href="https://vertx.io/docs/vertx-web/java/#_creating_the_session_handler">...</a>
+   * <p>
+   * Sessions last between HTTP requests for the length of a browser session
+   * and give you a place where you can add session-scope information, such as a shopping basket.
+   * <p>
+   * Sessions can’t work if browser doesn’t support cookies.
+   */
+  public void addAuthSessionCookieHandlers() {
+
+
+    Router router = this.getApexDomain().getHttpServer().getRouter();
+    router.route().handler(this.authClientHandler);
+    router.route().handler(this.sessionHandler);
 
   }
 
@@ -298,12 +358,12 @@ public class EraldyApiApp extends TowerApp {
    * @return the login uri used for redirection in case of non-authentication
    * For an API, it's a no-sense but yeah
    */
-  public UriEnhanced getMemberLoginUri(UriEnhanced redirectUri, ApiClient apiClient) {
+  public UriEnhanced getMemberLoginUri(UriEnhanced redirectUri, AuthClient authClient) {
 
     return this.getMemberAppUri()
       .setPath("/login")
       .addQueryProperty(AuthQueryProperty.REDIRECT_URI, redirectUri.toString())
-      .addQueryProperty(AuthQueryProperty.CLIENT_ID, apiClient.getGuid());
+      .addQueryProperty(AuthQueryProperty.CLIENT_ID, authClient.getGuid());
   }
 
   public UriEnhanced getMemberAppUri() {
@@ -444,8 +504,17 @@ public class EraldyApiApp extends TowerApp {
   @Override
   public Future<Void> mount() {
 
+    LOGGER.info("Add Auth Session Cookie");
+    addAuthSessionCookieHandlers();
+
+    TowerApexDomain apexDomain = this.getApexDomain();
+    LOGGER.info("Allow CORS on the domain ("+apexDomain+")");
+    // Allow Browser cross-origin request in the domain
+    Router router = apexDomain.getHttpServer().getRouter();
+    BrowserCorsUtil.allowCorsForApexDomain(router, apexDomain);
+
     LOGGER.info("EraldyApp Db Migration");
-    JdbcConnectionInfo postgresDatabaseConnectionInfo = this.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionInfo();
+    JdbcConnectionInfo postgresDatabaseConnectionInfo = apexDomain.getHttpServer().getServer().getPostgresDatabaseConnectionInfo();
     JdbcSchemaManager jdbcSchemaManager = JdbcSchemaManager.create(postgresDatabaseConnectionInfo);
     // Realms
     String schema = JdbcSchemaManager.getSchemaFromHandle("realms");
@@ -475,11 +544,16 @@ public class EraldyApiApp extends TowerApp {
       });
   }
 
-  public ApiClientProvider getApiClientProvider() {
-     return this.apiClientProvider;
+  public AuthClientProvider getApiClientProvider() {
+     return this.authClientProvider;
   }
 
   public EraldyModel getEraldyModel() {
     return this.eraldyModel;
   }
+
+  public AuthClientHandler getAuthClientHandler() {
+    return this.authClientHandler;
+  }
+
 }

@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * The event. They are the things that happen in our product.  Every event type will extend this object and add its properties.  We try to follow the element of a sequential diagram with the following participants: * user: the user * agent: the agent that the user is using * request: the request * time: the state times * channel: the channel properties (how the user came in)  All properties that are tied only to the event type/name are properties added at the root with a primary datatype.
+ * The event. They are the things that happen in our product.  Every event type should conform to this object and add its properties in the attr attribute.  We follow the element of a sequential diagram with the following participants: * user: the user * agent: the agent that the user is using * request: the request * time: the state times * channel: the channel properties (how the user came in)  All properties that are tied only to the event type/name are properties added at the root with a primary datatype.
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AnalyticsEvent   {
@@ -22,7 +22,7 @@ public class AnalyticsEvent   {
 
   protected AnalyticsEventState state;
 
-  protected AnalyticsEventApp app;
+  protected AnalyticsEventClient client;
 
   protected AnalyticsEventUser user;
 
@@ -106,19 +106,19 @@ public class AnalyticsEvent   {
   }
 
   /**
-  * @return app
+  * @return client
   */
-  @JsonProperty("app")
-  public AnalyticsEventApp getApp() {
-    return app;
+  @JsonProperty("client")
+  public AnalyticsEventClient getClient() {
+    return client;
   }
 
   /**
-  * @param app Set app
+  * @param client Set client
   */
   @SuppressWarnings("unused")
-  public void setApp(AnalyticsEventApp app) {
-    this.app = app;
+  public void setClient(AnalyticsEventClient client) {
+    this.client = client;
   }
 
   /**
@@ -197,12 +197,12 @@ public class AnalyticsEvent   {
     AnalyticsEvent analyticsEvent = (AnalyticsEvent) o;
     return
 
-            Objects.equals(guid, analyticsEvent.guid) && Objects.equals(typeName, analyticsEvent.typeName) && Objects.equals(typeGuid, analyticsEvent.typeGuid) && Objects.equals(state, analyticsEvent.state) && Objects.equals(app, analyticsEvent.app) && Objects.equals(user, analyticsEvent.user) && Objects.equals(request, analyticsEvent.request) && Objects.equals(utm, analyticsEvent.utm) && Objects.equals(attr, analyticsEvent.attr);
+            Objects.equals(guid, analyticsEvent.guid) && Objects.equals(typeName, analyticsEvent.typeName) && Objects.equals(typeGuid, analyticsEvent.typeGuid) && Objects.equals(state, analyticsEvent.state) && Objects.equals(client, analyticsEvent.client) && Objects.equals(user, analyticsEvent.user) && Objects.equals(request, analyticsEvent.request) && Objects.equals(utm, analyticsEvent.utm) && Objects.equals(attr, analyticsEvent.attr);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, typeName, typeGuid, state, app, user, request, utm, attr);
+    return Objects.hash(guid, typeName, typeGuid, state, client, user, request, utm, attr);
   }
 
   @Override

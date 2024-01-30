@@ -21,12 +21,15 @@ components:
         userEmail:
           type: string
           description: the user email (the user handle, may change for the id)
-    AnalyticsEventApp:
-      description: The properties of the app that created this event
+    AnalyticsEventClient:
+      description: The properties of the client that created this event
       type: object
       properties:
         # the properties have all app as prefix to make them unique on the event
         # to make the difference with a user (for instance userRealmId)
+        clientGuid:
+          type: string
+          description: The client id that has created this event (never change)
         appGuid:
           type: string
           description: The app id that has created this event (never change)
@@ -255,8 +258,8 @@ components:
           example: '0, 1, 2'
         state:
           $ref: '#/components/schemas/AnalyticsEventState'
-        app:
-          $ref: '#/components/schemas/AnalyticsEventApp'
+        client:
+          $ref: '#/components/schemas/AnalyticsEventClient'
         user:
           $ref: '#/components/schemas/AnalyticsEventUser'
         request:

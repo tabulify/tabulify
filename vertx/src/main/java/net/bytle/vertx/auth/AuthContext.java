@@ -13,7 +13,7 @@ import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.analytics.event.SignInEvent;
-import net.bytle.vertx.analytics.model.AnalyticsEventApp;
+import net.bytle.vertx.analytics.model.AnalyticsEventClient;
 import net.bytle.vertx.flow.WebFlow;
 import org.jetbrains.annotations.NotNull;
 
@@ -289,7 +289,7 @@ public class AuthContext {
     /**
      * App data
      */
-    AnalyticsEventApp app = signInEvent.getApp();
+    AnalyticsEventClient app = signInEvent.getApp();
     app.setAppGuid(appIdentifier);
     String appHandle = this.oAuthState.getAppHandle();
     if (appHandle == null) {

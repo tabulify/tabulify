@@ -4,10 +4,10 @@ import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.web.RoutingContext;
+import net.bytle.tower.AuthClient;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.EnvApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.AuthRealmHandler;
-import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.vertx.HttpRequestUtil;
 import net.bytle.vertx.TowerApp;
 
@@ -16,9 +16,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class EnvApiImpl implements EnvApi {
-  @SuppressWarnings("unused")
-  public EnvApiImpl(TowerApp towerApp) {
+  private final EraldyApiApp apiApp;
 
+  public EnvApiImpl(TowerApp towerApp) {
+    this.apiApp = (EraldyApiApp) towerApp;
   }
 
   @Override
@@ -64,8 +65,8 @@ public class EnvApiImpl implements EnvApi {
     HashMap<String, Object> calculatedObject = new HashMap<>();
     calculatedObject.put("remoteHost", HttpRequestUtil.getRemoteHost(routingContext));
     calculatedObject.put("remoteScheme", HttpRequestUtil.getRemoteScheme(routingContext));
-    Realm realm = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext);
-    calculatedObject.put("authRealmHandle", realm.getHandle());
+    AuthClient realm = this.apiApp.getAuthClientHandler().getApiClientStoredOnContext(routingContext);
+    calculatedObject.put("authRealmHandle", realm.getApp().getRealm().getHandle());
     requestObject.put("calculated", calculatedObject);
 
     /**

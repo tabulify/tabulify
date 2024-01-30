@@ -187,7 +187,7 @@ public class AnalyticsFileSystemLogger {
       eventName = "unknown";
       ANALYTICS_LOGGER.error("The event name is mandatory");
     }
-    String realmIdFromEvent = analyticsEvent.getApp().getAppRealmGuid();
+    String realmIdFromEvent = analyticsEvent.getClient().getAppRealmGuid();
     if (realmIdFromEvent == null) {
       /**
        * The easy solution is to park this event.

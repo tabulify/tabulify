@@ -6,11 +6,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 /**
- * The properties of the app that created this event
+ * The properties of the client that created this event
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AnalyticsEventApp   {
+public class AnalyticsEventClient   {
 
+
+  protected String clientGuid;
 
   protected String appGuid;
 
@@ -30,7 +32,23 @@ public class AnalyticsEventApp   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public AnalyticsEventApp () {
+  public AnalyticsEventClient () {
+  }
+
+  /**
+  * @return clientGuid The client id that has created this event (never change)
+  */
+  @JsonProperty("clientGuid")
+  public String getClientGuid() {
+    return clientGuid;
+  }
+
+  /**
+  * @param clientGuid The client id that has created this event (never change)
+  */
+  @SuppressWarnings("unused")
+  public void setClientGuid(String clientGuid) {
+    this.clientGuid = clientGuid;
   }
 
   /**
@@ -138,15 +156,15 @@ public class AnalyticsEventApp   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AnalyticsEventApp analyticsEventApp = (AnalyticsEventApp) o;
+    AnalyticsEventClient analyticsEventClient = (AnalyticsEventClient) o;
     return
 
-            Objects.equals(appGuid, analyticsEventApp.appGuid) && Objects.equals(appHandle, analyticsEventApp.appHandle) && Objects.equals(appRealmGuid, analyticsEventApp.appRealmGuid) && Objects.equals(appRealmHandle, analyticsEventApp.appRealmHandle) && Objects.equals(appOrganisationGuid, analyticsEventApp.appOrganisationGuid) && Objects.equals(appOrganisationHandle, analyticsEventApp.appOrganisationHandle);
+            Objects.equals(clientGuid, analyticsEventClient.clientGuid) && Objects.equals(appGuid, analyticsEventClient.appGuid) && Objects.equals(appHandle, analyticsEventClient.appHandle) && Objects.equals(appRealmGuid, analyticsEventClient.appRealmGuid) && Objects.equals(appRealmHandle, analyticsEventClient.appRealmHandle) && Objects.equals(appOrganisationGuid, analyticsEventClient.appOrganisationGuid) && Objects.equals(appOrganisationHandle, analyticsEventClient.appOrganisationHandle);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(appGuid, appHandle, appRealmGuid, appRealmHandle, appOrganisationGuid, appOrganisationHandle);
+    return Objects.hash(clientGuid, appGuid, appHandle, appRealmGuid, appRealmHandle, appOrganisationGuid, appOrganisationHandle);
   }
 
   @Override

@@ -16,6 +16,7 @@ import io.vertx.ext.web.sstore.SessionStore;
 import io.vertx.ext.web.sstore.impl.SessionInternal;
 import net.bytle.exception.InternalException;
 import net.bytle.vertx.TowerApexDomain;
+import net.bytle.vertx.TowerFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +70,11 @@ public class EraldySessionHandler implements SessionHandler {
   private int minLength = DEFAULT_SESSIONID_MIN_LENGTH;
   private boolean lazySession = DEFAULT_LAZY_SESSION;
   private long cookieMaxAge = -1;
+
+  /**
+   * the context key where to find the realm handle
+   */
+  private String realmHandleContextKey;
 
 
   public EraldySessionHandler(TowerApexDomain apexDomain) {
@@ -320,8 +326,14 @@ public class EraldySessionHandler implements SessionHandler {
      * Meaning that a user can be logged in on 2 differents realms
      * with the same browser
      */
-    String realmHandle = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext).getHandle();
-    return eraldyDomain.getPrefixName() + "-session-id-"+realmHandle;
+    String realmHandle = routingContext.get(this.realmHandleContextKey);
+    if (realmHandle == null) {
+      TowerFailureException.builder()
+        .setMessage("Internal error: The realm was not set on the context key " + this.realmHandleContextKey+". We can't determine the session cookie name.")
+        .buildWithContextFailingTerminal(routingContext);
+      return "";
+    }
+    return eraldyDomain.getPrefixName() + "-session-id-" + realmHandle;
 
   }
 
@@ -532,4 +544,12 @@ public class EraldySessionHandler implements SessionHandler {
     return this;
   }
 
+  /**
+   * @param realmHandleContextKey - the context key where to find the realm handle
+   *                              it's used to create a unique session cookie id for each realm (one session by realm)
+   */
+  public EraldySessionHandler setRealmHandleContextKey(String realmHandleContextKey) {
+    this.realmHandleContextKey = realmHandleContextKey;
+    return this;
+  }
 }

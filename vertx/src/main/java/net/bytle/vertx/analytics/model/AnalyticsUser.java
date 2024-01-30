@@ -224,7 +224,7 @@ public class AnalyticsUser   {
   }
 
   /**
-  * @return remoteIp The request remote Ip to update the location
+  * @return remoteIp The request remote Ip for geo-localization
   */
   @JsonProperty("remoteIp")
   public String getRemoteIp() {
@@ -232,7 +232,7 @@ public class AnalyticsUser   {
   }
 
   /**
-  * @param remoteIp The request remote Ip to update the location
+  * @param remoteIp The request remote Ip for geo-localization
   */
   @SuppressWarnings("unused")
   public void setRemoteIp(String remoteIp) {

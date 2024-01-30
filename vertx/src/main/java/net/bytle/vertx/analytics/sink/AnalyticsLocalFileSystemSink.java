@@ -5,7 +5,7 @@ import io.vertx.core.Future;
 import net.bytle.vertx.analytics.AnalyticsDelivery;
 import net.bytle.vertx.analytics.AnalyticsDeliveryExecution;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
-import net.bytle.vertx.analytics.model.AnalyticsEventApp;
+import net.bytle.vertx.analytics.model.AnalyticsEventClient;
 import net.bytle.vertx.analytics.model.AnalyticsEventRequest;
 
 public class AnalyticsLocalFileSystemSink extends AnalyticsSinkAbs {
@@ -17,7 +17,7 @@ public class AnalyticsLocalFileSystemSink extends AnalyticsSinkAbs {
     super(analyticsDelivery);
     this.noHandleMixin = analyticsDelivery.getServer().getJacksonMapperManager()
       .jsonMapperBuilder()
-      .addMixIn(AnalyticsEventApp.class, AnalyticsEventAppWithoutHandleMixin.class)
+      .addMixIn(AnalyticsEventClient.class, AnalyticsEventAppWithoutHandleMixin.class)
       .addMixIn(AnalyticsEventRequest.class, AnalyticsEventRequestWithoutHandleMixin.class)
       .build();
   }

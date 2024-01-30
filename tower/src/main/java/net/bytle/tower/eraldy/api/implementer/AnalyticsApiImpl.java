@@ -3,16 +3,16 @@ package net.bytle.tower.eraldy.api.implementer;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import net.bytle.tower.AuthClient;
 import net.bytle.tower.Log;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AnalyticsApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.AuthRealmHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
-import net.bytle.vertx.analytics.model.AnalyticsEventApp;
+import net.bytle.vertx.analytics.model.AnalyticsEventClient;
 import net.bytle.vertx.analytics.model.AnalyticsEventState;
 
 import java.nio.file.Path;
@@ -75,24 +75,24 @@ public class AnalyticsApiImpl implements AnalyticsApi {
     state.setEventReceptionTime(DateTimeUtil.getNowInUtc());
 
     /**
-     * App (client data)
-     * We should get the data from a client id in the future.
+     * Client/App data
      * <p>
      * We don't pass the Realm Object but the realm id and organization id
      * because Analytics Tracker does not know the realm object (only the ids)
      * as it's independent of the Eraldy Api App
      */
-    Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext);
-
-    AnalyticsEventApp app = analyticsEvent.getApp();
-    if(app==null){
-      app = new AnalyticsEventApp();
-      analyticsEvent.setApp(app);
+    AuthClient authClient = this.apiApp.getApiClientProvider().getFromRoutingContextKeyStore(routingContext);
+    AnalyticsEventClient analyticsClient = analyticsEvent.getClient();
+    if (analyticsClient == null) {
+      analyticsClient = new AnalyticsEventClient();
+      analyticsEvent.setClient(analyticsClient);
     }
-    app.setAppOrganisationGuid(authRealm.getOrganization().getGuid());
-    app.setAppOrganisationHandle(authRealm.getOrganization().getHandle());
-    app.setAppRealmGuid(authRealm.getGuid());
-    app.setAppRealmHandle(authRealm.getHandle());
+    analyticsClient.setClientGuid(authClient.getGuid());
+    Realm authRealm = authClient.getApp().getRealm();
+    analyticsClient.setAppOrganisationGuid(authRealm.getOrganization().getGuid());
+    analyticsClient.setAppOrganisationHandle(authRealm.getOrganization().getHandle());
+    analyticsClient.setAppRealmGuid(authRealm.getGuid());
+    analyticsClient.setAppRealmHandle(authRealm.getHandle());
 
 
     /**

@@ -2,7 +2,7 @@ package net.bytle.vertx.analytics.event;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.vertx.analytics.model.AnalyticsEventApp;
+import net.bytle.vertx.analytics.model.AnalyticsEventClient;
 import net.bytle.vertx.analytics.model.AnalyticsEventRequest;
 
 /**
@@ -17,7 +17,7 @@ public abstract class AnalyticsServerEvent {
     /**
      * Facility to not recreate the object
      */
-    this.app = new AnalyticsEventApp();
+    this.app = new AnalyticsEventClient();
     this.request = new AnalyticsEventRequest();
   }
 
@@ -25,7 +25,7 @@ public abstract class AnalyticsServerEvent {
   /**
    * The app information
    */
-  protected AnalyticsEventApp app;
+  protected AnalyticsEventClient app;
 
   /**
    * @return the type of the event
@@ -53,7 +53,7 @@ public abstract class AnalyticsServerEvent {
    */
   @JsonIgnore()
   @JsonProperty("app")
-  public AnalyticsEventApp getApp() {
+  public AnalyticsEventClient getApp() {
     return app;
   }
 

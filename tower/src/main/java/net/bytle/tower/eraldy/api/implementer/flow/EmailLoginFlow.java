@@ -9,7 +9,7 @@ import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.ApiClient;
+import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.UserLoginEmailCallback;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
@@ -72,9 +72,9 @@ public class EmailLoginFlow extends WebFlowAbs {
         .build()
       );
     }
-    ApiClient apiClient;
+    AuthClient authClient;
       try {
-          apiClient = this.getApp()
+          authClient = this.getApp()
             .getApiClientProvider()
             .getClientFromRedirectUri(redirectUriEnhanced);
       } catch (NotFoundException e) {
@@ -105,12 +105,12 @@ public class EmailLoginFlow extends WebFlowAbs {
           .getAuthProvider()
           .toJwtClaims(userToLogin)
           .addRequestClaims(routingContext)
-          .setAppGuid(apiClient.getApp().getGuid())
-          .setAppHandle(apiClient.getApp().getHandle())
-          .setRealmGuid(apiClient.getApp().getRealm().getGuid())
-          .setRealmHandle(apiClient.getApp().getRealm().getHandle())
-          .setOrganizationGuid(apiClient.getApp().getRealm().getOrganization().getGuid())
-          .setOrganizationHandle(apiClient.getApp().getRealm().getOrganization().getHandle())
+          .setAppGuid(authClient.getApp().getGuid())
+          .setAppHandle(authClient.getApp().getHandle())
+          .setRealmGuid(authClient.getApp().getRealm().getGuid())
+          .setRealmHandle(authClient.getApp().getRealm().getHandle())
+          .setOrganizationGuid(authClient.getApp().getRealm().getOrganization().getGuid())
+          .setOrganizationHandle(authClient.getApp().getRealm().getOrganization().getHandle())
           ;
 
 

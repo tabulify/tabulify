@@ -22,7 +22,7 @@ import net.bytle.vertx.analytics.AnalyticsDelivery;
 import net.bytle.vertx.analytics.AnalyticsDeliveryExecution;
 import net.bytle.vertx.analytics.AnalyticsException;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
-import net.bytle.vertx.analytics.model.AnalyticsEventApp;
+import net.bytle.vertx.analytics.model.AnalyticsEventClient;
 import net.bytle.vertx.analytics.model.AnalyticsEventRequest;
 import net.bytle.vertx.analytics.model.AnalyticsUser;
 import org.apache.logging.log4j.LogManager;
@@ -293,7 +293,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
      * https://docs.mixpanel.com/docs/tracking-methods/sdks/java#group-analytics
      * https://docs.mixpanel.com/docs/data-structure/advanced/group-analytics
      */
-    AnalyticsEventApp app = event.getApp();
+    AnalyticsEventClient app = event.getClient();
     String appId = app.getAppGuid();
     if (appId != null) {
       props.put(customPropertyAppIdKey, appId);
@@ -409,7 +409,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
     if (userId != null) {
       return userId;
     }
-    return event.getApp().getAppGuid();
+    return event.getClient().getAppGuid();
   }
 
 

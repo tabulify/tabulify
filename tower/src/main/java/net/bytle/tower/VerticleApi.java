@@ -4,10 +4,7 @@ package net.bytle.tower;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.ext.web.Router;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.auth.AuthRealmHandler;
-import net.bytle.tower.eraldy.auth.AuthSessionHandler;
 import net.bytle.tower.util.GlobalUtilityObjectsCreation;
 import net.bytle.vertx.*;
 import org.apache.logging.log4j.LogManager;
@@ -83,14 +80,6 @@ public class VerticleApi extends AbstractVerticle {
              */
             EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
             apiApp = EraldyApiApp.create(eraldyDomain);
-
-            /**
-             * Building Router
-             */
-            Router router = httpServer.getRouter();
-            AuthRealmHandler.createFrom(router, apiApp);
-            AuthSessionHandler.addAuthCookieSessionHandler(router, apiApp); // Add the session handler cross domain, cross realm
-            BrowserCorsUtil.allowCorsForApexDomain(router, eraldyDomain); // Allow Browser cross-origin request in the domain
 
             /**
              * Future to be executed before the HTTP server listen

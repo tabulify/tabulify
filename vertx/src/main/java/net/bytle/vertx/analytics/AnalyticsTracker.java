@@ -167,7 +167,7 @@ public class AnalyticsTracker {
       /**
        * App and request
        */
-      analyticsEvent.setApp(analyticsServerEvent.getApp());
+      analyticsEvent.setClient(analyticsServerEvent.getApp());
       analyticsEvent.setRequest(analyticsServerEvent.getRequest());
 
       /**
@@ -222,10 +222,10 @@ public class AnalyticsTracker {
         analyticsEventUser = new AnalyticsEventUser();
         analyticsEvent.setUser(analyticsEventUser);
       }
-      AnalyticsEventApp analyticsEventApp = analyticsEvent.getApp();
-      if (analyticsEventApp == null) {
-        analyticsEventApp = new AnalyticsEventApp();
-        analyticsEvent.setApp(analyticsEventApp);
+      AnalyticsEventClient analyticsEventClient = analyticsEvent.getClient();
+      if (analyticsEventClient == null) {
+        analyticsEventClient = new AnalyticsEventClient();
+        analyticsEvent.setClient(analyticsEventClient);
       }
       AnalyticsEventState analyticsEventState = analyticsEvent.getState();
       if (analyticsEventState == null) {
@@ -246,17 +246,17 @@ public class AnalyticsTracker {
       /**
        * Next to the event name, normalize the other handle
        */
-      String appHandle = analyticsEventApp.getAppHandle();
+      String appHandle = analyticsEventClient.getAppHandle();
       if (appHandle != null) {
-        analyticsEventApp.setAppHandle(KeyNormalizer.createFromString(appHandle).toCase(eventHandleCase));
+        analyticsEventClient.setAppHandle(KeyNormalizer.createFromString(appHandle).toCase(eventHandleCase));
       }
-      String appRealmHandle = analyticsEventApp.getAppRealmHandle();
+      String appRealmHandle = analyticsEventClient.getAppRealmHandle();
       if (appRealmHandle != null) {
-        analyticsEventApp.setAppRealmHandle(KeyNormalizer.createFromString(appRealmHandle).toCase(eventHandleCase));
+        analyticsEventClient.setAppRealmHandle(KeyNormalizer.createFromString(appRealmHandle).toCase(eventHandleCase));
       }
-      String appOrganisationHandle = analyticsEventApp.getAppOrganisationHandle();
+      String appOrganisationHandle = analyticsEventClient.getAppOrganisationHandle();
       if (appOrganisationHandle != null) {
-        analyticsEventApp.setAppOrganisationHandle(KeyNormalizer.createFromString(appOrganisationHandle).toCase(eventHandleCase));
+        analyticsEventClient.setAppOrganisationHandle(KeyNormalizer.createFromString(appOrganisationHandle).toCase(eventHandleCase));
       }
       String flowHandle = analyticsEventRequest.getFlowHandle();
       if (flowHandle != null) {
@@ -275,19 +275,19 @@ public class AnalyticsTracker {
         /**
          * App data from user if any?
          */
-        String appRealmGuid = analyticsEventApp.getAppRealmGuid();
+        String appRealmGuid = analyticsEventClient.getAppRealmGuid();
         if (appRealmGuid == null) {
-          analyticsEventApp.setAppRealmGuid(analyticsUser.getRealmGuid());
-          analyticsEventApp.setAppRealmHandle(analyticsUser.getRealmHandle());
+          analyticsEventClient.setAppRealmGuid(analyticsUser.getRealmGuid());
+          analyticsEventClient.setAppRealmHandle(analyticsUser.getRealmHandle());
         }
-        String appOrganizationGuid = analyticsEventApp.getAppOrganisationGuid();
+        String appOrganizationGuid = analyticsEventClient.getAppOrganisationGuid();
         if (appOrganizationGuid == null) {
           String organizationGuid = analyticsUser.getOrganizationGuid();
           if (organizationGuid != null) {
             // a user may have no organization
             // an app may not
-            analyticsEventApp.setAppOrganisationGuid(organizationGuid);
-            analyticsEventApp.setAppOrganisationHandle(analyticsUser.getOrganizationHandle());
+            analyticsEventClient.setAppOrganisationGuid(organizationGuid);
+            analyticsEventClient.setAppOrganisationHandle(analyticsUser.getOrganizationHandle());
           }
         }
 

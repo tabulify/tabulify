@@ -8,11 +8,11 @@ import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.ApiClient;
+import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.AuthRealmHandler;
+import net.bytle.tower.eraldy.auth.AuthClientHandler;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.OAuthAccessTokenResponse;
@@ -66,9 +66,9 @@ public class AuthApiImpl implements AuthApi {
       );
     }
 
-    ApiClient apiClient;
+    AuthClient authClient;
     try {
-      apiClient = this.apiApp.getApiClientProvider()
+      authClient = this.apiApp.getApiClientProvider()
         .getClientFromRedirectUri(uriEnhanced);
     } catch (NotFoundException e) {
       return Future.failedFuture(
@@ -83,9 +83,9 @@ public class AuthApiImpl implements AuthApi {
     /**
      * Auth Realm is mandatory
      * To be sure that we have the good realm
-     * in {@link AuthRealmHandler#getAuthRealmCookie(RoutingContext)}
+     * in {@link AuthClientHandler#getAuthRealmCookie(RoutingContext)}
      */
-    App app = apiClient.getApp();
+    App app = authClient.getApp();
     OAuthState oAuthState = OAuthState
       .createEmpty()
       .setListGuid(listGuid)
@@ -94,8 +94,7 @@ public class AuthApiImpl implements AuthApi {
       .setRealmIdentifier(app.getRealm().getGuid())
       .setRealmHandle(app.getRealm().getHandle())
       .setOrganisationGuid(app.getRealm().getOrganization().getGuid())
-      .setOrganisationHandle(app.getRealm().getOrganization().getHandle())
-      ;
+      .setOrganisationHandle(app.getRealm().getOrganization().getHandle());
 
     return this.apiApp
       .getOauthFlow()
@@ -129,27 +128,12 @@ public class AuthApiImpl implements AuthApi {
       );
     }
 
-    ApiClient apiClient;
-    try {
-      apiClient = this.apiApp.getApiClientProvider()
-        .getClientFromRedirectUri(redirectUriEnhanced);
-    } catch (NotFoundException e) {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-          .setMessage("A api client was not found for the redirect uri (" + redirectUriEnhanced + ")")
-          .setMimeToHtml()
-          .buildWithContextFailing(routingContext)
-      );
-    }
-
-    Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext);
+    /**
+     * Already Signed-in?
+     */
     try {
       AuthUser authSignedInUser = this.apiApp.getAuthProvider().getSignedInAuthUser(routingContext);
-      /**
-       * Signed-in and in same realm
-       */
-      if (authSignedInUser != null && authSignedInUser.getAudience().equals(authRealm.getGuid())) {
+      if (authSignedInUser != null) {
         routingContext.redirect(redirectUriEnhanced.toString());
         return Future.succeededFuture();
       }
@@ -158,9 +142,10 @@ public class AuthApiImpl implements AuthApi {
     }
 
     /**
-     * Not signed-in or realm different
+     * Not signed-in
      */
-    UriEnhanced url = this.apiApp.getMemberLoginUri(redirectUriEnhanced, apiClient);
+    AuthClient authClient = this.apiApp.getApiClientProvider().getFromRoutingContextKeyStore(routingContext);
+    UriEnhanced url = this.apiApp.getMemberLoginUri(redirectUriEnhanced, authClient);
     routingContext.redirect(url.toString());
     return Future.succeededFuture();
 
@@ -296,9 +281,9 @@ public class AuthApiImpl implements AuthApi {
           .buildWithContextFailing(routingContext)
       );
     }
-    ApiClient apiClient;
+    AuthClient authClient;
     try {
-      apiClient = this.apiApp.getApiClientProvider().getClientFromRedirectUri(redirectUriEnhanced);
+      authClient = this.apiApp.getApiClientProvider().getClientFromRedirectUri(redirectUriEnhanced);
     } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
@@ -310,7 +295,7 @@ public class AuthApiImpl implements AuthApi {
     }
 
     String redirect = this.apiApp
-      .getMemberLoginUri(redirectUriEnhanced, apiClient)
+      .getMemberLoginUri(redirectUriEnhanced, authClient)
       .toUrl()
       .toString();
     routingContext.redirect(redirect);
