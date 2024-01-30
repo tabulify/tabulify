@@ -177,6 +177,8 @@ public class EraldyApiApp extends TowerApp {
 
 
     /**
+     * The root - uses only on case of urgency or dev for now
+     * (Should be deleted)
      * Configuring the handler for api key security scheme
      * <p>
      * Note: Configuring `AuthenticationHandler`s defined in the OpenAPI document
@@ -189,6 +191,7 @@ public class EraldyApiApp extends TowerApp {
 
     /**
      * Configuring the handler for cookie security scheme
+     * ie you can see the cookie has equivalent to the client secret
      */
     ApiSessionAuthenticationHandler cookieAuthHandler = new ApiSessionAuthenticationHandler();
     routerBuilder

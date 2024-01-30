@@ -21,6 +21,12 @@ import org.apache.logging.log4j.Logger;
 
 
 /**
+ * TODO: client based (apiClient), not realm based
+ * The realm should be derived from the client.
+ * The request are made by client that are attached to a app
+ * Because an app is attached to a realm, we can derive it.
+ * The client should then be identified and the realm derived from it.
+ * <p>
  * The auth realm of the browser.
  * <p>
  * Do we really need that? As the realm is generally taken from query parameters or form post object,
@@ -49,16 +55,20 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
   private static final String REALM_IDENTIFIER = "realm_identifier";
 
   private final EraldyApiApp apiApp;
-  private final FrontEndCookie<Realm> authRealmCookie;
+
+  /**
+   * The cookie that stores the last realm
+   * information (when the front end is loaded)
+   * TODO: It should store the client
+   */
+  private final FrontEndCookie<Realm> lastAuthRealmCookie;
 
   private AuthRealmHandler(EraldyApiApp apiApp) {
 
     this.apiApp = apiApp;
-    /**
-     * The cookie that stores the realm information (when the front end is loaded)
-     */
+
     String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-realm";
-    this.authRealmCookie = FrontEndCookie.conf(cookieName, Realm.class)
+    this.lastAuthRealmCookie = FrontEndCookie.conf(cookieName, Realm.class)
       .setPath("/") // send back from all pages
       .setJsonMapper(this.apiApp.getRealmProvider().getPublicJsonMapper())
       .build();
@@ -120,7 +130,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
   private Realm getAuthRealmFromCookie(RoutingContext routingContext) throws NullValueException {
     Realm realm;
     try {
-      realm = authRealmCookie.getValue(routingContext);
+      realm = lastAuthRealmCookie.getValue(routingContext);
     } catch (CastException e) {
       LOGGER.error("Error while reading the auth realm cookie", e);
       throw new NullValueException();
@@ -180,7 +190,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
            * Because the realm is mandatory as the state is stored in the session
            * and that the session is realm dependent.
            */
-          authRealmCookie.setValue(currentAuthRealm, context);
+          lastAuthRealmCookie.setValue(currentAuthRealm, context);
 
 
           /**

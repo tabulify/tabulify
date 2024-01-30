@@ -374,10 +374,11 @@ public class ListApiImpl implements ListApi {
     Long finalPageId = pageId;
     Long finalPageSize = pageSize;
     String finalSearchTerm = searchTerm;
+    long realmId = guid.getRealmOrOrganizationId();
     return this.apiApp
       .getAuthProvider()
-      .checkRealmAuthorization(routingContext, guid.getRealmOrOrganizationId(), AuthScope.LIST_GET_REGISTRATIONS)
-      .compose(realmId -> apiApp.getListRegistrationProvider()
+      .checkRealmAuthorization(routingContext, realmId, AuthScope.LIST_GET_REGISTRATIONS)
+      .compose(realmIdRes -> apiApp.getListRegistrationProvider()
         .getListUsers(finalListIdentifier, finalPageId, finalPageSize, finalSearchTerm)
         .compose(subscriptionShorts -> Future.succeededFuture(new ApiResponse<>(subscriptionShorts))));
 

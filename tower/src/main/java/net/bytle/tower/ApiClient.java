@@ -4,6 +4,13 @@ import net.bytle.tower.eraldy.model.openapi.App;
 
 import java.net.URI;
 
+/**
+ * A client that represents an app
+ * that makes calls to the api.
+ * (Web Client, Mobile, ...)
+ * This is the same concept as
+ * the <a href="https://datacadamia.com/iam/oauth/client">OAuth Client</a>
+ */
 public class ApiClient {
   @SuppressWarnings("unused")
   private String guid;
