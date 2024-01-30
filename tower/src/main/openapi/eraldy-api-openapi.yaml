@@ -34,22 +34,14 @@ tags:
 # you need to set the security for an operation to the empty array
 # security: []
 security:
-  # Listed in the openapi-common.yaml
   - apiKeyAuth: [ ]
-  - cookieAuth: [ ]
-  - clientId: []
 components:
   securitySchemes:
+    # Api key is the only security that is supported on api client for dev environment only
+    # The realm session cookie id is also supported but there is no way to express it in openapi
+    # because the cookie name is realm dependent and not fixed
     apiKeyAuth: # binding name (arbitrary name used in code and in the file)
       $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/apiKeyAuth'
-#    bearerAuth: # binding name (arbitrary name used in code and in the file)
-#      $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/bearerAuth'
-    cookieAuth: # binding name (arbitrary name used in code and in the file)
-      $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/cookieAuth'
-    clientId: # binding name (arbitrary name used in code and in the file)
-      type: apiKey
-      in: header       # can be "header", "query" or "cookie"
-      name: x-client-id  # name of the header, query parameter or cookie
   requestBodies:
     LoginPostBody:
       description: The data needed to log a user in by password credentials
@@ -553,7 +545,6 @@ paths:
               - "doe.com"
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       responses:
         '200':
           description: "The events"
@@ -628,7 +619,6 @@ paths:
             example: "foo@example.com"
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       responses:
         '200':
           description: Ok
@@ -646,7 +636,6 @@ paths:
         - realm
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       parameters:
         - name: realmIdentifier
           description: "The guid or handle of the realm"
@@ -672,7 +661,6 @@ paths:
         - realm
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/RealmPostBody'
       responses:
@@ -690,7 +678,6 @@ paths:
         - realm
       security:
         - apiKeyAuth: [ 'root' ]
-        - cookieAuth: [ 'root' ]
       responses:
         '200':
           description: "Return the list of realms"
@@ -710,7 +697,6 @@ paths:
         - realm
       security:
         - apiKeyAuth: [ 'root' ]
-        - cookieAuth: [ 'root' ]
       parameters:
         - name: userGuid
           description: "The user guid"
@@ -742,7 +728,6 @@ paths:
         - realm
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       responses:
         '200':
           description: "Return the list of realms owned by the authenticated user"
@@ -786,7 +771,6 @@ paths:
         - campaign
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/CampaignEmailPostBody'
       responses:
@@ -836,7 +820,6 @@ paths:
         - service
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ServiceSmtpPostBody'
       responses:
@@ -872,7 +855,6 @@ paths:
         - app
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       parameters:
         - name: appIdentifier
           description: "An app guid or handle"
@@ -901,7 +883,6 @@ paths:
         - app
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       parameters:
         - name: realmIdentifier
           description: "A realm identifier (a guid or handle)"
@@ -956,7 +937,6 @@ paths:
         - user
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/UserPostBody'
       responses:
@@ -974,7 +954,6 @@ paths:
         - user
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       responses:
         '200':
           description: Ok
@@ -998,7 +977,6 @@ paths:
         - user
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       parameters:
         - name: guid
           description: "The guid of the user"
@@ -1024,7 +1002,6 @@ paths:
         - organization
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       responses:
         '200':
           description: Ok
@@ -1044,7 +1021,6 @@ paths:
         - organization
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       parameters:
         - name: orgaIdentifier
           description: "A organization identifier (a guid or a handle)"
@@ -1076,7 +1052,6 @@ paths:
         - email
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       parameters:
         - name: address
           description: "The email address"
@@ -1118,7 +1093,6 @@ paths:
         - list
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       parameters:
         - name: listIdentifier
           description: |
@@ -1153,7 +1127,6 @@ paths:
         - list
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       parameters:
         - name: listIdentifier
           description: |
@@ -1189,7 +1162,6 @@ paths:
         - list
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       parameters:
         - name: listIdentifier
           description: "The list identifier (handle or guid)"
@@ -1221,7 +1193,6 @@ paths:
         - app
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       parameters:
         - name: appIdentifier
           description: "An app guid or handle"
@@ -1259,7 +1230,6 @@ paths:
         - list
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       parameters:
         - name: appGuid
           description: "The app guid"
@@ -1297,7 +1267,6 @@ paths:
         - list
       security:
         - apiKeyAuth: []
-        - cookieAuth: []
       parameters:
         - name: realmIdentifier
           description: "A realm identifier (guid or realm)"
@@ -1326,7 +1295,6 @@ paths:
         - list
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       parameters:
         - name: listUserIdentifier
           description: "The guid of the user in the list"
@@ -1359,7 +1327,6 @@ paths:
         - list
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       parameters:
         - name: subscriberName
           description: "The name of the subscriber"
@@ -1415,7 +1382,6 @@ paths:
         - list
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       parameters:
         - name: listGuid
           description: "The list guid"
@@ -1480,7 +1446,6 @@ paths:
         - list
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       parameters:
         - name: listIdentifier
           description: "A list identifier (guid)"
@@ -1525,7 +1490,6 @@ paths:
         - list
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       parameters:
         - name: listIdentifier
           description: "A list identifier (guid)"
@@ -1551,7 +1515,6 @@ paths:
         - list
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       parameters:
         - name: listIdentifier
           description: "A list identifier (guid)"
@@ -1584,7 +1547,6 @@ paths:
         - list
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       parameters:
         - name: listIdentifier
           description: "A list identifier (guid)"
@@ -1615,7 +1577,6 @@ paths:
         - list
       security:
         - apiKeyAuth: [ ]
-        - cookieAuth: [ ]
       parameters:
         - name: listIdentifier
           description: "The identifier of the list (guid)"

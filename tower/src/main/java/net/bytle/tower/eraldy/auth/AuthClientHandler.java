@@ -1,7 +1,10 @@
 package net.bytle.tower.eraldy.auth;
 
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.ext.auth.User;
+import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
@@ -9,8 +12,14 @@ import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.util.FrontEndCookie;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.vertx.HttpServer;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
+
+import java.util.Set;
+
+import static net.bytle.vertx.auth.ApiKeyAuthenticationProvider.API_KEY_PROVIDER_ID;
+import static net.bytle.vertx.auth.ApiKeyAuthenticationProvider.ROOT_AUTHORIZATION;
 
 
 /**
@@ -90,6 +99,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
       return clientId;
     }
 
+
     /**
      * Fail
      */
@@ -102,9 +112,10 @@ public class AuthClientHandler implements Handler<RoutingContext> {
   @Override
   public void handle(RoutingContext context) {
 
-    String clientId;
+
+    Future<AuthClient> futureAuthClient;
     try {
-      clientId = getClientId(context);
+      futureAuthClient = getFutureAuthClient(context);
     } catch (NotFoundException e) {
       /**
        * Fail
@@ -114,11 +125,9 @@ public class AuthClientHandler implements Handler<RoutingContext> {
         .setMessage("The client id is mandatory and was not found")
         .buildWithContextFailingTerminal(context);
       return;
-
     }
-    this.apiApp
-      .getApiClientProvider()
-      .getClientFromClientId(clientId)
+
+    futureAuthClient
       .onFailure(e -> TowerFailureException
         .builder()
         .setMessage("Internal error: the client id could not be retrieved")
@@ -162,6 +171,40 @@ public class AuthClientHandler implements Handler<RoutingContext> {
 
         }
       );
+
+  }
+
+  /**
+   * Try to find a client id and return a future.
+   * <p>
+   * Special Case: If the client id is not found, we check to see if the user is not already
+   * set by the {@link HttpServer#getApiKeyAuthHandler()} handler.
+   * @throws NotFoundException if none is found
+   */
+  private Future<AuthClient> getFutureAuthClient(RoutingContext context) throws NotFoundException {
+
+    String clientId;
+    try {
+      clientId = getClientId(context);
+      return this.apiApp
+        .getAuthClientProvider()
+        .getClientFromClientId(clientId);
+    } catch (NotFoundException e) {
+
+      /**
+       * Already logged user via X-Api-Key?
+       */
+      User user = context.user();
+      if (user != null) {
+        Set<Authorization> authorization = user.authorizations().get(API_KEY_PROVIDER_ID);
+        if (authorization != null && authorization.contains(ROOT_AUTHORIZATION)) {
+          return Future.succeededFuture(this.apiApp.getAuthClientProvider().getApiKeyRootClient());
+        }
+      }
+
+    }
+    throw new NotFoundException();
+
 
   }
 

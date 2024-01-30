@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.APIKeyHandler;
 import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
@@ -15,6 +16,7 @@ import net.bytle.tower.AuthClient;
 import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.implementer.flow.*;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
+import net.bytle.tower.eraldy.auth.ApiAuthenticationHandler;
 import net.bytle.tower.eraldy.auth.AuthClientHandler;
 import net.bytle.tower.eraldy.auth.EraldySessionHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
@@ -25,7 +27,6 @@ import net.bytle.tower.util.EraldySubRealmModel;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.ApiSessionAuthenticationHandler;
 import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
@@ -85,6 +86,7 @@ public class EraldyApiApp extends TowerApp {
   private final AuthClientProvider authClientProvider;
   private final AuthClientHandler authClientHandler;
   private final EraldySessionHandler sessionHandler;
+  private final ApiAuthenticationHandler apiAuthHandler;
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
     super(apexDomain);
@@ -151,6 +153,9 @@ public class EraldyApiApp extends TowerApp {
     this.emailAddressValidator = new EmailAddressValidator(this);
 
     /**
+     * Handlers
+     */
+    /**
      * Determine the auth client (and therefore the realm)
      * and put it on the routingContext
      * As a user can log in to only on realm, the session cookie has the name
@@ -161,8 +166,6 @@ public class EraldyApiApp extends TowerApp {
     this.authClientHandler = AuthClientHandler.config(this)
       .setRealmHandleContextKey(realmHandleContextKey)
       .build();
-
-
     /**
      * Reconnect once every
      */
@@ -176,6 +179,11 @@ public class EraldyApiApp extends TowerApp {
       .setSessionTimeout(idleSessionTimeoutMs)
       .setRealmHandleContextKey(realmHandleContextKey)
       .setCookieMaxAge(cookieMaxAgeOneWeekInSec);
+
+    /**
+     * OpenApi Auth Handler
+     */
+    this.apiAuthHandler = new ApiAuthenticationHandler();
 
   }
 
@@ -206,14 +214,23 @@ public class EraldyApiApp extends TowerApp {
    * <p>
    * Sessions can’t work if browser doesn’t support cookies.
    */
-  public void addAuthSessionCookieHandlers() {
+  public void mountAuthenticationHandlers() {
 
+    /**
+     * Add the API Key authentication handler
+     * on the router to fill the user in the context
+     * as Api Key is supported
+     */
+    HttpServer httpServer = this.getApexDomain().getHttpServer();
+    APIKeyHandler apiKeyAuthHandler = httpServer.getApiKeyAuthHandler();
+    httpServer.getRouter().route().handler(apiKeyAuthHandler);
+
+    /**
+     * Session Handler
+     */
     String orRegexp = "|";
     String docPaths = String.join(orRegexp, this.getOpenApi().getDocPaths());
-    /**
-     * All paths except the Open Api doc needs a client id and a session
-     */
-    String allExceptApiDoc = "^(?!" + docPaths + ").*";
+    String allExceptApiDoc = "^(?!" + docPaths + ").*"; // All paths except the Open Api doc needs a client id and a session
     Router router = this.getApexDomain().getHttpServer().getRouter();
     router.routeWithRegex(allExceptApiDoc).handler(this.authClientHandler);
     router.routeWithRegex(allExceptApiDoc).handler(this.sessionHandler);
@@ -236,10 +253,14 @@ public class EraldyApiApp extends TowerApp {
   public EraldyApiApp openApiBindSecurityScheme(RouterBuilder routerBuilder, ConfigAccessor configAccessor) {
 
     /**
-     * Utility variables
+     * We trick the open api security scheme apiKey define in the openapi file
+     * to support a cookie authentication by realm
+     * This scheme below is implemented by
+     * the {@link ApiAuthenticationHandler} that just check if the user is on the vertx context.
+     * <p>
+     * We to add the needed Authentication handler to fill the user
+     * {@link #mountAuthenticationHandlers()}
      */
-    HttpServer httpServer = this.getApexDomain().getHttpServer();
-
 
     /**
      * The root - uses only on case of urgency or dev for now
@@ -249,19 +270,14 @@ public class EraldyApiApp extends TowerApp {
      * Note: Configuring `AuthenticationHandler`s defined in the OpenAPI document
      * https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document
      */
-    routerBuilder
-      .securityHandler(OpenApiSecurityNames.APIKEY_AUTH_SECURITY_SCHEME)
-      .bindBlocking(config -> httpServer.getApiKeyAuthHandler()
-      );
-
     /**
      * Configuring the handler for cookie security scheme
      * ie you can see the cookie has equivalent to the client secret
      */
-    ApiSessionAuthenticationHandler cookieAuthHandler = new ApiSessionAuthenticationHandler();
     routerBuilder
-      .securityHandler(OpenApiSecurityNames.COOKIE_SECURITY_SCHEME)
-      .bindBlocking(config -> cookieAuthHandler);
+      .securityHandler(OpenApiSecurityNames.APIKEY_AUTH_SECURITY_SCHEME)
+      .bindBlocking(config -> this.apiAuthHandler);
+
 
     Handler<RoutingContext> authorizationHandler = this.getOpenApi().authorizationCheckHandler();
     for (Operation operation : routerBuilder.operations()) {
@@ -510,7 +526,7 @@ public class EraldyApiApp extends TowerApp {
   public Future<Void> mount() {
 
     LOGGER.info("Add Auth Session Cookie");
-    addAuthSessionCookieHandlers();
+    mountAuthenticationHandlers();
 
     TowerApexDomain apexDomain = this.getApexDomain();
     LOGGER.info("Allow CORS on the domain (" + apexDomain + ")");
@@ -549,7 +565,7 @@ public class EraldyApiApp extends TowerApp {
       });
   }
 
-  public AuthClientProvider getApiClientProvider() {
+  public AuthClientProvider getAuthClientProvider() {
     return this.authClientProvider;
   }
 

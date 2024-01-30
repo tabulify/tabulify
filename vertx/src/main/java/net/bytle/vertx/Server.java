@@ -150,7 +150,7 @@ public class Server implements AutoCloseable {
     return this.jwtAuthManager;
   }
 
-  public ApiKeyAuthenticationProvider getApiKeyAuth() throws NullValueException {
+  public ApiKeyAuthenticationProvider getApiKeyAuthProvider() throws NullValueException {
     if (this.apiKeyAuth == null) {
       throw new NullValueException("No API Key configured for the server");
     }

@@ -295,4 +295,5 @@ public class AuthUser {
   public String getSubjectName() {
     return claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_NAME.toString());
   }
+
 }

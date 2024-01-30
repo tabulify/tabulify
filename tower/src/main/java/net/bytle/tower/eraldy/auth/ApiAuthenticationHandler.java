@@ -1,4 +1,4 @@
-package net.bytle.vertx.auth;
+package net.bytle.tower.eraldy.auth;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -12,12 +12,15 @@ import net.bytle.vertx.TowerFailureTypeEnum;
 
 /**
  * A class that permits to
- * authenticate a call based on the session
+ * handle the authentication in OpenApi
+ * (apikey + cookie session)
  */
-public class ApiSessionAuthenticationHandler extends AuthenticationHandlerImpl<AuthenticationProvider> {
+public class ApiAuthenticationHandler extends AuthenticationHandlerImpl<AuthenticationProvider> {
 
 
-  public ApiSessionAuthenticationHandler() {
+
+
+  public ApiAuthenticationHandler() {
     super(null);
   }
 

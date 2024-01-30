@@ -68,7 +68,7 @@ public class AuthApiImpl implements AuthApi {
 
     AuthClient authClient;
     try {
-      authClient = this.apiApp.getApiClientProvider()
+      authClient = this.apiApp.getAuthClientProvider()
         .getClientFromRedirectUri(uriEnhanced);
     } catch (NotFoundException e) {
       return Future.failedFuture(
@@ -144,7 +144,7 @@ public class AuthApiImpl implements AuthApi {
     /**
      * Not signed-in
      */
-    AuthClient authClient = this.apiApp.getApiClientProvider().getFromRoutingContextKeyStore(routingContext);
+    AuthClient authClient = this.apiApp.getAuthClientProvider().getFromRoutingContextKeyStore(routingContext);
     UriEnhanced url = this.apiApp.getMemberLoginUri(redirectUriEnhanced, authClient);
     routingContext.redirect(url.toString());
     return Future.succeededFuture();
@@ -283,7 +283,7 @@ public class AuthApiImpl implements AuthApi {
     }
     AuthClient authClient;
     try {
-      authClient = this.apiApp.getApiClientProvider().getClientFromRedirectUri(redirectUriEnhanced);
+      authClient = this.apiApp.getAuthClientProvider().getClientFromRedirectUri(redirectUriEnhanced);
     } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException.builder()

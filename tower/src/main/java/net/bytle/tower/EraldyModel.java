@@ -120,7 +120,7 @@ public class EraldyModel {
         interactClient.setApp(this.interactApp);
         interactClient.addUri(this.interactAppUri);
         AuthClientProvider authClientProvider = this.apiApp
-          .getApiClientProvider();
+          .getAuthClientProvider();
         authClientProvider.updateGuid(interactClient);
         authClientProvider
           .setInteractAppClient(interactClient);

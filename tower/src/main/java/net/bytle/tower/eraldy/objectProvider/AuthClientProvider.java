@@ -13,6 +13,11 @@ public class AuthClientProvider {
 
   private final EraldyApiApp apiApp;
   private AuthClient interactAuthClient;
+  /**
+   * A special client that is the open api client
+   * used with a api key
+   */
+  private AuthClient apiKeyRootClient;
 
   public AuthClientProvider(EraldyApiApp eraldyApiApp) {
     this.apiApp = eraldyApiApp;
@@ -30,7 +35,15 @@ public class AuthClientProvider {
   }
 
   public void setInteractAppClient(AuthClient authClient) {
+
     this.interactAuthClient = authClient;
+
+    // The API key root client is a dummy client
+    // for now a client of the interact app
+    this.apiKeyRootClient = new AuthClient();
+    this.apiKeyRootClient.setApp(this.interactAuthClient.getApp());
+    this.apiKeyRootClient.setGuid("cli-root");
+
   }
 
   public Future<AuthClient> getClientFromClientId(String clientId) {
@@ -48,6 +61,10 @@ public class AuthClientProvider {
 
   public AuthClient getFromRoutingContextKeyStore(RoutingContext routingContext) {
     return this.apiApp.getAuthClientHandler().getApiClientStoredOnContext(routingContext);
+  }
+
+  public AuthClient getApiKeyRootClient() {
+    return apiKeyRootClient;
   }
 
 }

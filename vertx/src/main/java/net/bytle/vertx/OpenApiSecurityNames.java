@@ -20,4 +20,5 @@ public class OpenApiSecurityNames {
    * JWT bearer header
    */
   public static final String BEARER_AUTH_SECURITY_SCHEME = "bearerAuth";
+
 }

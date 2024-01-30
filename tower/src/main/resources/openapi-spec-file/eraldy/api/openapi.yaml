@@ -9,7 +9,6 @@ servers:
 - url: https://localhost:8083
 security:
 - apiKeyAuth: []
-- cookieAuth: []
 tags:
 - description: Env data
   name: env
@@ -364,7 +363,6 @@ paths:
           description: Not authenticated
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Return a list of events
       tags:
       - analytics
@@ -451,7 +449,6 @@ paths:
           description: Ok
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Get users for the realm for pagination
       tags:
       - realm
@@ -478,7 +475,6 @@ paths:
           description: Ok
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Return the asked realm
       tags:
       - realm
@@ -497,7 +493,6 @@ paths:
           description: Ok
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Create a realm
       tags:
       - realm
@@ -519,8 +514,6 @@ paths:
           description: Not authenticated
       security:
       - apiKeyAuth:
-        - root
-      - cookieAuth:
         - root
       summary: Return the list of realms
       tags:
@@ -553,8 +546,6 @@ paths:
       security:
       - apiKeyAuth:
         - root
-      - cookieAuth:
-        - root
       summary: Return the list of realms owned by the user
       tags:
       - realm
@@ -575,10 +566,9 @@ paths:
           description: Not authenticated
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: |
         Return the list of realms owned by the authenticated user.
-        The authenticated user needs to be a organizational user.
+        The authenticated user needs to be an organizational user.
       tags:
       - realm
       x-accepts: application/json
@@ -625,7 +615,6 @@ paths:
           description: Ok
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Create an email campaign
       tags:
       - campaign
@@ -689,7 +678,6 @@ paths:
           description: Ok
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Create a SMTP mail service for a app or a user
       tags:
       - service
@@ -745,7 +733,6 @@ paths:
           description: Ok
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: |
         Retrieve an app by identifier (ie guid or handle)
       tags:
@@ -775,7 +762,6 @@ paths:
           description: Ok
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: List apps for a realm
       tags:
       - app
@@ -830,7 +816,6 @@ paths:
           description: Ok
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Create or modify a user (a guid or a email should be given)
       tags:
       - user
@@ -850,7 +835,6 @@ paths:
           description: Requires authentication if not authenticated
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Get the authenticated user
       tags:
       - user
@@ -877,7 +861,6 @@ paths:
           description: Ok
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: |
         Get a user by guid
 
@@ -903,7 +886,6 @@ paths:
             organization
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Get the authenticated user and its organization
       tags:
       - organization
@@ -937,7 +919,6 @@ paths:
             organization
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Get the users of the organization
       tags:
       - organization
@@ -983,7 +964,6 @@ paths:
             organization
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Validate an email address
       tags:
       - email
@@ -1017,7 +997,6 @@ paths:
           description: Ok
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Delete the list
       tags:
       - list
@@ -1055,7 +1034,6 @@ paths:
           description: Ok
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: |
         Get list information
 
@@ -1100,7 +1078,6 @@ paths:
           description: Ok
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: |
         Update a list
       tags:
@@ -1140,7 +1117,6 @@ paths:
           description: Ok
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Create a list where users can register
       tags:
       - app
@@ -1188,7 +1164,6 @@ paths:
           description: Not authenticated
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: |
         Get a list of lists
 
@@ -1224,7 +1199,6 @@ paths:
           description: Not authenticated
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Get a list of list in a summary format
       tags:
       - list
@@ -1253,7 +1227,6 @@ paths:
           description: The list user
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Get a user in a list
       tags:
       - list
@@ -1327,7 +1300,6 @@ paths:
           description: The confirmation letter
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: |
         Deprecated - The front end is now separated from the API
 
@@ -1389,7 +1361,6 @@ paths:
           description: The confirmation letter
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: |
         Return the validation letter with a validation link as send by email.
       tags:
@@ -1469,7 +1440,6 @@ paths:
           description: The import job id
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: Submit an import of users for a list
       tags:
       - list
@@ -1499,7 +1469,6 @@ paths:
           description: The import jobs
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: A list of imports
       tags:
       - list
@@ -1537,7 +1506,6 @@ paths:
           description: The import jobs
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: The list of emails with their import status
       tags:
       - list
@@ -1573,7 +1541,6 @@ paths:
           description: The import job status
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: The import status for the job
       tags:
       - list
@@ -1631,7 +1598,6 @@ paths:
           description: List of registrations
       security:
       - apiKeyAuth: []
-      - cookieAuth: []
       summary: List the users for a list
       tags:
       - list
@@ -2050,13 +2016,6 @@ components:
         All properties that are tied only to the event type/name
         are properties added at the root with a primary datatype.
       example:
-        app:
-          appOrganisationGuid: appOrganisationGuid
-          appOrganisationHandle: appOrganisationHandle
-          appHandle: appHandle
-          appRealmGuid: appRealmGuid
-          appGuid: appGuid
-          appRealmHandle: appRealmHandle
         request:
           referrerUri: https://openapi-generator.tech
           remoteIp: 143.176.206.76
@@ -2068,6 +2027,14 @@ components:
         typeName: "`Sign up`, `Purchase`"
         guid: guid
         typeGuid: "0, 1, 2"
+        client:
+          clientGuid: clientGuid
+          appOrganisationGuid: appOrganisationGuid
+          appOrganisationHandle: appOrganisationHandle
+          appHandle: appHandle
+          appRealmGuid: appRealmGuid
+          appGuid: appGuid
+          appRealmHandle: appRealmHandle
         state:
           eventSendingTime: 2000-01-23T04:56:07.000+00:00
           eventCreationTime: 2000-01-23T04:56:07.000+00:00
@@ -2117,8 +2084,8 @@ components:
           type: string
         state:
           $ref: '#/components/schemas/AnalyticsEventState'
-        app:
-          $ref: '#/components/schemas/AnalyticsEventApp'
+        client:
+          $ref: '#/components/schemas/AnalyticsEventClient'
         user:
           $ref: '#/components/schemas/AnalyticsEventUser'
         request:
@@ -2157,9 +2124,10 @@ components:
           format: date-time
           type: string
       type: object
-    AnalyticsEventApp:
-      description: The properties of the app that created this event
+    AnalyticsEventClient:
+      description: The properties of the client that created this event
       example:
+        clientGuid: clientGuid
         appOrganisationGuid: appOrganisationGuid
         appOrganisationHandle: appOrganisationHandle
         appHandle: appHandle
@@ -2167,6 +2135,9 @@ components:
         appGuid: appGuid
         appRealmHandle: appRealmHandle
       properties:
+        clientGuid:
+          description: The client id that has created this event (never change)
+          type: string
         appGuid:
           description: The app id that has created this event (never change)
           type: string
@@ -3524,11 +3495,3 @@ components:
       in: header
       name: x-api-key
       type: apiKey
-    cookieAuth:
-      in: cookie
-      name: ey-session-id
-      type: apiKey
-    clientId: # binding name (arbitrary name used in code and in the file)
-      type: apiKey
-      in: header       # can be "header", "query" or "cookie"
-      name: x-client-id  # name of the header, query parameter or cookie

@@ -75,7 +75,7 @@ public class EmailLoginFlow extends WebFlowAbs {
     AuthClient authClient;
       try {
           authClient = this.getApp()
-            .getApiClientProvider()
+            .getAuthClientProvider()
             .getClientFromRedirectUri(redirectUriEnhanced);
       } catch (NotFoundException e) {
         return Future.failedFuture(TowerFailureException

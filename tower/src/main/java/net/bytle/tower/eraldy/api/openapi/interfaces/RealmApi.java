@@ -35,7 +35,7 @@ public interface RealmApi  {
     Future<ApiResponse<List<Realm>>> realmsOwnedByGet(RoutingContext routingContext, String userGuid);
 
     /**
-     * Return the list of realms owned by the authenticated user. The authenticated user needs to be a organizational user.
+     * Return the list of realms owned by the authenticated user. The authenticated user needs to be an organizational user.
     */
     Future<ApiResponse<List<RealmAnalytics>>> realmsOwnedByMeGet(RoutingContext routingContext);
 }

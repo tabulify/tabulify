@@ -153,7 +153,7 @@ public class HttpServer implements AutoCloseable {
   public BasicAuthHandler getBasicAuthHandler() {
     if (this.basicAuthenticator == null) {
       try {
-        this.basicAuthenticator = BasicAuthHandler.create(this.getServer().getApiKeyAuth());
+        this.basicAuthenticator = BasicAuthHandler.create(this.getServer().getApiKeyAuthProvider());
       } catch (NullValueException e) {
         throw new InternalException("Api Key is not enabled on the server", e);
       }
@@ -328,7 +328,7 @@ public class HttpServer implements AutoCloseable {
         httpServer.persistentSessionStore = PersistentLocalSessionStore.create(httpServer);
       }
       try {
-        httpServer.apiKeyAuthenticator = APIKeyHandler.create(this.server.getApiKeyAuth());
+        httpServer.apiKeyAuthenticator = APIKeyHandler.create(this.server.getApiKeyAuthProvider());
       } catch (NullValueException e) {
         // not configured
       }

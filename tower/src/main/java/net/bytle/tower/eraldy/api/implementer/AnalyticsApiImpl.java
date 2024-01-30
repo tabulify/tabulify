@@ -81,7 +81,7 @@ public class AnalyticsApiImpl implements AnalyticsApi {
      * because Analytics Tracker does not know the realm object (only the ids)
      * as it's independent of the Eraldy Api App
      */
-    AuthClient authClient = this.apiApp.getApiClientProvider().getFromRoutingContextKeyStore(routingContext);
+    AuthClient authClient = this.apiApp.getAuthClientProvider().getFromRoutingContextKeyStore(routingContext);
     AnalyticsEventClient analyticsClient = analyticsEvent.getClient();
     if (analyticsClient == null) {
       analyticsClient = new AnalyticsEventClient();
