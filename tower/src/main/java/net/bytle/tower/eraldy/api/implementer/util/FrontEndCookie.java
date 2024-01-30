@@ -58,14 +58,18 @@ public class FrontEndCookie<T> {
   public void setValue(T value, RoutingContext routingContext) {
 
     String stringValue;
-    if (jsonMapper == null) {
-      JsonObject json = JsonObject.mapFrom(value);
-      stringValue = json.toString();
+    if (value instanceof String) {
+      stringValue = (String) value;
     } else {
-      try {
-        stringValue = jsonMapper.writeValueAsString(value);
-      } catch (JsonProcessingException e) {
-        throw new InternalException(e);
+      if (jsonMapper == null) {
+        JsonObject json = JsonObject.mapFrom(value);
+        stringValue = json.toString();
+      } else {
+        try {
+          stringValue = jsonMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+          throw new InternalException(e);
+        }
       }
     }
 
@@ -87,12 +91,20 @@ public class FrontEndCookie<T> {
     /**
      * Decode from base64
      */
-    String json;
+    String clearString;
     try {
-      json = Base64Utility.base64UrlStringToString(rawValue);
+      clearString = Base64Utility.base64UrlStringToString(rawValue);
     } catch (Exception e) {
       throw new CastException("We were unable to decode the cookie (cookieName: " + this.cookieName + ") from base64 with the value: (" + rawValue + ")");
     }
+
+    /**
+     * Simple string value
+     */
+    if (this.aClass.equals(String.class)) {
+      return this.aClass.cast(clearString);
+    }
+
     /**
      * Decode Json to Object
      * We cannot use the JsonMapper of the API
@@ -100,10 +112,10 @@ public class FrontEndCookie<T> {
      * This identifier is needed for the creation of the object
      */
     try {
-      return (new JsonObject(json)).mapTo(this.aClass);
+      return (new JsonObject(clearString)).mapTo(this.aClass);
     } catch (Exception e) {
       // should not occur but in dev, it may
-      throw new CastException("We were unable to decode the cookie (cookieName: " + this.cookieName + ") to the class (" + this.aClass + ") with the value: " + json + ")", e);
+      throw new CastException("We were unable to decode the cookie (cookieName: " + this.cookieName + ") to the class (" + this.aClass + ") with the value: " + clearString + ")", e);
     }
   }
 

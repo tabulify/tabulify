@@ -1,5 +1,7 @@
 package net.bytle.tower;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.model.openapi.App;
 
 import java.net.URI;
@@ -11,6 +13,7 @@ import java.net.URI;
  * This is the same concept as
  * the <a href="https://datacadamia.com/iam/oauth/client">OAuth Client</a>
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthClient {
 
   private String guid;
@@ -19,11 +22,15 @@ public class AuthClient {
   private long localId;
   private URI uri;
 
+  public AuthClient() {
+  }
+
+  @JsonProperty("guid")
   public String getGuid() {
     return this.guid;
   }
 
-
+  @JsonProperty("app")
   public App getApp() {
     return this.app;
   }

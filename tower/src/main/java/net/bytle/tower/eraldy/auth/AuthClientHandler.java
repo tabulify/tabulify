@@ -59,7 +59,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
    * The cookie that stores the last realm
    * information (when the front end is loaded)
    */
-  private final FrontEndCookie<Realm> lastAuthRealmCookie;
+
   private final String realmHandleContextKey;
 
   /**
@@ -73,11 +73,6 @@ public class AuthClientHandler implements Handler<RoutingContext> {
     this.apiApp = config.apiApp;
     this.realmHandleContextKey = config.realmHandleContextKey;
 
-    String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-realm";
-    this.lastAuthRealmCookie = FrontEndCookie.conf(cookieName, Realm.class)
-      .setPath("/") // send back from all pages
-      .setJsonMapper(this.apiApp.getRealmProvider().getPublicJsonMapper())
-      .build();
 
     String clientIdCookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-client-id-last";
     this.lastAuthClientIdCookie = FrontEndCookie.conf(clientIdCookieName, String.class)
@@ -133,7 +128,6 @@ public class AuthClientHandler implements Handler<RoutingContext> {
      * Fail
      */
     throw new NotFoundException();
-
 
   }
 
@@ -193,10 +187,15 @@ public class AuthClientHandler implements Handler<RoutingContext> {
           this.lastAuthClientIdCookie.setValue(apiClient.getGuid(), context);
 
           /**
-           * We set the realm in a cookie for the frontend.
+           * We set the apiCli in a cookie for the frontend.
            * They read and get the realm this way for now.
            */
-          lastAuthRealmCookie.setValue(realm, context);
+          String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-" + apiClient.getGuid();
+          FrontEndCookie.conf(cookieName, AuthClient.class)
+            .setPath("/") // send back from all pages
+            .setJsonMapper(this.apiApp.getAuthClientProvider().getPublicJsonMapper())
+            .build()
+            .setValue(apiClient, context);
 
           /**
            * To retrieve the request client quickly
