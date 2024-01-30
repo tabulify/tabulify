@@ -5,45 +5,75 @@ import io.vertx.ext.web.handler.StaticHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class OpenApiDoc {
 
   static Logger LOGGER = LogManager.getLogger(OpenApiDoc.class);
 
   public static final String DOC_OPERATION_PATH = "/doc";
+  private final OpenApiManager openApiManager;
+  private final String routerDirPath;
+  private final String routerYamlRootPath;
+  private final String routerYamlDocPath;
+  private final List<String> routerPaths;
+
+  public OpenApiDoc(OpenApiManager openApiManager) {
+    String tempLocalPath;
+    this.openApiManager = openApiManager;
+    TowerApp towerApp = this.openApiManager.getTowerApp();
+    tempLocalPath = towerApp.getPathMount();
+    if (tempLocalPath.isEmpty()) {
+      tempLocalPath = "/" + towerApp.getAppName().toLowerCase();
+    }
+    String rootPath = tempLocalPath;
+
+    this.routerDirPath = rootPath + DOC_OPERATION_PATH;
+    this.routerYamlRootPath = rootPath + TowerApp.OPENAPI_YAML_PATH;
+    this.routerYamlDocPath = routerDirPath + TowerApp.OPENAPI_YAML_PATH;
+
+    /**
+     * The path segment uses in the router
+     * (without glob)
+     */
+    this.routerPaths = new ArrayList<>();
+    this.routerPaths.add(this.routerDirPath);
+    this.routerPaths.add(routerYamlRootPath);
+    this.routerPaths.add(routerYamlDocPath);
+  }
 
   /**
    * Add the doc
    * (virtual static website that process and server the openapi.yml file)
    * <a href="https://vertx.io/docs/vertx-web/java/#_serving_static_resources">...</a>
    */
-  public static void addHandler(Router router, TowerApp towerApp) {
+  public void addHandler(Router router) {
 
-
-    String localPath = towerApp.getPathMount();
-    if (localPath.equals("")) {
-      localPath = "/" + towerApp.getAppName().toLowerCase();
-    }
-    String docLocalPath = localPath + DOC_OPERATION_PATH;
 
     /**
      * Serve the doc
      */
     StaticHandler staticHandler = StaticResourcesUtil.getStaticHandlerForRelativeResourcePath("openapi-doc");
     String allFilesJavascriptIncluded = "*";
-    router.get(docLocalPath + allFilesJavascriptIncluded).handler(staticHandler);
-    LOGGER.info("Serving API doc at " + towerApp.getOperationUriForLocalhost(docLocalPath) + " and " + towerApp.getOperationUriForPublicHost(docLocalPath));
+    router.get(routerDirPath + allFilesJavascriptIncluded).handler(staticHandler);
+    TowerApp towerApp = this.openApiManager.getTowerApp();
+    LOGGER.info("Serving API doc at " + towerApp.getOperationUriForLocalhost(routerDirPath) + " and " + towerApp.getOperationUriForPublicHost(routerDirPath));
 
     /**
      * Serve the spec (root OpenAPI document) at the root
      * as specified by the [spec](https://spec.openapis.org/oas/v3.1.0#document-structure)
      */
     String resourceOpenApiFile = towerApp.getRelativeSpecFileResourcesPath();
-    router.get(docLocalPath + TowerApp.OPENAPI_YAML_PATH).handler(ctx -> ctx.response().sendFile(resourceOpenApiFile));
-    LOGGER.info("Serving open API file at " + towerApp.getOperationUriForLocalhost(docLocalPath + TowerApp.OPENAPI_YAML_PATH) + " and " + towerApp.getOperationUriForPublicHost(docLocalPath + TowerApp.OPENAPI_YAML_PATH));
-    router.get(localPath + TowerApp.OPENAPI_YAML_PATH).handler(ctx -> ctx.response().sendFile(resourceOpenApiFile));
-    LOGGER.info("Serving open API file at " + towerApp.getOperationUriForLocalhost(localPath + TowerApp.OPENAPI_YAML_PATH) + " and " + towerApp.getOperationUriForPublicHost(localPath + TowerApp.OPENAPI_YAML_PATH));
+    router.get(routerYamlDocPath).handler(ctx -> ctx.response().sendFile(resourceOpenApiFile));
+    LOGGER.info("Serving open API file at " + towerApp.getOperationUriForLocalhost(routerYamlDocPath) + " and " + towerApp.getOperationUriForPublicHost(routerYamlDocPath));
+    router.get(routerYamlRootPath).handler(ctx -> ctx.response().sendFile(resourceOpenApiFile));
+    LOGGER.info("Serving open API file at " + towerApp.getOperationUriForLocalhost(routerYamlRootPath) + " and " + towerApp.getOperationUriForPublicHost(routerYamlRootPath));
 
   }
 
+  public List<String> getRouterDocPaths() {
+    return this.routerPaths;
+  }
 }

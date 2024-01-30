@@ -208,10 +208,15 @@ public class EraldyApiApp extends TowerApp {
    */
   public void addAuthSessionCookieHandlers() {
 
-
+    String orRegexp = "|";
+    String docPaths = String.join(orRegexp, this.getOpenApi().getDocPaths());
+    /**
+     * All paths except the Open Api doc needs a client id and a session
+     */
+    String allExceptApiDoc = "^(?!" + docPaths + ").*";
     Router router = this.getApexDomain().getHttpServer().getRouter();
-    router.route().handler(this.authClientHandler);
-    router.route().handler(this.sessionHandler);
+    router.routeWithRegex(allExceptApiDoc).handler(this.authClientHandler);
+    router.routeWithRegex(allExceptApiDoc).handler(this.sessionHandler);
 
   }
 
@@ -508,7 +513,7 @@ public class EraldyApiApp extends TowerApp {
     addAuthSessionCookieHandlers();
 
     TowerApexDomain apexDomain = this.getApexDomain();
-    LOGGER.info("Allow CORS on the domain ("+apexDomain+")");
+    LOGGER.info("Allow CORS on the domain (" + apexDomain + ")");
     // Allow Browser cross-origin request in the domain
     Router router = apexDomain.getHttpServer().getRouter();
     BrowserCorsUtil.allowCorsForApexDomain(router, apexDomain);
@@ -545,7 +550,7 @@ public class EraldyApiApp extends TowerApp {
   }
 
   public AuthClientProvider getApiClientProvider() {
-     return this.authClientProvider;
+    return this.authClientProvider;
   }
 
   public EraldyModel getEraldyModel() {

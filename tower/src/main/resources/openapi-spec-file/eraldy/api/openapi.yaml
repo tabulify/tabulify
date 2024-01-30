@@ -3528,3 +3528,7 @@ components:
       in: cookie
       name: ey-session-id
       type: apiKey
+    clientId: # binding name (arbitrary name used in code and in the file)
+      type: apiKey
+      in: header       # can be "header", "query" or "cookie"
+      name: x-client-id  # name of the header, query parameter or cookie

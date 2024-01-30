@@ -341,7 +341,6 @@ public class EraldySessionHandler implements SessionHandler {
   @Override
   public void handle(RoutingContext context) {
 
-
     HttpServerRequest request = context.request();
     if (nagHttps && LOG.isDebugEnabled()) {
       String uri = request.absoluteURI();

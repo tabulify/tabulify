@@ -37,6 +37,7 @@ security:
   # Listed in the openapi-common.yaml
   - apiKeyAuth: [ ]
   - cookieAuth: [ ]
+  - clientId: []
 components:
   securitySchemes:
     apiKeyAuth: # binding name (arbitrary name used in code and in the file)
@@ -45,6 +46,10 @@ components:
 #      $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/bearerAuth'
     cookieAuth: # binding name (arbitrary name used in code and in the file)
       $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/cookieAuth'
+    clientId: # binding name (arbitrary name used in code and in the file)
+      type: apiKey
+      in: header       # can be "header", "query" or "cookie"
+      name: x-client-id  # name of the header, query parameter or cookie
   requestBodies:
     LoginPostBody:
       description: The data needed to log a user in by password credentials

@@ -55,6 +55,13 @@ public abstract class TowerApp {
     this.apexDomain = towerApexDomain;
     this.configAccessor = apexDomain.getHttpServer().getServer().getConfigAccessor();
 
+    /**
+     * Built OpenApi
+     */
+    if (this.hasOpenApiSpec()) {
+      openApi = OpenApiManager.config(this).build();
+    }
+
   }
 
   public String getRelativeSpecFileResourcesPath() {
@@ -292,16 +299,9 @@ public abstract class TowerApp {
      * <p>
      */
     Future<Void> openApiMount;
-    if (this.hasOpenApiSpec()) {
-      /**
-       * Built OpenApi
-       */
-      openApi = OpenApiManager.config(this)
-        .build();
-      /**
-       * Mount
-       */
-      openApiMount = openApi.mountOpenApi(this, rootRouter);
+    if (this.openApi != null) {
+
+      openApiMount = openApi.mountOpenApi(rootRouter);
 
     } else {
 
