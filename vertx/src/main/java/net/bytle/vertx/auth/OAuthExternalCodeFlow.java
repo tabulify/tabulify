@@ -47,6 +47,9 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
   }
 
 
+  /**
+   * The step 2 is performed by the callback
+   */
   public void step2AddProviderAndCallbacks(Router router) {
     oauthExternal.addCallBackHandlers(router);
   }
@@ -106,4 +109,5 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
   public WebFlowType getFlowType() {
     return WebFlowType.OAUTH;
   }
+
 }

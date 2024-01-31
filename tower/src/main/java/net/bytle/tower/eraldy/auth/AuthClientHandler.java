@@ -12,8 +12,8 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.exception.NullValueException;
 import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.api.implementer.util.FrontEndCookie;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.vertx.FrontEndCookie;
 import net.bytle.vertx.HttpServer;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
@@ -77,6 +77,8 @@ public class AuthClientHandler implements Handler<RoutingContext> {
     String clientIdCookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-client-id-last";
     this.lastAuthClientIdCookie = FrontEndCookie.conf(clientIdCookieName, String.class)
       .setPath("/") // send back from all pages
+      .setHttpOnly(true) // only for the server
+      .setSameSiteStrictInProdAndLaxInDev()
       .build();
 
   }
@@ -153,13 +155,13 @@ public class AuthClientHandler implements Handler<RoutingContext> {
     futureAuthClient
       .onFailure(e -> TowerFailureException
         .builder()
-        .setMessage("Internal error: the client id could not be retrieved")
+        .setMessage("The client id could not be retrieved")
         .setCauseException(e)
         .buildWithContextFailingTerminal(context)
       )
-      .onSuccess(apiClient -> {
+      .onSuccess(authClient -> {
 
-          if (apiClient == null) {
+          if (authClient == null) {
             /**
              * The client is mandatory for the authentication by realm via cookie
              * Even if we get an app or list guid that contains the realm,
@@ -178,29 +180,38 @@ public class AuthClientHandler implements Handler<RoutingContext> {
            * We set the realm handle for the creation of the session cookie name
            * in the session handler.
            */
-          Realm realm = apiClient.getApp().getRealm();
+          Realm realm = authClient.getApp().getRealm();
           context.put(this.realmHandleContextKey, realm.getHandle().toLowerCase());
 
           /**
            * We set the last client id for oauth
            */
-          this.lastAuthClientIdCookie.setValue(apiClient.getGuid(), context);
+          this.lastAuthClientIdCookie.setValue(authClient.getGuid(), context);
 
           /**
-           * We set the apiCli in a cookie for the frontend.
-           * They read and get the realm this way for now.
+           * We set the authCli data in a cookie for the member app.
+           * It read and get the context data (ie realm) for the creation of the page, this way for now
+           * so that the app does not need to make a query.
+           * The member app proxy all requests as if it was another app.
            */
-          String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-" + apiClient.getGuid();
-          FrontEndCookie.conf(cookieName, AuthClient.class)
-            .setPath("/") // send back from all pages
-            .setJsonMapper(this.apiApp.getAuthClientProvider().getPublicJsonMapper())
-            .build()
-            .setValue(apiClient, context);
+          if (context.request().params().contains(CLIENT_ID)) {
+            // client_id is normally send as HTTP headers by client
+            // it's advertised in the URL only from the member app
+            // it's just a trick to not send this data for all apps
+            // Why? because only the  auth app have this query parameter
+            String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-" + authClient.getGuid();
+            FrontEndCookie.conf(cookieName, AuthClient.class)
+              .setPath("/") // send back from all pages
+              .setJsonMapper(this.apiApp.getAuthClientProvider().getPublicJsonMapper())
+              .setHttpOnly(false)
+              .build()
+              .setValue(authClient, context);
+          }
 
           /**
            * To retrieve the request client quickly
            */
-          context.put(CLIENT_ID_CONTEXT_KEY, apiClient);
+          context.put(CLIENT_ID_CONTEXT_KEY, authClient);
           context.next();
 
         }

@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.api.implementer.util;
+package net.bytle.vertx;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,26 +9,43 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
+import net.bytle.java.JavaEnvs;
 import net.bytle.type.Base64Utility;
 
 /**
- * We pass data to the frontend via cookie
- * * the auth realm: for the
+ * A cookie utility function to create cookie
+ * This cookie class allows to encode the data in json and base64.
+ * <p>
+ * We pass and get data to the frontend via cookie
+ * * the auth cli: for the auth member app
  * * data: for all confirmation page and the registration page
  * <p>
  * The type should be serializable to Json (ie Map<String, Object> or a pojo)
  */
 public class FrontEndCookie<T> {
 
-  private static final String COOKIE_DATA_NAME = "data";
+  private static final String DEFAULT_COOKIE_DATA_NAME = "data";
   private final String cookieName;
-  private String cookiePath;
+  private final boolean httpOnly;
+  private final CookieSameSite sameSitePolicy;
+  private final String cookiePath;
   private final Class<? extends T> aClass;
-  private ObjectMapper jsonMapper;
+  private final ObjectMapper jsonMapper;
 
-  public FrontEndCookie(String cookieName, Class<T> aClass) {
-    this.cookieName = cookieName;
-    this.aClass = aClass;
+  /**
+   * With the easiness to create certificate on dev,
+   * the cookie should always be sent on HTTPS
+   */
+  @SuppressWarnings("FieldCanBeLocal")
+  private boolean COOKIE_HTTPS_SECURE = true;
+
+  private FrontEndCookie(Conf<T> config) {
+    this.cookieName = config.cookieName;
+    this.aClass = config.aClass;
+    this.cookiePath = config.cookiePath;
+    this.jsonMapper = config.jsonMapper;
+    this.httpOnly = config.httpOnly;
+    this.sameSitePolicy = config.sameSitePolicy;
   }
 
   /**
@@ -37,13 +54,16 @@ public class FrontEndCookie<T> {
    */
   public static Cookie getCookieData(Object variables) {
     JsonObject data = JsonObject.mapFrom(variables);
-    return Cookie.cookie(COOKIE_DATA_NAME, Base64Utility.stringToBase64UrlString(data.toString()))
-      .setHttpOnly(false);
+    return Cookie.cookie(DEFAULT_COOKIE_DATA_NAME, Base64Utility.stringToBase64UrlString(data.toString()))
+      .setHttpOnly(false)
+      .setSecure(true)
+      ;
   }
 
 
   public static <T> FrontEndCookie<T> createCookieData(Class<T> aClass) {
-    return new Conf<>(COOKIE_DATA_NAME, aClass)
+    return new Conf<>(DEFAULT_COOKIE_DATA_NAME, aClass)
+      .setHttpOnly(false)
       .build();
   }
 
@@ -73,9 +93,12 @@ public class FrontEndCookie<T> {
       }
     }
 
+
+    COOKIE_HTTPS_SECURE = true;
     Cookie cookie = Cookie.cookie(this.cookieName, Base64Utility.stringToBase64UrlString(stringValue))
-      .setHttpOnly(false)
-      .setSameSite(CookieSameSite.STRICT);
+      .setHttpOnly(httpOnly)
+      .setSecure(COOKIE_HTTPS_SECURE)
+      .setSameSite(this.sameSitePolicy);
     if (this.cookiePath != null) {
       cookie.setPath(this.cookiePath);
     }
@@ -124,6 +147,8 @@ public class FrontEndCookie<T> {
     private final Class<T> aClass;
     private String cookiePath;
     private ObjectMapper jsonMapper;
+    private boolean httpOnly = true;
+    private CookieSameSite sameSitePolicy = CookieSameSite.STRICT;
 
     public Conf(String cookieName, Class<T> aClass) {
       this.cookieName = cookieName;
@@ -136,15 +161,34 @@ public class FrontEndCookie<T> {
     }
 
     public FrontEndCookie<T> build() {
-      FrontEndCookie<T> frontendCookie = new FrontEndCookie<>(cookieName, this.aClass);
-      frontendCookie.cookiePath = cookiePath;
-      frontendCookie.jsonMapper = jsonMapper;
-      return frontendCookie;
+      return new FrontEndCookie<>(this);
     }
 
     public Conf<T> setJsonMapper(ObjectMapper jsonMapper) {
       this.jsonMapper = jsonMapper;
       return this;
+    }
+
+    public Conf<T> setHttpOnly(boolean httpOnly) {
+      this.httpOnly = httpOnly;
+      return this;
+    }
+
+    public Conf<T> setSameSite(CookieSameSite policy) {
+      this.sameSitePolicy = policy;
+      return this;
+    }
+
+    /**
+     * In dev, localhost:8083, the cookie is set on localhost
+     * and is not send back if the policy is not strict
+     * This function is a utility function just for that.
+     */
+    public Conf<T> setSameSiteStrictInProdAndLaxInDev() {
+      if(JavaEnvs.IS_DEV){
+        return this.setSameSite(CookieSameSite.LAX);
+      }
+      return this.setSameSite(CookieSameSite.STRICT);
     }
   }
 }

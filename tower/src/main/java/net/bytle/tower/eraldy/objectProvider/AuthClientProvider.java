@@ -61,11 +61,15 @@ public class AuthClientProvider {
 
   }
 
+  /**
+   * @param clientId - the client id
+   * @return the auth client, null if not found (to not advertise a failure)
+   */
   public Future<AuthClient> getClientFromClientId(String clientId) {
     if (this.interactAuthClient.getGuid().equals(clientId)) {
       return Future.succeededFuture(this.interactAuthClient);
     }
-    return Future.failedFuture(new NotFoundException("The client (" + clientId + ") is unknown"));
+    return Future.succeededFuture();
   }
 
   public void updateGuid(AuthClient authClient) {

@@ -24,6 +24,7 @@ public class OAuthState {
   private static final String REALM_IDENTIFIER = "realmIdentifier";
   private static final String REALM_HANDLE = "realmHandle";
   private static final String APP_GUID = "appIdentifier";
+  private static final String CLIENT_ID = "clientId";
   private static final String APP_HANDLE = "appHandle";
   private static final String ORG_IDENTIFIER = "orgIdentifier";
   private static final String ORG_HANDLE = "orgHandle";
@@ -171,4 +172,13 @@ public class OAuthState {
   public String getProviderGuid() {
     return this.providerGuid;
   }
+
+  public OAuthState setClientId(String clientId) {
+    this.jsonObject.put(CLIENT_ID, clientId);
+    return this;
+  }
+  public String getClientId() {
+    return this.jsonObject.getString(CLIENT_ID);
+  }
+
 }

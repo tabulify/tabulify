@@ -25,7 +25,7 @@ public interface AuthApi  {
     /**
      * Redirect to the external oauth authorization end point
     */
-    Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String redirectUri, String realmIdentifier, String listGuid);
+    Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String redirectUri, String clientId, String listGuid);
 
     /**
      * The login form end point for password credentials

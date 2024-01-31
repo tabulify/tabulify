@@ -115,10 +115,10 @@ paths:
           type: string
         style: form
       - description: |
-          The realm identifier (a realm guid or handle)
+          The client id
         explode: true
         in: query
-        name: realm_identifier
+        name: client_id
         required: true
         schema:
           type: string
@@ -1613,15 +1613,6 @@ components:
       schema:
         type: string
       style: form
-    client_id:
-      description: The client id (the app guid)
-      explode: true
-      in: query
-      name: client_id
-      required: false
-      schema:
-        type: string
-      style: form
     state:
       description: |
         The [state](https://datacadamia.com/iam/oauth/state) is a opaque value with the initial navigational state of the user.
@@ -1634,12 +1625,12 @@ components:
       schema:
         type: string
       style: form
-    realm_identifier:
+    client_id:
       description: |
-        The realm identifier (a realm guid or handle)
+        The client id
       explode: true
       in: query
-      name: realm_identifier
+      name: client_id
       required: true
       schema:
         type: string

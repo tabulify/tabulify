@@ -12,7 +12,6 @@ import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.AuthClientHandler;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.OAuthAccessTokenResponse;
@@ -36,7 +35,7 @@ public class AuthApiImpl implements AuthApi {
    * @param listGuid       - the list guid where to register the user (maybe null)
    */
   @Override
-  public Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String redirectUri, String listGuid, String realmIdentifier) {
+  public Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String redirectUri, String listGuid, String clientId) {
 
     /**
      * We don't rely on the argument because they can change of positions on the signature unfortunately
@@ -53,9 +52,9 @@ public class AuthApiImpl implements AuthApi {
           .buildWithContextFailing(routingContext)
       );
     }
-    UriEnhanced uriEnhanced;
+
     try {
-      uriEnhanced = UriEnhanced.createFromString(redirectUri);
+      UriEnhanced.createFromString(redirectUri);
     } catch (IllegalStructure e) {
       return Future.failedFuture(
         TowerFailureException.builder()
@@ -66,29 +65,33 @@ public class AuthApiImpl implements AuthApi {
       );
     }
 
-    AuthClient authClient;
-    try {
-      authClient = this.apiApp.getAuthClientProvider()
-        .getClientFromRedirectUri(uriEnhanced);
-    } catch (NotFoundException e) {
+    clientId = routingContext.request().getParam(AuthQueryProperty.CLIENT_ID.toString());
+    if (clientId == null) {
       return Future.failedFuture(
         TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-          .setMessage("The api client was not found with the redirect uri (" + redirectUri + ")")
-          .setCauseException(e)
+          .setMessage("The redirect client id query property  (" + AuthQueryProperty.CLIENT_ID + ") is mandatory.")
+          .buildWithContextFailing(routingContext)
+      );
+    }
+
+    AuthClient authClient = this.apiApp.getAuthClientProvider().getFromRoutingContextKeyStore(routingContext);
+    if (!clientId.equals(authClient.getGuid())) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setMessage("The client id and auth client id are inconsistent.")
           .buildWithContextFailing(routingContext)
       );
     }
 
     /**
-     * Auth Realm is mandatory
-     * To be sure that we have the good realm
-     * in {@link AuthClientHandler#getAuthRealmCookie(RoutingContext)}
+     * OAuth is an independent package,
+     * we need to set all analytics data
      */
     App app = authClient.getApp();
     OAuthState oAuthState = OAuthState
       .createEmpty()
       .setListGuid(listGuid)
+      .setClientId(clientId)
       .setAppIdentifier(app.getGuid())
       .setAppHandle(app.getHandle())
       .setRealmIdentifier(app.getRealm().getGuid())

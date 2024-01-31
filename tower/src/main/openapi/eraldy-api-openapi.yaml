@@ -243,13 +243,6 @@ components:
       required: false # by default, session cookie for first party
       schema:
         type: string
-    client_id:
-      name: client_id
-      description: "The client id (the app guid)"
-      in: query
-      required: false # not mandatory for session cookie response type
-      schema:
-        type: string
     state:
       name: state
       description: |
@@ -260,11 +253,11 @@ components:
       in: query
       schema:
         type: string
-    realm_identifier:
-      name: realm_identifier
+    client_id:
+      name: client_id
       description: |
-        The realm identifier (a realm guid or handle)
-      required: true
+        The client id
+      required: true # mandatory to determine the realm
       in: query
       schema:
         type: string
@@ -340,7 +333,7 @@ paths:
             type: string
           example: 'lis-xxxx'
         - $ref: "#/components/parameters/redirect_uri"
-        - $ref: "#/components/parameters/realm_identifier"
+        - $ref: "#/components/parameters/client_id"
       responses:
         '302':
           description: "The OAuth redirection URL to the authorization end point for the provider"
