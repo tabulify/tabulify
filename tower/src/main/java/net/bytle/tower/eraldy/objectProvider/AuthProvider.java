@@ -4,10 +4,8 @@ import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
-import net.bytle.exception.AssertionException;
-import net.bytle.exception.CastException;
-import net.bytle.exception.InternalException;
-import net.bytle.exception.NotFoundException;
+import net.bytle.exception.*;
+import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationUser;
 import net.bytle.tower.eraldy.auth.AuthScope;
@@ -22,6 +20,7 @@ import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlow;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,8 +39,17 @@ public class AuthProvider {
   private static final String REALMS_ID_KEY = "realms_id";
   private final EraldyApiApp apiApp;
 
+  /**
+   * Public action for all clients
+   */
+  private final HashSet<AuthScope> publicClientScopes;
+
   public AuthProvider(EraldyApiApp eraldyApiApp) {
+
     this.apiApp = eraldyApiApp;
+    this.publicClientScopes = new HashSet<>();
+    this.publicClientScopes.add(AuthScope.LIST_ADD_USER_FLOW);
+
   }
 
   /**
@@ -509,5 +517,22 @@ public class AuthProvider {
       }
     }
     return analyticsUser;
+  }
+
+
+  @SuppressWarnings("unused")
+  public void checkClientAuthorization(AuthClient authClient, AuthScope authScope) throws NotAuthorizedException {
+    /**
+     * Public Client Scopes (?)
+     */
+    if (this.publicClientScopes.contains(authScope)) {
+      return;
+    }
+    /**
+     * Member client?
+     */
+    if (!this.apiApp.getEraldyModel().getMemberClient().getGuid().equals(authClient.getGuid())) {
+      throw new NotAuthorizedException();
+    }
   }
 }

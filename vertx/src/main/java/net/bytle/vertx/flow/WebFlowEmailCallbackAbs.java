@@ -17,6 +17,7 @@ import net.bytle.vertx.auth.AuthUser;
 
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.Map;
 
 public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
 
@@ -58,20 +59,21 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
   }
 
   /**
-   * @param routingContext - the routing context
-   * @param smtpSender     - the email sender
-   * @param recipientName  - the name of the recipient
-   * @param authUser       - the claims (ie the user to authenticate and the state)
+   * @param routingContext          - the routing context
+   * @param smtpSender              - the email sender
+   * @param recipientName           - the name of the recipient
+   * @param authUser                - the claims (ie the user to authenticate and the state)
+   * @param extraCallbackQueryProperties - extra query properties added to the callback link
    * @return the email template to send for validation
    */
-  public BMailTransactionalTemplate getCallbackTransactionalEmailTemplateForClaims(RoutingContext routingContext, SmtpSender smtpSender, String recipientName, AuthUser authUser) {
+  public BMailTransactionalTemplate getCallbackTransactionalEmailTemplateForClaims(RoutingContext routingContext, SmtpSender smtpSender, String recipientName, AuthUser authUser, Map<String, String> extraCallbackQueryProperties) {
 
 
     JsonObject jwtClaims = authUser.toClaimsWithExpiration(EXPIRATION_IN_MINUTES);
     String accessToken = jsonToken.encrypt(jwtClaims, DATA_CIPHER);
     OAuthAccessTokenResponse oAuthAccessTokenResponse = new OAuthAccessTokenResponse();
     oAuthAccessTokenResponse.setAccessToken(accessToken);
-    String validationUrl = getCallbackUri(oAuthAccessTokenResponse).toUri().toString();
+    String validationUrl = getCallbackUri(oAuthAccessTokenResponse, extraCallbackQueryProperties).toUri().toString();
 
 
     /**
@@ -161,7 +163,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
   }
 
   @Override
-  public UriEnhanced getCallbackUri(Object validationObject) {
+  public <T> UriEnhanced getCallbackUri(T validationObject, Map<String, String> callbackQueriesProperties) {
 
     JsonObject validationJson;
     if (validationObject instanceof JsonObject) {
@@ -174,9 +176,11 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
     return webFlow
       .getApp()
       .getOperationUriForPublicHost(this.getCallbackOperationPath())
-      .addQueryProperty(URI_DATA_PARAMETER, encryptedData);
+      .addQueryProperty(URI_DATA_PARAMETER, encryptedData)
+      .addQueryProperties(callbackQueriesProperties);
 
   }
+
 
   @Override
   public String getCallbackOperationPath() {

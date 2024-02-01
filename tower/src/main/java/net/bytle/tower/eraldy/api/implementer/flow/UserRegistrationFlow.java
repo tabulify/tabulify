@@ -9,10 +9,13 @@ import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
 import net.bytle.exception.IllegalArgumentExceptions;
+import net.bytle.exception.NotAuthorizedException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.UserRegisterEmailCallback;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
+import net.bytle.tower.eraldy.auth.AuthScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.AuthEmailPost;
 import net.bytle.tower.eraldy.model.openapi.Realm;
@@ -27,6 +30,9 @@ import net.bytle.vertx.flow.WebFlowAbs;
 import net.bytle.vertx.flow.WebFlowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static net.bytle.tower.eraldy.api.implementer.ListApiImpl.REGISTRATION_EMAIL_SUBJECT_PREFIX;
 
@@ -64,6 +70,20 @@ public class UserRegistrationFlow extends WebFlowAbs {
    */
   public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext, AuthEmailPost authEmailPost) {
 
+    /**
+     * Check client authorization
+     */
+    AuthScope listRegistration = AuthScope.USER_REGISTRATION_FLOW;
+    AuthClient authClient = this.getApp().getAuthClientProvider().getFromRoutingContextKeyStore(routingContext);
+    try {
+      this.getApp().getAuthProvider().checkClientAuthorization(authClient, listRegistration);
+    } catch (NotAuthorizedException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setMessage("You don't have any permission to "+listRegistration.getHumanActionName())
+        .buildWithContextFailing(routingContext)
+      );
+    }
+
     ValidationUtil.validateEmail(authEmailPost.getUserEmail(), "userEmail");
     String clientId = authEmailPost.getClientId();
     if (clientId == null) {
@@ -77,12 +97,12 @@ public class UserRegistrationFlow extends WebFlowAbs {
     return getApp()
       .getAuthClientProvider()
       .getClientFromClientId(clientId)
-      .compose(authClient->{
+      .compose(clientAuthClient->{
 
 
         User newUser = new User();
         newUser.setEmail(authEmailPost.getUserEmail());
-        Realm realm = authClient.getApp().getRealm();
+        Realm realm = clientAuthClient.getApp().getRealm();
         newUser.setRealm(realm);
 
 
@@ -103,11 +123,19 @@ public class UserRegistrationFlow extends WebFlowAbs {
               .buildWithContextFailing(routingContext)
           );
         }
+
+
+        /**
+         * Add the calling client id
+         */
+        Map<String, String> clientCallbackQueryProperties = new HashMap<>();
+        clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), authClient.getGuid());
+
         BMailTransactionalTemplate letter =
           getApp()
             .getUserRegistrationFlow()
             .getCallback()
-            .getCallbackTransactionalEmailTemplateForClaims(routingContext, realmOwnerSender, newUserName, jwtClaims)
+            .getCallbackTransactionalEmailTemplateForClaims(routingContext, realmOwnerSender, newUserName, jwtClaims, clientCallbackQueryProperties)
             .setPreview("Validate your registration to `" + realmNameOrHandle + "`")
             .addIntroParagraph(
               "I just got a subscription request to <mark>" + realmNameOrHandle + "</mark> with your email." +

@@ -113,11 +113,10 @@ public class EraldyApiApp extends TowerApp {
     this.authClientProvider = new AuthClientProvider(this);
 
     /**
-     * Model
+     * Model and app
      */
     this.eraldyModel = new EraldyModel(this);
     this.eraldySubRealmModel = EraldySubRealmModel.getOrCreate(this);
-
 
     /**
      * Flow management
@@ -215,9 +214,19 @@ public class EraldyApiApp extends TowerApp {
     /**
      * Session Handler
      */
-    String orRegexp = "|";
-    String docPaths = String.join(orRegexp, this.getOpenApi().getDocPaths());
-    String allExceptApiDoc = "^(?!" + docPaths + ").*"; // All paths except the Open Api doc needs a client id and a session
+
+    List<String> excludedPaths = new ArrayList<>();
+    /**
+     * No session on the Open Api doc
+     */
+    this.getOpenApi().getDocPaths();
+    /**
+     * The oauth callbacks have only code and state.
+     * https://localhost:8083/auth/oauth/github/callback?code=xxx&state=xxx
+     * To keep the clientId, we may use the last cookie
+     */
+    excludedPaths.add("/auth/login/oauth/.*/callback");
+    String allExceptApiDoc = "^(?!" + String.join("|", excludedPaths) + ").*";
     Router router = this.getApexDomain().getHttpServer().getRouter();
     router.routeWithRegex(allExceptApiDoc).handler(this.authClientHandler);
     router.routeWithRegex(allExceptApiDoc).handler(this.sessionHandler);
@@ -370,7 +379,6 @@ public class EraldyApiApp extends TowerApp {
       .addQueryProperty(AuthQueryProperty.REDIRECT_URI, redirectUri.toString())
       .addQueryProperty(AuthQueryProperty.CLIENT_ID, authClient.getGuid());
   }
-
 
 
   public RealmProvider getRealmProvider() {

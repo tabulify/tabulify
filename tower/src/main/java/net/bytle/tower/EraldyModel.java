@@ -41,6 +41,7 @@ public class EraldyModel {
   private final URI memberAppUri;
 
   Realm realm;
+  private AuthClient memberClient;
 
 
   public EraldyModel(EraldyApiApp apiApp) throws ConfigIllegalException {
@@ -147,7 +148,7 @@ public class EraldyModel {
         /**
          * Create a client for the member App
          */
-        AuthClient memberClient = new AuthClient();
+        memberClient = new AuthClient();
         memberClient.setLocalId(1L);
         memberClient.setApp(memberApp);
         memberClient.addUri(this.memberAppUri);
@@ -191,4 +192,9 @@ public class EraldyModel {
 
     return UriEnhanced.createFromUri(this.memberAppUri);
   }
+
+  public AuthClient getMemberClient() {
+    return this.memberClient;
+  }
+
 }

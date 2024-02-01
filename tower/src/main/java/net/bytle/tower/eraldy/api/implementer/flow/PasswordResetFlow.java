@@ -7,21 +7,28 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
+import net.bytle.exception.NotAuthorizedException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.PasswordResetEmailCallback;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
+import net.bytle.tower.eraldy.auth.AuthScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthJwtClaims;
+import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
 import net.bytle.vertx.flow.WebFlowEmailCallback;
 import net.bytle.vertx.flow.WebFlowType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class PasswordResetFlow extends WebFlowAbs {
 
@@ -91,8 +98,28 @@ public class PasswordResetFlow extends WebFlowAbs {
         }
         AuthJwtClaims jwtClaims = getApp().getAuthProvider().toJwtClaims(userToResetPassword).addRequestClaims(routingContext);
 
+        /**
+         * Check client authorization
+         */
+        AuthScope listRegistration = AuthScope.PASSWORD_RESET_FLOW;
+        AuthClient authClient = this.getApp().getAuthClientProvider().getFromRoutingContextKeyStore(routingContext);
+        try {
+          this.getApp().getAuthProvider().checkClientAuthorization(authClient, listRegistration);
+        } catch (NotAuthorizedException e) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setMessage("You don't have any permission to "+listRegistration.getHumanActionName())
+            .buildWithContextFailing(routingContext)
+          );
+        }
+
+        /**
+         * Add the calling client id
+         */
+        Map<String, String> clientCallbackQueryProperties = new HashMap<>();
+        clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), authClient.getGuid());
+
         BMailTransactionalTemplate letter = this.step2Callback
-          .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims)
+          .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims, clientCallbackQueryProperties)
           .addIntroParagraph(
             "I just got a password reset request on <mark>" + realmNameOrHandle + "</mark> with your email.")
           .setActionName("Click on this link to reset your password.")

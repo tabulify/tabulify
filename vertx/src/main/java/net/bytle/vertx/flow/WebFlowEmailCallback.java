@@ -6,6 +6,8 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.JsonTokenCipher;
 
+import java.util.Map;
+
 /**
  * An interface to create all validation callback
  * that occurs by email.
@@ -63,10 +65,11 @@ public interface WebFlowEmailCallback extends Handler<RoutingContext> {
 
 
   /**
-   * @param validationObject - the object that goes into the data URL parameter
-   * @param <T>              the validation object class
+   * @param <T>                       the validation object class
+   * @param validationObject          - the object that goes into the data URL parameter
+   * @param callbackQueriesProperties - the extra properties that should be added
    * @return the validation uri that is found in the email
    */
-  <T> UriEnhanced getCallbackUri(T validationObject);
+  <T> UriEnhanced getCallbackUri(T validationObject, Map<String, String> callbackQueriesProperties);
 
 }

@@ -175,8 +175,9 @@ public class UriEnhanced {
    * @param withEncoding - false if you use {@link URI}
    * @return the string encoded or not
    */
+  @SuppressWarnings("SameParameterValue")
   private String getQueryString(boolean withEncoding) {
-    if (this.queryProperties.size() == 0) {
+    if (this.queryProperties.isEmpty()) {
       return null;
     }
     StringBuilder query = new StringBuilder();
@@ -302,7 +303,7 @@ public class UriEnhanced {
    */
   @SuppressWarnings("unused")
   public String getSubDomain() {
-    if (host == null || host.equals("")) {
+    if (host == null || host.isEmpty()) {
       return "";
     }
     int apexLength = getApexWithoutPort().length();
@@ -317,4 +318,12 @@ public class UriEnhanced {
     return toUri().toString();
   }
 
+  public UriEnhanced addQueryProperties(Map<String, String> queriesProperties) {
+
+    for (Map.Entry<String, String> entry : queriesProperties.entrySet()) {
+      this.addQueryProperty(entry.getKey(), entry.getValue());
+    }
+    return this;
+
+  }
 }

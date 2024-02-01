@@ -11,10 +11,12 @@ import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
 import net.bytle.exception.*;
+import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.ListRegistrationEmailCallback;
 import net.bytle.tower.eraldy.api.implementer.util.FrontEndRouter;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
+import net.bytle.tower.eraldy.auth.AuthScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
@@ -137,6 +139,20 @@ public class ListRegistrationFlow extends WebFlowAbs {
   public Future<Void> handleStep1SendingValidationEmail(RoutingContext routingContext, ListUserPostBody listUserPostBody) {
 
     /**
+     * Check authorization
+     */
+    AuthClient authClient = this.getApp().getAuthClientProvider().getFromRoutingContextKeyStore(routingContext);
+    AuthScope listRegistration = AuthScope.LIST_ADD_USER_FLOW;
+    try {
+      this.getApp().getAuthProvider().checkClientAuthorization(authClient, listRegistration);
+    } catch (NotAuthorizedException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setMessage("You don't have any permission to "+listRegistration.getHumanActionName())
+        .buildWithContextFailing(routingContext)
+      );
+    }
+
+    /**
      * Email validation
      */
     ValidationUtil.validateEmail(listUserPostBody.getUserEmail(), "userEmail");
@@ -178,10 +194,17 @@ public class ListRegistrationFlow extends WebFlowAbs {
             .buildWithContextFailing(routingContext)
           );
         }
+
+        /**
+         * Add the calling client id
+         */
+        Map<String, String> clientCallbackQueryProperties = new HashMap<>();
+        clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), authClient.getGuid());
+
         BMailTransactionalTemplate letter = getApp()
           .getUserListRegistrationFlow()
           .getCallback()
-          .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, subscriberRecipientName, jwtClaims)
+          .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, subscriberRecipientName, jwtClaims, clientCallbackQueryProperties)
           .setPreview("Validate your registration to the list `" + registrationList.getName() + "`")
           .addIntroParagraph(
             "I just got a subscription request to the list <mark>" + registrationList.getName() + "</mark> with your email." +

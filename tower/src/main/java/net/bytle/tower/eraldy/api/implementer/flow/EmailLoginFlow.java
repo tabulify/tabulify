@@ -8,15 +8,20 @@ import io.vertx.json.schema.ValidationException;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
+import net.bytle.exception.NotAuthorizedException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.UserLoginEmailCallback;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
+import net.bytle.tower.eraldy.auth.AuthScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.AuthEmailPost;
+import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
+import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.auth.OAuthInternalSession;
 import net.bytle.vertx.flow.SmtpSender;
@@ -24,6 +29,9 @@ import net.bytle.vertx.flow.WebFlowAbs;
 import net.bytle.vertx.flow.WebFlowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class EmailLoginFlow extends WebFlowAbs {
 
@@ -52,6 +60,16 @@ public class EmailLoginFlow extends WebFlowAbs {
 
   public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext, AuthEmailPost authEmailPost) {
 
+    AuthClient authClient = this.getApp().getAuthClientProvider().getFromRoutingContextKeyStore(routingContext);
+    try {
+      this.getApp().getAuthProvider().checkClientAuthorization(authClient, AuthScope.LOGIN_EMAIL);
+    } catch (NotAuthorizedException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setMessage("You don't have any permission to ask a email login.")
+        .buildWithContextFailing(routingContext)
+      );
+    }
+
     String redirectUri = authEmailPost.getRedirectUri();
     UriEnhanced redirectUriEnhanced = ValidationUtil.validateAndGetRedirectUriAsUri(redirectUri);
     /**
@@ -72,12 +90,17 @@ public class EmailLoginFlow extends WebFlowAbs {
       );
     }
 
-    return this.getApp()
-      .getAuthClientProvider()
+    AuthClientProvider authClientProvider = this.getApp().getAuthClientProvider();
+    return authClientProvider
       .getClientFromClientId(authEmailPost.getClientId())
-      .compose(authClient -> {
+      .compose(clientAuthClient -> {
 
-        if (authClient == null) {
+        /**
+         * Client Auth Client
+         * is not the client of the request but the client that
+         * want to log in its user
+         */
+        if (clientAuthClient == null) {
           return Future.failedFuture(TowerFailureException
             .builder()
             .setMessage("No Api client could be found for the client id (" + authEmailPost.getClientId() + ").")
@@ -88,7 +111,7 @@ public class EmailLoginFlow extends WebFlowAbs {
 
         return getApp()
           .getUserProvider()
-          .getUserByEmail(bMailInternetAddress, authClient.getApp().getRealm().getGuid())
+          .getUserByEmail(bMailInternetAddress, clientAuthClient.getApp().getRealm().getGuid())
           .compose(userToLogin -> {
 
             /**
@@ -105,13 +128,12 @@ public class EmailLoginFlow extends WebFlowAbs {
               .getAuthProvider()
               .toJwtClaims(userToLogin)
               .addRequestClaims(routingContext)
-              .setAppGuid(authClient.getApp().getGuid())
-              .setAppHandle(authClient.getApp().getHandle())
-              .setRealmGuid(authClient.getApp().getRealm().getGuid())
-              .setRealmHandle(authClient.getApp().getRealm().getHandle())
-              .setOrganizationGuid(authClient.getApp().getRealm().getOrganization().getGuid())
-              .setOrganizationHandle(authClient.getApp().getRealm().getOrganization().getHandle())
-              ;
+              .setAppGuid(clientAuthClient.getApp().getGuid())
+              .setAppHandle(clientAuthClient.getApp().getHandle())
+              .setRealmGuid(clientAuthClient.getApp().getRealm().getGuid())
+              .setRealmHandle(clientAuthClient.getApp().getRealm().getHandle())
+              .setOrganizationGuid(clientAuthClient.getApp().getRealm().getOrganization().getGuid())
+              .setOrganizationHandle(clientAuthClient.getApp().getRealm().getOrganization().getHandle());
 
 
             /**
@@ -126,10 +148,18 @@ public class EmailLoginFlow extends WebFlowAbs {
               throw ValidationException.create("The provided email is not valid", "email", userToLogin.getEmail());
             }
             SmtpSender sender = UsersUtil.toSenderUser(userToLogin.getRealm().getOwnerUser());
+
+            /**
+             * Add the calling client id
+             */
+            Map<String, String> clientCallbackQueryProperties = new HashMap<>();
+            clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), authClient.getGuid());
+
+
             BMailTransactionalTemplate letter = getApp()
               .getUserEmailLoginFlow()
               .getStep2Callback()
-              .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims)
+              .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims, clientCallbackQueryProperties)
               .addIntroParagraph(
                 "I just got a login request to <mark>" + realmNameOrHandle + "</mark> with your email.")
               .setActionName("Click on this link to login automatically.")
