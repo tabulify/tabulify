@@ -9,6 +9,8 @@ import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.tower.eraldy.objectProvider.OrganizationUserProvider;
+import net.bytle.type.UriEnhanced;
+import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.TowerApexDomain;
 import org.apache.logging.log4j.LogManager;
@@ -30,20 +32,36 @@ public class EraldyModel {
    * The URI of the interact app
    */
   private static final String INTERACT_APP_URI_CONF = "interact.app.uri";
+  /**
+   * The URI of the member app
+   */
+  private static final String MEMBER_APP_URI_CONF = "member.app.uri";
   private final EraldyApiApp apiApp;
   private final URI interactAppUri;
+  private final URI memberAppUri;
 
   Realm realm;
-  private App interactApp;
+
 
   public EraldyModel(EraldyApiApp apiApp) throws ConfigIllegalException {
     this.apiApp = apiApp;
-    String interactUri = apiApp.getApexDomain().getHttpServer().getServer().getConfigAccessor().getString(INTERACT_APP_URI_CONF, "https://interact." + apiApp.getApexDomain().getApexNameWithPort());
+    ConfigAccessor configAccessor = apiApp.getApexDomain().getHttpServer().getServer().getConfigAccessor();
+    String interactUri = configAccessor.getString(INTERACT_APP_URI_CONF, "https://interact." + apiApp.getApexDomain().getApexNameWithPort());
     try {
       this.interactAppUri = URI.create(interactUri);
       LOGGER.info("The interact app URI was set to ({}) via the conf ({})", interactUri, INTERACT_APP_URI_CONF);
     } catch (Exception e) {
       throw new ConfigIllegalException("The member app value (" + interactUri + ") of the conf (" + INTERACT_APP_URI_CONF + ") is not a valid URI", e);
+    }
+    /**
+     * For redirect
+     */
+    String memberUri = configAccessor.getString(MEMBER_APP_URI_CONF, "https://member." + apiApp.getApexDomain().getApexNameWithPort());
+    try {
+      this.memberAppUri = URI.create(memberUri);
+      LOGGER.info("The member app URI was set to ({}) via the conf ({})", memberUri, MEMBER_APP_URI_CONF);
+    } catch (Exception e) {
+      throw new ConfigIllegalException("The member app value (" + memberUri + ") of the conf (" + MEMBER_APP_URI_CONF + ") is not a valid URI", e);
     }
   }
 
@@ -100,31 +118,54 @@ public class EraldyModel {
       .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy realm", t)))
       .compose(realmCompo -> {
         realm = realmCompo;
+        App memberApp = new App();
+        memberApp.setLocalId(1L);
+        memberApp.setName("Members");
+        memberApp.setHandle("members");
+        memberApp.setHome(URI.create("https://eraldy.com"));
+        memberApp.setUser(realm.getOwnerUser()); // mandatory in the database (not null)
+        memberApp.setRealm(realm);
+        Future<App> getSertMember = this.apiApp.getAppProvider().getsert(memberApp);
+
         App interactApp = new App();
-        interactApp.setLocalId(1L);
+        interactApp.setLocalId(2L);
         interactApp.setName("Interact");
         interactApp.setHandle("interact");
         interactApp.setHome(URI.create("https://eraldy.com"));
         interactApp.setUser(realm.getOwnerUser()); // mandatory in the database (not null)
         interactApp.setRealm(realm);
-        return this.apiApp.getAppProvider().getsert(interactApp);
+        Future<App> getSertInteract = this.apiApp.getAppProvider().getsert(interactApp);
+        return Future.all(getSertMember, getSertInteract);
       })
-      .recover(t -> Future.failedFuture(new InternalException("Error while getserting the interact app", t)))
-      .compose(resApp -> {
-        this.interactApp = resApp;
+      .recover(t -> Future.failedFuture(new InternalException("Error while getserting the member and interact app", t)))
+      .compose(compositeResult -> {
+
+        App memberApp = compositeResult.resultAt(0);
+        App interactApp = compositeResult.resultAt(1);
+        AuthClientProvider authClientProvider = this.apiApp.getAuthClientProvider();
+
         /**
-         * Create a client for the App
+         * Create a client for the member App
+         */
+        AuthClient memberClient = new AuthClient();
+        memberClient.setLocalId(1L);
+        memberClient.setApp(memberApp);
+        memberClient.addUri(this.memberAppUri);
+        authClientProvider.updateGuid(memberClient);
+        authClientProvider.addEraldyClient(memberClient);
+        LOGGER.info("The client id (" + memberClient.getGuid() + ") for the member app was created");
+
+        /**
+         * Create a client for the interact App
          */
         AuthClient interactClient = new AuthClient();
-        interactClient.setLocalId(1L);
-        interactClient.setApp(this.interactApp);
+        interactClient.setLocalId(2L);
+        interactClient.setApp(interactApp);
         interactClient.addUri(this.interactAppUri);
-        AuthClientProvider authClientProvider = this.apiApp
-          .getAuthClientProvider();
         authClientProvider.updateGuid(interactClient);
-        authClientProvider
-          .setInteractAppClient(interactClient);
+        authClientProvider.addEraldyClient(interactClient);
         LOGGER.info("The client id (" + interactClient.getGuid() + ") for the interact app was created");
+
         return Future.succeededFuture();
       });
   }
@@ -146,4 +187,8 @@ public class EraldyModel {
   }
 
 
+  public UriEnhanced getMemberAppUri() {
+
+    return UriEnhanced.createFromUri(this.memberAppUri);
+  }
 }

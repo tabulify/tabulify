@@ -14,7 +14,7 @@ public class AuthEmailPost   {
 
   protected String userEmail;
 
-  protected String realmIdentifier;
+  protected String clientId;
 
   protected String redirectUri;
 
@@ -44,19 +44,19 @@ public class AuthEmailPost   {
   }
 
   /**
-  * @return realmIdentifier The realm identifier (guid or handle)
+  * @return clientId The client id
   */
-  @JsonProperty("realmIdentifier")
-  public String getRealmIdentifier() {
-    return realmIdentifier;
+  @JsonProperty("clientId")
+  public String getClientId() {
+    return clientId;
   }
 
   /**
-  * @param realmIdentifier The realm identifier (guid or handle)
+  * @param clientId The client id
   */
   @SuppressWarnings("unused")
-  public void setRealmIdentifier(String realmIdentifier) {
-    this.realmIdentifier = realmIdentifier;
+  public void setClientId(String clientId) {
+    this.clientId = clientId;
   }
 
   /**
@@ -86,18 +86,18 @@ public class AuthEmailPost   {
     }
     AuthEmailPost authEmailPost = (AuthEmailPost) o;
     return
-            Objects.equals(userEmail, authEmailPost.userEmail) && Objects.equals(realmIdentifier, authEmailPost.realmIdentifier) && Objects.equals(redirectUri, authEmailPost.redirectUri);
+            Objects.equals(userEmail, authEmailPost.userEmail) && Objects.equals(clientId, authEmailPost.clientId) && Objects.equals(redirectUri, authEmailPost.redirectUri);
 
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(userEmail, realmIdentifier, redirectUri);
+    return Objects.hash(userEmail, clientId, redirectUri);
   }
 
   @Override
   public String toString() {
-    return userEmail + ", " + realmIdentifier + ", " + redirectUri;
+    return userEmail + ", " + clientId + ", " + redirectUri;
   }
 
 }

@@ -3,7 +3,6 @@ package net.bytle.tower.eraldy.objectProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.exception.NotFoundException;
 import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithRealm;
@@ -13,13 +12,15 @@ import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
-import net.bytle.type.UriEnhanced;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class AuthClientProvider {
   private static final String GUID_CLI_PREFIX = "cli";
 
   private final EraldyApiApp apiApp;
-  private AuthClient interactAuthClient;
+  private final Map<String, AuthClient> interactAuthClients = new HashMap<>();
   /**
    * A special client that is the open api client
    * used with a api key
@@ -36,28 +37,20 @@ public class AuthClientProvider {
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .build();
+
   }
 
-  public AuthClient getClientFromRedirectUri(UriEnhanced redirectUriEnhanced) throws NotFoundException {
+  public void addEraldyClient(AuthClient authClient) {
 
-    UriEnhanced interactAppUri = UriEnhanced.createFromUri(this.interactAuthClient.getUri());
-
-    if (redirectUriEnhanced.getHostWithPort().equals(interactAppUri.getHostWithPort())) {
-      return this.interactAuthClient;
+    this.interactAuthClients.put(authClient.getGuid(), authClient);
+    if (authClient.getLocalId() == 2L) {
+      // The API key root client is a dummy client
+      // for now a client of the interact app
+      this.apiKeyRootClient = new AuthClient();
+      this.apiKeyRootClient.setApp(authClient.getApp());
+      this.apiKeyRootClient.setGuid("cli-root");
     }
-    throw new NotFoundException("The client api could not found for the redirect URI (" + redirectUriEnhanced + ")");
 
-  }
-
-  public void setInteractAppClient(AuthClient authClient) {
-
-    this.interactAuthClient = authClient;
-
-    // The API key root client is a dummy client
-    // for now a client of the interact app
-    this.apiKeyRootClient = new AuthClient();
-    this.apiKeyRootClient.setApp(this.interactAuthClient.getApp());
-    this.apiKeyRootClient.setGuid("cli-root");
 
   }
 
@@ -66,8 +59,9 @@ public class AuthClientProvider {
    * @return the auth client, null if not found (to not advertise a failure)
    */
   public Future<AuthClient> getClientFromClientId(String clientId) {
-    if (this.interactAuthClient.getGuid().equals(clientId)) {
-      return Future.succeededFuture(this.interactAuthClient);
+    AuthClient authClient = this.interactAuthClients.get(clientId);
+    if (authClient != null) {
+      return Future.succeededFuture(authClient);
     }
     return Future.succeededFuture();
   }

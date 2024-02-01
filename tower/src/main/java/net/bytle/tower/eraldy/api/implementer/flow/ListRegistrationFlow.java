@@ -111,7 +111,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
   public UriEnhanced getRegistrationConfirmationOperationPath(ListUser listUser) {
     String registrationConfirmationOperationPath = FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH.replace(REGISTRATION_GUID_PARAM, listUser.getGuid());
-    return this.getApp().getMemberAppUri().setPath(registrationConfirmationOperationPath);
+    return this.getApp().getEraldyModel().getMemberAppUri().setPath(registrationConfirmationOperationPath);
   }
 
   /**

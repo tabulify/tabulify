@@ -170,12 +170,14 @@ public void mount(RouterBuilder builder) {
     // Param extraction
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
-            String redirectUri = requestParameters.queryParameter("redirect_uri") != null ? requestParameters.queryParameter("redirect_uri").getString() : null;
+            String clientId = requestParameters.queryParameter("client_id") != null ? requestParameters.queryParameter("client_id").getString() : null;
+        String redirectUri = requestParameters.queryParameter("redirect_uri") != null ? requestParameters.queryParameter("redirect_uri").getString() : null;
 
+      logger.debug("Parameter clientId is {}", clientId);
       logger.debug("Parameter redirectUri is {}", redirectUri);
 
     // Based on Route#respond
-    api.authLogoutGet(routingContext, redirectUri)
+    api.authLogoutGet(routingContext, clientId, redirectUri)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

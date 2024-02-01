@@ -33,6 +33,15 @@ paths:
     get:
       operationId: authLogoutGet
       parameters:
+      - description: |
+          The client id
+        explode: true
+        in: query
+        name: client_id
+        required: true
+        schema:
+          type: string
+        style: form
       - description: The redirect uri (known also as callback endpoint)
         explode: true
         in: query
@@ -1883,20 +1892,20 @@ components:
         \ ..."
       example:
         redirectUri: redirectUri
+        clientId: clientId
         userEmail: userEmail
-        realmIdentifier: realmIdentifier
       properties:
         userEmail:
           description: An email
           type: string
-        realmIdentifier:
-          description: The realm identifier (guid or handle)
+        clientId:
+          description: The client id
           type: string
         redirectUri:
           description: The uri where to redirect the user after successful registration
           type: string
       required:
-      - realmIdentifier
+      - clientId
       - redirectUri
       - userEmail
       type: object

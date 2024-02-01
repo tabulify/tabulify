@@ -45,7 +45,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
 
   private static final String CLIENT_ID_CONTEXT_KEY = "client-id-context-key";
 
-  private static final String X_CLIENT_ID = "X-CLIENT-ID";
+  private static final String X_CLIENT_ID = "x-client-id";
 
   /**
    * The client id

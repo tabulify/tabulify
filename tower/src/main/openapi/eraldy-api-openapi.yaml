@@ -185,7 +185,7 @@ components:
       description: A auth post object based on email to register, get a magic link, ...
       required:
         - userEmail
-        - realmIdentifier
+        - clientId
         - redirectUri
       properties:
         userEmail:
@@ -194,9 +194,9 @@ components:
           # we do the validation ourselves
           # format: email
           description: An email
-        realmIdentifier:
+        clientId:
           type: string
-          description: The realm identifier (guid or handle)
+          description: The client id
         redirectUri:
           type: string
           description: The uri where to redirect the user after successful registration
@@ -279,6 +279,7 @@ paths:
       tags:
         - auth
       parameters:
+        - $ref: "#/components/parameters/client_id"
         - $ref: "#/components/parameters/redirect_uri"
           description: |
             After a logout, the user is redirected to the login page

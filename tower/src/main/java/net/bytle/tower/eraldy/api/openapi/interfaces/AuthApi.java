@@ -45,7 +45,7 @@ public interface AuthApi  {
     /**
      * The logout endpoint
     */
-    Future<ApiResponse<Void>> authLogoutGet(RoutingContext routingContext, String redirectUri);
+    Future<ApiResponse<Void>> authLogoutGet(RoutingContext routingContext, String clientId, String redirectUri);
 
     /**
      * Register a user to a list If the user is:   * not signed in, a redirection occurs to the page with the register form   * signed in, a redirection occurs to the confirmation page

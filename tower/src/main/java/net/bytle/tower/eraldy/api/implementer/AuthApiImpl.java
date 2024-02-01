@@ -257,7 +257,7 @@ public class AuthApiImpl implements AuthApi {
    * Logout delete the user from the session
    */
   @Override
-  public Future<ApiResponse<Void>> authLogoutGet(RoutingContext routingContext, String redirectUri) {
+  public Future<ApiResponse<Void>> authLogoutGet(RoutingContext routingContext, String clientId, String redirectUri) {
 
     routingContext.clearUser();
 
@@ -284,26 +284,30 @@ public class AuthApiImpl implements AuthApi {
           .buildWithContextFailing(routingContext)
       );
     }
-    AuthClient authClient;
-    try {
-      authClient = this.apiApp.getAuthClientProvider().getClientFromRedirectUri(redirectUriEnhanced);
-    } catch (NotFoundException e) {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-          .setMessage("A client could not be found with the redirect uri (" + redirectUriEnhanced + ")")
-          .setMimeToHtml()
-          .buildWithContextFailing(routingContext)
-      );
-    }
 
-    String redirect = this.apiApp
-      .getMemberLoginUri(redirectUriEnhanced, authClient)
-      .toUrl()
-      .toString();
-    routingContext.redirect(redirect);
+    RoutingContextWrapper routingContextWrapper = new RoutingContextWrapper(routingContext);
+    clientId = routingContextWrapper.getRequestQueryParameterAsString(AuthQueryProperty.CLIENT_ID.toString());
+    String finalClientId = clientId;
+    return this.apiApp.getAuthClientProvider().getClientFromClientId(clientId)
+      .compose(authClient -> {
+        if (authClient == null) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+              .setMessage("A client could not be found with the client id (" + finalClientId + ")")
+              .setMimeToHtml()
+              .buildWithContextFailing(routingContext)
+          );
+        }
+        String redirect = this.apiApp
+          .getMemberLoginUri(redirectUriEnhanced, authClient)
+          .toUrl()
+          .toString();
+        routingContext.redirect(redirect);
 
-    return Future.succeededFuture(new ApiResponse<>());
+        return Future.succeededFuture(new ApiResponse<>());
+      });
+
 
   }
 

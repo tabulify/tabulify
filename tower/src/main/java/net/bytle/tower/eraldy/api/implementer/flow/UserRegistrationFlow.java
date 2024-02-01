@@ -15,6 +15,7 @@ import net.bytle.tower.eraldy.api.implementer.callback.UserRegisterEmailCallback
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.AuthEmailPost;
+import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
@@ -64,9 +65,9 @@ public class UserRegistrationFlow extends WebFlowAbs {
   public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext, AuthEmailPost authEmailPost) {
 
     ValidationUtil.validateEmail(authEmailPost.getUserEmail(), "userEmail");
-    String realmIdentifier = authEmailPost.getRealmIdentifier();
-    if (realmIdentifier == null) {
-      throw IllegalArgumentExceptions.createWithInputNameAndValue("The realm identifier cannot be null.", "realmIdentifier", null);
+    String clientId = authEmailPost.getClientId();
+    if (clientId == null) {
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("The client id cannot be null.", "clientId", null);
     }
 
     String redirectUri = authEmailPost.getRedirectUri();
@@ -74,13 +75,14 @@ public class UserRegistrationFlow extends WebFlowAbs {
     OAuthInternalSession.addRedirectUri(routingContext, redirectUriEnhanced);
 
     return getApp()
-      .getRealmProvider()
-      .getRealmFromIdentifier(authEmailPost.getRealmIdentifier())
-      .onFailure(routingContext::fail)
-      .compose(realm -> {
+      .getAuthClientProvider()
+      .getClientFromClientId(clientId)
+      .compose(authClient->{
+
 
         User newUser = new User();
         newUser.setEmail(authEmailPost.getUserEmail());
+        Realm realm = authClient.getApp().getRealm();
         newUser.setRealm(realm);
 
 
@@ -237,7 +239,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
   }
 
   private UriEnhanced getUriToUserRegistrationConfirmation(String guid) {
-    return this.getApp().getMemberAppUri().setPath(FRONTEND_REGISTER_CONFIRMATION_PATH.replace(USER_GUID_PARAM, guid));
+    return this.getApp().getEraldyModel().getMemberAppUri().setPath(FRONTEND_REGISTER_CONFIRMATION_PATH.replace(USER_GUID_PARAM, guid));
   }
 
   public UserRegisterEmailCallback getCallback() {

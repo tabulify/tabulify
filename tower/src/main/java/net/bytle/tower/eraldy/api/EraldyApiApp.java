@@ -35,7 +35,6 @@ import net.bytle.vertx.resilience.EmailAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -52,10 +51,6 @@ public class EraldyApiApp extends TowerApp {
   private static final String RUNTIME_DATA_DIR_CONF = "data.runtime.dir.path";
 
   static Logger LOGGER = LogManager.getLogger(EraldyApiApp.class);
-  /**
-   * The URI of the member app
-   */
-  private static final String MEMBER_APP_URI_CONF = "member.app.uri";
   private final UserProvider userProvider;
   private final RealmProvider realmProvider;
   private final ListProvider listProvider;
@@ -66,7 +61,6 @@ public class EraldyApiApp extends TowerApp {
   private final ServiceProvider serviceProvider;
   @SuppressWarnings({"FieldCanBeLocal", "unused"})
   private final OrganizationUserProvider organizationUserProvider;
-  private final URI memberAppUri;
   private final UserRegistrationFlow userRegistrationFlow;
   private final ListRegistrationFlow userListRegistrationFlow;
   private final EmailLoginFlow emailLoginFlow;
@@ -123,17 +117,6 @@ public class EraldyApiApp extends TowerApp {
      */
     this.eraldyModel = new EraldyModel(this);
     this.eraldySubRealmModel = EraldySubRealmModel.getOrCreate(this);
-
-    /**
-     * For redirect
-     */
-    String memberUri = configAccessor.getString(MEMBER_APP_URI_CONF, "https://member." + apexDomain.getApexNameWithPort());
-    try {
-      this.memberAppUri = URI.create(memberUri);
-      LOGGER.info("The member app URI was set to ({}) via the conf ({})", memberUri, MEMBER_APP_URI_CONF);
-    } catch (Exception e) {
-      throw new ConfigIllegalException("The member app value (" + memberUri + ") of the conf (" + MEMBER_APP_URI_CONF + ") is not a valid URI", e);
-    }
 
 
     /**
@@ -382,16 +365,13 @@ public class EraldyApiApp extends TowerApp {
    */
   public UriEnhanced getMemberLoginUri(UriEnhanced redirectUri, AuthClient authClient) {
 
-    return this.getMemberAppUri()
+    return this.getEraldyModel().getMemberAppUri()
       .setPath("/login")
       .addQueryProperty(AuthQueryProperty.REDIRECT_URI, redirectUri.toString())
       .addQueryProperty(AuthQueryProperty.CLIENT_ID, authClient.getGuid());
   }
 
-  public UriEnhanced getMemberAppUri() {
 
-    return UriEnhanced.createFromUri(this.memberAppUri);
-  }
 
   public RealmProvider getRealmProvider() {
     return this.realmProvider;
