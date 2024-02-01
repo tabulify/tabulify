@@ -14,7 +14,6 @@ import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.vertx.FrontEndCookie;
-import net.bytle.vertx.HttpServer;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 
@@ -88,7 +87,8 @@ public class AuthClientHandler implements Handler<RoutingContext> {
   }
 
 
-  private String getClientId(RoutingContext routingContext) throws NotFoundException {
+  private String
+  getClientId(RoutingContext routingContext) throws NotFoundException {
 
 
     HttpServerRequest request = routingContext.request();
@@ -137,21 +137,41 @@ public class AuthClientHandler implements Handler<RoutingContext> {
   @Override
   public void handle(RoutingContext context) {
 
-
-    Future<AuthClient> futureAuthClient;
+    Future<AuthClient> futureAuthClient = null;
+    String clientId = null;
     try {
-      futureAuthClient = getFutureAuthClient(context);
+      clientId = getClientId(context);
+      futureAuthClient = this.apiApp
+        .getAuthClientProvider()
+        .getClientFromClientId(clientId);
     } catch (NotFoundException e) {
+
+      /**
+       * Already logged user via X-Api-Key?
+       */
+      User user = context.user();
+      if (user != null) {
+        Set<Authorization> authorization = user.authorizations().get(API_KEY_PROVIDER_ID);
+        if (authorization != null && authorization.contains(ROOT_AUTHORIZATION)) {
+          futureAuthClient = Future.succeededFuture(this.apiApp.getAuthClientProvider().getApiKeyRootClient());
+        }
+      }
+
+    }
+
+    if (futureAuthClient == null) {
       /**
        * Fail
        */
       TowerFailureException.builder()
         .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-        .setMessage("The client id is mandatory and was not found")
+        .setMessage("The client id is mandatory and was not found. The query property '" + CLIENT_ID + ", nor the header '" + X_CLIENT_ID + "' was found")
         .buildWithContextFailingTerminal(context);
       return;
     }
 
+
+    String finalClientId = clientId;
     futureAuthClient
       .onFailure(e -> TowerFailureException
         .builder()
@@ -168,9 +188,15 @@ public class AuthClientHandler implements Handler<RoutingContext> {
              * it's too difficult to manage the {@link EraldySessionHandler session}
              * at the api implementation (too late in the calls chain)
              */
+            String message;
+            if (finalClientId != null) {
+              message = "The client for the client id (" + finalClientId + ") was not found";
+            } else {
+              message = "The client for the api key was not found";
+            }
             TowerFailureException.builder()
               .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-              .setMessage("The client id is mandatory and was not found")
+              .setMessage(message)
               .buildWithContextFailingTerminal(context);
             context.next();
             return;
@@ -219,39 +245,6 @@ public class AuthClientHandler implements Handler<RoutingContext> {
 
   }
 
-  /**
-   * Try to find a client id and return a future.
-   * <p>
-   * Special Case: If the client id is not found, we check to see if the user is not already
-   * set by the {@link HttpServer#getApiKeyAuthHandler()} handler.
-   * @throws NotFoundException if none is found
-   */
-  private Future<AuthClient> getFutureAuthClient(RoutingContext context) throws NotFoundException {
-
-    String clientId;
-    try {
-      clientId = getClientId(context);
-      return this.apiApp
-        .getAuthClientProvider()
-        .getClientFromClientId(clientId);
-    } catch (NotFoundException e) {
-
-      /**
-       * Already logged user via X-Api-Key?
-       */
-      User user = context.user();
-      if (user != null) {
-        Set<Authorization> authorization = user.authorizations().get(API_KEY_PROVIDER_ID);
-        if (authorization != null && authorization.contains(ROOT_AUTHORIZATION)) {
-          return Future.succeededFuture(this.apiApp.getAuthClientProvider().getApiKeyRootClient());
-        }
-      }
-
-    }
-    throw new NotFoundException();
-
-
-  }
 
   /**
    * @param routingContext - the routing context
