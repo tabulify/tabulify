@@ -73,7 +73,7 @@ public class AuthClientProvider {
   }
 
   public AuthClient getFromRoutingContextKeyStore(RoutingContext routingContext) {
-    return this.apiApp.getAuthClientHandler().getApiClientStoredOnContext(routingContext);
+    return this.apiApp.getAuthClientIdHandler().getApiClientStoredOnContext(routingContext);
   }
 
   public AuthClient getApiKeyRootClient() {

@@ -79,7 +79,7 @@ public class EraldyApiApp extends TowerApp {
   private final EraldyModel eraldyModel;
   private final EraldySubRealmModel eraldySubRealmModel;
   private final AuthClientProvider authClientProvider;
-  private final AuthClientHandler authClientHandler;
+  private final AuthClientHandler authClientIdHandler;
   private final EraldySessionHandler sessionHandler;
   private final ApiKeyAuthenticationProvider apiKeyUserProvider;
 
@@ -147,7 +147,7 @@ public class EraldyApiApp extends TowerApp {
      * This handler should then be mounted before the session handler
      */
     String realmHandleContextKey = "ey-realm-handle";
-    this.authClientHandler = AuthClientHandler.config(this)
+    this.authClientIdHandler = AuthClientHandler.config(this)
       .setRealmHandleContextKey(realmHandleContextKey)
       .build();
     /**
@@ -188,50 +188,7 @@ public class EraldyApiApp extends TowerApp {
 
   }
 
-  /**
-   * A handler that maintains a {@link io.vertx.ext.web.Session} for each browser session
-   * with a cookie
-   * <p>
-   * It looks up the session for each request based on a session cookie called `vertx-web.session`
-   * which contains a session ID. It stores the session when the response is ended in the session store.
-   * <p>
-   * The session is available on the routing context with {@link RoutingContext#session()}
-   * <p>
-   * Get: Integer cnt = session.get("hitcount");
-   * Put: session.put("hitcount", cnt);
-   * <p>
-   * Doc: <a href="https://vertx.io/docs/vertx-web/java/#_handling_sessions">...</a>
-   * <a href="https://vertx.io/docs/vertx-web/java/#_creating_the_session_handler">...</a>
-   * <p>
-   * Sessions last between HTTP requests for the length of a browser session
-   * and give you a place where you can add session-scope information, such as a shopping basket.
-   * <p>
-   * Sessions can’t work if browser doesn’t support cookies.
-   */
-  public void mountSessionHandlers() {
 
-
-    /**
-     * Session Handler
-     */
-
-    List<String> excludedPaths = new ArrayList<>();
-    /**
-     * No session on the Open Api doc
-     */
-    this.getOpenApi().getDocPaths();
-    /**
-     * The oauth callbacks have only code and state.
-     * https://localhost:8083/auth/oauth/github/callback?code=xxx&state=xxx
-     * To keep the clientId, we may use the last cookie
-     */
-    excludedPaths.add("/auth/login/oauth/.*/callback");
-    String allExceptApiDoc = "^(?!" + String.join("|", excludedPaths) + ").*";
-    Router router = this.getApexDomain().getHttpServer().getRouter();
-    router.routeWithRegex(allExceptApiDoc).handler(this.authClientHandler);
-    router.routeWithRegex(allExceptApiDoc).handler(this.sessionHandler);
-
-  }
 
   @Override
   public String getAppName() {
@@ -269,7 +226,7 @@ public class EraldyApiApp extends TowerApp {
           throw new InternalException("The security scheme in should be a header, not " + in);
         }
         String headerName = jsonObject.getString("name");
-        return new ApiKeyAndSessionUserAuthenticationHandler(headerName, apiKeyUserProvider);
+        return new ApiKeyAndSessionUserAuthenticationHandler(this,headerName, apiKeyUserProvider);
       });
 
     Handler<RoutingContext> authorizationHandler = this.getOpenApi().authorizationCheckHandler();
@@ -521,12 +478,13 @@ public class EraldyApiApp extends TowerApp {
      * We mount the session after then
      */
     LOGGER.info("Add Auth Session Cookie");
-    mountSessionHandlers();
+    Router router = this.getApexDomain().getHttpServer().getRouter();
+    router.route().handler(this.authClientIdHandler);
+    router.route().handler(this.sessionHandler);
 
     TowerApexDomain apexDomain = this.getApexDomain();
     LOGGER.info("Allow CORS on the domain (" + apexDomain + ")");
     // Allow Browser cross-origin request in the domain
-    Router router = apexDomain.getHttpServer().getRouter();
     BrowserCorsUtil.allowCorsForApexDomain(router, apexDomain);
 
     LOGGER.info("EraldyApp Db Migration");
@@ -572,8 +530,8 @@ public class EraldyApiApp extends TowerApp {
     return this.eraldyModel;
   }
 
-  public AuthClientHandler getAuthClientHandler() {
-    return this.authClientHandler;
+  public AuthClientHandler getAuthClientIdHandler() {
+    return this.authClientIdHandler;
   }
 
 }

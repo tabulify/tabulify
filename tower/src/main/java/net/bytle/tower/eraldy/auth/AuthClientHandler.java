@@ -71,7 +71,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
   }
 
 
-  private String
+  public String
   getClientId(RoutingContext routingContext) throws NotFoundException {
 
 
@@ -87,12 +87,13 @@ public class AuthClientHandler implements Handler<RoutingContext> {
     }
 
     /**
-     * Auth
+     * Auth Hack
+     * until we can handle session
+     * at a later stage
      */
     if (!request.path().startsWith("/auth")) {
       throw new NotFoundException();
     }
-    // From Query String
     clientId = request.getParam(CLIENT_ID);
     if (clientId != null) {
       return clientId;
@@ -133,12 +134,13 @@ public class AuthClientHandler implements Handler<RoutingContext> {
 
     if (futureAuthClient == null) {
       /**
-       * Fail
+       * We don't fail, without clientId, there is no domain session on the request
+       * created by the {@link EraldySessionHandler domain session handler}
+       * It's easier than to try to handle all cases where the session should not be created
+       * such as openapi doc, callback oauth, ...
+       * The program may create a session on a later stage.
        */
-      TowerFailureException.builder()
-        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-        .setMessage("The client id is mandatory and was not found. The query property '" + CLIENT_ID + ", nor the header '" + X_CLIENT_ID + "' was found")
-        .buildWithContextFailingTerminal(context);
+      context.next();
       return;
     }
 
@@ -224,6 +226,8 @@ public class AuthClientHandler implements Handler<RoutingContext> {
     }
     return authClient;
   }
+
+
 
 
   public static class Config {

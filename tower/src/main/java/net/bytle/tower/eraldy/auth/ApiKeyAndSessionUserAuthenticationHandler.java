@@ -10,6 +10,9 @@ import io.vertx.ext.auth.authentication.TokenCredentials;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.handler.impl.AuthenticationHandlerImpl;
+import net.bytle.exception.NotFoundException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
 
@@ -23,11 +26,13 @@ public class ApiKeyAndSessionUserAuthenticationHandler extends AuthenticationHan
 
   private final String headerName;
   private final ApiKeyAuthenticationProvider apiKeyUserProvider;
+  private final EraldyApiApp apiApp;
 
-  public ApiKeyAndSessionUserAuthenticationHandler(String headerName, ApiKeyAuthenticationProvider apiKeyUserProvider) {
+  public ApiKeyAndSessionUserAuthenticationHandler(EraldyApiApp eraldyApiApp, String headerName, ApiKeyAuthenticationProvider apiKeyUserProvider) {
     super(apiKeyUserProvider);
     this.apiKeyUserProvider = apiKeyUserProvider;
     this.headerName = headerName;
+    this.apiApp = eraldyApiApp;
   }
 
   @Override
@@ -58,7 +63,36 @@ public class ApiKeyAndSessionUserAuthenticationHandler extends AuthenticationHan
     if (user != null) {
       handler.handle(Future.succeededFuture(user));
     } else {
-      handler.handle(Future.failedFuture(new HttpException(TowerFailureTypeEnum.NOT_LOGGED_IN_401.getStatusCode(), "The session has no authenticated user.")));
+      /**
+       * A call to the API should be logged.
+       * If there is no session, it means that the clientId was not found
+       */
+      if (context.session() == null) {
+        try {
+          String clientId = apiApp.getAuthClientIdHandler().getClientId(context);
+          // internal error
+          handler.handle(Future.failedFuture(
+            TowerFailureException.builder()
+              .setMessage("The request has no session but a client id ("+clientId+")")
+              .build())
+          );
+        } catch (NotFoundException e) {
+          // no client id, the client has forgotten the client id in the http header
+          handler.handle(Future.failedFuture(
+            TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
+              .setMessage("The request has no client id.")
+              .build())
+          );
+        }
+        return;
+      }
+      handler.handle(Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
+          .setMessage("The session has no authenticated user.")
+          .build()
+      ));
     }
 
   }
