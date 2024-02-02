@@ -17,7 +17,8 @@ public enum AuthScope {
   LIST_ADD_USER_FLOW("add a user to a list via a flow"),
   LOGIN_EMAIL("send a email login"),
   PASSWORD_RESET_FLOW("reset a password via a flow"),
-  USER_REGISTRATION_FLOW("register a user via a flow");
+  USER_REGISTRATION_FLOW("register a user via a flow"),
+  PROXY_CLIENT("proxy a client");
 
   private final String humanActionName;
 

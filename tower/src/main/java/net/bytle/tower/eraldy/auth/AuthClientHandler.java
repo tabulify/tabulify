@@ -7,16 +7,19 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.InternalException;
+import net.bytle.exception.NotAuthorizedException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.vertx.FrontEndCookie;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 
 import java.util.Set;
 
+import static net.bytle.vertx.TowerFailureTypeEnum.NOT_AUTHORIZED_403;
 import static net.bytle.vertx.auth.ApiKeyAuthenticationProvider.API_KEY_PROVIDER_ID;
 import static net.bytle.vertx.auth.ApiKeyAuthenticationProvider.ROOT_AUTHORIZATION;
 
@@ -43,7 +46,16 @@ public class AuthClientHandler implements Handler<RoutingContext> {
 
   private static final String CLIENT_ID_CONTEXT_KEY = "client-id-context-key";
 
+  /**
+   * The client id
+   */
   private static final String X_CLIENT_ID = "x-client-id";
+  /**
+   * The client id that the client wants to proxy
+   * (Used in the member/auth app)
+   */
+
+  private static final String X_PROXY_CLIENT_ID = "x-proxy-client-id";
 
   /**
    * The client id
@@ -76,7 +88,6 @@ public class AuthClientHandler implements Handler<RoutingContext> {
 
 
     HttpServerRequest request = routingContext.request();
-
 
     /**
      * From header (classic)
@@ -112,10 +123,10 @@ public class AuthClientHandler implements Handler<RoutingContext> {
 
     Future<AuthClient> futureAuthClient = null;
     String clientId = null;
+    AuthClientProvider authClientProvider = this.apiApp.getAuthClientProvider();
     try {
       clientId = getClientId(context);
-      futureAuthClient = this.apiApp
-        .getAuthClientProvider()
+      futureAuthClient = authClientProvider
         .getClientFromClientId(clientId);
     } catch (NotFoundException e) {
 
@@ -126,7 +137,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
       if (user != null) {
         Set<Authorization> authorization = user.authorizations().get(API_KEY_PROVIDER_ID);
         if (authorization != null && authorization.contains(ROOT_AUTHORIZATION)) {
-          futureAuthClient = Future.succeededFuture(this.apiApp.getAuthClientProvider().getApiKeyRootClient());
+          futureAuthClient = Future.succeededFuture(authClientProvider.getApiKeyRootClient());
         }
       }
 
@@ -177,37 +188,71 @@ public class AuthClientHandler implements Handler<RoutingContext> {
           }
 
           /**
-           * We set the realm handle for the creation of the session cookie name
-           * in the session handler.
+           * Proxy call?
            */
-          Realm realm = authClient.getApp().getRealm();
-          context.put(this.realmHandleContextKey, realm.getHandle().toLowerCase());
-
-          /**
-           * We set the authCli data in a cookie for the member app.
-           * It read and get the context data (ie realm) for the creation of the page, this way for now
-           * so that the app does not need to make a query.
-           * The member app proxy all requests as if it was another app.
-           */
-          if (context.request().params().contains(CLIENT_ID)) {
-            // client_id is normally send as HTTP headers by client
-            // it's advertised in the URL only from the member app
-            // it's just a trick to not send this data for all apps
-            // Why? because only the  auth app have this query parameter
-            String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-" + authClient.getGuid();
-            FrontEndCookie.conf(cookieName, AuthClient.class)
-              .setPath("/") // send back from all pages
-              .setJsonMapper(this.apiApp.getAuthClientProvider().getPublicJsonMapper())
-              .setHttpOnly(false)
-              .build()
-              .setValue(authClient, context);
+          Future<AuthClient> futureFinalAuthClient = Future.succeededFuture(authClient);
+          String proxyClientId = context.request().getHeader(X_PROXY_CLIENT_ID);
+          if (proxyClientId != null) {
+            AuthScope proxyClient = AuthScope.PROXY_CLIENT;
+            try {
+              this.apiApp.getAuthProvider().checkClientAuthorization(authClient, proxyClient);
+            } catch (NotAuthorizedException e) {
+              TowerFailureException.builder()
+                .setType(NOT_AUTHORIZED_403)
+                .setMessage("The client (" + authClient.getGuid() + ") is not authorized to " + proxyClient.getHumanActionName())
+                .buildWithContextFailingTerminal(context);
+              return;
+            }
+            futureFinalAuthClient = authClientProvider.getClientFromClientId(proxyClientId);
           }
 
-          /**
-           * To retrieve the request client quickly
-           */
-          context.put(CLIENT_ID_CONTEXT_KEY, authClient);
-          context.next();
+          futureFinalAuthClient
+            .onFailure(e -> TowerFailureException
+              .builder()
+              .setMessage("The client id could not be retrieved")
+              .setCauseException(e)
+              .buildWithContextFailingTerminal(context)
+            )
+            .onSuccess(finalAuthClient->{
+              /**
+               * We set the realm handle for the creation of the session cookie name
+               * in the session handler.
+               */
+              Realm realm = finalAuthClient.getApp().getRealm();
+              context.put(this.realmHandleContextKey, realm.getHandle().toLowerCase());
+
+              /**
+               * We set the authCli data in a cookie for the member app.
+               * It read and get the context data (ie realm) for the creation of the page, this way for now
+               * so that the app does not need to make a query.
+               * The member app proxy all requests as if it was another app.
+               */
+              if (context.request().params().contains(CLIENT_ID)) {
+                // client_id is normally send as HTTP headers by client
+                // it's advertised in the URL only from the member app
+                // it's just a trick to not send this data for all apps
+                // Why? because only the  auth app have this query parameter
+                String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-" + finalAuthClient.getGuid();
+                FrontEndCookie.conf(cookieName, AuthClient.class)
+                  .setPath("/") // send back from all pages
+                  .setJsonMapper(authClientProvider.getPublicJsonMapper())
+                  .setHttpOnly(false)
+                  .build()
+                  .setValue(finalAuthClient, context);
+              }
+
+              /**
+               * To retrieve the request client quickly
+               */
+              context.put(CLIENT_ID_CONTEXT_KEY, finalAuthClient);
+
+              /**
+               * Next handler
+               * to continue the chain
+               */
+              context.next();
+            });
+
 
         }
       );
@@ -226,8 +271,6 @@ public class AuthClientHandler implements Handler<RoutingContext> {
     }
     return authClient;
   }
-
-
 
 
   public static class Config {
