@@ -18,7 +18,7 @@ import net.bytle.tower.eraldy.api.implementer.flow.*;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.auth.ApiKeyAndSessionUserAuthenticationHandler;
 import net.bytle.tower.eraldy.auth.AuthClientHandler;
-import net.bytle.tower.eraldy.auth.EraldySessionHandler;
+import net.bytle.tower.eraldy.auth.RealmSessionHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
@@ -80,7 +80,7 @@ public class EraldyApiApp extends TowerApp {
   private final EraldySubRealmModel eraldySubRealmModel;
   private final AuthClientProvider authClientProvider;
   private final AuthClientHandler authClientIdHandler;
-  private final EraldySessionHandler sessionHandler;
+  private final RealmSessionHandler sessionHandler;
   private final ApiKeyAuthenticationProvider apiKeyUserProvider;
 
 
@@ -125,10 +125,10 @@ public class EraldyApiApp extends TowerApp {
     this.userListRegistrationFlow = new ListRegistrationFlow(this);
     this.emailLoginFlow = new EmailLoginFlow(this);
     this.passwordLoginFlow = new PasswordLoginFlow(this);
-    List<Handler<AuthContext>> authHandlers = new ArrayList<>();
-    authHandlers.add(this.userRegistrationFlow.handleOAuthAuthentication());
-    authHandlers.add(this.userListRegistrationFlow.handleStepOAuthAuthentication());
-    this.oauthExternalFlow = new OAuthExternalCodeFlow(this, "/auth/oauth", authHandlers);
+    List<Handler<AuthContext>> authContextHandlers = new ArrayList<>();
+    authContextHandlers.add(this.userRegistrationFlow.handleOAuthAuthentication());
+    authContextHandlers.add(this.userListRegistrationFlow.handleStepOAuthAuthentication());
+    this.oauthExternalFlow = new OAuthExternalCodeFlow(this, "/auth/oauth", authContextHandlers);
 
     /**
      * Utility
@@ -158,7 +158,7 @@ public class EraldyApiApp extends TowerApp {
      * Delete the session if not accessed within this timeout
      */
     int idleSessionTimeoutMs = cookieMaxAgeOneWeekInSec * 1000;
-    this.sessionHandler = EraldySessionHandler
+    this.sessionHandler = RealmSessionHandler
       .createWithDomain(this.getApexDomain())
       .setSessionTimeout(idleSessionTimeoutMs)
       .setRealmHandleContextKey(realmHandleContextKey)

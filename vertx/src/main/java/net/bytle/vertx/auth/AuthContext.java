@@ -83,8 +83,13 @@ public class AuthContext {
 
   }
 
-  public AuthContext setHandlers(List<Handler<AuthContext>> oAuthSessionAuthenticationHandlers) {
-    this.handlers = oAuthSessionAuthenticationHandlers;
+  /**
+   *
+   * @param authContextHandlers - Handlers that run before signing in
+   *                                           and that may perform other actions.
+   */
+  public AuthContext setHandlers(List<Handler<AuthContext>> authContextHandlers) {
+    this.handlers = authContextHandlers;
     return this;
   }
 

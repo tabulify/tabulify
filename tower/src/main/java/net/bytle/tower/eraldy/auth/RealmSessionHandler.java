@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  * <p>
  * Sessions can’t work if the browser doesn’t support cookies or if the realm key is not set
  */
-public class EraldySessionHandler implements SessionHandler {
+public class RealmSessionHandler implements SessionHandler {
 
   /**
    * The key on the session data where to retrieve the user
@@ -71,8 +71,8 @@ public class EraldySessionHandler implements SessionHandler {
    */
   public static final String SESSION_COOKIE_SAME_SITE_KEY = "cs-session-cross-cookie";
 
-  private static final Logger LOG = LoggerFactory.getLogger(EraldySessionHandler.class);
-  private static EraldySessionHandler eraldySessionHandler;
+  private static final Logger LOG = LoggerFactory.getLogger(RealmSessionHandler.class);
+  private static RealmSessionHandler realmSessionHandler;
 
   private final SessionStore sessionStore;
   private final TowerApexDomain eraldyDomain;
@@ -95,20 +95,20 @@ public class EraldySessionHandler implements SessionHandler {
   private String realmHandleContextKey;
 
 
-  public EraldySessionHandler(TowerApexDomain apexDomain) {
+  public RealmSessionHandler(TowerApexDomain apexDomain) {
     this.sessionStore = apexDomain.getHttpServer().getPersistentSessionStore();
     this.eraldyDomain = apexDomain;
   }
 
-  public static EraldySessionHandler createWithDomain(TowerApexDomain eraldyDomain) {
-    if (EraldySessionHandler.eraldySessionHandler == null) {
-      EraldySessionHandler.eraldySessionHandler = new EraldySessionHandler(eraldyDomain);
+  public static RealmSessionHandler createWithDomain(TowerApexDomain eraldyDomain) {
+    if (RealmSessionHandler.realmSessionHandler == null) {
+      RealmSessionHandler.realmSessionHandler = new RealmSessionHandler(eraldyDomain);
     }
-    return EraldySessionHandler.eraldySessionHandler;
+    return RealmSessionHandler.realmSessionHandler;
   }
 
-  public static EraldySessionHandler get() {
-    return eraldySessionHandler;
+  public static RealmSessionHandler get() {
+    return realmSessionHandler;
   }
 
   /**
@@ -119,62 +119,62 @@ public class EraldySessionHandler implements SessionHandler {
    * @param timeout the timeout, in ms.
    */
   @Override
-  public EraldySessionHandler setSessionTimeout(long timeout) {
+  public RealmSessionHandler setSessionTimeout(long timeout) {
     this.sessionTimeout = timeout;
     return this;
   }
 
   @Override
-  public EraldySessionHandler setNagHttps(boolean nag) {
+  public RealmSessionHandler setNagHttps(boolean nag) {
     this.nagHttps = nag;
     return this;
   }
 
   @Override
-  public EraldySessionHandler setCookieSecureFlag(boolean secure) {
+  public RealmSessionHandler setCookieSecureFlag(boolean secure) {
     throw new InternalException("Cookie settings are dynamic");
   }
 
   @Override
-  public EraldySessionHandler setCookieHttpOnlyFlag(boolean httpOnly) {
+  public RealmSessionHandler setCookieHttpOnlyFlag(boolean httpOnly) {
     throw new InternalException("Cookie settings are dynamic");
   }
 
   @Override
-  public EraldySessionHandler setSessionCookieName(String sessionCookieName) {
+  public RealmSessionHandler setSessionCookieName(String sessionCookieName) {
     throw new InternalException("Cookie settings are dynamic");
   }
 
   @Override
-  public EraldySessionHandler setSessionCookiePath(String sessionCookiePath) {
+  public RealmSessionHandler setSessionCookiePath(String sessionCookiePath) {
     throw new InternalException("Cookie settings are dynamic");
   }
 
   @Override
-  public EraldySessionHandler setMinLength(int minLength) {
+  public RealmSessionHandler setMinLength(int minLength) {
     this.minLength = minLength;
     return this;
   }
 
   @Override
-  public EraldySessionHandler setCookieSameSite(CookieSameSite policy) {
+  public RealmSessionHandler setCookieSameSite(CookieSameSite policy) {
     throw new InternalException("Cookie settings are dynamic");
   }
 
   @Override
-  public EraldySessionHandler setLazySession(boolean lazySession) {
+  public RealmSessionHandler setLazySession(boolean lazySession) {
     this.lazySession = lazySession;
     return this;
   }
 
   @Override
-  public EraldySessionHandler setCookieMaxAge(long cookieMaxAge) {
+  public RealmSessionHandler setCookieMaxAge(long cookieMaxAge) {
     this.cookieMaxAge = cookieMaxAge;
     return this;
   }
 
   @Override
-  public EraldySessionHandler setCookieless(boolean cookieless) {
+  public RealmSessionHandler setCookieless(boolean cookieless) {
     /**
      * Cookie less sends the session via HTTP query parameters
      */
@@ -601,7 +601,7 @@ public class EraldySessionHandler implements SessionHandler {
    * @return the domain session handler
    */
   @SuppressWarnings("unused")
-  public EraldySessionHandler upgradeSessionCookieToCrossCookie(RoutingContext ctx) {
+  public RealmSessionHandler upgradeSessionCookieToCrossCookie(RoutingContext ctx) {
     ctx.put(SESSION_COOKIE_SAME_SITE_KEY, CookieSameSite.NONE);
     return this;
   }
@@ -610,7 +610,7 @@ public class EraldySessionHandler implements SessionHandler {
    * @param realmHandleContextKey - the context key where to find the realm handle
    *                              it's used to create a unique session cookie id for each realm (one session by realm)
    */
-  public EraldySessionHandler setRealmHandleContextKey(String realmHandleContextKey) {
+  public RealmSessionHandler setRealmHandleContextKey(String realmHandleContextKey) {
     this.realmHandleContextKey = realmHandleContextKey;
     return this;
   }

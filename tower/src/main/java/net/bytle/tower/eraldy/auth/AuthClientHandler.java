@@ -16,6 +16,8 @@ import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.vertx.FrontEndCookie;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.auth.AuthQueryProperty;
+import net.bytle.vertx.auth.OAuthState;
 
 import java.util.Set;
 
@@ -83,8 +85,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
   }
 
 
-  public String
-  getClientId(RoutingContext routingContext) throws NotFoundException {
+  public String getClientId(RoutingContext routingContext) throws NotFoundException {
 
 
     HttpServerRequest request = routingContext.request();
@@ -99,8 +100,10 @@ public class AuthClientHandler implements Handler<RoutingContext> {
 
     /**
      * Auth Hack
-     * until we can handle session
-     * at a later stage
+     * Because a session is only a handler of a routing context
+     * There is no way to create a session at the last handler context
+     * because the session interface implements / depends on the {@link RoutingContext}
+     * You can't then have a session object with two type of handlers.
      */
     if (!request.path().startsWith("/auth")) {
       throw new NotFoundException();
@@ -109,12 +112,18 @@ public class AuthClientHandler implements Handler<RoutingContext> {
     if (clientId != null) {
       return clientId;
     }
-
-    /**
-     * Fail
-     */
-    throw new NotFoundException();
-
+    // in the callback state
+    final String state = routingContext.request().getParam(AuthQueryProperty.STATE.toString());
+    String message = "For Auth, the client id is mandatory.";
+    if (state == null) {
+      throw new InternalException(message);
+    }
+    OAuthState oAuthState = OAuthState.createFromStateString(state);
+    clientId = oAuthState.getClientId();
+    if (clientId == null) {
+      throw new InternalException(message);
+    }
+    return clientId;
   }
 
 
@@ -146,7 +155,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
     if (futureAuthClient == null) {
       /**
        * We don't fail, without clientId, there is no domain session on the request
-       * created by the {@link EraldySessionHandler domain session handler}
+       * created by the {@link RealmSessionHandler domain session handler}
        * It's easier than to try to handle all cases where the session should not be created
        * such as openapi doc, callback oauth, ...
        * The program may create a session on a later stage.
@@ -170,7 +179,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
             /**
              * The client is mandatory for the authentication by realm via cookie
              * Even if we get an app or list guid that contains the realm,
-             * it's too difficult to manage the {@link EraldySessionHandler session}
+             * it's too difficult to manage the {@link RealmSessionHandler session}
              * at the api implementation (too late in the calls chain)
              */
             String message;
@@ -213,7 +222,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
               .setCauseException(e)
               .buildWithContextFailingTerminal(context)
             )
-            .onSuccess(finalAuthClient->{
+            .onSuccess(finalAuthClient -> {
               /**
                * We set the realm handle for the creation of the session cookie name
                * in the session handler.

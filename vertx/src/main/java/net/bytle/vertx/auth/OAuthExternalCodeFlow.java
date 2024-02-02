@@ -22,9 +22,9 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
   private final OAuthExternal oauthExternal;
 
 
-  public OAuthExternalCodeFlow(TowerApp towerApp, String pathMount, List<Handler<AuthContext>> authHandlers) throws ConfigIllegalException {
+  public OAuthExternalCodeFlow(TowerApp towerApp, String pathMount, List<Handler<AuthContext>> authContextHandlers) throws ConfigIllegalException {
     super(towerApp);
-    this.oauthExternal = new OAuthExternal(this, pathMount, authHandlers);
+    this.oauthExternal = new OAuthExternal(this, pathMount, authContextHandlers);
   }
 
   /**
