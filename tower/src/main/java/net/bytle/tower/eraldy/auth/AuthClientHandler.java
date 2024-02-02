@@ -6,6 +6,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.web.RoutingContext;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotAuthorizedException;
 import net.bytle.exception.NotFoundException;
@@ -112,13 +113,20 @@ public class AuthClientHandler implements Handler<RoutingContext> {
     if (clientId != null) {
       return clientId;
     }
-    // in the callback state
+    /**
+     * In the callback state?
+     */
     final String state = routingContext.request().getParam(AuthQueryProperty.STATE.toString());
     String message = "For Auth, the client id is mandatory.";
     if (state == null) {
       throw new InternalException(message);
     }
-    OAuthState oAuthState = OAuthState.createFromStateString(state);
+    OAuthState oAuthState;
+    try {
+      oAuthState = OAuthState.createFromStateString(state);
+    } catch (CastException e) {
+      throw new InternalException(message + " . The state is not in the good format");
+    }
     clientId = oAuthState.getClientId();
     if (clientId == null) {
       throw new InternalException(message);

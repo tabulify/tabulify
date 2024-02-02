@@ -10,6 +10,7 @@ import io.vertx.ext.auth.oauth2.Oauth2Credentials;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import io.vertx.ext.web.handler.AuthenticationHandler;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 
@@ -110,7 +111,13 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
       ctx.fail(TowerFailureTypeEnum.NOT_LOGGED_IN_401.getStatusCode(), new IllegalStateException("Invalid oauth2 state"));
       return;
     }
-    OAuthState oAuthState = OAuthState.createFromStateString(ctxState);
+    OAuthState oAuthState;
+    try {
+      oAuthState = OAuthState.createFromStateString(ctxState);
+    } catch (CastException e) {
+      ctx.fail(TowerFailureTypeEnum.NOT_LOGGED_IN_401.getStatusCode(), new IllegalStateException("Invalid oauth2 state"));
+      return;
+    }
 
     /**
      * Analytics

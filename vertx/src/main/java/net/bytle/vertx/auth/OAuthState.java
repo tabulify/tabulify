@@ -2,6 +2,7 @@ package net.bytle.vertx.auth;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.vertx.core.json.JsonObject;
+import net.bytle.exception.CastException;
 import net.bytle.type.Base64Utility;
 
 /**
@@ -39,7 +40,7 @@ public class OAuthState {
    */
   private String providerGuid;
 
-  public static OAuthState createFromStateString(String state) {
+  public static OAuthState createFromStateString(String state) throws CastException {
     String jsonState = Base64Utility.base64UrlStringToString(state);
     return new OAuthState(new JsonObject(jsonState));
   }

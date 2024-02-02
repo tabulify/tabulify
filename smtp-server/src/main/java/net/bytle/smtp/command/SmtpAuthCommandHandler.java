@@ -57,7 +57,7 @@ public class SmtpAuthCommandHandler extends SmtpInputCommandDirectReplyHandler {
       return this.authenticate(session, sessionState.getAuthMechanism(), token);
     }
 
-    if (arguments.size() == 0) {
+    if (arguments.isEmpty()) {
       throw SmtpException.createBadSyntax("The command (" + SmtpCommand.AUTH + ") has at minimum one argument the Auth mechanism. The syntax is: " + SmtpCommand.AUTH.getCommandSyntax());
     }
 
@@ -91,7 +91,13 @@ public class SmtpAuthCommandHandler extends SmtpInputCommandDirectReplyHandler {
        * as seen in the AUTH EBNF syntax
        * https://datatracker.ietf.org/doc/html/rfc4954#section-8
        */
-      String credential = Base64Utility.base64UrlStringToString(token);
+      String credential;
+      try {
+        credential = Base64Utility.base64UrlStringToString(token);
+      } catch (CastException e) {
+        SmtpReply smtpReply = SmtpReply.create(SmtpReplyCode.CREDENTIAL_INVALID_535, "Credentials Invalid: They should be encoded in base 64. " + e.getMessage());
+        throw SmtpException.create(smtpReply, e);
+      }
       SmtpDomain domain;
       try {
         domain = smtpSession.getGreeting().getRequestedHost().getDomain();

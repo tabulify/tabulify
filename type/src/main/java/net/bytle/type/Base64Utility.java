@@ -1,5 +1,7 @@
 package net.bytle.type;
 
+import net.bytle.exception.CastException;
+
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -15,6 +17,7 @@ public class Base64Utility {
     return java.util.Base64.getUrlEncoder().encodeToString(string.getBytes(StandardCharsets.UTF_8));
   }
 
+  @SuppressWarnings("unused")
   public static String bytesToBase64UrlBytes(byte[] binaryData) {
     return java.util.Base64.getUrlEncoder().encodeToString(binaryData);
   }
@@ -23,14 +26,18 @@ public class Base64Utility {
     return java.util.Base64.getDecoder().decode(base64String);
   }
 
-  public static String base64UrlStringToString(String string) {
+  public static String base64UrlStringToString(String string) throws CastException {
     byte[] bytes = base64UrlStringToByte(string);
     return Strings.createFromByte(bytes, StandardCharsets.UTF_8).toString();
 
   }
 
-  public static byte[] base64UrlStringToByte(String base64String) {
-    return java.util.Base64.getUrlDecoder().decode(base64String);
+  public static byte[] base64UrlStringToByte(String base64String) throws CastException {
+    try {
+      return java.util.Base64.getUrlDecoder().decode(base64String);
+    } catch (Exception e) {
+      throw new CastException("The string is not a base 64 string",e);
+    }
   }
 
 }
