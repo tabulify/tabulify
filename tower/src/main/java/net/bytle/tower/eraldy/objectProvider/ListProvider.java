@@ -301,7 +301,7 @@ public class ListProvider {
    * @param realm - the realmId
    * @return the realm
    */
-  public Future<java.util.List<ListItem>> getListsForRealm(Realm realm) {
+  public Future<java.util.List<ListItemAnalytics>> getListsForRealm(Realm realm) {
 
 
     String selectListsForRealmSql = "SELECT * FROM " +
@@ -319,9 +319,9 @@ public class ListProvider {
          * the {@link CompositeFuture#all(java.util.List)}  all function } does not
          * take other thing than a raw future
          */
-        List<Future<ListItem>> futurePublications = new ArrayList<>();
+        List<Future<ListItemAnalytics>> futurePublications = new ArrayList<>();
         for (Row row : rowSet) {
-          Future<ListItem> futurePublication = getListFromRow(row, null, realm, ListItem.class);
+          Future<ListItemAnalytics> futurePublication = getListFromRow(row, null, realm, ListItemAnalytics.class);
           futurePublications.add(futurePublication);
         }
 
@@ -332,7 +332,7 @@ public class ListProvider {
         return Future
           .all(futurePublications)
           .onFailure(FailureStatic::failFutureWithTrace)
-          .map(CompositeFuture::<ListItem>list);
+          .map(CompositeFuture::<ListItemAnalytics>list);
       });
 
   }
@@ -547,7 +547,7 @@ public class ListProvider {
       });
   }
 
-  public Future<java.util.List<ListItem>> getListsForApp(App app) {
+  public Future<java.util.List<ListItemAnalytics>> getListsForApp(App app) {
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " where \n" +
@@ -562,20 +562,16 @@ public class ListProvider {
          * the {@link CompositeFuture#all(java.util.List)}  all function } does not
          * take other thing than a raw future
          */
-        java.util.List<Future<ListItem>> futureLists = new ArrayList<>();
+        java.util.List<Future<ListItemAnalytics>> futureLists = new ArrayList<>();
         for (Row row : listRows) {
-          Future<ListItem> futurePublication = getListFromRow(row, app, null, ListItem.class);
+          Future<ListItemAnalytics> futurePublication = getListFromRow(row, app, app.getRealm(), ListItemAnalytics.class);
           futureLists.add(futurePublication);
         }
 
-        /**
-         * https://vertx.io/docs/vertx-core/java/#_future_coordination
-         * https://stackoverflow.com/questions/71936229/vertx-compositefuture-on-completion-of-all-futures
-         */
         return Future
           .all(futureLists)
           .onFailure(FailureStatic::failFutureWithTrace)
-          .map(CompositeFuture::<ListItem>list);
+          .map(CompositeFuture::<ListItemAnalytics>list);
       });
   }
 

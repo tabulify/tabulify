@@ -20,6 +20,8 @@ import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.*;
 
+import java.util.List;
+
 public class AppApiImpl implements AppApi {
 
   private final EraldyApiApp apiApp;
@@ -33,6 +35,31 @@ public class AppApiImpl implements AppApi {
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .build();
+  }
+
+  @Override
+  public Future<ApiResponse<List<ListItemAnalytics>>> appAppIdentifierListsGet(RoutingContext routingContext, String appIdentifier) {
+
+    ListProvider listProvider = this.apiApp.getListProvider();
+    Future<Realm> realmFuture;
+    try {
+      Guid guid = this.apiApp.getAppProvider().getGuid(appIdentifier);
+      long realmId = guid.getRealmOrOrganizationId();
+      realmFuture = this.apiApp.getRealmProvider().getRealmFromLocalIdOrAutCli(realmId, routingContext);
+    } catch (CastException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .setMessage("The app identifier ("+appIdentifier+") should be a app guid, an handle is not yet supported")
+        .build()
+      );
+    }
+    return realmFuture
+      .compose(realmRes -> this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realmRes, AuthScope.APP_LISTS_GET))
+      .compose(realmAfterCheck -> this.apiApp.getAppProvider().getAppByIdentifier(appIdentifier, realmAfterCheck))
+      .compose(listProvider::getListsForApp)
+      .compose(lists -> Future.succeededFuture(new ApiResponse<>(lists).setMapper(listProvider.getApiMapper())));
+
+
   }
 
   @Override

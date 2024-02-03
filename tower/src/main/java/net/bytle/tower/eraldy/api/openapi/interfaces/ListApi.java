@@ -71,11 +71,6 @@ public interface ListApi  {
     Future<ApiResponse<String>> listUserLetterValidationGet(RoutingContext routingContext, String listGuid, String subscriberName, String subscriberEmail, Boolean debug);
 
     /**
-     * Get a list of lists  The app should be given via:   - the appGuid   - or the appUri along with a realm identifier (guid or handle)
-    */
-    Future<ApiResponse<List<ListItem>>> listsGet(RoutingContext routingContext, String appGuid, String appUri, String realmIdentifier);
-
-    /**
      * Get a list of list in a summary format
     */
     Future<ApiResponse<List<ListSummary>>> listsSummaryGet(RoutingContext routingContext, String realmIdentifier);

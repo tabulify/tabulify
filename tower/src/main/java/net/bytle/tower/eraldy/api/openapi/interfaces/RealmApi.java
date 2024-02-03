@@ -20,6 +20,11 @@ public interface RealmApi  {
     Future<ApiResponse<Realm>> realmPost(RoutingContext routingContext, RealmPostBody realmPostBody);
 
     /**
+     * Get the lists for an realm
+    */
+    Future<ApiResponse<List<ListItemAnalytics>>> realmRealmIdentifierListsGet(RoutingContext routingContext, String realmIdentifier);
+
+    /**
      * Get users for the realm for pagination
     */
     Future<ApiResponse<List<User>>> realmRealmUsersGet(RoutingContext routingContext, String realmIdentifier, Long pageSize, Long pageId, String searchTerm);

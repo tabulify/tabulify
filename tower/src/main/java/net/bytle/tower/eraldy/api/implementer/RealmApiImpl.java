@@ -5,7 +5,10 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.RealmApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
+import net.bytle.tower.eraldy.auth.AuthScope;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.objectProvider.AuthProvider;
+import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.vertx.*;
@@ -49,6 +52,17 @@ public class RealmApiImpl implements RealmApi {
         }
       );
 
+  }
+
+  @Override
+  public Future<ApiResponse<List<ListItemAnalytics>>> realmRealmIdentifierListsGet(RoutingContext routingContext, String realmIdentifier) {
+    ListProvider listProvider = this.apiApp.getListProvider();
+    AuthProvider authProvider = this.apiApp.getAuthProvider();
+    return this.apiApp.getRealmProvider()
+      .getRealmFromIdentifier(realmIdentifier, Realm.class)
+      .compose(realm-> authProvider.checkRealmAuthorization(routingContext, realm, AuthScope.REALM_LISTS_GET))
+      .compose(listProvider::getListsForRealm)
+      .compose(lists->Future.succeededFuture(new ApiResponse<>(lists).setMapper(listProvider.getApiMapper())));
   }
 
   @Override

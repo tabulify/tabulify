@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
@@ -607,5 +608,13 @@ public class RealmProvider {
         }
         return futureRealm;
       });
+  }
+
+  public Future<Realm> getRealmFromLocalIdOrAutCli(long realmId, RoutingContext routingContext) {
+    Realm authRealmClient = this.apiApp.getAuthClientProvider().getFromRoutingContextKeyStore(routingContext).getApp().getRealm();
+    if (authRealmClient.getLocalId() == realmId) {
+      return Future.succeededFuture(authRealmClient);
+    }
+    return this.getRealmFromLocalId(realmId);
   }
 }

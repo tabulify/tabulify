@@ -32,7 +32,10 @@ import net.bytle.vertx.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class ListApiImpl implements ListApi {
 
@@ -40,66 +43,6 @@ public class ListApiImpl implements ListApi {
 
   public ListApiImpl(TowerApp towerApp) {
     this.apiApp = (EraldyApiApp) towerApp;
-  }
-
-  @Override
-  public Future<ApiResponse<List<ListItem>>> listsGet(RoutingContext routingContext, String appGuid, String appUri, String realmIdentifier) {
-
-    if (appGuid == null && appUri == null && realmIdentifier == null) {
-      throw ValidationException.create("A app or realm definition should be given to get a list of lists.", "any", null);
-    }
-
-    Future<List<ListItem>> futureLists;
-    ListProvider listProvider = apiApp.getListProvider();
-    if (appGuid == null && appUri == null) {
-
-      /**
-       * Realms selection
-       */
-      futureLists = this.apiApp.getRealmProvider()
-        .getRealmFromIdentifier(realmIdentifier, Realm.class)
-        .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-        .compose(listProvider::getListsForRealm);
-
-    } else {
-
-      /**
-       * App selections
-       */
-      Future<App> futureApp;
-      if (appGuid != null) {
-        futureApp = apiApp.getAppProvider()
-          .getAppByGuid(appGuid);
-      } else {
-        if (realmIdentifier == null) {
-          throw ValidationException.create("The realm identifier (guid or handle) should be given for an appUri", "realmIdentifier", null);
-        }
-        futureApp = this.apiApp.getRealmProvider()
-          .getRealmFromIdentifier(realmIdentifier)
-          .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-          .compose(realm -> apiApp.getAppProvider().getAppByHandle(appUri, realm));
-      }
-
-      futureLists = futureApp
-        .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-        .compose(app -> {
-          if (app == null) {
-            NoSuchElementException noSuchElementException = new NoSuchElementException("The app could not be found");
-            return Future.failedFuture(noSuchElementException);
-          }
-          return listProvider.getListsForApp(app);
-        });
-
-    }
-
-    return futureLists
-      .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-      .compose(lists -> {
-        ApiResponse<java.util.List<ListItem>> apiResponse = new ApiResponse<>(lists)
-          .setMapper(listProvider.getApiMapper());
-        return Future.succeededFuture(apiResponse);
-      });
-
   }
 
 

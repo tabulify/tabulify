@@ -405,6 +405,36 @@ paths:
       tags:
       - env
       x-accepts: application/json
+  /realm/{realmIdentifier}/lists:
+    get:
+      operationId: realmRealmIdentifierListsGet
+      parameters:
+      - description: An realm identifier (a guid or a handle)
+        explode: false
+        in: path
+        name: realmIdentifier
+        required: true
+        schema:
+          example: rea-xjkkLmi
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ListItemAnalytics'
+                type: array
+          description: Return a list of lists for the app
+        "403":
+          description: Not authenticated
+      security:
+      - apiKeyAuth: []
+      summary: Get the lists for an realm
+      tags:
+      - realm
+      x-accepts: application/json
   /realm/{realmIdentifier}/users:
     get:
       operationId: realmRealmUsersGet
@@ -1131,56 +1161,35 @@ paths:
       - app
       x-content-type: application/json
       x-accepts: application/json
-  /lists:
+  /app/{appIdentifier}/lists:
     get:
-      operationId: listsGet
+      operationId: appAppIdentifierListsGet
       parameters:
-      - description: The app guid
-        explode: true
-        in: query
-        name: appGuid
-        required: false
+      - description: "An app identifier (a guid, handle is not yet supported)"
+        explode: false
+        in: path
+        name: appIdentifier
+        required: true
         schema:
-          example: xjkkLmi
+          example: app-xjkkLmi
           type: string
-        style: form
-      - description: The uri of the app
-        explode: true
-        in: query
-        name: appUri
-        required: false
-        schema:
-          type: string
-        style: form
-      - description: A realm identifier (a guid or handle)
-        explode: true
-        in: query
-        name: realmIdentifier
-        required: false
-        schema:
-          type: string
-        style: form
+        style: simple
       responses:
         "200":
           content:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/ListItem'
+                  $ref: '#/components/schemas/ListItemAnalytics'
                 type: array
           description: Return a list of lists for the app
         "403":
           description: Not authenticated
       security:
       - apiKeyAuth: []
-      summary: |
-        Get a list of lists
-
-        The app should be given via:
-          - the appGuid
-          - or the appUri along with a realm identifier (guid or handle)
+      summary: Get the lists for an app
       tags:
-      - list
+      - app
       x-accepts: application/json
   /lists/summary:
     get:
@@ -2321,6 +2330,140 @@ components:
             referrer.
           type: string
       type: object
+    ListItemAnalytics:
+      allOf:
+      - $ref: '#/components/schemas/ListItem'
+      - properties:
+          userCount:
+            description: The number of users for the list (subscribed/unsubscribed
+              - registered/unregistered)
+            type: integer
+          userInCount:
+            description: The number of users that are still in the list
+            type: integer
+        type: object
+      description: "List Analytics (count, ...)"
+    ListItem:
+      description: |
+        A list where a user can register.
+
+        Example:
+        * Newsletter
+        * Sign up to a waiting list
+      example:
+        ownerUser:
+          disabledReason: disabledReason
+          website: https://mywebsite
+          creationTime: 2000-01-23T04:56:07.000+00:00
+          givenName: John
+          bio: bio
+          handle: foo
+          avatar: https://en.gravatar.com/userimage/john.doe.png
+          title: Chief Executive Officer
+          localId: 1
+          modificationTime: 2000-01-23T04:56:07.000+00:00
+          familyName: Doe
+          guid: xmmmN
+          disabled: true
+          location: The world
+          realm:
+            ownerUser: null
+            organization:
+              name: name
+              guid: org-xmmmN
+              handle: handle
+              localId: 1
+            name: name
+            guid: guid
+            handle: handle
+            localId: 0
+          email: john@doe.com
+        name: Mailing list
+        guid: xmmmN
+        description: The last news ....
+        handle: newsletter
+        realm:
+          ownerUser: null
+          organization:
+            name: name
+            guid: org-xmmmN
+            handle: handle
+            localId: 1
+          name: name
+          guid: guid
+          handle: handle
+          localId: 0
+        title: The top Newsletters
+        localId: 1
+        registrationUrl: https://openapi-generator.tech
+        ownerApp:
+          terms: https://openapi-generator.tech
+          name: Doe
+          primaryColor: '#3498db'
+          guid: xmmmN
+          logo: https://doe.com/_media/android-chrome-192x192.png
+          handle: "[\"doe\"]"
+          realm:
+            ownerUser: null
+            organization:
+              name: name
+              guid: org-xmmmN
+              handle: handle
+              localId: 1
+            name: name
+            guid: guid
+            handle: handle
+            localId: 0
+          localId: 1
+          uri: https://app.doe.com
+          slogan: "Doe, Be You"
+          user: null
+          home: https://doe.com/landing
+      properties:
+        localId:
+          description: "The list identifier in the realm scope. Without the realm,\
+            \ this id have duplicate."
+          example: 1
+          format: int64
+          type: integer
+        guid:
+          description: The global list id where the user can register
+          example: xmmmN
+          type: string
+        handle:
+          description: A handle (unique code) for the list
+          example: newsletter
+          type: string
+        name:
+          description: The name of the list
+          example: Mailing list
+          type: string
+        title:
+          description: The title of the list used in heading
+          example: The top Newsletters
+          type: string
+        description:
+          description: The description of the list
+          example: The last news ....
+          type: string
+        ownerUser:
+          $ref: '#/components/schemas/User'
+        ownerApp:
+          $ref: '#/components/schemas/App'
+        realm:
+          $ref: '#/components/schemas/Realm'
+        registrationUrl:
+          description: The public page where to register for this list
+          format: uri
+          type: string
+      title: A list of users
+      type: object
+      x-fields-identity:
+      - guid
+      x-fields-to-string:
+      - guid
+      - handle
+      x-parent: true
     User:
       description: A user
       example:
@@ -2549,6 +2692,100 @@ components:
       x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
         \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
         \ property = \"guid\", scope = User.class)"
+    App:
+      description: "An app is the container for branding elements (such as logo, color)"
+      example:
+        terms: https://openapi-generator.tech
+        name: Doe
+        primaryColor: '#3498db'
+        guid: xmmmN
+        logo: https://doe.com/_media/android-chrome-192x192.png
+        handle: "[\"doe\"]"
+        realm:
+          ownerUser: null
+          organization:
+            name: name
+            guid: org-xmmmN
+            handle: handle
+            localId: 1
+          name: name
+          guid: guid
+          handle: handle
+          localId: 0
+        localId: 1
+        uri: https://app.doe.com
+        slogan: "Doe, Be You"
+        user: null
+        home: https://doe.com/landing
+      properties:
+        localId:
+          description: "The app identifier in the realm (without the realm, the id\
+            \ may have duplicate)"
+          example: 1
+          format: int64
+          type: integer
+        guid:
+          description: The global app id (realm id + local app id)
+          example: xmmmN
+          type: string
+        handle:
+          description: |
+            The handle of the app.
+            The handle is unique for all apps on the realm.
+            It follows the DNS name constraint
+          example: "[\"doe\"]"
+          type: string
+        name:
+          description: The name of the app
+          example: Doe
+          type: string
+        uri:
+          description: |
+            An authentication url identifier
+            It has no query string nor fragment.
+            If you use the member authentication module, this URL should not be empty.
+          example: https://app.doe.com
+          format: uri
+          type: string
+        home:
+          description: |
+            The home URL of the app
+            This is a app branding element
+            that adds an URL to any app communication footer
+          example: https://doe.com/landing
+          format: uri
+          type: string
+        slogan:
+          description: The slogan of the app
+          example: "Doe, Be You"
+          type: string
+        logo:
+          description: The uri of the app logo
+          example: https://doe.com/_media/android-chrome-192x192.png
+          format: uri
+          type: string
+        primaryColor:
+          description: The css primary color of the theme (rgb in hexadecimal)
+          example: '#3498db'
+          type: string
+        user:
+          $ref: '#/components/schemas/OrganizationUser'
+        realm:
+          $ref: '#/components/schemas/Realm'
+        terms:
+          description: The location of the terms and conditions document
+          format: uri
+          type: string
+      title: An app
+      type: object
+      x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
+        \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
+        \ property = \"guid\", scope = App.class)"
+      x-fields-identity:
+      - guid
+      x-fields-to-string:
+      - guid
+      - handle
     RealmAnalytics:
       allOf:
       - $ref: '#/components/schemas/Realm'
@@ -2881,100 +3118,6 @@ components:
           format: uri
           type: string
       type: object
-    App:
-      description: "An app is the container for branding elements (such as logo, color)"
-      example:
-        terms: https://openapi-generator.tech
-        name: Doe
-        primaryColor: '#3498db'
-        guid: xmmmN
-        logo: https://doe.com/_media/android-chrome-192x192.png
-        handle: "[\"doe\"]"
-        realm:
-          ownerUser: null
-          organization:
-            name: name
-            guid: org-xmmmN
-            handle: handle
-            localId: 1
-          name: name
-          guid: guid
-          handle: handle
-          localId: 0
-        localId: 1
-        uri: https://app.doe.com
-        slogan: "Doe, Be You"
-        user: null
-        home: https://doe.com/landing
-      properties:
-        localId:
-          description: "The app identifier in the realm (without the realm, the id\
-            \ may have duplicate)"
-          example: 1
-          format: int64
-          type: integer
-        guid:
-          description: The global app id (realm id + local app id)
-          example: xmmmN
-          type: string
-        handle:
-          description: |
-            The handle of the app.
-            The handle is unique for all apps on the realm.
-            It follows the DNS name constraint
-          example: "[\"doe\"]"
-          type: string
-        name:
-          description: The name of the app
-          example: Doe
-          type: string
-        uri:
-          description: |
-            An authentication url identifier
-            It has no query string nor fragment.
-            If you use the member authentication module, this URL should not be empty.
-          example: https://app.doe.com
-          format: uri
-          type: string
-        home:
-          description: |
-            The home URL of the app
-            This is a app branding element
-            that adds an URL to any app communication footer
-          example: https://doe.com/landing
-          format: uri
-          type: string
-        slogan:
-          description: The slogan of the app
-          example: "Doe, Be You"
-          type: string
-        logo:
-          description: The uri of the app logo
-          example: https://doe.com/_media/android-chrome-192x192.png
-          format: uri
-          type: string
-        primaryColor:
-          description: The css primary color of the theme (rgb in hexadecimal)
-          example: '#3498db'
-          type: string
-        user:
-          $ref: '#/components/schemas/OrganizationUser'
-        realm:
-          $ref: '#/components/schemas/Realm'
-        terms:
-          description: The location of the terms and conditions document
-          format: uri
-          type: string
-      title: An app
-      type: object
-      x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
-        \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
-        \ property = \"guid\", scope = App.class)"
-      x-fields-identity:
-      - guid
-      x-fields-to-string:
-      - guid
-      - handle
     UserPostBody:
       description: |
         A user.
@@ -3024,140 +3167,6 @@ components:
       additionalProperties: true
       description: A Json object
       type: object
-    ListItemAnalytics:
-      allOf:
-      - $ref: '#/components/schemas/ListItem'
-      - properties:
-          userCount:
-            description: The number of users for the list (subscribed/unsubscribed
-              - registered/unregistered)
-            type: integer
-          userInCount:
-            description: The number of users that are still in the list
-            type: integer
-        type: object
-      description: "List Analytics (count, ...)"
-    ListItem:
-      description: |
-        A list where a user can register.
-
-        Example:
-        * Newsletter
-        * Sign up to a waiting list
-      example:
-        ownerUser:
-          disabledReason: disabledReason
-          website: https://mywebsite
-          creationTime: 2000-01-23T04:56:07.000+00:00
-          givenName: John
-          bio: bio
-          handle: foo
-          avatar: https://en.gravatar.com/userimage/john.doe.png
-          title: Chief Executive Officer
-          localId: 1
-          modificationTime: 2000-01-23T04:56:07.000+00:00
-          familyName: Doe
-          guid: xmmmN
-          disabled: true
-          location: The world
-          realm:
-            ownerUser: null
-            organization:
-              name: name
-              guid: org-xmmmN
-              handle: handle
-              localId: 1
-            name: name
-            guid: guid
-            handle: handle
-            localId: 0
-          email: john@doe.com
-        name: Mailing list
-        guid: xmmmN
-        description: The last news ....
-        handle: newsletter
-        realm:
-          ownerUser: null
-          organization:
-            name: name
-            guid: org-xmmmN
-            handle: handle
-            localId: 1
-          name: name
-          guid: guid
-          handle: handle
-          localId: 0
-        title: The top Newsletters
-        localId: 1
-        registrationUrl: https://openapi-generator.tech
-        ownerApp:
-          terms: https://openapi-generator.tech
-          name: Doe
-          primaryColor: '#3498db'
-          guid: xmmmN
-          logo: https://doe.com/_media/android-chrome-192x192.png
-          handle: "[\"doe\"]"
-          realm:
-            ownerUser: null
-            organization:
-              name: name
-              guid: org-xmmmN
-              handle: handle
-              localId: 1
-            name: name
-            guid: guid
-            handle: handle
-            localId: 0
-          localId: 1
-          uri: https://app.doe.com
-          slogan: "Doe, Be You"
-          user: null
-          home: https://doe.com/landing
-      properties:
-        localId:
-          description: "The list identifier in the realm scope. Without the realm,\
-            \ this id have duplicate."
-          example: 1
-          format: int64
-          type: integer
-        guid:
-          description: The global list id where the user can register
-          example: xmmmN
-          type: string
-        handle:
-          description: A handle (unique code) for the list
-          example: newsletter
-          type: string
-        name:
-          description: The name of the list
-          example: Mailing list
-          type: string
-        title:
-          description: The title of the list used in heading
-          example: The top Newsletters
-          type: string
-        description:
-          description: The description of the list
-          example: The last news ....
-          type: string
-        ownerUser:
-          $ref: '#/components/schemas/User'
-        ownerApp:
-          $ref: '#/components/schemas/App'
-        realm:
-          $ref: '#/components/schemas/Realm'
-        registrationUrl:
-          description: The public page where to register for this list
-          format: uri
-          type: string
-      title: A list of users
-      type: object
-      x-fields-identity:
-      - guid
-      x-fields-to-string:
-      - guid
-      - handle
-      x-parent: true
     ListBody:
       description: |
         List creation and update

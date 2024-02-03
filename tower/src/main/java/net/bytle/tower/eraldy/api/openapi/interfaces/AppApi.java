@@ -3,14 +3,16 @@ package net.bytle.tower.eraldy.api.openapi.interfaces;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.model.openapi.App;
-import net.bytle.tower.eraldy.model.openapi.AppPostBody;
-import net.bytle.tower.eraldy.model.openapi.ListBody;
-import net.bytle.tower.eraldy.model.openapi.ListItem;
+import net.bytle.tower.eraldy.model.openapi.*;
 
 import java.util.List;
 
 public interface AppApi  {
+
+    /**
+     * Get the lists for an app
+    */
+    Future<ApiResponse<List<ListItemAnalytics>>> appAppIdentifierListsGet(RoutingContext routingContext, String appIdentifier);
 
     /**
      * Create a list where users can register

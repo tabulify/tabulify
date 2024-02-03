@@ -1,10 +1,5 @@
 package net.bytle.tower.eraldy.api.openapi.interfaces;
 
-import net.bytle.tower.eraldy.model.openapi.App;
-import net.bytle.tower.eraldy.model.openapi.AppPostBody;
-import net.bytle.tower.eraldy.model.openapi.ListBody;
-import net.bytle.tower.eraldy.model.openapi.ListItem;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.ext.web.RoutingContext;
@@ -13,9 +8,10 @@ import io.vertx.ext.web.validation.RequestParameter;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
+import net.bytle.tower.eraldy.model.openapi.AppPostBody;
+import net.bytle.tower.eraldy.model.openapi.ListBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Map; // for pure json data
 
 public class AppApiHandler {
 
@@ -28,11 +24,28 @@ this.api = api;
 }
 
 public void mount(RouterBuilder builder) {
+    builder.operation("appAppIdentifierListsGet").handler(this::appAppIdentifierListsGet);
     builder.operation("appAppListPost").handler(this::appAppListPost);
     builder.operation("appGet").handler(this::appGet);
     builder.operation("appPost").handler(this::appPost);
     builder.operation("appsGet").handler(this::appsGet);
 }
+
+    private void appAppIdentifierListsGet(RoutingContext routingContext) {
+    logger.info("appAppIdentifierListsGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String appIdentifier = requestParameters.pathParameter("appIdentifier") != null ? requestParameters.pathParameter("appIdentifier").getString() : null;
+
+      logger.debug("Parameter appIdentifier is {}", appIdentifier);
+
+    // Based on Route#respond
+    api.appAppIdentifierListsGet(routingContext, appIdentifier)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
 
     private void appAppListPost(RoutingContext routingContext) {
     logger.info("appAppListPost()");

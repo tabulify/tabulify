@@ -18,7 +18,9 @@ public enum AuthScope {
   LOGIN_EMAIL("send a email login"),
   PASSWORD_RESET_FLOW("reset a password via a flow"),
   USER_REGISTRATION_FLOW("register a user via a flow"),
-  PROXY_CLIENT("proxy a client");
+  PROXY_CLIENT("proxy a client"),
+  APP_LISTS_GET("get the lists of an app"),
+  REALM_LISTS_GET("get the lists of a realm");
 
   private final String humanActionName;
 

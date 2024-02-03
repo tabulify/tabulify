@@ -257,7 +257,6 @@ public class AppProvider {
   }
 
 
-
   private Future<RowSet<Row>> updateAppByHandle(App app) {
     String updateSqlByUri = "UPDATE \n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
@@ -508,16 +507,20 @@ public class AppProvider {
     return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(APP_GUID_PREFIX, appGuid);
   }
 
-  public Future<App> getAppByGuid(String appGuid) {
-    Guid guid;
-    try {
-      guid = apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(APP_GUID_PREFIX, appGuid);
-    } catch (CastException e) {
-      throw ValidationException.create("The appGuid is not valid", "appGuid", appGuid);
+  public Future<App> getAppByGuid(Guid guid, Realm realm) {
+
+    Future<Realm> realmFuture;
+    if (realm != null) {
+      realmFuture = Future.succeededFuture(realm);
+    } else {
+      realmFuture = this.apiApp.getRealmProvider()
+        .getRealmFromLocalId(guid.getRealmOrOrganizationId());
     }
-    return this.apiApp.getRealmProvider()
-      .getRealmFromLocalId(guid.getRealmOrOrganizationId())
-      .compose(realm -> getAppById(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm));
+    return realmFuture
+      .compose(realmRes -> {
+        long appId = guid.validateRealmAndGetFirstObjectId(realmRes.getLocalId());
+        return getAppById(appId, realmRes);
+      });
   }
 
   public Future<App> getAppById(long appId, Realm realm) {
@@ -548,21 +551,31 @@ public class AppProvider {
    */
   public Future<App> getsert(App app) {
     Future<App> selectApp;
-    if(app.getLocalId()!=null){
+    if (app.getLocalId() != null) {
       selectApp = this.getAppById(app.getLocalId(), app.getRealm());
     } else {
       String handle = app.getHandle();
-      if(handle==null){
+      if (handle == null) {
         return Future.failedFuture(new InternalException("The app to getsert should have an identifier (local id, or handle)"));
       }
       selectApp = this.getAppByHandle(handle, app.getRealm());
     }
     return selectApp
-      .compose(selectedApp->{
-        if(selectedApp!=null){
+      .compose(selectedApp -> {
+        if (selectedApp != null) {
           return Future.succeededFuture(selectedApp);
         }
         return this.insertApp(app);
-    });
+      });
+  }
+
+  public Future<App> getAppByIdentifier(String appIdentifier, Realm realm) {
+    try {
+      Guid guid = this.getGuid(appIdentifier);
+      return this.getAppByGuid(guid, realm);
+    } catch (CastException e) {
+      return getAppByHandle(appIdentifier, realm);
+    }
+
   }
 }

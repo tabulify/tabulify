@@ -577,6 +577,33 @@ paths:
               schema:
                 type: object
                 additionalProperties: true
+  /realm/{realmIdentifier}/lists:
+    get:
+      operationId: realmRealmIdentifierListsGet
+      summary: Get the lists for an realm
+      tags:
+        - realm
+      security:
+        - apiKeyAuth: [ ]
+      parameters:
+        - name: realmIdentifier
+          description: "An realm identifier (a guid or a handle)"
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "rea-xjkkLmi"
+      responses:
+        '200':
+          description: "Return a list of lists for the app"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListItemAnalytics'
+        '403':
+          description: "Not authenticated"
   /realm/{realmIdentifier}/users:
     get:
       operationId: realmRealmUsersGet
@@ -1211,37 +1238,22 @@ paths:
             application/json:
               schema:
                 $ref: './eraldy-common-openapi.yaml#/components/schemas/ListItem'
-  /lists:
+  /app/{appIdentifier}/lists:
     get:
-      operationId: listsGet
-      summary: |
-        Get a list of lists
-
-        The app should be given via:
-          - the appGuid
-          - or the appUri along with a realm identifier (guid or handle)
+      operationId: appAppIdentifierListsGet
+      summary: Get the lists for an app
       tags:
-        - list
+        - app
       security:
         - apiKeyAuth: []
       parameters:
-        - name: appGuid
-          description: "The app guid"
-          in: query
+        - name: appIdentifier
+          description: "An app identifier (a guid, handle is not yet supported)"
+          in: path
+          required: true
           schema:
             type: string
-            example: "xjkkLmi"
-        - name: appUri
-          description: "The uri of the app"
-          in: query
-          schema:
-            type: string
-#            format: uri - format is not supported for parameters
-        - name: realmIdentifier
-          description: "A realm identifier (a guid or handle)"
-          in: query
-          schema:
-            type: string
+            example: "app-xjkkLmi"
       responses:
         '200':
           description: "Return a list of lists for the app"
@@ -1250,7 +1262,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListItem'
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListItemAnalytics'
         '403':
           description: "Not authenticated"
   /lists/summary:

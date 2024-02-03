@@ -36,7 +36,6 @@ public void mount(RouterBuilder builder) {
     builder.operation("listUserIdentifierGet").handler(this::listUserIdentifierGet);
     builder.operation("listUserLetterConfirmationGet").handler(this::listUserLetterConfirmationGet);
     builder.operation("listUserLetterValidationGet").handler(this::listUserLetterValidationGet);
-    builder.operation("listsGet").handler(this::listsGet);
     builder.operation("listsSummaryGet").handler(this::listsSummaryGet);
 }
 
@@ -269,26 +268,6 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listUserLetterValidationGet(routingContext, listGuid, subscriberName, subscriberEmail, debug)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
-
-    private void listsGet(RoutingContext routingContext) {
-    logger.info("listsGet()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-            String appGuid = requestParameters.queryParameter("appGuid") != null ? requestParameters.queryParameter("appGuid").getString() : null;
-        String appUri = requestParameters.queryParameter("appUri") != null ? requestParameters.queryParameter("appUri").getString() : null;
-        String realmIdentifier = requestParameters.queryParameter("realmIdentifier") != null ? requestParameters.queryParameter("realmIdentifier").getString() : null;
-
-      logger.debug("Parameter appGuid is {}", appGuid);
-      logger.debug("Parameter appUri is {}", appUri);
-      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
-
-    // Based on Route#respond
-    api.listsGet(routingContext, appGuid, appUri, realmIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }
