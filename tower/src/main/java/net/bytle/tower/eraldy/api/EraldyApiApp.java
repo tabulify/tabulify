@@ -28,7 +28,7 @@ import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
-import net.bytle.vertx.auth.AuthContext;
+import net.bytle.vertx.auth.AuthNContextManager;
 import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import net.bytle.vertx.resilience.EmailAddressValidator;
@@ -37,8 +37,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 
 import static net.bytle.tower.util.Guid.*;
 
@@ -82,6 +80,7 @@ public class EraldyApiApp extends TowerApp {
   private final AuthClientHandler authClientIdHandler;
   private final RealmSessionHandler sessionHandler;
   private final ApiKeyAuthenticationProvider apiKeyUserProvider;
+  private final AuthNContextManager authNContextManager;
 
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
@@ -125,10 +124,22 @@ public class EraldyApiApp extends TowerApp {
     this.userListRegistrationFlow = new ListRegistrationFlow(this);
     this.emailLoginFlow = new EmailLoginFlow(this);
     this.passwordLoginFlow = new PasswordLoginFlow(this);
-    List<Handler<AuthContext>> authContextHandlers = new ArrayList<>();
-    authContextHandlers.add(this.userRegistrationFlow.handleOAuthAuthentication());
-    authContextHandlers.add(this.userListRegistrationFlow.handleStepOAuthAuthentication());
-    this.oauthExternalFlow = new OAuthExternalCodeFlow(this, "/auth/oauth", authContextHandlers);
+
+    /**
+     * OAuth
+     */
+    String realmSessionKey = "realmGuid";
+    AuthNContextManager oAuthContextManager = AuthNContextManager.builder()
+      .addContextHandler(this.userRegistrationFlow.handleOAuthAuthentication())
+      .addContextHandler(this.userListRegistrationFlow.handleStepOAuthAuthentication())
+      .setRealmSessionKey(realmSessionKey)
+      .build();
+    this.oauthExternalFlow = new OAuthExternalCodeFlow(this, "/auth/oauth", oAuthContextManager);
+
+    /**
+     * The authN manager used by all flows
+     */
+    this.authNContextManager = AuthNContextManager.builder().setRealmSessionKey(realmSessionKey).build();
 
     /**
      * Utility
@@ -146,9 +157,9 @@ public class EraldyApiApp extends TowerApp {
      * of the realm in its name
      * This handler should then be mounted before the session handler
      */
-    String realmHandleContextKey = "ey-realm-handle";
+    String realmContextKey = "ey-realm-handle";
     this.authClientIdHandler = AuthClientHandler.config(this)
-      .setRealmHandleContextKey(realmHandleContextKey)
+      .setRealmHandleContextKey(realmContextKey)
       .build();
     /**
      * Reconnect once every
@@ -161,8 +172,10 @@ public class EraldyApiApp extends TowerApp {
     this.sessionHandler = RealmSessionHandler
       .createWithDomain(this.getApexDomain())
       .setSessionTimeout(idleSessionTimeoutMs)
-      .setRealmHandleContextKey(realmHandleContextKey)
-      .setCookieMaxAge(cookieMaxAgeOneWeekInSec);
+      .setRealmContextKey(realmContextKey)
+      .setRealmSessionKey(realmSessionKey)
+      .setCookieMaxAge(cookieMaxAgeOneWeekInSec)
+      .setFailIfRealmNotFound(false);
 
     /**
      * OpenApi Auth Handler
@@ -534,4 +547,7 @@ public class EraldyApiApp extends TowerApp {
     return this.authClientIdHandler;
   }
 
+  public AuthNContextManager getAuthNContextManager() {
+    return this.authNContextManager;
+  }
 }

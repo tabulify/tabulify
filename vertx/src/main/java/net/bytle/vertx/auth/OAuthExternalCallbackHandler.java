@@ -208,19 +208,20 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
       /**
        * Authenticate and redirect
        */
+      OAuthExternalCodeFlow flow = this.oAuthExternalProvider.getOAuthExternal().getFlow();
       oauthUserFuture
         .onFailure(err -> {
           ctx.session().destroy();
           ctx.fail(err);
         })
-        .onSuccess(authUser -> new AuthContext(
-            this.oAuthExternalProvider.getOAuthExternal().getFlow(),
-            ctx,
-            authUser,
-            oAuthState,
-            AuthJwtClaims.createEmptyClaims()
-          )
-            .setHandlers(oAuthExternalProvider.getOAuthExternal().getOAuthSessionAuthenticationHandlers())
+        .onSuccess(authUser -> flow.getAuthContextManager()
+            .newAuthNContext(
+              ctx,
+              flow,
+              authUser,
+              oAuthState,
+              AuthJwtClaims.createEmptyClaims()
+            )
             .authenticateSession()
         );
     });

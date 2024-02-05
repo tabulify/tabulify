@@ -325,6 +325,12 @@ public class AuthProvider {
 
   }
 
+  /**
+   *
+   * @param email - the email
+   * @param realmIdentifier - the realm
+   * @return a auth user to be stored in a session
+   */
   public Future<AuthUser> getAuthUserForSessionByEmail(BMailInternetAddress email, String realmIdentifier) {
 
     return this.apiApp.getUserProvider()

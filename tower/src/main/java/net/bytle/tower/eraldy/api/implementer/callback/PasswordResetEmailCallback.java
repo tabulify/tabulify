@@ -8,7 +8,6 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
-import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.OAuthState;
 import net.bytle.vertx.flow.WebFlowEmailCallbackAbs;
@@ -67,7 +66,7 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
       .getAuthProvider()
       .getAuthUserForSessionByEmailNotNull(bMailInternetAddress, realmIdentifier)
       .onFailure(ctx::fail)
-      .onSuccess(authUserForSession -> new AuthContext(this.getWebFlow(), ctx, authUserForSession, OAuthState.createEmpty(), jwtClaims)
+      .onSuccess(authUserForSession -> apiApp.getAuthNContextManager().newAuthNContext(ctx, webFlow, authUserForSession, OAuthState.createEmpty(), jwtClaims)
         .redirectViaHttp(apiApp.getEraldyModel().getMemberAppUri().setPath(FRONT_END_UPDATE_OPERATION_PATH))
         .authenticateSession());
 

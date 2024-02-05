@@ -17,7 +17,6 @@ import net.bytle.vertx.analytics.model.AnalyticsEventClient;
 import net.bytle.vertx.flow.WebFlow;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,30 +29,32 @@ import java.util.List;
  * It will authenticate the session
  * and redirect the user when all handlers have been called
  */
-public class AuthContext {
+public class AuthNContext {
 
   private final RoutingContext ctx;
   private final AuthJwtClaims jwtClaims;
+  private final WebFlow flow;
   private AuthUser authUser;
   private final OAuthState oAuthState;
-  private final WebFlow flow;
-  private List<Handler<AuthContext>> handlers = new ArrayList<>();
+  private final AuthNContextManager authNContextManager;
+
   private int handlerIndex = -1;
 
   /**
-   *
-   * @param flow - the flow that log the user in
-   * @param ctx - the context
-   * @param user - the user to set on the session
-   * @param oAuthState - the auth state from an external oauth endpoint
-   * @param jwtClaims - the context claims from a link on an email or for a direct login
+   * @param authNContextManager - the authN manager with the configuration
+   * @param webFlow             - the flow that log the user in
+   * @param ctx                 - the context
+   * @param user                - the user to set on the session
+   * @param oAuthState          - the auth state from an external oauth endpoint
+   * @param jwtClaims           - the context claims from a link on an email or for a direct login
    */
-  public AuthContext(WebFlow flow, RoutingContext ctx, AuthUser user, OAuthState oAuthState, AuthJwtClaims jwtClaims) {
+  protected AuthNContext(AuthNContextManager authNContextManager, WebFlow webFlow, RoutingContext ctx, AuthUser user, OAuthState oAuthState, AuthJwtClaims jwtClaims) {
     this.ctx = ctx;
     this.authUser = user;
     this.oAuthState = oAuthState;
-    this.flow = flow;
+    this.authNContextManager = authNContextManager;
     this.jwtClaims = jwtClaims;
+    this.flow = webFlow;
   }
 
 
@@ -73,31 +74,22 @@ public class AuthContext {
    * Call the next handler
    */
   public void next() {
-
-    if (this.handlerIndex < this.handlers.size() - 1) {
+    List<Handler<AuthNContext>> handlers = this.authNContextManager.getHandlers();
+    if (this.handlerIndex < handlers.size() - 1) {
       handlerIndex++;
-      this.handlers.get(handlerIndex).handle(this);
+      handlers.get(handlerIndex).handle(this);
     } else {
       this.nextLastHandlerSessionUpgrade();
     }
 
   }
 
-  /**
-   *
-   * @param authContextHandlers - Handlers that run before signing in
-   *                                           and that may perform other actions.
-   */
-  public AuthContext setHandlers(List<Handler<AuthContext>> authContextHandlers) {
-    this.handlers = authContextHandlers;
-    return this;
-  }
 
   /**
    * @param redirectUri - the uri where to redirect. It will get the auth redirect uri as parameter.
    *                    This is used with for instance a confirmation page that shows a message and then redirect the user
    */
-  public AuthContext redirectViaHttpWithAuthRedirectUriAsParameter(UriEnhanced redirectUri) {
+  public AuthNContext redirectViaHttpWithAuthRedirectUriAsParameter(UriEnhanced redirectUri) {
     this.redirectVia = RedirectionMethod.HTTP;
     UriEnhanced redirectUriParameter;
     try {
@@ -131,7 +123,7 @@ public class AuthContext {
    * We redirect to the frontend app to have a consistent design.
    * We don't validate the operation path for now other than with a visual / integration test.
    */
-  public AuthContext redirectViaHttp(UriEnhanced uriToRedirect) {
+  public AuthNContext redirectViaHttp(UriEnhanced uriToRedirect) {
     /**
      * We don't return an HTML template for consistency in the HTML app design
      * The user registers and gets the confirmation in the same design
@@ -145,7 +137,7 @@ public class AuthContext {
    * Redirect via the {@link AuthQueryProperty#REDIRECT_URI redirect uri parameter}
    * that is stored in the session (or in the auth state)
    */
-  public AuthContext redirectViaHttpWithAuthRedirectUriAsUri() {
+  public AuthNContext redirectViaHttpWithAuthRedirectUriAsUri() {
     this.redirectVia = RedirectionMethod.HTTP;
     /**
      * Try to get the original redirect uri parameters
@@ -168,7 +160,7 @@ public class AuthContext {
     return this;
   }
 
-  public AuthContext redirectViaClient() {
+  public AuthNContext redirectViaClient() {
     this.redirectVia = RedirectionMethod.NONE;
     return this;
   }
@@ -217,16 +209,28 @@ public class AuthContext {
         throw new InternalException("The authenticated user has no audience");
       }
 
-      contextUser = authUser.toVertxUser();
-      ctx.setUser(contextUser);
-
-
-      // the user has upgraded from unauthenticated to authenticated
-      // session should be upgraded as recommended by owasp
+      /**
+       * the user has upgraded from unauthenticated to authenticated
+       *  session should be upgraded as recommended by owasp
+       */
       Session session = ctx.session();
       if (session != null) {
         session.regenerateId();
+        String realmSessionKey = this.authNContextManager.getRealmSessionKey();
+        if (realmSessionKey != null) {
+          String realmSessionValue = session.get(realmSessionKey);
+          if(realmSessionValue==null){
+            throw new InternalException("The realm session key (" + realmSessionKey + ") does not return any value");
+          }
+          String realmUserValue = authUser.getRealmHandle();
+          if (!realmSessionValue.equals(realmUserValue)) {
+            throw new InternalException("The realm of the authenticated user (" + realmUserValue + ") and the realm of the session (" + realmSessionValue + ") differs.");
+          }
+        }
       }
+
+      contextUser = authUser.toVertxUser();
+      ctx.setUser(contextUser);
 
       SignInEvent signInEvent = getSignInEvent();
 

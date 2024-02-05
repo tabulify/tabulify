@@ -47,6 +47,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
   public ListRegistrationFlow(EraldyApiApp eraldyApiApp) {
     super(eraldyApiApp);
     this.callback = new ListRegistrationEmailCallback(this);
+
   }
 
   @Override
@@ -70,31 +71,32 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param optInIp          - the opt-in-ip
    * @param registrationFlow - the flow used to register the user to the list
    */
-  public Future<ListUser> registerUserToList(RoutingContext ctx, Guid listGuid, User user, LocalDateTime optInTime, String optInIp, ListUserSource registrationFlow) {
+  public Future<ListUser> createListUserEntry(RoutingContext ctx, Guid listGuid, User user, LocalDateTime optInTime, String optInIp, ListUserSource registrationFlow) {
 
     return this.getApp()
       .getListProvider()
       .getListByGuidObject(listGuid)
-      .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
+      .recover(err -> Future.failedFuture(new InternalException(err)))
       .compose(list -> {
-        ListUser inputListUser = new ListUser();
-        inputListUser.setList(list);
-        inputListUser.setUser(user);
-        inputListUser.setInOptInTime(optInTime);
-        inputListUser.setInOptInConfirmationTime(LocalDateTime.now());
-        inputListUser.setInOptInIp(optInIp);
+        ListUser listUser = new ListUser();
+        listUser.setList(list);
+        listUser.setUser(user);
+        listUser.setStatus(ListUserStatus.OK);
+        listUser.setInOptInTime(optInTime);
+        listUser.setInOptInConfirmationTime(LocalDateTime.now());
+        listUser.setInOptInIp(optInIp);
         try {
           String realRemoteClient = HttpRequestUtil.getRealRemoteClientIp(ctx.request());
-          inputListUser.setInOptInConfirmationIp(realRemoteClient);
+          listUser.setInOptInConfirmationIp(realRemoteClient);
         } catch (NotFoundException e) {
           LOGGER.warn("List registration validation: The remote ip client could not be found. Error: " + e.getMessage());
         }
-        inputListUser.setInSourceId(registrationFlow);
+        listUser.setInSourceId(registrationFlow);
         return this
           .getApp()
           .getListRegistrationProvider()
-          .upsertListUser(inputListUser)
-          .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
+          .upsertListUser(listUser)
+          .recover(err -> Future.failedFuture(new InternalException(err)))
           .compose(Future::succeededFuture);
       });
   }
@@ -149,8 +151,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .toJwtClaims(user)
           .addRequestClaims(routingContext)
           .setListGuid(listGuidHash)
-          .setRedirectUri(listUserPostBody.getRedirectUri())
-          ;
+          .setRedirectUri(listUserPostBody.getRedirectUri());
 
         SmtpSender sender = UsersUtil.toSenderUser(registrationList.getOwnerUser());
         String subscriberRecipientName;
@@ -328,12 +329,11 @@ public class ListRegistrationFlow extends WebFlowAbs {
         }
         futureFinaleAuthSessionUser
           .onFailure(ctx::fail)
-          .onSuccess(finalAuthSessionUser -> registerUserToList(ctx, listGuidObject, authProvider.toBaseModelUser(finalAuthSessionUser), optInTime, finalOptInIp, ListUserSource.EMAIL)
+          .onSuccess(finalAuthSessionUser -> createListUserEntry(ctx, listGuidObject, authProvider.toBaseModelUser(finalAuthSessionUser), optInTime, finalOptInIp, ListUserSource.EMAIL)
             .onFailure(ctx::fail)
             .onSuccess(listUser -> {
               String jwtRedirectUri = jwtClaims.getRedirectUri();
               String registrationConfirmationOperationPath = jwtRedirectUri.replace(REGISTRATION_GUID_PARAM, listUser.getGuid());
-
               UriEnhanced redirectUri;
               try {
                 redirectUri = UriEnhanced.createFromString(registrationConfirmationOperationPath);
@@ -344,7 +344,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
                   .buildWithContextFailingTerminal(ctx);
                 return;
               }
-              new AuthContext(this, ctx, finalAuthSessionUser, OAuthState.createEmpty(), jwtClaims)
+              getApp().getAuthNContextManager()
+                .newAuthNContext(ctx, this, finalAuthSessionUser, OAuthState.createEmpty(), jwtClaims)
                 .redirectViaHttp(redirectUri)
                 .authenticateSession();
             })
@@ -365,7 +366,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * If the user authenticate via a list, we register
    * the user to the list
    */
-  public Handler<AuthContext> handleStepOAuthAuthentication() {
+  public Handler<AuthNContext> handleStepOAuthAuthentication() {
     return authContext -> {
 
       String listGuid = authContext.getAuthState().getListGuid();
@@ -407,7 +408,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       }
 
       User user = this.getApp().getAuthProvider().toBaseModelUser(authUser);
-      this.registerUserToList(ctx, listGuidObject, user, optInTime, optInIp, ListUserSource.OAUTH)
+      this.createListUserEntry(ctx, listGuidObject, user, optInTime, optInIp, ListUserSource.OAUTH)
         .onFailure(err -> authContext.getRoutingContext().fail(err))
         .onSuccess(registration -> authContext.next());
     };

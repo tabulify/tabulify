@@ -1,7 +1,6 @@
 package net.bytle.vertx.auth;
 
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalArgumentExceptions;
@@ -11,8 +10,6 @@ import net.bytle.vertx.*;
 import net.bytle.vertx.flow.WebFlowAbs;
 import net.bytle.vertx.flow.WebFlowType;
 
-import java.util.List;
-
 /**
  * A flow with external IDP (identity provider)
  * that implements the oauth code flow
@@ -20,11 +17,13 @@ import java.util.List;
 public class OAuthExternalCodeFlow extends WebFlowAbs {
 
   private final OAuthExternal oauthExternal;
+  private final AuthNContextManager authNContextManager;
 
 
-  public OAuthExternalCodeFlow(TowerApp towerApp, String pathMount, List<Handler<AuthContext>> authContextHandlers) throws ConfigIllegalException {
+  public OAuthExternalCodeFlow(TowerApp towerApp, String pathMount, AuthNContextManager authContextManager) throws ConfigIllegalException {
     super(towerApp);
-    this.oauthExternal = new OAuthExternal(this, pathMount, authContextHandlers);
+    this.oauthExternal = new OAuthExternal(this, pathMount);
+    this.authNContextManager = authContextManager;
   }
 
   /**
@@ -110,4 +109,7 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
     return WebFlowType.OAUTH;
   }
 
+  public AuthNContextManager getAuthContextManager() {
+    return this.authNContextManager;
+  }
 }

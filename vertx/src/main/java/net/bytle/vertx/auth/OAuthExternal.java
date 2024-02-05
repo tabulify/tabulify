@@ -1,6 +1,5 @@
 package net.bytle.vertx.auth;
 
-import io.vertx.core.Handler;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.auth.authorization.PermissionBasedAuthorization;
 import io.vertx.ext.auth.oauth2.authorization.ScopeAuthorization;
@@ -13,12 +12,10 @@ import net.bytle.type.Casts;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.TowerApp;
-import net.bytle.vertx.flow.WebFlow;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -51,14 +48,12 @@ public class OAuthExternal {
   private final OAuthExternalCodeFlow flow;
   private final String pathMount;
 
-  private final List<Handler<AuthContext>> authHandlers;
 
-  public OAuthExternal(OAuthExternalCodeFlow flow, String pathMount, List<Handler<AuthContext>> authHandlers) throws ConfigIllegalException {
+  public OAuthExternal(OAuthExternalCodeFlow flow, String pathMount) throws ConfigIllegalException {
     this.flow = flow;
     this.pathMount = pathMount;
     addExternalProvider(OAuthExternalIdentifier.GITHUB);
     addExternalProvider(OAuthExternalIdentifier.GOOGLE);
-    this.authHandlers = authHandlers;
   }
 
   private OAuthExternal addExternalProvider(OAuthExternalIdentifier provider) throws ConfigIllegalException {
@@ -141,12 +136,8 @@ public class OAuthExternal {
   }
 
 
-  public List<Handler<AuthContext>> getOAuthSessionAuthenticationHandlers() {
-    return this.authHandlers;
-  }
-
-
-  public WebFlow getFlow() {
+  public OAuthExternalCodeFlow getFlow() {
     return this.flow;
   }
+
 }

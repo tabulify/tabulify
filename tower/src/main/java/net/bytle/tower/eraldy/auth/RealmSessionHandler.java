@@ -17,6 +17,7 @@ import io.vertx.ext.web.sstore.impl.SessionInternal;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.vertx.TowerApexDomain;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * we can (github, google, ...) do it
  * <p>
  * A handler that maintains a {@link io.vertx.ext.web.Session} for each browser session
- * with a cookie based on a realm key (See {@link #getSessionCookieName(RoutingContext)}
+ * with a cookie based on a realm key (See {@link #getSessionCookieName(String)}
  * <p>
  * It stores the session when the response is ended in the session store.
  * <p>
@@ -72,6 +73,7 @@ public class RealmSessionHandler implements SessionHandler {
   public static final String SESSION_COOKIE_SAME_SITE_KEY = "cs-session-cross-cookie";
 
   private static final Logger LOG = LoggerFactory.getLogger(RealmSessionHandler.class);
+
   private static RealmSessionHandler realmSessionHandler;
 
   private final SessionStore sessionStore;
@@ -93,6 +95,11 @@ public class RealmSessionHandler implements SessionHandler {
    * the context key where to find the realm handle
    */
   private String realmHandleContextKey;
+  private boolean failIfRealmNotFound = true;
+  /**
+   * The key in the session where the realm value is stored
+   */
+  private String realmSessionKey = "realm";
 
 
   public RealmSessionHandler(TowerApexDomain apexDomain) {
@@ -173,6 +180,11 @@ public class RealmSessionHandler implements SessionHandler {
     return this;
   }
 
+  public RealmSessionHandler setRealmSessionKey(String realmSessionKey) {
+    this.realmSessionKey = realmSessionKey;
+    return this;
+  }
+
   @Override
   public RealmSessionHandler setCookieless(boolean cookieless) {
     /**
@@ -183,12 +195,13 @@ public class RealmSessionHandler implements SessionHandler {
 
   @Override
   public Future<Void> flush(RoutingContext context, boolean ignoreStatus) {
-    String cookieName;
+    String realmHandle;
     try {
-      cookieName = this.getSessionCookieName(context);
+      realmHandle = this.getRealmHandle(context);
     } catch (NotFoundException e) {
       return Future.succeededFuture();
     }
+    String cookieName = this.getSessionCookieName(realmHandle);
     return flushSessionToStore(context, false, ignoreStatus, cookieName);
   }
 
@@ -345,28 +358,30 @@ public class RealmSessionHandler implements SessionHandler {
 
   /**
    *
-   * @param routingContext - the http routing context
+   * @param realmHandle - the realm handle
    * @return the cookie name where the session id is stored
-   * @throws NotFoundException - if the realm handle key has no value.
-   * This is not a fatal error.
-   * Because we don't control the setting of the context key.
-   * For instance, a callback from oauth will not have information
-   * that permits us to set it. In this case, there is no session.
-   * The auth callback handler needs to create the session.
+   *
    */
-  private String getSessionCookieName(RoutingContext routingContext) throws NotFoundException {
+  private String getSessionCookieName(String realmHandle) {
 
-    /**
-     * Session is at the realm level
-     * Meaning that a user can be logged in on 2 differents realms
-     * with the same browser
-     */
-    String realmHandle = routingContext.get(this.realmHandleContextKey);
-    if (realmHandle == null) {
-      throw new NotFoundException("The realm was not set on the context key " + this.realmHandleContextKey + ". We can't determine the session cookie name.");
-    }
     return eraldyDomain.getPrefixName() + "-session-id-" + realmHandle;
 
+  }
+
+  /**
+   * Session is at the realm level
+   * Meaning that a user can be logged in on 2 differents realms
+   * with the same browser
+   */
+  @NotNull
+  private String getRealmHandle(RoutingContext routingContext) throws NotFoundException {
+
+    String realmHandle = routingContext.get(this.realmHandleContextKey);
+    if (realmHandle == null) {
+      String s = "The realm was not set on the context key " + this.realmHandleContextKey + ". We can't determine the session cookie name.";
+      throw new NotFoundException(s);
+    }
+    return realmHandle;
   }
 
 
@@ -375,15 +390,16 @@ public class RealmSessionHandler implements SessionHandler {
 
     String tempCookieName;
     try {
-      tempCookieName = this.getSessionCookieName(context);
+      tempCookieName = this.getRealmHandle(context);
     } catch (NotFoundException e) {
-      /**
-       * See {@link #getFutureCookieNameNotFound()}
-       */
-      context.next();
+      if (this.failIfRealmNotFound) {
+        context.fail(e);
+      } else {
+        context.next();
+      }
       return;
     }
-    String cookieName = tempCookieName;
+    String cookieName = this.getSessionCookieName(tempCookieName);
 
     HttpServerRequest request = context.request();
     if (nagHttps && LOG.isDebugEnabled()) {
@@ -465,13 +481,16 @@ public class RealmSessionHandler implements SessionHandler {
 
   @Override
   public Session newSession(RoutingContext context) {
-    String cookieName;
+    String realmHandle;
     try {
-      cookieName = this.getSessionCookieName(context);
+      realmHandle = this.getRealmHandle(context);
     } catch (NotFoundException e) {
+      if (this.failIfRealmNotFound) {
+        context.fail(e);
+      }
       return null;
     }
-
+    String cookieName = this.getSessionCookieName(realmHandle);
     Session session = sessionStore.createSession(sessionTimeout, minLength);
     ((RoutingContextInternal) context).setSession(session);
 
@@ -486,12 +505,17 @@ public class RealmSessionHandler implements SessionHandler {
   }
 
   public Future<Void> setUser(RoutingContext context, User user) {
-    String cookieName;
+    String realmHandle;
     try {
-      cookieName = this.getSessionCookieName(context);
+      realmHandle = this.getRealmHandle(context);
     } catch (NotFoundException e) {
-      return Future.succeededFuture();
+      if (this.failIfRealmNotFound) {
+        return Future.failedFuture(e);
+      } else {
+        return Future.succeededFuture();
+      }
     }
+    String cookieName = this.getSessionCookieName(realmHandle);
     context.response().removeCookie(cookieName, false);
     context.setUser(user);
     // signal we must store the user to link it to the session
@@ -531,7 +555,8 @@ public class RealmSessionHandler implements SessionHandler {
       });
   }
 
-  private void doGetSession(Vertx vertx, long startTime, String sessionID, Handler<AsyncResult<Session>> resultHandler) {
+  private void doGetSession(Vertx vertx, long startTime, String
+    sessionID, Handler<AsyncResult<Session>> resultHandler) {
     sessionStore.get(sessionID)
       .onComplete(res -> {
         if (res.succeeded()) {
@@ -571,6 +596,14 @@ public class RealmSessionHandler implements SessionHandler {
 
   private void createNewSession(RoutingContext context, String cookieName) {
     Session session = sessionStore.createSession(sessionTimeout, minLength);
+    try {
+      session.put(this.realmSessionKey, this.getRealmHandle(context));
+    } catch (NotFoundException e) {
+      if (this.failIfRealmNotFound) {
+        context.fail(e);
+        return;
+      }
+    }
     ((RoutingContextInternal) context).setSession(session);
     context.response().removeCookie(cookieName, false);
     // it's a new session we must store the user too otherwise it won't be linked
@@ -610,8 +643,17 @@ public class RealmSessionHandler implements SessionHandler {
    * @param realmHandleContextKey - the context key where to find the realm handle
    *                              it's used to create a unique session cookie id for each realm (one session by realm)
    */
-  public RealmSessionHandler setRealmHandleContextKey(String realmHandleContextKey) {
+  public RealmSessionHandler setRealmContextKey(String realmHandleContextKey) {
     this.realmHandleContextKey = realmHandleContextKey;
+    return this;
+  }
+
+  /**
+   *
+   * @param failIfRealmNotFound - fail the request if no realm is set
+   */
+  public RealmSessionHandler setFailIfRealmNotFound(boolean failIfRealmNotFound) {
+    this.failIfRealmNotFound = failIfRealmNotFound;
     return this;
   }
 }

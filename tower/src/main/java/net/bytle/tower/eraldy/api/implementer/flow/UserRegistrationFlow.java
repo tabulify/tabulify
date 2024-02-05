@@ -79,7 +79,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
       this.getApp().getAuthProvider().checkClientAuthorization(authClient, listRegistration);
     } catch (NotAuthorizedException e) {
       return Future.failedFuture(TowerFailureException.builder()
-        .setMessage("You don't have any permission to "+listRegistration.getHumanActionName())
+        .setMessage("You don't have any permission to " + listRegistration.getHumanActionName())
         .buildWithContextFailing(routingContext)
       );
     }
@@ -97,7 +97,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
     return getApp()
       .getAuthClientProvider()
       .getClientFromClientId(clientId)
-      .compose(clientAuthClient->{
+      .compose(clientAuthClient -> {
 
 
         User newUser = new User();
@@ -250,7 +250,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           // Possible causes:
           // * The user has clicked two times on the validation link received by email
           // * The user tries to register again
-          new AuthContext(this, ctx, authUserFromGet, OAuthState.createEmpty(), jwtClaims)
+          this.getApp().getAuthNContextManager().newAuthNContext(ctx, this, authUserFromGet, OAuthState.createEmpty(), jwtClaims)
             .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(authUserFromGet.getSubject()))
             .authenticateSession();
           return;
@@ -258,7 +258,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         authProvider
           .insertUserFromLoginAuthUserClaims(jwtClaims, ctx, this)
           .onFailure(ctx::fail)
-          .onSuccess(authUserInserted -> new AuthContext(this, ctx, authUserInserted, OAuthState.createEmpty(), jwtClaims)
+          .onSuccess(authUserInserted -> this.getApp().getAuthNContextManager().newAuthNContext(ctx, this, authUserInserted, OAuthState.createEmpty(), jwtClaims)
             .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(authUserInserted.getSubject()))
             .authenticateSession()
           );
@@ -277,7 +277,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
   /**
    * Handle when a user is authenticated via OAuth
    */
-  public Handler<AuthContext> handleOAuthAuthentication() {
+  public Handler<AuthNContext> handleOAuthAuthentication() {
     return authContext -> {
 
       AuthUser authUserClaims = authContext.getAuthUser();
