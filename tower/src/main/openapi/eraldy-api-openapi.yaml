@@ -275,7 +275,7 @@ paths:
     get:
       operationId: "authLogoutGet"
       summary: The logout endpoint
-      security: []
+      security: [ ]
       tags:
         - auth
       parameters:
@@ -344,7 +344,7 @@ paths:
       summary: Login by sending an email with a login link
       tags:
         - auth
-      security: [] # open
+      security: [ ] # open
       requestBody:
         $ref: '#/components/requestBodies/AuthEmailPostBody'
       responses:
@@ -394,7 +394,7 @@ paths:
       summary: The login form end point for password credentials
       tags:
         - auth
-      security: [] # open
+      security: [ ] # open
       requestBody:
         $ref: '#/components/requestBodies/LoginPostBody'
       responses:
@@ -423,7 +423,7 @@ paths:
       summary: "Login via a link and give the possibility to modify the password"
       tags:
         - auth
-      security: [] # open
+      security: [ ] # open
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/EmailPostBody'
       responses:
@@ -438,7 +438,7 @@ paths:
       summary: "Register a user"
       tags:
         - auth
-      security: [] # open
+      security: [ ] # open
       requestBody:
         $ref: '#/components/requestBodies/AuthEmailPostBody'
       responses:
@@ -447,32 +447,16 @@ paths:
           description: "An email was send for validation"
         '400':
           description: "A parameter is not valid"
-  /auth/register/list:
+  /list/{listIdentifier}/register:
     post:
-      operationId: authRegisterListPost
-      summary: "Register a user to a list by sending an email for validation"
+      operationId: listListIdentifierRegisterPost
+      summary: "Register a public user to a list by sending an email for validation"
       tags:
-        - auth
-      security: [] # open
+        - list
+      security: [ ] # open
       requestBody:
         required: true
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ListUserPostBody'
-      responses:
-        '200':
-          description: "Email was send for validation"
-        '204':
-          description: "Email was send for validation"
-  /auth/register/list/{listIdentifier}:
-    get:
-      operationId: authRegisterListListIdentifierGet
-      summary: |
-        Register a user to a list
-        If the user is:
-          * not signed in, a redirection occurs to the page with the register form
-          * signed in, a redirection occurs to the confirmation page
-      tags:
-        - auth
-      security: [ ] # open
       parameters:
         - name: listIdentifier
           description: "The list identifier (guid, ...)"
@@ -482,13 +466,15 @@ paths:
             type: string
             example: "lis-xklm"
       responses:
-        '302':
-          description: "Redirect to the form or confirmation page"
+        '200':
+          description: "Email was send for validation"
+        '204':
+          description: "Email was send for validation"
   /analytics/event:
     post:
       operationId: analyticsEventPost
       summary: "Report a analytics event"
-      security: [] # open
+      security: [ ] # open
       tags:
         - analytics
       requestBody:
@@ -555,7 +541,7 @@ paths:
       operationId: cspReportPost
       # https://w3c.github.io/webappsec-csp/#cspviolationreportbody
       summary: "Report a CSP Violation"
-      security: [] # open
+      security: [ ] # open
       tags:
         - csp
       requestBody:
@@ -656,7 +642,7 @@ paths:
       tags:
         - realm
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       parameters:
         - name: realmIdentifier
           description: "The guid or handle of the realm"
@@ -681,7 +667,7 @@ paths:
       tags:
         - realm
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/RealmPostBody'
       responses:
@@ -748,7 +734,7 @@ paths:
       tags:
         - realm
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       responses:
         '200':
           description: "Return the list of realms owned by the authenticated user"
@@ -791,7 +777,7 @@ paths:
       tags:
         - campaign
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/CampaignEmailPostBody'
       responses:
@@ -840,7 +826,7 @@ paths:
       tags:
         - service
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ServiceSmtpPostBody'
       responses:
@@ -857,7 +843,7 @@ paths:
       tags:
         - app
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/AppPostBody'
       responses:
@@ -875,7 +861,7 @@ paths:
       tags:
         - app
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       parameters:
         - name: appIdentifier
           description: "An app guid or handle"
@@ -903,7 +889,7 @@ paths:
       tags:
         - app
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       parameters:
         - name: realmIdentifier
           description: "A realm identifier (a guid or handle)"
@@ -957,7 +943,7 @@ paths:
       tags:
         - user
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/UserPostBody'
       responses:
@@ -974,7 +960,7 @@ paths:
       tags:
         - user
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       responses:
         '200':
           description: Ok
@@ -997,7 +983,7 @@ paths:
       tags:
         - user
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       parameters:
         - name: guid
           description: "The guid of the user"
@@ -1112,8 +1098,8 @@ paths:
         * name with the listHandle and realmIdentifier
       tags:
         - list
-      security:
-        - apiKeyAuth: []
+      # open to be able to register public users, we need this data to be public
+      security: [ ]
       parameters:
         - name: listIdentifier
           description: |
@@ -1213,7 +1199,7 @@ paths:
       tags:
         - app
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       parameters:
         - name: appIdentifier
           description: "An app guid or handle"
@@ -1245,7 +1231,7 @@ paths:
       tags:
         - app
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       parameters:
         - name: appIdentifier
           description: "An app identifier (a guid, handle is not yet supported)"
@@ -1272,7 +1258,7 @@ paths:
       tags:
         - list
       security:
-        - apiKeyAuth: []
+        - apiKeyAuth: [ ]
       parameters:
         - name: realmIdentifier
           description: "A realm identifier (guid or realm)"
@@ -1417,29 +1403,6 @@ paths:
       responses:
         '200':
           description: "The confirmation letter"
-          content:
-            text/html:
-              schema:
-                type: string
-  # callback
-  /list/user/confirmation/{listUserIdentifier}:
-    get:
-      operationId: "listUserConfirmationUserGet"
-      summary: "Shows a confirmation page for the registration"
-      tags:
-        - list
-      security: [ ]
-      parameters:
-        - name: "listUserIdentifier"
-          description: The list user identifier (guid)
-          required: true
-          in: path
-          schema:
-            type: string
-        - $ref: "#/components/parameters/redirect_uri"
-      responses:
-        '200':
-          description: "The registration list confirmation HTML page"
           content:
             text/html:
               schema:

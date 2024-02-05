@@ -122,5 +122,13 @@ public class AuthJwtClaims extends AuthUser {
   }
 
 
+  public String getRedirectUri() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_REDIRECT_URI.toString());
+  }
+
+  public AuthJwtClaims setRedirectUri(URI redirectUri) {
+    claims.put(AuthUserJwtClaims.CUSTOM_REDIRECT_URI.toString(), redirectUri.toString());
+    return this;
+  }
 
 }

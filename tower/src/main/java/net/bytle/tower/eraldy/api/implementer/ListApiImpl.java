@@ -168,6 +168,14 @@ public class ListApiImpl implements ListApi {
   }
 
   @Override
+  public Future<ApiResponse<Void>> listListIdentifierRegisterPost(RoutingContext routingContext, String listIdentifier, ListUserPostBody listUserPostBody) {
+
+    return this.apiApp.getUserListRegistrationFlow().handleStep1SendingValidationEmail(routingContext, listIdentifier, listUserPostBody)
+      .compose(response -> Future.succeededFuture(new ApiResponse<>()));
+
+  }
+
+  @Override
   public Future<ApiResponse<List<ListImportJobRowStatus>>> listListImportJobDetailsGet(RoutingContext routingContext, String listIdentifier, String jobIdentifier) {
 
     Path path = this.apiApp
@@ -265,15 +273,6 @@ public class ListApiImpl implements ListApi {
   }
 
 
-  @Override
-  public Future<ApiResponse<String>> listUserConfirmationUserGet(RoutingContext routingContext, String registrationGuid, String redirectUri) {
-    /**
-     * Note that the redirection uri is not mandatory
-     * and is used by the front end to redirect if present
-     */
-    return this.apiApp.getUserListRegistrationFlow().handleStep3Confirmation(routingContext, registrationGuid);
-  }
-
   public static final String REGISTRATION_EMAIL_SUBJECT_PREFIX = "User Registration: ";
 
   @Override
@@ -366,7 +365,6 @@ public class ListApiImpl implements ListApi {
 
     ListUserPostBody listRegistrationPostBody = new ListUserPostBody();
     listRegistrationPostBody.setUserEmail(subscriberEmail);
-    listRegistrationPostBody.setListGuid(listGuid);
 
     Vertx vertx = routingContext.vertx();
     return apiApp

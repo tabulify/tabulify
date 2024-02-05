@@ -7,6 +7,7 @@ import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.tower.eraldy.model.openapi.ListUserPostBody;
 import net.bytle.tower.util.Env;
 import net.bytle.type.UriEnhanced;
@@ -18,7 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 
 /**
- * <a href="https://mailchimp.com/help/view-export-contacts/#heading+what%27s+included">Audience Data</a>
+ *
  */
 public class ListRegistrationValidationToken {
 
@@ -39,15 +40,14 @@ public class ListRegistrationValidationToken {
    */
   private URI optInUri;
   private String userEmail;
-  private String userName;
-  private String publicationGuid;
+  private final String listGuid;
 
-  public ListRegistrationValidationToken() {
-
+  public ListRegistrationValidationToken(ListItem listItem) {
+    this.listGuid = listItem.getGuid();
   }
 
-  public static config config() {
-    return new config();
+  public static config config(ListItem listItem) {
+    return new config(listItem);
   }
 
   @JsonProperty("optInIp")
@@ -70,14 +70,9 @@ public class ListRegistrationValidationToken {
     return userEmail;
   }
 
-  @JsonProperty("userName")
-  public String getUserName() {
-    return userName;
-  }
-
-  @JsonProperty("publicationGuid")
-  public String getPublicationGuid() {
-    return publicationGuid;
+  @JsonProperty("listGuid")
+  public String getListGuid() {
+    return listGuid;
   }
 
   public static class config {
@@ -88,8 +83,8 @@ public class ListRegistrationValidationToken {
       return token;
     }
 
-    public config() {
-      this.token = new ListRegistrationValidationToken();
+    public config(ListItem listItem) {
+      this.token = new ListRegistrationValidationToken(listItem);
     }
 
     public config setOptInIp(String optInIp) {
@@ -127,10 +122,9 @@ public class ListRegistrationValidationToken {
       return this;
     }
 
-    public config setFromListObject(ListUserPostBody publicationSubscriptionPost) {
-      this.token.userEmail = publicationSubscriptionPost.getUserEmail();
-      this.token.optInUri = publicationSubscriptionPost.getRedirectUri();
-      this.token.publicationGuid = publicationSubscriptionPost.getListGuid();
+    public config setFromListObject(ListUserPostBody listUserPost) {
+      this.token.userEmail = listUserPost.getUserEmail();
+      this.token.optInUri = listUserPost.getRedirectUri();
       return this;
     }
   }

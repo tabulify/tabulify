@@ -10,6 +10,7 @@ import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.model.openapi.ListBody;
+import net.bytle.tower.eraldy.model.openapi.ListUserPostBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,13 +27,13 @@ this.api = api;
 public void mount(RouterBuilder builder) {
     builder.operation("listListDelete").handler(this::listListDelete);
     builder.operation("listListGet").handler(this::listListGet);
+    builder.operation("listListIdentifierRegisterPost").handler(this::listListIdentifierRegisterPost);
     builder.operation("listListImportJobDetailsGet").handler(this::listListImportJobDetailsGet);
     builder.operation("listListImportJobGet").handler(this::listListImportJobGet);
     builder.operation("listListImportPost").handler(this::listListImportPost);
     builder.operation("listListImportsGet").handler(this::listListImportsGet);
     builder.operation("listListPatch").handler(this::listListPatch);
     builder.operation("listListUsersGet").handler(this::listListUsersGet);
-    builder.operation("listUserConfirmationUserGet").handler(this::listUserConfirmationUserGet);
     builder.operation("listUserIdentifierGet").handler(this::listUserIdentifierGet);
     builder.operation("listUserLetterConfirmationGet").handler(this::listUserLetterConfirmationGet);
     builder.operation("listUserLetterValidationGet").handler(this::listUserLetterValidationGet);
@@ -71,6 +72,25 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listListGet(routingContext, listIdentifier, realmIdentifier)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void listListIdentifierRegisterPost(RoutingContext routingContext) {
+    logger.info("listListIdentifierRegisterPost()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
+  RequestParameter requestParameterBody = requestParameters.body();
+  ListUserPostBody listUserPostBody = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<ListUserPostBody>(){}) : null;
+
+      logger.debug("Parameter listIdentifier is {}", listIdentifier);
+      logger.debug("Parameter listUserPostBody is {}", listUserPostBody);
+
+    // Based on Route#respond
+    api.listListIdentifierRegisterPost(routingContext, listIdentifier, listUserPostBody)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }
@@ -186,24 +206,6 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listListUsersGet(routingContext, listIdentifier, pageSize, pageId, searchTerm)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
-
-    private void listUserConfirmationUserGet(RoutingContext routingContext) {
-    logger.info("listUserConfirmationUserGet()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-            String listUserIdentifier = requestParameters.pathParameter("listUserIdentifier") != null ? requestParameters.pathParameter("listUserIdentifier").getString() : null;
-        String redirectUri = requestParameters.queryParameter("redirect_uri") != null ? requestParameters.queryParameter("redirect_uri").getString() : null;
-
-      logger.debug("Parameter listUserIdentifier is {}", listUserIdentifier);
-      logger.debug("Parameter redirectUri is {}", redirectUri);
-
-    // Based on Route#respond
-    api.listUserConfirmationUserGet(routingContext, listUserIdentifier, redirectUri)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

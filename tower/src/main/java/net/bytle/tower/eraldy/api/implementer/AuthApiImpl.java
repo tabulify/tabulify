@@ -6,7 +6,6 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.IllegalStructure;
-import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
@@ -311,22 +310,12 @@ public class AuthApiImpl implements AuthApi {
 
   }
 
-  @Override
-  public Future<ApiResponse<Void>> authRegisterListListIdentifierGet(RoutingContext routingContext, String listIdentifier) {
-    throw new InternalException("Not yet implemented");
-  }
 
 
   @Override
   public Future<ApiResponse<Void>> authRegisterUserPost(RoutingContext routingContext, AuthEmailPost authEmailPost) {
 
     return this.apiApp.getUserRegistrationFlow().handleStep1SendEmail(routingContext, authEmailPost);
-  }
-
-  @Override
-  public Future<ApiResponse<Void>> authRegisterListPost(RoutingContext routingContext, ListUserPostBody listUserPostBody) {
-    return this.apiApp.getUserListRegistrationFlow().handleStep1SendingValidationEmail(routingContext, listUserPostBody)
-      .compose(response -> Future.succeededFuture(new ApiResponse<>()));
   }
 
 

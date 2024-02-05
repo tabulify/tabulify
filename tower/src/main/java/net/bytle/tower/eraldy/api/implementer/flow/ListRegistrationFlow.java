@@ -2,8 +2,6 @@ package net.bytle.tower.eraldy.api.implementer.flow;
 
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.http.Cookie;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
@@ -14,8 +12,6 @@ import net.bytle.exception.*;
 import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.ListRegistrationEmailCallback;
-import net.bytle.tower.eraldy.api.implementer.util.FrontEndRouter;
-import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
@@ -44,21 +40,13 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
   private static final Logger LOGGER = LogManager.getLogger(ListRegistrationFlow.class);
 
-  private static final String REGISTRATION_GUID_PARAM = ":registrationGuid";
+  private static final String REGISTRATION_GUID_PARAM = ":guid";
 
-  /**
-   * We add the guid in the path to not fall in the
-   * list registration operation path (ie /register/list/:registrationGuid)
-   * TODO: Add dynamically as a callback the same that it's done for email, See {@link ListRegistrationEmailCallback}
-   */
-  private static final String FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH = "/register/list/confirmation/" + REGISTRATION_GUID_PARAM;
   private final ListRegistrationEmailCallback callback;
-  private final FrontEndCookie<String> cookieData;
 
   public ListRegistrationFlow(EraldyApiApp eraldyApiApp) {
     super(eraldyApiApp);
     this.callback = new ListRegistrationEmailCallback(this);
-    this.cookieData = FrontEndCookie.createCookieData(String.class);
   }
 
   @Override
@@ -111,24 +99,6 @@ public class ListRegistrationFlow extends WebFlowAbs {
       });
   }
 
-  public UriEnhanced getRegistrationConfirmationOperationPath(ListUser listUser) {
-    String registrationConfirmationOperationPath = FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH.replace(REGISTRATION_GUID_PARAM, listUser.getGuid());
-    return this.getApp().getEraldyModel().getMemberAppUri().setPath(registrationConfirmationOperationPath);
-  }
-
-  /**
-   * Send registration data to the front end via cookie
-   *
-   * @param routingContext - the context
-   * @param listUser   - the registration
-   */
-  public void addRegistrationConfirmationCookieData(RoutingContext routingContext, ListUser listUser) {
-
-
-      String listUserAsJson = this.getApp().getListRegistrationProvider().toTemplateJson(listUser);
-
-      this.cookieData.setValue(listUserAsJson, routingContext);
-  }
 
   /**
    * Handle the post list registration
@@ -136,7 +106,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param routingContext              - the routing context
    * @param listUserPostBody - the post data
    */
-  public Future<Void> handleStep1SendingValidationEmail(RoutingContext routingContext, ListUserPostBody listUserPostBody) {
+  public Future<Void> handleStep1SendingValidationEmail(RoutingContext routingContext, String listGuidHash, ListUserPostBody listUserPostBody) {
 
     /**
      * Check authorization
@@ -147,7 +117,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       this.getApp().getAuthProvider().checkClientAuthorization(authClient, listRegistration);
     } catch (NotAuthorizedException e) {
       return Future.failedFuture(TowerFailureException.builder()
-        .setMessage("You don't have any permission to "+listRegistration.getHumanActionName())
+        .setMessage("You don't have any permission to " + listRegistration.getHumanActionName())
         .buildWithContextFailing(routingContext)
       );
     }
@@ -161,9 +131,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
      * We validate the publication id value
      * (not against the database)
      */
-    String listGuidHash = listUserPostBody.getListGuid();
     if (listGuidHash == null) {
-      throw IllegalArgumentExceptions.createWithInputNameAndValue("List guid should not be null", "listGuid", null);
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("List guid should not be null", "listIdentifier", null);
     }
 
     return getApp().getListProvider()
@@ -179,7 +148,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
         AuthJwtClaims jwtClaims = getApp().getAuthProvider()
           .toJwtClaims(user)
           .addRequestClaims(routingContext)
-          .setListGuid(listGuidHash);
+          .setListGuid(listGuidHash)
+          .setRedirectUri(listUserPostBody.getRedirectUri())
+          ;
 
         SmtpSender sender = UsersUtil.toSenderUser(registrationList.getOwnerUser());
         String subscriberRecipientName;
@@ -291,6 +262,11 @@ public class ListRegistrationFlow extends WebFlowAbs {
       });
   }
 
+  /**
+   * Handle when the user clicks on the link in the email
+   * @param ctx - the context
+   * @param jwtClaims - the claims received
+   */
   public void handleStep2EmailValidationLinkClick(RoutingContext ctx, AuthJwtClaims jwtClaims) {
 
 
@@ -301,6 +277,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       ctx.fail(new InternalException("No guid was in the claims for a user list registration"));
       return;
     }
+
     LocalDateTime optInTime = jwtClaims.getIssuedAt().toLocalDateTime();
     String optInIp;
     try {
@@ -353,94 +330,29 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .onFailure(ctx::fail)
           .onSuccess(finalAuthSessionUser -> registerUserToList(ctx, listGuidObject, authProvider.toBaseModelUser(finalAuthSessionUser), optInTime, finalOptInIp, ListUserSource.EMAIL)
             .onFailure(ctx::fail)
-            .onSuccess(registration -> {
-              if (ctx.user() == null) {
-                addRegistrationConfirmationCookieData(ctx, registration);
-                UriEnhanced redirectUri = getRegistrationConfirmationOperationPath(registration);
-                new AuthContext(this, ctx, finalAuthSessionUser, OAuthState.createEmpty(), jwtClaims)
-                  .redirectViaHttp(redirectUri)
-                  .authenticateSession();
+            .onSuccess(listUser -> {
+              String jwtRedirectUri = jwtClaims.getRedirectUri();
+              String registrationConfirmationOperationPath = jwtRedirectUri.replace(REGISTRATION_GUID_PARAM, listUser.getGuid());
+
+              UriEnhanced redirectUri;
+              try {
+                redirectUri = UriEnhanced.createFromString(registrationConfirmationOperationPath);
+              } catch (IllegalStructure e) {
+                TowerFailureException.builder()
+                  .setMessage("The redirect uri (" + registrationConfirmationOperationPath + ") is not valid")
+                  .setCauseException(e)
+                  .buildWithContextFailingTerminal(ctx);
+                return;
               }
+              new AuthContext(this, ctx, finalAuthSessionUser, OAuthState.createEmpty(), jwtClaims)
+                .redirectViaHttp(redirectUri)
+                .authenticateSession();
             })
           );
       });
 
   }
 
-  /**
-   * The page that shows the HTML form registration.
-   * This step is optional as the form may be hosted
-   * elsewhere
-   *
-   * @param routingContext - the routing context
-   * @param listGuid       - the list guid
-   * @return the frontend html page
-   */
-  @SuppressWarnings("unused")
-  public static Future<ApiResponse<String>> handleStep0RegistrationForm(EraldyApiApp apiApp, RoutingContext routingContext, Guid listGuid) {
-
-
-    Vertx vertx = routingContext.vertx();
-    return apiApp.getListProvider()
-      .getListByGuidObject(listGuid)
-      .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-      .compose(list -> {
-        if (list == null) {
-          return Future.failedFuture(
-            TowerFailureException
-              .builder()
-              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-              .setName("The list was not found")
-              .setMessage("The list <mark>" + listGuid + "</mark> was not found.")
-              .setMimeToHtml()
-              .buildWithContextFailing(routingContext)
-          );
-        }
-        Map<String, Object> variables = new HashMap<>();
-        User owner = ListProvider.getOwnerUser(list);
-        variables.put("list", list);
-        variables.put("owner", UsersUtil.getPublicUserForTemplateWithDefaultValues(owner));
-        Cookie cookieData = FrontEndCookie.getCookieData(variables);
-        routingContext.response().addCookie(cookieData);
-
-        /**
-         * Redirect URI is not mandatory
-         * The flow may end on the confirmation page.
-         */
-        UriEnhanced redirectUri = null;
-        try {
-          redirectUri = OAuthExternalCodeFlow.getRedirectUri(routingContext);
-        } catch (IllegalArgumentException e) {
-          return Future.failedFuture(e);
-        } catch (NotFoundException e) {
-          /**
-           * Redirect URI is not mandatory
-           * The flow may end on the confirmation page.
-           */
-        }
-
-        return FrontEndRouter.toPublicNonOAuthPage(apiApp, routingContext, redirectUri);
-
-      });
-  }
-
-  /**
-   * Shows the confirmation page
-   *
-   * @param routingContext   - the routing context
-   * @param registrationGuid - the registration guid
-   * @return Note that the redirection uri is not mandatory
-   * and is used by the front end to redirect if present
-   */
-  public Future<ApiResponse<String>> handleStep3Confirmation(RoutingContext routingContext, String registrationGuid) {
-    return this.getApp().getListRegistrationProvider()
-      .getListUserByGuidHash(registrationGuid)
-      .onFailure(routingContext::fail)
-      .compose(registration -> {
-        addRegistrationConfirmationCookieData(routingContext, registration);
-        return FrontEndRouter.toPrivatePage(this.getApp(), routingContext, false);
-      });
-  }
 
   public ListRegistrationEmailCallback getCallback() {
     return this.callback;

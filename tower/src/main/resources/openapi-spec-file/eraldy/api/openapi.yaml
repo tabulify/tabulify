@@ -269,25 +269,9 @@ paths:
       - auth
       x-content-type: application/json
       x-accepts: application/json
-  /auth/register/list:
+  /list/{listIdentifier}/register:
     post:
-      operationId: authRegisterListPost
-      requestBody:
-        $ref: '#/components/requestBodies/ListUserPostBody'
-      responses:
-        "200":
-          description: Email was send for validation
-        "204":
-          description: Email was send for validation
-      security: []
-      summary: Register a user to a list by sending an email for validation
-      tags:
-      - auth
-      x-content-type: application/json
-      x-accepts: application/json
-  /auth/register/list/{listIdentifier}:
-    get:
-      operationId: authRegisterListListIdentifierGet
+      operationId: listListIdentifierRegisterPost
       parameters:
       - description: "The list identifier (guid, ...)"
         explode: false
@@ -298,17 +282,18 @@ paths:
           example: lis-xklm
           type: string
         style: simple
+      requestBody:
+        $ref: '#/components/requestBodies/ListUserPostBody'
       responses:
-        "302":
-          description: Redirect to the form or confirmation page
+        "200":
+          description: Email was send for validation
+        "204":
+          description: Email was send for validation
       security: []
-      summary: |
-        Register a user to a list
-        If the user is:
-          * not signed in, a redirection occurs to the page with the register form
-          * signed in, a redirection occurs to the confirmation page
+      summary: Register a public user to a list by sending an email for validation
       tags:
-      - auth
+      - list
+      x-content-type: application/json
       x-accepts: application/json
   /analytics/event:
     post:
@@ -1071,8 +1056,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ListItemAnalytics'
           description: Ok
-      security:
-      - apiKeyAuth: []
+      security: []
       summary: |
         Get list information
 
@@ -1381,39 +1365,6 @@ paths:
       - apiKeyAuth: []
       summary: |
         Return the validation letter with a validation link as send by email.
-      tags:
-      - list
-      x-accepts: text/html
-  /list/user/confirmation/{listUserIdentifier}:
-    get:
-      operationId: listUserConfirmationUserGet
-      parameters:
-      - description: The list user identifier (guid)
-        explode: false
-        in: path
-        name: listUserIdentifier
-        required: true
-        schema:
-          type: string
-        style: simple
-      - description: The redirect uri (known also as callback endpoint)
-        explode: true
-        in: query
-        name: redirect_uri
-        required: true
-        schema:
-          example: https://client.example.com/callback
-          type: string
-        style: form
-      responses:
-        "200":
-          content:
-            text/html:
-              schema:
-                type: string
-          description: The registration list confirmation HTML page
-      security: []
-      summary: Shows a confirmation page for the registration
       tags:
       - list
       x-accepts: text/html
@@ -1976,31 +1927,32 @@ components:
       type: object
     ListUserPostBody:
       description: |
-        The data needed to register a user to a list
-        Note that a user email or a user id is required
-        (OpenAPI cannot describe that in a elegant way)
-        a user email or id is mandatory
-        a list id or guid is mandatory
+        The data needed to register a public user to a list
       example:
-        redirectUri: https://example.com/page
-        listGuid: listGuid
+        redirectUri: https://member.eradly.com/registration/confirmation/:guid?redirect_uri=xxx
         userEmail: john@doe.com
       properties:
         userEmail:
-          description: The email of the user that want to subscribe
+          description: The email of the public user that want to subscribe
           example: john@doe.com
           format: email
           type: string
-        listGuid:
-          description: The public list id where the user should be registered
-          type: string
         redirectUri:
-          description: where to redirect the user
-          example: https://example.com/page
+          description: |
+            The redirect Uri where to redirect the browser.
+
+            This URI is a template uri and should contains a `:guid` placeholder.
+            This placeholder is replaced with the list user entry guid that can be used to lookup
+            the entry.
+
+            The frontend is the driver of the flow, therefore this URI is mandatory.
+
+            If another final redirect uri needs to be set, it should be
+            set as a query property of this uri (ie http(s)://redirectUri?redirectUri)
+          example: https://member.eradly.com/registration/confirmation/:guid?redirect_uri=xxx
           format: uri
           type: string
       required:
-      - listGuid
       - redirectUri
       - userEmail
       title: Registration Request to a list

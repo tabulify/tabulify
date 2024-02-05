@@ -15,10 +15,12 @@ import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.tower.eraldy.model.openapi.ListUserPostBody;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.type.Booleans;
 import net.bytle.type.UriEnhanced;
-import net.bytle.vertx.*;
+import net.bytle.vertx.JsonToken;
+import net.bytle.vertx.JsonTokenCipher;
+import net.bytle.vertx.TemplateEngine;
+import net.bytle.vertx.TowerApp;
 
 /**
  * The letter (in HTML format)
@@ -66,7 +68,7 @@ public class ListRegistrationValidationLetter {
     private final BMailTransactionalTemplate transactionalTemplate;
     private final TowerApp towerApp;
     private RoutingContext routingContext;
-    private ListUserPostBody subscriptionPostObject;
+    private ListUserPostBody listUserPostObject;
     private ListItem listItem;
 
     public Config(TowerApp towerApp) {
@@ -106,23 +108,19 @@ public class ListRegistrationValidationLetter {
        * - we make sure that the path exists and was not changed in case of refactoring
        * - we may send back a html page (openapi does not allow to send back html for the moment)
        */
-      ListRegistrationValidationToken publicationSubscriptionConfirmationToken = ListRegistrationValidationToken
-        .config()
+      ListRegistrationValidationToken listRegistrationConfirmationToken = ListRegistrationValidationToken
+        .config(listItem)
         .addOptInContext(routingContext)
-        .setFromListObject(subscriptionPostObject)
+        .setFromListObject(listUserPostObject)
         .build();
       JsonToken jsonToken = this.towerApp.getApexDomain().getHttpServer().getServer().getJsonToken();
-      UriEnhanced validationUri = getValidationUri(publicationSubscriptionConfirmationToken, jsonToken);
-      if (HttpRequestUtil.isLocalhostRequest(routingContext)) {
-        // only in a test environment, to not modify the host file when testing with an external http client such as postman
-        validationUri.addQueryProperty(RealmProvider.REALM_HANDLE_URL_PARAMETER, listItem.getRealm().getHandle());
-      }
+      UriEnhanced validationUri = getValidationUri(listRegistrationConfirmationToken, jsonToken);
       String validationUrl = validationUri.toUri().toString();
 
 
       String recipientName = null;
       User subscriber = new User();
-      subscriber.setEmail(subscriptionPostObject.getUserEmail());
+      subscriber.setEmail(listUserPostObject.getUserEmail());
       try {
         recipientName = UsersUtil.getNameOrNameFromEmail(subscriber);
       } catch (NotFoundException e) {
@@ -179,7 +177,7 @@ public class ListRegistrationValidationLetter {
     }
 
     public Config withSubscriptionPostObject(ListUserPostBody listUserPostBody) {
-      this.subscriptionPostObject = listUserPostBody;
+      this.listUserPostObject = listUserPostBody;
       return this;
     }
 

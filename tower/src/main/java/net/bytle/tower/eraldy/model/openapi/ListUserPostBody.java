@@ -7,15 +7,13 @@ import java.net.URI;
 import java.util.Objects;
 
 /**
- * The data needed to register a user to a list Note that a user email or a user id is required (OpenAPI cannot describe that in a elegant way) a user email or id is mandatory a list id or guid is mandatory
+ * The data needed to register a public user to a list
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ListUserPostBody   {
 
 
   protected String userEmail;
-
-  protected String listGuid;
 
   protected URI redirectUri;
 
@@ -29,7 +27,7 @@ public class ListUserPostBody   {
   }
 
   /**
-  * @return userEmail The email of the user that want to subscribe
+  * @return userEmail The email of the public user that want to subscribe
   */
   @JsonProperty("userEmail")
   public String getUserEmail() {
@@ -37,7 +35,7 @@ public class ListUserPostBody   {
   }
 
   /**
-  * @param userEmail The email of the user that want to subscribe
+  * @param userEmail The email of the public user that want to subscribe
   */
   @SuppressWarnings("unused")
   public void setUserEmail(String userEmail) {
@@ -45,23 +43,7 @@ public class ListUserPostBody   {
   }
 
   /**
-  * @return listGuid The public list id where the user should be registered
-  */
-  @JsonProperty("listGuid")
-  public String getListGuid() {
-    return listGuid;
-  }
-
-  /**
-  * @param listGuid The public list id where the user should be registered
-  */
-  @SuppressWarnings("unused")
-  public void setListGuid(String listGuid) {
-    this.listGuid = listGuid;
-  }
-
-  /**
-  * @return redirectUri where to redirect the user
+  * @return redirectUri The redirect Uri where to redirect the browser.  This URI is a template uri and should contains a `:guid` placeholder. This placeholder is replaced with the list user entry guid that can be used to lookup the entry.  The frontend is the driver of the flow, therefore this URI is mandatory.  If another final redirect uri needs to be set, it should be set as a query property of this uri (ie http(s)://redirectUri?redirectUri)
   */
   @JsonProperty("redirectUri")
   public URI getRedirectUri() {
@@ -69,7 +51,7 @@ public class ListUserPostBody   {
   }
 
   /**
-  * @param redirectUri where to redirect the user
+  * @param redirectUri The redirect Uri where to redirect the browser.  This URI is a template uri and should contains a `:guid` placeholder. This placeholder is replaced with the list user entry guid that can be used to lookup the entry.  The frontend is the driver of the flow, therefore this URI is mandatory.  If another final redirect uri needs to be set, it should be set as a query property of this uri (ie http(s)://redirectUri?redirectUri)
   */
   @SuppressWarnings("unused")
   public void setRedirectUri(URI redirectUri) {
@@ -87,18 +69,18 @@ public class ListUserPostBody   {
     }
     ListUserPostBody listUserPostBody = (ListUserPostBody) o;
     return
-            Objects.equals(userEmail, listUserPostBody.userEmail) && Objects.equals(listGuid, listUserPostBody.listGuid) && Objects.equals(redirectUri, listUserPostBody.redirectUri);
+            Objects.equals(userEmail, listUserPostBody.userEmail) && Objects.equals(redirectUri, listUserPostBody.redirectUri);
 
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(userEmail, listGuid, redirectUri);
+    return Objects.hash(userEmail, redirectUri);
   }
 
   @Override
   public String toString() {
-    return userEmail + ", " + listGuid + ", " + redirectUri.toString();
+    return userEmail + ", " + redirectUri.toString();
   }
 
 }

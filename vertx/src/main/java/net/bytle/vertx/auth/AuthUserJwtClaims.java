@@ -136,7 +136,8 @@ public enum AuthUserJwtClaims {
   CUSTOM_SUBJECT_FAMILY_NAME("subFamilyName"),
   CUSTOM_SUBJECT_NAME("subName"),
   CUSTOM_ORG_GUID("orgGuid"),
-  CUSTOM_ORG_HANDLE("orgHandle");
+  CUSTOM_ORG_HANDLE("orgHandle"),
+  CUSTOM_REDIRECT_URI("redirectUri");
   private final String jwtKey;
 
   AuthUserJwtClaims(String jwtKey) {

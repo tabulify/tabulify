@@ -21,6 +21,11 @@ public interface ListApi  {
     Future<ApiResponse<ListItemAnalytics>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
 
     /**
+     * Register a public user to a list by sending an email for validation
+    */
+    Future<ApiResponse<Void>> listListIdentifierRegisterPost(RoutingContext routingContext, String listIdentifier, ListUserPostBody listUserPostBody);
+
+    /**
      * The list of emails with their import status
     */
     Future<ApiResponse<List<ListImportJobRowStatus>>> listListImportJobDetailsGet(RoutingContext routingContext, String listIdentifier, String jobIdentifier);
@@ -49,11 +54,6 @@ public interface ListApi  {
      * List the users for a list
     */
     Future<ApiResponse<List<ListUserShort>>> listListUsersGet(RoutingContext routingContext, String listIdentifier, Long pageSize, Long pageId, String searchTerm);
-
-    /**
-     * Shows a confirmation page for the registration
-    */
-    Future<ApiResponse<String>> listUserConfirmationUserGet(RoutingContext routingContext, String listUserIdentifier, String redirectUri);
 
     /**
      * Get a user in a list

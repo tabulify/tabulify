@@ -20,7 +20,7 @@ public class ListRegistrationEmailCallback extends WebFlowEmailCallbackAbs {
    * @return the operation path that is the start point of the flow
    */
   public String getOriginOperationPath() {
-    return "/auth/register/list";
+    return "/list/register";
   }
 
 

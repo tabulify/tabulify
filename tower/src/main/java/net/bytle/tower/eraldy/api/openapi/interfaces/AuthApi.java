@@ -48,16 +48,6 @@ public interface AuthApi  {
     Future<ApiResponse<Void>> authLogoutGet(RoutingContext routingContext, String clientId, String redirectUri);
 
     /**
-     * Register a user to a list If the user is:   * not signed in, a redirection occurs to the page with the register form   * signed in, a redirection occurs to the confirmation page
-    */
-    Future<ApiResponse<Void>> authRegisterListListIdentifierGet(RoutingContext routingContext, String listIdentifier);
-
-    /**
-     * Register a user to a list by sending an email for validation
-    */
-    Future<ApiResponse<Void>> authRegisterListPost(RoutingContext routingContext, ListUserPostBody listUserPostBody);
-
-    /**
      * Register a user
     */
     Future<ApiResponse<Void>> authRegisterUserPost(RoutingContext routingContext, AuthEmailPost authEmailPost);

@@ -700,30 +700,32 @@ components:
     ListUserPostBody:
       title: Registration Request to a list
       description: |
-        The data needed to register a user to a list
-        Note that a user email or a user id is required
-        (OpenAPI cannot describe that in a elegant way)
-        a user email or id is mandatory
-        a list id or guid is mandatory
+        The data needed to register a public user to a list
       type: object
       required:
         - userEmail
-        - listGuid
         - redirectUri
       properties:
         userEmail:
           type: string
-          description: The email of the user that want to subscribe
+          description: The email of the public user that want to subscribe
           format: email
           example: "john@doe.com"
-        listGuid:
-          type: string
-          description: The public list id where the user should be registered
         redirectUri:
           type: string
           format: uri
-          description: where to redirect the user
-          example: "https://example.com/page"
+          description: |
+            The redirect Uri where to redirect the browser.
+
+            This URI is a template uri and should contains a `:guid` placeholder.
+            This placeholder is replaced with the list user entry guid that can be used to lookup
+            the entry.
+
+            The frontend is the driver of the flow, therefore this URI is mandatory.
+
+            If another final redirect uri needs to be set, it should be
+            set as a query property of this uri (ie http(s)://redirectUri?redirectUri)
+          example: "https://member.eradly.com/registration/confirmation/:guid?redirect_uri=xxx"
     ExitStatusResponse:
       title: Error Response to a request
       description: |
