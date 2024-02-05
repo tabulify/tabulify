@@ -36,9 +36,20 @@ public class EraldyModel {
    * The URI of the member app
    */
   private static final String MEMBER_APP_URI_CONF = "member.app.uri";
+  /**
+   * A template uri with the %s as placeholder
+   * where the users can register publicly
+   * Example: `http(s)://domain.com/path/%s`
+   */
+  private static final String MEMBER_REGISTRATION_URL = "member.list.registration.url.template";
   private final EraldyApiApp apiApp;
   private final URI interactAppUri;
   private final URI memberAppUri;
+  /**
+   * A template URI with %s that is replaced by the list gui
+   * This uri is where the users can register publicly to the list
+   */
+  private final String uriRegistrationPathTemplate;
 
   Realm realm;
   private AuthClient memberClient;
@@ -63,6 +74,16 @@ public class EraldyModel {
       LOGGER.info("The member app URI was set to ({}) via the conf ({})", memberUri, MEMBER_APP_URI_CONF);
     } catch (Exception e) {
       throw new ConfigIllegalException("The member app value (" + memberUri + ") of the conf (" + MEMBER_APP_URI_CONF + ") is not a valid URI", e);
+    }
+    this.uriRegistrationPathTemplate = configAccessor.getString(MEMBER_REGISTRATION_URL, memberUri + "/register/list/%s");
+    try {
+      String s = "lis-yolo";
+      URI uri = getMemberListRegistrationPath(s);
+      if (!uri.getPath().contains(s)) {
+        throw new ConfigIllegalException("The member registration url value (" + uriRegistrationPathTemplate + ") of the conf (" + MEMBER_REGISTRATION_URL + ") is not a valid URI template because it seems to not include the %s placeholder");
+      }
+    } catch (Exception e) {
+      throw new ConfigIllegalException("The member registration url value (" + uriRegistrationPathTemplate + ") of the conf (" + MEMBER_REGISTRATION_URL + ") is not a valid URI template", e);
     }
   }
 
@@ -197,4 +218,11 @@ public class EraldyModel {
     return this.memberClient;
   }
 
+  public URI getMemberListRegistrationPath(String s) {
+    try {
+      return new URI(String.format(this.uriRegistrationPathTemplate, s));
+    } catch (URISyntaxException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

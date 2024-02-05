@@ -29,6 +29,7 @@ import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -62,20 +63,23 @@ public class ListProvider {
   private final JsonMapper apiMapper;
 
 
+
   public ListProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
-    this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool();
-    this.apiMapper = apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
+    Server server = apiApp.getApexDomain().getHttpServer().getServer();
+    this.jdbcPool = server.getPostgresDatabaseConnectionPool();
+    this.apiMapper = server.getJacksonMapperManager()
       .jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .addMixIn(ListItem.class, ListItemMixinWithRealm.class)
       .build();
+
   }
 
 
-    /**
+  /**
    * This function was created to be sure that the data is consistent
    * between guid and (id and realm id)
    *
@@ -316,7 +320,7 @@ public class ListProvider {
       .compose(rowSet -> {
 
         /**
-         * the {@link CompositeFuture#all(java.util.List)}  all function } does not
+         * the {@link CompositeFuture#all(java.util.List) all function} does not
          * take other thing than a raw future
          */
         List<Future<ListItemAnalytics>> futurePublications = new ArrayList<>();
@@ -421,7 +425,8 @@ public class ListProvider {
             }
 
             listItem.setRealm(realmResult);
-
+            URI memberListRegistrationPath = this.apiApp.getEraldyModel().getMemberListRegistrationPath(listItem.getGuid());
+            listItem.setRegistrationUrl(memberListRegistrationPath);
             return Future.succeededFuture(listItem);
 
           });
@@ -631,7 +636,6 @@ public class ListProvider {
         }
       );
   }
-
 
 
   /**
