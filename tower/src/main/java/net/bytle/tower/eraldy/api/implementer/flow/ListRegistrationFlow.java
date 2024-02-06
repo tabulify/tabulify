@@ -134,18 +134,17 @@ public class ListRegistrationFlow extends WebFlowAbs {
      * (not against the database)
      */
     if (listGuidHash == null) {
-      throw IllegalArgumentExceptions.createWithInputNameAndValue("List guid should not be null", "listIdentifier", null);
+      return Future.failedFuture(IllegalArgumentExceptions.createWithInputNameAndValue("List guid should not be null", "listIdentifier", null));
     }
 
     return getApp().getListProvider()
       .getListByGuidHashIdentifier(listGuidHash)
-      .compose(registrationList -> {
+      .compose(listUser -> {
 
         User user = new User();
         user.setEmail(listUserPostBody.getUserEmail());
-        Realm listRealm = registrationList.getRealm();
+        Realm listRealm = listUser.getRealm();
         user.setRealm(listRealm);
-
 
         AuthJwtClaims jwtClaims = getApp().getAuthProvider()
           .toJwtClaims(user)
@@ -153,7 +152,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .setListGuid(listGuidHash)
           .setRedirectUri(listUserPostBody.getRedirectUri());
 
-        SmtpSender sender = UsersUtil.toSenderUser(registrationList.getOwnerUser());
+        SmtpSender sender = UsersUtil.toSenderUser(listUser.getOwnerUser());
         String subscriberRecipientName;
         try {
           subscriberRecipientName = UsersUtil.getNameOrNameFromEmail(user);
@@ -177,9 +176,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .getUserListRegistrationFlow()
           .getCallback()
           .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, subscriberRecipientName, jwtClaims, clientCallbackQueryProperties)
-          .setPreview("Validate your registration to the list `" + registrationList.getName() + "`")
+          .setPreview("Validate your registration to the list `" + listUser.getName() + "`")
           .addIntroParagraph(
-            "I just got a subscription request to the list <mark>" + registrationList.getName() + "</mark> with your email." +
+            "I just got a subscription request to the list <mark>" + listUser.getName() + "</mark> with your email." +
               "<br>For bot and consent protections, we check that it was really you asking.")
 
           .setActionName("Click on this link to validate your registration.")
@@ -195,11 +194,11 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .compose(html -> {
             String text = letter.generatePlainText();
 
-            String mailSubject = "Registration validation to the list `" + registrationList.getName() + "`";
+            String mailSubject = "Registration validation to the list `" + listUser.getName() + "`";
             TowerSmtpClient towerSmtpClient = this.getApp().getApexDomain().getHttpServer().getServer().getSmtpClient();
 
 
-            User listOwnerUser = ListProvider.getOwnerUser(registrationList);
+            User listOwnerUser = ListProvider.getOwnerUser(listUser);
             String ownerEmailAddressInRfcFormat;
             try {
               ownerEmailAddressInRfcFormat = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getGivenName()).toString();
@@ -242,7 +241,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
               .compose(mailResult -> {
 
                 // Send feedback to the list owner
-                String title = "The user (" + subscriberAddressWithName + ") received a validation email for the list (" + registrationList.getHandle() + ").";
+                String title = "The user (" + subscriberAddressWithName + ") received a validation email for the list (" + listUser.getHandle() + ").";
                 MailMessage ownerFeedbackEmail = towerSmtpClient
                   .createVertxMailMessage()
                   .setTo(ownerEmailAddressInRfcFormat)
@@ -344,6 +343,18 @@ public class ListRegistrationFlow extends WebFlowAbs {
                   .buildWithContextFailingTerminal(ctx);
                 return;
               }
+
+              /**
+               * Analytics Claims
+               */
+              jwtClaims.setAppGuid(listUser.getList().getOwnerApp().getGuid());
+              jwtClaims.setAppHandle(listUser.getList().getOwnerApp().getHandle());
+              jwtClaims.setRealmGuid(listUser.getList().getOwnerApp().getRealm().getGuid());
+              jwtClaims.setRealmHandle(listUser.getList().getOwnerApp().getRealm().getHandle());
+
+              /**
+               * Authenticate
+               */
               getApp().getAuthNContextManager()
                 .newAuthNContext(ctx, this, finalAuthSessionUser, OAuthState.createEmpty(), jwtClaims)
                 .redirectViaHttp(redirectUri)

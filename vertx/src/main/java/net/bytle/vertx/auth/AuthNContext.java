@@ -7,7 +7,7 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import net.bytle.exception.IllegalStructure;
-import net.bytle.exception.InternalException;
+import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.TowerFailureException;
@@ -198,15 +198,24 @@ public class AuthNContext {
        */
       if (authUser.getSubject() == null) {
         // The subject is the user id (for us, the user guid) and should be not null
-        throw new InternalException("The authenticated user has no subject");
+        TowerFailureException.builder()
+          .setMessage("The authenticated user has no subject")
+          .buildWithContextFailingTerminal(ctx);
+        return;
       }
       // not really needed to look up the user but nice to have
       if (authUser.getSubjectEmail() == null) {
-        throw new InternalException("The authenticated user has no email");
+        TowerFailureException.builder()
+          .setMessage("The authenticated user has no email")
+          .buildWithContextFailingTerminal(ctx);
+        return;
       }
       // not really needed to look up the user but nice to have
       if (authUser.getAudience() == null) {
-        throw new InternalException("The authenticated user has no audience");
+        TowerFailureException.builder()
+          .setMessage("The authenticated user has no audience")
+          .buildWithContextFailingTerminal(ctx);
+        return;
       }
 
       /**
@@ -219,12 +228,18 @@ public class AuthNContext {
         String realmSessionKey = this.authNContextManager.getRealmSessionKey();
         if (realmSessionKey != null) {
           String realmSessionValue = session.get(realmSessionKey);
-          if(realmSessionValue==null){
-            throw new InternalException("The realm session key (" + realmSessionKey + ") does not return any value");
+          if (realmSessionValue == null) {
+            TowerFailureException.builder()
+              .setMessage("The realm session key (" + realmSessionKey + ") does not return any value")
+              .buildWithContextFailingTerminal(ctx);
+            return;
           }
           String realmUserValue = authUser.getRealmHandle();
           if (!realmSessionValue.equals(realmUserValue)) {
-            throw new InternalException("The realm of the authenticated user (" + realmUserValue + ") and the realm of the session (" + realmSessionValue + ") differs.");
+            TowerFailureException.builder()
+              .setMessage("The realm of the authenticated user (" + realmUserValue + ") and the realm of the session (" + realmSessionValue + ") differs.")
+              .buildWithContextFailingTerminal(ctx);
+            return;
           }
         }
       }
@@ -232,7 +247,17 @@ public class AuthNContext {
       contextUser = authUser.toVertxUser();
       ctx.setUser(contextUser);
 
-      SignInEvent signInEvent = getSignInEvent();
+      SignInEvent signInEvent;
+      try {
+        signInEvent = getSignInEvent();
+      } catch (NotFoundException e) {
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
+          .setCauseException(e)
+          .setMessage(e.getMessage())
+          .buildWithContextFailingTerminal(ctx);
+        return;
+      }
 
       /**
        * You need to log out to come to this point in the code.
@@ -279,12 +304,15 @@ public class AuthNContext {
          */
         break;
       default:
-        throw new InternalException("The redirection method (" + this.redirectVia + ") is unknown");
+        TowerFailureException
+          .builder()
+          .setMessage("The redirection method (" + this.redirectVia + ") is unknown")
+          .buildWithContextFailingTerminal(ctx);
     }
   }
 
   @NotNull
-  private SignInEvent getSignInEvent() {
+  private SignInEvent getSignInEvent() throws NotFoundException {
     SignInEvent signInEvent = new SignInEvent();
     signInEvent.getRequest().setFlowGuid(this.flow.getFlowType().getId().toString());
     signInEvent.getRequest().setFlowHandle(this.flow.getFlowType().toString());
@@ -292,7 +320,7 @@ public class AuthNContext {
     if (appIdentifier == null) {
       appIdentifier = this.jwtClaims.getAppGuid();
       if (appIdentifier == null && JavaEnvs.IS_DEV) {
-        throw new InternalException("The app Identifier was not found (in the AuthUser or AuthState) for the Sign-in with the flow (" + this.flow.getClass().getSimpleName() + ")");
+        throw new NotFoundException("The app Identifier was not found (in the AuthUser or AuthState) for the Sign-in with the flow (" + this.flow.getClass().getSimpleName() + ")");
       }
     }
     /**
