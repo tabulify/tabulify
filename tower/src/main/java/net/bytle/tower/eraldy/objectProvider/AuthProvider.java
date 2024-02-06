@@ -249,6 +249,9 @@ public class AuthProvider {
   }
 
   public Future<Long> checkRealmAuthorization(RoutingContext routingContext, Long realmId, AuthScope authScope) {
+    if (authScope.isPublic()) {
+      return Future.succeededFuture(realmId);
+    }
     return this.getSignedInAuthUserOrFail(routingContext)
       .compose(signedInUser -> {
         Set<Long> realmGuids = getManagedRealmsId(signedInUser);

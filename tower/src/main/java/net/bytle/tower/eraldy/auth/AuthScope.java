@@ -2,38 +2,48 @@ package net.bytle.tower.eraldy.auth;
 
 public enum AuthScope {
 
-  ANALYTICS_EVENT_GET("get an analytics event"),
-  REALM_APPS_GET("get apps"),
-  REALM_APP_GET("get an app"),
-  REALM_USER_GET("Get a user"),
-  LIST_CREATION("create a list"),
-  LIST_GET("get a list"),
-  LIST_DELETE("delete a list"),
-  LIST_GET_USERS("get users from a list"),
-  LIST_PATCH("patch a list"),
-  ORGA_USERS_GET("get organisational users"),
-  APP_CREATE("create an app"),
-  LIST_IMPORT("import a list"),
-  LIST_ADD_USER_FLOW("add a user to a list via a flow"),
-  LOGIN_EMAIL("send a email login"),
-  PASSWORD_RESET_FLOW("reset a password via a flow"),
-  USER_REGISTRATION_FLOW("register a user via a flow"),
-  PROXY_CLIENT("proxy a client"),
-  APP_LISTS_GET("get the lists of an app"),
-  REALM_LISTS_GET("get the lists of a realm");
+  ANALYTICS_EVENT_GET("get an analytics event", false),
+  REALM_APPS_GET("get apps", false),
+  REALM_APP_GET("get an app", false),
+  REALM_USER_GET("Get a user", false),
+  LIST_CREATION("create a list", false),
+  /**
+   * To be able to subscribe public user to a list, the list data needs to be public
+   */
+  LIST_GET("get a list", true),
+  LIST_DELETE("delete a list", false),
+  LIST_GET_USERS("get users from a list", false),
+  LIST_PATCH("patch a list", false),
+  ORGA_USERS_GET("get organisational users", false),
+  APP_CREATE("create an app", false),
+  LIST_IMPORT("import a list", false),
+  LIST_ADD_USER_FLOW("add a user to a list via a flow", false),
+  LOGIN_EMAIL("send a email login", false),
+  PASSWORD_RESET_FLOW("reset a password via a flow", false),
+  USER_REGISTRATION_FLOW("register a user via a flow", false),
+  PROXY_CLIENT("proxy a client", false),
+  APP_LISTS_GET("get the lists of an app", false),
+  REALM_LISTS_GET("get the lists of a realm", false);
 
   private final String humanActionName;
+  private final boolean isPublic;
 
   /**
-   *
    * @param humanActionName - the text that should come after `you don't have the permission to`
+   * @param isPublic - if the action can be accessed by an anonymous user
    */
-  AuthScope(String humanActionName) {
+  AuthScope(String humanActionName, boolean isPublic) {
+
     this.humanActionName = humanActionName;
+    this.isPublic = isPublic;
+
   }
 
   public String getHumanActionName() {
     return humanActionName + " (" + name().toLowerCase() + ").";
   }
 
+  public boolean isPublic() {
+    return this.isPublic;
+  }
 }
