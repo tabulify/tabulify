@@ -27,8 +27,8 @@ public class AuthNContextManager {
       return new AuthNContext(this, webFlow, ctx, authUser, oAuthState, jwtClaims);
   }
 
-  public String getRealmSessionKey() {
-    return this.builder.realmSessionKey;
+  public String getRealmGuidSessionKey() {
+    return this.builder.realmGuidSessionKey;
   }
 
   public List<Handler<AuthNContext>> getHandlers() {
@@ -39,7 +39,7 @@ public class AuthNContextManager {
   public static class Builder {
 
     List<Handler<AuthNContext>> authContextHandlers = new ArrayList<>();
-    private String realmSessionKey;
+    private String realmGuidSessionKey;
 
     public Builder addContextHandler(Handler<AuthNContext> authContextHandler) {
       authContextHandlers.add(authContextHandler);
@@ -47,11 +47,11 @@ public class AuthNContextManager {
     }
 
     /**
-     * @param realmSessionKey - the session key that permits to retrieve the realm on the session
+     * @param realmGuidSessionKey - the session key that permits to retrieve the realm guid on the session
      *                        This is used to verify that the users logged is also from the same realm
      */
-    public Builder setRealmSessionKey(String realmSessionKey) {
-      this.realmSessionKey = realmSessionKey;
+    public Builder setRealmGuidSessionKey(String realmGuidSessionKey) {
+      this.realmGuidSessionKey = realmGuidSessionKey;
       return this;
     }
 

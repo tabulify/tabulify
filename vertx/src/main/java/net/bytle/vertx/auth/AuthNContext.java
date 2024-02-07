@@ -225,7 +225,7 @@ public class AuthNContext {
       Session session = ctx.session();
       if (session != null) {
         session.regenerateId();
-        String realmSessionKey = this.authNContextManager.getRealmSessionKey();
+        String realmSessionKey = this.authNContextManager.getRealmGuidSessionKey();
         if (realmSessionKey != null) {
           String realmSessionValue = session.get(realmSessionKey);
           if (realmSessionValue == null) {
@@ -234,7 +234,7 @@ public class AuthNContext {
               .buildWithContextFailingTerminal(ctx);
             return;
           }
-          String realmUserValue = authUser.getRealmHandle();
+          String realmUserValue = authUser.getRealmGuid();
           if (!realmSessionValue.equals(realmUserValue)) {
             TowerFailureException.builder()
               .setMessage("The realm of the authenticated user (" + realmUserValue + ") and the realm of the session (" + realmSessionValue + ") differs.")

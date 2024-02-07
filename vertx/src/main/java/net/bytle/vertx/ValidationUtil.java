@@ -11,7 +11,12 @@ import net.bytle.vertx.auth.AuthQueryProperty;
 
 public class ValidationUtil {
 
-  public static void validateEmail(String email, String attribute) {
+  /**
+   *
+   * The validation is now part of the constructor
+   */
+  @Deprecated
+  public static BMailInternetAddress validateEmail(String email, String attribute) {
     /**
      * Email validation
      */
@@ -20,8 +25,7 @@ public class ValidationUtil {
     }
 
     try {
-      BMailInternetAddress.of(email)
-        .externalEmailValidation();
+      return BMailInternetAddress.of(email);
     } catch (AddressException e) {
       throw ValidationException.create("The email is not valid. Error: " + e.getMessage(), attribute, email);
     }

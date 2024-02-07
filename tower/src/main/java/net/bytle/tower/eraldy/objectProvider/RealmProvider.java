@@ -611,10 +611,19 @@ public class RealmProvider {
   }
 
   public Future<Realm> getRealmFromLocalIdOrAutCli(long realmId, RoutingContext routingContext) {
-    Realm authRealmClient = this.apiApp.getAuthClientProvider().getFromRoutingContextKeyStore(routingContext).getApp().getRealm();
+    Realm authRealmClient = this.apiApp.getAuthClientProvider().getRequestingClient(routingContext).getApp().getRealm();
     if (authRealmClient.getLocalId() == realmId) {
       return Future.succeededFuture(authRealmClient);
     }
     return this.getRealmFromLocalId(realmId);
   }
+
+  /**
+   * @param routingContext - the http routing context
+   * @return the realm of the request (ie of the client)
+   */
+  public Realm getRequestingRealm(RoutingContext routingContext) {
+    return this.apiApp.getAuthClientIdHandler().getRequestingApp(routingContext).getRealm();
+  }
+
 }

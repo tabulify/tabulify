@@ -13,7 +13,7 @@ public interface AuthApi  {
     Future<ApiResponse<Void>> authLoginAuthorizeGet(RoutingContext routingContext, String redirectUri);
 
     /**
-     * Login by sending an email with a login link
+     * Login or register a user by sending an email with a link  This is one login/registration endpoint.  This is better than a login and a register endpoint because the user will always get an email. ie to avoid leaking if the user is registered, (ie Email enumeration protection), the login endpoint does not return any information (send no email).
     */
     Future<ApiResponse<Void>> authLoginEmailPost(RoutingContext routingContext, AuthEmailPost authEmailPost);
 
@@ -46,9 +46,4 @@ public interface AuthApi  {
      * The logout endpoint
     */
     Future<ApiResponse<Void>> authLogoutGet(RoutingContext routingContext, String clientId, String redirectUri);
-
-    /**
-     * Register a user
-    */
-    Future<ApiResponse<Void>> authRegisterUserPost(RoutingContext routingContext, AuthEmailPost authEmailPost);
 }

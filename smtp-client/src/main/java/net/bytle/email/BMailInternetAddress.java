@@ -38,6 +38,9 @@ public class BMailInternetAddress {
   private final InternetAddress internetAddress;
 
   public static BMailInternetAddress of(String email, String name) throws AddressException {
+    if (email == null) {
+      throw new AddressException("The email given was null");
+    }
     InternetAddress internetAddress = new InternetAddress(email);
     if (name != null) {
       try {
@@ -57,7 +60,7 @@ public class BMailInternetAddress {
   /**
    * @param internetAddress - a rfc822 internet address
    */
-  private BMailInternetAddress(InternetAddress internetAddress) {
+  private BMailInternetAddress(InternetAddress internetAddress) throws AddressException {
 
     this.internetAddress = internetAddress;
 
@@ -87,6 +90,7 @@ public class BMailInternetAddress {
       }
     }
 
+    this.externalEmailValidation();
   }
 
   /**
@@ -124,7 +128,7 @@ public class BMailInternetAddress {
     return of(email, null);
   }
 
-  public static BMailInternetAddress of(InternetAddress internetAddress) {
+  public static BMailInternetAddress of(InternetAddress internetAddress) throws AddressException {
     return new BMailInternetAddress(internetAddress);
   }
 
@@ -174,7 +178,7 @@ public class BMailInternetAddress {
    *                          <p>
    *                          <a href="         See also https://commons.apache.org/proper/">...</a>commons-validator/
    */
-  public void externalEmailValidation() throws AddressException {
+  private void externalEmailValidation() throws AddressException {
     if (this.domain.equals("localhost")) {
       throw new AddressException("The domain should not be localhost");
     }

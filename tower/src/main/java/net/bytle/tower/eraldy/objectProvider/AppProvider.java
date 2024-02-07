@@ -7,6 +7,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
@@ -475,7 +476,7 @@ public class AppProvider {
       app.setGuid(appGuid);
       long appId;
       try {
-        appId = this.getGuid(appGuid)
+        appId = this.getGuidFromHash(appGuid)
           .validateRealmAndGetFirstObjectId(realm.getLocalId());
       } catch (CastException e) {
         throw ValidationException.create("The app guid is not valid", "appGuid", appGuid);
@@ -503,7 +504,7 @@ public class AppProvider {
 
   }
 
-  public Guid getGuid(String appGuid) throws CastException {
+  public Guid getGuidFromHash(String appGuid) throws CastException {
     return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(APP_GUID_PREFIX, appGuid);
   }
 
@@ -571,11 +572,16 @@ public class AppProvider {
 
   public Future<App> getAppByIdentifier(String appIdentifier, Realm realm) {
     try {
-      Guid guid = this.getGuid(appIdentifier);
+      Guid guid = this.getGuidFromHash(appIdentifier);
       return this.getAppByGuid(guid, realm);
     } catch (CastException e) {
       return getAppByHandle(appIdentifier, realm);
     }
 
   }
+
+  public App getRequestingApp(RoutingContext routingContext) {
+    return this.apiApp.getAuthClientIdHandler().getRequestingApp(routingContext);
+  }
+
 }

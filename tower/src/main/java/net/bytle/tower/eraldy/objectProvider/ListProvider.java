@@ -17,7 +17,7 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.auth.AuthScope;
+import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.ListItemMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
@@ -656,7 +656,7 @@ public class ListProvider {
     return this.getListByGuidObject(listGuid);
   }
 
-  public <T extends ListItem> Future<T> getListByIdentifier(RoutingContext routingContext, AuthScope scope, Class<T> aClass) {
+  public <T extends ListItem> Future<T> getListByIdentifier(RoutingContext routingContext, AuthUserScope scope, Class<T> aClass) {
     RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
     String listIdentifier;
     try {

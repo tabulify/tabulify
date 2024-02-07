@@ -65,7 +65,7 @@ public class EnvApiImpl implements EnvApi {
     HashMap<String, Object> calculatedObject = new HashMap<>();
     calculatedObject.put("remoteHost", HttpRequestUtil.getRemoteHost(routingContext));
     calculatedObject.put("remoteScheme", HttpRequestUtil.getRemoteScheme(routingContext));
-    AuthClient realm = this.apiApp.getAuthClientIdHandler().getApiClientStoredOnContext(routingContext);
+    AuthClient realm = this.apiApp.getAuthClientIdHandler().getRequestingClient(routingContext);
     calculatedObject.put("authRealmHandle", realm.getApp().getRealm().getHandle());
     requestObject.put("calculated", calculatedObject);
 

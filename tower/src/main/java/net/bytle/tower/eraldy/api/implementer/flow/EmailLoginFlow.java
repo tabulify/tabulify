@@ -14,10 +14,10 @@ import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.UserLoginEmailCallback;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.AuthScope;
+import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.tower.eraldy.model.openapi.AuthEmailPost;
-import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
+import net.bytle.tower.eraldy.model.openapi.App;
+import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
@@ -58,183 +58,138 @@ public class EmailLoginFlow extends WebFlowAbs {
   }
 
 
-  public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext, AuthEmailPost authEmailPost) {
+  public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext, User userToLogin, UriEnhanced redirectUri) {
 
-    AuthClient authClient = this.getApp().getAuthClientProvider().getFromRoutingContextKeyStore(routingContext);
+    AuthClient authClient = this.getApp().getAuthClientProvider().getRequestingClient(routingContext);
+    AuthClientScope loginEmailFlow = AuthClientScope.LOGIN_EMAIL_FLOW;
     try {
-      this.getApp().getAuthProvider().checkClientAuthorization(authClient, AuthScope.LOGIN_EMAIL);
+
+      this.getApp().getAuthProvider().checkClientAuthorization(authClient, loginEmailFlow);
     } catch (NotAuthorizedException e) {
       return Future.failedFuture(TowerFailureException.builder()
-        .setMessage("You don't have any permission to ask a email login.")
+        .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
+        .setMessage("You don't have any permission to " + loginEmailFlow.getHumanActionName())
         .buildWithContextFailing(routingContext)
       );
     }
 
-    String redirectUri = authEmailPost.getRedirectUri();
-    UriEnhanced redirectUriEnhanced = ValidationUtil.validateAndGetRedirectUriAsUri(redirectUri);
     /**
      * By making the redirect URI part of the session,
      * the link can't be used 2 times
      */
-    OAuthInternalSession.addRedirectUri(routingContext, redirectUriEnhanced);
-    String userEmail = authEmailPost.getUserEmail();
-    BMailInternetAddress bMailInternetAddress;
+    OAuthInternalSession.addRedirectUri(routingContext, redirectUri);
+
+    App requestingApp = this.getApp().getAppProvider().getRequestingApp(routingContext);
+
+    AuthUser jwtClaims = getApp()
+      .getAuthProvider()
+      .toJwtClaims(userToLogin)
+      .addRequestClaims(routingContext)
+      .setAppGuid(requestingApp.getGuid())
+      .setAppHandle(requestingApp.getHandle())
+      .setRealmGuid(requestingApp.getRealm().getGuid())
+      .setRealmHandle(requestingApp.getRealm().getHandle())
+      .setOrganizationGuid(requestingApp.getRealm().getOrganization().getGuid())
+      .setOrganizationHandle(requestingApp.getRealm().getOrganization().getHandle());
+
+
+    /**
+     * Recipient
+     */
+    String recipientName;
     try {
-      bMailInternetAddress = BMailInternetAddress.of(userEmail);
+      recipientName = UsersUtil.getNameOrNameFromEmail(userToLogin);
+    } catch (NotFoundException e) {
+      throw ValidationException.create("A user name could not be found", "userToRegister", userToLogin.getEmail());
     } catch (AddressException e) {
-      return Future.failedFuture(TowerFailureException
-        .builder()
-        .setMessage("The user email (" + userEmail + ") is not valid.")
-        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-        .build()
-      );
+      throw ValidationException.create("The provided email is not valid", "email", userToLogin.getEmail());
     }
+    SmtpSender sender = UsersUtil.toSenderUser(userToLogin.getRealm().getOwnerUser());
 
-    AuthClientProvider authClientProvider = this.getApp().getAuthClientProvider();
-    return authClientProvider
-      .getClientFromClientId(authEmailPost.getClientId())
-      .compose(clientAuthClient -> {
+    /**
+     * Add the calling client id
+     */
+    Map<String, String> clientCallbackQueryProperties = new HashMap<>();
+    clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), authClient.getGuid());
 
-        /**
-         * Client Auth Client
-         * is not the client of the request but the client that
-         * want to log in its user
-         */
-        if (clientAuthClient == null) {
-          return Future.failedFuture(TowerFailureException
-            .builder()
-            .setMessage("No Api client could be found for the client id (" + authEmailPost.getClientId() + ").")
-            .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-            .build()
+    String realmNameOrHandle = RealmProvider.getNameOrHandle(userToLogin.getRealm());
+    BMailTransactionalTemplate letter = getApp()
+      .getUserEmailLoginFlow()
+      .getStep2Callback()
+      .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims, clientCallbackQueryProperties)
+      .addIntroParagraph(
+        "I just got a login request to <mark>" + realmNameOrHandle + "</mark> with your email.")
+      .setActionName("Click on this link to login automatically.")
+      .setActionDescription("Click on this link to login automatically.")
+      .addOutroParagraph(
+        "<br>" +
+          "<br>Need help, or have any questions? " +
+          "<br>Just reply to this email, I ❤ to help."
+      );
+
+    return this.getApp().getApexDomain().getHttpServer().getServer().getVertx()
+      .executeBlocking(letter::generateHTMLForEmail)
+      .compose(html -> {
+
+        String text = letter.generatePlainText();
+
+        String mailSubject = "Login to " + realmNameOrHandle;
+        TowerSmtpClient towerSmtpClient = this.getApp().getApexDomain().getHttpServer().getServer().getSmtpClient();
+
+        String recipientEmailAddressInRfcFormat;
+        try {
+          recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToLogin.getEmail(), userToLogin.getGivenName()).toString();
+        } catch (AddressException e) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+              .setMessage("The recipient email (" + userToLogin.getEmail() + ") is not valid")
+              .setCauseException(e)
+              .buildWithContextFailing(routingContext)
+          );
+        }
+        String senderEmailAddressInRfcFormat;
+        try {
+          senderEmailAddressInRfcFormat = BMailInternetAddress.of(sender.getEmail(), sender.getName()).toString();
+        } catch (AddressException e) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
+              .setMessage("The sender email (" + sender.getEmail() + ") is not valid")
+              .setCauseException(e)
+              .buildWithContextFailing(routingContext)
           );
         }
 
-        return getApp()
-          .getUserProvider()
-          .getUserByEmail(bMailInternetAddress, clientAuthClient.getApp().getRealm().getGuid())
-          .compose(userToLogin -> {
+        MailClient mailClientForListOwner = towerSmtpClient
+          .getVertxMailClientForSenderWithSigning(sender.getEmail());
 
-            /**
-             * Email was not found
-             * We return a success as we don't want
-             * to expose our user
-             */
-            if (userToLogin == null) {
-              return Future.succeededFuture();
-            }
-            String realmNameOrHandle = RealmProvider.getNameOrHandle(userToLogin.getRealm());
+        MailMessage registrationEmail = towerSmtpClient
+          .createVertxMailMessage()
+          .setTo(recipientEmailAddressInRfcFormat)
+          .setFrom(senderEmailAddressInRfcFormat)
+          .setSubject(mailSubject)
+          .setText(text)
+          .setHtml(html);
 
-            AuthUser jwtClaims = getApp()
-              .getAuthProvider()
-              .toJwtClaims(userToLogin)
-              .addRequestClaims(routingContext)
-              .setAppGuid(clientAuthClient.getApp().getGuid())
-              .setAppHandle(clientAuthClient.getApp().getHandle())
-              .setRealmGuid(clientAuthClient.getApp().getRealm().getGuid())
-              .setRealmHandle(clientAuthClient.getApp().getRealm().getHandle())
-              .setOrganizationGuid(clientAuthClient.getApp().getRealm().getOrganization().getGuid())
-              .setOrganizationHandle(clientAuthClient.getApp().getRealm().getOrganization().getHandle());
+        return mailClientForListOwner
+          .sendMail(registrationEmail)
+          .onFailure(t -> TowerFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
+          .compose(mailResult -> {
 
-
-            /**
-             * Recipient
-             */
-            String recipientName;
-            try {
-              recipientName = UsersUtil.getNameOrNameFromEmail(userToLogin);
-            } catch (NotFoundException e) {
-              throw ValidationException.create("A user name could not be found", "userToRegister", userToLogin.getEmail());
-            } catch (AddressException e) {
-              throw ValidationException.create("The provided email is not valid", "email", userToLogin.getEmail());
-            }
-            SmtpSender sender = UsersUtil.toSenderUser(userToLogin.getRealm().getOwnerUser());
-
-            /**
-             * Add the calling client id
-             */
-            Map<String, String> clientCallbackQueryProperties = new HashMap<>();
-            clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), authClient.getGuid());
-
-
-            BMailTransactionalTemplate letter = getApp()
-              .getUserEmailLoginFlow()
-              .getStep2Callback()
-              .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims, clientCallbackQueryProperties)
-              .addIntroParagraph(
-                "I just got a login request to <mark>" + realmNameOrHandle + "</mark> with your email.")
-              .setActionName("Click on this link to login automatically.")
-              .setActionDescription("Click on this link to login automatically.")
-              .addOutroParagraph(
-                "<br>" +
-                  "<br>Need help, or have any questions? " +
-                  "<br>Just reply to this email, I ❤ to help."
-              );
-
-            return this.getApp().getApexDomain().getHttpServer().getServer().getVertx()
-              .executeBlocking(letter::generateHTMLForEmail)
-              .compose(html -> {
-
-                String text = letter.generatePlainText();
-
-                String mailSubject = "Login to " + realmNameOrHandle;
-                TowerSmtpClient towerSmtpClient = this.getApp().getApexDomain().getHttpServer().getServer().getSmtpClient();
-
-                String recipientEmailAddressInRfcFormat;
-                try {
-                  recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToLogin.getEmail(), userToLogin.getGivenName()).toString();
-                } catch (AddressException e) {
-                  return Future.failedFuture(
-                    TowerFailureException.builder()
-                      .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-                      .setMessage("The recipient email (" + userToLogin.getEmail() + ") is not valid")
-                      .setCauseException(e)
-                      .buildWithContextFailing(routingContext)
-                  );
-                }
-                String senderEmailAddressInRfcFormat;
-                try {
-                  senderEmailAddressInRfcFormat = BMailInternetAddress.of(sender.getEmail(), sender.getName()).toString();
-                } catch (AddressException e) {
-                  return Future.failedFuture(
-                    TowerFailureException.builder()
-                      .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
-                      .setMessage("The sender email (" + sender.getEmail() + ") is not valid")
-                      .setCauseException(e)
-                      .buildWithContextFailing(routingContext)
-                  );
-                }
-
-                MailClient mailClientForListOwner = towerSmtpClient
-                  .getVertxMailClientForSenderWithSigning(sender.getEmail());
-
-                MailMessage registrationEmail = towerSmtpClient
-                  .createVertxMailMessage()
-                  .setTo(recipientEmailAddressInRfcFormat)
-                  .setFrom(senderEmailAddressInRfcFormat)
-                  .setSubject(mailSubject)
-                  .setText(text)
-                  .setHtml(html);
-
-                return mailClientForListOwner
-                  .sendMail(registrationEmail)
-                  .onFailure(t -> TowerFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
-                  .compose(mailResult -> {
-
-                    // Send feedback to the list owner
-                    String title = "The user (" + userToLogin.getEmail() + ") received a login email for the realm (" + userToLogin.getRealm().getHandle() + ").";
-                    MailMessage ownerFeedbackEmail = towerSmtpClient
-                      .createVertxMailMessage()
-                      .setTo(senderEmailAddressInRfcFormat)
-                      .setFrom(senderEmailAddressInRfcFormat)
-                      .setSubject("User Login: " + title)
-                      .setText(text)
-                      .setHtml(html);
-                    mailClientForListOwner
-                      .sendMail(ownerFeedbackEmail)
-                      .onFailure(t -> LOGGER.error("Error while sending the realm owner feedback email", t));
-                    return Future.succeededFuture();
-                  });
-              });
+            // Send feedback to the list owner
+            String title = "The user (" + userToLogin.getEmail() + ") received a login email for the realm (" + userToLogin.getRealm().getHandle() + ").";
+            MailMessage ownerFeedbackEmail = towerSmtpClient
+              .createVertxMailMessage()
+              .setTo(senderEmailAddressInRfcFormat)
+              .setFrom(senderEmailAddressInRfcFormat)
+              .setSubject("User Login: " + title)
+              .setText(text)
+              .setHtml(html);
+            mailClientForListOwner
+              .sendMail(ownerFeedbackEmail)
+              .onFailure(t -> LOGGER.error("Error while sending the realm owner feedback email", t));
+            return Future.succeededFuture();
           });
       });
 

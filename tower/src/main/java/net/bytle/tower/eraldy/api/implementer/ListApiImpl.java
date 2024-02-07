@@ -21,7 +21,7 @@ import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationConfirmatio
 import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationValidationLetter;
 import net.bytle.tower.eraldy.api.openapi.interfaces.ListApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.AuthScope;
+import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.ListUserProvider;
@@ -102,7 +102,7 @@ public class ListApiImpl implements ListApi {
               .buildWithContextFailing(routingContext)
           );
         }
-        return this.apiApp.getAuthProvider().checkListAuthorization(routingContext, list, AuthScope.LIST_IMPORT);
+        return this.apiApp.getAuthProvider().checkListAuthorization(routingContext, list, AuthUserScope.LIST_IMPORT);
       })
       .compose(list -> {
         ListImportJob importJob = this.apiApp.getListImportFlow()
@@ -137,7 +137,7 @@ public class ListApiImpl implements ListApi {
 
     ListProvider listProvider = this.apiApp.getListProvider();
     return listProvider
-      .getListByIdentifier(routingContext, AuthScope.LIST_DELETE, ListItem.class)
+      .getListByIdentifier(routingContext, AuthUserScope.LIST_DELETE, ListItem.class)
       .compose(listItem -> {
 
         if (listItem == null) {
@@ -159,7 +159,7 @@ public class ListApiImpl implements ListApi {
   public Future<ApiResponse<ListItemAnalytics>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier) {
     ListProvider listProvider = this.apiApp.getListProvider();
     return listProvider
-      .getListByIdentifier(routingContext, AuthScope.LIST_GET, ListItemAnalytics.class)
+      .getListByIdentifier(routingContext, AuthUserScope.LIST_GET, ListItemAnalytics.class)
       .compose(listItemAnalytics -> {
         ApiResponse<ListItemAnalytics> apiResult = new ApiResponse<>(listItemAnalytics)
           .setMapper(listProvider.getApiMapper());
@@ -223,7 +223,7 @@ public class ListApiImpl implements ListApi {
   @Override
   public Future<ApiResponse<ListItem>> listListPatch(RoutingContext routingContext, String listIdentifier, ListBody listBody, String realmIdentifier) {
     ListProvider listProvider = this.apiApp.getListProvider();
-    return listProvider.getListByIdentifier(routingContext, AuthScope.LIST_PATCH, ListItem.class)
+    return listProvider.getListByIdentifier(routingContext, AuthUserScope.LIST_PATCH, ListItem.class)
       .compose(list -> {
         String listHandle = listBody.getListHandle();
         if (listHandle != null) {
@@ -319,7 +319,7 @@ public class ListApiImpl implements ListApi {
     long realmId = guid.getRealmOrOrganizationId();
     return this.apiApp
       .getAuthProvider()
-      .checkRealmAuthorization(routingContext, realmId, AuthScope.LIST_GET_USERS)
+      .checkRealmAuthorization(routingContext, realmId, AuthUserScope.LIST_GET_USERS)
       .compose(realmIdRes -> apiApp.getListRegistrationProvider()
         .getListUsers(finalListIdentifier, finalPageId, finalPageSize, finalSearchTerm)
         .compose(subscriptionShorts -> Future.succeededFuture(new ApiResponse<>(subscriptionShorts))));

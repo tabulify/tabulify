@@ -185,7 +185,6 @@ components:
       description: A auth post object based on email to register, get a magic link, ...
       required:
         - userEmail
-        - clientId
         - redirectUri
       properties:
         userEmail:
@@ -194,9 +193,6 @@ components:
           # we do the validation ourselves
           # format: email
           description: An email
-        clientId:
-          type: string
-          description: The client id
         redirectUri:
           type: string
           description: The uri where to redirect the user after successful registration
@@ -341,7 +337,17 @@ paths:
   /auth/login/email:
     post:
       operationId: "authLoginEmailPost"
-      summary: Login by sending an email with a login link
+      summary: |
+        Login or register a user
+        by sending an email with a link
+
+        This is one login/registration endpoint.
+
+        This is better than a login and a register endpoint
+        because the user will always get an email. ie
+        to avoid leaking if the user is registered,
+        (ie Email enumeration protection), the login endpoint does not return any information
+        (send no email).
       tags:
         - auth
       security: [ ] # open
@@ -349,7 +355,7 @@ paths:
         $ref: '#/components/requestBodies/AuthEmailPostBody'
       responses:
         204:
-          description: "Successful. An email was sent or not if not known"
+          description: "Successful. An email was sent"
   /auth/login/oauth/access_token:
     get:
       operationId: "authLoginOauthAccessTokenGet"
@@ -432,21 +438,6 @@ paths:
           description: "Processed. An email was send for password resetting if it was found."
         '400':
           description: "The email provided is not valid"
-  /auth/register/user:
-    post:
-      operationId: "authRegisterUserPost"
-      summary: "Register a user"
-      tags:
-        - auth
-      security: [ ] # open
-      requestBody:
-        $ref: '#/components/requestBodies/AuthEmailPostBody'
-      responses:
-        '200':
-          # even if the email exists, we don't want to leak info
-          description: "An email was send for validation"
-        '400':
-          description: "A parameter is not valid"
   /list/{listIdentifier}/register:
     post:
       operationId: listListIdentifierRegisterPost

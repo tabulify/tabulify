@@ -72,8 +72,8 @@ public class AuthClientProvider {
     authClient.setGuid(guid.toString());
   }
 
-  public AuthClient getFromRoutingContextKeyStore(RoutingContext routingContext) {
-    return this.apiApp.getAuthClientIdHandler().getApiClientStoredOnContext(routingContext);
+  public AuthClient getRequestingClient(RoutingContext routingContext) {
+    return this.apiApp.getAuthClientIdHandler().getRequestingClient(routingContext);
   }
 
   public AuthClient getApiKeyRootClient() {

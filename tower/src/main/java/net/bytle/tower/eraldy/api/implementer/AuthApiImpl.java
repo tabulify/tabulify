@@ -4,6 +4,8 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
+import jakarta.mail.internet.AddressException;
+import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NotFoundException;
@@ -73,7 +75,7 @@ public class AuthApiImpl implements AuthApi {
       );
     }
 
-    AuthClient authClient = this.apiApp.getAuthClientProvider().getFromRoutingContextKeyStore(routingContext);
+    AuthClient authClient = this.apiApp.getAuthClientProvider().getRequestingClient(routingContext);
     if (!clientId.equals(authClient.getGuid())) {
       return Future.failedFuture(
         TowerFailureException.builder()
@@ -146,7 +148,7 @@ public class AuthApiImpl implements AuthApi {
     /**
      * Not signed-in
      */
-    AuthClient authClient = this.apiApp.getAuthClientProvider().getFromRoutingContextKeyStore(routingContext);
+    AuthClient authClient = this.apiApp.getAuthClientProvider().getRequestingClient(routingContext);
     UriEnhanced url = this.apiApp.getMemberLoginUri(redirectUriEnhanced, authClient);
     routingContext.redirect(url.toString());
     return Future.succeededFuture();
@@ -156,8 +158,45 @@ public class AuthApiImpl implements AuthApi {
   @Override
   public Future<ApiResponse<Void>> authLoginEmailPost(RoutingContext routingContext, AuthEmailPost authEmailPost) {
 
-    return this.apiApp.getUserEmailLoginFlow()
-      .handleStep1SendEmail(routingContext, authEmailPost);
+    /**
+     * Valid email
+     */
+    BMailInternetAddress bMailInternetAddress;
+    try {
+      bMailInternetAddress = BMailInternetAddress.of(authEmailPost.getUserEmail());
+    } catch (AddressException e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The email (" + authEmailPost.getUserEmail() + ") is not valid")
+          .setCauseException(e)
+          .build()
+      );
+    }
+    /**
+     * Valid redirect Uri
+     */
+    UriEnhanced redirectUri = ValidationUtil.validateAndGetRedirectUriAsUri(authEmailPost.getRedirectUri());
+    Realm requestingRealm = this.apiApp.getRealmProvider().getRequestingRealm(routingContext);
+    return this.apiApp.getUserProvider().getUserByEmail(bMailInternetAddress, requestingRealm)
+      .compose(user -> {
+        if (user == null) {
+          /**
+           * Registration
+           */
+          return this.apiApp.getUserRegistrationFlow().handleStep1SendEmail(
+            routingContext,
+            bMailInternetAddress,
+            requestingRealm,
+            redirectUri
+          );
+        }
+        /**
+         * Login
+         */
+        return this.apiApp.getUserEmailLoginFlow()
+          .handleStep1SendEmail(routingContext, user, redirectUri);
+      });
 
   }
 
@@ -308,14 +347,6 @@ public class AuthApiImpl implements AuthApi {
       });
 
 
-  }
-
-
-
-  @Override
-  public Future<ApiResponse<Void>> authRegisterUserPost(RoutingContext routingContext, AuthEmailPost authEmailPost) {
-
-    return this.apiApp.getUserRegistrationFlow().handleStep1SendEmail(routingContext, authEmailPost);
   }
 
 

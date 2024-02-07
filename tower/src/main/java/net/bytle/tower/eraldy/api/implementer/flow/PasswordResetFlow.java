@@ -13,7 +13,7 @@ import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.PasswordResetEmailCallback;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.AuthScope;
+import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
@@ -101,8 +101,8 @@ public class PasswordResetFlow extends WebFlowAbs {
         /**
          * Check client authorization
          */
-        AuthScope listRegistration = AuthScope.PASSWORD_RESET_FLOW;
-        AuthClient authClient = this.getApp().getAuthClientProvider().getFromRoutingContextKeyStore(routingContext);
+        AuthClientScope listRegistration = AuthClientScope.PASSWORD_RESET_FLOW;
+        AuthClient authClient = this.getApp().getAuthClientProvider().getRequestingClient(routingContext);
         try {
           this.getApp().getAuthProvider().checkClientAuthorization(authClient, listRegistration);
         } catch (NotAuthorizedException e) {

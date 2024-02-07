@@ -34,7 +34,6 @@ public void mount(RouterBuilder builder) {
     builder.operation("authLoginPasswordResetPost").handler(this::authLoginPasswordResetPost);
     builder.operation("authLoginPasswordUpdatePost").handler(this::authLoginPasswordUpdatePost);
     builder.operation("authLogoutGet").handler(this::authLogoutGet);
-    builder.operation("authRegisterUserPost").handler(this::authRegisterUserPost);
 }
 
     private void authLoginAuthorizeGet(RoutingContext routingContext) {
@@ -179,23 +178,6 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.authLogoutGet(routingContext, clientId, redirectUri)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
-
-    private void authRegisterUserPost(RoutingContext routingContext) {
-    logger.info("authRegisterUserPost()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-      RequestParameter requestParameterBody = requestParameters.body();
-  AuthEmailPost authEmailPost = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<AuthEmailPost>(){}) : null;
-
-      logger.debug("Parameter authEmailPost is {}", authEmailPost);
-
-    // Based on Route#respond
-    api.authRegisterUserPost(routingContext, authEmailPost)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

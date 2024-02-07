@@ -8,7 +8,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.OrganizationApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.AuthScope;
+import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
@@ -52,7 +52,7 @@ public class OrganizationApiImpl implements OrganizationApi {
     }
     return this.apiApp
       .getAuthProvider()
-      .checkOrgAuthorization(routingContext,orgaIdentifier, AuthScope.ORGA_USERS_GET)
+      .checkOrgAuthorization(routingContext,orgaIdentifier, AuthUserScope.ORGA_USERS_GET)
       .compose(v-> this.apiApp
         .getOrganizationProvider()
         .getById(guid.getRealmOrOrganizationId())

@@ -12,7 +12,7 @@ import net.bytle.exception.*;
 import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.ListRegistrationEmailCallback;
-import net.bytle.tower.eraldy.auth.AuthScope;
+import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
@@ -113,8 +113,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
     /**
      * Check authorization
      */
-    AuthClient authClient = this.getApp().getAuthClientProvider().getFromRoutingContextKeyStore(routingContext);
-    AuthScope listRegistration = AuthScope.LIST_ADD_USER_FLOW;
+    AuthClient authClient = this.getApp().getAuthClientProvider().getRequestingClient(routingContext);
+    AuthClientScope listRegistration = AuthClientScope.LIST_ADD_USER_FLOW;
     try {
       this.getApp().getAuthProvider().checkClientAuthorization(authClient, listRegistration);
     } catch (NotAuthorizedException e) {

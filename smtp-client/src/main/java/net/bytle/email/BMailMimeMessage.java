@@ -17,7 +17,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * A wrapper around a {@link MimeMessage}
@@ -203,11 +202,15 @@ public class BMailMimeMessage {
       if (allRecipients == null) {
         return new ArrayList<>();
       }
-      return Arrays.stream(allRecipients)
-        .filter(recipientAddress -> recipientAddress instanceof InternetAddress)
-        .map(recipientAddress -> (InternetAddress) recipientAddress)
-        .map(BMailInternetAddress::of)
-        .collect(Collectors.toList());
+      List<BMailInternetAddress> list = new ArrayList<>();
+      for (Address recipientAddress : allRecipients) {
+        if (recipientAddress instanceof InternetAddress) {
+          InternetAddress address = (InternetAddress) recipientAddress;
+          BMailInternetAddress bMailInternetAddress = BMailInternetAddress.of(address);
+          list.add(bMailInternetAddress);
+        }
+      }
+      return list;
     } catch (MessagingException e) {
       throw new RuntimeException(e);
     }
@@ -248,7 +251,11 @@ public class BMailMimeMessage {
 
   public BMailInternetAddress getFrom() {
 
-    return BMailInternetAddress.of(getFromInternetAddress());
+      try {
+          return BMailInternetAddress.of(getFromInternetAddress());
+      } catch (AddressException e) {
+          throw new RuntimeException(e);
+      }
 
   }
 

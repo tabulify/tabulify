@@ -524,20 +524,24 @@ public class UserProvider {
   }
 
 
+  public Future<? extends User> getUserByEmail(BMailInternetAddress userEmail, Realm realm) {
+
+    Class<? extends User> userClass;
+    if (this.apiApp.getEraldyModel().isEraldyRealm(realm)) {
+      userClass = OrganizationUser.class;
+    } else {
+      userClass = User.class;
+    }
+    return getUserByEmail(userEmail, realm.getLocalId(), userClass, realm);
+
+
+  }
+
   public Future<? extends User> getUserByEmail(BMailInternetAddress userEmail, String realmIdentifier) {
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(realmIdentifier)
-      .onFailure(err -> LOGGER.error("getUserByEmail: Error while trying to retrieve the realm", err))
-      .compose(realm -> {
-          Class<? extends User> userClass;
-          if (this.apiApp.getEraldyModel().isEraldyRealm(realm)) {
-            userClass = OrganizationUser.class;
-          } else {
-            userClass = User.class;
-          }
-          return getUserByEmail(userEmail, realm.getLocalId(), userClass, realm);
-        }
-      );
+      .recover(err -> Future.failedFuture(new InternalException("getUserByEmail: Error while trying to retrieve the realm", err)))
+      .compose(realm -> getUserByEmail(userEmail, realm));
   }
 
   /**
@@ -833,7 +837,7 @@ public class UserProvider {
   }
 
   public <T extends User> void updateGuid(T user) {
-    Guid guid = this.createUserGuid(user.getRealm().getLocalId(),user.getLocalId());
+    Guid guid = this.createUserGuid(user.getRealm().getLocalId(), user.getLocalId());
     user.setGuid(guid.toString());
   }
 }

@@ -14,8 +14,6 @@ public class AuthEmailPost   {
 
   protected String userEmail;
 
-  protected String clientId;
-
   protected String redirectUri;
 
   /**
@@ -41,22 +39,6 @@ public class AuthEmailPost   {
   @SuppressWarnings("unused")
   public void setUserEmail(String userEmail) {
     this.userEmail = userEmail;
-  }
-
-  /**
-  * @return clientId The client id
-  */
-  @JsonProperty("clientId")
-  public String getClientId() {
-    return clientId;
-  }
-
-  /**
-  * @param clientId The client id
-  */
-  @SuppressWarnings("unused")
-  public void setClientId(String clientId) {
-    this.clientId = clientId;
   }
 
   /**
@@ -86,18 +68,18 @@ public class AuthEmailPost   {
     }
     AuthEmailPost authEmailPost = (AuthEmailPost) o;
     return
-            Objects.equals(userEmail, authEmailPost.userEmail) && Objects.equals(clientId, authEmailPost.clientId) && Objects.equals(redirectUri, authEmailPost.redirectUri);
+            Objects.equals(userEmail, authEmailPost.userEmail) && Objects.equals(redirectUri, authEmailPost.redirectUri);
 
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(userEmail, clientId, redirectUri);
+    return Objects.hash(userEmail, redirectUri);
   }
 
   @Override
   public String toString() {
-    return userEmail + ", " + clientId + ", " + redirectUri;
+    return userEmail + ", " + redirectUri;
   }
 
 }

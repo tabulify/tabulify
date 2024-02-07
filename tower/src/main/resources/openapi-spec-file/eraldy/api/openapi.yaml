@@ -149,9 +149,19 @@ paths:
         $ref: '#/components/requestBodies/AuthEmailPostBody'
       responses:
         "204":
-          description: Successful. An email was sent or not if not known
+          description: Successful. An email was sent
       security: []
-      summary: Login by sending an email with a login link
+      summary: |
+        Login or register a user
+        by sending an email with a link
+
+        This is one login/registration endpoint.
+
+        This is better than a login and a register endpoint
+        because the user will always get an email. ie
+        to avoid leaking if the user is registered,
+        (ie Email enumeration protection), the login endpoint does not return any information
+        (send no email).
       tags:
       - auth
       x-content-type: application/json
@@ -249,22 +259,6 @@ paths:
           description: The email provided is not valid
       security: []
       summary: Login via a link and give the possibility to modify the password
-      tags:
-      - auth
-      x-content-type: application/json
-      x-accepts: application/json
-  /auth/register/user:
-    post:
-      operationId: authRegisterUserPost
-      requestBody:
-        $ref: '#/components/requestBodies/AuthEmailPostBody'
-      responses:
-        "200":
-          description: An email was send for validation
-        "400":
-          description: A parameter is not valid
-      security: []
-      summary: Register a user
       tags:
       - auth
       x-content-type: application/json
@@ -1852,20 +1846,15 @@ components:
         \ ..."
       example:
         redirectUri: redirectUri
-        clientId: clientId
         userEmail: userEmail
       properties:
         userEmail:
           description: An email
           type: string
-        clientId:
-          description: The client id
-          type: string
         redirectUri:
           description: The uri where to redirect the user after successful registration
           type: string
       required:
-      - clientId
       - redirectUri
       - userEmail
       type: object

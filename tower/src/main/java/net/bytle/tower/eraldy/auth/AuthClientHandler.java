@@ -12,8 +12,11 @@ import net.bytle.exception.NotAuthorizedException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
+import net.bytle.tower.util.Guid;
 import net.bytle.vertx.FrontEndCookie;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
@@ -22,6 +25,7 @@ import net.bytle.vertx.auth.OAuthState;
 
 import java.util.Set;
 
+import static net.bytle.vertx.TowerFailureTypeEnum.BAD_REQUEST_400;
 import static net.bytle.vertx.TowerFailureTypeEnum.NOT_AUTHORIZED_403;
 import static net.bytle.vertx.auth.ApiKeyAuthenticationProvider.API_KEY_PROVIDER_ID;
 import static net.bytle.vertx.auth.ApiKeyAuthenticationProvider.ROOT_AUTHORIZATION;
@@ -43,16 +47,29 @@ import static net.bytle.vertx.auth.ApiKeyAuthenticationProvider.ROOT_AUTHORIZATI
  * for the session.
  * <p>
  * After the handler has been executed,
- * next handlers can retrieve the realm with the function {@link #getApiClientStoredOnContext(RoutingContext)}
+ * next handlers can retrieve the realm with the function {@link #getRequestingClient(RoutingContext)}
  */
 public class AuthClientHandler implements Handler<RoutingContext> {
 
   private static final String CLIENT_ID_CONTEXT_KEY = "client-id-context-key";
 
   /**
+   * This is used to store the app attached to the request.
+   * The client id may be our apps that proxy another app.
+   * For instance, list registration has a public form that is hosted
+   * by our app but the app of the request is proxied
+   */
+  private static final String APP_ID_CONTEXT_KEY = "app-id-context-key";
+
+  /**
    * The client id
    */
   private static final String X_CLIENT_ID = "x-client-id";
+
+  /**
+   * The app id of the request
+   */
+  private static final String X_PROXY_APP_ID = "x-proxy-app-id";
   /**
    * The client id that the client wants to proxy
    * (Used in the member/auth app)
@@ -72,11 +89,13 @@ public class AuthClientHandler implements Handler<RoutingContext> {
    * information (when the front end is loaded)
    */
 
+  private final String realmGuidContextKey;
   private final String realmHandleContextKey;
 
   private AuthClientHandler(Config config) {
 
     this.apiApp = config.apiApp;
+    this.realmGuidContextKey = config.realmGuidContextKey;
     this.realmHandleContextKey = config.realmHandleContextKey;
 
   }
@@ -177,7 +196,8 @@ public class AuthClientHandler implements Handler<RoutingContext> {
     futureAuthClient
       .onFailure(e -> TowerFailureException
         .builder()
-        .setMessage("The client id could not be retrieved")
+        .setType(BAD_REQUEST_400)
+        .setMessage("The client (" + finalClientId + ") is unknown")
         .setCauseException(e)
         .buildWithContextFailingTerminal(context)
       )
@@ -210,7 +230,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
           Future<AuthClient> futureFinalAuthClient = Future.succeededFuture(authClient);
           String proxyClientId = context.request().getHeader(X_PROXY_CLIENT_ID);
           if (proxyClientId != null) {
-            AuthScope proxyClient = AuthScope.PROXY_CLIENT;
+            AuthClientScope proxyClient = AuthClientScope.PROXY_CLIENT;
             try {
               this.apiApp.getAuthProvider().checkClientAuthorization(authClient, proxyClient);
             } catch (NotAuthorizedException e) {
@@ -226,17 +246,34 @@ public class AuthClientHandler implements Handler<RoutingContext> {
           futureFinalAuthClient
             .onFailure(e -> TowerFailureException
               .builder()
-              .setMessage("The client id could not be retrieved")
               .setCauseException(e)
               .buildWithContextFailingTerminal(context)
             )
             .onSuccess(finalAuthClient -> {
+
+              if (finalAuthClient == null) {
+                if (proxyClientId != null) {
+                  TowerFailureException.builder()
+                    .setType(NOT_AUTHORIZED_403)
+                    .setMessage("The proxy client (" + proxyClientId + ") is unknown")
+                    .buildWithContextFailingTerminal(context);
+                } else {
+                  TowerFailureException.builder()
+                    .setMessage("The final client should be not null")
+                    .buildWithContextFailingTerminal(context);
+                }
+                context.next();
+                return;
+              }
+
               /**
-               * We set the realm handle for the creation of the session cookie name
+               * We set the realm handle and guid
+               * for the creation of the session (cookie name and session data)
                * in the session handler.
                */
               Realm realm = finalAuthClient.getApp().getRealm();
-              context.put(this.realmHandleContextKey, realm.getHandle().toLowerCase());
+              context.put(this.realmGuidContextKey, realm.getGuid());
+              context.put(this.realmHandleContextKey, realm.getHandle());
 
               /**
                * We set the authCli data in a cookie for the member app.
@@ -259,15 +296,78 @@ public class AuthClientHandler implements Handler<RoutingContext> {
               }
 
               /**
-               * To retrieve the request client quickly
+               * To retrieve the request client
                */
               context.put(CLIENT_ID_CONTEXT_KEY, finalAuthClient);
 
               /**
-               * Next handler
-               * to continue the chain
+               * App determination
+               * A cli can proxy request for another app
+               * (This is the case of our apps when we register a user
+               * to a list for instance)
                */
-              context.next();
+
+              Future<App> futureRequestApp = Future.succeededFuture(finalAuthClient.getApp());
+              String proxyAppId = context.request().getHeader(X_PROXY_APP_ID);
+              if (proxyAppId != null) {
+                AuthClientScope proxyApp = AuthClientScope.PROXY_APP;
+                try {
+                  this.apiApp.getAuthProvider().checkClientAuthorization(authClient, proxyApp);
+                } catch (NotAuthorizedException e) {
+                  TowerFailureException.builder()
+                    .setType(NOT_AUTHORIZED_403)
+                    .setMessage("The client (" + authClient.getGuid() + ") is not authorized to " + proxyApp.getHumanActionName())
+                    .buildWithContextFailingTerminal(context);
+                  return;
+                }
+                AppProvider appProvider = apiApp.getAppProvider();
+                Guid appGuid;
+                try {
+                  appGuid = appProvider.getGuidFromHash(proxyAppId);
+                } catch (CastException e) {
+                  TowerFailureException.builder()
+                    .setType(BAD_REQUEST_400)
+                    .setMessage("The proxy app guid value (" + proxyAppId + ") is not valid")
+                    .buildWithContextFailingTerminal(context);
+                  return;
+                }
+                futureRequestApp = appProvider.getAppByGuid(appGuid, null);
+              }
+              futureRequestApp
+                .onFailure(e -> TowerFailureException
+                  .builder()
+                  .setMessage("Fatal Error while retrieving the requesting app")
+                  .setCauseException(e)
+                  .buildWithContextFailingTerminal(context)
+                )
+                .onSuccess(app -> {
+                  if (app == null) {
+                    if (proxyAppId != null) {
+                      TowerFailureException.builder()
+                        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+                        .setMessage("The app (" + proxyAppId + ") was not found")
+                        .buildWithContextFailingTerminal(context);
+                    } else {
+                      TowerFailureException.builder()
+                        .setMessage("The request app is null on the client (" + finalClientId + ")")
+                        .buildWithContextFailingTerminal(context);
+                    }
+                    context.next();
+                    return;
+                  }
+
+                  /**
+                   * To retrieve the request client
+                   */
+                  context.put(APP_ID_CONTEXT_KEY, app);
+
+                  /**
+                   * Next handler
+                   * to continue the chain
+                   */
+                  context.next();
+                });
+
             });
 
 
@@ -281,21 +381,35 @@ public class AuthClientHandler implements Handler<RoutingContext> {
    * @param routingContext - the routing context
    * @return the realm or throw
    */
-  public AuthClient getApiClientStoredOnContext(RoutingContext routingContext) {
+  public AuthClient getRequestingClient(RoutingContext routingContext) {
     AuthClient authClient = routingContext.get(AuthClientHandler.CLIENT_ID_CONTEXT_KEY);
     if (authClient == null) {
-      throw new InternalException("The authentication realm was not found, does the auth realm handler was executed before in the route hierarchy");
+      throw new InternalException("The client id was not found");
     }
     return authClient;
+  }
+
+  public App getRequestingApp(RoutingContext routingContext) {
+    App app = routingContext.get(AuthClientHandler.APP_ID_CONTEXT_KEY);
+    if (app == null) {
+      throw new InternalException("The app from the client was not found");
+    }
+    return app;
   }
 
 
   public static class Config {
     private final EraldyApiApp apiApp;
-    private String realmHandleContextKey;
+    private String realmGuidContextKey = "realm-guid";
+    private String realmHandleContextKey = "realm-handle";
 
     public Config(EraldyApiApp eraldyApiApp) {
       this.apiApp = eraldyApiApp;
+    }
+
+    public Config setRealmGuidContextKey(String contextKey) {
+      this.realmGuidContextKey = contextKey;
+      return this;
     }
 
     public Config setRealmHandleContextKey(String contextKey) {

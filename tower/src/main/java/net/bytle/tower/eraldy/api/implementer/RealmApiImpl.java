@@ -5,7 +5,7 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.RealmApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.AuthScope;
+import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
@@ -60,7 +60,7 @@ public class RealmApiImpl implements RealmApi {
     AuthProvider authProvider = this.apiApp.getAuthProvider();
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(realmIdentifier, Realm.class)
-      .compose(realm-> authProvider.checkRealmAuthorization(routingContext, realm, AuthScope.REALM_LISTS_GET))
+      .compose(realm-> authProvider.checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_LISTS_GET))
       .compose(listProvider::getListsForRealm)
       .compose(lists->Future.succeededFuture(new ApiResponse<>(lists).setMapper(listProvider.getApiMapper())));
   }

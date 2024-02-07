@@ -128,18 +128,19 @@ public class EraldyApiApp extends TowerApp {
     /**
      * OAuth
      */
-    String realmSessionKey = "realmGuid";
+    String realmGuidContextAndSessionKey = "ey-realm-guid";
+    String realmHandleContextAndSessionKey = "ey-realm-handle";
     AuthNContextManager oAuthContextManager = AuthNContextManager.builder()
       .addContextHandler(this.userRegistrationFlow.handleOAuthAuthentication())
       .addContextHandler(this.userListRegistrationFlow.handleStepOAuthAuthentication())
-      .setRealmSessionKey(realmSessionKey)
+      .setRealmGuidSessionKey(realmGuidContextAndSessionKey)
       .build();
     this.oauthExternalFlow = new OAuthExternalCodeFlow(this, "/auth/oauth", oAuthContextManager);
 
     /**
      * The authN manager used by all flows
      */
-    this.authNContextManager = AuthNContextManager.builder().setRealmSessionKey(realmSessionKey).build();
+    this.authNContextManager = AuthNContextManager.builder().setRealmGuidSessionKey(realmGuidContextAndSessionKey).build();
 
     /**
      * Utility
@@ -157,9 +158,10 @@ public class EraldyApiApp extends TowerApp {
      * of the realm in its name
      * This handler should then be mounted before the session handler
      */
-    String realmContextKey = "ey-realm-handle";
+
     this.authClientIdHandler = AuthClientHandler.config(this)
-      .setRealmHandleContextKey(realmContextKey)
+      .setRealmGuidContextKey(realmGuidContextAndSessionKey)
+      .setRealmHandleContextKey(realmHandleContextAndSessionKey)
       .build();
     /**
      * Reconnect once every
@@ -172,8 +174,8 @@ public class EraldyApiApp extends TowerApp {
     this.sessionHandler = RealmSessionHandler
       .createWithDomain(this.getApexDomain())
       .setSessionTimeout(idleSessionTimeoutMs)
-      .setRealmContextKey(realmContextKey)
-      .setRealmSessionKey(realmSessionKey)
+      .setRealmHandleContextAndSessionKey(realmHandleContextAndSessionKey)
+      .setRealmGuidContextAndSessionKey(realmGuidContextAndSessionKey)
       .setCookieMaxAge(cookieMaxAgeOneWeekInSec)
       .setFailIfRealmNotFound(false);
 

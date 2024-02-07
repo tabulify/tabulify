@@ -9,7 +9,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.UserApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.AuthScope;
+import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.model.openapi.UserPostBody;
@@ -65,7 +65,7 @@ public class UserApiImpl implements UserApi {
               .build()
           );
         }
-        return apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.REALM_USER_GET);
+        return apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_USER_GET);
       })
       .compose(realmChecked -> {
         Future<User> futureUser;

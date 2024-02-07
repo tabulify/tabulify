@@ -9,7 +9,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AppApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.AuthScope;
+import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
@@ -43,7 +43,7 @@ public class AppApiImpl implements AppApi {
     ListProvider listProvider = this.apiApp.getListProvider();
     Future<Realm> realmFuture;
     try {
-      Guid guid = this.apiApp.getAppProvider().getGuid(appIdentifier);
+      Guid guid = this.apiApp.getAppProvider().getGuidFromHash(appIdentifier);
       long realmId = guid.getRealmOrOrganizationId();
       realmFuture = this.apiApp.getRealmProvider().getRealmFromLocalIdOrAutCli(realmId, routingContext);
     } catch (CastException e) {
@@ -54,7 +54,7 @@ public class AppApiImpl implements AppApi {
       );
     }
     return realmFuture
-      .compose(realmRes -> this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realmRes, AuthScope.APP_LISTS_GET))
+      .compose(realmRes -> this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realmRes, AuthUserScope.APP_LISTS_GET))
       .compose(realmAfterCheck -> this.apiApp.getAppProvider().getAppByIdentifier(appIdentifier, realmAfterCheck))
       .compose(listProvider::getListsForApp)
       .compose(lists -> Future.succeededFuture(new ApiResponse<>(lists).setMapper(listProvider.getApiMapper())));
@@ -75,7 +75,7 @@ public class AppApiImpl implements AppApi {
     Future<Realm> realmFuture;
     Guid guid = null;
     try {
-      guid = this.apiApp.getAppProvider().getGuid(appIdentifier);
+      guid = this.apiApp.getAppProvider().getGuidFromHash(appIdentifier);
       realmFuture = this.apiApp.getRealmProvider().getRealmFromLocalId(guid.getRealmOrOrganizationId());
     } catch (CastException e) {
       if (realmIdentifier == null) {
@@ -105,7 +105,7 @@ public class AppApiImpl implements AppApi {
           );
         }
 
-        return apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.LIST_CREATION);
+        return apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.LIST_CREATION);
       })
       .compose(futureRealm -> {
         if (finalGuid != null) {
@@ -131,7 +131,7 @@ public class AppApiImpl implements AppApi {
     Future<Realm> futureRealm;
     Guid appGuid = null;
     try {
-      appGuid = this.apiApp.getAppProvider().getGuid(appIdentifier);
+      appGuid = this.apiApp.getAppProvider().getGuidFromHash(appIdentifier);
       futureRealm = this.apiApp.getRealmProvider().getRealmFromLocalId(appGuid.getRealmOrOrganizationId());
     } catch (CastException e) {
       if (realmIdentifier == null) {
@@ -162,7 +162,7 @@ public class AppApiImpl implements AppApi {
               .build()
           );
         }
-        return this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.REALM_APP_GET);
+        return this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_APP_GET);
       }).compose(realm -> {
         Future<App> futureApp;
         if (finalAppGuid != null) {
@@ -217,7 +217,7 @@ public class AppApiImpl implements AppApi {
               .build()
           );
         }
-        return authProvider.checkRealmAuthorization(routingContext, realm, AuthScope.APP_CREATE);
+        return authProvider.checkRealmAuthorization(routingContext, realm, AuthUserScope.APP_CREATE);
       })
       .compose(realm -> appProvider.postApp(appPostBody, realm))
       .compose(app -> Future.succeededFuture(new ApiResponse<>(app).setMapper(appProvider.getApiMapper())));
@@ -235,7 +235,7 @@ public class AppApiImpl implements AppApi {
 
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifierNotNull(realmIdentifier, Realm.class)
-      .compose(realm -> this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.REALM_APPS_GET))
+      .compose(realm -> this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_APPS_GET))
       .compose(
         realm -> apiApp.getAppProvider().getApps(realm),
         err -> Future.failedFuture(

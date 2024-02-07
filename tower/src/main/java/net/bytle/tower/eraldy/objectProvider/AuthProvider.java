@@ -8,7 +8,8 @@ import net.bytle.exception.*;
 import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationUser;
-import net.bytle.tower.eraldy.auth.AuthScope;
+import net.bytle.tower.eraldy.auth.AuthClientScope;
+import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.TowerFailureException;
@@ -20,7 +21,6 @@ import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlow;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,16 +39,11 @@ public class AuthProvider {
   private static final String REALMS_ID_KEY = "realms_id";
   private final EraldyApiApp apiApp;
 
-  /**
-   * Public action for all clients
-   */
-  private final HashSet<AuthScope> publicClientScopes;
+
 
   public AuthProvider(EraldyApiApp eraldyApiApp) {
 
     this.apiApp = eraldyApiApp;
-    this.publicClientScopes = new HashSet<>();
-    this.publicClientScopes.add(AuthScope.LIST_ADD_USER_FLOW);
 
   }
 
@@ -238,18 +233,18 @@ public class AuthProvider {
   /**
    * @param routingContext - the http context
    * @param realm          - the realm to authorize
-   * @param authScope      - the scopes (permissions) - not implemented for now
+   * @param authUserScope      - the scopes (permissions) - not implemented for now
    * @return the realm if authorize or a failure
    */
-  public Future<Realm> checkRealmAuthorization(RoutingContext routingContext, Realm realm, AuthScope authScope) {
+  public Future<Realm> checkRealmAuthorization(RoutingContext routingContext, Realm realm, AuthUserScope authUserScope) {
 
-    return checkRealmAuthorization(routingContext, realm.getLocalId(), authScope)
+    return checkRealmAuthorization(routingContext, realm.getLocalId(), authUserScope)
       .compose(realmId -> Future.succeededFuture(realm));
 
   }
 
-  public Future<Long> checkRealmAuthorization(RoutingContext routingContext, Long realmId, AuthScope authScope) {
-    if (authScope.isPublic()) {
+  public Future<Long> checkRealmAuthorization(RoutingContext routingContext, Long realmId, AuthUserScope authUserScope) {
+    if (authUserScope.isPublic()) {
       return Future.succeededFuture(realmId);
     }
     return this.getSignedInAuthUserOrFail(routingContext)
@@ -259,7 +254,7 @@ public class AuthProvider {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
-              .setMessage("Authenticated User (" + signedInUser + ") has no permission on the requested realm (" + realmId + "). Scope: " + authScope)
+              .setMessage("Authenticated User (" + signedInUser + ") has no permission on the requested realm (" + realmId + "). Scope: " + authUserScope)
               .build()
           );
         }
@@ -472,7 +467,7 @@ public class AuthProvider {
   }
 
 
-  public Future<Void> checkOrgAuthorization(RoutingContext routingContext, String requestedOrgGuid, AuthScope authScope) {
+  public Future<Void> checkOrgAuthorization(RoutingContext routingContext, String requestedOrgGuid, AuthUserScope authUserScope) {
     return this.getSignedInAuthUserOrFail(routingContext)
       .compose(signedInUser -> {
         String signedInUserGroup = signedInUser.getOrganizationGuid();
@@ -480,7 +475,7 @@ public class AuthProvider {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
-              .setMessage("Authenticated User (" + signedInUser + ") is not an organizational user. Scope: " + authScope)
+              .setMessage("Authenticated User (" + signedInUser + ") is not an organizational user. Scope: " + authUserScope)
               .build()
           );
         }
@@ -488,7 +483,7 @@ public class AuthProvider {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
-              .setMessage("Authenticated User (" + signedInUser + ") has no permission on the requested organization (" + requestedOrgGuid + "). Scope: " + authScope)
+              .setMessage("Authenticated User (" + signedInUser + ") has no permission on the requested organization (" + requestedOrgGuid + "). Scope: " + authUserScope)
               .build()
           );
         }
@@ -496,8 +491,8 @@ public class AuthProvider {
       });
   }
 
-  public Future<ListItem> checkListAuthorization(RoutingContext routingContext, ListItem list, AuthScope authScope) {
-    return this.checkRealmAuthorization(routingContext, list.getRealm(), authScope)
+  public Future<ListItem> checkListAuthorization(RoutingContext routingContext, ListItem list, AuthUserScope authUserScope) {
+    return this.checkRealmAuthorization(routingContext, list.getRealm(), authUserScope)
       .compose(realm -> Future.succeededFuture(list));
   }
 
@@ -529,16 +524,17 @@ public class AuthProvider {
   }
 
 
-  @SuppressWarnings("unused")
-  public void checkClientAuthorization(AuthClient authClient, AuthScope authScope) throws NotAuthorizedException {
+  public void checkClientAuthorization(AuthClient authClient, AuthClientScope authUserScope) throws NotAuthorizedException {
+
     /**
      * Public Client Scopes (?)
      */
-    if (this.publicClientScopes.contains(authScope)) {
+    if (authUserScope.isPublic()) {
       return;
     }
     /**
      * Member client?
+     * (Only the member app is authorised to make proxy call)
      */
     if (!this.apiApp.getEraldyModel().getMemberClient().getGuid().equals(authClient.getGuid())) {
       throw new NotAuthorizedException();

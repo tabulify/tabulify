@@ -1,6 +1,6 @@
 package net.bytle.tower.eraldy.auth;
 
-public enum AuthScope {
+public enum AuthUserScope {
 
   ANALYTICS_EVENT_GET("get an analytics event", false),
   REALM_APPS_GET("get apps", false),
@@ -17,13 +17,10 @@ public enum AuthScope {
   ORGA_USERS_GET("get organisational users", false),
   APP_CREATE("create an app", false),
   LIST_IMPORT("import a list", false),
-  LIST_ADD_USER_FLOW("add a user to a list via a flow", false),
-  LOGIN_EMAIL("send a email login", false),
-  PASSWORD_RESET_FLOW("reset a password via a flow", false),
-  USER_REGISTRATION_FLOW("register a user via a flow", false),
-  PROXY_CLIENT("proxy a client", false),
+
   APP_LISTS_GET("get the lists of an app", false),
   REALM_LISTS_GET("get the lists of a realm", false);
+
 
   private final String humanActionName;
   private final boolean isPublic;
@@ -32,7 +29,7 @@ public enum AuthScope {
    * @param humanActionName - the text that should come after `you don't have the permission to`
    * @param isPublic - if the action can be accessed by an anonymous user
    */
-  AuthScope(String humanActionName, boolean isPublic) {
+  AuthUserScope(String humanActionName, boolean isPublic) {
 
     this.humanActionName = humanActionName;
     this.isPublic = isPublic;
@@ -43,7 +40,11 @@ public enum AuthScope {
     return humanActionName + " (" + name().toLowerCase() + ").";
   }
 
+  /**
+   * Public action for all clients
+   */
   public boolean isPublic() {
     return this.isPublic;
   }
+
 }
