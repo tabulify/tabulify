@@ -341,13 +341,14 @@ paths:
         Login or register a user
         by sending an email with a link
 
-        This is one login/registration endpoint.
+        This is one single endpoint for login and registration.
 
-        This is better than a login and a register endpoint
-        because the user will always get an email. ie
-        to avoid leaking if the user is registered,
-        (ie Email enumeration protection), the login endpoint does not return any information
+        This is better than a login and a register endpoint because:
+        - the user will always get an email. ie to avoid leaking if the user is registered,
+        (due to Email enumeration protection), the login endpoint does not return any information
         (send no email).
+        - the user cannot try to register 2 times. If known, it will get a login link
+        - it follows the same flow as the Oauth flow (one click registration and login)
       tags:
         - auth
       security: [ ] # open

@@ -3,10 +3,7 @@ package net.bytle.tower;
 import io.vertx.core.Future;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.model.openapi.App;
-import net.bytle.tower.eraldy.model.openapi.Organization;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
-import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.tower.eraldy.objectProvider.OrganizationUserProvider;
 import net.bytle.type.UriEnhanced;
@@ -37,9 +34,11 @@ public class EraldyModel {
    */
   private static final String MEMBER_APP_URI_CONF = "member.app.uri";
   /**
-   * A template uri with the %s as placeholder
-   * where the users can register publicly
-   * Example: `http(s)://domain.com/path/%s`
+   * A template uri where the users can register publicly
+   * (With the 2 %s as placeholder (the first one for the app guid
+   * and the second for the list guid)
+   * <p>
+   * Example: `http(s)://domain.com/path/%s/%s`
    */
   private static final String MEMBER_REGISTRATION_URL = "member.list.registration.url.template";
   private final EraldyApiApp apiApp;
@@ -75,14 +74,15 @@ public class EraldyModel {
     } catch (Exception e) {
       throw new ConfigIllegalException("The member app value (" + memberUri + ") of the conf (" + MEMBER_APP_URI_CONF + ") is not a valid URI", e);
     }
-    this.uriRegistrationPathTemplate = configAccessor.getString(MEMBER_REGISTRATION_URL, memberUri + "/register/list/%s");
+    this.uriRegistrationPathTemplate = configAccessor.getString(MEMBER_REGISTRATION_URL, memberUri + "/app/%s/list/%s/registration");
     try {
-      String s = "lis-yolo";
-      URI uri = getMemberListRegistrationPath(s);
-      if (!uri.getPath().contains(s)) {
-        throw new ConfigIllegalException("The member registration url value (" + uriRegistrationPathTemplate + ") of the conf (" + MEMBER_REGISTRATION_URL + ") is not a valid URI template because it seems to not include the %s placeholder");
+      String listGuid = "lis-yolo";
+      String appGuid = "app-youlou";
+      URI uri = getMemberListRegistrationPath(appGuid, listGuid);
+      if (!uri.getPath().contains(listGuid) || !uri.getPath().contains(appGuid)) {
+        throw new ConfigIllegalException("The member registration url value (" + uriRegistrationPathTemplate + ") of the conf (" + MEMBER_REGISTRATION_URL + ") is not a valid URI template because it seems to not include 2 %s placeholder");
       }
-    } catch (Exception e) {
+    } catch (URISyntaxException e) {
       throw new ConfigIllegalException("The member registration url value (" + uriRegistrationPathTemplate + ") of the conf (" + MEMBER_REGISTRATION_URL + ") is not a valid URI template", e);
     }
   }
@@ -218,11 +218,25 @@ public class EraldyModel {
     return this.memberClient;
   }
 
-  public URI getMemberListRegistrationPath(String s) {
-    try {
-      return new URI(String.format(this.uriRegistrationPathTemplate, s));
-    } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
+  /**
+   * A private utility function used at build time to test if the URI is valid.
+   * That's why the signature does not have the {@link ListItem} object but 2 strings
+   * <p>
+   * The public function {@link #getMemberListRegistrationPath(ListItem)} does have a {@link ListItem}
+   * as signature
+   */
+  private URI getMemberListRegistrationPath(String appGuid, String listGuid) throws URISyntaxException {
+
+    return new URI(String.format(this.uriRegistrationPathTemplate, appGuid, listGuid));
+
   }
+
+  public URI getMemberListRegistrationPath(ListItem listItem) {
+      try {
+          return getMemberListRegistrationPath(listItem.getOwnerApp().getGuid(), listItem.getGuid());
+      } catch (URISyntaxException e) {
+          throw new InternalException("The URI should have been tested at build time of Eraldy Model",e);
+      }
+  }
+
 }

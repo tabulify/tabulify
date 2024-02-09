@@ -105,7 +105,6 @@ public class RealmSessionHandler implements SessionHandler {
   private String realmHandleContextAndSessionKey = "realm-handle";
 
 
-
   public RealmSessionHandler(TowerApexDomain apexDomain) {
     this.sessionStore = apexDomain.getHttpServer().getPersistentSessionStore();
     this.eraldyDomain = apexDomain;
@@ -188,6 +187,7 @@ public class RealmSessionHandler implements SessionHandler {
     this.realmGuidContextAndSessionKey = realmGuidSessionKey;
     return this;
   }
+
   public RealmSessionHandler setRealmHandleContextAndSessionKey(String realmHandleSessionKey) {
     this.realmHandleContextAndSessionKey = realmHandleSessionKey;
     return this;
@@ -467,18 +467,32 @@ public class RealmSessionHandler implements SessionHandler {
         context.fail(err);
       })
       .onSuccess(session -> {
+
+
         if (session != null) {
-          ((RoutingContextInternal) context).setSession(session);
-          // attempt to load the user from the session
-          UserHolder holder = session.get(SESSION_USER_HOLDER_KEY);
-          if (holder != null) {
-            holder.refresh(context);
+
+          String realmGuidValue = session.get(this.realmGuidContextAndSessionKey);
+          String realmHandleValue = session.get(this.realmHandleContextAndSessionKey);
+          if (realmGuidValue == null || realmHandleValue == null) {
+
+            // session should have the realm information
+            // old stored sessions don't have them
+            createNewSession(context, cookieName);
+
           } else {
-            // signal we must store the user to link it to the
-            // session as it wasn't found
-            context.put(SESSION_STORE_USER_KEY, true);
+
+            ((RoutingContextInternal) context).setSession(session);
+            // attempt to load the user from the session
+            UserHolder holder = session.get(SESSION_USER_HOLDER_KEY);
+            if (holder != null) {
+              holder.refresh(context);
+            } else {
+              // signal we must store the user to link it to the
+              // session as it wasn't found
+              context.put(SESSION_STORE_USER_KEY, true);
+            }
+            addStoreSessionHandler(context, cookieName);
           }
-          addStoreSessionHandler(context, cookieName);
         } else {
           // Cannot find session - either it timed out, or was explicitly destroyed at the
           // server side on a

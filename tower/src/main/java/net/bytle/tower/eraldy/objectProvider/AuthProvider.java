@@ -323,11 +323,24 @@ public class AuthProvider {
 
   }
 
+  public Future<AuthUser> getAuthUserForSessionByEmail(BMailInternetAddress email, Realm realm) {
+
+    return this.apiApp.getUserProvider()
+      .getUserByEmail(email, realm)
+      .compose(userInDb -> {
+        if (userInDb == null) {
+          return Future.succeededFuture();
+        }
+        return toAuthUserForSession(userInDb)
+          .compose(Future::succeededFuture);
+      });
+
+  }
   /**
    *
    * @param email - the email
    * @param realmIdentifier - the realm
-   * @return a auth user to be stored in a session
+   * @return an auth user to be stored in a session or null
    */
   public Future<AuthUser> getAuthUserForSessionByEmail(BMailInternetAddress email, String realmIdentifier) {
 

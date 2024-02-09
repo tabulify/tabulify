@@ -425,7 +425,7 @@ public class ListProvider {
             }
 
             listItem.setRealm(realmResult);
-            URI memberListRegistrationPath = this.apiApp.getEraldyModel().getMemberListRegistrationPath(listItem.getGuid());
+            URI memberListRegistrationPath = this.apiApp.getEraldyModel().getMemberListRegistrationPath(listItem);
             listItem.setRegistrationUrl(memberListRegistrationPath);
             return Future.succeededFuture(listItem);
 

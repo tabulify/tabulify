@@ -63,18 +63,18 @@ public class AuthClientHandler implements Handler<RoutingContext> {
 
   /**
    * The client id
+   * (not guid because we follow the oauth convention)
    */
   private static final String X_CLIENT_ID = "x-client-id";
 
   /**
-   * The app id of the request
+   * The app id (guid) of the request
    */
   private static final String X_PROXY_APP_ID = "x-proxy-app-id";
   /**
    * The client id that the client wants to proxy
    * (Used in the member/auth app)
    */
-
   private static final String X_PROXY_CLIENT_ID = "x-proxy-client-id";
 
   /**

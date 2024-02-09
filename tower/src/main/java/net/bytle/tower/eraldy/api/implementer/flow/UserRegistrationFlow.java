@@ -8,6 +8,7 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
+import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NotAuthorizedException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.AuthClient;
@@ -16,6 +17,7 @@ import net.bytle.tower.eraldy.api.implementer.callback.UserRegisterEmailCallback
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
@@ -40,9 +42,6 @@ import static net.bytle.tower.eraldy.api.implementer.ListApiImpl.REGISTRATION_EM
 public class UserRegistrationFlow extends WebFlowAbs {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(UserRegistrationFlow.class);
-
-  private static final String USER_GUID_PARAM = ":userGuid";
-  private static final String FRONTEND_REGISTER_CONFIRMATION_PATH = "/register/user/confirmation/" + USER_GUID_PARAM;
   private final UserRegisterEmailCallback userCallback;
 
   public UserRegistrationFlow(TowerApp towerApp) {
@@ -85,17 +84,16 @@ public class UserRegistrationFlow extends WebFlowAbs {
       );
     }
 
-
-    OAuthInternalSession.addRedirectUri(routingContext, redirectUri);
-
-
     User newUser = new User();
     newUser.setEmail(bMailInternetAddress.toNormalizedString());
     newUser.setRealm(realm);
     String realmNameOrHandle = RealmProvider.getNameOrHandle(realm);
 
     SmtpSender realmOwnerSender = UsersUtil.toSenderUser(realm.getOwnerUser());
-    AuthJwtClaims jwtClaims = getApp().getAuthProvider().toJwtClaims(newUser).addRequestClaims(routingContext);
+    AuthJwtClaims jwtClaims = getApp().getAuthProvider().toJwtClaims(newUser)
+      .addRequestClaims(routingContext)
+      .setRedirectUri(redirectUri.toUri());
+
     String newUserName;
     try {
       newUserName = UsersUtil.getNameOrNameFromEmail(newUser);
@@ -219,41 +217,80 @@ public class UserRegistrationFlow extends WebFlowAbs {
     } catch (AddressException e) {
       TowerFailureException
         .builder()
+        .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500) // callback our fault
         .setMessage("The AuthUser subject Email (" + subjectEmail + ") is not valid.")
-        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
         .buildWithContextFailingTerminal(ctx);
       return;
     }
     AuthProvider authProvider = getApp().getAuthProvider();
 
+    /**
+     * The requested realm should be the same as the user realm
+     */
+    Realm requestingRealm = this.getApp().getRealmProvider().getRequestingRealm(ctx);
+    if (!requestingRealm.getGuid().equals(jwtClaims.getRealmGuid())) {
+      TowerFailureException
+        .builder()
+        .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500) // callback our fault
+        .setMessage("The requesting realm (" + requestingRealm.getGuid() + ") is not the same as the claims (" + jwtClaims.getRealmGuid() + ")")
+        .buildWithContextFailingTerminal(ctx);
+      return;
+    }
     authProvider
-      .getAuthUserForSessionByEmailNotNull(bMailInternetAddress, jwtClaims.getRealmGuid())
+      .getAuthUserForSessionByEmail(bMailInternetAddress, requestingRealm)
       .onFailure(ctx::fail)
       .onSuccess(authUserFromGet -> {
+        UriEnhanced uriEnhanced;
+        try {
+          uriEnhanced = UriEnhanced.createFromString(jwtClaims.getRedirectUri());
+        } catch (IllegalStructure e) {
+          TowerFailureException
+            .builder()
+            .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500) // callback our fault
+            .setMessage("The claims redirect uri (" + jwtClaims.getRedirectUri() + ") is not a valid URI")
+            .setCauseException(e)
+            .buildWithContextFailingTerminal(ctx);
+          return;
+        }
         if (authUserFromGet != null) {
           // The user was already registered.
           // Possible causes:
           // * The user has clicked two times on the validation link received by email
-          // * The user tries to register again
-          this.getApp().getAuthNContextManager().newAuthNContext(ctx, this, authUserFromGet, OAuthState.createEmpty(), jwtClaims)
-            .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(authUserFromGet.getSubject()))
+          // Note the user can not register 2 times as if it's the case the user gets a login link
+          this.getApp().getAuthNContextManager()
+            .newAuthNContext(ctx, this, authUserFromGet, OAuthState.createEmpty(), jwtClaims)
+            .redirectViaHttp(uriEnhanced)
             .authenticateSession();
           return;
         }
+
+        /**
+         * Analytics
+         * (Jwt Claims are used to pass analytics data to the event)
+         */
+        App requestingApp = this.getApp().getAppProvider().getRequestingApp(ctx);
+        jwtClaims.setAppGuid(requestingApp.getGuid());
+        jwtClaims.setAppHandle(requestingApp.getHandle());
+        jwtClaims.setOrganizationGuid(requestingApp.getRealm().getOrganization().getGuid());
+        jwtClaims.setOrganizationHandle(requestingApp.getRealm().getOrganization().getHandle());
+
+        /**
+         * Insert and login
+         */
         authProvider
           .insertUserFromLoginAuthUserClaims(jwtClaims, ctx, this)
           .onFailure(ctx::fail)
-          .onSuccess(authUserInserted -> this.getApp().getAuthNContextManager().newAuthNContext(ctx, this, authUserInserted, OAuthState.createEmpty(), jwtClaims)
-            .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(authUserInserted.getSubject()))
+          .onSuccess(authUserInserted -> this
+            .getApp()
+            .getAuthNContextManager()
+            .newAuthNContext(ctx, this, authUserInserted, OAuthState.createEmpty(), jwtClaims)
+            .redirectViaHttp(uriEnhanced)
             .authenticateSession()
           );
       });
 
   }
 
-  private UriEnhanced getUriToUserRegistrationConfirmation(String guid) {
-    return this.getApp().getEraldyModel().getMemberAppUri().setPath(FRONTEND_REGISTER_CONFIRMATION_PATH.replace(USER_GUID_PARAM, guid));
-  }
 
   public UserRegisterEmailCallback getCallback() {
     return this.userCallback;
