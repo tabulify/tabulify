@@ -101,14 +101,16 @@ public void mount(RouterBuilder builder) {
         String redirectUri = requestParameters.queryParameter("redirect_uri") != null ? requestParameters.queryParameter("redirect_uri").getString() : null;
         String clientId = requestParameters.queryParameter("client_id") != null ? requestParameters.queryParameter("client_id").getString() : null;
         String listGuid = requestParameters.queryParameter("list_guid") != null ? requestParameters.queryParameter("list_guid").getString() : null;
+        String appGuid = requestParameters.queryParameter("app_guid") != null ? requestParameters.queryParameter("app_guid").getString() : null;
 
       logger.debug("Parameter provider is {}", provider);
       logger.debug("Parameter redirectUri is {}", redirectUri);
       logger.debug("Parameter clientId is {}", clientId);
       logger.debug("Parameter listGuid is {}", listGuid);
+      logger.debug("Parameter appGuid is {}", appGuid);
 
     // Based on Route#respond
-    api.authLoginOauthProviderGet(routingContext, provider, redirectUri, clientId, listGuid)
+    api.authLoginOauthProviderGet(routingContext, provider, redirectUri, clientId, listGuid, appGuid)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

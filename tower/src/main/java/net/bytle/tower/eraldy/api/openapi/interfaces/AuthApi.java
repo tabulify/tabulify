@@ -13,7 +13,7 @@ public interface AuthApi  {
     Future<ApiResponse<Void>> authLoginAuthorizeGet(RoutingContext routingContext, String redirectUri);
 
     /**
-     * Login or register a user by sending an email with a link  This is one login/registration endpoint.  This is better than a login and a register endpoint because the user will always get an email. ie to avoid leaking if the user is registered, (ie Email enumeration protection), the login endpoint does not return any information (send no email).
+     * Login or register a user by sending an email with a link  This is one single endpoint for login and registration.  This is better than a login and a register endpoint because: - the user will always get an email. ie to avoid leaking if the user is registered, (due to Email enumeration protection), the login endpoint does not return any information (send no email). - the user cannot try to register 2 times. If known, it will get a login link - it follows the same flow as the Oauth flow (one click registration and login)
     */
     Future<ApiResponse<Void>> authLoginEmailPost(RoutingContext routingContext, AuthEmailPost authEmailPost);
 
@@ -25,7 +25,7 @@ public interface AuthApi  {
     /**
      * Redirect to the external oauth authorization end point
     */
-    Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String redirectUri, String clientId, String listGuid);
+    Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String redirectUri, String clientId, String listGuid, String appGuid);
 
     /**
      * The login form end point for password credentials

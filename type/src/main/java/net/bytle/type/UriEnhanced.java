@@ -36,7 +36,12 @@ public class UriEnhanced {
     if (url == null) {
       throw new IllegalStructure("The url cannot be null");
     }
-    URI uri = URI.create(url);
+    URI uri;
+    try {
+      uri = URI.create(url);
+    } catch (Exception e) {
+      throw new IllegalStructure("Illegal URL: "+e.getMessage(),e);
+    }
     return createFromUri(uri);
 
   }

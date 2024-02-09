@@ -17,6 +17,7 @@ import net.bytle.vertx.analytics.model.AnalyticsEventClient;
 import net.bytle.vertx.flow.WebFlow;
 import org.jetbrains.annotations.NotNull;
 
+import java.net.URI;
 import java.util.List;
 
 /**
@@ -66,7 +67,7 @@ public class AuthNContext {
     return this.ctx;
   }
 
-  public OAuthState getAuthState() {
+  public OAuthState getOAuthState() {
     return this.oAuthState;
   }
 
@@ -84,24 +85,6 @@ public class AuthNContext {
 
   }
 
-
-  /**
-   * @param redirectUri - the uri where to redirect. It will get the auth redirect uri as parameter.
-   *                    This is used with for instance a confirmation page that shows a message and then redirect the user
-   */
-  public AuthNContext redirectViaHttpWithAuthRedirectUriAsParameter(UriEnhanced redirectUri) {
-    this.redirectVia = RedirectionMethod.HTTP;
-    UriEnhanced redirectUriParameter;
-    try {
-      redirectUriParameter = this.getAndRemoveRedirectUri();
-    } catch (TowerFailureException e) {
-      // the exception thrown fails already the context
-      // nothing to do more
-      return this;
-    }
-    this.redirectUri = redirectUri.addQueryProperty(AuthQueryProperty.REDIRECT_URI, redirectUriParameter.toUrl().toString());
-    return this;
-  }
 
   public void setAuthUser(AuthUser authUser) {
     this.authUser = authUser;
@@ -135,28 +118,14 @@ public class AuthNContext {
 
   /**
    * Redirect via the {@link AuthQueryProperty#REDIRECT_URI redirect uri parameter}
-   * that is stored in the session (or in the auth state)
+   * that is stored in the session or in the state (auth state and jwt claims)
    */
-  public AuthNContext redirectViaHttpWithAuthRedirectUriAsUri() {
+  public AuthNContext redirectViaHttpToAuthRedirectUri() {
     this.redirectVia = RedirectionMethod.HTTP;
     /**
-     * Try to get the original redirect uri parameters
-     * <p>
-     * The URI should be before authentication because the session may
-     * be regenerated when the user is not the same
-     * <p>
-     * It can happen if the user is from another realm,
-     * Say I log in to the combo portal as user of the realm Eraldy,
-     * then I want to subscribe to a list from another realm,
-     * I click on Oauth and a new user is created
+     * We don't set the redirectUri with {@link #getRedirectUriFromSessionOrClaims()}
+     * because the redirect uri may by changed by the auth handlers.
      */
-    try {
-      redirectUri = this.getAndRemoveRedirectUri();
-    } catch (TowerFailureException e) {
-      // the exception thrown fails already the context
-      // nothing to do more
-      return this;
-    }
     return this;
   }
 
@@ -333,7 +302,7 @@ public class AuthNContext {
       appHandle = this.jwtClaims.getAppHandle();
     }
     app.setAppHandle(appHandle);
-    String realmIdentifier = this.oAuthState.getRealmIdentifier();
+    String realmIdentifier = this.oAuthState.getRealmGuid();
     if (realmIdentifier == null) {
       realmIdentifier = this.jwtClaims.getRealmGuid();
     }
@@ -381,7 +350,7 @@ public class AuthNContext {
         /**
          * The default
          */
-        this.redirectUri = this.getAndRemoveRedirectUri();
+        this.redirectUri = this.getRedirectUriFromSessionOrClaims();
       } catch (TowerFailureException e) {
         // this exception is terminal
         // and the context was failed in the function
@@ -401,18 +370,40 @@ public class AuthNContext {
   }
 
   /**
+   * This function should be called once at the end
+   * because the redirect uri may be changed by the authNContext handlers.
+   * <p>
+   * Example: This is the case with the redirection to the list registration confirmation
+   * where the list user guid is known only after registration and the URL is then modified accordingly.
+   * <p>
    * @return the redirect uri where to redirect the user after identification ore registration.
    * @throws TowerFailureException - This exception already fails the context if any error. We throw if any error, so that the code can stop its processing.
    */
-  private UriEnhanced getAndRemoveRedirectUri() throws TowerFailureException {
+  private UriEnhanced getRedirectUriFromSessionOrClaims() throws TowerFailureException {
 
-    Session session = ctx.session();
+    UriEnhanced redirection;
+    if(this.oAuthState!=null){
+      redirection = oAuthState.getRedirectUri();
+      if(redirection!=null){
+        return redirection;
+      }
+    }
+
+    if(this.jwtClaims!=null){
+      URI redirectionUri = jwtClaims.getRedirectUri();
+      if(redirectionUri!=null){
+        return UriEnhanced.createFromUri(redirectionUri);
+      }
+    }
 
     /**
      * Redirection to the client
      * (with code and state for third-party client)
+     * Deprecated: we don't store the redirect uri in the session
+     * but on the state. It permits to handle case where the user for instance
+     * switch of browser due to another default browser in the mail app
      */
-    final UriEnhanced redirection;
+    Session session = ctx.session();
     String sessionRedirectionUrl = session.remove(OAuthInternalSession.REDIRECT_URI_KEY);
     if (sessionRedirectionUrl == null) {
       throw TowerFailureException.builder()
@@ -456,7 +447,7 @@ public class AuthNContext {
           .setMimeToHtml()
           .buildWithContextFailing(ctx);
       }
-      redirection.addQueryProperty(AuthQueryProperty.STATE.toString(), inState);
+      redirection.addQueryProperty(AuthQueryProperty.OAUTH_STATE.toString(), inState);
       String authCode = OAuthCodeManagement.createOrGet().createAuthorizationAndGetCode(sessionRedirectionUrl, authUser);
       redirection.addQueryProperty(AuthQueryProperty.CODE.toString(), authCode);
     }

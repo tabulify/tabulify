@@ -36,15 +36,12 @@ public class AuthApiImpl implements AuthApi {
    * @param listGuid       - the list guid where to register the user (maybe null)
    */
   @Override
-  public Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String redirectUri, String listGuid, String clientId) {
+  public Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String redirectUri, String listGuid, String clientId, String appGuid) {
 
-    /**
-     * We don't rely on the argument because they can change of positions on the signature unfortunately
-     * or in the openapi definition
-     */
-    listGuid = routingContext.request().getParam(AuthQueryProperty.LIST_GUID.toString());
 
-    redirectUri = routingContext.request().getParam(AuthQueryProperty.REDIRECT_URI.toString());
+    RoutingContextWrapper routingContextWrapper = new RoutingContextWrapper(routingContext);
+
+    redirectUri = routingContextWrapper.getRequestQueryParameterAsString(AuthQueryProperty.REDIRECT_URI.toString());
     if (redirectUri == null) {
       return Future.failedFuture(
         TowerFailureException.builder()
@@ -53,9 +50,9 @@ public class AuthApiImpl implements AuthApi {
           .buildWithContextFailing(routingContext)
       );
     }
-
+    UriEnhanced redirectUriEnhanced;
     try {
-      UriEnhanced.createFromString(redirectUri);
+      redirectUriEnhanced = UriEnhanced.createFromString(redirectUri);
     } catch (IllegalStructure e) {
       return Future.failedFuture(
         TowerFailureException.builder()
@@ -66,7 +63,7 @@ public class AuthApiImpl implements AuthApi {
       );
     }
 
-    clientId = routingContext.request().getParam(AuthQueryProperty.CLIENT_ID.toString());
+    clientId = routingContextWrapper.getRequestQueryParameterAsString(AuthQueryProperty.CLIENT_ID.toString());
     if (clientId == null) {
       return Future.failedFuture(
         TowerFailureException.builder()
@@ -75,8 +72,8 @@ public class AuthApiImpl implements AuthApi {
       );
     }
 
-    AuthClient authClient = this.apiApp.getAuthClientProvider().getRequestingClient(routingContext);
-    if (!clientId.equals(authClient.getGuid())) {
+    AuthClient requestingClient = this.apiApp.getAuthClientProvider().getRequestingClient(routingContext);
+    if (!clientId.equals(requestingClient.getGuid())) {
       return Future.failedFuture(
         TowerFailureException.builder()
           .setMessage("The client id and auth client id are inconsistent.")
@@ -84,30 +81,66 @@ public class AuthApiImpl implements AuthApi {
       );
     }
 
-    /**
-     * OAuth is an independent package,
-     * we need to set all analytics data
-     */
-    App app = authClient.getApp();
-    OAuthState oAuthState = OAuthState
-      .createEmpty()
-      .setListGuid(listGuid)
-      .setClientId(clientId)
-      .setAppIdentifier(app.getGuid())
-      .setAppHandle(app.getHandle())
-      .setRealmIdentifier(app.getRealm().getGuid())
-      .setRealmHandle(app.getRealm().getHandle())
-      .setOrganisationGuid(app.getRealm().getOrganization().getGuid())
-      .setOrganisationHandle(app.getRealm().getOrganization().getHandle());
+    listGuid = routingContextWrapper.getRequestQueryParameterAsString(AuthQueryProperty.LIST_GUID.toString());
+    Future<ListItem> futureList;
+    if (listGuid != null) {
+      futureList = this.apiApp.getListProvider().getListByGuidHashIdentifier(listGuid);
+    } else {
+      futureList = Future.succeededFuture();
+    }
 
-    return this.apiApp
-      .getOauthFlow()
-      .step1RedirectToExternalIdentityProvider(
-        routingContext,
-        provider,
-        oAuthState
-      )
-      .compose(v -> Future.succeededFuture(new ApiResponse<>()));
+    String finalListGuid = listGuid;
+    String finalClientId = clientId;
+    return futureList
+      .compose(listItem -> {
+
+        App requestingApp = this.apiApp.getAppProvider().getRequestingApp(routingContext);
+        String requestingAppGuid = requestingApp.getGuid();
+        if (listItem != null) {
+
+          String listAppGuid = listItem.getOwnerApp().getGuid();
+          if (!requestingAppGuid.equals(listAppGuid)) {
+              return Future.failedFuture(
+                TowerFailureException.builder()
+                  .setMessage("The requesting app ("+requestingAppGuid+") and the app guid of the list ("+listAppGuid+") are not consistent. Did you forgot the "+AuthQueryProperty.APP_GUID+" property?")
+                  .buildWithContextFailing(routingContext)
+              );
+            }
+        }
+        if(listItem==null && finalListGuid!=null){
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+              .setMessage("The list ("+finalListGuid+") was not found")
+              .buildWithContextFailing(routingContext)
+          );
+        }
+
+        /**
+         * OAuth is an independent package,
+         * we need to set all analytics data
+         */
+        OAuthState oAuthState = OAuthState
+          .createEmpty()
+          .setListGuid(finalListGuid)
+          .setClientId(finalClientId)
+          .setAppGuid(requestingAppGuid)
+          .setAppHandle(requestingApp.getHandle())
+          .setRealmIdentifier(requestingApp.getRealm().getGuid())
+          .setRealmHandle(requestingApp.getRealm().getHandle())
+          .setOrganisationGuid(requestingApp.getRealm().getOrganization().getGuid())
+          .setOrganisationHandle(requestingApp.getRealm().getOrganization().getHandle())
+          .setRedirectUri(redirectUriEnhanced);
+
+        return this.apiApp
+          .getOauthFlow()
+          .step1RedirectToExternalIdentityProvider(
+            routingContext,
+            provider,
+            oAuthState
+          )
+          .compose(v -> Future.succeededFuture(new ApiResponse<>()));
+      });
 
 
   }

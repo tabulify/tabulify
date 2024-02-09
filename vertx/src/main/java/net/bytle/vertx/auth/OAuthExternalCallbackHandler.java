@@ -94,7 +94,7 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
     // an opaque random string (to protect against replay attacks)
     // or if there was no session available the target resource to
     // server after validation
-    final String state = ctx.request().getParam(AuthQueryProperty.STATE.toString());
+    final String state = ctx.request().getParam(AuthQueryProperty.OAUTH_STATE.toString());
     if (state == null) {
       ctx.fail(TowerFailureTypeEnum.BAD_REQUEST_400.getStatusCode(), new IllegalStateException("Missing state parameter"));
       return;
@@ -215,14 +215,15 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
           ctx.fail(err);
         })
         .onSuccess(authUser -> flow.getAuthContextManager()
-            .newAuthNContext(
-              ctx,
-              flow,
-              authUser,
-              oAuthState,
-              AuthJwtClaims.createEmptyClaims()
-            )
-            .authenticateSession()
+          .newAuthNContext(
+            ctx,
+            flow,
+            authUser,
+            oAuthState,
+            AuthJwtClaims.createEmptyClaims()
+          )
+          .redirectViaHttpToAuthRedirectUri()
+          .authenticateSession()
         );
     });
   }

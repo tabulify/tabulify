@@ -3,7 +3,10 @@ package net.bytle.vertx.auth;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.vertx.core.json.JsonObject;
 import net.bytle.exception.CastException;
+import net.bytle.exception.IllegalStructure;
 import net.bytle.type.Base64Utility;
+import net.bytle.type.UriEnhanced;
+
 
 /**
  * A pojo to:
@@ -22,13 +25,15 @@ public class OAuthState {
    * The random value to stop any replay
    */
   private static final String RANDOM_VALUE = "randomValue";
-  private static final String REALM_IDENTIFIER = "realmIdentifier";
+  private static final String REALM_GUID = "realmGuid";
   private static final String REALM_HANDLE = "realmHandle";
   private static final String APP_GUID = "appIdentifier";
   private static final String CLIENT_ID = "clientId";
   private static final String APP_HANDLE = "appHandle";
-  private static final String ORG_IDENTIFIER = "orgIdentifier";
+  private static final String ORG_GUID = "orgGuid";
   private static final String ORG_HANDLE = "orgHandle";
+
+  private static final String REDIRECT_URI = "redirectUri";
   private final JsonObject jsonObject;
 
   /**
@@ -39,6 +44,7 @@ public class OAuthState {
    * The provider id
    */
   private String providerGuid;
+
 
   public static OAuthState createFromStateString(String state) throws CastException {
     String jsonState = Base64Utility.base64UrlStringToString(state);
@@ -88,18 +94,18 @@ public class OAuthState {
    * @param realmIdentifier - the realm Identifier (used in analytics and to control the realm)
    */
   public OAuthState setRealmIdentifier(String realmIdentifier) {
-    this.jsonObject.put(REALM_IDENTIFIER, realmIdentifier);
+    this.jsonObject.put(REALM_GUID, realmIdentifier);
     return this;
   }
 
-  public String getRealmIdentifier() {
-    return this.jsonObject.getString(REALM_IDENTIFIER);
+  public String getRealmGuid() {
+    return this.jsonObject.getString(REALM_GUID);
   }
 
   /**
    * @param appIdentifier - an identifier for the app (used in analytics)
    */
-  public OAuthState setAppIdentifier(String appIdentifier) {
+  public OAuthState setAppGuid(String appIdentifier) {
     this.jsonObject.put(APP_GUID, appIdentifier);
     return this;
   }
@@ -112,12 +118,12 @@ public class OAuthState {
    * @param orgIdentifier - an identifier for the org (used in analytics)
    */
   public OAuthState setOrganisationGuid(String orgIdentifier) {
-    this.jsonObject.put(ORG_IDENTIFIER, orgIdentifier);
+    this.jsonObject.put(ORG_GUID, orgIdentifier);
     return this;
   }
 
   public String getOrganisationGuid() {
-    return this.jsonObject.getString(ORG_IDENTIFIER);
+    return this.jsonObject.getString(ORG_GUID);
   }
 
   /**
@@ -178,8 +184,25 @@ public class OAuthState {
     this.jsonObject.put(CLIENT_ID, clientId);
     return this;
   }
+
   public String getClientId() {
     return this.jsonObject.getString(CLIENT_ID);
   }
 
+  public UriEnhanced getRedirectUri() {
+    String redirectUriString = this.jsonObject.getString(REDIRECT_URI);
+    if (redirectUriString == null) {
+      return null;
+    }
+    try {
+      return UriEnhanced.createFromString(redirectUriString);
+    } catch (IllegalStructure e) {
+      throw new RuntimeException("It should not happen because the set use the URIEnhanced object as signature", e);
+    }
+  }
+
+  public OAuthState setRedirectUri(UriEnhanced redirectUri) {
+    this.jsonObject.put(REDIRECT_URI, redirectUri.toString());
+    return this;
+  }
 }

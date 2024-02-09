@@ -322,15 +322,23 @@ paths:
           schema:
             type: string
             enum: [ github, google ]
-          example: github
+            example: github
         - name: list_guid
           description: "The list guid if the user register to a list"
           in: query
           schema:
             type: string
-          example: 'lis-xxxx'
+            example: 'lis-xxxx'
+        - name: app_guid
+          description: The app guid of the list, mandatory if there is a list
+          required: false
+          in: query
+          schema:
+            type: string
+            example: 'app-xxxx'
         - $ref: "#/components/parameters/redirect_uri"
         - $ref: "#/components/parameters/client_id"
+
       responses:
         '302':
           description: "The OAuth redirection URL to the authorization end point for the provider"

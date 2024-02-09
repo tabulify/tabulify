@@ -64,7 +64,7 @@ public class UserLoginEmailCallback extends WebFlowEmailCallbackAbs {
       .onFailure(ctx::fail)
       .onSuccess(authUserForSession -> apiApp.getAuthNContextManager()
         .newAuthNContext(ctx, webFlow, authUserForSession, OAuthState.createEmpty(), jwtClaims)
-        .redirectViaHttpWithAuthRedirectUriAsUri()
+        .redirectViaHttpToAuthRedirectUri()
         .authenticateSession());
 
   }

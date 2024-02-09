@@ -331,7 +331,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .onSuccess(finalAuthSessionUser -> createListUserEntry(ctx, listGuidObject, authProvider.toBaseModelUser(finalAuthSessionUser), optInTime, finalOptInIp, ListUserSource.EMAIL)
             .onFailure(ctx::fail)
             .onSuccess(listUser -> {
-              String jwtRedirectUri = jwtClaims.getRedirectUri();
+              String jwtRedirectUri = jwtClaims.getRedirectUri().toString();
               String registrationConfirmationOperationPath = jwtRedirectUri.replace(REGISTRATION_GUID_PARAM, listUser.getGuid());
               UriEnhanced redirectUri;
               try {
@@ -380,7 +380,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
   public Handler<AuthNContext> handleStepOAuthAuthentication() {
     return authContext -> {
 
-      String listGuid = authContext.getAuthState().getListGuid();
+      OAuthState oAuthState = authContext.getOAuthState();
+      String listGuid = oAuthState.getListGuid();
       if (listGuid == null) {
         // no list in registration context, we continue
         authContext.next();
@@ -421,7 +422,27 @@ public class ListRegistrationFlow extends WebFlowAbs {
       User user = this.getApp().getAuthProvider().toBaseModelUser(authUser);
       this.createListUserEntry(ctx, listGuidObject, user, optInTime, optInIp, ListUserSource.OAUTH)
         .onFailure(err -> authContext.getRoutingContext().fail(err))
-        .onSuccess(registration -> authContext.next());
+        .onSuccess(listUser -> {
+          /**
+           * Update the confirmation URL
+           * with the list user guid
+           */
+          UriEnhanced redirectUri = oAuthState.getRedirectUri();
+          if(redirectUri==null){
+            TowerFailureException
+              .builder()
+              .setMessage("The redirect uri was not found in the OAuth State object")
+              .buildWithContextFailingTerminal(authContext.getRoutingContext());
+            return;
+          }
+          String registrationConfirmationOperationPath = redirectUri.getPath().replace(REGISTRATION_GUID_PARAM, listUser.getGuid());
+          redirectUri.setPath(registrationConfirmationOperationPath);
+          oAuthState.setRedirectUri(redirectUri);
+          /**
+           * Next handler
+           */
+          authContext.next();
+        });
     };
   }
 

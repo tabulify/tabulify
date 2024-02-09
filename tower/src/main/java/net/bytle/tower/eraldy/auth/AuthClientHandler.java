@@ -59,7 +59,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
    * For instance, list registration has a public form that is hosted
    * by our app but the app of the request is proxied
    */
-  private static final String APP_ID_CONTEXT_KEY = "app-id-context-key";
+  private static final String APP_GUID_CONTEXT_KEY = "app-guid-context-key";
 
   /**
    * The client id
@@ -70,7 +70,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
   /**
    * The app id (guid) of the request
    */
-  private static final String X_PROXY_APP_ID = "x-proxy-app-id";
+  private static final String X_PROXY_APP_GUID = "x-proxy-app-guid";
   /**
    * The client id that the client wants to proxy
    * (Used in the member/auth app)
@@ -79,16 +79,32 @@ public class AuthClientHandler implements Handler<RoutingContext> {
 
   /**
    * The client id
+   * used in get request
    */
-  private static final String CLIENT_ID = "client_id";
-
-  private final EraldyApiApp apiApp;
+  private static final AuthQueryProperty CLIENT_ID = AuthQueryProperty.CLIENT_ID;
 
   /**
-   * The cookie that stores the last realm
-   * information (when the front end is loaded)
+   * The app guid
+   * used in get request from the browser
    */
+  private static final AuthQueryProperty APP_GUID = AuthQueryProperty.APP_GUID;
 
+  /**
+   * All route operations that starts with this path are auth operations
+   * and allows clientId and appGuid as query parameters or in oauth state
+   */
+  private static final String AUTH_START_ROUTE = "/auth";
+
+  /**
+   * The main app
+   */
+  private final EraldyApiApp apiApp;
+
+
+  /**
+   * The keys on the context that stores the realm guid and handle
+   * (used by the {@link RealmSessionHandler} to create a cookie by realm)
+   */
   private final String realmGuidContextKey;
   private final String realmHandleContextKey;
 
@@ -111,7 +127,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
     HttpServerRequest request = routingContext.request();
 
     /**
-     * From header (classic)
+     * From HTTP header (classic)
      */
     String clientId = request.getHeader(X_CLIENT_ID);
     if (clientId != null) {
@@ -119,23 +135,30 @@ public class AuthClientHandler implements Handler<RoutingContext> {
     }
 
     /**
-     * Auth Hack
-     * Because a session is only a handler of a routing context
-     * There is no way to create a session at the last handler context
-     * because the session interface implements / depends on the {@link RoutingContext}
-     * You can't then have a session object with two type of handlers.
+     * Auth Hack from Get request
+     * <p>
+     * Note: We try to determine the session at the last handler of the routing context, but we failed.
+     * Why? Because a session is a handler implementation of a routing context,
+     * there is no way to create or determine a {@link RealmSessionHandler} at the last handler in a routing context.
+     * And because the session interface implements / depends on the {@link RoutingContext},
+     * you can't then have a session object with two type of handlers (ie RoutingContext and another one).
      */
-    if (!request.path().startsWith("/auth")) {
+    if (!request.path().startsWith(AUTH_START_ROUTE)) {
       throw new NotFoundException();
     }
-    clientId = request.getParam(CLIENT_ID);
+
+    /**
+     * Client Id on login/authorized and oauth endpoint
+     */
+    clientId = request.getParam(CLIENT_ID.toString());
     if (clientId != null) {
       return clientId;
     }
+
     /**
-     * In the callback state?
+     * Client Id on a OAuth callback state
      */
-    final String state = routingContext.request().getParam(AuthQueryProperty.STATE.toString());
+    final String state = routingContext.request().getParam(AuthQueryProperty.OAUTH_STATE.toString());
     String message = "For Auth, the client id is mandatory.";
     if (state == null) {
       throw new InternalException(message);
@@ -281,10 +304,10 @@ public class AuthClientHandler implements Handler<RoutingContext> {
                * so that the app does not need to make a query.
                * The member app proxy all requests as if it was another app.
                */
-              if (context.request().params().contains(CLIENT_ID)) {
+              if (context.request().params().contains(CLIENT_ID.toString())) {
                 // client_id is normally send as HTTP headers by client
                 // it's advertised in the URL only from the member app
-                // it's just a trick to not send this data for all apps
+                // contains client id, is just a trick to not send this data for all apps
                 // Why? because only the  auth app have this query parameter
                 String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-" + finalAuthClient.getGuid();
                 FrontEndCookie.conf(cookieName, AuthClient.class)
@@ -294,6 +317,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
                   .build()
                   .setValue(finalAuthClient, context);
               }
+
 
               /**
                * To retrieve the request client
@@ -308,7 +332,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
                */
 
               Future<App> futureRequestApp = Future.succeededFuture(finalAuthClient.getApp());
-              String proxyAppId = context.request().getHeader(X_PROXY_APP_ID);
+              String proxyAppId = this.getAppGuid(context);
               if (proxyAppId != null) {
                 AuthClientScope proxyApp = AuthClientScope.PROXY_APP;
                 try {
@@ -359,7 +383,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
                   /**
                    * To retrieve the request client
                    */
-                  context.put(APP_ID_CONTEXT_KEY, app);
+                  context.put(APP_GUID_CONTEXT_KEY, app);
 
                   /**
                    * Next handler
@@ -373,6 +397,66 @@ public class AuthClientHandler implements Handler<RoutingContext> {
 
         }
       );
+
+  }
+
+  /**
+   * Same logic as {@link #getClientId(RoutingContext)}
+   * but on the app level.
+   * This is used when a cli proxy an app.
+   * It's the case with our page to register a user to the list.
+   * The cli is ours (ie member app) but the app is not.
+   */
+  private String getAppGuid(RoutingContext context) {
+    /**
+     * Standard HTTP header
+     */
+    HttpServerRequest request = context.request();
+    String appGuid = request.getHeader(X_PROXY_APP_GUID);
+    if(appGuid!=null){
+      return appGuid;
+    }
+
+    /**
+     * Auth Hack from Get request
+     * <p>
+     * Note: We try to determine the session at the last handler of the routing context, but we failed.
+     * Why? Because a session is a handler implementation of a routing context,
+     * there is no way to create or determine a {@link RealmSessionHandler} at the last handler in a routing context.
+     * And because the session interface implements / depends on the {@link RoutingContext},
+     * you can't then have a session object with two type of handlers (ie RoutingContext and another one).
+     */
+    if (!request.path().startsWith(AUTH_START_ROUTE)) {
+      return null;
+    }
+
+    /**
+     * App Id on login/authorized and oauth endpoint
+     */
+    appGuid = request.getParam(APP_GUID.toString());
+    if (appGuid != null) {
+      return appGuid;
+    }
+
+    /**
+     * App Guid on a OAuth callback state
+     */
+    final String state = request.getParam(AuthQueryProperty.OAUTH_STATE.toString());
+    if (state == null) {
+      return null;
+    }
+    OAuthState oAuthState;
+    try {
+      oAuthState = OAuthState.createFromStateString(state);
+    } catch (CastException e) {
+      TowerFailureException.builder()
+        .setMessage("The oauth state  query is not in the good format")
+        .setCauseException(e)
+        .buildWithContextFailingTerminal(context);
+      return null;
+    }
+    return oAuthState.getAppGuid();
+
 
   }
 
@@ -390,7 +474,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
   }
 
   public App getRequestingApp(RoutingContext routingContext) {
-    App app = routingContext.get(AuthClientHandler.APP_ID_CONTEXT_KEY);
+    App app = routingContext.get(AuthClientHandler.APP_GUID_CONTEXT_KEY);
     if (app == null) {
       throw new InternalException("The app from the client was not found");
     }

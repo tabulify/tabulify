@@ -8,7 +8,6 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
-import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NotAuthorizedException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.AuthClient;
@@ -240,18 +239,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
       .getAuthUserForSessionByEmail(bMailInternetAddress, requestingRealm)
       .onFailure(ctx::fail)
       .onSuccess(authUserFromGet -> {
-        UriEnhanced uriEnhanced;
-        try {
-          uriEnhanced = UriEnhanced.createFromString(jwtClaims.getRedirectUri());
-        } catch (IllegalStructure e) {
-          TowerFailureException
-            .builder()
-            .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500) // callback our fault
-            .setMessage("The claims redirect uri (" + jwtClaims.getRedirectUri() + ") is not a valid URI")
-            .setCauseException(e)
-            .buildWithContextFailingTerminal(ctx);
-          return;
-        }
+        UriEnhanced uriEnhanced = UriEnhanced.createFromUri(jwtClaims.getRedirectUri());
         if (authUserFromGet != null) {
           // The user was already registered.
           // Possible causes:
@@ -308,7 +296,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         return;
       }
 
-      String realmIdentifier = authContext.getAuthState().getRealmIdentifier();
+      String realmIdentifier = authContext.getOAuthState().getRealmGuid();
       if (realmIdentifier == null) {
         TowerFailureException.builder()
           .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)

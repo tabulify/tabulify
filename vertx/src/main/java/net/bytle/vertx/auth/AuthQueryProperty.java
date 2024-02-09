@@ -12,7 +12,7 @@ public enum AuthQueryProperty {
   /**
    * A nonce to avoid Cross request attack
    */
-  STATE("state"),
+  OAUTH_STATE("state"),
   /**
    * The code send in the callback when the auth is successful
    */
@@ -33,7 +33,12 @@ public enum AuthQueryProperty {
   /**
    * The list guid
    */
-  LIST_GUID("list_guid");
+  LIST_GUID("list_guid"),
+
+  /**
+   * The proxied app guid
+   */
+  APP_GUID("app_guid");
 
   private final String key;
 

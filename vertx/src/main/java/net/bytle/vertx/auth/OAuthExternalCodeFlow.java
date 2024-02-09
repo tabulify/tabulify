@@ -6,7 +6,9 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.NotFoundException;
 import net.bytle.type.UriEnhanced;
-import net.bytle.vertx.*;
+import net.bytle.vertx.ConfigIllegalException;
+import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.ValidationUtil;
 import net.bytle.vertx.flow.WebFlowAbs;
 import net.bytle.vertx.flow.WebFlowType;
 
@@ -60,31 +62,6 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
    * @return redirect to the Oauth provider
    */
   public Future<Void> step1RedirectToExternalIdentityProvider(RoutingContext routingContext, String provider, OAuthState OAuthState) {
-
-
-    /**
-     * CallBack is mandatory
-     *
-     */
-    UriEnhanced redirectUriAsUri;
-    try {
-      redirectUriAsUri = getRedirectUri(routingContext);
-    } catch (NotFoundException e) {
-      /**
-       * The redirect uri is mandatory
-       * For a user registration, it should be the calling application
-       * For a list registration, it should be the confirmation page
-       */
-      return Future.failedFuture(
-        TowerFailureException
-          .builder()
-          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-          .setMessage("The (" + OAuthInternalSession.REDIRECT_URI_KEY + ") of the client cannot be null for a user registration.")
-          .buildWithContextFailing(routingContext)
-      );
-    }
-
-    OAuthInternalSession.addRedirectUri(routingContext, redirectUriAsUri);
 
 
     /**
