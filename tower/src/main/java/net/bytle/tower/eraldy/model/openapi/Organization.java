@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.model.openapi;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -19,6 +20,10 @@ public class Organization   {
   protected String handle;
 
   protected String name;
+
+  protected LocalDateTime creationTime;
+
+  protected LocalDateTime modificationTime;
 
   /**
   * The empty constructor is
@@ -94,6 +99,38 @@ public class Organization   {
     this.name = name;
   }
 
+  /**
+  * @return creationTime The creation time of the user in UTC
+  */
+  @JsonProperty("creationTime")
+  public LocalDateTime getCreationTime() {
+    return creationTime;
+  }
+
+  /**
+  * @param creationTime The creation time of the user in UTC
+  */
+  @SuppressWarnings("unused")
+  public void setCreationTime(LocalDateTime creationTime) {
+    this.creationTime = creationTime;
+  }
+
+  /**
+  * @return modificationTime The last modification time of the user in UTC
+  */
+  @JsonProperty("modificationTime")
+  public LocalDateTime getModificationTime() {
+    return modificationTime;
+  }
+
+  /**
+  * @param modificationTime The last modification time of the user in UTC
+  */
+  @SuppressWarnings("unused")
+  public void setModificationTime(LocalDateTime modificationTime) {
+    this.modificationTime = modificationTime;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -106,12 +143,12 @@ public class Organization   {
     Organization organization = (Organization) o;
     return
 
-            Objects.equals(guid, organization.guid) && Objects.equals(localId, organization.localId) && Objects.equals(handle, organization.handle) && Objects.equals(name, organization.name);
+            Objects.equals(guid, organization.guid) && Objects.equals(localId, organization.localId) && Objects.equals(handle, organization.handle) && Objects.equals(name, organization.name) && Objects.equals(creationTime, organization.creationTime) && Objects.equals(modificationTime, organization.modificationTime);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, localId, handle, name);
+    return Objects.hash(guid, localId, handle, name, creationTime, modificationTime);
   }
 
   @Override

@@ -66,10 +66,9 @@ public class UserProvider {
   public static final String DATA_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + DATA;
   private static final String REALM_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
   protected static final String ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "id";
-  private static final String MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
 
   public static final String USR_GUID_PREFIX = "usr";
-
+  private static final String MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private static final String CREATION_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private final EraldyApiApp apiApp;
   private final PgPool jdbcPool;
@@ -199,8 +198,7 @@ public class UserProvider {
 
     return jdbcPool
       .withTransaction(sqlConnection -> SequenceProvider.getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, user.getRealm().getLocalId())
-        .compose(
-          userId -> {
+        .compose(userId -> {
             user.setLocalId(userId);
             this.computeGuid(user);
             String databaseJsonString = this.toDatabaseJsonString(user);

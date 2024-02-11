@@ -953,6 +953,14 @@ components:
         name:
           type: string
           description: Organization name
+        creationTime:
+          type: string
+          format: date-time
+          description: The creation time of the user in UTC
+        modificationTime:
+          type: string
+          format: date-time
+          description: The last modification time of the user in UTC
     OrganizationUser:
       description: |
         A user in the organization

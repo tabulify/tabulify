@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.objectProvider;
 import io.vertx.core.Future;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
+import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.AssertionException;
 import net.bytle.exception.InternalException;
@@ -62,66 +63,37 @@ public class OrganizationUserProvider {
         if (user == null) {
           return Future.succeededFuture();
         }
-        return getOrganizationUserFromDb(user);
+        return getOrganizationUserByUser(user);
       });
   }
 
-  public Future<OrganizationUser> getOrganizationUserByUser(OrganizationUser organizationUser) {
-
-    if (organizationUser.getOrganization() != null) {
-      return Future.succeededFuture(organizationUser);
-    }
-
-    return this.getOrganizationRowForUser(organizationUser)
-      .compose(row -> {
-          if (row == null) {
-            return Future.succeededFuture();
-          }
-          return this.setOrganizationFromDatabaseRow(row, organizationUser, null);
-        }
-      );
-
-
-  }
-
   /**
-   * Take a OrganizationUser that was created as a child user object
-   * and add organization information only such as the organization object from the database
+   * Take a OrganizationUser that was created from the {@link UserProvider} or manually
+   * and add organization information (such as the organization object from the database)
    *
    * @param organizationUser - the organization user to add extra info
    * @return null or the organizationUser enriched with the organization
    */
-  private Future<OrganizationUser> getOrganizationUserFromDb(OrganizationUser organizationUser) {
+  public Future<OrganizationUser> getOrganizationUserByUser(OrganizationUser organizationUser) {
 
-    if (organizationUser.getOrganization() != null) {
-      return Future.succeededFuture(organizationUser);
-    }
-
-    return this.getOrganizationRowForUser(organizationUser)
-      .compose(row -> {
-          if (row == null) {
-            // No error, we need to tell that the user is not an organization user
-            return Future.succeededFuture();
-          }
-          return this.setOrganizationFromDatabaseRow(row, organizationUser, null);
-        }
-      );
+    return this.jdbcPool.withConnection(sqlConnection->getOrganizationUserByUser(organizationUser,sqlConnection));
 
   }
 
-  private Future<Row> getOrganizationRowForUser(OrganizationUser organizationUser) {
 
+  private Future<Row> getOrganizationRowForUser(OrganizationUser organizationUser, SqlConnection sqlConnection) {
+    Long realmLocalId = organizationUser.getRealm().getLocalId();
     try {
-      this.checkOrganizationUserRealmId(OrganizationUser.class, organizationUser.getRealm().getLocalId());
+      this.checkOrganizationUserRealmId(OrganizationUser.class, realmLocalId);
     } catch (AssertionException e) {
-      throw new InternalException("This user has not the Eraldy realm. He cannot be an organization user.", e);
+      throw new InternalException("This user has not the Eraldy realm ("+realmLocalId+"). He cannot be an organization user.", e);
     }
 
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " + ORGA_USER_USER_ID_COLUMN + " = $1";
     Long localId = organizationUser.getLocalId();
-    return jdbcPool.preparedQuery(sql)
+    return sqlConnection.preparedQuery(sql)
       .execute(Tuple.of(localId))
       .recover(e -> Future.failedFuture(new InternalException("Error: " + e.getMessage() + ", while retrieving the orga user by user id with the sql\n" + sql, e)))
       .compose(userRows -> {
@@ -200,8 +172,8 @@ public class OrganizationUserProvider {
 
   <T extends User> void checkOrganizationUserRealmId(Class<T> userClass, Long localId) throws AssertionException {
     if (userClass.equals(OrganizationUser.class) && !this.apiApp.getEraldyModel().isRealmLocalId(localId)) {
-      Realm eraldyRealm = this.apiApp.getEraldyModel().getRealm();
-      throw new AssertionException("Organizational user are users from the realm id (" + eraldyRealm.getLocalId() + ") not from the realm id (" + localId + ")");
+      Long eraldyRealmLocalId = this.apiApp.getEraldyModel().getRealmLocalId();
+      throw new AssertionException("Organizational user are users from the realm id (" + eraldyRealmLocalId + ") not from the realm id (" + localId + ")");
     }
   }
 
@@ -238,7 +210,7 @@ public class OrganizationUserProvider {
         if (user == null) {
           return Future.succeededFuture();
         }
-        return getOrganizationUserFromDb(user);
+        return getOrganizationUserByUser(user);
       });
   }
 
@@ -262,6 +234,28 @@ public class OrganizationUserProvider {
 
   public Future<OrganizationUser> insertUser(OrganizationUser organizationUser) {
 
+    return this.jdbcPool.withConnection(sqlConnection->insertUser(organizationUser,sqlConnection));
+  }
+
+
+  /**
+   * Getsert: Get or insert the user
+   */
+  public Future<OrganizationUser> getsert(OrganizationUser organizationUser, SqlConnection sqlConnection) {
+    return this.getOrganizationUserByUser(organizationUser, sqlConnection)
+      .recover(t -> Future.failedFuture(new InternalException("Error while selecting the eraldy owner realm", t)))
+      .compose(selectedOrganizationUser -> {
+        Future<OrganizationUser> futureOrganizationUser;
+        if (selectedOrganizationUser != null) {
+          futureOrganizationUser = Future.succeededFuture(selectedOrganizationUser);
+        } else {
+          futureOrganizationUser = this.insertUser(organizationUser, sqlConnection);
+        }
+        return futureOrganizationUser;
+      });
+  }
+
+  private Future<OrganizationUser> insertUser(OrganizationUser organizationUser, SqlConnection sqlConnection) {
     try {
       this.checkOrganizationUserRealmId(OrganizationUser.class, organizationUser.getRealm().getLocalId());
     } catch (AssertionException e) {
@@ -270,7 +264,7 @@ public class OrganizationUserProvider {
 
     Organization organization = organizationUser.getOrganization();
     if (organization == null) {
-      return Future.failedFuture(new InternalException("The organization should not be null when inserting an organization user"));
+      return Future.failedFuture(new InternalException("The organization should not be null when inserting an organizational user"));
     }
     Long organizationLocalId = organization.getLocalId();
     if (organizationLocalId == null) {
@@ -290,7 +284,8 @@ public class OrganizationUserProvider {
       "  )\n" +
       " values ($1, $2, $3, $4)\n";
 
-    return jdbcPool.preparedQuery(sql)
+    return sqlConnection
+      .preparedQuery(sql)
       .execute(Tuple.of(
         userLocalId,
         organizationLocalId,
@@ -304,21 +299,25 @@ public class OrganizationUserProvider {
       });
   }
 
-
   /**
-   * Getsert: Get or insert the user
+   * Take a OrganizationUser that was created from the {@link UserProvider} or manually
+   * and add organization information (such as the organization object from the database)
+   *
+   * @param organizationUser - the organization user to add extra info
+   * @param sqlConnection - the sql connection for transaction
+   * @return null or the organizationUser enriched with the organization
    */
-  public Future<OrganizationUser> getsert(OrganizationUser organizationUser) {
-    return this.getOrganizationUserByUser(organizationUser)
-      .recover(t -> Future.failedFuture(new InternalException("Error while selecting the eraldy owner realm", t)))
-      .compose(selectedOrganizationUser -> {
-        Future<OrganizationUser> futureOrganizationUser;
-        if (selectedOrganizationUser != null) {
-          futureOrganizationUser = Future.succeededFuture(selectedOrganizationUser);
-        } else {
-          futureOrganizationUser = this.insertUser(organizationUser);
+  private Future<OrganizationUser> getOrganizationUserByUser(OrganizationUser organizationUser, SqlConnection sqlConnection) {
+    if (organizationUser.getOrganization() != null) {
+      return Future.succeededFuture(organizationUser);
+    }
+
+    return this.getOrganizationRowForUser(organizationUser, sqlConnection)
+      .compose(row -> {
+        if (row == null) {
+          return Future.succeededFuture();
         }
-        return futureOrganizationUser;
+        return this.setOrganizationFromDatabaseRow(row, organizationUser, null);
       });
   }
 }

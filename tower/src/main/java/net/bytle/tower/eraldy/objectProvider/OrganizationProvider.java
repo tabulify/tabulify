@@ -1,14 +1,19 @@
 package net.bytle.tower.eraldy.objectProvider;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
+import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.mixin.OrganizationDatabaseMixin;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.util.Guid;
+import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,24 +37,40 @@ public class OrganizationProvider {
   private static final String GUID_PREFIX = "org";
   private final EraldyApiApp apiApp;
   public static final String ORGA_HANDLE_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "handle";
+  public static final String ORGA_DATA_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "data";
+  private static final String ORGA_MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
+  private static final String ORGA_CREATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private final PgPool jdbcPool;
+  private final JsonMapper databaseMapper;
 
   public OrganizationProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
     this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool();
+    this.databaseMapper = apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
+      .jsonMapperBuilder()
+      .addMixIn(Organization.class, OrganizationDatabaseMixin.class)
+      .build();
   }
 
 
   public Future<Organization> getById(Long orgaId) {
-    return getById(orgaId,Organization.class);
+    return getById(orgaId, Organization.class);
   }
+
   @SuppressWarnings("SameParameterValue")
   private <T extends Organization> Future<T> getById(Long orgaId, Class<T> clazz) {
+
+    return jdbcPool.withConnection(sqlConnection -> {
+      return getById(orgaId, clazz, sqlConnection);
+    });
+  }
+
+  private <T extends Organization> Future<T> getById(Long orgaId, Class<T> clazz, SqlConnection sqlConnection) {
 
     String sql = "SELECT * FROM\n" +
       QUALIFIED_TABLE_NAME + "\n" +
       "WHERE " + ORGA_ID_COLUMN + " = $1";
-    return jdbcPool.preparedQuery(sql)
+    return sqlConnection.preparedQuery(sql)
       .execute(Tuple.of(orgaId))
       .onFailure(e -> LOGGER.error("Error: " + e.getMessage() + ", while retrieving the realm by id with the sql\n" + sql, e))
       .compose(orgRows -> {
@@ -85,11 +106,72 @@ public class OrganizationProvider {
 
 
   public Guid createGuid(String guid) throws CastException {
-    return apiApp.createGuidFromHashWithOneId(GUID_PREFIX,guid);
+    return apiApp.createGuidFromHashWithOneId(GUID_PREFIX, guid);
   }
 
   public void updateGuid(Organization organization) {
     Guid guid = this.computeGuid(organization);
     organization.setGuid(guid.toString());
+  }
+
+  /**
+   * Getsert: Get or insert the user
+   */
+  public Future<Organization> getsert(Organization organization, SqlConnection sqlConnection) {
+
+    return this.getById(organization.getLocalId(), sqlConnection)
+      .recover(t -> Future.failedFuture(new InternalException("Error while selecting the organization", t)))
+      .compose(storedOrganization -> {
+        if (storedOrganization != null) {
+          return Future.succeededFuture(storedOrganization);
+        } else {
+          return this.insert(organization, sqlConnection);
+        }
+      });
+
+  }
+
+  private Future<Organization> insert(Organization organization, SqlConnection sqlConnection) {
+    String sql = "INSERT INTO\n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
+      "  " + ORGA_ID_COLUMN + ",\n" +
+      "  " + ORGA_HANDLE_COLUMN + ",\n" +
+      "  " + ORGA_DATA_COLUMN + ",\n" +
+      "  " + ORGA_CREATION_TIME_COLUMN + "\n" +
+      "  )\n" +
+      " values ($1, $2, $3, $4)\n" +
+      " returning " + ORGA_ID_COLUMN;
+
+    String data = toDatabaseJsonString(organization);
+    return sqlConnection.preparedQuery(sql)
+      .execute(Tuple.of(
+        organization.getLocalId(),
+        organization.getHandle(),
+        data,
+        DateTimeUtil.getNowInUtc()
+      ))
+      .recover(e -> Future.failedFuture(new InternalException("Error: " + e.getMessage() + ", while inserting the orga user with the sql\n" + sql, e)))
+      .compose(orgRows -> {
+        Long orgLocalId = orgRows.iterator().next().getLong(ORGA_ID_COLUMN);
+        organization.setLocalId(orgLocalId);
+        this.computeGuid(organization);
+        return Future.succeededFuture(organization);
+      });
+  }
+
+  private Future<Organization> getById(Long localId, SqlConnection sqlConnection) {
+    return getById(localId,Organization.class,sqlConnection);
+  }
+
+  private String toDatabaseJsonString(Organization organization) {
+    try {
+      return this.databaseMapper.writeValueAsString(organization);
+    } catch (JsonProcessingException e) {
+      throw new InternalException("Could not transform organization as json string for database", e);
+    }
+  }
+
+  private Future<Organization> insert(Organization organization) {
+    return this.jdbcPool.withConnection(sqlConnection -> this.insert(organization, sqlConnection));
   }
 }
