@@ -3,13 +3,17 @@
 val log4jVersion = "2.20.0"
 // https://mvnrepository.com/artifact/org.assertj/assertj-core
 val assertJAssertionVersion = "3.24.2"
-val vertxVersion = "4.4.5"
+// 4.5 brings virtual thread and traffic bandwidth limiting https://vertx.io/blog/whats-new-in-vert-x-4-5/
+val vertxVersion = "4.4.8"
+// Jackson same as vertx
+val jacksonVersion = "2.13.4"
+// Guava same as vertx
+val guavaVersion = "31.1.2"
 val junit4Version = "4.13.2"
 val junit5Version = "5.10.0"
 val javaLanguageVersion = 11
 val slf4jVersion = "2.0.6"
-// Jackson is used in vertx
-val jacksonVersion = "2.13.4"
+
 // email SMTP server
 // https://mvnrepository.com/artifact/com.github.davidmoten/subethasmtp
 val subethaVersion = "6.0.7"

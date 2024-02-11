@@ -8,18 +8,6 @@ create  table  organization
 );
 comment on table organization is 'An organization is the owner of realms and has users.';
 
--- Create the Eraldy Organization
-INSERT INTO organization(ORGA_ID,
-                         ORGA_NAME,
-                         ORGA_DATA,
-                         ORGA_CREATION_TIME)
-values (1,
-        'eraldy',
-        '{}'::jsonb,
-        now())
-ON conflict (ORGA_ID)
-  DO NOTHING;
-
 create table organization_role
 (
   ORGA_ROLE_ID                BIGSERIAL                   NOT NULL PRIMARY KEY,
@@ -29,18 +17,6 @@ create table organization_role
   ORGA_ROLE_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
 );
 comment on table organization_role is 'The role for the users (owner, billing, ..). It gives permission to user on the organization level.';
-
--- Create the first role, the Owner Role
-INSERT INTO organization_role(ORGA_ROLE_ID,
-                              ORGA_ROLE_NAME,
-                              ORGA_ROLE_DATA,
-                              ORGA_ROLE_CREATION_TIME)
-values (1,
-        'Owner',
-        '{}'::jsonb,
-        now())
-ON conflict (ORGA_ROLE_ID)
-  DO NOTHING;
 
 
 -- Add the organization id to the realm
@@ -59,31 +35,6 @@ comment on column realm.REALM_DEFAULT_APP_ID is 'The default app (The app that i
 ALTER TABLE realm
   ADD CONSTRAINT realm_default_app_fkey FOREIGN KEY (REALM_ORGA_ID, REALM_DEFAULT_APP_ID) REFERENCES realm_app;
 
--- Create the Eraldy realm
-INSERT INTO realm(realm_id,
-                  realm_handle,
-                  realm_data,
-                  realm_creation_time)
-values (1,
-        'eraldy',
-        '{}'::jsonb,
-        now())
-ON conflict (realm_id)
-  DO NOTHING;
-
-
--- Create the Eraldy owner user
-INSERT INTO realm_user(user_realm_id,
-                       user_id,
-                       user_email,
-                       user_data,
-                       user_creation_time)
-values (1, 1, 'nico@eraldy.com', '{}'::jsonb, now())
-ON conflict (user_realm_id, user_id)
-  DO NOTHING;
-
-
-
 create table organization_user
 (
   ORGA_USER_USER_ID           BIGINT                      NOT NULL,
@@ -95,34 +46,6 @@ create table organization_user
 );
 comment on table organization_user is 'The users of the organization';
 comment on column organization_user.ORGA_USER_USER_ID is 'The user id of the realm id 1. It''s not a sequence';
-
--- Insert the Eraldy owner
-INSERT INTO organization_user(ORGA_USER_ORGA_ID,
-                              ORGA_USER_USER_ID,
-                              ORGA_USER_ORGA_ROLE_ID,
-                              ORGA_USER_CREATION_TIME)
-values (1,
-        1,
-        1,
-        now())
-ON conflict (ORGA_USER_ORGA_ID,ORGA_USER_USER_ID)
-  DO NOTHING;
-
--- creating the default app
-INSERT INTO realm_app(app_realm_id,
-                      app_id,
-                      app_uri,
-                      app_user_id,
-                      app_data,
-                      app_creation_time)
-values (1,
-        1,
-        'eraldy.com',
-        1,
-        '{}'::jsonb,
-        now())
-ON conflict (app_realm_id, app_id)
-  DO NOTHING;
 
 
 

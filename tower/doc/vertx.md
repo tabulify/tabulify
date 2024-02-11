@@ -4,7 +4,14 @@
 
 Vertx is a java web server reactive framework that supports tcp and http connection.
 
+## Platform
 
+It's our platform.
+
+It includes:
+* Jackson
+* Guava
+* Netty
 
 
 ## Help

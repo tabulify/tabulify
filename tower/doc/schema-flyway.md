@@ -10,7 +10,8 @@ Prerequisites: [Logical data-model](data_model.md)
 
 There is 2 schema:
 * [Realms](../src/main/resources/db/cs-realms) for the realm
-* [Ip](../src/main/resources/db/cs-ip) an application without any realm
+* [Ip](../../vertx/src/main/resources/db/cs-ip) an application without any realm
+
 
 ## Architecture - one schema by realm vs one realm column
 
@@ -34,7 +35,7 @@ should go in each directory and follows the [flyway naming](https://flywaydb.org
 #### Versioned script
 
 Example for version:
-* `v1`: [v1__create_ip_table.sql](../src/main/resources/db/cs-ip/v1__create_ip_table.sql)
+* `v1`: [v1__create_ip_table.sql](../../vertx/src/main/resources/db/cs-ip/v1__create_ip_table.sql)
 * `v1.1`: v1.1__xxx.sql
 * `v1.1.1`: v1.1.1__xxx.sql
 
@@ -59,7 +60,7 @@ The version history table is `version_log`
 ### Migration occurs when the server start
 
 Flyway is called when the server starts.
-in the [JdbMigration class](../src/main/java/net/bytle/tower/util/JdbcSchemaManager.java)
+via the [JdbMigration class](../../vertx/src/main/java/net/bytle/vertx/JdbcSchemaManager.java)
 
 ### Migration occurs with the following Gradle task
 
@@ -114,3 +115,8 @@ eating a number in the sequence.
 ### Identifier
 
 See [identifier](identifier.md)
+
+
+## Flyway Refactoring (Baseline)
+
+Use baseline() or set baselineOnMigrate to true to initialize the schema history table.

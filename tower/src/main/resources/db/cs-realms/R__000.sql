@@ -327,3 +327,10 @@ CREATE OR REPLACE TRIGGER realm_check_orga_user_id
   BEFORE INSERT OR UPDATE ON organization_user
   FOR EACH ROW
 EXECUTE FUNCTION realm_check_orga_user_id();
+
+-- create table list partition on realm insertion
+CREATE OR REPLACE TRIGGER create_realm_partitions_on_insert
+  AFTER INSERT
+  ON realm
+  FOR EACH ROW
+EXECUTE PROCEDURE create_partitions_for_realm_on_insert();
