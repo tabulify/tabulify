@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
+import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.apache.logging.log4j.LogManager;
@@ -24,8 +25,9 @@ public class SequenceProvider {
 
 
   public static Future<Long> getNextIdForTableAndRealm(
-    SqlConnection sqlConnection, String tableName, Long realmId) {
+    SqlConnection sqlConnection, String tableName, Realm realm) {
 
+    Long realmId = realm.getLocalId();
     // https://vertx.io/docs/vertx-pg-client/java/#_returning_clauses
     String updateSql = "update " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n " +
       "set " +

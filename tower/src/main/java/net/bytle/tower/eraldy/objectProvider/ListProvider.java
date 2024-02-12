@@ -85,7 +85,7 @@ public class ListProvider {
    *
    * @param listItem - the registration list
    */
-  private void computeGuid(ListItem listItem) {
+  private void updateGuid(ListItem listItem) {
     if (listItem.getGuid() != null) {
       return;
     }
@@ -170,10 +170,10 @@ public class ListProvider {
     return jdbcPool
       .withTransaction(sqlConnection ->
         SequenceProvider
-          .getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, listItem.getRealm().getLocalId())
+          .getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, listItem.getRealm())
           .compose(nextId -> {
             listItem.setLocalId(nextId);
-            computeGuid(listItem);
+            updateGuid(listItem);
             return sqlConnection
               .preparedQuery(insertSql)
               .execute(Tuple.of(
@@ -412,7 +412,7 @@ public class ListProvider {
 
             listItem.setLocalId(listId);
             listItem.setRealm(realmResult);
-            this.computeGuid(listItem);
+            this.updateGuid(listItem);
             listItem.setHandle(listHandle);
             App appResult = mapper.resultAt(0);
             if (appResult == null) {

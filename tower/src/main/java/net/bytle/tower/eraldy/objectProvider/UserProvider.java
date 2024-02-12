@@ -146,7 +146,7 @@ public class UserProvider {
          */
         Long resultUserId = rows.iterator().next().getLong(ID_COLUMN);
         user.setLocalId(resultUserId);
-        this.computeGuid(user);
+        this.updateGuid(user);
         return Future.succeededFuture(user);
       });
 
@@ -197,10 +197,10 @@ public class UserProvider {
       " values ($1, $2, $3, $4, $5)\n";
 
     return jdbcPool
-      .withTransaction(sqlConnection -> SequenceProvider.getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, user.getRealm().getLocalId())
+      .withTransaction(sqlConnection -> SequenceProvider.getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, user.getRealm())
         .compose(userId -> {
             user.setLocalId(userId);
-            this.computeGuid(user);
+            this.updateGuid(user);
             String databaseJsonString = this.toDatabaseJsonString(user);
             String email = user.getEmail();
             String emailAddressNormalized;
@@ -462,7 +462,7 @@ public class UserProvider {
 
         user.setLocalId(id);
         user.setRealm(realm);
-        this.computeGuid(user);
+        this.updateGuid(user);
         user.setEmail(row.getString(EMAIL_COLUMN));
         Boolean disabled = row.getBoolean(DISABLED_COLUMN);
         if (disabled == null) {
@@ -477,7 +477,7 @@ public class UserProvider {
   }
 
 
-  private <T extends User> void computeGuid(T user) {
+  private <T extends User> void updateGuid(T user) {
     if (user.getGuid() != null) {
       return;
     }
@@ -834,8 +834,5 @@ public class UserProvider {
     return this.apiApp.createGuidFromRealmAndObjectId(USR_GUID_PREFIX, realmId, userId);
   }
 
-  public <T extends User> void updateGuid(T user) {
-    Guid guid = this.createUserGuid(user.getRealm().getLocalId(), user.getLocalId());
-    user.setGuid(guid.toString());
-  }
+
 }

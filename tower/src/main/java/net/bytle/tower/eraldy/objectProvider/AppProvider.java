@@ -12,6 +12,7 @@ import io.vertx.json.schema.ValidationException;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
+import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalStructure;
@@ -173,39 +174,8 @@ public class AppProvider {
 
   private Future<App> insertApp(App app) {
 
-    String sql = "INSERT INTO\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
-      "  " + REALM_ID_COLUMN + ",\n" +
-      "  " + APP_ID_COLUMN + ",\n" +
-      "  " + HANDLE_COLUMN + ",\n" +
-      "  " + USER_COLUMN + ",\n" +
-      "  " + DATA_COLUMN + ",\n" +
-      "  " + CREATION_TIME + "\n" +
-      "  )\n" +
-      " values ($1, $2, $3, $4, $5, $6)\n";
+    return this.jdbcPool.withTransaction(sqlConnection -> insertApp(app, sqlConnection));
 
-    // https://github.com/vert-x3/vertx-examples/blob/4.x/sql-client-examples/src/main/java/io/vertx/example/sqlclient/transaction_rollback/SqlClientExample.java
-    return jdbcPool
-      .withTransaction(sqlConnection ->
-        SequenceProvider
-          .getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, app.getRealm().getLocalId())
-          .compose(nextId -> {
-            app.setLocalId(nextId);
-            return sqlConnection
-              .preparedQuery(sql)
-              .execute(
-                Tuple.of(
-                  app.getRealm().getLocalId(),
-                  app.getLocalId(),
-                  app.getHandle(),
-                  app.getUser().getLocalId(),
-                  this.getDatabaseJsonObject(app),
-                  DateTimeUtil.getNowInUtc()
-                )
-              );
-          })
-          .onFailure(e -> LOGGER.error("App Insert Error:" + e.getMessage() + ". Sql: " + sql, e))
-          .compose(rows -> Future.succeededFuture(app)));
 
   }
 
@@ -419,24 +389,7 @@ public class AppProvider {
 
   public Future<App> getAppByHandle(String handle, Realm realm) {
 
-    return jdbcPool.preparedQuery(
-        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
-          + " WHERE " + HANDLE_COLUMN + " = $1 "
-          + "and " + REALM_ID_COLUMN + " = $2 ")
-      .execute(Tuple.of(
-        handle,
-        realm.getLocalId()
-      ))
-      .onFailure(FailureStatic::failFutureWithTrace)
-      .compose(userRows -> {
-
-        if (userRows.size() == 0) {
-          return Future.succeededFuture();
-        }
-
-        Row row = userRows.iterator().next();
-        return getFromRow(row, realm);
-      });
+    return this.jdbcPool.withConnection(sqlConnection->getAppByHandle(handle, realm, sqlConnection));
   }
 
 
@@ -525,7 +478,66 @@ public class AppProvider {
   }
 
   public Future<App> getAppById(long appId, Realm realm) {
-    return jdbcPool.preparedQuery(
+    return this.jdbcPool.withConnection(sqlConnection->getAppById(appId,realm, sqlConnection));
+  }
+
+  public ObjectMapper getApiMapper() {
+    return this.apiMapper;
+  }
+
+  /**
+   * Getsert: get or insert an app with a local id
+   */
+  public Future<App> getsert(App app, SqlConnection sqlConnection) {
+    Future<App> selectApp;
+    if (app.getLocalId() != null) {
+      selectApp = this.getAppById(app.getLocalId(), app.getRealm(), sqlConnection);
+    } else {
+      String handle = app.getHandle();
+      if (handle == null) {
+        return Future.failedFuture(new InternalException("The app to getsert should have an identifier (local id, or handle)"));
+      }
+      selectApp = this.getAppByHandle(handle, app.getRealm(), sqlConnection);
+    }
+    return selectApp
+      .compose(selectedApp -> {
+        if (selectedApp != null) {
+          return Future.succeededFuture(selectedApp);
+        }
+        return this.insertApp(app, sqlConnection);
+      });
+  }
+
+  /**
+   *
+   * @param appHandle - the app handle
+   * @param realm - the realm to insert to
+   * @param sqlConnection - a connection with or without transaction
+   * @return the app or null
+   */
+  private Future<App> getAppByHandle(String appHandle, Realm realm, SqlConnection sqlConnection) {
+    return sqlConnection.preparedQuery(
+        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
+          + " WHERE " + HANDLE_COLUMN + " = $1 "
+          + "and " + REALM_ID_COLUMN + " = $2 ")
+      .execute(Tuple.of(
+        appHandle,
+        realm.getLocalId()
+      ))
+      .onFailure(FailureStatic::failFutureWithTrace)
+      .compose(userRows -> {
+
+        if (userRows.size() == 0) {
+          return Future.succeededFuture();
+        }
+
+        Row row = userRows.iterator().next();
+        return getFromRow(row, realm);
+      });
+  }
+
+  private Future<App> getAppById(Long appId, Realm realm, SqlConnection sqlConnection) {
+    return sqlConnection.preparedQuery(
         "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
           + " WHERE " + APP_ID_COLUMN + " = $1 "
           + " AND " + REALM_ID_COLUMN + " = $2 "
@@ -543,31 +555,55 @@ public class AppProvider {
       });
   }
 
-  public ObjectMapper getApiMapper() {
-    return this.apiMapper;
-  }
-
   /**
-   * Getsert: get or insert an app with a local id
+   *
+   * @param app - the app to insert (realm is mandatory)
+   * @param sqlConnection - the sql connection (with or without a transaction)
+   * @return the app given with a id and a guid
    */
-  public Future<App> getsert(App app) {
-    Future<App> selectApp;
-    if (app.getLocalId() != null) {
-      selectApp = this.getAppById(app.getLocalId(), app.getRealm());
-    } else {
-      String handle = app.getHandle();
-      if (handle == null) {
-        return Future.failedFuture(new InternalException("The app to getsert should have an identifier (local id, or handle)"));
-      }
-      selectApp = this.getAppByHandle(handle, app.getRealm());
+  private Future<App> insertApp(App app, SqlConnection sqlConnection) {
+
+    String sql = "INSERT INTO\n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
+      "  " + REALM_ID_COLUMN + ",\n" +
+      "  " + APP_ID_COLUMN + ",\n" +
+      "  " + HANDLE_COLUMN + ",\n" +
+      "  " + USER_COLUMN + ",\n" +
+      "  " + DATA_COLUMN + ",\n" +
+      "  " + CREATION_TIME + "\n" +
+      "  )\n" +
+      " values ($1, $2, $3, $4, $5, $6)\n";
+
+    // https://github.com/vert-x3/vertx-examples/blob/4.x/sql-client-examples/src/main/java/io/vertx/example/sqlclient/transaction_rollback/SqlClientExample.java
+    Long appLocalId = app.getLocalId();
+    Future<Long> appIdFuture = Future.succeededFuture(appLocalId);
+    if (appLocalId == null) {
+      /**
+       * At start time the id of the Eraldy App are known,
+       * therefore, the appLocalId may be not null
+       */
+      appIdFuture = SequenceProvider
+        .getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, app.getRealm());
     }
-    return selectApp
-      .compose(selectedApp -> {
-        if (selectedApp != null) {
-          return Future.succeededFuture(selectedApp);
-        }
-        return this.insertApp(app);
-      });
+    return appIdFuture
+      .compose(finalAppId -> {
+        app.setLocalId(finalAppId);
+        this.updateGuid(app);
+        return sqlConnection
+          .preparedQuery(sql)
+          .execute(
+            Tuple.of(
+              app.getRealm().getLocalId(),
+              app.getLocalId(),
+              app.getHandle(),
+              app.getUser().getLocalId(),
+              this.getDatabaseJsonObject(app),
+              DateTimeUtil.getNowInUtc()
+            )
+          );
+      })
+      .onFailure(e -> LOGGER.error("App Insert Error:" + e.getMessage() + ". Sql: " + sql, e))
+      .compose(rows -> Future.succeededFuture(app));
   }
 
   public Future<App> getAppByIdentifier(String appIdentifier, Realm realm) {
@@ -583,5 +619,6 @@ public class AppProvider {
   public App getRequestingApp(RoutingContext routingContext) {
     return this.apiApp.getAuthClientIdHandler().getRequestingApp(routingContext);
   }
+
 
 }

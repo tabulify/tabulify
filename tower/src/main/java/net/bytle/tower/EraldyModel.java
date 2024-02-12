@@ -99,125 +99,137 @@ public class EraldyModel {
      * at the end (ie commit)
      */
     return apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool()
-      .withTransaction(sqlConnection->{
+      .withTransaction(sqlConnection-> sqlConnection
+        /**
+         * There are foreign-key circular constraints that cannot be resolved by simple insertion.
+         * For instance,
+         * - the owner of a realm must be an existing user
+         * - but a user must have a realm
+         * Without any data, there is no realm and no user, it's not possible to do 2 insertions
+         * in isolation.
+         * To resolve this problem, we insert all data at once (in one transaction)
+         * and enforce the constraint at the end
+         * This is what does the below statement
+         * Note that all foreign-key circular constraints needs to be deferrable.
+         * Example with a alter statement:
+         * ALTER TABLE cs_realms.realm ALTER CONSTRAINT realm_organization_owner_user_fkey DEFERRABLE INITIALLY IMMEDIATE;
+         */
+        .query("SET CONSTRAINTS ALL DEFERRED")
+        .execute()
+        .compose(ar->{
+          /**
+           * Create if not exists and get the Eraldy Model
+           * (ie getsert)
+           */
+          Organization initialEraldyOrganization = new Organization();
+          initialEraldyOrganization.setLocalId(1L);
+          initialEraldyOrganization.setHandle("eraldy");
+          initialEraldyOrganization.setName("Eraldy");
+          return this.apiApp.getOrganizationProvider()
+            .getsert(initialEraldyOrganization, sqlConnection)
+            .compose(eraldyOrganization -> {
+              LOGGER.info("Eraldy Organization getserted");
+              /**
+               * Realm
+               * (Cross, before updating the realm
+               * need to be a property of the organizational user)
+               */
+              TowerApexDomain apexDomain = apiApp.getApexDomain();
+              Realm initialEraldyRealm = new Realm();
+              initialEraldyRealm.setHandle(apexDomain.getRealmHandle());
+              initialEraldyRealm.setName(apexDomain.getName());
+              initialEraldyRealm.setLocalId(this.getRealmLocalId());
+              initialEraldyRealm.setOrganization(eraldyOrganization);
 
-        return sqlConnection
-          .query("SET CONSTRAINTS ALL DEFERRED")
-          .execute()
-          .compose(ar->{
-            /**
-             * Create if not exists and get the Eraldy Model
-             * (ie getsert)
-             */
-            Organization initialEraldyOrganization = new Organization();
-            initialEraldyOrganization.setLocalId(1L);
-            initialEraldyOrganization.setHandle("eraldy");
-            initialEraldyOrganization.setName("Eraldy");
-            return this.apiApp.getOrganizationProvider()
-              .getsert(initialEraldyOrganization, sqlConnection)
-              .compose(eraldyOrganization -> {
-                LOGGER.info("Eraldy Organization getserted");
-                /**
-                 * Realm
-                 * (Cross, before updating the realm
-                 * need to be a property of the organizational user)
-                 */
-                TowerApexDomain apexDomain = apiApp.getApexDomain();
-                Realm initialEraldyRealm = new Realm();
-                initialEraldyRealm.setHandle(apexDomain.getRealmHandle());
-                initialEraldyRealm.setName(apexDomain.getName());
-                initialEraldyRealm.setLocalId(this.getRealmLocalId());
-                initialEraldyRealm.setOrganization(eraldyOrganization);
+              /**
+               * Organization User
+               */
+              OrganizationUser initialRealmOwnerUser = new OrganizationUser();
+              initialRealmOwnerUser.setLocalId(1L);
+              initialEraldyRealm.setOwnerUser(initialRealmOwnerUser);
 
-                /**
-                 * Organization User
-                 */
-                OrganizationUser initialRealmOwnerUser = new OrganizationUser();
-                initialRealmOwnerUser.setLocalId(1L);
-                initialEraldyRealm.setOwnerUser(initialRealmOwnerUser);
+              return this.apiApp.getRealmProvider()
+                .getsert(initialEraldyRealm, sqlConnection)
+                .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy realm", t)))
+                .compose(eraldyRealm -> {
+                  LOGGER.info("Eraldy Realm getserted");
+                  this.eraldyRealm = eraldyRealm;
 
-                return this.apiApp.getRealmProvider()
-                  .getsert(initialEraldyRealm, sqlConnection)
-                  .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy realm", t)))
-                  .compose(eraldyRealm -> {
-                    LOGGER.info("Eraldy Realm getserted");
-                    this.eraldyRealm = eraldyRealm;
+                  /**
+                   * Realm Owner user getsertion
+                   */
+                  initialRealmOwnerUser.setRealm(eraldyRealm);
+                  initialRealmOwnerUser.setGivenName(apexDomain.getOwnerName());
+                  initialRealmOwnerUser.setEmail(apexDomain.getOwnerEmail());
+                  initialRealmOwnerUser.setOrganization(eraldyOrganization);
+                  try {
+                    initialRealmOwnerUser.setAvatar(new URI("https://2.gravatar.com/avatar/cbc56a3848d90024bdc76629a1cfc1d9"));
+                  } catch (URISyntaxException e) {
+                    throw new InternalException("The eraldy owner URL is not valid", e);
+                  }
+                  return apiApp.getOrganizationUserProvider()
+                    .getsert(initialRealmOwnerUser, sqlConnection)
+                    .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner realm", t)))
+                    .compose(realmOwnerUser -> {
+                      LOGGER.info("Eraldy Realm Owner User getserted");
+                      eraldyRealm.setOwnerUser(realmOwnerUser);
 
-                    /**
-                     * Realm Owner user getsertion
-                     */
-                    initialRealmOwnerUser.setRealm(eraldyRealm);
-                    initialRealmOwnerUser.setGivenName(apexDomain.getOwnerName());
-                    initialRealmOwnerUser.setEmail(apexDomain.getOwnerEmail());
-                    try {
-                      initialRealmOwnerUser.setAvatar(new URI("https://2.gravatar.com/avatar/cbc56a3848d90024bdc76629a1cfc1d9"));
-                    } catch (URISyntaxException e) {
-                      throw new InternalException("The eraldy owner URL is not valid", e);
-                    }
-                    return apiApp.getOrganizationUserProvider()
-                      .getsert(initialRealmOwnerUser, sqlConnection)
-                      .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner realm", t)))
-                      .compose(realmOwnerUser -> {
-                        LOGGER.info("Eraldy Realm Owner User getserted");
-                        eraldyRealm.setOwnerUser(realmOwnerUser);
+                      /**
+                       * App getsertion
+                       */
+                      App memberApp = new App();
+                      memberApp.setLocalId(1L);
+                      memberApp.setName("Members");
+                      memberApp.setHandle("members");
+                      memberApp.setHome(URI.create("https://eraldy.com"));
+                      memberApp.setUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
+                      memberApp.setRealm(this.eraldyRealm);
+                      Future<App> getSertMember = this.apiApp.getAppProvider().getsert(memberApp, sqlConnection);
 
-                        /**
-                         * App getsertion
-                         */
-                        App memberApp = new App();
-                        memberApp.setLocalId(1L);
-                        memberApp.setName("Members");
-                        memberApp.setHandle("members");
-                        memberApp.setHome(URI.create("https://eraldy.com"));
-                        memberApp.setUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
-                        memberApp.setRealm(this.eraldyRealm);
-                        Future<App> getSertMember = this.apiApp.getAppProvider().getsert(memberApp);
+                      App interactApp = new App();
+                      interactApp.setLocalId(2L);
+                      interactApp.setName("Interact");
+                      interactApp.setHandle("interact");
+                      interactApp.setHome(URI.create("https://eraldy.com"));
+                      interactApp.setUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
+                      interactApp.setRealm(this.eraldyRealm);
+                      Future<App> getSertInteract = this.apiApp.getAppProvider().getsert(interactApp, sqlConnection);
+                      return Future.all(getSertMember, getSertInteract);
+                    })
+                    .recover(t -> Future.failedFuture(new InternalException("Error while getserting the member and interact app", t)))
+                    .compose(compositeResult -> {
 
-                        App interactApp = new App();
-                        interactApp.setLocalId(2L);
-                        interactApp.setName("Interact");
-                        interactApp.setHandle("interact");
-                        interactApp.setHome(URI.create("https://eraldy.com"));
-                        interactApp.setUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
-                        interactApp.setRealm(this.eraldyRealm);
-                        Future<App> getSertInteract = this.apiApp.getAppProvider().getsert(interactApp);
-                        return Future.all(getSertMember, getSertInteract);
-                      })
-                      .recover(t -> Future.failedFuture(new InternalException("Error while getserting the member and interact app", t)))
-                      .compose(compositeResult -> {
+                      App memberApp = compositeResult.resultAt(0);
+                      App interactApp = compositeResult.resultAt(1);
+                      AuthClientProvider authClientProvider = this.apiApp.getAuthClientProvider();
 
-                        App memberApp = compositeResult.resultAt(0);
-                        App interactApp = compositeResult.resultAt(1);
-                        AuthClientProvider authClientProvider = this.apiApp.getAuthClientProvider();
+                      /**
+                       * Create a client for the member App
+                       */
+                      memberClient = new AuthClient();
+                      memberClient.setLocalId(1L);
+                      memberClient.setApp(memberApp);
+                      memberClient.addUri(this.memberAppUri);
+                      authClientProvider.updateGuid(memberClient);
+                      authClientProvider.addEraldyClient(memberClient);
+                      LOGGER.info("The client id (" + memberClient.getGuid() + ") for the member app was created");
 
-                        /**
-                         * Create a client for the member App
-                         */
-                        memberClient = new AuthClient();
-                        memberClient.setLocalId(1L);
-                        memberClient.setApp(memberApp);
-                        memberClient.addUri(this.memberAppUri);
-                        authClientProvider.updateGuid(memberClient);
-                        authClientProvider.addEraldyClient(memberClient);
-                        LOGGER.info("The client id (" + memberClient.getGuid() + ") for the member app was created");
+                      /**
+                       * Create a client for the interact App
+                       */
+                      AuthClient interactClient = new AuthClient();
+                      interactClient.setLocalId(2L);
+                      interactClient.setApp(interactApp);
+                      interactClient.addUri(this.interactAppUri);
+                      authClientProvider.updateGuid(interactClient);
+                      authClientProvider.addEraldyClient(interactClient);
+                      LOGGER.info("The client id (" + interactClient.getGuid() + ") for the interact app was created");
 
-                        /**
-                         * Create a client for the interact App
-                         */
-                        AuthClient interactClient = new AuthClient();
-                        interactClient.setLocalId(2L);
-                        interactClient.setApp(interactApp);
-                        interactClient.addUri(this.interactAppUri);
-                        authClientProvider.updateGuid(interactClient);
-                        authClientProvider.addEraldyClient(interactClient);
-                        LOGGER.info("The client id (" + interactClient.getGuid() + ") for the interact app was created");
-
-                        return Future.succeededFuture();
-                      });
-                  });
-              });
-          });
-      });
+                      return Future.succeededFuture();
+                    });
+                });
+            });
+        }));
 
 
 
