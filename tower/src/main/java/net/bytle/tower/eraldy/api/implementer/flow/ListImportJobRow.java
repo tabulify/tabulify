@@ -11,6 +11,7 @@ import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListUserProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.time.Timestamp;
+import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.resilience.EmailAddressValidationStatus;
 import net.bytle.vertx.resilience.ValidationTestResult;
 import org.apache.logging.log4j.LogManager;
@@ -136,7 +137,7 @@ public class ListImportJobRow {
               newUser.setLocation(this.location);
               newUser.setRealm(list.getRealm());
               this.userStatus = ListImportUserStatus.CREATED;
-              return userProvider.insertUserFromImport(newUser);
+              return userProvider.insertUserAndTrackEvent(newUser, FlowType.LIST_IMPORT);
             }
           })
           .compose(user -> {

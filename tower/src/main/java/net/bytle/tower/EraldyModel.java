@@ -99,7 +99,7 @@ public class EraldyModel {
      * at the end (ie commit)
      */
     return apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool()
-      .withTransaction(sqlConnection-> sqlConnection
+      .withTransaction(sqlConnection -> sqlConnection
         /**
          * There are foreign-key circular constraints that cannot be resolved by simple insertion.
          * For instance,
@@ -116,7 +116,7 @@ public class EraldyModel {
          */
         .query("SET CONSTRAINTS ALL DEFERRED")
         .execute()
-        .compose(ar->{
+        .compose(ar -> {
           /**
            * Create if not exists and get the Eraldy Model
            * (ie getsert)
@@ -155,23 +155,41 @@ public class EraldyModel {
                   LOGGER.info("Eraldy Realm getserted");
                   this.eraldyRealm = eraldyRealm;
 
-                  /**
-                   * Realm Owner user getsertion
-                   */
-                  initialRealmOwnerUser.setRealm(eraldyRealm);
-                  initialRealmOwnerUser.setGivenName(apexDomain.getOwnerName());
-                  initialRealmOwnerUser.setEmail(apexDomain.getOwnerEmail());
-                  initialRealmOwnerUser.setOrganization(eraldyOrganization);
-                  try {
-                    initialRealmOwnerUser.setAvatar(new URI("https://2.gravatar.com/avatar/cbc56a3848d90024bdc76629a1cfc1d9"));
-                  } catch (URISyntaxException e) {
-                    throw new InternalException("The eraldy owner URL is not valid", e);
+                  OrganizationUser ownerUser = eraldyRealm.getOwnerUser();
+                  Future<OrganizationUser> futureOwnerUser;
+                  if (ownerUser != null && !ownerUser.getLocalId().equals(initialRealmOwnerUser.getLocalId())) {
+                    futureOwnerUser = Future.succeededFuture(ownerUser);
+                  } else {
+                    /**
+                     * Realm Owner user getsertion
+                     */
+                    initialRealmOwnerUser.setRealm(eraldyRealm);
+                    initialRealmOwnerUser.setGivenName(apexDomain.getOwnerName());
+                    initialRealmOwnerUser.setEmail(apexDomain.getOwnerEmail());
+                    try {
+                      initialRealmOwnerUser.setAvatar(new URI("https://2.gravatar.com/avatar/cbc56a3848d90024bdc76629a1cfc1d9"));
+                    } catch (URISyntaxException e) {
+                      throw new InternalException("The eraldy owner URL is not valid", e);
+                    }
+                    futureOwnerUser = apiApp
+                      .getUserProvider()
+                      .getsertOnServerStartup(initialRealmOwnerUser, sqlConnection, OrganizationUser.class)
+                      .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner user", t)))
+                      .compose(resUser -> {
+                          LOGGER.info("Eraldy Realm Owner User getserted as Realm User");
+                          /**
+                           * get sert the user as organization user
+                           */
+                          resUser.setOrganization(eraldyOrganization);
+                          return apiApp.getOrganizationUserProvider()
+                            .getsert(resUser, sqlConnection);
+                        }
+                      )
+                      .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner organization user", t)));
                   }
-                  return apiApp.getOrganizationUserProvider()
-                    .getsert(initialRealmOwnerUser, sqlConnection)
-                    .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner realm", t)))
+                  return futureOwnerUser
                     .compose(realmOwnerUser -> {
-                      LOGGER.info("Eraldy Realm Owner User getserted");
+                      LOGGER.info("Eraldy Realm Owner User getserted as Organizational User");
                       eraldyRealm.setOwnerUser(realmOwnerUser);
 
                       /**
@@ -230,7 +248,6 @@ public class EraldyModel {
                 });
             });
         }));
-
 
 
   }

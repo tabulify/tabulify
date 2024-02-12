@@ -9,8 +9,8 @@ import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.ValidationUtil;
+import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.WebFlowAbs;
-import net.bytle.vertx.flow.WebFlowType;
 
 /**
  * A flow with external IDP (identity provider)
@@ -82,8 +82,8 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
   }
 
   @Override
-  public WebFlowType getFlowType() {
-    return WebFlowType.OAUTH;
+  public FlowType getFlowType() {
+    return FlowType.OAUTH;
   }
 
   public AuthNContextManager getAuthContextManager() {

@@ -7,8 +7,8 @@ import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.OAuthState;
+import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.WebFlow;
-import net.bytle.vertx.flow.WebFlowType;
 
 public class PasswordLoginFlow implements WebFlow {
   private final EraldyApiApp apiApp;
@@ -23,8 +23,8 @@ public class PasswordLoginFlow implements WebFlow {
   }
 
   @Override
-  public WebFlowType getFlowType() {
-    return WebFlowType.PASSWORD_LOGIN;
+  public FlowType getFlowType() {
+    return FlowType.PASSWORD_LOGIN;
   }
 
   public Future<Void> login(String realmIdentifier, String handle, String password, RoutingContext routingContext) {

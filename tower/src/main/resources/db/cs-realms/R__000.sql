@@ -310,7 +310,7 @@ BEGIN
   IF EXISTS (
     SELECT 1
     FROM realm_user
-    WHERE realm_user.user_id = NEW.ORGA_USER_REALM_USER_ID
+    WHERE realm_user.user_id = NEW.ORGA_USER_USER_ID
       and realm_user.user_realm_id = 1
   ) THEN
     PERFORM set_config('search_path', old_search_path, true);

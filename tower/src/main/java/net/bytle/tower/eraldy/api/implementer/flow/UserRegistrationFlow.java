@@ -24,9 +24,9 @@ import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.*;
+import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
-import net.bytle.vertx.flow.WebFlowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,8 +54,8 @@ public class UserRegistrationFlow extends WebFlowAbs {
   }
 
   @Override
-  public WebFlowType getFlowType() {
-    return WebFlowType.USER_REGISTRATION;
+  public FlowType getFlowType() {
+    return FlowType.USER_REGISTRATION;
   }
 
   /**

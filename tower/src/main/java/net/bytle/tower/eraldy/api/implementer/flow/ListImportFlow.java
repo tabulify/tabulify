@@ -13,8 +13,8 @@ import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.type.Strings;
 import net.bytle.vertx.*;
+import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.WebFlow;
-import net.bytle.vertx.flow.WebFlowType;
 import net.bytle.vertx.resilience.EmailAddressValidator;
 
 import java.nio.file.Files;
@@ -79,8 +79,8 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
   }
 
   @Override
-  public WebFlowType getFlowType() {
-    return WebFlowType.LIST_IMPORT;
+  public FlowType getFlowType() {
+    return FlowType.LIST_IMPORT;
   }
 
   public Path getRuntimeDataDirectory() {

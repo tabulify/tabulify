@@ -13,6 +13,7 @@ import io.vertx.json.schema.ValidationException;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
+import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
@@ -34,7 +35,7 @@ import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.*;
 import net.bytle.vertx.analytics.event.SignUpEvent;
 import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.flow.WebFlowType;
+import net.bytle.vertx.flow.FlowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,88 +154,27 @@ public class UserProvider {
   }
 
   /**
-   * @param user - the user
+   * @param user        - the user
+   * @param flowType - the web flow that insert this event
    * @return a user suitable
    */
-  public Future<User> insertUserFromImport(User user) {
-    return this
-      .insertUser(user)
-      .compose(insertedUser -> {
-        SignUpEvent signUpEvent = new SignUpEvent();
-        signUpEvent.getRequest().setFlowGuid(WebFlowType.LIST_IMPORT.getId().toString());
-        signUpEvent.getRequest().setFlowHandle(WebFlowType.LIST_IMPORT.getHandle());
-        this.apiApp
-          .getApexDomain()
-          .getHttpServer()
-          .getServer()
-          .getTrackerAnalytics()
-          .eventBuilder(signUpEvent)
-          .setAnalyticsUser(this.apiApp.getAuthProvider().toAnalyticsUser(user))
-          .processEvent();
-        return Future.succeededFuture(insertedUser);
-      });
+  public <T extends User> Future<T> insertUserAndTrackEvent(T user, FlowType flowType) {
+
+    return this.jdbcPool.withConnection(sqlConnection -> insertUserAndTrackEvent(user, flowType, sqlConnection));
 
   }
 
   /**
    * Package Private,
    * for creation with login/signup, the insertion should be driven by {@link AuthProvider#insertUserFromLoginAuthUserClaims(AuthUser, RoutingContext, net.bytle.vertx.flow.WebFlow)}
-   * for creation via import, the insertion should be driven by {@link #insertUserFromImport(User)}
+   * for creation via import, the insertion should be driven by {@link #insertUserAndTrackEvent(User, FlowType)}
    *
    * @param user      - the user to insert (sign-up or import)
    * @return a user
    */
   <T extends User> Future<T> insertUser(T user) {
 
-    String sql = "INSERT INTO\n" +
-      QUALIFIED_TABLE_NAME + " (\n" +
-      "  " + REALM_COLUMN + ",\n" +
-      "  " + ID_COLUMN + ",\n" +
-      "  " + EMAIL_COLUMN + ",\n" +
-      "  " + DATA_COLUMN + ",\n" +
-      "  " + CREATION_COLUMN + "\n" +
-      "  )\n" +
-      " values ($1, $2, $3, $4, $5)\n";
-
-    return jdbcPool
-      .withTransaction(sqlConnection -> SequenceProvider.getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, user.getRealm())
-        .compose(userId -> {
-            user.setLocalId(userId);
-            this.updateGuid(user);
-            String databaseJsonString = this.toDatabaseJsonString(user);
-            String email = user.getEmail();
-            String emailAddressNormalized;
-            try {
-              emailAddressNormalized = BMailInternetAddress.of(email)
-                .toNormalizedString();
-            } catch (AddressException e) {
-              return Future.failedFuture(new InternalError("The email value (" + email + ") is not valid", e));
-            }
-            return sqlConnection
-              .preparedQuery(sql)
-              .execute(Tuple.of(
-                  user.getRealm().getLocalId(),
-                  user.getLocalId(),
-                  emailAddressNormalized,
-                  databaseJsonString,
-                  DateTimeUtil.getNowInUtc()
-                )
-              );
-          },
-          err -> Future.failedFuture(
-            TowerFailureException.builder()
-              .setCauseException(err)
-              .setMessage("UserProvider: Error on next sequence id" + err.getMessage())
-              .build()
-          )
-        ))
-      .recover(error -> Future.failedFuture(
-        TowerFailureException.builder()
-          .setCauseException(error)
-          .setMessage("Insert User Error:" + error.getMessage() + ". Sql: " + sql)
-          .build()
-      ))
-      .compose(rows -> Future.succeededFuture(user));
+    return this.jdbcPool.withConnection(sqlConnection -> insertUser(user, sqlConnection));
   }
 
   @SuppressWarnings("unused")
@@ -498,27 +438,7 @@ public class UserProvider {
    */
   public <T extends User> Future<T> getUserByLocalId(Long userId, Long realmId, Class<T> userClass, Realm realm) {
 
-    assert userId != null;
-    assert realmId != null;
-
-    String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
-      " WHERE \n" +
-      " " + ID_COLUMN + " = $1\n" +
-      " AND " + REALM_COLUMN + " = $2";
-    return jdbcPool.preparedQuery(
-        sql)
-      .execute(Tuple.of(userId, realmId))
-      .onFailure(t -> LOGGER.error("Error while retrieving the user by id. Sql: " + sql, t))
-      .compose(userRows -> {
-
-        if (userRows.size() == 0) {
-          return Future.succeededFuture();
-        }
-
-        Row row = userRows.iterator().next();
-        return getUserFromRow(row, userClass, realm);
-
-      });
+    return this.jdbcPool.withConnection(sqlConnection->getUserByLocalId(userId, realmId, userClass, realm, sqlConnection));
   }
 
 
@@ -835,4 +755,153 @@ public class UserProvider {
   }
 
 
+  /**
+   * Get or insert the user. It's used at first to load the initial data of the Eraldy model
+   * The onServerStartUp name is there because we track the flow that insert the user
+   * @param userToGetSert - the user to get sert
+   * @param sqlConnection - the sql connection
+   * @param clazz - the clazz
+   * @return the user
+   * @param <T> extended user
+   */
+  public <T extends User> Future<T> getsertOnServerStartup(T userToGetSert, SqlConnection sqlConnection, Class<T> clazz) {
+    Future<T> futureGetUser = this.getUserByLocalId(
+      userToGetSert.getLocalId(),
+      userToGetSert.getRealm().getLocalId(),
+      clazz,
+      userToGetSert.getRealm(),
+      sqlConnection
+    );
+    return futureGetUser
+      .compose(getUser -> {
+        Future<T> futureUser;
+        if (getUser == null) {
+          futureUser = this.insertUserAndTrackEvent(userToGetSert, FlowType.SERVER_STARTUP, sqlConnection);
+        } else {
+          futureUser = Future.succeededFuture(getUser);
+        }
+        return futureUser;
+      });
+  }
+
+
+  /**
+   * A get that can be used in a SQlConnection with or without transaction
+   * It was created initially to not block during the transaction on server startup to insert
+   * Eraldy data.
+   * @param userId - the user id
+   * @param realmId - the realm id
+   * @param userClass - the User class
+   * @param realm - the realm if already build
+   * @param sqlConnection - the sql connection
+   * @return the user or null
+   * @param <T> a user extension
+   */
+  private <T extends User> Future<T> getUserByLocalId(Long userId, Long realmId, Class<T> userClass, Realm realm, SqlConnection sqlConnection) {
+    assert userId != null;
+    assert realmId != null;
+
+    String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+      " WHERE \n" +
+      " " + ID_COLUMN + " = $1\n" +
+      " AND " + REALM_COLUMN + " = $2";
+    return sqlConnection
+      .preparedQuery(sql)
+      .execute(Tuple.of(userId, realmId))
+      .recover(t -> Future.failedFuture(new InternalException("Error while retrieving the user by id. Sql: " + sql, t)))
+      .compose(userRows -> {
+
+        if (userRows.size() == 0) {
+          return Future.succeededFuture();
+        }
+
+        Row row = userRows.iterator().next();
+        return getUserFromRow(row, userClass, realm);
+
+      });
+  }
+
+  private <T extends User> Future<T> insertUserAndTrackEvent(T user, FlowType flowType, SqlConnection sqlConnection) {
+    return this
+      .insertUser(user, sqlConnection)
+      .compose(insertedUser -> {
+        SignUpEvent signUpEvent = new SignUpEvent();
+        signUpEvent.getRequest().setFlowGuid(flowType.getId().toString());
+        signUpEvent.getRequest().setFlowHandle(flowType.getHandle());
+        this.apiApp
+          .getApexDomain()
+          .getHttpServer()
+          .getServer()
+          .getTrackerAnalytics()
+          .eventBuilder(signUpEvent)
+          .setAnalyticsUser(this.apiApp.getAuthProvider().toAnalyticsUser(user))
+          .processEvent();
+        return Future.succeededFuture(insertedUser);
+      });
+  }
+
+  private <T extends User> Future<T> insertUser(T user, SqlConnection sqlConnection) {
+    String sql = "INSERT INTO\n" +
+      QUALIFIED_TABLE_NAME + " (\n" +
+      "  " + REALM_COLUMN + ",\n" +
+      "  " + ID_COLUMN + ",\n" +
+      "  " + EMAIL_COLUMN + ",\n" +
+      "  " + DATA_COLUMN + ",\n" +
+      "  " + CREATION_COLUMN + "\n" +
+      "  )\n" +
+      " values ($1, $2, $3, $4, $5)\n";
+
+    Future<Long> futureUserLocalId;
+    Long userLocalId = user.getLocalId();
+    if (userLocalId != null) {
+      /**
+       * First insertion case for the Eraldy realm with the value 1
+       */
+      futureUserLocalId = Future.succeededFuture(userLocalId);
+    } else {
+      /**
+       * Basic case when the id is unknown
+       */
+      futureUserLocalId = SequenceProvider
+        .getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, user.getRealm())
+        .recover(err -> Future.failedFuture(
+          TowerFailureException.builder()
+            .setCauseException(err)
+            .setMessage("UserProvider: Error on next sequence id" + err.getMessage())
+            .build()
+        ));
+    }
+
+    return futureUserLocalId
+      .compose(userId -> {
+        user.setLocalId(userId);
+        this.updateGuid(user);
+        String databaseJsonString = this.toDatabaseJsonString(user);
+        String email = user.getEmail();
+        String emailAddressNormalized;
+        try {
+          emailAddressNormalized = BMailInternetAddress.of(email)
+            .toNormalizedString();
+        } catch (AddressException e) {
+          return Future.failedFuture(new InternalError("The email value (" + email + ") is not valid", e));
+        }
+        return sqlConnection
+          .preparedQuery(sql)
+          .execute(Tuple.of(
+              user.getRealm().getLocalId(),
+              user.getLocalId(),
+              emailAddressNormalized,
+              databaseJsonString,
+              DateTimeUtil.getNowInUtc()
+            )
+          );
+      })
+      .recover(error -> Future.failedFuture(
+        TowerFailureException.builder()
+          .setCauseException(error)
+          .setMessage("Insert User Error:" + error.getMessage() + ". Sql: " + sql)
+          .build()
+      ))
+      .compose(rows -> Future.succeededFuture(user));
+  }
 }

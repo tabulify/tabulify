@@ -5,6 +5,7 @@ import io.vertx.core.Handler;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.json.schema.ValidationException;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
@@ -21,9 +22,9 @@ import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.*;
+import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
-import net.bytle.vertx.flow.WebFlowType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -56,8 +57,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
   }
 
   @Override
-  public WebFlowType getFlowType() {
-    return WebFlowType.LIST_REGISTRATION;
+  public FlowType getFlowType() {
+    return FlowType.LIST_REGISTRATION;
   }
 
   /**
@@ -127,7 +128,13 @@ public class ListRegistrationFlow extends WebFlowAbs {
     /**
      * Email validation
      */
-    ValidationUtil.validateEmail(listUserPostBody.getUserEmail(), "userEmail");
+    BMailInternetAddress validatedEmailAddress;
+    try {
+      validatedEmailAddress = BMailInternetAddress.of(listUserPostBody.getUserEmail());
+    } catch (AddressException e) {
+      throw ValidationException.create("The email is not valid. Error: " + e.getMessage(), "userEmail", listUserPostBody.getUserEmail());
+    }
+
 
     /**
      * We validate the publication id value
@@ -142,7 +149,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       .compose(listUser -> {
 
         User user = new User();
-        user.setEmail(listUserPostBody.getUserEmail());
+        user.setEmail(validatedEmailAddress.toNormalizedString());
         Realm listRealm = listUser.getRealm();
         user.setRealm(listRealm);
 
@@ -428,7 +435,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
            * with the list user guid
            */
           UriEnhanced redirectUri = oAuthState.getRedirectUri();
-          if(redirectUri==null){
+          if (redirectUri == null) {
             TowerFailureException
               .builder()
               .setMessage("The redirect uri was not found in the OAuth State object")
