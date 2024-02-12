@@ -4,16 +4,18 @@ import io.vertx.core.Future;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
+import net.bytle.tower.EraldyModel;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class SequenceProvider {
+public class RealmSequenceProvider {
 
 
-  private static final Logger LOGGER = LogManager.getLogger(SequenceProvider.class);
+  private static final Logger LOGGER = LogManager.getLogger(RealmSequenceProvider.class);
   private static final String TABLE_NAME = "realm_sequence";
 
   private static final String TABLE_PREFIX = "sequence";
@@ -22,10 +24,19 @@ public class SequenceProvider {
   private static final String CREATION_TIME_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private static final String TABLE_NAME_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + "table_name";
   private static final String REALM_ID_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
+  private final EraldyApiApp apiApp;
 
+  public RealmSequenceProvider(EraldyApiApp eraldyApiApp) {
+    this.apiApp = eraldyApiApp;
+  }
 
-  public static Future<Long> getNextIdForTableAndRealm(
-    SqlConnection sqlConnection, String tableName, Realm realm) {
+  /**
+   * @param sqlConnection - the sql connection
+   * @param realm         - the realm
+   * @param tableName -the table name
+   * @return the next id
+   */
+  public Future<Long> getNextIdForTableAndRealm(SqlConnection sqlConnection, Realm realm, String tableName) {
 
     Long realmId = realm.getLocalId();
     // https://vertx.io/docs/vertx-pg-client/java/#_returning_clauses
@@ -36,7 +47,8 @@ public class SequenceProvider {
       "where " + TABLE_NAME_COLUMN + " = $2 \n " +
       "and " + REALM_ID_COLUMN + " = $3 " +
       "RETURNING " + LAST_ID_COLUMN;
-    return sqlConnection.preparedQuery(updateSql)
+    return sqlConnection
+      .preparedQuery(updateSql)
       .execute(Tuple.of(
         DateTimeUtil.getNowInUtc(),
         tableName,
@@ -47,15 +59,19 @@ public class SequenceProvider {
         Long nextId;
         if (rows.size() == 0) {
           // insert
-          nextId = 1L;
+          EraldyModel eraldyModel = this.apiApp.getEraldyModel();
+          if(eraldyModel.isEraldyRealm(realm)){
+            nextId = eraldyModel.getFirstIdForTableSequence(tableName);
+          } else {
+            nextId = 1L;
+          }
           String insertSql = "insert into " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n " +
             REALM_ID_COLUMN + ",\n" +
             TABLE_NAME_COLUMN + ",\n" +
             LAST_ID_COLUMN + ",\n" +
             CREATION_TIME_COLUMN + "\n" +
             ") values ($1, $2, $3, $4)";
-          return sqlConnection.preparedQuery(
-              insertSql)
+          return sqlConnection.preparedQuery(insertSql)
             .execute(Tuple.of(
               realmId,
               tableName,
@@ -73,4 +89,6 @@ public class SequenceProvider {
         return Future.succeededFuture(nextId);
       });
   }
+
+
 }

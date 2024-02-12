@@ -45,7 +45,7 @@ public class AppProvider {
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String COLUMN_PREFIX = "app";
   private static final String APP_GUID_PREFIX = "app";
-  protected static final String TABLE_NAME = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + COLUMN_PREFIX;
+  public static final String TABLE_NAME = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + COLUMN_PREFIX;
   public static final String REALM_ID_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
   public static final String USER_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
 
@@ -65,7 +65,6 @@ public class AppProvider {
   private final EraldyApiApp apiApp;
   private final PgPool jdbcPool;
   private final JsonMapper apiMapper;
-
 
   public AppProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
@@ -582,8 +581,8 @@ public class AppProvider {
        * At start time the id of the Eraldy App are known,
        * therefore, the appLocalId may be not null
        */
-      appIdFuture = SequenceProvider
-        .getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, app.getRealm());
+      appIdFuture = this.apiApp.getRealmSequenceProvider()
+        .getNextIdForTableAndRealm(sqlConnection, app.getRealm(), TABLE_NAME);
     }
     return appIdFuture
       .compose(finalAppId -> {

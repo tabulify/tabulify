@@ -4,7 +4,10 @@ import io.vertx.core.Future;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
+import net.bytle.tower.eraldy.objectProvider.RealmProvider;
+import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
@@ -40,6 +43,9 @@ public class EraldyModel {
    * Example: `http(s)://domain.com/path/%s/%s`
    */
   private static final String MEMBER_REGISTRATION_URL = "member.list.registration.url.template";
+  private static final long REALM_USER_LOCAL_ID = 1L;
+  private static final Long APP_MEMBER_ID = 1L;
+  private static final Long APP_INTERACT_ID = 2L;
   private final EraldyApiApp apiApp;
   private final URI interactAppUri;
   private final URI memberAppUri;
@@ -87,7 +93,7 @@ public class EraldyModel {
   }
 
 
-  public Future<Void> insertModelInDatabase() {
+  public Future<Void> mount() {
 
     LOGGER.info("Get/Inserting the Eraldy model");
 
@@ -111,7 +117,7 @@ public class EraldyModel {
          * and enforce the constraint at the end
          * This is what does the below statement
          * Note that all foreign-key circular constraints needs to be deferrable.
-         * Example with a alter statement:
+         * Example with an alter statement:
          * ALTER TABLE cs_realms.realm ALTER CONSTRAINT realm_organization_owner_user_fkey DEFERRABLE INITIALLY IMMEDIATE;
          */
         .query("SET CONSTRAINTS ALL DEFERRED")
@@ -122,13 +128,25 @@ public class EraldyModel {
            * (ie getsert)
            */
           Organization initialEraldyOrganization = new Organization();
-          initialEraldyOrganization.setLocalId(1L);
+          initialEraldyOrganization.setLocalId(REALM_USER_LOCAL_ID);
           initialEraldyOrganization.setHandle("eraldy");
           initialEraldyOrganization.setName("Eraldy");
-          return this.apiApp.getOrganizationProvider()
-            .getsert(initialEraldyOrganization, sqlConnection)
-            .compose(eraldyOrganization -> {
-              LOGGER.info("Eraldy Organization getserted");
+          Future<Organization> futureOrganization = this.apiApp.getOrganizationProvider()
+            .getsert(initialEraldyOrganization, sqlConnection);
+
+          /**
+           * The organization roles
+           */
+          Future<Void> upsertAllRoles = this.apiApp.getOrganizationRoleProvider().upsertAll(sqlConnection);
+
+          /**
+           * Composite of all organization data
+           */
+          return Future.all(futureOrganization, upsertAllRoles)
+            .compose(composite -> {
+              LOGGER.info("Eraldy Organization and roles getserted");
+
+              Organization eraldyOrganization = composite.resultAt(0);
               /**
                * Realm
                * (Cross, before updating the realm
@@ -145,11 +163,11 @@ public class EraldyModel {
                * Organization User
                */
               OrganizationUser initialRealmOwnerUser = new OrganizationUser();
-              initialRealmOwnerUser.setLocalId(1L);
+              initialRealmOwnerUser.setLocalId(REALM_USER_LOCAL_ID);
               initialEraldyRealm.setOwnerUser(initialRealmOwnerUser);
 
               return this.apiApp.getRealmProvider()
-                .getsert(initialEraldyRealm, sqlConnection)
+                .getsertOnServerStartup(initialEraldyRealm, sqlConnection)
                 .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy realm", t)))
                 .compose(eraldyRealm -> {
                   LOGGER.info("Eraldy Realm getserted");
@@ -182,7 +200,7 @@ public class EraldyModel {
                            */
                           resUser.setOrganization(eraldyOrganization);
                           return apiApp.getOrganizationUserProvider()
-                            .getsert(resUser, sqlConnection);
+                            .getsertOnServerStartup(resUser, sqlConnection);
                         }
                       )
                       .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner organization user", t)));
@@ -196,7 +214,7 @@ public class EraldyModel {
                        * App getsertion
                        */
                       App memberApp = new App();
-                      memberApp.setLocalId(1L);
+                      memberApp.setLocalId(APP_MEMBER_ID);
                       memberApp.setName("Members");
                       memberApp.setHandle("members");
                       memberApp.setHome(URI.create("https://eraldy.com"));
@@ -205,7 +223,7 @@ public class EraldyModel {
                       Future<App> getSertMember = this.apiApp.getAppProvider().getsert(memberApp, sqlConnection);
 
                       App interactApp = new App();
-                      interactApp.setLocalId(2L);
+                      interactApp.setLocalId(APP_INTERACT_ID);
                       interactApp.setName("Interact");
                       interactApp.setHandle("interact");
                       interactApp.setHome(URI.create("https://eraldy.com"));
@@ -225,7 +243,7 @@ public class EraldyModel {
                        * Create a client for the member App
                        */
                       memberClient = new AuthClient();
-                      memberClient.setLocalId(1L);
+                      memberClient.setLocalId(REALM_USER_LOCAL_ID);
                       memberClient.setApp(memberApp);
                       memberClient.addUri(this.memberAppUri);
                       authClientProvider.updateGuid(memberClient);
@@ -299,4 +317,31 @@ public class EraldyModel {
     }
   }
 
+  /**
+   * Return the first id of the sequence for the Eraldy realm if the sequence does not exist
+   * It's used only when there is no data at all
+   * @param tableName - the table name
+   * @return the first default id to use if the sequence was not found
+   */
+  public Long getFirstIdForTableSequence(String tableName) {
+    switch (tableName) {
+      case RealmProvider.TABLE_NAME:
+        /**
+         * 1 realm only
+         */
+        return this.getRealmLocalId() + 1L;
+      case UserProvider.TABLE_NAME:
+        /**
+         * 1 user only
+         */
+        return REALM_USER_LOCAL_ID + 1L;
+      case AppProvider.TABLE_NAME:
+        /**
+         * 2 app on mount
+         */
+        return 3L;
+      default:
+        return 1L;
+    }
+  }
 }

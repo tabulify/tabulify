@@ -37,6 +37,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import static net.bytle.tower.util.Guid.*;
 
@@ -81,6 +83,9 @@ public class EraldyApiApp extends TowerApp {
   private final RealmSessionHandler sessionHandler;
   private final ApiKeyAuthenticationProvider apiKeyUserProvider;
   private final AuthNContextManager authNContextManager;
+  private final OrganizationRoleProvider organizationRoleProvider;
+
+  private final RealmSequenceProvider realmSequenceProvider;
 
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
@@ -108,8 +113,10 @@ public class EraldyApiApp extends TowerApp {
     this.listUserProvider = new ListUserProvider(this);
     this.serviceProvider = new ServiceProvider(this);
     this.organizationUserProvider = new OrganizationUserProvider(this);
+    this.organizationRoleProvider = new OrganizationRoleProvider(this);
     this.hashIds = this.getApexDomain().getHttpServer().getServer().getHashId();
     this.authClientProvider = new AuthClientProvider(this);
+    this.realmSequenceProvider = new RealmSequenceProvider(this);
 
     /**
      * Model and app
@@ -517,11 +524,12 @@ public class EraldyApiApp extends TowerApp {
       return Future.failedFuture(new InternalException("The database migration failed", e));
     }
 
-    Future<Void> eraldyOrg = eraldyModel.insertModelInDatabase();
-    Future<Void> parentMount = super.mount();
+    List<Future<Void>> futureMounts = new ArrayList<>();
+    futureMounts.add(eraldyModel.mount());
+    futureMounts.add(super.mount());
 
     return Future
-      .all(eraldyOrg, parentMount)
+      .all(futureMounts)
       .recover(err -> Future.failedFuture(new InternalException("One of the Api App mount future has failed", err)))
       .compose(v -> {
 
@@ -551,5 +559,14 @@ public class EraldyApiApp extends TowerApp {
 
   public AuthNContextManager getAuthNContextManager() {
     return this.authNContextManager;
+  }
+
+  public OrganizationRoleProvider getOrganizationRoleProvider() {
+    return this.organizationRoleProvider;
+  }
+
+
+  public RealmSequenceProvider getRealmSequenceProvider() {
+    return this.realmSequenceProvider;
   }
 }

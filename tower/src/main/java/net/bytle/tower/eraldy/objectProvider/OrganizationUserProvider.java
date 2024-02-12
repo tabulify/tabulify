@@ -8,6 +8,7 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.AssertionException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.api.OrganizationRoleProvider;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
@@ -35,7 +36,6 @@ import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
 public class OrganizationUserProvider {
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(OrganizationUserProvider.class);
-  private static final int OWNER_ROLE_ID = 1;
 
   private final EraldyApiApp apiApp;
   private static final String TABLE_NAME = "organization_user";
@@ -103,7 +103,7 @@ public class OrganizationUserProvider {
           return Future.succeededFuture();
         }
 
-        if (userRows.size() != OWNER_ROLE_ID) {
+        if (userRows.size() != OrganizationRoleProvider.OWNER_ROLE_ID) {
           return Future.failedFuture(new InternalException("There is more than one orga user with the id (" + localId + ")"));
         }
         Row row = userRows.iterator().next();
@@ -241,7 +241,7 @@ public class OrganizationUserProvider {
   /**
    * Getsert: Get or insert the user
    */
-  public Future<OrganizationUser> getsert(OrganizationUser organizationUser, SqlConnection sqlConnection) {
+  public Future<OrganizationUser> getsertOnServerStartup(OrganizationUser organizationUser, SqlConnection sqlConnection) {
     return this.getOrganizationUserEnrichedWithOrganizationDataEventually(organizationUser, sqlConnection)
       .recover(t -> Future.failedFuture(new InternalException("Error while selecting the eraldy owner realm", t)))
       .compose(selectedOrganizationUser -> {
@@ -284,19 +284,17 @@ public class OrganizationUserProvider {
       "  )\n" +
       " values ($1, $2, $3, $4)\n";
 
+    Tuple ownerInsertTuple = Tuple.of(
+      userLocalId,
+      organizationLocalId,
+      OrganizationRoleProvider.OWNER_ROLE_ID,
+      DateTimeUtil.getNowInUtc()
+    );
     return sqlConnection
       .preparedQuery(sql)
-      .execute(Tuple.of(
-        userLocalId,
-        organizationLocalId,
-        OWNER_ROLE_ID,
-        DateTimeUtil.getNowInUtc()
-      ))
+      .execute(ownerInsertTuple)
       .recover(e -> Future.failedFuture(new InternalException("Error: " + e.getMessage() + ", while inserting the orga user with the sql\n" + sql, e)))
-      .compose(userRows -> {
-        Row row = userRows.iterator().next();
-        return setOrganizationFromDatabaseRow(row, organizationUser, null);
-      });
+      .compose(userRows -> Future.succeededFuture(organizationUser));
   }
 
   /**

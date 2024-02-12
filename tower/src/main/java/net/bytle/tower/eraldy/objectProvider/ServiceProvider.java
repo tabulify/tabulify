@@ -239,7 +239,7 @@ public class ServiceProvider {
       " values ($1, $2, $3, $4, $5, $6, $7)\n";
 
     return jdbcPool
-      .withTransaction(sqlConnection -> SequenceProvider.getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, service.getRealm())
+      .withTransaction(sqlConnection -> this.apiApp.getRealmSequenceProvider().getNextIdForTableAndRealm(sqlConnection, service.getRealm(), TABLE_NAME)
         .onFailure(error -> LOGGER.error("ServiceProvider: Error on next sequence id" + error.getMessage(), error))
         .compose(serviceId -> {
           service.setLocalId(serviceId);

@@ -1,9 +1,10 @@
 package net.bytle.tower.util;
 
 import io.vertx.core.Future;
+import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.User;
 
 public class EraldySubRealmModel {
   public static final String REALM_HANDLE = "datacadamia";
@@ -24,15 +25,29 @@ public class EraldySubRealmModel {
     datacadamiaRealm.setHandle(REALM_HANDLE);
     datacadamiaRealm.setName(REALM_HANDLE + " Realm");
     datacadamiaRealm.setOrganization(eraldyRealm.getOrganization());
-    User owner = new User();
-    owner.setRealm(eraldyRealm);
-    owner.setEmail("owner@datacadamia.com");
-    return apiApp.getUserProvider()
-      .upsertUser(owner)
-      .compose(ownerResult -> this.apiApp.getRealmProvider()
-        .upsertRealm(datacadamiaRealm)
-      )
-      .compose(realm -> Future.succeededFuture());
+    OrganizationUser initialOwnerUser = new OrganizationUser();
+    initialOwnerUser.setRealm(eraldyRealm);
+    initialOwnerUser.setEmail("owner@datacadamia.com");
+
+    return this.apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool()
+      .withConnection(sqlConnection -> apiApp.getUserProvider()
+        .getsertOnServerStartup(initialOwnerUser, sqlConnection, OrganizationUser.class)
+        .recover(err->Future.failedFuture(new InternalException("Error on user getsert",err)))
+        .compose(ownerUser -> {
+          ownerUser.setOrganization(eraldyRealm.getOrganization());
+          return apiApp.getOrganizationUserProvider()
+            .getsertOnServerStartup(ownerUser, sqlConnection);
+        })
+        .recover(err->Future.failedFuture(new InternalException("Error on user organization getsert",err)))
+        .compose(ownerResult -> {
+            datacadamiaRealm.setOwnerUser(ownerResult);
+            return this.apiApp.getRealmProvider()
+              .getsertOnServerStartup(datacadamiaRealm, sqlConnection);
+          }
+        )
+        .recover(err->Future.failedFuture(new InternalException("Error on realm getsert",err)))
+        .compose(realm -> Future.succeededFuture()));
+
 
   }
 }

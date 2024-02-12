@@ -49,8 +49,6 @@ public class RealmProvider {
   protected static final Logger LOGGER = LoggerFactory.getLogger(RealmProvider.class);
 
   public static final String REALM_ID_COLUMN = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + RealmProvider.ID;
-
-  public static final String REALM_HANDLE_URL_PARAMETER = "realm";
   public static final String ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "id";
   private static final String REALM_HANDLE_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "handle";
   private static final String REALM_ORGA_ID = TABLE_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN;
@@ -197,7 +195,6 @@ public class RealmProvider {
 
   private Future<Realm> insertRealm(Realm realm, SqlConnection sqlConnection) {
 
-    Long realmLocalId = realm.getLocalId();
     String pgJsonObject = this.toDatabaseJsonString(realm);
 
     /**
@@ -211,36 +208,41 @@ public class RealmProvider {
       "  " + REALM_ORGA_ID + ",\n" +
       "  " + DATA_COLUMN + ",\n" +
       "  " + REALM_OWNER_ID_COLUMN + ",\n" +
-      "  " + CREATION_TIME_COLUMN + "\n";
-    if (realmLocalId != null) {
-      sql += ",  " + REALM_ID_COLUMN + "\n";
-    }
-    sql += "  )\n" +
-      " values ($1, $2, $3, $4, $5";
-    if (realmLocalId != null) {
-      sql += ", $6";
-    }
-    sql += ")\n" +
+      "  " + CREATION_TIME_COLUMN + "\n"+
+      "  )\n" +
+      " values ($1, $2, $3, $4, $5)\n" +
       " returning " + REALM_ID_COLUMN;
 
+    String handle = realm.getHandle();
+    if(handle==null){
+      throw new InternalException("The realm handle cannot be null on realm insertion");
+    }
+    OrganizationUser ownerUser = realm.getOwnerUser();
+    if(ownerUser==null){
+      throw new InternalException("The owner user of the realm (handle: "+handle+") cannot be null on realm insertion");
+    }
     Tuple tuple = Tuple.of(
-      realm.getHandle(),
+      handle,
       realm.getOrganization().getLocalId(),
       pgJsonObject,
-      realm.getOwnerUser().getLocalId(),
+      ownerUser.getLocalId(),
       DateTimeUtil.getNowInUtc()
     );
-    if (realmLocalId != null) {
-      tuple.addLong(realmLocalId);
-    }
 
-    String finalSql = sql;
     return sqlConnection
       .preparedQuery(sql)
       .execute(tuple)
-      .onFailure(t -> LOGGER.error("Error while executing the following sql:\n" + finalSql, t))
+      .onFailure(t -> LOGGER.error("Error while executing the following sql:\n" + sql, t))
       .compose(rows -> {
         Long realmId = rows.iterator().next().getLong(REALM_ID_COLUMN);
+        Long askedRealmLocalIdOnInsert = realm.getLocalId();
+        if(askedRealmLocalIdOnInsert!=null && !askedRealmLocalIdOnInsert.equals(realmId)){
+          /**
+           * Case when we insert a realm when we want the id
+           * The Eraldy realm should be 1 is the main case
+           */
+          return Future.failedFuture(new InternalException("The asked realm id ("+askedRealmLocalIdOnInsert +") did not get the same id but the id ("+realmId+")"));
+        }
         realm.setLocalId(realmId);
         this.updateGuid(realm);
         return Future.succeededFuture(realm);
@@ -250,12 +252,7 @@ public class RealmProvider {
   private Future<Realm> insertRealm(Realm realm) {
 
     return this.jdbcPool
-      .getConnection()
-      .compose(sqlConnection -> {
-        return insertRealm(realm, sqlConnection)
-          // return the connection to the pool
-          .eventually(v -> sqlConnection.close());
-      });
+      .withConnection(sqlConnection -> insertRealm(realm, sqlConnection));
   }
 
   private Future<Realm> updateRealm(Realm realm) {
@@ -402,7 +399,7 @@ public class RealmProvider {
 
   /**
    * @param realmId - the realmId
-   * @return the realm
+   * @return the realm or null if not found
    */
   private <T extends Realm> Future<T> getRealmFromLocalId(Long realmId, Class<T> clazz) {
 
@@ -411,13 +408,18 @@ public class RealmProvider {
      * https://vertx.io/docs/vertx-pg-client/java/#_getting_a_connection
      */
     return jdbcPool
-      .getConnection()
-      .compose(connection -> this.getRealmFromLocalId(connection, realmId, clazz)
-        // Return the connection to the pool
-        .eventually(v -> connection.close()));
+      .withConnection(connection -> this.getRealmFromLocalId(connection, realmId, clazz));
 
   }
 
+  /**
+   *
+   * @param realmHandle - the handle
+   * @param clazz - the clazz
+   * @param sqlConnection - the connection with or without a transaction
+   * @return the realm or null if not found
+   * @param <T> - the type of realm
+   */
   private <T extends Realm> Future<T> getRealmFromHandle(String realmHandle, Class<T> clazz, SqlConnection sqlConnection) {
     String sql = "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " WHERE realm_handle = $1";
     return sqlConnection
@@ -426,7 +428,7 @@ public class RealmProvider {
       .compose(userRows -> {
 
         if (userRows.size() == 0) {
-          return Future.failedFuture(new NotFoundException("the realm handle (" + realmHandle + ") was not found"));
+          return Future.succeededFuture();
         }
 
         if (userRows.size() != 1) {
@@ -442,11 +444,9 @@ public class RealmProvider {
 
     return this.jdbcPool.
       getConnection()
-      .compose(connection -> {
-        return getRealmFromHandle(realmHandle, clazz, connection)
-          // return the connection to the pool
-          .eventually(v -> connection.close());
-      });
+      .compose(connection -> getRealmFromHandle(realmHandle, clazz, connection)
+        // return the connection to the pool
+        .eventually(v -> connection.close()));
 
   }
 
@@ -610,14 +610,6 @@ public class RealmProvider {
     return getRealmFromIdentifier(realmIdentifier, RealmAnalytics.class);
   }
 
-
-  public boolean isIdentifierForRealm(String realmIdentifier, Realm realm) {
-    if (realm.getGuid().equals(realmIdentifier)) {
-      return true;
-    }
-    return realm.getHandle().equals(realmIdentifier);
-  }
-
   public ObjectMapper getPublicJsonMapper() {
     return this.publicRealmJsonMapper;
   }
@@ -652,7 +644,7 @@ public class RealmProvider {
    * @param sqlConnection - the insertion connection to defer constraint on transaction
    * @return the realm inserted
    */
-  public Future<Realm> getsert(Realm realm, SqlConnection sqlConnection) {
+  public Future<Realm> getsertOnServerStartup(Realm realm, SqlConnection sqlConnection) {
     Future<Realm> selectRealmFuture;
     if (realm.getLocalId() != null) {
       selectRealmFuture = this.getRealmFromLocalId(realm.getLocalId(), sqlConnection);

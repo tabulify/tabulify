@@ -51,7 +51,7 @@ public class UserProvider {
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(UserProvider.class);
 
-  protected static final String TABLE_NAME = "realm_user";
+  public static final String TABLE_NAME = "realm_user";
   protected static final String QUALIFIED_TABLE_NAME = JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME;
 
 
@@ -71,6 +71,7 @@ public class UserProvider {
   public static final String USR_GUID_PREFIX = "usr";
   private static final String MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private static final String CREATION_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
+  private static final long FIRST_USER_ID = 1L;
   private final EraldyApiApp apiApp;
   private final PgPool jdbcPool;
   /**
@@ -438,7 +439,7 @@ public class UserProvider {
    */
   public <T extends User> Future<T> getUserByLocalId(Long userId, Long realmId, Class<T> userClass, Realm realm) {
 
-    return this.jdbcPool.withConnection(sqlConnection->getUserByLocalId(userId, realmId, userClass, realm, sqlConnection));
+    return this.jdbcPool.withConnection(sqlConnection -> getUserByLocalId(userId, realmId, userClass, realm, sqlConnection));
   }
 
 
@@ -471,6 +472,11 @@ public class UserProvider {
    */
   public <T extends User> Future<T> getUserByEmail(BMailInternetAddress userEmail, Long realmLocalId, Class<T> userClass, Realm realm) {
 
+    return this.jdbcPool.withConnection(sqlConnection -> getUserByEmail(userEmail, realmLocalId, userClass, realm, sqlConnection));
+
+  }
+
+  private <T extends User> Future<T> getUserByEmail(BMailInternetAddress userEmail, Long realmLocalId, Class<T> userClass, Realm realm, SqlConnection sqlConnection) {
     assert userEmail != null;
     assert realmLocalId != null;
 
@@ -480,7 +486,8 @@ public class UserProvider {
       " AND " + REALM_COLUMN + " = $2";
     String lowerCaseEmailAddress = userEmail.toNormalizedString();
 
-    return jdbcPool.preparedQuery(sql)
+    return sqlConnection
+      .preparedQuery(sql)
       .execute(Tuple.of(lowerCaseEmailAddress, realmLocalId))
       .compose(
         userRows -> {
@@ -493,7 +500,6 @@ public class UserProvider {
           Row row = userRows.iterator().next();
           return getUserFromRow(row, userClass, realm);
         }, err -> Future.failedFuture(new InternalError("Error while retrieving the user by email and realm. Sql: \n" + sql, err)));
-
   }
 
   public Future<User> getUserFromGuidOrEmail(String userGuid, String userEmail, Realm realm) {
@@ -765,13 +771,36 @@ public class UserProvider {
    * @param <T> extended user
    */
   public <T extends User> Future<T> getsertOnServerStartup(T userToGetSert, SqlConnection sqlConnection, Class<T> clazz) {
-    Future<T> futureGetUser = this.getUserByLocalId(
-      userToGetSert.getLocalId(),
-      userToGetSert.getRealm().getLocalId(),
-      clazz,
-      userToGetSert.getRealm(),
-      sqlConnection
-    );
+    Long localId = userToGetSert.getLocalId();
+    Future<T> futureGetUser;
+    if (localId != null) {
+      futureGetUser = this.getUserByLocalId(
+        localId,
+        userToGetSert.getRealm().getLocalId(),
+        clazz,
+        userToGetSert.getRealm(),
+        sqlConnection
+      );
+    } else {
+
+      String emailAddress = userToGetSert.getEmail();
+      if (emailAddress == null) {
+        return Future.failedFuture(new InternalException("On user getSert an email or id should be given"));
+      }
+      BMailInternetAddress bMailInternetAddress;
+      try {
+        bMailInternetAddress = BMailInternetAddress.of(emailAddress);
+      } catch (AddressException e) {
+        return Future.failedFuture(new InternalException("The email address (" + emailAddress + ") of the user to getSert is not valid", e));
+      }
+      futureGetUser = this.getUserByEmail(
+        bMailInternetAddress,
+        userToGetSert.getRealm().getLocalId(),
+        clazz,
+        userToGetSert.getRealm(),
+        sqlConnection
+      );
+    }
     return futureGetUser
       .compose(getUser -> {
         Future<T> futureUser;
@@ -857,13 +886,19 @@ public class UserProvider {
       /**
        * First insertion case for the Eraldy realm with the value 1
        */
+      if (userLocalId != FIRST_USER_ID) {
+        return Future.failedFuture(TowerFailureException.builder()
+          .setMessage("The first user should have the value 1 not " + userLocalId)
+          .build()
+        );
+      }
       futureUserLocalId = Future.succeededFuture(userLocalId);
     } else {
       /**
        * Basic case when the id is unknown
        */
-      futureUserLocalId = SequenceProvider
-        .getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, user.getRealm())
+      futureUserLocalId = this.apiApp.getRealmSequenceProvider()
+        .getNextIdForTableAndRealm(sqlConnection, user.getRealm(), TABLE_NAME)
         .recover(err -> Future.failedFuture(
           TowerFailureException.builder()
             .setCauseException(err)

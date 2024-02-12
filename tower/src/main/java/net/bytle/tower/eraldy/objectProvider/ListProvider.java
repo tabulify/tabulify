@@ -169,8 +169,8 @@ public class ListProvider {
 
     return jdbcPool
       .withTransaction(sqlConnection ->
-        SequenceProvider
-          .getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, listItem.getRealm())
+        this.apiApp.getRealmSequenceProvider()
+          .getNextIdForTableAndRealm(sqlConnection, listItem.getRealm(), TABLE_NAME)
           .compose(nextId -> {
             listItem.setLocalId(nextId);
             updateGuid(listItem);
