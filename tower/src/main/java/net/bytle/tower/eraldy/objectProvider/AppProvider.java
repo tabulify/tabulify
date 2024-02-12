@@ -45,7 +45,7 @@ public class AppProvider {
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String COLUMN_PREFIX = "app";
   private static final String APP_GUID_PREFIX = "app";
-  public static final String TABLE_NAME = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + COLUMN_PREFIX;
+  public static final String REALM_APP_TABLE_NAME = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + COLUMN_PREFIX;
   public static final String REALM_ID_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
   public static final String USER_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
 
@@ -182,7 +182,7 @@ public class AppProvider {
 
     if (app.getLocalId() != null) {
       String updateSqlById = "UPDATE \n" +
-        JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
+        JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME + "\n" +
         "set\n" +
         "  " + HANDLE_COLUMN + " = $1,\n" +
         "  " + USER_COLUMN + " = $2, \n" +
@@ -229,7 +229,7 @@ public class AppProvider {
 
   private Future<RowSet<Row>> updateAppByHandle(App app) {
     String updateSqlByUri = "UPDATE \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME + " \n" +
       "set \n" +
       "  " + USER_COLUMN + " = $1, \n" +
       "  " + DATA_COLUMN + " = $2 \n" +
@@ -260,7 +260,7 @@ public class AppProvider {
     Future<RowSet<Row>> futureResponse;
     if (app.getLocalId() != null) {
       sql = "select " + APP_ID_COLUMN +
-        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME +
         " where " +
         " " + REALM_ID_COLUMN + " = ?" +
         " AND " + APP_ID_COLUMN + " = ?";
@@ -278,7 +278,7 @@ public class AppProvider {
         return Future.failedFuture(internalException);
       }
       sql = "select " + APP_ID_COLUMN +
-        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME +
         " where " +
         " " + REALM_ID_COLUMN + " = ?" +
         " AND " + HANDLE_COLUMN + " = ?";
@@ -323,7 +323,7 @@ public class AppProvider {
 
     return jdbcPool
       .preparedQuery(
-        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
+        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME
           + " where " + REALM_ID_COLUMN + " = $1")
       .execute(Tuple.of(realm.getLocalId()))
       .onFailure(FailureStatic::failFutureWithTrace)
@@ -487,23 +487,23 @@ public class AppProvider {
   /**
    * Getsert: get or insert an app with a local id
    */
-  public Future<App> getsert(App app, SqlConnection sqlConnection) {
+  public Future<App> getsertOnStartup(App app) {
     Future<App> selectApp;
     if (app.getLocalId() != null) {
-      selectApp = this.getAppById(app.getLocalId(), app.getRealm(), sqlConnection);
+      selectApp = this.getAppById(app.getLocalId(), app.getRealm());
     } else {
       String handle = app.getHandle();
       if (handle == null) {
         return Future.failedFuture(new InternalException("The app to getsert should have an identifier (local id, or handle)"));
       }
-      selectApp = this.getAppByHandle(handle, app.getRealm(), sqlConnection);
+      selectApp = this.getAppByHandle(handle, app.getRealm());
     }
     return selectApp
       .compose(selectedApp -> {
         if (selectedApp != null) {
           return Future.succeededFuture(selectedApp);
         }
-        return this.insertApp(app, sqlConnection);
+        return this.insertApp(app);
       });
   }
 
@@ -516,7 +516,7 @@ public class AppProvider {
    */
   private Future<App> getAppByHandle(String appHandle, Realm realm, SqlConnection sqlConnection) {
     return sqlConnection.preparedQuery(
-        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
+        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME
           + " WHERE " + HANDLE_COLUMN + " = $1 "
           + "and " + REALM_ID_COLUMN + " = $2 ")
       .execute(Tuple.of(
@@ -537,7 +537,7 @@ public class AppProvider {
 
   private Future<App> getAppById(Long appId, Realm realm, SqlConnection sqlConnection) {
     return sqlConnection.preparedQuery(
-        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
+        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME
           + " WHERE " + APP_ID_COLUMN + " = $1 "
           + " AND " + REALM_ID_COLUMN + " = $2 "
       )
@@ -563,7 +563,7 @@ public class AppProvider {
   private Future<App> insertApp(App app, SqlConnection sqlConnection) {
 
     String sql = "INSERT INTO\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME + " (\n" +
       "  " + REALM_ID_COLUMN + ",\n" +
       "  " + APP_ID_COLUMN + ",\n" +
       "  " + HANDLE_COLUMN + ",\n" +
@@ -572,20 +572,18 @@ public class AppProvider {
       "  " + CREATION_TIME + "\n" +
       "  )\n" +
       " values ($1, $2, $3, $4, $5, $6)\n";
-
-    // https://github.com/vert-x3/vertx-examples/blob/4.x/sql-client-examples/src/main/java/io/vertx/example/sqlclient/transaction_rollback/SqlClientExample.java
-    Long appLocalId = app.getLocalId();
-    Future<Long> appIdFuture = Future.succeededFuture(appLocalId);
-    if (appLocalId == null) {
-      /**
-       * At start time the id of the Eraldy App are known,
-       * therefore, the appLocalId may be not null
-       */
-      appIdFuture = this.apiApp.getRealmSequenceProvider()
-        .getNextIdForTableAndRealm(sqlConnection, app.getRealm(), TABLE_NAME);
-    }
-    return appIdFuture
+    return this.apiApp.getRealmSequenceProvider()
+      .getNextIdForTableAndRealm(sqlConnection, app.getRealm(), REALM_APP_TABLE_NAME)
       .compose(finalAppId -> {
+        Long askedLocalId = app.getLocalId();
+        if(askedLocalId!=null && !askedLocalId.equals(finalAppId)){
+          /**
+           * When we insert a startup
+           * with {@link #getsertOnStartup(App, SqlConnection)}
+           * where there is no data
+           */
+          return Future.failedFuture("The asked local id ("+askedLocalId+") is different of the id given ("+finalAppId+"). Be careful that on the insertion order.");
+        }
         app.setLocalId(finalAppId);
         this.updateGuid(app);
         return sqlConnection

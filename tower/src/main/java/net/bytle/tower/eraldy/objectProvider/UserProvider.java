@@ -51,8 +51,8 @@ public class UserProvider {
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(UserProvider.class);
 
-  public static final String TABLE_NAME = "realm_user";
-  protected static final String QUALIFIED_TABLE_NAME = JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME;
+  public static final String REALM_USER_TABLE_NAME = "realm_user";
+  protected static final String QUALIFIED_TABLE_NAME = JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME;
 
 
   private static final String TABLE_PREFIX = "user";
@@ -71,7 +71,6 @@ public class UserProvider {
   public static final String USR_GUID_PREFIX = "usr";
   private static final String MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private static final String CREATION_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
-  private static final long FIRST_USER_ID = 1L;
   private final EraldyApiApp apiApp;
   private final PgPool jdbcPool;
   /**
@@ -185,7 +184,7 @@ public class UserProvider {
     if (user.getLocalId() != null) {
 
       sql = "select " + ID_COLUMN +
-        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
         " where " +
         ID_COLUMN + " = $1 " +
         "AND " + REALM_COLUMN + " = $2 ";
@@ -203,7 +202,7 @@ public class UserProvider {
         return Future.failedFuture(internalException);
       }
       sql = "select " + ID_COLUMN +
-        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
         " where " +
         EMAIL_COLUMN + " = $1 " +
         "AND " + REALM_COLUMN + " = $2 ";
@@ -237,7 +236,7 @@ public class UserProvider {
 
     if (user.getLocalId() != null) {
       sql = "UPDATE \n" +
-        JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
+        JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME + " \n" +
         "set \n" +
         "  " + EMAIL_COLUMN + " = $1,\n" +
         "  " + DATA_COLUMN + " = $2,\n" +
@@ -283,7 +282,7 @@ public class UserProvider {
       return Future.failedFuture(internalException);
     }
     final String updateSql = "UPDATE \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME + " \n" +
       "set \n" +
       "  " + DATA_COLUMN + " = $1,\n" +
       "  " + MODIFICATION_TIME_COLUMN + " = $2\n" +
@@ -330,7 +329,7 @@ public class UserProvider {
       "   SELECT " +
       "      ROW_NUMBER() OVER (ORDER BY user_creation_time DESC) AS rn," +
       "      *" +
-      "   FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+      "   FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
       "   where " + REALM_COLUMN + " = $1" +
       searchTermFiltering +
       "  ) as userNumbered" +
@@ -480,7 +479,7 @@ public class UserProvider {
     assert userEmail != null;
     assert realmLocalId != null;
 
-    String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+    String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
       " WHERE " +
       EMAIL_COLUMN + " = $1\n" +
       " AND " + REALM_COLUMN + " = $2";
@@ -647,7 +646,7 @@ public class UserProvider {
       .hash(password);
 
     sql = "UPDATE \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME + " \n" +
       "set \n" +
       "  " + PASSWORD_COLUMN + " = $1,\n" +
       "  " + MODIFICATION_TIME_COLUMN + " = $2\n" +
@@ -678,7 +677,7 @@ public class UserProvider {
 
     String hashedPassword = PasswordHashManager.get().hash(userPassword);
 
-    String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+    String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
       " WHERE " +
       EMAIL_COLUMN + " = $1\n" +
       " AND " + REALM_COLUMN + " = $2" +
@@ -830,7 +829,7 @@ public class UserProvider {
     assert userId != null;
     assert realmId != null;
 
-    String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+    String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
       " WHERE \n" +
       " " + ID_COLUMN + " = $1\n" +
       " AND " + REALM_COLUMN + " = $2";
@@ -880,36 +879,25 @@ public class UserProvider {
       "  )\n" +
       " values ($1, $2, $3, $4, $5)\n";
 
-    Future<Long> futureUserLocalId;
-    Long userLocalId = user.getLocalId();
-    if (userLocalId != null) {
-      /**
-       * First insertion case for the Eraldy realm with the value 1
-       */
-      if (userLocalId != FIRST_USER_ID) {
-        return Future.failedFuture(TowerFailureException.builder()
-          .setMessage("The first user should have the value 1 not " + userLocalId)
+    return this.apiApp.getRealmSequenceProvider()
+      .getNextIdForTableAndRealm(sqlConnection, user.getRealm(), REALM_USER_TABLE_NAME)
+      .recover(err -> Future.failedFuture(
+        TowerFailureException.builder()
+          .setCauseException(err)
+          .setMessage("UserProvider: Error on next sequence id" + err.getMessage())
           .build()
-        );
-      }
-      futureUserLocalId = Future.succeededFuture(userLocalId);
-    } else {
-      /**
-       * Basic case when the id is unknown
-       */
-      futureUserLocalId = this.apiApp.getRealmSequenceProvider()
-        .getNextIdForTableAndRealm(sqlConnection, user.getRealm(), TABLE_NAME)
-        .recover(err -> Future.failedFuture(
-          TowerFailureException.builder()
-            .setCauseException(err)
-            .setMessage("UserProvider: Error on next sequence id" + err.getMessage())
-            .build()
-        ));
-    }
-
-    return futureUserLocalId
-      .compose(userId -> {
-        user.setLocalId(userId);
+      ))
+      .compose(seqUserId -> {
+        Long askedLocalId = user.getLocalId();
+        if(askedLocalId!=null && !askedLocalId.equals(seqUserId)){
+          /**
+           * When we insert a startup
+           * with {@link #getsertOnServerStartup(User, SqlConnection, Class)}
+           * where there is no data
+           */
+          return Future.failedFuture("The asked local id ("+askedLocalId+") is different of the id given ("+seqUserId+"). Be careful that on the insertion order.");
+        }
+        user.setLocalId(seqUserId);
         this.updateGuid(user);
         String databaseJsonString = this.toDatabaseJsonString(user);
         String email = user.getEmail();

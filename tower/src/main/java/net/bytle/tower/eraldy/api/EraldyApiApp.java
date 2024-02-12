@@ -116,7 +116,7 @@ public class EraldyApiApp extends TowerApp {
     this.organizationRoleProvider = new OrganizationRoleProvider(this);
     this.hashIds = this.getApexDomain().getHttpServer().getServer().getHashId();
     this.authClientProvider = new AuthClientProvider(this);
-    this.realmSequenceProvider = new RealmSequenceProvider(this);
+    this.realmSequenceProvider = new RealmSequenceProvider();
 
     /**
      * Model and app

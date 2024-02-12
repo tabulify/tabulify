@@ -4,18 +4,14 @@ import io.vertx.core.Future;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
-import net.bytle.tower.EraldyModel;
-import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.JdbcSchemaManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import net.bytle.vertx.TowerFailureException;
 
 public class RealmSequenceProvider {
 
 
-  private static final Logger LOGGER = LogManager.getLogger(RealmSequenceProvider.class);
   private static final String TABLE_NAME = "realm_sequence";
 
   private static final String TABLE_PREFIX = "sequence";
@@ -24,11 +20,7 @@ public class RealmSequenceProvider {
   private static final String CREATION_TIME_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private static final String TABLE_NAME_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + "table_name";
   private static final String REALM_ID_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
-  private final EraldyApiApp apiApp;
 
-  public RealmSequenceProvider(EraldyApiApp eraldyApiApp) {
-    this.apiApp = eraldyApiApp;
-  }
 
   /**
    * @param sqlConnection - the sql connection
@@ -54,38 +46,43 @@ public class RealmSequenceProvider {
         tableName,
         realmId
       ))
-      .onFailure(t -> LOGGER.error("Error while executing the following sql:\n" + updateSql, t))
+      .recover(t -> Future.failedFuture(
+        TowerFailureException.builder()
+          .setMessage("Error while updating the sequence for the table (" + tableName + ") with the the following sql:\n" + updateSql)
+          .setCauseException(t)
+          .build())
+      )
       .compose(rows -> {
-        Long nextId;
         if (rows.size() == 0) {
           // insert
-          EraldyModel eraldyModel = this.apiApp.getEraldyModel();
-          if(eraldyModel.isEraldyRealm(realm)){
-            nextId = eraldyModel.getFirstIdForTableSequence(tableName);
-          } else {
-            nextId = 1L;
-          }
+          Long startId = 1L;
           String insertSql = "insert into " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n " +
             REALM_ID_COLUMN + ",\n" +
             TABLE_NAME_COLUMN + ",\n" +
             LAST_ID_COLUMN + ",\n" +
             CREATION_TIME_COLUMN + "\n" +
             ") values ($1, $2, $3, $4)";
+          Tuple tuple = Tuple.of(
+            realmId,
+            tableName,
+            startId,
+            DateTimeUtil.getNowInUtc()
+          );
           return sqlConnection.preparedQuery(insertSql)
-            .execute(Tuple.of(
-              realmId,
-              tableName,
-              nextId,
-              DateTimeUtil.getNowInUtc()
-            ))
-            .onFailure(t -> LOGGER.error("Error while executing the following sql:\n" + insertSql, t))
-            .compose(ok -> Future.succeededFuture(nextId));
+            .execute(tuple)
+            .recover(t -> Future.failedFuture(
+              TowerFailureException.builder()
+                .setMessage("Error while creating the sequence for the the table (" + tableName + ") the following sql:\n" + insertSql + "\n")
+                .setCauseException(t)
+                .build())
+            )
+            .compose(ok -> Future.succeededFuture(startId));
         }
         if (rows.size() > 1) {
           return Future.failedFuture("realm_sequence_id: The number of rows returned is bigger than 1 with the realm (" + realmId + ") and the table (" + tableName + ").");
         }
         Row row = rows.iterator().next();
-        nextId = row.getLong(LAST_ID_COLUMN);
+        Long nextId = row.getLong(LAST_ID_COLUMN);
         return Future.succeededFuture(nextId);
       });
   }

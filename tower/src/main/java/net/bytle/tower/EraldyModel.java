@@ -4,10 +4,7 @@ import io.vertx.core.Future;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.*;
-import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
-import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
@@ -92,18 +89,84 @@ public class EraldyModel {
     }
   }
 
-
   public Future<Void> mount() {
+    return defferedConnectionMount()
+      .compose(v -> connectionMount());
+  }
 
-    LOGGER.info("Get/Inserting the Eraldy model");
+  /**
+   * This is not a transaction
+   * because you can't insert and then update the same record
+   * It's then a problem when you insert 2 values
+   * that uses our {@link net.bytle.tower.eraldy.objectProvider.RealmSequenceProvider sequence}
+   * Below we insert 2 apps and the insert should be into 2 differents transactions
+   */
+  public Future<Void> connectionMount() {
+    LOGGER.info("Get/Inserting the App and client");
 
-    /**
-     * When the data is inserted the first time,
-     * - the user that owns the realm does not exist
-     * - the realm does not exist but requires a user
-     * We use a connection to defer the constraint check
-     * at the end (ie commit)
-     */
+
+    App memberApp = new App();
+    memberApp.setLocalId(APP_MEMBER_ID);
+    memberApp.setName("Members");
+    memberApp.setHandle("members");
+    memberApp.setHome(URI.create("https://eraldy.com"));
+    memberApp.setUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
+    memberApp.setRealm(this.eraldyRealm);
+    return this.apiApp.getAppProvider().getsertOnStartup(memberApp)
+      .compose(memberAppRes -> {
+        /**
+         * Create a client for the member App
+         */
+        memberClient = new AuthClient();
+        memberClient.setLocalId(1L);
+        memberClient.setApp(memberAppRes);
+        memberClient.addUri(this.memberAppUri);
+        AuthClientProvider authClientProvider = this.apiApp.getAuthClientProvider();
+        authClientProvider.updateGuid(memberClient);
+        authClientProvider.addEraldyClient(memberClient);
+        LOGGER.info("The client id (" + memberClient.getGuid() + ") for the member app was created");
+
+        App interactApp = new App();
+        interactApp.setLocalId(APP_INTERACT_ID);
+        interactApp.setName("Interact");
+        interactApp.setHandle("interact");
+        interactApp.setHome(URI.create("https://eraldy.com"));
+        interactApp.setUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
+        interactApp.setRealm(this.eraldyRealm);
+        return this.apiApp.getAppProvider().getsertOnStartup(interactApp);
+      })
+      .compose(interactAppRes -> {
+        AuthClientProvider authClientProvider = this.apiApp.getAuthClientProvider();
+
+        /**
+         * Create a client for the interact App
+         */
+        AuthClient interactClient = new AuthClient();
+        interactClient.setLocalId(2L);
+        interactClient.setApp(interactAppRes);
+        interactClient.addUri(this.interactAppUri);
+        authClientProvider.updateGuid(interactClient);
+        authClientProvider.addEraldyClient(interactClient);
+        LOGGER.info("The client id (" + interactClient.getGuid() + ") for the interact app was created");
+
+        return Future.succeededFuture();
+
+      });
+
+
+  }
+
+  /**
+   * When the data is inserted the first time,
+   * - the user that owns the realm does not exist
+   * - the realm does not exist but requires a user
+   * We use a transaction to defer the constraint check
+   * at the end (ie commit)
+   */
+  public Future<Void> defferedConnectionMount() {
+
+    LOGGER.info("Get/Inserting the Eraldy Organization, Realm and User");
+
     return apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool()
       .withTransaction(sqlConnection -> sqlConnection
         /**
@@ -142,7 +205,10 @@ public class EraldyModel {
           /**
            * Composite of all organization data
            */
-          return Future.all(futureOrganization, upsertAllRoles)
+          return Future.all(
+              futureOrganization,
+              upsertAllRoles
+            )
             .compose(composite -> {
               LOGGER.info("Eraldy Organization and roles getserted");
 
@@ -205,68 +271,15 @@ public class EraldyModel {
                       )
                       .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner organization user", t)));
                   }
-                  return futureOwnerUser
-                    .compose(realmOwnerUser -> {
-                      LOGGER.info("Eraldy Realm Owner User getserted as Organizational User");
-                      eraldyRealm.setOwnerUser(realmOwnerUser);
-
-                      /**
-                       * App getsertion
-                       */
-                      App memberApp = new App();
-                      memberApp.setLocalId(APP_MEMBER_ID);
-                      memberApp.setName("Members");
-                      memberApp.setHandle("members");
-                      memberApp.setHome(URI.create("https://eraldy.com"));
-                      memberApp.setUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
-                      memberApp.setRealm(this.eraldyRealm);
-                      Future<App> getSertMember = this.apiApp.getAppProvider().getsert(memberApp, sqlConnection);
-
-                      App interactApp = new App();
-                      interactApp.setLocalId(APP_INTERACT_ID);
-                      interactApp.setName("Interact");
-                      interactApp.setHandle("interact");
-                      interactApp.setHome(URI.create("https://eraldy.com"));
-                      interactApp.setUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
-                      interactApp.setRealm(this.eraldyRealm);
-                      Future<App> getSertInteract = this.apiApp.getAppProvider().getsert(interactApp, sqlConnection);
-                      return Future.all(getSertMember, getSertInteract);
-                    })
-                    .recover(t -> Future.failedFuture(new InternalException("Error while getserting the member and interact app", t)))
-                    .compose(compositeResult -> {
-
-                      App memberApp = compositeResult.resultAt(0);
-                      App interactApp = compositeResult.resultAt(1);
-                      AuthClientProvider authClientProvider = this.apiApp.getAuthClientProvider();
-
-                      /**
-                       * Create a client for the member App
-                       */
-                      memberClient = new AuthClient();
-                      memberClient.setLocalId(REALM_USER_LOCAL_ID);
-                      memberClient.setApp(memberApp);
-                      memberClient.addUri(this.memberAppUri);
-                      authClientProvider.updateGuid(memberClient);
-                      authClientProvider.addEraldyClient(memberClient);
-                      LOGGER.info("The client id (" + memberClient.getGuid() + ") for the member app was created");
-
-                      /**
-                       * Create a client for the interact App
-                       */
-                      AuthClient interactClient = new AuthClient();
-                      interactClient.setLocalId(2L);
-                      interactClient.setApp(interactApp);
-                      interactClient.addUri(this.interactAppUri);
-                      authClientProvider.updateGuid(interactClient);
-                      authClientProvider.addEraldyClient(interactClient);
-                      LOGGER.info("The client id (" + interactClient.getGuid() + ") for the interact app was created");
-
-                      return Future.succeededFuture();
-                    });
+                  return futureOwnerUser;
                 });
-            });
-        }));
 
+            });
+        }))
+      .compose(realmOwnerUser -> {
+        eraldyRealm.setOwnerUser(realmOwnerUser);
+        return Future.succeededFuture();
+      });
 
   }
 
@@ -317,31 +330,4 @@ public class EraldyModel {
     }
   }
 
-  /**
-   * Return the first id of the sequence for the Eraldy realm if the sequence does not exist
-   * It's used only when there is no data at all
-   * @param tableName - the table name
-   * @return the first default id to use if the sequence was not found
-   */
-  public Long getFirstIdForTableSequence(String tableName) {
-    switch (tableName) {
-      case RealmProvider.TABLE_NAME:
-        /**
-         * 1 realm only
-         */
-        return this.getRealmLocalId() + 1L;
-      case UserProvider.TABLE_NAME:
-        /**
-         * 1 user only
-         */
-        return REALM_USER_LOCAL_ID + 1L;
-      case AppProvider.TABLE_NAME:
-        /**
-         * 2 app on mount
-         */
-        return 3L;
-      default:
-        return 1L;
-    }
-  }
 }

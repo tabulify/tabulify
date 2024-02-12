@@ -547,7 +547,7 @@ public class RealmProvider {
       REALM_HANDLE_COLUMN + ",\n" +
       "STRING_AGG(app_uri,', ') as " + aliasAppUris + "\n" +
       "  from \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + AppProvider.TABLE_NAME + " app\n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + AppProvider.REALM_APP_TABLE_NAME + " app\n" +
       "right join " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " realm\n" +
       "on app.app_realm_id = realm.realm_id\n" +
       "group by " + REALM_ID_COLUMN + ", " + REALM_HANDLE_COLUMN + "\n" +
