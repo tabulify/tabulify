@@ -8,6 +8,7 @@ import io.vertx.core.net.SocketAddress;
 import jakarta.mail.internet.AddressException;
 import net.bytle.dns.DnsClient;
 import net.bytle.dns.DnsIllegalArgumentException;
+import net.bytle.dns.DnsName;
 import net.bytle.dns.XBillDnsClient;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.CastException;
@@ -427,12 +428,12 @@ public class SmtpServer {
     } catch (AddressException e) {
       throw SmtpException.createForInternalException("bad email address" + email, e);
     }
-    String userDomain = internetAddress.getDomain();
+    DnsName userDomain = internetAddress.getDomainName();
     SmtpDomain domain = this.hostedDomains
       .values()
       .stream()
       .map(SmtpHost::getDomain)
-      .filter(d -> d.getDnsDomain().toStringWithoutRoot().equals(userDomain))
+      .filter(d -> d.getDnsDomain().equals(userDomain))
       .findFirst()
       .orElse(null);
     if (domain == null) {

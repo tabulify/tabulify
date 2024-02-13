@@ -1,23 +1,21 @@
 package net.bytle.email;
 
+
 import com.sanctionco.jmail.InvalidEmailException;
 import com.sanctionco.jmail.JMail;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
-import net.bytle.exception.CastException;
+import net.bytle.dns.DnsIllegalArgumentException;
+import net.bytle.dns.DnsName;
 import net.bytle.exception.InternalException;
-import net.bytle.type.Casts;
 import net.bytle.type.Strings;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
+ * An email address with the domain name as {@link DnsName}
+ * <p>
  * A class to handle mailbox address format ie the email RFC 822
  * where an email address can be specified in a mailbox format
  * `<yolo yol@email.com>`
@@ -33,7 +31,7 @@ public class BMailInternetAddress {
 
   private static final String AT_SIGN = "@";
   private final String emailAddress;
-  private final String domain;
+  private final DnsName domain;
   private final String localPart;
   private final InternetAddress internetAddress;
 
@@ -71,13 +69,16 @@ public class BMailInternetAddress {
     }
 
     final String[] split = this.emailAddress.split(AT_SIGN);
-    if (split.length == 2) {
-      this.domain = split[1];
-      this.localPart = split[0];
-    } else {
-      this.domain = "";
-      this.localPart = "";
+    if (split.length != 2) {
+      throw new AddressException("The email address does not have 2 parts (ie localname@domain)");
     }
+    String absoluteName = split[1];
+    try {
+      this.domain = DnsName.create(absoluteName);
+    } catch (DnsIllegalArgumentException e) {
+      throw new AddressException("The domain (" + absoluteName + ")is not valid (");
+    }
+    this.localPart = split[0];
 
     /**
      * Set by default the personal to the local part of the email
@@ -90,28 +91,10 @@ public class BMailInternetAddress {
       }
     }
 
-    this.externalEmailValidation();
+    this.emailValidation();
   }
 
-  /**
-   * @throws AddressException - if the address is not valid
-   */
-  public BMailInternetAddress validate() throws AddressException {
-    // user@[10.9.8.7] and user@localhost are also valid
-    this.internetAddress.validate();
-    if (this.emailAddress.split(AT_SIGN).length != 2) {
-      throw new AddressException("(" + this.emailAddress + ") is not a valid email");
-    }
-    try {
-      JMail.enforceValid(this.emailAddress);
-    } catch (InvalidEmailException e) {
-      // Handle invalid email
-      throw new AddressException("(" + this.emailAddress + ") is not a valid email: " + e.getMessage());
-    }
-    return this;
-  }
-
-  public String getDomain() {
+  public DnsName getDomainName() {
     return domain;
   }
 
@@ -132,27 +115,7 @@ public class BMailInternetAddress {
     return new BMailInternetAddress(internetAddress);
   }
 
-  public List<String> getDomainParts() {
 
-    return Arrays.asList(domain.split("\\."));
-
-  }
-
-  public String getRootDomain() {
-
-    List<String> rootDomainParts = IntStream
-      .range(0, 2)
-      .mapToObj(i -> getDomainParts().get(getDomainParts().size() - 1 - i))
-      .sorted(Collections.reverseOrder())
-      .collect(Collectors.toList());
-
-    return String.join(".", rootDomainParts);
-
-  }
-
-  public Integer getDomainDots() {
-    return getDomainParts().size() - 1;
-  }
 
   public Integer getLocalPartDigitCount() {
     return Strings.createFromString(localPart).getDigitCount();
@@ -173,45 +136,33 @@ public class BMailInternetAddress {
   }
 
   /**
-   * @throws AddressException - if the email is not a good external one
+   * @throws AddressException - if the email is not a good one
    *                          <a href="https://stackoverflow.com/questions/624581/what-is-the-best-java-email-address-validation-method">...</a>
-   *                          <p>
-   *                          <a href="         See also https://commons.apache.org/proper/">...</a>commons-validator/
+   *                          <p>See also
+   *                          <a href=https://commons.apache.org/proper/">...</a>commons-validator/
    */
-  private void externalEmailValidation() throws AddressException {
-    if (this.domain.equals("localhost")) {
+  private void emailValidation() throws AddressException {
+
+    if (this.domain.toStringWithoutRoot().equals("localhost")) {
       throw new AddressException("The domain should not be localhost");
     }
-    if (this.domain.startsWith("[")) {
+
+    if (this.domain.toStringWithoutRoot().startsWith("[")) {
       throw new AddressException("The domain should not start with a [");
     }
-    List<String> domainParts = this.getDomainParts();
-    if (domainParts.size() < 2) {
-      throw new AddressException("The domain should have at minimal a TLD domain (.com, ...)");
+
+    // user@[10.9.8.7] and user@localhost are also valid
+    this.internetAddress.validate();
+
+    /**
+     * Not sure if this is needed
+     */
+    try {
+      JMail.enforceValid(this.emailAddress);
+    } catch (InvalidEmailException e) {
+      // Handle invalid email
+      throw new AddressException("(" + this.emailAddress + ") is not a valid email: " + e.getMessage());
     }
-
-
-    for (String part : domainParts) {
-
-      try {
-        Casts.cast(part, Integer.class);
-        throw new AddressException("A domain part should not be a number. The part (" + part + ") is a number.");
-      } catch (CastException e) {
-        // should throw
-      }
-      if (part.length() <= 1) {
-        throw new AddressException("A domain part should have at minimum 2 characters. The part (" + part + ") has less than 2 characters.");
-      }
-      try {
-        String firstLetter = part.substring(0, 1);
-        Casts.cast(firstLetter, Integer.class);
-        throw new AddressException("A domain part should not start with a number. The part (" + part + ") start with the number " + firstLetter + ".");
-      } catch (CastException e) {
-        // should throw
-      }
-
-    }
-
 
   }
 

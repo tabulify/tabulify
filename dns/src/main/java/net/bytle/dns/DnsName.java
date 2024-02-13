@@ -1,6 +1,6 @@
 package net.bytle.dns;
 
-import net.bytle.email.BMailInternetAddress;
+
 import org.xbill.DNS.Name;
 import org.xbill.DNS.TextParseException;
 
@@ -17,7 +17,7 @@ public class DnsName {
    * Selector / Value
    */
   private final Map<String, String> expectedDkims = new HashMap<>();
-  private final List<BMailInternetAddress> expectedDmarcEmails = new ArrayList<>();
+  private final List<DnsEmailAddress> expectedDmarcEmails = new ArrayList<>();
 
   protected DnsName(String absoluteName) throws DnsIllegalArgumentException {
     String nameWithRoot;
@@ -37,8 +37,6 @@ public class DnsName {
   public static DnsName create(String absoluteName) throws DnsIllegalArgumentException {
     return new DnsName(absoluteName);
   }
-
-
 
 
 
@@ -129,7 +127,7 @@ public class DnsName {
      * Optional - Inherited from p
      * dmarc += "; sp=" + rejectPolicy;
      */
-    if (this.expectedDmarcEmails.size() == 0) {
+    if (this.expectedDmarcEmails.isEmpty()) {
       return dmarc;
     }
     String mailToSchema = "mailto:";
@@ -137,20 +135,25 @@ public class DnsName {
      * We put a space as shown in google here:
      * https://support.google.com/a/answer/2466563#dmarc-record-tags
      */
-
     String ruaDelimiter = ", " + mailToSchema;
-    return dmarc + "; rua=" + mailToSchema + this.expectedDmarcEmails.stream().map(BMailInternetAddress::getAddress).collect(Collectors.joining(ruaDelimiter));
+    return dmarc + "; rua=" + mailToSchema + this.expectedDmarcEmails.stream().map(DnsEmailAddress::toString).collect(Collectors.joining(ruaDelimiter));
   }
 
-  public DnsName addExpectedDmarcEmail(BMailInternetAddress mail) {
+  public DnsName addExpectedDmarcEmail(DnsEmailAddress mail) {
     this.expectedDmarcEmails.add(mail);
     return this;
   }
 
-  public List<BMailInternetAddress> getDmarcEmails() {
+  public List<DnsEmailAddress> getDmarcEmails() {
     return this.expectedDmarcEmails;
   }
 
 
-
+  public List<String> getLabels() {
+    List<String> labels = new ArrayList<>();
+    for(int i=0;i<this.xBillDnsName.labels(); i++){
+      labels.add(this.xBillDnsName.getLabelString(i));
+    }
+    return labels;
+  }
 }

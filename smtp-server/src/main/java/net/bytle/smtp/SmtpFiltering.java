@@ -34,7 +34,7 @@ public class SmtpFiltering {
     if (shouldNotBeFiltered(smtpSession)) {
       return;
     }
-    String domain = emailAddress.getDomain();
+    String domain = emailAddress.getDomainName().toStringWithoutRoot();
     DnsBlockListQueryHelper dnsBlockListHelper = DnsBlockListQueryHelper.forDomain(domain).build().get(0);
     Set<DnsIp> dnsIps;
     try {
@@ -42,7 +42,7 @@ public class SmtpFiltering {
     } catch (DnsNotFoundException | DnsException e) {
       return;
     }
-    if (dnsIps.size() == 0) {
+    if (dnsIps.isEmpty()) {
       return;
     }
     DnsBlockListResponseCode responseCode = dnsBlockListHelper.createResponseCode(dnsIps.iterator().next());
@@ -78,7 +78,7 @@ public class SmtpFiltering {
     } catch (DnsException e) {
       throw SmtpException.createForInternalException("Error while querying the Ip Block list", e);
     }
-    if (dnsIps.size() == 0) {
+    if (dnsIps.isEmpty()) {
       return;
     }
     DnsBlockListResponseCode responseCode = dblQueryHelper.createResponseCode(dnsIps.iterator().next());

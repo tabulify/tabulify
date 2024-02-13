@@ -41,6 +41,8 @@ dependencies {
 
 
   implementation(project(":bytle-type"))
+  // for domain name
+  implementation(project(":bytle-dns"))
   // for the transactional template
   implementation(project(":bytle-template"))
 

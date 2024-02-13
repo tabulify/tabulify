@@ -2,9 +2,7 @@ package net.bytle.monitor;
 
 import io.vertx.core.Future;
 import io.vertx.core.net.NetClient;
-import jakarta.mail.internet.AddressException;
 import net.bytle.dns.*;
-import net.bytle.email.BMailInternetAddress;
 import net.bytle.vertx.ConfigAccessor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -117,13 +115,13 @@ public class MonitorServices {
 
       LOGGER.info("Monitor DNS - Add Dmarc to domains");
       try {
-        bytleDomain.addExpectedDmarcEmail(BMailInternetAddress.of("44801f5f73014104b1898b84a16eb826@dmarc-reports.cloudflare.net"));
-        combostrapDomain.addExpectedDmarcEmail(BMailInternetAddress.of("970a4434804f4e449ca040d51d4e4588@dmarc-reports.cloudflare.net"));
-        BMailInternetAddress dmarcInternal = BMailInternetAddress.of("dmarc@eraldy.com");
+        bytleDomain.addExpectedDmarcEmail(DnsEmailAddress.of("44801f5f73014104b1898b84a16eb826@dmarc-reports.cloudflare.net"));
+        combostrapDomain.addExpectedDmarcEmail(DnsEmailAddress.of("970a4434804f4e449ca040d51d4e4588@dmarc-reports.cloudflare.net"));
+        DnsEmailAddress dmarcInternal = DnsEmailAddress.of("dmarc@eraldy.com");
         for (DnsName apexDomain : apexDomains) {
           apexDomain.addExpectedDmarcEmail(dmarcInternal);
         }
-      } catch (AddressException e) {
+      } catch (DnsException e) {
         throw new RuntimeException("The email are literal, it should not happen", e);
       }
 
@@ -563,7 +561,7 @@ public class MonitorServices {
               /**
                * We report not the certificate chain success only the first one
                */
-              if (monitorReportResults.size() == 0) {
+              if (monitorReportResults.isEmpty()) {
                 monitorReportResults.add(createResult(checkTitle, "The certificate (" + subjectDn + ") of the service (" + service + ") expires only over " + duration + " days", MonitorReportResultStatus.SUCCESS));
               }
             }
@@ -690,10 +688,10 @@ public class MonitorServices {
        * See https://datatracker.ietf.org/doc/html/rfc7489#section-7.1
        * <p>
        */
-      for (BMailInternetAddress email : domain.getDmarcEmails()) {
+      for (DnsEmailAddress email : domain.getDmarcEmails()) {
         DnsName emailDomain;
         try {
-          emailDomain = DnsName.create(email.getDomain());
+          emailDomain = email.getDomainName();
           if (!emailDomain.equals(domain)) {
             DnsName dmarcReportName = emailDomain
               .getSubdomain("_dmarc")

@@ -2,7 +2,6 @@ package net.bytle.vertx.resilience;
 
 import io.vertx.core.Future;
 import jakarta.mail.internet.AddressException;
-import net.bytle.dns.DnsIllegalArgumentException;
 import net.bytle.dns.DnsName;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.vertx.TowerApp;
@@ -35,7 +34,7 @@ public class EmailAddressValidator {
     } catch (AddressException e) {
       return Future.succeededFuture(
         emailValidityReport
-          .addResult(emailValidCheck.setMessage("Email address is not valid").fail())
+          .addResult(emailValidCheck.setMessage("Email address is not valid (" + e.getMessage() + ")").fail())
           .build()
       );
     }
@@ -44,12 +43,7 @@ public class EmailAddressValidator {
     /**
      * The domain to check
      */
-    DnsName emailDomain;
-    try {
-      emailDomain = DnsName.create(emailAddress.getDomain());
-    } catch (DnsIllegalArgumentException e) {
-      return Future.failedFuture(e);
-    }
+    DnsName emailDomain = emailAddress.getDomainName();
 
     /**
      * Domain Check

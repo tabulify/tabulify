@@ -377,7 +377,7 @@ public class SmtpSession implements Handler<List<SmtpInput>> {
     return this.getFirstPartyDomains().stream()
       .map(SmtpDomain::toString)
       .collect(Collectors.toList())
-      .contains(mailFromSender.getDomain());
+      .contains(mailFromSender.getDomainName().toStringWithoutRoot());
 
   }
 
@@ -410,7 +410,7 @@ public class SmtpSession implements Handler<List<SmtpInput>> {
   }
 
   public SmtpUser checkUserExists(BMailInternetAddress address) throws SmtpException {
-    String domain = address.getDomain();
+    String domain = address.getDomainName().toStringWithoutRoot();
     SmtpDomain smtpDomain;
     try {
       smtpDomain = this.getFirstPartyDomain(domain);

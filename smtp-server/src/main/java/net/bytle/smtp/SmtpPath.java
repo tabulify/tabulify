@@ -55,7 +55,7 @@ public class SmtpPath {
 
   public static SmtpPath of(String stringPath) throws SmtpException {
 
-    if (stringPath == null || stringPath.length() == 0) {
+    if (stringPath == null || stringPath.isEmpty()) {
       throw SmtpException.createBadSyntax("A smtp path may not be empty or null");
     }
     if (stringPath.length() < 2) {
@@ -118,7 +118,7 @@ public class SmtpPath {
   }
 
   private SmtpPath buildAndValidate() throws SmtpException {
-    if (this.mailbox.equals("")) {
+    if (this.mailbox.isEmpty()) {
       /**
        * Internet Address reject empty string
        * but this is a valid path in case of bounce
@@ -135,8 +135,7 @@ public class SmtpPath {
       return this;
     }
     try {
-      this.mailboxInternetAddress = BMailInternetAddress.of(this.mailbox)
-        .validate();
+      this.mailboxInternetAddress = BMailInternetAddress.of(this.mailbox);
     } catch (AddressException e) {
       throw SmtpException.createBadSequence("The mailbox (" + this.mailbox + ") is not valid", e);
     }
