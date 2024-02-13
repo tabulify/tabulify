@@ -63,7 +63,6 @@ public class ListProvider {
   private final JsonMapper apiMapper;
 
 
-
   public ListProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
     Server server = apiApp.getApexDomain().getHttpServer().getServer();
@@ -93,12 +92,20 @@ public class ListProvider {
     listItem.setGuid(guid);
   }
 
-  public static User getOwnerUser(ListItem listItem) {
-    User ownerUser = listItem.getOwnerUser();
+  public static User getOwnerUser(ListItem list) {
+    User ownerUser = list.getOwnerUser();
     if (ownerUser != null) {
       return ownerUser;
     }
-    return listItem.getOwnerApp().getUser();
+    ownerUser = list.getOwnerApp().getUser();
+    if (ownerUser != null) {
+      return ownerUser;
+    }
+    ownerUser = list.getOwnerApp().getRealm().getOwnerUser();
+    if (ownerUser != null) {
+      return ownerUser;
+    }
+    throw new InternalException("The owner of the list (" + list + ") could not be determined");
   }
 
 
@@ -390,24 +397,29 @@ public class ListProvider {
             if (listItem instanceof ListItemAnalytics) {
               ListItemAnalytics listItemAnalytics = (ListItemAnalytics) listItem;
               JsonObject jsonAnalytics = Postgres.getFromJsonB(row, ANALYTICS_COLUMN);
+              Integer userCount = 0;
+              Integer userInCount = 0;
               if (jsonAnalytics != null) {
                 /**
+                 * May be null at creation time
+                 * <p>
                  * Note that we could have merged the Data and Analytics Json together
                  * before decoding
                  * but because the Analytics data is created manually via SQL, we prefer assume that the Analytics data is not safe
                  */
-                Integer userCount = jsonAnalytics.getInteger("userCount");
+                userCount = jsonAnalytics.getInteger("userCount");
                 if (userCount == null) {
                   LOGGER.error("The userCount property was not found in the list analytics property");
                 }
-                listItemAnalytics.setUserCount(userCount);
-                Integer userInCount = jsonAnalytics.getInteger("userInCount");
+                userInCount = jsonAnalytics.getInteger("userInCount");
                 if (userInCount == null) {
                   LOGGER.error("The userInCount property was not found in the list analytics property");
                 }
-                listItemAnalytics.setUserInCount(userInCount);
               }
+              listItemAnalytics.setUserCount(userCount);
+              listItemAnalytics.setUserInCount(userInCount);
             }
+
 
 
             listItem.setLocalId(listId);
@@ -701,4 +713,6 @@ public class ListProvider {
   public Future<Void> deleteByList(ListItem listItem) {
     return deleteById(listItem.getLocalId(), listItem.getRealm());
   }
+
+
 }

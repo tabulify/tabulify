@@ -146,11 +146,11 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
     return getApp().getListProvider()
       .getListByGuidHashIdentifier(listGuidHash)
-      .compose(listUser -> {
+      .compose(listItem -> {
 
         User user = new User();
         user.setEmail(validatedEmailAddress.toNormalizedString());
-        Realm listRealm = listUser.getRealm();
+        Realm listRealm = listItem.getRealm();
         user.setRealm(listRealm);
 
         AuthJwtClaims jwtClaims = getApp().getAuthProvider()
@@ -159,7 +159,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .setListGuid(listGuidHash)
           .setRedirectUri(listUserPostBody.getRedirectUri());
 
-        SmtpSender sender = UsersUtil.toSenderUser(listUser.getOwnerUser());
+        User listOwnerUser = ListProvider.getOwnerUser(listItem);
+        SmtpSender sender = UsersUtil.toSenderUser(listOwnerUser);
         String subscriberRecipientName;
         try {
           subscriberRecipientName = UsersUtil.getNameOrNameFromEmail(user);
@@ -183,9 +184,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .getUserListRegistrationFlow()
           .getCallback()
           .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, subscriberRecipientName, jwtClaims, clientCallbackQueryProperties)
-          .setPreview("Validate your registration to the list `" + listUser.getName() + "`")
+          .setPreview("Validate your registration to the list `" + listItem.getName() + "`")
           .addIntroParagraph(
-            "I just got a subscription request to the list <mark>" + listUser.getName() + "</mark> with your email." +
+            "I just got a subscription request to the list <mark>" + listItem.getName() + "</mark> with your email." +
               "<br>For bot and consent protections, we check that it was really you asking.")
 
           .setActionName("Click on this link to validate your registration.")
@@ -201,11 +202,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .compose(html -> {
             String text = letter.generatePlainText();
 
-            String mailSubject = "Registration validation to the list `" + listUser.getName() + "`";
+            String mailSubject = "Registration validation to the list `" + listItem.getName() + "`";
             TowerSmtpClient towerSmtpClient = this.getApp().getApexDomain().getHttpServer().getServer().getSmtpClient();
 
-
-            User listOwnerUser = ListProvider.getOwnerUser(listUser);
             String ownerEmailAddressInRfcFormat;
             try {
               ownerEmailAddressInRfcFormat = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getGivenName()).toString();
@@ -248,7 +247,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
               .compose(mailResult -> {
 
                 // Send feedback to the list owner
-                String title = "The user (" + subscriberAddressWithName + ") received a validation email for the list (" + listUser.getHandle() + ").";
+                String title = "The user (" + subscriberAddressWithName + ") received a validation email for the list (" + listItem.getHandle() + ").";
                 MailMessage ownerFeedbackEmail = towerSmtpClient
                   .createVertxMailMessage()
                   .setTo(ownerEmailAddressInRfcFormat)

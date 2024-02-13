@@ -367,7 +367,7 @@ public class AppProvider {
     }
     return Future
       .all(userFuture, realmFuture)
-      .recover(t -> Future.failedFuture(new InternalException("AppProvider getFromRows Error", t)))
+      .recover(t -> Future.failedFuture(new InternalException("AppProvider getFromRows Error ("+t.getMessage()+")", t)))
       .compose(compositeFuture -> {
         OrganizationUser organizationUser = compositeFuture.resultAt(0);
         Realm realmResult = compositeFuture.resultAt(1);
