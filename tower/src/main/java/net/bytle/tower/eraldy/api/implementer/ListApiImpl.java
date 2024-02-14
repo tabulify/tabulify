@@ -161,6 +161,15 @@ public class ListApiImpl implements ListApi {
     return listProvider
       .getListByIdentifier(routingContext, AuthUserScope.LIST_GET, ListItemAnalytics.class)
       .compose(listItemAnalytics -> {
+        if (listItemAnalytics == null) {
+          return Future.failedFuture(
+            TowerFailureException
+              .builder()
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+              .setMessage("The list (" + listIdentifier + ") was not found")
+              .build()
+          );
+        }
         ApiResponse<ListItemAnalytics> apiResult = new ApiResponse<>(listItemAnalytics)
           .setMapper(listProvider.getApiMapper());
         return Future.succeededFuture(apiResult);

@@ -1,3 +1,4 @@
+-- Create orga
 create  table  organization
 (
   ORGA_ID                BIGSERIAL                   NOT NULL PRIMARY KEY,
@@ -101,3 +102,36 @@ alter table realm_list
 comment on column realm_list.LIST_ANALYTICS is 'The analytics data for the list';
 alter table realm_list
   add column if not exists LIST_ANALYTICS_TIME TIMESTAMP WITHOUT TIME ZONE NULL;
+
+
+-- modify the type of the status from string to integer
+alter table cs_realms.realm_list_registration add column registration_status_new int not null default 0;
+alter table cs_realms.realm_list_registration drop column registration_status;
+alter table cs_realms.realm_list_registration rename column registration_status_new to registration_status;
+
+-- rename registration to list_user
+alter table cs_realms.realm_list_registration rename column registration_realm_id to list_user_realm_id;
+alter table cs_realms.realm_list_registration rename column registration_list_id to list_user_list_id;
+alter table cs_realms.realm_list_registration rename column registration_user_id to list_user_user_id;
+alter table cs_realms.realm_list_registration rename column registration_data to list_user_data;
+alter table cs_realms.realm_list_registration rename column registration_creation_time to list_user_creation_time;
+alter table cs_realms.realm_list_registration rename column registration_modification_time to list_user_modification_time;
+alter table cs_realms.realm_list_registration rename column registration_status to list_user_status;
+alter table cs_realms.realm_list_registration rename to realm_list_user;
+
+-- add app_handle, app_uri is now a parameter
+update cs_realms.realm_app SET app_uri = LEFT(app_uri, 30);
+ALTER TABLE cs_realms.realm_app ALTER COLUMN app_uri TYPE VARCHAR(30);
+alter table cs_realms.realm_app rename column app_uri to app_handle;
+alter table cs_realms.realm_app ADD column app_uri VARCHAR(255) NULL UNIQUE;
+
+-- column name should be handle
+ALTER TABLE cs_realms.organization rename column orga_name to orga_handle;
+
+-- Default app should be on the front-end or in a pref object
+ALTER TABLE cs_realms.realm drop column realm_default_app_id;
+
+-- Defer for initial insertion
+ALTER TABLE cs_realms.realm ALTER CONSTRAINT realm_organization_owner_user_fkey DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE cs_realms.realm_sequence ALTER CONSTRAINT realm_sequence_sequence_realm_id_fkey  DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE cs_realms.realm_app ALTER constraint realm_app_app_realm_id_app_user_id_fkey DEFERRABLE INITIALLY IMMEDIATE;
