@@ -9,6 +9,15 @@ import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.JdbcSchemaManager;
 import net.bytle.vertx.TowerFailureException;
 
+/**
+ * This class creates and maintain a sequence by realm.
+ * <p>
+ * We may split on storage level by realm
+ * Therefore all sequence are realm based.
+ * <p>
+ * For instance, a list is a realm and a list sequence
+ * See the data_model.md file for more information
+ */
 public class RealmSequenceProvider {
 
 
