@@ -3,6 +3,7 @@ package net.bytle.vertx.future;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.WorkerExecutor;
 import net.bytle.vertx.TowerCompositeFutureListener;
 
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.List;
 /**
  * Execute futures one after the other (sequentially)
  */
-public class TowerFuturesSequentialScheduler<T extends Handler<Promise<T>>> {
+public class TowerFuturesSequentialScheduler {
 
 
 
@@ -21,12 +22,15 @@ public class TowerFuturesSequentialScheduler<T extends Handler<Promise<T>>> {
     TowerFutureCoordination coordination;
     int maxFatalErrorCount = Integer.MAX_VALUE;
     List<Handler<Promise<T>>> handlers;
+    int batchSize = 1;
+    WorkerExecutor workerExecutor;
 
     public Config<T> setListener(net.bytle.vertx.TowerCompositeFutureListener listener) {
       this.listener = listener;
       return this;
     }
 
+    @SuppressWarnings("unused")
     public Config<T> setMaxErrorCount(int maxFatalErrorCount) {
       this.maxFatalErrorCount = maxFatalErrorCount;
       return this;
@@ -55,5 +59,14 @@ public class TowerFuturesSequentialScheduler<T extends Handler<Promise<T>>> {
       return Future.future(new TowerFuturesSequentialComposite<>(this));
     }
 
+    public Config<T> setBatchSize(int batchSize) {
+      this.batchSize = batchSize;
+      return this;
+    }
+
+    public Config<T> setExecutorContext(WorkerExecutor workerExecutor) {
+      this.workerExecutor = workerExecutor;
+      return this;
+    }
   }
 }

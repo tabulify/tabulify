@@ -353,11 +353,9 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
     }
 
     int poolSize = 2;
-
-
     WorkerExecutor executor = this.getExecutor(poolSize);
     try {
-      listImportJob.executeSequentially()
+      listImportJob.executeSequentially(executor, poolSize)
         .onComplete(blockingAsyncResult -> {
           /**
            * Executor Fatal Error

@@ -18,7 +18,6 @@ public class TowerFuturesRateLimitedComposite<T> implements TowerFutureComposite
 
   private final List<T> results = new ArrayList<>();
   private Throwable failure;
-  private Integer failureIndex;
   private LocalDateTime actualPeriodEndTime;
   private int actualPeriodExecutedAmount;
   private Promise<TowerFutureComposite<T>> actualPeriodPromise;
@@ -88,7 +87,7 @@ public class TowerFuturesRateLimitedComposite<T> implements TowerFutureComposite
             this.failure = asyncResult.cause();
             for (int i = 0; i < this.rateLimitedMeta.getBatchSize(); i++) {
               if (asyncResult.result().failed(i)) {
-                this.failureIndex = this.results.size()-1;
+                //this.failureIndex = this.results.size()-1;
                 break;
               }
               this.results.add(asyncResult.result().resultAt(i));
@@ -117,12 +116,29 @@ public class TowerFuturesRateLimitedComposite<T> implements TowerFutureComposite
     return this.failure != null;
   }
 
-  public Throwable getFailure() {
+  public Throwable getFailureCause() {
     return this.failure;
   }
 
-  public Integer getFailureIndex() {
-    return this.failureIndex;
+  @Override
+  public int size() {
+    return this.results.size();
   }
+
+  @Override
+  public boolean failed(int i) {
+    throw new RuntimeException("Not Yet implemented");
+  }
+
+  @Override
+  public Throwable cause(int i) {
+    throw new RuntimeException("Not Yet implemented");
+  }
+
+  @Override
+  public T resultAt(int i) {
+    throw new RuntimeException("Not Yet implemented");
+  }
+
 
 }

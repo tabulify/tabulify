@@ -289,16 +289,27 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
     this.getExecutableFutureWithoutErrorHandling()
       .onFailure(err -> {
         // database timeout for instance
-        this.closeExecution(ListImportJobRowStatus.FATAL_ERROR, err.getMessage() + " (" + err.getClass().getSimpleName() + ")");
-        int rowFatalErrorCounter = this.listImportJob.incrementRowFatalErrorCounter();
-        if (rowFatalErrorCounter <= 3) {
-          // if an import of 10 thousand row with the same error
+        this.setFatalError(err);
+        int executionFatalErrorCounter = this.listImportJob.incrementRowFatalErrorCounter();
+        if (executionFatalErrorCounter <= 3) {
+          /**
+           * We log only 3 because we don't want 10 thousand error
+           * if the same error repeat on each row of a 10 thousand file
+           */
           LOGGER.error("A fatal error has occurred on the row (" + this.rowId + ", " + this.email + ") with the list import job (" + listImportJob.getList().getGuid() + "," + listImportJob.getStatus().getJobId() + ")", err);
         }
         event.complete(this);
       })
       .onSuccess(listImportJobRow -> event.complete(this));
 
+  }
+
+  /**
+   * Set a fatal error caught during the execution or caught by the executor
+   * @param err - the fatal error
+   */
+  public void setFatalError(Throwable err) {
+    this.closeExecution(ListImportJobRowStatus.FATAL_ERROR, err.getMessage() + " (" + err.getClass().getSimpleName() + ")");
   }
 
 }

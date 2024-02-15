@@ -1,8 +1,6 @@
 package net.bytle.vertx.future;
 
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import net.bytle.exception.InternalException;
 import net.bytle.vertx.TowerCompositeFutureListener;
 
@@ -17,62 +15,116 @@ public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<
   private final TowerFutureCoordination coordination;
   private final int maxFatalErrorCount;
   private final Iterator<Handler<Promise<T>>> handlers;
-  private Integer rowId;
+  private final int batchSize;
+  private final WorkerExecutor workerExecutor;
   private final TowerCompositeFutureListener listener;
   private final List<T> results = new ArrayList<>();
-  private Throwable failure;
-  private Integer failureIndex;
+  private Throwable failureCause;
   private Promise<TowerFutureComposite<T>> promise;
   private int failureCounter = 0;
+  private final List<Throwable> failures = new ArrayList<>();
 
 
   TowerFuturesSequentialComposite(TowerFuturesSequentialScheduler.Config<T> config) {
     this.handlers = config.handlers.iterator();
     this.listener = config.listener;
-    this.rowId = -1;
     this.coordination = config.coordination;
     this.maxFatalErrorCount = config.maxFatalErrorCount;
+    this.batchSize = config.batchSize;
+    this.workerExecutor = config.workerExecutor;
   }
 
 
-  void executeSequentially() {
+  /**
+   * This method executes a batch and call itself until all handlers
+   * have been executed
+   */
+  void handleRecursively() {
+
     if (!(this.coordination == TowerFutureCoordination.ALL || this.coordination == TowerFutureCoordination.JOIN)) {
-      this.failure = new InternalException("The coordination (" + this.coordination + ") is not implemented");
+      this.failureCause = new InternalException("The coordination (" + this.coordination + ") is not implemented");
       this.promise.complete(this);
       return;
     }
-    Future<T> next;
-    try {
-      next = Future.future(handlers.next());
-      this.rowId++;
-    } catch (NoSuchElementException e) {
+
+    List<Future<T>> nextBatch = new ArrayList<>();
+    for (int i = 0; i < this.batchSize; i++) {
+      Handler<Promise<T>> handler;
+      try {
+        handler = handlers.next();
+      } catch (NoSuchElementException e) {
+        break;
+      }
+      Promise<T> promise = Promise.promise();
+      if (this.workerExecutor != null) {
+        /**
+         * In the context of a worker
+         */
+        this.workerExecutor.executeBlocking(() -> {
+          try {
+            handler.handle(promise);
+          } catch (Throwable e) {
+            promise.tryFail(e);
+          }
+          return null;
+        });
+      } else {
+        /**
+         * In the context of the verticle
+         */
+        try {
+          handler.handle(promise);
+        } catch (Throwable e) {
+          promise.tryFail(e);
+        }
+      }
+      nextBatch.add(promise.future());
+
+    }
+    if (nextBatch.isEmpty()) {
       this.promise.complete(this);
       return;
     }
-    // Capture the current context
-    next
+
+    // Await completion
+    Future
+      .all(nextBatch)
       .onComplete(
         res -> {
           if (res.failed()) {
-            this.failure = res.cause();
-            this.failureIndex = rowId;
-            this.failureCounter++;
+            this.failureCause = res.cause();
             if (this.coordination == TowerFutureCoordination.ALL) {
               promise.complete(this);
               return;
             }
-            if (this.failureCounter >= this.maxFatalErrorCount) {
-              this.failure = new InternalException("Too much fatal errors (" + this.failureCounter + ") on execution", this.failure);
-              promise.complete(this);
-              return;
+          }
+          CompositeFuture compositeFuture = res.result();
+          int actualBatchSizeExecution = compositeFuture.size();
+          for(int i = 0; i< actualBatchSizeExecution; i++){
+            if( compositeFuture.failed()){
+              /**
+               * Bad execution
+               */
+              this.results.add(null);
+              this.failures.add(compositeFuture.cause(i));
+              this.failureCounter++;
+              if (this.failureCounter >= this.maxFatalErrorCount) {
+                this.failureCause = new InternalException("Too much fatal errors (" + this.failureCounter + ") on execution", this.failureCause);
+                promise.complete(this);
+                return;
+              }
+              continue;
             }
+            /**
+             * Good execution
+             */
+            this.results.add(compositeFuture.resultAt(i));
+            this.failures.add(null);
           }
-          T castResult = res.result();
           if (this.listener != null) {
-            this.listener.setCountComplete(this.listener.getCountComplete() + 1);
+            this.listener.setCountComplete(this.listener.getCountComplete() + actualBatchSizeExecution);
           }
-          this.results.add(rowId, castResult);
-          executeSequentially();
+          handleRecursively();
         }
       );
 
@@ -83,21 +135,38 @@ public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<
   }
 
   public boolean hasFailed() {
-    return this.failure != null;
+    return this.failureCause != null;
   }
 
-  public Throwable getFailure() {
-    return this.failure;
+  public Throwable getFailureCause() {
+    return this.failureCause;
   }
 
-  public Integer getFailureIndex() {
-    return this.failureIndex;
+  @Override
+  public int size() {
+    return this.results.size();
   }
+
+  @Override
+  public boolean failed(int i) {
+    return this.failures.get(i)!=null;
+  }
+
+  @Override
+  public Throwable cause(int i) {
+    return this.failures.get(i);
+  }
+
+  @Override
+  public T resultAt(int i) {
+    return this.results.get(i);
+  }
+
 
   @Override
   public void handle(Promise<TowerFutureComposite<T>> event) {
     this.promise = event;
-    executeSequentially();
+    handleRecursively();
   }
 
 }

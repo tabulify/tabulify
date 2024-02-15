@@ -7,6 +7,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
@@ -146,7 +147,7 @@ public class ListImportJob {
   /**
    * @return execute incrementally the job
    */
-  public Future<ListImportJob> executeSequentially() {
+  public Future<ListImportJob> executeSequentially(WorkerExecutor executor, int poolSize) {
 
     synchronized (this) {
       if (this.isComplete()) {
@@ -157,42 +158,67 @@ public class ListImportJob {
     listImportJobStatus.setStartTime(LocalDateTime.now());
     listImportJobStatus.setStatusCode(executionStatusCode);
 
-    List<Handler<Promise<ListImportJobRow>>> listImportJobRows ;
+    List<ListImportJobRow> listImportJobRows;
     try {
       listImportJobRows = this.getListImportJobRows();
     } catch (CastException | IOException e) {
       return this.closeJobWithFatalError(e, "");
     }
-    return this.executeSequentiallyWithRetry(listImportJobRows, 0);
-
+    return this.executeSequentiallyWithRetry(listImportJobRows, 0, executor, poolSize);
 
   }
 
   /**
    *
-   * @param handlers - the future to executes
+   * @param importRows - the import rows to execute
    * @param iterationIndex - the number of times that this job has run (0 = first time, 1 = second time - first retry, ...)
+   * @param workerExecutor - the executor
+   * @param batchSize - the number of handlers to execute a one time
    */
-  private Future<ListImportJob> executeSequentiallyWithRetry(List<Handler<Promise<ListImportJobRow>>> handlers, int iterationIndex) {
+  private Future<ListImportJob> executeSequentiallyWithRetry(List<ListImportJobRow> importRows,
+                                                             int iterationIndex,
+                                                             WorkerExecutor workerExecutor,
+                                                             int batchSize) {
 
+    List<Handler<Promise<ListImportJobRow>>> handlers = importRows.stream()
+      .map(e -> (Handler<Promise<ListImportJobRow>>) e)
+      .collect(Collectors.toList());
 
     return this.listImportFlow.getApp().getApexDomain().getHttpServer().getServer().getFutureSchedulers()
       .createSequentialScheduler(ListImportJobRow.class)
       .setListener(this.listImportJobStatus)
+      .setBatchSize(batchSize)
+      .setExecutorContext(workerExecutor)
       .all(handlers)
       .compose(composite -> {
-        List<ListImportJobRow> resultsListImportJobRows = composite.getResults();
+
         if (composite.hasFailed()) {
-          Throwable failure = composite.getFailure();
-          return this.closeJobWithFatalError(failure, "A fatal error has happened on the row " + (composite.getFailureIndex() + 1));
+          Throwable failure = composite.getFailureCause();
+          return this.closeJobWithFatalError(failure, "A fatal error has happened on the import");
         }
-        List<Handler<Promise<ListImportJobRow>>> toRetryHandlers = new ArrayList<>();
-        for (ListImportJobRow resultListImportJobRow : resultsListImportJobRows) {
-          if (
-            iterationIndex < this.listImportFlow.getRowValidationFailureRetryCount()
-              && resultListImportJobRow.getStatus().equals(FATAL_ERROR.getStatusCode())
-          ) {
-            toRetryHandlers.add(resultListImportJobRow);
+        List<ListImportJobRow> toRetryJobRow = new ArrayList<>();
+        for (int i = 0; i < composite.size(); i++) {
+          ListImportJobRow resultListImportJobRow;
+          if (composite.failed(i)) {
+            /**
+             * Fatal error not caught in the handler
+             */
+            resultListImportJobRow = importRows.get(i);
+            Throwable throwable = composite.cause(i);
+            resultListImportJobRow.setFatalError(throwable);
+
+          } else {
+            /**
+             * Normal process where all error where caught
+             * during the execution
+             */
+            resultListImportJobRow = composite.resultAt(i);
+            if (
+              iterationIndex < this.listImportFlow.getRowValidationFailureRetryCount()
+                && resultListImportJobRow.getStatus().equals(FATAL_ERROR.getStatusCode())
+            ) {
+              toRetryJobRow.add(resultListImportJobRow);
+            }
           }
           /**
            * We build the list first
@@ -205,9 +231,9 @@ public class ListImportJob {
             resultImportJobRows.add(rowId, resultListImportJobRow);
           }
         }
-        if (!toRetryHandlers.isEmpty()) {
+        if (!toRetryJobRow.isEmpty()) {
           int nextIterationIndex = iterationIndex + 1;
-          return executeSequentiallyWithRetry(toRetryHandlers, nextIterationIndex);
+          return executeSequentiallyWithRetry(toRetryJobRow, nextIterationIndex, workerExecutor, batchSize);
         }
         return this.closeJob();
       });
@@ -217,7 +243,7 @@ public class ListImportJob {
   /**
    * Build the list of future to process
    */
-  private List<Handler<Promise<ListImportJobRow>>> getListImportJobRows() throws CastException, IOException {
+  private List<ListImportJobRow> getListImportJobRows() throws CastException, IOException {
     /**
      * Jackson Csv Processing
      * Csv import Doc for Jackson is at:
@@ -243,7 +269,7 @@ public class ListImportJob {
       .readValues(uploadedCsvFile.toFile())) {
 
       int counter = -1;
-      List<Handler<Promise<ListImportJobRow>>> listImportJobRows = new ArrayList<>();
+      List<ListImportJobRow> listImportJobRows = new ArrayList<>();
       while (iterator.hasNextValue()) {
         counter++;
         String[] row = iterator.nextValue();
