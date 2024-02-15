@@ -1,7 +1,6 @@
 package net.bytle.vertx.analytics;
 
 import io.vertx.core.json.JsonObject;
-import net.bytle.java.JavaEnvs;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import net.bytle.vertx.analytics.model.AnalyticsUser;
 import org.apache.logging.log4j.LogManager;
@@ -16,10 +15,12 @@ public class AnalyticsDeliveryExecution<T> {
   private final static Logger LOGGER = LogManager.getLogger(AnalyticsDeliveryExecution.class);
   private final AnalyticsDeliveryStatus<T> analyticsDeliveryStatus;
   private final String sinkName;
+  private final boolean logEvent;
 
   public AnalyticsDeliveryExecution(AnalyticsDeliveryStatus<T> analyticsDeliveryStatus, String sinkName) {
     this.analyticsDeliveryStatus = analyticsDeliveryStatus;
     this.sinkName = sinkName;
+    this.logEvent = false;
   }
 
   public T getDeliveryObject() {
@@ -37,7 +38,7 @@ public class AnalyticsDeliveryExecution<T> {
 
   public void delivered() {
     this.analyticsDeliveryStatus.deliveredForSink(sinkName);
-    if (JavaEnvs.IS_DEV) {
+    if (logEvent) {
       Object object = analyticsDeliveryStatus.getDeliveryObject();
       if (object instanceof AnalyticsEvent) {
         LOGGER.info("The event (" + ((AnalyticsEvent) object).getTypeName() + ") for the sink (" + sinkName + ") has been delivered");

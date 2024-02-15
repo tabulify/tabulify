@@ -335,51 +335,50 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
   public void step2ExecuteNextJob() {
 
     this.executionLastTime = LocalDateTime.now();
-    ListImportJob listImportJob = this.importJobQueue.peek();
-    if (listImportJob == null) {
-      this.scheduleNextJob();
-      return;
+    ListImportJob listImportJob;
+    synchronized (this) {
+      listImportJob = this.importJobQueue.peek();
+      if (listImportJob == null) {
+        this.scheduleNextJob();
+        return;
+      }
+      /**
+       * The peek job is deleted at the end of
+       * the execution
+       */
+      if (listImportJob.isRunning()) {
+        this.scheduleNextJob();
+        return;
+      }
     }
 
-    /**
-     * The peek job is deleted at the end of
-     * the execution
-     */
-    if (listImportJob.isRunning()) {
-      this.scheduleNextJob();
-      return;
-    }
-
-    int poolSize = 1;
-    long maxExecutionTime = 10;
+    int poolSize = 2;
+    long maxExecutionTimeSecond = 60 * 5; // 5 minutes
     TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
-    WorkerExecutor executor = vertx.createSharedWorkerExecutor("list-import-flow", poolSize, maxExecutionTime, maxExecuteTimeUnit);
-    executor
-      .executeBlocking(listImportJob::executeSequentially)
-      .onComplete(blockingAsyncResult -> {
 
-        /**
-         * Executor Fatal Error
-         * (Timeout)
-         */
-        if (blockingAsyncResult.failed()) {
-          Throwable cause = blockingAsyncResult.cause();
-          listImportJob.closeJobWithFatalError(cause, null);
-          this.closeExecutionAndExecuteNextJob(listImportJob, executor);
-          return;
-        }
-        /**
-         * JobRow Fatal Error
-         */
-        blockingAsyncResult.result().onComplete(v -> {
-          if (v.failed()) {
-            // timeout
-            Throwable cause = v.cause();
+
+    String workerExecutor = "list-import-flow";
+    WorkerExecutor executor = vertx.createSharedWorkerExecutor(workerExecutor, poolSize, maxExecutionTimeSecond, maxExecuteTimeUnit);
+    try {
+      listImportJob.executeSequentially(workerExecutor)
+        .onComplete(blockingAsyncResult -> {
+          /**
+           * Executor Fatal Error
+           * (Timeout)
+           */
+          if (blockingAsyncResult.failed()) {
+            Throwable cause = blockingAsyncResult.cause();
             listImportJob.closeJobWithFatalError(cause, null);
+            this.closeExecutionAndExecuteNextJob(listImportJob, executor);
+            return;
           }
           this.closeExecutionAndExecuteNextJob(listImportJob, executor);
         });
-      });
+    } catch (Exception e) {
+      // Trying to catch JVM error such as Stack overflow error
+      listImportJob.closeJobWithFatalError(e, null);
+      this.closeExecutionAndExecuteNextJob(listImportJob, executor);
+    }
 
   }
 
@@ -389,7 +388,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
      */
     this.importJobQueue.remove(executingJob);
     /**
-     * Destory executor
+     * Destroy executor
      */
     executor.close();
     /**

@@ -515,8 +515,9 @@ public class RealmProvider {
     Future<OrganizationUser> futureOwnerUser = apiApp.getOrganizationUserProvider()
       .getOrganizationUserByLocalId(ownerUserLocalId, eraldyRealm.getLocalId(), eraldyRealm);
 
-    return Future.all(futureOrganization, futureOwnerUser)
-      .onFailure(t -> LOGGER.error("Error while getting the future for building the realm", t))
+    return Future
+      .all(futureOrganization, futureOwnerUser)
+      .recover(t -> Future.failedFuture(new InternalException("Future All Error for building the realm", t)))
       .compose(result -> {
         realm.setOrganization(result.resultAt(0));
         realm.setOwnerUser(result.resultAt(1));

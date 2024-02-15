@@ -77,18 +77,18 @@ public class UserApiImpl implements UserApi {
             realmChecked
           );
         } else {
-            BMailInternetAddress mailInternetAddress;
-            try {
-                mailInternetAddress = BMailInternetAddress.of(userIdentifier);
-            } catch (AddressException e) {
-                return Future.failedFuture(TowerFailureException
-                  .builder()
-                  .setMessage("The identifier is not a guid, nor an email ("+userIdentifier+")")
-                  .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-                  .build()
-                );
-            }
-            futureUser = userProvider.getUserByEmail(mailInternetAddress, realmChecked.getLocalId(),
+          BMailInternetAddress mailInternetAddress;
+          try {
+            mailInternetAddress = BMailInternetAddress.of(userIdentifier);
+          } catch (AddressException e) {
+            return Future.failedFuture(TowerFailureException
+              .builder()
+              .setMessage("The identifier is not a guid, nor an email (" + userIdentifier + ")")
+              .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+              .build()
+            );
+          }
+          futureUser = userProvider.getUserByEmail(mailInternetAddress, realmChecked.getLocalId(),
             User.class,
             realmChecked);
         }
@@ -115,6 +115,14 @@ public class UserApiImpl implements UserApi {
       .getUserByGuid(guid, User.class, null)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(user -> {
+        if (user == null) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+              .setMessage("The user with the guid (" + guid + ") was not found")
+              .build()
+          );
+        }
         ApiResponse<User> apiResponse = new ApiResponse<>(user);
         return Future.succeededFuture(apiResponse);
       });

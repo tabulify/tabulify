@@ -1,5 +1,6 @@
 package net.bytle.tower.eraldy.schedule;
 
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
@@ -15,8 +16,6 @@ import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.JacksonMapperManager;
 import net.bytle.vertx.Server;
-import net.bytle.vertx.future.TowerFutureComposite;
-import net.bytle.vertx.future.TowerFuturesSequentialScheduler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -153,18 +152,19 @@ public class SqlAnalytics implements Handler<Long> {
       LOGGER.error("Error while reading the analytics directory", e);
       return;
     }
-    new TowerFuturesSequentialScheduler<RowSet<Row>>()
-      .join(futures, null)
+    Future
+      .join(futures)
       .onComplete(async -> {
         this.isRunning = false;
         if (async.failed()) {
           LOGGER.error("Error while running the analytics directory", async.cause());
-          return;
         }
-        TowerFutureComposite<RowSet<Row>> towerComposite = async.result();
-        if (towerComposite.hasFailed()) {
-          int failureIndex = towerComposite.getFailureIndex();
-          LOGGER.error("The SQL analytic (" + executedPaths.get(failureIndex) + ") with the SQL: " + sqls.get(failureIndex), towerComposite.getFailure());
+        CompositeFuture composite = async.result();
+        for(int i=0;i<composite.size();i++){
+          if (composite.failed(i)) {
+            Throwable err = composite.causes().get(i);
+            LOGGER.error("The SQL analytic (" + executedPaths.get(i) + ") with the SQL: " + sqls.get(i), composite.cause(i), err);
+          }
         }
       });
   }

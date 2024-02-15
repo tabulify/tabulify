@@ -6,55 +6,56 @@ public enum ListImportJobRowStatus {
   /**
    * The import completed without any error
    */
-  COMPLETED(0, "complete", 0),
+  COMPLETED(0, "complete"),
   /**
    * A fatal error has occurred during
    * validation
    */
-  FATAL_ERROR(1, "fatalError", 999),
+  FATAL_ERROR(1, "fatalError"),
   /**
    * The email address is invalid
    */
-  EMAIL_ADDRESS_INVALID(2, "addressInvalid", 900),
+  EMAIL_ADDRESS_INVALID(2, "addressInvalid"),
   /**
    * Data is invalid
    * (Example: an ip for the import that is not an ip)
    */
-  DATA_INVALID(3, "dataInvalid", 800),
+  DATA_INVALID(3, "dataInvalid"),
   /**
    * The domain does not pass the test
    * (mx record, ...)
    */
-  DOMAIN_SUSPICIOUS(4, "domainSuspicious", 700),
+  DOMAIN_SUSPICIOUS(4, "domainSuspicious"),
   /**
    * The domain is on an external blocking list
    */
-  DOMAIN_BLOCKED(5, "domainBlocked", 800),
+  DOMAIN_BLOCKED(5, "domainBlocked"),
   /**
    * The email (ie domain) is soft banned
    * (meaning that the domain is banned for a period of time)
    * The domain didn't pass the validation tests (ie was suspicious)
    * The validation tests were not performed
    */
-  SOFT_BAN(6, "softBan", 700),
+  SOFT_BAN(6, "softBan"),
   /**
    * The email (ie domain) is hard banned
    * (meaning that the domain is on our internal blocking list)
    */
-  HARD_BAN(7, "hardBan", 500);
+  HARD_BAN(7, "hardBan"),
+  /**
+   * The domain is in the grey area
+   * meaning that the email cannot be imported
+   * without any human email validation
+   * (163.com mostly)
+   */
+  GREY_BAN(8, "greyBan");
 
   private final int statusCode;
   private final String statusName;
-  /**
-   * If the validator has multiple status,
-   * the status with the higher order wins
-   */
-  private final int orderOfPrecedence;
 
-  ListImportJobRowStatus(int statusCode, String statusName, int orderOfPrecedence) {
+  ListImportJobRowStatus(int statusCode, String statusName) {
     this.statusCode = statusCode;
     this.statusName = statusName;
-    this.orderOfPrecedence = orderOfPrecedence;
   }
 
   @Override
@@ -62,9 +63,6 @@ public enum ListImportJobRowStatus {
     return statusCode + " (" + statusName + ")";
   }
 
-  public int getOrderOfPrecedence() {
-    return this.orderOfPrecedence;
-  }
 
   public int getStatusCode() {
     return this.statusCode;

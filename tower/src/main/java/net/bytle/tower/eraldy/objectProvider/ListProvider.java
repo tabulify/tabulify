@@ -387,9 +387,7 @@ public class ListProvider {
 
         return Future
           .all(appFuture, ownerFuture)
-          .onFailure(e -> {
-            throw new InternalException(e);
-          })
+          .recover(e -> Future.failedFuture(new InternalException("getListFromRow error " + e.getMessage(), e)))
           .compose(mapper -> {
 
             JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
@@ -419,7 +417,6 @@ public class ListProvider {
               listItemAnalytics.setUserCount(userCount);
               listItemAnalytics.setUserInCount(userInCount);
             }
-
 
 
             listItem.setLocalId(listId);

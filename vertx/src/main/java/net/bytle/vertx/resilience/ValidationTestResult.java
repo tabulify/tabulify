@@ -129,10 +129,10 @@ public class ValidationTestResult {
      * Non-fatal error will not be retried
      * because they do not depend on request condition such as network, disk
      */
-    public Builder setNonFatalError(Throwable error, String s) {
-      this.message = error.getClass().getSimpleName() + ": " + error.getMessage();
-      if (s != null) {
-        this.message = s + ". " + this.message;
+    public Builder setNonFatalError(Throwable error, String nonFatalMessage) {
+      this.message = error.getMessage()+" ("+error.getClass().getSimpleName()+")";
+      if (nonFatalMessage != null) {
+        this.message = nonFatalMessage + " " + this.message;
       }
       return this;
     }

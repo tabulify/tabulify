@@ -45,7 +45,7 @@ public abstract class TowerApp {
   private static final String OPEN_API_RESOURCES_PREFIX = "openapi-spec-file";
   private final TowerApexDomain apexDomain;
   private final ConfigAccessor configAccessor;
-  private ProxyUtil proxy;
+  private ForwardProxy proxy;
   private WebClient webClient;
   private OpenApiManager openApi;
 
@@ -342,7 +342,7 @@ public abstract class TowerApp {
    */
   public void addProxyHandlerForUnknownResourceOfHtmlApp(Router router) {
     if (getIsHtmlApp()) {
-      ProxyUtil.addProxyHandler(router, this);
+      ForwardProxy.addProxyHandler(router, this);
     }
   }
 
@@ -423,12 +423,12 @@ public abstract class TowerApp {
   /**
    * @return a proxy instance for this app request
    */
-  public ProxyUtil getProxy() {
+  public ForwardProxy getProxy() {
     if (this.proxy != null) {
       return this.proxy;
     }
     Boolean useFiddler = configAccessor.getBoolean("forward.proxy.fiddler", false);
-    this.proxy = ProxyUtil
+    this.proxy = ForwardProxy
       .config(this)
       .setProxyThroughFiddler(useFiddler)
       .build();

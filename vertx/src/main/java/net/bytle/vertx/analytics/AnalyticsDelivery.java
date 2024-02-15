@@ -1,5 +1,6 @@
 package net.bytle.vertx.analytics;
 
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import net.bytle.java.JavaEnvs;
 import net.bytle.vertx.ConfigIllegalException;
@@ -9,7 +10,6 @@ import net.bytle.vertx.analytics.model.AnalyticsUser;
 import net.bytle.vertx.analytics.sink.AnalyticsLocalFileSystemSink;
 import net.bytle.vertx.analytics.sink.AnalyticsMixPanelSink;
 import net.bytle.vertx.analytics.sink.AnalyticsSink;
-import net.bytle.vertx.future.TowerFutureComposite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -65,6 +65,10 @@ public class AnalyticsDelivery {
     }
 
     int sec10 = 10000;
+    if (JavaEnvs.IS_IDE_DEBUGGING) {
+      // 10 minutes
+      sec10 = sec10 * 60;
+    }
     server.getVertx().setPeriodic(sec10, sec10, jobId -> processSink());
 
   }
@@ -72,8 +76,8 @@ public class AnalyticsDelivery {
   public void processSink() {
 
 
-    synchronized (this){
-      if(this.isRunning){
+    synchronized (this) {
+      if (this.isRunning) {
         return;
       }
       this.isRunning = true;
@@ -86,24 +90,24 @@ public class AnalyticsDelivery {
     }
 
     /**
-     * Process the sink sequentially
+     * Process the sink
      */
-    this.server.getFutureSchedulers()
-      .createSequentialScheduler(Void.class)
-      .join(processesQueue, null)
-      .onComplete(async->{
+    Future.join(processesQueue)
+      .onComplete(async -> {
         this.isRunning = false;
-        if(async.failed()){
+        if (async.failed()) {
           Throwable err = async.cause();
           LOGGER.error("The analytics processSink method has failed. Err:" + err.getMessage(), err);
-          return;
         }
-        TowerFutureComposite<Void> composite = async.result();
-        if (composite.hasFailed()) {
-          String failedSinkName = this.sinks.get(composite.getFailureIndex()).getClass().getSimpleName();
-          Throwable err = composite.getFailure();
-          LOGGER.error("The analytics processSink (" + failedSinkName + ") has failed. Err:" + err.getMessage(), err);
+        CompositeFuture composite = async.result();
+        for (int i = 0; i < composite.size(); i++) {
+          if (composite.failed(i)) {
+            String failedSinkName = this.sinks.get(i).getClass().getSimpleName();
+            Throwable err = composite.causes().get(i);
+            LOGGER.error("The analytics processSink (" + failedSinkName + ") has failed. Err:" + err.getMessage(), err);
+          }
         }
+
       });
 
   }
@@ -168,7 +172,7 @@ public class AnalyticsDelivery {
   private <T> List<AnalyticsDeliveryExecution<T>> pullObjectToDeliver(HashMap<String, AnalyticsDeliveryStatus<T>> objectQueue, int batchNumber, String sinkName) {
     List<AnalyticsDeliveryExecution<T>> pulled = new ArrayList<>();
     List<String> completedDelivery = new ArrayList<>();
-    for(Map.Entry<String,AnalyticsDeliveryStatus<T>> entry: objectQueue.entrySet()) {
+    for (Map.Entry<String, AnalyticsDeliveryStatus<T>> entry : objectQueue.entrySet()) {
 
       String guid = entry.getKey();
       AnalyticsDeliveryStatus<T> analyticsEventDeliveryStatus = entry.getValue();
@@ -186,7 +190,7 @@ public class AnalyticsDelivery {
       }
 
     }
-    for(String guid: completedDelivery){
+    for (String guid : completedDelivery) {
       objectQueue.remove(guid);
     }
     return pulled;

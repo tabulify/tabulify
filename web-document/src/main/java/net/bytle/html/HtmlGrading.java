@@ -13,9 +13,12 @@ public class HtmlGrading {
    * Check if this is a legit HTML page
    */
   static public void grade(String html) throws HtmlStructureException {
+    if (html == null) {
+      throw new HtmlStructureException("The HTML is empty (null, no body)");
+    }
     Document document = Jsoup.parse(html);
     String title = document.title();
-    if (title == null) {
+    if (title.isEmpty()) {
       throw new HtmlStructureException("The page has no title");
     }
     int bodyElements = document.body().getAllElements().size();

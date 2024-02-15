@@ -30,9 +30,9 @@ import org.slf4j.LoggerFactory;
  * Here also an example with an API gateway:
  * <a href="https://github.com/sczyh30/vertx-blueprint-microservice/blob/master/api-gateway/src/main/java/io/vertx/blueprint/microservice/gateway/APIGatewayVerticle.java#L155">...</a>
  */
-public class ProxyUtil {
+public class ForwardProxy {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ProxyUtil.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ForwardProxy.class);
 
   /**
    * if no answer si received after 5 secs,
@@ -45,7 +45,7 @@ public class ProxyUtil {
   private final String targetHost;
   private final ProxyOptions fiddlerProxy;
 
-  public ProxyUtil(TowerApp towerApp, boolean useFiddlerProxy) {
+  public ForwardProxy(TowerApp towerApp, boolean useFiddlerProxy) {
 
     this.app = towerApp;
 
@@ -112,7 +112,7 @@ public class ProxyUtil {
     String absoluteInternalPath = towerApp.getPathMount();
     String route = absoluteInternalPath + "/*";
 
-    ProxyUtil proxy = towerApp.getProxy();
+    ForwardProxy proxy = towerApp.getProxy();
     rootRouter.route(route).method(HttpMethod.GET).handler(ctx ->
       proxy
         .proxyRequest(ctx)
@@ -262,8 +262,8 @@ public class ProxyUtil {
       return this;
     }
 
-    public ProxyUtil build() {
-      return new ProxyUtil(towerApp, useFiddler);
+    public ForwardProxy build() {
+      return new ForwardProxy(towerApp, useFiddler);
     }
 
   }

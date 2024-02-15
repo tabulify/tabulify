@@ -1,6 +1,8 @@
 package net.bytle.tower.eraldy.api.implementer.flow;
 
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import net.bytle.dns.DnsException;
 import net.bytle.dns.DnsIp;
 import net.bytle.email.BMailInternetAddress;
@@ -24,7 +26,7 @@ import java.util.stream.Collectors;
  * A unit of execution for a row
  * that can be re-executed if there is a fatal error (timeout, servfail DNS, ...)
  */
-public class ListImportJobRow {
+public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
 
   static final Logger LOGGER = LogManager.getLogger(ListImportJobRow.class);
   private final int rowId;
@@ -55,18 +57,9 @@ public class ListImportJobRow {
     this.email = email;
   }
 
-  public Future<ListImportJobRow> getExecutableFuture() {
-    return this.getExecutableFutureWithoutErrorHandling()
-      .recover(err -> {
-        // database timeout for instance
-        this.closeExecution(ListImportJobRowStatus.FATAL_ERROR, err.getMessage() + " (" + err.getClass().getSimpleName() + ")");
-        LOGGER.error("A fatal error has occurred on the row (" + this.rowId + ", " + this.email + ") with the list import job (" + listImportJob.getList().getGuid() + "," + listImportJob.getStatus().getJobId() + ")", err);
-        return Future.succeededFuture(this);
-      })
-      .compose(listImportJobRow -> Future.succeededFuture(this));
-  }
 
   public Future<ListImportJobRow> getExecutableFutureWithoutErrorHandling() {
+
     this.executionCount++;
     return this.listImportJob.getListImportFlow().getEmailAddressValidator()
       .validate(email, this.listImportJob.getFailEarly())
@@ -84,6 +77,9 @@ public class ListImportJobRow {
               break;
             case SOFT_BAN:
               listImportJobStatus = ListImportJobRowStatus.SOFT_BAN;
+              break;
+            case GREY_BAN:
+              listImportJobStatus = ListImportJobRowStatus.GREY_BAN;
               break;
             case EMAIL_ADDRESS_INVALID:
               listImportJobStatus = ListImportJobRowStatus.EMAIL_ADDRESS_INVALID;
@@ -207,7 +203,7 @@ public class ListImportJobRow {
                   .compose(listRegistrationInserted -> {
                     this.listUserStatus = ListImportListUserStatus.ADDED;
                     this.listUserGuid = listRegistrationInserted.getGuid();
-                   return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
+                    return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
                   });
               });
           });
@@ -286,4 +282,23 @@ public class ListImportJobRow {
   public void setLocation(String location) {
     this.location = location;
   }
+
+  @Override
+  public void handle(Promise<ListImportJobRow> event) {
+
+    this.getExecutableFutureWithoutErrorHandling()
+      .onFailure(err -> {
+        // database timeout for instance
+        this.closeExecution(ListImportJobRowStatus.FATAL_ERROR, err.getMessage() + " (" + err.getClass().getSimpleName() + ")");
+        int rowFatalErrorCounter = this.listImportJob.incrementRowFatalErrorCounter();
+        if (rowFatalErrorCounter <= 3) {
+          // if an import of 10 thousand row with the same error
+          LOGGER.error("A fatal error has occurred on the row (" + this.rowId + ", " + this.email + ") with the list import job (" + listImportJob.getList().getGuid() + "," + listImportJob.getStatus().getJobId() + ")", err);
+        }
+        event.complete(this);
+      })
+      .onSuccess(listImportJobRow -> event.complete(this));
+
+  }
+
 }

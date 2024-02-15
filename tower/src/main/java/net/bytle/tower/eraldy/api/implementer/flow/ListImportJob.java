@@ -5,9 +5,12 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
+import net.bytle.exception.CastException;
 import net.bytle.fs.Fs;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
@@ -23,7 +26,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static net.bytle.vertx.resilience.EmailAddressValidationStatus.FATAL_ERROR;
+import static net.bytle.tower.eraldy.api.implementer.flow.ListImportJobRowStatus.FATAL_ERROR;
 
 public class ListImportJob {
 
@@ -54,6 +57,12 @@ public class ListImportJob {
   private Integer executionStatusCode = TO_PROCESS_STATUS_CODE;
   private final ListImportUserAction userAction;
   private final List<ListImportJobRow> resultImportJobRows = new ArrayList<>();
+
+  /**
+   * A counter of the number of errors on row
+   * execution. We log only the first 5 to not be overwhelmed with error.
+   */
+  private int rowFatalErrorExecutionCounter = 0;
 
   public ListImportJob(Builder builder) {
     this.listImportFlow = builder.listImportFlow;
@@ -94,6 +103,11 @@ public class ListImportJob {
     return this.listUserAction;
   }
 
+  public int incrementRowFatalErrorCounter() {
+    this.rowFatalErrorExecutionCounter++;
+    return this.rowFatalErrorExecutionCounter;
+  }
+
   public static class Builder {
     private final FileUpload fileUpload;
     private final ListImportFlow listImportFlow;
@@ -132,7 +146,7 @@ public class ListImportJob {
   /**
    * @return execute incrementally the job
    */
-  public Future<ListImportJob> executeSequentially() {
+  public Future<ListImportJob> executeSequentially(String workerExecutor) {
 
     synchronized (this) {
       if (this.isComplete()) {
@@ -143,36 +157,41 @@ public class ListImportJob {
     listImportJobStatus.setStartTime(LocalDateTime.now());
     listImportJobStatus.setStatusCode(executionStatusCode);
 
-    return this.buildFutureListToExecute()
-      .compose(futuresToExecute -> this.executeSequentiallyWithRetry(futuresToExecute, 0));
+    List<Handler<Promise<ListImportJobRow>>> listImportJobRows ;
+    try {
+      listImportJobRows = this.getListImportJobRows();
+    } catch (CastException | IOException e) {
+      return this.closeJobWithFatalError(e, "");
+    }
+    return this.executeSequentiallyWithRetry(listImportJobRows, 0);
 
 
   }
 
   /**
    *
-   * @param listFutureToExecute - the future to executes
+   * @param handlers - the future to executes
    * @param iterationIndex - the number of times that this job has run (0 = first time, 1 = second time - first retry, ...)
    */
-  private Future<ListImportJob> executeSequentiallyWithRetry(List<Future<ListImportJobRow>> listFutureToExecute, int iterationIndex) {
+  private Future<ListImportJob> executeSequentiallyWithRetry(List<Handler<Promise<ListImportJobRow>>> handlers, int iterationIndex) {
 
 
     return this.listImportFlow.getApp().getApexDomain().getHttpServer().getServer().getFutureSchedulers()
       .createSequentialScheduler(ListImportJobRow.class)
-      .all(listFutureToExecute, this.listImportJobStatus)
+      .all(handlers, this.listImportJobStatus)
       .compose(composite -> {
         List<ListImportJobRow> resultsListImportJobRows = composite.getResults();
         if (composite.hasFailed()) {
           Throwable failure = composite.getFailure();
           return this.closeJobWithFatalError(failure, "A fatal error has happened on the row " + (composite.getFailureIndex() + 1));
         }
-        List<Future<ListImportJobRow>> toRetryFutures = new ArrayList<>();
+        List<Handler<Promise<ListImportJobRow>>> toRetryHandlers = new ArrayList<>();
         for (ListImportJobRow resultListImportJobRow : resultsListImportJobRows) {
           if (
             iterationIndex < this.listImportFlow.getRowValidationFailureRetryCount()
               && resultListImportJobRow.getStatus().equals(FATAL_ERROR.getStatusCode())
           ) {
-            toRetryFutures.add(resultListImportJobRow.getExecutableFuture());
+            toRetryHandlers.add(resultListImportJobRow);
           }
           /**
            * We build the list first
@@ -185,9 +204,9 @@ public class ListImportJob {
             resultImportJobRows.add(rowId, resultListImportJobRow);
           }
         }
-        if (!toRetryFutures.isEmpty()) {
+        if (!toRetryHandlers.isEmpty()) {
           int nextIterationIndex = iterationIndex + 1;
-          return executeSequentiallyWithRetry(toRetryFutures, nextIterationIndex);
+          return executeSequentiallyWithRetry(toRetryHandlers, nextIterationIndex);
         }
         return this.closeJob();
       });
@@ -197,7 +216,7 @@ public class ListImportJob {
   /**
    * Build the list of future to process
    */
-  private Future<List<Future<ListImportJobRow>>> buildFutureListToExecute() {
+  private List<Handler<Promise<ListImportJobRow>>> getListImportJobRows() throws CastException, IOException {
     /**
      * Jackson Csv Processing
      * Csv import Doc for Jackson is at:
@@ -215,7 +234,7 @@ public class ListImportJob {
     /**
      * The Jackson Iterator
      */
-    try (MappingIterator<String[]> it = csvMapper
+    try (MappingIterator<String[]> iterator = csvMapper
       .readerFor(String[].class)
       // This setting will transform the json as array to get a String[]
       .with(CsvParser.Feature.WRAP_AS_ARRAY)
@@ -223,10 +242,10 @@ public class ListImportJob {
       .readValues(uploadedCsvFile.toFile())) {
 
       int counter = -1;
-      List<Future<ListImportJobRow>> listFutureJobRowStatus = new ArrayList<>();
-      while (it.hasNextValue()) {
+      List<Handler<Promise<ListImportJobRow>>> listImportJobRows = new ArrayList<>();
+      while (iterator.hasNextValue()) {
         counter++;
-        String[] row = it.nextValue();
+        String[] row = iterator.nextValue();
         if (counter == 0) {
           // Header
           // Mailchimp doc
@@ -284,8 +303,7 @@ public class ListImportJob {
             String statusMessage = "An email address header could not be found in the file (" + this.getFileNameWithExtension() + "). Headers found: " + Arrays.toString(row);
             listImportJobStatus.setStatusMessage(statusMessage);
             this.executionStatusCode = BAD_FILE_STATUS;
-            return this.closeJob()
-              .compose(v -> Future.failedFuture(statusMessage));
+            throw new CastException(statusMessage);
 
           }
           // continue the loop and process the second record
@@ -339,8 +357,7 @@ public class ListImportJob {
           String location = row[locationIndex];
           listImportJobRow.setLocation(location);
         }
-        Future<ListImportJobRow> futureListImportRow = listImportJobRow.getExecutableFuture();
-        listFutureJobRowStatus.add(futureListImportRow);
+        listImportJobRows.add(listImportJobRow);
         int maxRowsProcessedByImport = this.getMaxRowCountToProcess();
         if (counter >= maxRowsProcessedByImport) {
           this.executionStatusCode = ABOVE_IMPORT_QUOTA;
@@ -348,11 +365,10 @@ public class ListImportJob {
           break;
         }
       }
-      return Future.succeededFuture(listFutureJobRowStatus);
+      return listImportJobRows;
     } catch (IOException e) {
       String message = "List import couldn't read the csv file (" + this.getFileNameWithExtension() + ").";
-      return this.closeJobWithFatalError(e, message)
-        .compose(v -> Future.failedFuture(message));
+      throw new IOException(message, e);
     }
   }
 
@@ -363,7 +379,7 @@ public class ListImportJob {
 
   public Future<ListImportJob> closeJobWithFatalError(Throwable e, String message) {
     String exceptionSuffix = "Error:" + e.getMessage() + " (" + e.getClass().getSimpleName() + ")";
-    if (message == null) {
+    if (message == null || message.isEmpty()) {
       message = exceptionSuffix;
     } else {
       message = message + " " + exceptionSuffix;

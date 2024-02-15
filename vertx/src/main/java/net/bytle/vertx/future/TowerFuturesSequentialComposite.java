@@ -4,27 +4,34 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import net.bytle.exception.InternalException;
+import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerCompositeFutureListener;
 
 import java.util.*;
 
 public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<T>, Handler<Promise<TowerFutureComposite<T>>> {
 
-  private final Iterator<Future<T>> futureIterator;
+
   private final TowerFutureCoordination coordinatation;
+  private final int maxFatalErrorCount;
+  private final Server server;
+  private final Iterator<Handler<Promise<T>>> handlers;
   private Integer rowId;
   private final TowerCompositeFutureListener listener;
   private final List<T> results = new ArrayList<>();
   private Throwable failure;
   private Integer failureIndex;
   private Promise<TowerFutureComposite<T>> promise;
+  private int failureCounter = 0;
 
 
-  public TowerFuturesSequentialComposite(Collection<Future<T>> futures, TowerFutureCoordination towerFutureCoordination, TowerCompositeFutureListener listener) {
-    this.futureIterator = futures.iterator();
+  public TowerFuturesSequentialComposite(Server server, Collection<Handler<Promise<T>>> handlers, TowerFutureCoordination towerFutureCoordination, TowerCompositeFutureListener listener, int maxFatalErrorCount) {
+    this.handlers = handlers.iterator();
     this.listener = listener;
     this.rowId = -1;
     this.coordinatation = towerFutureCoordination;
+    this.maxFatalErrorCount = maxFatalErrorCount;
+    this.server = server;
   }
 
 
@@ -36,19 +43,26 @@ public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<
     }
     Future<T> next;
     try {
-      next = futureIterator.next();
+      next = Future.future(handlers.next());
       this.rowId++;
     } catch (NoSuchElementException e) {
       this.promise.complete(this);
       return;
     }
+    // Capture the current context
     next
       .onComplete(
         res -> {
           if (res.failed()) {
             this.failure = res.cause();
             this.failureIndex = rowId;
+            this.failureCounter++;
             if (this.coordinatation == TowerFutureCoordination.ALL) {
+              promise.complete(this);
+              return;
+            }
+            if (this.failureCounter >= this.maxFatalErrorCount) {
+              this.failure = new InternalException("Too much fatal errors (" + this.failureCounter + ") on execution", this.failure);
               promise.complete(this);
               return;
             }
@@ -61,6 +75,7 @@ public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<
           executeSequentially();
         }
       );
+
   }
 
   public List<T> getResults() {

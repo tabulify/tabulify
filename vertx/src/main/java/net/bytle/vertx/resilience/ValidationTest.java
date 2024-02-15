@@ -33,7 +33,11 @@ public enum ValidationTest {
   /**
    * Test if the domain is on a while list
    */
-  WHITE_LIST("whiteList", EmailAddressValidationStatus.LEGIT);
+  WHITE_LIST("whiteList", EmailAddressValidationStatus.LEGIT),
+  /**
+   * Test if the domain is not on the grey list
+   */
+  GREY_LIST("greyList", EmailAddressValidationStatus.GREY_BAN);
   private final String name;
   private final EmailAddressValidationStatus emailAddressValidationStatus;
 

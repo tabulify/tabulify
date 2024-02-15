@@ -11,6 +11,7 @@ import jakarta.mail.MessagingException;
 import net.bytle.dns.*;
 import net.bytle.email.BMailSmtpClient;
 import net.bytle.email.BMailStartTls;
+import net.bytle.exception.AssertionException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.html.HtmlGrading;
 import net.bytle.html.HtmlStructureException;
@@ -37,6 +38,12 @@ public class DomainValidator {
   private final Set<String> whiteListDomains;
   private final Vertx vertx;
   private final Boolean checkPingMx;
+
+  /**
+   * Grey List are not allowed on import
+   * but via email validation
+   */
+  private final HashSet<String> greyListDomains;
 
 
   public DomainValidator(TowerApp towerApp) {
@@ -74,6 +81,13 @@ public class DomainValidator {
     whiteListDomains.add("yandex.ru");
     whiteListDomains.add("zoho.com");
 
+    /**
+     * The known blocked domain list that we don't test
+     */
+    greyListDomains = new HashSet<>();
+    greyListDomains.add("163.com");
+
+
   }
 
   /**
@@ -93,6 +107,15 @@ public class DomainValidator {
       domainValidatorResult.addTest(ValidationTest.WHITE_LIST.createResultBuilder()
         .setMessage("Domain (" + lowerCaseDomainWithoutRoot + ") is on the white list")
         .succeed());
+      return Future.succeededFuture(domainValidatorResult);
+    }
+
+    if (greyListDomains.contains(lowerCaseDomainWithoutRoot)) {
+      domainValidatorResult.addTest(
+        ValidationTest.GREY_LIST.createResultBuilder()
+          .setMessage("Domain (" + lowerCaseDomainWithoutRoot + ") is on the grey list")
+          .fail()
+      );
       return Future.succeededFuture(domainValidatorResult);
     }
 
@@ -314,22 +337,23 @@ public class DomainValidator {
     ValidationTestResult.Builder webServer = ValidationTest.WEB_SERVER.createResultBuilder();
     ValidationTestResult.Builder homePage = ValidationTest.HOME_PAGE.createResultBuilder();
 
-    return this.getPageContent(apexDomainNameAsString)
+    return this.getHomePageResponse(apexDomainNameAsString)
       .compose(response -> {
+          String html = response.bodyAsString();
           try {
-            HtmlGrading.grade(response.bodyAsString());
+            HtmlGrading.grade(html);
             return Future.succeededFuture(homePage.setMessage("HTML page legit at (" + apexDomainNameAsString + ")"));
           } catch (HtmlStructureException e) {
             return Future.failedFuture(homePage.setMessage("The HTML page (" + apexDomainNameAsString + ") is not legit" + e.getMessage()));
           }
         },
         err -> {
-          String message = "The http or https web server (" + apexDomainNameAsString + ") could not be contacted.";
+          String message = "The web server (http(s)://" + apexDomainNameAsString + ") has an error.";
 
           Set<Class<?>> nonFatalError = new HashSet<>();
           // Bad certificate
           nonFatalError.add(SSLHandshakeException.class);
-          // Default throwable when the future is failed in getPageContent
+          // Default throwable when the future is failed
           nonFatalError.add(NoStackTraceThrowable.class);
           /**
            * Fatal error example due to network that could be solved when run twice
@@ -345,7 +369,7 @@ public class DomainValidator {
       );
   }
 
-  private Future<HttpResponse<Buffer>> getPageContent(String apexDomainNameAsString) {
+  private Future<HttpResponse<Buffer>> getHomePageResponse(String apexDomainNameAsString) {
 
     /**
      * HTTPS with redirect first (https://vertx.io/docs/vertx-core/java/#_30x_redirection_handling)
@@ -354,7 +378,14 @@ public class DomainValidator {
     return webClient.getAbs(httpsUri)
       .followRedirects(true)
       .send()
-      .compose(Future::succeededFuture,
+      .compose(response -> {
+          try {
+            this.verifyRequestStatusCode(response);
+          } catch (AssertionException e) {
+            return Future.failedFuture(e);
+          }
+          return Future.succeededFuture(response);
+        },
         httpsErr -> {
           /**
            * Try a redirection on http
@@ -366,6 +397,11 @@ public class DomainValidator {
             .send()
             .compose(
               request -> {
+                try {
+                  this.verifyRequestStatusCode(request);
+                } catch (AssertionException e) {
+                  return Future.failedFuture(e);
+                }
                 List<String> followedRedirects = request.followedRedirects();
                 if (followedRedirects.isEmpty()) {
                   return Future.failedFuture("The domain (" + apexDomainNameAsString + ") is only on http, not on https");
@@ -380,5 +416,12 @@ public class DomainValidator {
               httpErr -> Future.failedFuture(httpsErr)
             );
         });
+  }
+
+  private void verifyRequestStatusCode(HttpResponse<Buffer> response) throws AssertionException {
+    int statusCode = response.statusCode();
+    if (statusCode != 200) {
+      throw new AssertionException("The server returns a bad status (" + statusCode + ")");
+    }
   }
 }

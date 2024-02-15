@@ -36,7 +36,13 @@ public enum EmailAddressValidationStatus {
    * The email (ie domain) is hard banned
    * (meaning that the domain is on our internal blocking list)
    */
-  HARD_BAN(6, "hardBan", 500);
+  HARD_BAN(6, "hardBan", 500),
+  /**
+   * The domain is valid but may be used to create
+   * spam email. More validation is needed
+   */
+  GREY_BAN(7, "greyBan", 100),
+  ;
 
   private final int statusCode;
   private final String statusName;
