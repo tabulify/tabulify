@@ -69,7 +69,7 @@ public class ListApiImpl implements ListApi {
 
 
   @Override
-  public Future<ApiResponse<ListImportPostResponse>> listListImportPost(RoutingContext routingContext, String listIdentifier, Integer rowCountToProcess, FileUpload fileBinary) {
+  public Future<ApiResponse<ListImportPostResponse>> listListImportPost(RoutingContext routingContext, String listIdentifier, Integer rowCountToProcess, Integer parallelCount, FileUpload fileBinary) {
 
     RoutingContextWrapper routingContextWrapper = new RoutingContextWrapper(routingContext);
     rowCountToProcess = routingContextWrapper.getRequestQueryParameterAsInteger("rowCountToProcess", 10000);
@@ -227,6 +227,8 @@ public class ListApiImpl implements ListApi {
     ListImportJobStatus listImportStatus = new JsonObject(string).mapTo(ListImportJobStatus.class);
     return Future.succeededFuture(new ApiResponse<>(listImportStatus));
   }
+
+
 
 
   @Override

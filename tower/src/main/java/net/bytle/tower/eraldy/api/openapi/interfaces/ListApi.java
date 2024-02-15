@@ -38,7 +38,7 @@ public interface ListApi  {
     /**
      * Submit an import of users for a list
     */
-    Future<ApiResponse<ListImportPostResponse>> listListImportPost(RoutingContext routingContext, String listIdentifier, Integer rowCountToProcess, FileUpload fileBinary);
+    Future<ApiResponse<ListImportPostResponse>> listListImportPost(RoutingContext routingContext, String listIdentifier, Integer rowCountToProcess, Integer parallelCount, FileUpload fileBinary);
 
     /**
      * A list of imports

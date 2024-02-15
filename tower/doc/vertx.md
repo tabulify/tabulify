@@ -26,6 +26,21 @@ It includes:
 
 Based on [Netty](https://netty.io/) - event loop and so. See [Wiki](https://netty.io/wiki/index.html)
 
+## Context
+
+A context determine in which mode, the handlers are executed (event loop, worker, ...).
+
+A verticle starts and has only one context of execution (by default the event loop)
+Context is then also used as synonym for a verticle, even if you can execute on another context
+via worker.
+
+## Blocking code
+
+By default, if executeBlocking is called several times from the same context
+(e.g. the same verticle instance or worker), then the different executeBlocking
+are executed serially (i.e. one after another).
+
+
 ## onFailure
 
 

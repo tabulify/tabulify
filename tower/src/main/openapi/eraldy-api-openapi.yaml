@@ -1430,6 +1430,13 @@ paths:
           schema:
             type: integer
             default: 10000
+        - name: parallelCount
+          description: "The number of parallel process to speed up import"
+          required: false
+          in: query
+          schema:
+            type: integer
+            default: 1
       requestBody:
         required: true
         content:

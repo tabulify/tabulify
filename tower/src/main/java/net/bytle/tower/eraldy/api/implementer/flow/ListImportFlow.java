@@ -353,14 +353,11 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
     }
 
     int poolSize = 2;
-    long maxExecutionTimeSecond = 60 * 5; // 5 minutes
-    TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
 
 
-    String workerExecutor = "list-import-flow";
-    WorkerExecutor executor = vertx.createSharedWorkerExecutor(workerExecutor, poolSize, maxExecutionTimeSecond, maxExecuteTimeUnit);
+    WorkerExecutor executor = this.getExecutor(poolSize);
     try {
-      listImportJob.executeSequentially(workerExecutor)
+      listImportJob.executeSequentially()
         .onComplete(blockingAsyncResult -> {
           /**
            * Executor Fatal Error
@@ -380,6 +377,13 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
       this.closeExecutionAndExecuteNextJob(listImportJob, executor);
     }
 
+  }
+
+  private WorkerExecutor getExecutor(int poolSize) {
+    long maxExecutionTimeSecond = 60 * 5; // 5 minutes
+    TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
+    String workerExecutor = "list-import-flow";
+    return vertx.createSharedWorkerExecutor(workerExecutor, poolSize, maxExecutionTimeSecond, maxExecuteTimeUnit);
   }
 
   private void closeExecutionAndExecuteNextJob(ListImportJob executingJob, WorkerExecutor executor) {

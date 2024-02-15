@@ -21,9 +21,9 @@ public class TowerFutures {
    * @return void when finished
    */
   @SuppressWarnings("unused") // tClass is used by the code analytics to define the type on the function level
-  public <T extends Handler<Promise<T>>> TowerFuturesSequentialScheduler<T> createSequentialScheduler(Class<T> tClass) {
+  public <T extends Handler<Promise<T>>> TowerFuturesSequentialScheduler.Config<T> createSequentialScheduler(Class<T> tClass) {
 
-    return new TowerFuturesSequentialScheduler<>(this.server);
+    return new TowerFuturesSequentialScheduler.Config<>();
 
   }
 

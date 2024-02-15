@@ -146,7 +146,7 @@ public class ListImportJob {
   /**
    * @return execute incrementally the job
    */
-  public Future<ListImportJob> executeSequentially(String workerExecutor) {
+  public Future<ListImportJob> executeSequentially() {
 
     synchronized (this) {
       if (this.isComplete()) {
@@ -178,7 +178,8 @@ public class ListImportJob {
 
     return this.listImportFlow.getApp().getApexDomain().getHttpServer().getServer().getFutureSchedulers()
       .createSequentialScheduler(ListImportJobRow.class)
-      .all(handlers, this.listImportJobStatus)
+      .setListener(this.listImportJobStatus)
+      .all(handlers)
       .compose(composite -> {
         List<ListImportJobRow> resultsListImportJobRows = composite.getResults();
         if (composite.hasFailed()) {

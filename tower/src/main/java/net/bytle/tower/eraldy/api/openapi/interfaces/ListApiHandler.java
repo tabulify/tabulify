@@ -139,14 +139,16 @@ public void mount(RouterBuilder builder) {
 
             String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
         Integer rowCountToProcess = requestParameters.queryParameter("rowCountToProcess") != null ? requestParameters.queryParameter("rowCountToProcess").getInteger() : 10000;
+        Integer parallelCount = requestParameters.queryParameter("parallelCount") != null ? requestParameters.queryParameter("parallelCount").getInteger() : 1;
         FileUpload fileBinary = routingContext.fileUploads().iterator().next();
 
       logger.debug("Parameter listIdentifier is {}", listIdentifier);
       logger.debug("Parameter rowCountToProcess is {}", rowCountToProcess);
+      logger.debug("Parameter parallelCount is {}", parallelCount);
       logger.debug("Parameter fileBinary is {}", fileBinary);
 
     // Based on Route#respond
-    api.listListImportPost(routingContext, listIdentifier, rowCountToProcess, fileBinary)
+    api.listListImportPost(routingContext, listIdentifier, rowCountToProcess, parallelCount, fileBinary)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

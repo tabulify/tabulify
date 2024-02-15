@@ -1394,6 +1394,15 @@ paths:
           default: 10000
           type: integer
         style: form
+      - description: The number of parallel process to speed up import
+        explode: true
+        in: query
+        name: parallelCount
+        required: false
+        schema:
+          default: 1
+          type: integer
+        style: form
       requestBody:
         content:
           multipart/form-data:

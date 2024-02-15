@@ -4,17 +4,18 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import net.bytle.exception.InternalException;
-import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerCompositeFutureListener;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<T>, Handler<Promise<TowerFutureComposite<T>>> {
 
 
-  private final TowerFutureCoordination coordinatation;
+  private final TowerFutureCoordination coordination;
   private final int maxFatalErrorCount;
-  private final Server server;
   private final Iterator<Handler<Promise<T>>> handlers;
   private Integer rowId;
   private final TowerCompositeFutureListener listener;
@@ -25,19 +26,18 @@ public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<
   private int failureCounter = 0;
 
 
-  public TowerFuturesSequentialComposite(Server server, Collection<Handler<Promise<T>>> handlers, TowerFutureCoordination towerFutureCoordination, TowerCompositeFutureListener listener, int maxFatalErrorCount) {
-    this.handlers = handlers.iterator();
-    this.listener = listener;
+  TowerFuturesSequentialComposite(TowerFuturesSequentialScheduler.Config<T> config) {
+    this.handlers = config.handlers.iterator();
+    this.listener = config.listener;
     this.rowId = -1;
-    this.coordinatation = towerFutureCoordination;
-    this.maxFatalErrorCount = maxFatalErrorCount;
-    this.server = server;
+    this.coordination = config.coordination;
+    this.maxFatalErrorCount = config.maxFatalErrorCount;
   }
 
 
   void executeSequentially() {
-    if (!(this.coordinatation == TowerFutureCoordination.ALL || this.coordinatation == TowerFutureCoordination.JOIN)) {
-      this.failure = new InternalException("The coordination (" + this.coordinatation + ") is not implemented");
+    if (!(this.coordination == TowerFutureCoordination.ALL || this.coordination == TowerFutureCoordination.JOIN)) {
+      this.failure = new InternalException("The coordination (" + this.coordination + ") is not implemented");
       this.promise.complete(this);
       return;
     }
@@ -57,7 +57,7 @@ public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<
             this.failure = res.cause();
             this.failureIndex = rowId;
             this.failureCounter++;
-            if (this.coordinatation == TowerFutureCoordination.ALL) {
+            if (this.coordination == TowerFutureCoordination.ALL) {
               promise.complete(this);
               return;
             }
