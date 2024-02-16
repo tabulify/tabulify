@@ -1,9 +1,9 @@
 package net.bytle.vertx.resilience;
 
 import io.vertx.core.json.JsonObject;
-import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
+import net.bytle.type.EmailAddress;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -79,8 +79,8 @@ public class EmailAddressValidatorReport {
     return jsonObject;
   }
 
-  public BMailInternetAddress getEmailInternetAddress() throws NullValueException {
-    BMailInternetAddress emailInternetAddress = this.builder.emailInternetAddress;
+  public EmailAddress getEmailAddress() throws NullValueException {
+    EmailAddress emailInternetAddress = this.builder.emailInternetAddress;
     if (emailInternetAddress == null) {
       throw new NullValueException("This method returns a value only if the address is valid.");
     }
@@ -102,7 +102,7 @@ public class EmailAddressValidatorReport {
 
   public static class Builder {
 
-    private BMailInternetAddress emailInternetAddress;
+    private EmailAddress emailInternetAddress;
     private final String inputEmailAddress;
     public EmailAddressValidationStatus status;
     private final Set<ValidationTestResult> validationTestResults = new HashSet<>();
@@ -141,7 +141,7 @@ public class EmailAddressValidatorReport {
       return this;
     }
 
-    public void setEmailInternetAddress(BMailInternetAddress mailInternetAddress) {
+    public void setEmailInternetAddress(EmailAddress mailInternetAddress) {
       this.emailInternetAddress = mailInternetAddress;
     }
   }

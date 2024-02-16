@@ -1,5 +1,7 @@
 package net.bytle.dns;
 
+import net.bytle.exception.CastException;
+import net.bytle.type.DnsName;
 import org.xbill.DNS.*;
 import org.xbill.DNS.lookup.LookupSession;
 import org.xbill.DNS.lookup.NoSuchDomainException;
@@ -65,7 +67,7 @@ public class XBillDnsClient extends DnsClientAbs {
         .map(rec-> {
           try {
             return DnsName.create(rec.getTarget().toString());
-          } catch (DnsIllegalArgumentException e) {
+          } catch (CastException e) {
             throw new RuntimeException(e);
           }
         })
@@ -90,7 +92,7 @@ public class XBillDnsClient extends DnsClientAbs {
         .map(rec-> {
           try {
             return DnsName.create(rec.getTarget().toString());
-          } catch (DnsIllegalArgumentException e) {
+          } catch (CastException e) {
             throw new RuntimeException(e);
           }
         })
@@ -101,7 +103,7 @@ public class XBillDnsClient extends DnsClientAbs {
       String reverseName = name.toString();
       try {
         dnsName = DnsName.create(reverseName);
-      } catch (DnsIllegalArgumentException ex) {
+      } catch (CastException ex) {
         throw new DnsInternalException("The reverse name should be good ("+reverseName+")");
       }
       throw handleLookupException(dnsName, e);
@@ -179,7 +181,7 @@ public class XBillDnsClient extends DnsClientAbs {
           public DnsName getTarget() {
             try {
               return DnsName.create(mx.getTarget().toString());
-            } catch (DnsIllegalArgumentException e) {
+            } catch (CastException e) {
               throw new RuntimeException(e);
             }
           }

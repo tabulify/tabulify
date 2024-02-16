@@ -3,6 +3,9 @@ package net.bytle.monitor;
 import io.vertx.core.Future;
 import io.vertx.core.net.NetClient;
 import net.bytle.dns.*;
+import net.bytle.exception.CastException;
+import net.bytle.type.DnsName;
+import net.bytle.type.EmailAddress;
 import net.bytle.vertx.ConfigAccessor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -115,13 +118,13 @@ public class MonitorServices {
 
       LOGGER.info("Monitor DNS - Add Dmarc to domains");
       try {
-        bytleDomain.addExpectedDmarcEmail(DnsEmailAddress.of("44801f5f73014104b1898b84a16eb826@dmarc-reports.cloudflare.net"));
-        combostrapDomain.addExpectedDmarcEmail(DnsEmailAddress.of("970a4434804f4e449ca040d51d4e4588@dmarc-reports.cloudflare.net"));
-        DnsEmailAddress dmarcInternal = DnsEmailAddress.of("dmarc@eraldy.com");
+        bytleDomain.addExpectedDmarcEmail(EmailAddress.of("44801f5f73014104b1898b84a16eb826@dmarc-reports.cloudflare.net"));
+        combostrapDomain.addExpectedDmarcEmail(EmailAddress.of("970a4434804f4e449ca040d51d4e4588@dmarc-reports.cloudflare.net"));
+        EmailAddress dmarcInternal = EmailAddress.of("dmarc@eraldy.com");
         for (DnsName apexDomain : apexDomains) {
           apexDomain.addExpectedDmarcEmail(dmarcInternal);
         }
-      } catch (DnsException e) {
+      } catch (CastException e) {
         throw new RuntimeException("The email are literal, it should not happen", e);
       }
 
@@ -137,7 +140,7 @@ public class MonitorServices {
       eraldyInboxMx = new HashMap<>();
       eraldyInboxMx.put(monitorBeauHost.getName(), 1);
 
-    } catch (DnsException | DnsIllegalArgumentException e) {
+    } catch (DnsException | CastException | IllegalArgumentException | DnsIllegalArgumentException e) {
       throw new RuntimeException(e);
     }
 
@@ -162,70 +165,76 @@ public class MonitorServices {
    * <a href="https://support.google.com/mail/answer/81126#ip-practices">...</a> for more 550
    */
 
-  public MonitorServices checkMailersPtr(List<DnsHost> mailers) throws DnsException {
+  public MonitorServices checkMailersPtr(List<DnsHost> mailers)  {
 
     String checkName = "Check Mailer Host (Ptr)";
     for (DnsHost dnsHost : mailers) {
+
       DnsName hostDnsName = dnsHost.getDnsName();
-      /**
-       * Ipv4 PTR check
-       */
-      DnsIp dnsIpv4Address;
-      try {
-        dnsIpv4Address = dnsClient.lookupIpv4(hostDnsName);
-      } catch (DnsNotFoundException e) {
-        this.addFailure(checkName, hostDnsName, e.getMessage());
-        continue;
-      }
-
-      if (dnsIpv4Address.equals(dnsHost.getIpv4())) {
-        this.addSuccess(checkName, hostDnsName, "The host (" + dnsHost + ") has the ipv4 (" + dnsHost.getIpv4() + ")");
-      } else {
-        this.addFailure(checkName, hostDnsName, "The host (" + dnsHost + ") has NOT the ipv4 (" + dnsHost.getIpv4() + ")");
-      }
 
       try {
-        DnsName ptrName = dnsClient.lookupPtr(dnsIpv4Address);
-        if (ptrName.equals(hostDnsName)) {
-          this.addSuccess(checkName, hostDnsName, "The ipv4 (" + dnsIpv4Address + ") has the reverse PTR name (" + hostDnsName + ")");
-        } else {
-          this.addFailure(checkName, hostDnsName, "The ipv4 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
-        }
-      } catch (DnsNotFoundException e) {
-        this.addFailure(checkName, hostDnsName, "The ipv4 PTR for the host (" + dnsHost + ") was not found");
-      }
-
-      /**
-       * Ipv6 PTR check
-       */
-      DnsIp ipv6 = dnsHost.getIpv6();
-      if (ipv6 != null) {
-
-        String hostIpv6Address = ipv6.getAddress();
-        DnsIp dnsIpv6Address;
+        /**
+         * Ipv4 PTR check
+         */
+        DnsIp dnsIpv4Address;
         try {
-          dnsIpv6Address = dnsClient.lookupIpv6(hostDnsName);
+          dnsIpv4Address = dnsClient.lookupIpv4(hostDnsName);
         } catch (DnsNotFoundException e) {
           this.addFailure(checkName, hostDnsName, e.getMessage());
           continue;
         }
-        if (dnsIpv6Address.equals(ipv6)) {
-          this.addSuccess(checkName, hostDnsName, "The host (" + dnsHost + ") has the ipv6 (" + hostIpv6Address + ")");
+
+        if (dnsIpv4Address.equals(dnsHost.getIpv4())) {
+          this.addSuccess(checkName, hostDnsName, "The host (" + dnsHost + ") has the ipv4 (" + dnsHost.getIpv4() + ")");
         } else {
-          this.addFailure(checkName, hostDnsName, "The host (" + dnsHost + ") has NOT the ipv6 (" + hostIpv6Address + ")");
+          this.addFailure(checkName, hostDnsName, "The host (" + dnsHost + ") has NOT the ipv4 (" + dnsHost.getIpv4() + ")");
         }
 
         try {
-          DnsName ptrName = dnsClient.lookupPtr(dnsIpv6Address);
+          DnsName ptrName = dnsClient.lookupPtr(dnsIpv4Address);
           if (ptrName.equals(hostDnsName)) {
-            this.addSuccess(checkName, hostDnsName, "The ipv6 (" + dnsIpv6Address + ") has the reverse PTR name (" + hostDnsName + ")");
+            this.addSuccess(checkName, hostDnsName, "The ipv4 (" + dnsIpv4Address + ") has the reverse PTR name (" + hostDnsName + ")");
           } else {
-            this.addSuccess(checkName, hostDnsName, "The ipv6 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
+            this.addFailure(checkName, hostDnsName, "The ipv4 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
           }
         } catch (DnsNotFoundException e) {
-          this.addFailure(checkName, hostDnsName, "The ipv6 PTR for the host (" + dnsHost + ") was not found");
+          this.addFailure(checkName, hostDnsName, "The ipv4 PTR for the host (" + dnsHost + ") was not found");
         }
 
+        /**
+         * Ipv6 PTR check
+         */
+        DnsIp ipv6 = dnsHost.getIpv6();
+        if (ipv6 != null) {
+
+          String hostIpv6Address = ipv6.getAddress();
+          DnsIp dnsIpv6Address;
+          try {
+            dnsIpv6Address = dnsClient.lookupIpv6(hostDnsName);
+          } catch (DnsNotFoundException e) {
+            this.addFailure(checkName, hostDnsName, e.getMessage());
+            continue;
+          }
+          if (dnsIpv6Address.equals(ipv6)) {
+            this.addSuccess(checkName, hostDnsName, "The host (" + dnsHost + ") has the ipv6 (" + hostIpv6Address + ")");
+          } else {
+            this.addFailure(checkName, hostDnsName, "The host (" + dnsHost + ") has NOT the ipv6 (" + hostIpv6Address + ")");
+          }
+
+          try {
+            DnsName ptrName = dnsClient.lookupPtr(dnsIpv6Address);
+            if (ptrName.equals(hostDnsName)) {
+              this.addSuccess(checkName, hostDnsName, "The ipv6 (" + dnsIpv6Address + ") has the reverse PTR name (" + hostDnsName + ")");
+            } else {
+              this.addSuccess(checkName, hostDnsName, "The ipv6 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
+            }
+          } catch (DnsNotFoundException e) {
+            this.addFailure(checkName, hostDnsName, "The ipv6 PTR for the host (" + dnsHost + ") was not found");
+          }
+
+        }
+      } catch (DnsException e) {
+        this.addFailure(checkName, hostDnsName, "Fatal Dns Exception "+e.getMessage());
       }
     }
 
@@ -261,7 +270,7 @@ public class MonitorServices {
    * @param thirdDomains - the name of domains that should include the original spf records
    * @param mailersName  - the name where the A and AAAA record name of the mailers are stored
    */
-  public MonitorServices checkSpf(DnsName mainDomain, DnsName mailersName, Set<DnsName> thirdDomains) throws DnsIllegalArgumentException {
+  public MonitorServices checkSpf(DnsName mainDomain, DnsName mailersName, Set<DnsName> thirdDomains) throws CastException {
 
 
     DnsName spfSubDomainName = mainDomain.getSubdomain("spf");
@@ -431,7 +440,7 @@ public class MonitorServices {
   }
 
 
-  public List<MonitorReport> checkAll() throws DnsException, DnsIllegalArgumentException {
+  public List<MonitorReport> checkAll() throws CastException {
 
 
     LOGGER.info("Monitor Check Services started");
@@ -688,7 +697,7 @@ public class MonitorServices {
        * See https://datatracker.ietf.org/doc/html/rfc7489#section-7.1
        * <p>
        */
-      for (DnsEmailAddress email : domain.getDmarcEmails()) {
+      for (EmailAddress email : domain.getDmarcEmails()) {
         DnsName emailDomain;
         try {
           emailDomain = email.getDomainName();
@@ -728,8 +737,7 @@ public class MonitorServices {
               }
             }
           }
-        } catch (DnsIllegalArgumentException e) {
-
+        } catch (CastException e) {
           throw new RuntimeException("Illegal name should not happen", e);
         }
       }

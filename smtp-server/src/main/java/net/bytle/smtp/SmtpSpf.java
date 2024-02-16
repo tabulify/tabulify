@@ -1,7 +1,7 @@
 package net.bytle.smtp;
 
-import net.bytle.dns.DnsName;
 import net.bytle.email.BMailInternetAddress;
+import net.bytle.type.DnsName;
 
 /**
  * SPF

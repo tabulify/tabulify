@@ -1,5 +1,8 @@
 package net.bytle.dns;
 
+import net.bytle.exception.CastException;
+import net.bytle.type.DnsName;
+
 import java.util.List;
 import java.util.Set;
 
@@ -10,7 +13,7 @@ public abstract class DnsClientAbs implements DnsClient {
   @Override
   public DnsIp lookupA(DnsName dnsName) throws DnsException, DnsNotFoundException {
     Set<DnsIp> dnsIps = this.resolveA(dnsName);
-    if (dnsIps.size() == 0) {
+    if (dnsIps.isEmpty()) {
       throw new DnsNotFoundException("There is no A record for the name (" + dnsName + ")");
     }
     return dnsIps.iterator().next();
@@ -24,7 +27,7 @@ public abstract class DnsClientAbs implements DnsClient {
   @Override
   public DnsIp lookupAAAA(DnsName dnsName) throws DnsNotFoundException, DnsException {
     Set<DnsIp> dnsIps = this.resolveAAAA(dnsName);
-    if (dnsIps.size() == 0) {
+    if (dnsIps.isEmpty()) {
       throw new DnsNotFoundException("There is no AAAA record for the name (" + dnsName + ")");
     }
     /**
@@ -36,7 +39,7 @@ public abstract class DnsClientAbs implements DnsClient {
   @Override
   public String lookupTxt(DnsName dnsName) throws DnsException, DnsNotFoundException {
     List<String> txtRecords = this.resolveTxt(dnsName);
-    if (txtRecords.size() == 0) {
+    if (txtRecords.isEmpty()) {
       throw new DnsNotFoundException();
     }
     return txtRecords.get(0);
@@ -48,7 +51,7 @@ public abstract class DnsClientAbs implements DnsClient {
     try {
       DnsName dkimSelectorName = DnsName.create(dkimSelector + "._domainkey." + dnsName.toString());
       return getTextRecordThatStartsWith(dkimSelectorName, "v=DKIM1");
-    } catch (DnsIllegalArgumentException e) {
+    } catch (CastException e) {
       throw new RuntimeException("We create the name, it should be good",e);
     }
 
@@ -78,7 +81,7 @@ public abstract class DnsClientAbs implements DnsClient {
   public String lookupDmarc(DnsName dnsName) throws DnsException, DnsNotFoundException {
     try {
       return getTextRecordThatStartsWith(dnsName.getSubdomain("_dmarc"), "v=DMARC1");
-    } catch (DnsIllegalArgumentException e) {
+    } catch (CastException e) {
       throw new DnsInternalException("_dmarc is a valid name", e);
     }
   }
@@ -104,7 +107,7 @@ public abstract class DnsClientAbs implements DnsClient {
     try {
       System.out.println(tabLevel1 + "Ipv6 (AAAA records)");
       Set<DnsIp> dnsIpv6s = this.resolveAAAA(dnsName);
-      if (dnsIpv6s.size() == 0) {
+      if (dnsIpv6s.isEmpty()) {
         System.out.println(tabLevel2 + "none");
       }
       for (DnsIp dnsIp : dnsIpv6s) {
@@ -119,7 +122,7 @@ public abstract class DnsClientAbs implements DnsClient {
     try {
       System.out.println(tabLevel1 + "Cname for " + this);
       Set<DnsName> cnameRecords = resolveCName(dnsName);
-      if (cnameRecords.size() == 0) {
+      if (cnameRecords.isEmpty()) {
         System.out.println(tabLevel2 + "none");
       }
       for (DnsName cnameRecord : cnameRecords) {
@@ -132,11 +135,11 @@ public abstract class DnsClientAbs implements DnsClient {
     }
   }
 
-  public void printRecords(String domainName) throws DnsIllegalArgumentException {
+  public void printRecords(String domainName) throws CastException {
     printRecords(DnsName.create(domainName));
   }
 
-  public DnsIp lookupA(String domainName) throws DnsIllegalArgumentException, DnsException, DnsNotFoundException {
+  public DnsIp lookupA(String domainName) throws CastException, DnsException, DnsNotFoundException {
     return this.lookupA(DnsName.create(domainName));
   }
 

@@ -3,7 +3,11 @@ package net.bytle.vertx;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.dns.DnsClientOptions;
-import net.bytle.dns.*;
+import net.bytle.dns.DnsException;
+import net.bytle.dns.DnsIp;
+import net.bytle.dns.DnsMxRecord;
+import net.bytle.exception.CastException;
+import net.bytle.type.DnsName;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.xbill.DNS.*;
@@ -105,7 +109,7 @@ public class TowerDnsClient {
                 public DnsName getTarget() {
                   try {
                     return DnsName.create(mx.getTarget().toString());
-                  } catch (DnsIllegalArgumentException e) {
+                  } catch (CastException e) {
                     throw new RuntimeException(e);
                   }
                 }
@@ -132,7 +136,7 @@ public class TowerDnsClient {
               public DnsName getTarget() {
                 try {
                   return DnsName.create(mx.name());
-                } catch (DnsIllegalArgumentException e) {
+                } catch (CastException e) {
                   throw new RuntimeException(e);
                 }
               }

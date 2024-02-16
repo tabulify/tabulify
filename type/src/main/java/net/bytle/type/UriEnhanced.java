@@ -2,6 +2,7 @@ package net.bytle.type;
 
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalStructure;
+import net.bytle.exception.NotFoundException;
 
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -21,7 +22,7 @@ public class UriEnhanced {
   /**
    * The host does not have any port information
    */
-  private String host;
+  private DnsName host;
   private Integer port = null;
   private MapKeyIndependent<String> queryProperties = new MapKeyIndependent<>();
   private String fragment;
@@ -40,7 +41,7 @@ public class UriEnhanced {
     try {
       uri = URI.create(url);
     } catch (Exception e) {
-      throw new IllegalStructure("Illegal URL: "+e.getMessage(),e);
+      throw new IllegalStructure("Illegal URL: " + e.getMessage(), e);
     }
     return createFromUri(uri);
 
@@ -93,7 +94,11 @@ public class UriEnhanced {
     if (host.contains(":")) {
       return this.setAuthority(host);
     }
-    this.host = host;
+    try {
+      this.host = DnsName.create(host);
+    } catch (CastException e) {
+      throw new IllegalStructure("The host value (" + host + ") is not a valid domain name", e);
+    }
     return this;
   }
 
@@ -103,7 +108,7 @@ public class UriEnhanced {
    */
   private UriEnhanced setAuthority(String authority) throws IllegalStructure {
     String[] authorityParts = authority.split(":");
-    this.host = authorityParts[0];
+    this.setHost(authorityParts[0]);
     if (authorityParts.length >= 2) {
       String authorityPort = authorityParts[1];
       try {
@@ -167,9 +172,9 @@ public class UriEnhanced {
        */
       String nonEscapedQueryString = this.getQueryString(false);
       if (this.port == null) {
-        return new URI(this.scheme, this.host, this.path, nonEscapedQueryString, this.fragment);
+        return new URI(this.scheme, this.host.toStringWithoutRoot(), this.path, nonEscapedQueryString, this.fragment);
       } else {
-        return new URI(this.scheme, null, this.host, this.port, this.path, nonEscapedQueryString, this.fragment);
+        return new URI(this.scheme, null, this.host.toStringWithoutRoot(), this.port, this.path, nonEscapedQueryString, this.fragment);
       }
     } catch (URISyntaxException e) {
       throw new RuntimeException(e);
@@ -209,8 +214,23 @@ public class UriEnhanced {
     return query.toString();
   }
 
-  public String getHost() {
+  public DnsName getHost() throws NotFoundException {
+    if(this.host==null){
+      throw new NotFoundException();
+    }
     return this.host;
+  }
+
+  /**
+   * @deprecated use {@link #getHost()}
+   * @return the host or null if not found
+   */
+  @Deprecated
+  public String getHostAsString() {
+    if (this.host == null) {
+      return null;
+    }
+    return this.host.toStringWithoutRoot();
   }
 
   public Integer getPort() {
@@ -276,47 +296,15 @@ public class UriEnhanced {
   /**
    * @return the host with the port if known
    * Some API consider the port to be part of the host and other not.
+   * We consider not because for use the host is the DNS name
    */
   public String getHostWithPort() {
     if (port == null) {
-      return getHost();
+      return this.host.toStringWithoutRoot();
     }
-    return getHost() + ":" + port;
+    return this.host.toStringWithoutRoot() + ":" + port;
   }
 
-  /**
-   * @return the apex domain (ie the two last name of the host)
-   * in `member.combostrap.com` the apex is the `combostrap.com`
-   */
-  public String getApexWithoutPort() {
-    String host = getHost();
-    if (host == null) {
-      return "";
-    }
-    String[] hostNames = getHost().split("\\.");
-    int length = hostNames.length;
-    switch (length) {
-      case 1:
-        return hostNames[0];
-      default:
-        return hostNames[length - 2] + "." + hostNames[length - 1];
-    }
-  }
-
-  /**
-   * @return the subdomain (ie on `foo.bar.example.com` returns `foo.bar`) or empty string
-   */
-  @SuppressWarnings("unused")
-  public String getSubDomain() {
-    if (host == null || host.isEmpty()) {
-      return "";
-    }
-    int apexLength = getApexWithoutPort().length();
-    if (host.length() <= apexLength) {
-      return "";
-    }
-    return host.substring(0, host.length() - apexLength - 1);
-  }
 
   @Override
   public String toString() {

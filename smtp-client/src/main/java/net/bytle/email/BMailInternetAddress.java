@@ -5,34 +5,33 @@ import com.sanctionco.jmail.InvalidEmailException;
 import com.sanctionco.jmail.JMail;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
-import net.bytle.dns.DnsIllegalArgumentException;
-import net.bytle.dns.DnsName;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
-import net.bytle.type.Strings;
+import net.bytle.type.DnsName;
+import net.bytle.type.EmailAddress;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Objects;
 
 /**
- * An email address with the domain name as {@link DnsName}
+ * An Internet address is an {@link EmailAddress email address} and a name
+ * in different format specified in RFC 822
  * <p>
- * A class to handle mailbox address format ie the email RFC 822
+ * Example:
  * where an email address can be specified in a mailbox format
  * `<yolo yol@email.com>`
- * It wraps a {@link jakarta.mail.internet.MimeMessage}
+ * This class wraps a {@link jakarta.mail.internet.InternetAddress}
+ * and a {@link EmailAddress}
  * <p>
- * Email fields are Strings using the common formats for email with or without real name.
- * Example of valid values
- * `username@example.com`
- * `username@example.com (Firstname Lastname)`
- * `Firstname Lastname <username@example.com>`
+ * Internet Address are Strings using the common formats for email with or without real name.
+ *  * Example of valid values
+ *  * `username@example.com`
+ *  * `username@example.com (Firstname Lastname)`
+ *  * `Firstname Lastname <username@example.com>`
  */
 public class BMailInternetAddress {
 
-  private static final String AT_SIGN = "@";
-  private final String emailAddress;
-  private final DnsName domain;
-  private final String localPart;
+  private final EmailAddress emailAddress;
   private final InternetAddress internetAddress;
 
   public static BMailInternetAddress of(String email, String name) throws AddressException {
@@ -62,30 +61,22 @@ public class BMailInternetAddress {
 
     this.internetAddress = internetAddress;
 
-    this.emailAddress = internetAddress.getAddress();
+      try {
+          this.emailAddress = EmailAddress.of(internetAddress.getAddress());
+      } catch (CastException e) {
+        throw new AddressException("The email address is not valid ("+e.getMessage()+")");
+      }
 
-    if (internetAddress.isGroup()) {
+      if (internetAddress.isGroup()) {
       throw new RuntimeException("(" + internetAddress + ") is a group email and it's not yet supported");
     }
-
-    final String[] split = this.emailAddress.split(AT_SIGN);
-    if (split.length != 2) {
-      throw new AddressException("The email address does not have 2 parts (ie localname@domain)");
-    }
-    String absoluteName = split[1];
-    try {
-      this.domain = DnsName.create(absoluteName);
-    } catch (DnsIllegalArgumentException e) {
-      throw new AddressException("The domain (" + absoluteName + ")is not valid (");
-    }
-    this.localPart = split[0];
 
     /**
      * Set by default the personal to the local part of the email
      */
     if (this.internetAddress.getPersonal() == null) {
       try {
-        this.internetAddress.setPersonal(this.localPart);
+        this.internetAddress.setPersonal(this.emailAddress.getLocalPart());
       } catch (UnsupportedEncodingException e) {
         throw new InternalException("We were unable to set the personal to the email local part", e);
       }
@@ -94,15 +85,26 @@ public class BMailInternetAddress {
     this.emailValidation();
   }
 
+  public EmailAddress getEmailAddress() {
+    return emailAddress;
+  }
+
+  /**
+   *
+   * @deprecated use {@link #getEmailAddress()} to get the domain
+   */
+  @Deprecated
   public DnsName getDomainName() {
-    return domain;
+    return emailAddress.getDomainName();
   }
 
   /**
    * @return the part before the at/arobase character
+   * @deprecated use {@link #getEmailAddress()}
    */
+  @Deprecated
   public String getLocalPart() {
-    return localPart;
+    return emailAddress.getLocalPart();
   }
 
   public static BMailInternetAddress of(String email) throws AddressException {
@@ -113,12 +115,6 @@ public class BMailInternetAddress {
 
   public static BMailInternetAddress of(InternetAddress internetAddress) throws AddressException {
     return new BMailInternetAddress(internetAddress);
-  }
-
-
-
-  public Integer getLocalPartDigitCount() {
-    return Strings.createFromString(localPart).getDigitCount();
   }
 
 
@@ -143,22 +139,14 @@ public class BMailInternetAddress {
    */
   private void emailValidation() throws AddressException {
 
-    if (this.domain.toStringWithoutRoot().equals("localhost")) {
-      throw new AddressException("The domain should not be localhost");
-    }
 
-    if (this.domain.toStringWithoutRoot().startsWith("[")) {
-      throw new AddressException("The domain should not start with a [");
-    }
-
-    // user@[10.9.8.7] and user@localhost are also valid
     this.internetAddress.validate();
 
     /**
      * Not sure if this is needed
      */
     try {
-      JMail.enforceValid(this.emailAddress);
+      JMail.enforceValid(this.emailAddress.toString());
     } catch (InvalidEmailException e) {
       // Handle invalid email
       throw new AddressException("(" + this.emailAddress + ") is not a valid email: " + e.getMessage());
@@ -172,17 +160,11 @@ public class BMailInternetAddress {
   }
 
   public String getAddress() {
-    return this.emailAddress;
+    return this.emailAddress.toString();
   }
 
-  /**
-   *
-   * @return the email in lowercase format
-   * ChatGpt: In practice, most mail servers and services treat both the local and domain parts of email addresses as case-insensitive.
-   * Nonetheless, it's always recommended to follow the standard conventions and use lowercase characters
-   * for the entire email address to avoid potential issues or confusion.
-   */
+
   public String toNormalizedString() {
-    return this.emailAddress.toLowerCase();
+    return this.emailAddress.toNormalizedString();
   }
 }

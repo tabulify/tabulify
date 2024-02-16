@@ -1,5 +1,7 @@
 package net.bytle.dns;
 
+import net.bytle.type.DnsName;
+
 import java.util.List;
 import java.util.Set;
 

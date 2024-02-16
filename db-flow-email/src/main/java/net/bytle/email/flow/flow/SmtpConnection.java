@@ -1,5 +1,6 @@
 package net.bytle.email.flow.flow;
 
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import net.bytle.db.Tabular;
@@ -213,7 +214,12 @@ public class SmtpConnection extends Connection {
 
   @Override
   public Boolean ping() {
-    return this.getSmtpServer().ping();
+    try {
+      this.getSmtpServer().ping();
+      return false;
+    } catch (MessagingException e) {
+      return true;
+    }
   }
 
   public BMailSmtpClient getSmtpServer() {
@@ -260,16 +266,17 @@ public class SmtpConnection extends Connection {
 
   private String getHost() {
 
-    String host = this.uri.getHost();
-    if (host != null) {
-      return host;
+    try {
+      return this.uri.getHost().toStringWithoutRoot();
+    } catch (NotFoundException e) {
+      // no host
     }
-    // not null for sure
     try {
       return (String) this.getVariable(BMailSmtpConnectionAttribute.HOST).getValueOrDefaultOrNull();
     } catch (NoVariableException e) {
       return BMailSmtpConnectionAttribute.DEFAULTS.HOST;
     }
+
 
   }
 

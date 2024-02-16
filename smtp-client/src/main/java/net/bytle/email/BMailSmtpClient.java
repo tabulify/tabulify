@@ -216,14 +216,18 @@ public class BMailSmtpClient {
     return toUri().toString();
   }
 
-  public Boolean ping() throws MessagingException {
+  /**
+   * @throws MessagingException if the ping was not successful due to a network exception
+   * We can't check if this is a network problem or that the server does not exist
+   * So we throw by default
+   */
+  public void ping() throws MessagingException {
     try {
       Transport transport = smtpSession.getTransport();
       transport.connect();
       transport.close();
-      return true;
     } catch (NoSuchProviderException e) {
-      throw new RuntimeException(e);
+        throw new RuntimeException(e);
     }
   }
 

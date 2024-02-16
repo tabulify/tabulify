@@ -1,9 +1,10 @@
 package net.bytle.smtp;
 
 import net.bytle.dns.DnsIllegalArgumentException;
-import net.bytle.dns.DnsName;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.type.DnsName;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +22,11 @@ public class SmtpDomain {
 
   public SmtpDomain(String name) throws DnsIllegalArgumentException {
 
-    this.domainName = DnsName.create(name);
+      try {
+          this.domainName = DnsName.create(name);
+      } catch (CastException e) {
+          throw new DnsIllegalArgumentException(e);
+      }
 
   }
 

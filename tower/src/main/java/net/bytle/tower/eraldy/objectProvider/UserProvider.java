@@ -15,8 +15,6 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
-import jakarta.mail.internet.AddressException;
-import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.AssertionException;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
@@ -32,6 +30,8 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.PasswordHashManager;
 import net.bytle.tower.util.Postgres;
+import net.bytle.type.EmailAddress;
+import net.bytle.type.EmailCastException;
 import net.bytle.vertx.*;
 import net.bytle.vertx.analytics.event.SignUpEvent;
 import net.bytle.vertx.auth.AuthUser;
@@ -442,7 +442,7 @@ public class UserProvider {
   }
 
 
-  public Future<? extends User> getUserByEmail(BMailInternetAddress userEmail, Realm realm) {
+  public Future<? extends User> getUserByEmail(EmailAddress userEmail, Realm realm) {
 
     Class<? extends User> userClass;
     if (this.apiApp.getEraldyModel().isEraldyRealm(realm)) {
@@ -455,7 +455,7 @@ public class UserProvider {
 
   }
 
-  public Future<? extends User> getUserByEmail(BMailInternetAddress userEmail, String realmIdentifier) {
+  public Future<? extends User> getUserByEmail(EmailAddress userEmail, String realmIdentifier) {
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(realmIdentifier)
       .recover(err -> Future.failedFuture(new InternalException("getUserByEmail: Error while trying to retrieve the realm", err)))
@@ -469,13 +469,13 @@ public class UserProvider {
    * @param realm        - the realm to use to build the user (maybe null)
    * @return the user or null if not found
    */
-  public <T extends User> Future<T> getUserByEmail(BMailInternetAddress userEmail, Long realmLocalId, Class<T> userClass, Realm realm) {
+  public <T extends User> Future<T> getUserByEmail(EmailAddress userEmail, Long realmLocalId, Class<T> userClass, Realm realm) {
 
     return this.jdbcPool.withConnection(sqlConnection -> getUserByEmail(userEmail, realmLocalId, userClass, realm, sqlConnection));
 
   }
 
-  private <T extends User> Future<T> getUserByEmail(BMailInternetAddress userEmail, Long realmLocalId, Class<T> userClass, Realm realm, SqlConnection sqlConnection) {
+  private <T extends User> Future<T> getUserByEmail(EmailAddress userEmail, Long realmLocalId, Class<T> userClass, Realm realm, SqlConnection sqlConnection) {
     assert userEmail != null;
     assert realmLocalId != null;
 
@@ -740,10 +740,10 @@ public class UserProvider {
       if (realm == null) {
         return Future.failedFuture(new InternalException("With a user email (" + identifier + ") as user identifier, the realm should be provided"));
       }
-      BMailInternetAddress email;
+      EmailAddress email;
       try {
-        email = BMailInternetAddress.of(identifier);
-      } catch (AddressException e) {
+        email = EmailAddress.of(identifier);
+      } catch (EmailCastException e) {
         return Future.failedFuture(TowerFailureException.builder()
           .setMessage("The user identifier (" + identifier + ") is not a guid nor an email")
           .setType(TowerFailureTypeEnum.BAD_STRUCTURE_422)
@@ -786,10 +786,10 @@ public class UserProvider {
       if (emailAddress == null) {
         return Future.failedFuture(new InternalException("On user getSert an email or id should be given"));
       }
-      BMailInternetAddress bMailInternetAddress;
+      EmailAddress bMailInternetAddress;
       try {
-        bMailInternetAddress = BMailInternetAddress.of(emailAddress);
-      } catch (AddressException e) {
+        bMailInternetAddress = EmailAddress.of(emailAddress);
+      } catch (EmailCastException e) {
         return Future.failedFuture(new InternalException("The email address (" + emailAddress + ") of the user to getSert is not valid", e));
       }
       futureGetUser = this.getUserByEmail(
@@ -903,9 +903,9 @@ public class UserProvider {
         String email = user.getEmail();
         String emailAddressNormalized;
         try {
-          emailAddressNormalized = BMailInternetAddress.of(email)
+          emailAddressNormalized = EmailAddress.of(email)
             .toNormalizedString();
-        } catch (AddressException e) {
+        } catch (EmailCastException e) {
           return Future.failedFuture(new InternalError("The email value (" + email + ") is not valid", e));
         }
         return sqlConnection

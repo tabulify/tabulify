@@ -8,6 +8,7 @@ val vertxVersion = rootProject.ext.get("vertxVersion").toString()
 val vertxPluginVersion = rootProject.ext.get("vertxPluginVersion").toString()
 dependencies {
 
+  implementation(project(":bytle-type"))
   implementation(project(":bytle-dns"))
   implementation(project(":bytle-vertx"))
   implementation(project(":bytle-smtp-client"))

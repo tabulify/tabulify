@@ -2,8 +2,6 @@ package net.bytle.tower.eraldy.api.implementer;
 
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import jakarta.mail.internet.AddressException;
-import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.CastException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
@@ -16,6 +14,7 @@ import net.bytle.tower.eraldy.model.openapi.UserPostBody;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.Guid;
+import net.bytle.type.EmailAddress;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
@@ -77,10 +76,10 @@ public class UserApiImpl implements UserApi {
             realmChecked
           );
         } else {
-          BMailInternetAddress mailInternetAddress;
+          EmailAddress mailInternetAddress;
           try {
-            mailInternetAddress = BMailInternetAddress.of(userIdentifier);
-          } catch (AddressException e) {
+            mailInternetAddress = EmailAddress.of(userIdentifier);
+          } catch (CastException e) {
             return Future.failedFuture(TowerFailureException
               .builder()
               .setMessage("The identifier is not a guid, nor an email (" + userIdentifier + ")")

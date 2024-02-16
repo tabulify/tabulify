@@ -17,6 +17,8 @@ import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
+import net.bytle.type.EmailAddress;
+import net.bytle.type.EmailCastException;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.AuthQueryProperty;
@@ -56,11 +58,11 @@ public class PasswordResetFlow extends WebFlowAbs {
   }
 
   public Future<ApiResponse<Void>> step1SendEmail(RoutingContext routingContext, EmailIdentifier emailIdentifier) {
-    BMailInternetAddress bMailInternetAddress;
+    EmailAddress bMailInternetAddress;
     String emailAddressAsString = emailIdentifier.getUserEmail();
     try {
-      bMailInternetAddress = BMailInternetAddress.of(emailAddressAsString);
-    } catch (AddressException e) {
+      bMailInternetAddress = EmailAddress.of(emailAddressAsString);
+    } catch (EmailCastException e) {
       return Future.failedFuture(TowerFailureException
         .builder()
         .setMessage("The email (" + emailAddressAsString + ") is not valid.")

@@ -1,5 +1,7 @@
 val jsoupVersion = rootProject.ext.get("jsoupVersion").toString()
 dependencies {
+  // for the URI
+  implementation(project(":bytle-type"))
   implementation(project(":bytle-fs"))
   implementation("org.jsoup:jsoup:$jsoupVersion")
   implementation("net.sourceforge.cssparser:cssparser:0.9.29")

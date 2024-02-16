@@ -1,5 +1,7 @@
 package net.bytle.dns;
 
+import net.bytle.type.DnsName;
+
 public interface DnsMxRecord {
 
   /**

@@ -1,5 +1,8 @@
 package net.bytle.dns;
 
+import net.bytle.exception.CastException;
+import net.bytle.type.DnsName;
+
 /**
  * Represents a host with a name and its 2 ip address
  */
@@ -36,7 +39,11 @@ public class DnsHost {
 
     public DnsHostConfig(String name) throws DnsIllegalArgumentException {
 
-      this.dnsName = DnsName.create(name);
+        try {
+            this.dnsName = DnsName.create(name);
+        } catch (CastException e) {
+            throw new DnsIllegalArgumentException(e);
+        }
 
     }
 

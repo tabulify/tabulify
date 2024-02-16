@@ -1,12 +1,12 @@
 package net.bytle.smtp;
 
 import io.vertx.core.buffer.Buffer;
-import net.bytle.dns.DnsName;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.smtp.command.SmtpBdatCommandHandler;
 import net.bytle.smtp.command.SmtpDataCommandHandler;
 import net.bytle.smtp.command.SmtpRcptCommandHandler;
 import net.bytle.smtp.sasl.SimpleAuthMechanism;
+import net.bytle.type.DnsName;
 
 import java.util.HashMap;
 import java.util.HashSet;

@@ -1,7 +1,9 @@
 package net.bytle.dns;
 
+import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
+import net.bytle.type.DnsName;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,8 +28,8 @@ public class DnsBlockListQueryHelper {
     this.queryTerm = queryTerm;
   }
 
-  public static BuilderConf forDomain(String domain) {
-    return new BuilderConf(DnsBlockListType.DOMAIN, domain);
+  public static BuilderConf forDomain(DnsName domain) {
+    return new BuilderConf(DnsBlockListType.DOMAIN, domain.toStringWithoutRoot());
   }
 
   /**
@@ -37,7 +39,7 @@ public class DnsBlockListQueryHelper {
   public DnsBlockListResponseCode createResponseCode(DnsIp dnsIp) {
 
     Set<DnsBlockListResponseCode> blockingKnownResponses = dnsBlockList.getBlockingKnownResponses();
-    if (blockingKnownResponses.size() == 0) {
+    if (blockingKnownResponses.isEmpty()) {
       /**
        * Response may be error response, we don't know, normally
        * you are blocked if we get a response
@@ -94,7 +96,7 @@ public class DnsBlockListQueryHelper {
   public DnsName getDnsNameToQuery() {
     try {
       return DnsName.create(this.queryTerm + "." + dnsBlockList.getZone());
-    } catch (DnsIllegalArgumentException e) {
+    } catch (CastException e) {
       throw new RuntimeException("We create the name, it should be good",e);
     }
   }
@@ -146,7 +148,7 @@ public class DnsBlockListQueryHelper {
     }
 
     public List<DnsBlockListQueryHelper> build() {
-      if (this.blockLists.size() == 0) {
+      if (this.blockLists.isEmpty()) {
         switch (this.dnsBlockListType) {
           case IP:
             this.addBlockList(DnsBlockList.ZEN_SPAMHAUS_ORG);

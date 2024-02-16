@@ -19,6 +19,8 @@ import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.util.Guid;
+import net.bytle.type.EmailAddress;
+import net.bytle.type.EmailCastException;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.*;
@@ -294,10 +296,10 @@ public class ListRegistrationFlow extends WebFlowAbs {
     }
 
     String subjectEmail = jwtClaims.getSubjectEmail();
-    BMailInternetAddress bMailInternetAddress;
+    EmailAddress bMailInternetAddress;
     try {
-      bMailInternetAddress = BMailInternetAddress.of(subjectEmail);
-    } catch (AddressException e) {
+      bMailInternetAddress = EmailAddress.of(subjectEmail);
+    } catch (EmailCastException e) {
       TowerFailureException
         .builder()
         .setMessage("The AUTH subject email (" + subjectEmail + ") is not valid.")

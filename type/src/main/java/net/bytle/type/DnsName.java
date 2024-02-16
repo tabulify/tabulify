@@ -1,50 +1,54 @@
-package net.bytle.dns;
+package net.bytle.type;
 
 
-import org.xbill.DNS.Name;
-import org.xbill.DNS.TextParseException;
+import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * DNS Name is a basic type
+ * <p>
+ * It's used everywhere from URI to Email.
+ */
 public class DnsName {
 
   private static final String DNS_SEPARATOR = ".";
   public static final String ROOT_DOT = DNS_SEPARATOR;
 
-  private final Name xBillDnsName;
+  private final DnsNameXbill xBillDnsName;
   /**
    * Selector / Value
    */
   private final Map<String, String> expectedDkims = new HashMap<>();
-  private final List<DnsEmailAddress> expectedDmarcEmails = new ArrayList<>();
+  private final List<EmailAddress> expectedDmarcEmails = new ArrayList<>();
 
-  protected DnsName(String absoluteName) throws DnsIllegalArgumentException {
+  protected DnsName(String absoluteName) throws DnsCastException {
     String nameWithRoot;
     if (!absoluteName.endsWith(ROOT_DOT)) {
       nameWithRoot = absoluteName + ROOT_DOT;
     } else {
       nameWithRoot = absoluteName;
     }
-    try {
-      this.xBillDnsName = Name.fromString(nameWithRoot);
-    } catch (TextParseException e) {
-      throw new DnsIllegalArgumentException(e);
-    }
-
+    this.xBillDnsName = DnsNameXbill.fromString(nameWithRoot);
   }
 
-  public static DnsName create(String absoluteName) throws DnsIllegalArgumentException {
+  /**
+   *
+   * @param absoluteName - an absolute name with or without the root dot (We add it)
+   * @return a DNS Name
+   * @throws DnsCastException if the name is not valid
+   */
+  public static DnsName create(String absoluteName) throws DnsCastException {
     return new DnsName(absoluteName);
   }
-
 
 
   @SuppressWarnings("unused")
   boolean isSubdomain(DnsName dnsName) {
     return this.xBillDnsName.subdomain(dnsName.xBillDnsName);
   }
-
 
 
   @Override
@@ -61,15 +65,21 @@ public class DnsName {
   }
 
 
-
+  /**
+   * @return the domain without the root point
+   */
   @Override
   public String toString() {
-    return this.xBillDnsName.toString();
+    /**
+     * When used as a string, there is no root dot
+     * always
+     */
+    return toStringWithoutRoot();
   }
 
 
-  public DnsName getSubdomain(String label) throws DnsIllegalArgumentException {
-    return new DnsName( label + DNS_SEPARATOR + this.xBillDnsName);
+  public DnsName getSubdomain(String label) throws CastException {
+    return new DnsName(label + DNS_SEPARATOR + this.xBillDnsName);
   }
 
   /**
@@ -77,6 +87,11 @@ public class DnsName {
    */
   public String toStringWithoutRoot() {
     return this.xBillDnsName.toString(true);
+  }
+
+  @SuppressWarnings("unused")
+  public String toStringWithRoot() {
+    return this.xBillDnsName.toString(false);
   }
 
   public DnsName getApexName() {
@@ -88,12 +103,11 @@ public class DnsName {
       String rootLabel = this.xBillDnsName.getLabelString(labels - 1);
       String tldLabel = this.xBillDnsName.getLabelString(labels - 2);
       String apexLabel = this.xBillDnsName.getLabelString(labels - 3);
-      return new DnsName( apexLabel + "." + tldLabel + "." + rootLabel);
-    } catch (DnsIllegalArgumentException e) {
-      throw new DnsInternalException("It should not throw");
+      return new DnsName(apexLabel + "." + tldLabel + "." + rootLabel);
+    } catch (CastException e) {
+      throw new InternalException("It should not throw");
     }
   }
-
 
 
   public void addExpectedDkim(String selector, String value) {
@@ -136,22 +150,22 @@ public class DnsName {
      * https://support.google.com/a/answer/2466563#dmarc-record-tags
      */
     String ruaDelimiter = ", " + mailToSchema;
-    return dmarc + "; rua=" + mailToSchema + this.expectedDmarcEmails.stream().map(DnsEmailAddress::toString).collect(Collectors.joining(ruaDelimiter));
+    return dmarc + "; rua=" + mailToSchema + this.expectedDmarcEmails.stream().map(EmailAddress::toString).collect(Collectors.joining(ruaDelimiter));
   }
 
-  public DnsName addExpectedDmarcEmail(DnsEmailAddress mail) {
+  public DnsName addExpectedDmarcEmail(EmailAddress mail) {
     this.expectedDmarcEmails.add(mail);
     return this;
   }
 
-  public List<DnsEmailAddress> getDmarcEmails() {
+  public List<EmailAddress> getDmarcEmails() {
     return this.expectedDmarcEmails;
   }
 
 
   public List<String> getLabels() {
     List<String> labels = new ArrayList<>();
-    for(int i=0;i<this.xBillDnsName.labels(); i++){
+    for (int i = 0; i < this.xBillDnsName.labels(); i++) {
       labels.add(this.xBillDnsName.getLabelString(i));
     }
     return labels;

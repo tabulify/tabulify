@@ -1,9 +1,9 @@
 package net.bytle.vertx.resilience;
 
 import io.vertx.core.Future;
-import jakarta.mail.internet.AddressException;
-import net.bytle.dns.DnsName;
-import net.bytle.email.BMailInternetAddress;
+import net.bytle.type.DnsName;
+import net.bytle.type.EmailAddress;
+import net.bytle.type.EmailCastException;
 import net.bytle.vertx.TowerApp;
 
 public class EmailAddressValidator {
@@ -27,11 +27,11 @@ public class EmailAddressValidator {
 
     ValidationTestResult.Builder emailValidCheck = ValidationTest.EMAIL_ADDRESS.createResultBuilder();
     EmailAddressValidatorReport.Builder emailValidityReport = EmailAddressValidatorReport.builder(email);
-    BMailInternetAddress emailAddress;
+    EmailAddress internetAddress;
     try {
-      emailAddress = BMailInternetAddress.of(email);
-      emailValidityReport.setEmailInternetAddress(emailAddress);
-    } catch (AddressException e) {
+      internetAddress = EmailAddress.of(email);
+      emailValidityReport.setEmailInternetAddress(internetAddress);
+    } catch (EmailCastException e) {
       return Future.succeededFuture(
         emailValidityReport
           .addResult(emailValidCheck.setMessage("Email address is not valid (" + e.getMessage() + ")").fail())
@@ -43,7 +43,7 @@ public class EmailAddressValidator {
     /**
      * The domain to check
      */
-    DnsName emailDomain = emailAddress.getDomainName();
+    DnsName emailDomain = internetAddress.getDomainName();
 
     /**
      * Domain Check

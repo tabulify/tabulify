@@ -5,13 +5,13 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import net.bytle.dns.DnsException;
 import net.bytle.dns.DnsIp;
-import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListUserProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
+import net.bytle.type.EmailAddress;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.resilience.EmailAddressValidationStatus;
@@ -98,9 +98,9 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
           return this.closeExecution(listImportJobStatus, message);
         }
         UserProvider userProvider = this.listImportJob.getListImportFlow().getApp().getUserProvider();
-        BMailInternetAddress emailInternetAddress;
+        EmailAddress emailInternetAddress;
         try {
-          emailInternetAddress = emailAddressValidityReport.getEmailInternetAddress();
+          emailInternetAddress = emailAddressValidityReport.getEmailAddress();
         } catch (NullValueException e) {
           return Future.failedFuture(new InternalException("Email address was null but the email was validated. It should not happen."));
         }

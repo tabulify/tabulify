@@ -2,8 +2,6 @@ package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import jakarta.mail.internet.AddressException;
-import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.*;
 import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
@@ -12,6 +10,8 @@ import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
+import net.bytle.type.EmailAddress;
+import net.bytle.type.EmailCastException;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.analytics.event.SignUpEvent;
@@ -304,7 +304,7 @@ public class AuthProvider {
 
   }
 
-  public Future<AuthUser> getAuthUserForSessionByEmailNotNull(BMailInternetAddress email, String realmIdentifier) {
+  public Future<AuthUser> getAuthUserForSessionByEmailNotNull(EmailAddress email, String realmIdentifier) {
 
     return this.apiApp.getUserProvider()
       .getUserByEmail(email, realmIdentifier)
@@ -323,7 +323,7 @@ public class AuthProvider {
 
   }
 
-  public Future<AuthUser> getAuthUserForSessionByEmail(BMailInternetAddress email, Realm realm) {
+  public Future<AuthUser> getAuthUserForSessionByEmail(EmailAddress email, Realm realm) {
 
     return this.apiApp.getUserProvider()
       .getUserByEmail(email, realm)
@@ -342,7 +342,7 @@ public class AuthProvider {
    * @param realmIdentifier - the realm
    * @return an auth user to be stored in a session or null
    */
-  public Future<AuthUser> getAuthUserForSessionByEmail(BMailInternetAddress email, String realmIdentifier) {
+  public Future<AuthUser> getAuthUserForSessionByEmail(EmailAddress email, String realmIdentifier) {
 
     return this.apiApp.getUserProvider()
       .getUserByEmail(email, realmIdentifier)
@@ -453,10 +453,10 @@ public class AuthProvider {
 
   public Future<AuthUser> getAuthUserForSessionByClaims(AuthUser authUserClaims) {
     String subjectEmail = authUserClaims.getSubjectEmail();
-    BMailInternetAddress bMailInternetAddress;
+    EmailAddress bMailInternetAddress;
     try {
-      bMailInternetAddress = BMailInternetAddress.of(subjectEmail);
-    } catch (AddressException e) {
+      bMailInternetAddress = EmailAddress.of(subjectEmail);
+    } catch (EmailCastException e) {
       return Future.failedFuture(TowerFailureException
         .builder()
         .setMessage("The AuthUser subject email (" + subjectEmail + ") is not valid.")

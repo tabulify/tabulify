@@ -4,8 +4,6 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
-import jakarta.mail.internet.AddressException;
-import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NotFoundException;
@@ -14,6 +12,8 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.type.EmailAddress;
+import net.bytle.type.EmailCastException;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.OAuthAccessTokenResponse;
 import net.bytle.vertx.*;
@@ -100,18 +100,18 @@ public class AuthApiImpl implements AuthApi {
 
           String listAppGuid = listItem.getOwnerApp().getGuid();
           if (!requestingAppGuid.equals(listAppGuid)) {
-              return Future.failedFuture(
-                TowerFailureException.builder()
-                  .setMessage("The requesting app ("+requestingAppGuid+") and the app guid of the list ("+listAppGuid+") are not consistent. Did you forgot the "+AuthQueryProperty.APP_GUID+" property?")
-                  .buildWithContextFailing(routingContext)
-              );
-            }
+            return Future.failedFuture(
+              TowerFailureException.builder()
+                .setMessage("The requesting app (" + requestingAppGuid + ") and the app guid of the list (" + listAppGuid + ") are not consistent. Did you forgot the " + AuthQueryProperty.APP_GUID + " property?")
+                .buildWithContextFailing(routingContext)
+            );
+          }
         }
-        if(listItem==null && finalListGuid!=null){
+        if (listItem == null && finalListGuid != null) {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-              .setMessage("The list ("+finalListGuid+") was not found")
+              .setMessage("The list (" + finalListGuid + ") was not found")
               .buildWithContextFailing(routingContext)
           );
         }
@@ -194,10 +194,10 @@ public class AuthApiImpl implements AuthApi {
     /**
      * Valid email
      */
-    BMailInternetAddress bMailInternetAddress;
+    EmailAddress bMailInternetAddress;
     try {
-      bMailInternetAddress = BMailInternetAddress.of(authEmailPost.getUserEmail());
-    } catch (AddressException e) {
+      bMailInternetAddress = EmailAddress.of(authEmailPost.getUserEmail());
+    } catch (EmailCastException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
           .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
@@ -384,7 +384,11 @@ public class AuthApiImpl implements AuthApi {
 
 
   private void utilValidateEmailIdentifierDataUtil(EmailIdentifier emailIdentifier) {
-    ValidationUtil.validateEmail(emailIdentifier.getUserEmail(), "userEmail");
+    try {
+      EmailAddress.of(emailIdentifier.getUserEmail());
+    } catch (EmailCastException e) {
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("The email address is not valid", "userEmail", null);
+    }
     String realmIdentifier = emailIdentifier.getRealmIdentifier();
     if (realmIdentifier == null) {
       throw IllegalArgumentExceptions.createWithInputNameAndValue("The realm identifier cannot be null.", "realmIdentifier", null);

@@ -3,6 +3,7 @@ package net.bytle.smtp;
 import net.bytle.dns.*;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.IllegalStructure;
+import net.bytle.type.DnsName;
 
 import java.util.Set;
 
@@ -27,14 +28,14 @@ public class SmtpFiltering {
     return smtpSession.getSmtpService().isAuthRequired();
   }
 
-  public static void checkIfDomainIsNotBlocked(SmtpSession smtpSession, BMailInternetAddress emailAddress) throws SmtpException {
+  public static void checkIfDomainIsNotBlocked(SmtpSession smtpSession, BMailInternetAddress internetAddress) throws SmtpException {
     if (smtpSession.getSmtpService().getSmtpServer().isDnsBlockListDisabled()) {
       return;
     }
     if (shouldNotBeFiltered(smtpSession)) {
       return;
     }
-    String domain = emailAddress.getDomainName().toStringWithoutRoot();
+    DnsName domain = internetAddress.getEmailAddress().getDomainName();
     DnsBlockListQueryHelper dnsBlockListHelper = DnsBlockListQueryHelper.forDomain(domain).build().get(0);
     Set<DnsIp> dnsIps;
     try {

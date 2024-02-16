@@ -21,6 +21,8 @@ import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
+import net.bytle.type.EmailAddress;
+import net.bytle.type.EmailCastException;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.*;
@@ -64,7 +66,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
    *
    */
   public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext,
-                                                        BMailInternetAddress bMailInternetAddress,
+                                                        EmailAddress bMailInternetAddress,
                                                         Realm realm,
                                                         UriEnhanced redirectUri
   ) {
@@ -210,10 +212,10 @@ public class UserRegistrationFlow extends WebFlowAbs {
   public void handleStep2ClickOnEmailValidationLink(RoutingContext ctx, AuthJwtClaims jwtClaims) {
 
     String subjectEmail = jwtClaims.getSubjectEmail();
-    BMailInternetAddress bMailInternetAddress;
+    EmailAddress emailAddress;
     try {
-      bMailInternetAddress = BMailInternetAddress.of(subjectEmail);
-    } catch (AddressException e) {
+      emailAddress = EmailAddress.of(subjectEmail);
+    } catch (EmailCastException e) {
       TowerFailureException
         .builder()
         .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500) // callback our fault
@@ -236,7 +238,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
       return;
     }
     authProvider
-      .getAuthUserForSessionByEmail(bMailInternetAddress, requestingRealm)
+      .getAuthUserForSessionByEmail(emailAddress, requestingRealm)
       .onFailure(ctx::fail)
       .onSuccess(authUserFromGet -> {
         UriEnhanced uriEnhanced = UriEnhanced.createFromUri(jwtClaims.getRedirectUri());

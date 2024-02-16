@@ -8,7 +8,6 @@ import io.vertx.core.net.SocketAddress;
 import jakarta.mail.internet.AddressException;
 import net.bytle.dns.DnsClient;
 import net.bytle.dns.DnsIllegalArgumentException;
-import net.bytle.dns.DnsName;
 import net.bytle.dns.XBillDnsClient;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.CastException;
@@ -22,6 +21,7 @@ import net.bytle.smtp.mailbox.SmtpMailboxStdout;
 import net.bytle.smtp.milter.DmarcMilter;
 import net.bytle.smtp.milter.SmtpMilter;
 import net.bytle.type.Casts;
+import net.bytle.type.DnsName;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
 import org.apache.logging.log4j.LogManager;
@@ -428,7 +428,7 @@ public class SmtpServer {
     } catch (AddressException e) {
       throw SmtpException.createForInternalException("bad email address" + email, e);
     }
-    DnsName userDomain = internetAddress.getDomainName();
+    DnsName userDomain = internetAddress.getEmailAddress().getDomainName();
     SmtpDomain domain = this.hostedDomains
       .values()
       .stream()
@@ -440,7 +440,7 @@ public class SmtpServer {
       throw SmtpException.createForInternalException("The domain (" + userDomain + ") of the user (" + email + ") does not exist");
     }
 
-    SmtpUser user = domain.getUser(internetAddress.getLocalPart());
+    SmtpUser user = domain.getUser(internetAddress.getEmailAddress().getLocalPart());
     SmtpMailbox mailbox = user.getMailbox();
     if (!(mailbox instanceof SmtpMailboxMemory)) {
       throw SmtpException.createForInternalException("The user (" + email + ") has not a memory mailbox. The message cannot be retrieved");
