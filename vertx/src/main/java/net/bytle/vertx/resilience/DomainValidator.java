@@ -49,6 +49,7 @@ public class DomainValidator {
 
 
   public DomainValidator(TowerApp towerApp) {
+
     Server server = towerApp.getApexDomain().getHttpServer().getServer();
     webClient = HttpClientBuilder.builder(server.getVertx())
       .setMaxHeaderSize(8192 * 10) // mail.ru has HTTP headers that are bigger than 8192 bytes
@@ -66,6 +67,7 @@ public class DomainValidator {
     whiteListDomains = new HashSet<>();
     whiteListDomains.add("aol.com");
     whiteListDomains.add("bigmir.net"); // ukrainian portal
+    whiteListDomains.add("comunidad.unam.mx"); // it's not an apex domain but is a university student
     whiteListDomains.add("free.fr");
     whiteListDomains.add("hotmail.com");
     whiteListDomains.add("icloud.com");
