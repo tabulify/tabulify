@@ -102,7 +102,10 @@ public class DomainValidator {
      * Blocking
      */
     blockListApexDomains = new HashSet<>();
-    blockListApexDomains.add("backlinksgenerator.in");
+    if(!JavaEnvs.IS_DEV) {
+      // to test: Lilla_Guess@mail.backlinksgenerator.in
+      blockListApexDomains.add("backlinksgenerator.in");
+    }
     blockListApexDomains.add("horsetipstersreview.com"); // betting platform
     blockListApexDomains.add("tremunpiercing.com"); // 3 email prueba3@..., prueba4@..., prueba5@...
 
@@ -166,6 +169,13 @@ public class DomainValidator {
      */
     Future<Set<ValidationTestResult>> homePageFutureTestResults = this.getHomePageFutureCheck(dnsNameToCheck.getApexName())
       .compose(testResults -> {
+        /**
+         * If this is not an Apex domain, check the page of the subdomain
+         * <p>
+         * Example:
+         * Bad: Lilla_Guess@mail.backlinksgenerator.in
+         * Good: zackdavid@comunidad.unam.mx
+         */
         if (dnsNameToCheck.isApexDomain()) {
           return Future.succeededFuture(testResults);
         }
