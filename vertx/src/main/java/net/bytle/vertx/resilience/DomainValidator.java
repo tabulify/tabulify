@@ -96,7 +96,7 @@ public class DomainValidator {
     blockListDomains = new HashSet<>();
     blockListDomains.add("backlinksgenerator.in");
     blockListDomains.add("horsetipstersreview.com"); // betting platform
-    blockListDomains.add("tremunpiercing.com"); // 3 email prueba3@, prueba4@, prueba5@
+    blockListDomains.add("tremunpiercing.com"); // 3 email prueba3@..., prueba4@..., prueba5@...
 
 
   }
@@ -136,6 +136,27 @@ public class DomainValidator {
           .fail()
       );
       return Future.succeededFuture(domainValidatorResult);
+    }
+
+    /**
+     * No email domain where we need to send an email has more than 2 labels
+     * (example: `mail.backlinksgenerator.in`)
+     */
+    if(!dnsName.isApexDomain()){
+      domainValidatorResult.addTest(
+        ValidationTest.APEX_DOMAIN.createResultBuilder()
+          .setMessage("Domain (" + lowerCaseDomainWithoutRoot + ") is not an apex domain")
+          .fail()
+      );
+      if(failEarly){
+        return Future.succeededFuture(domainValidatorResult);
+      }
+    } else {
+      domainValidatorResult.addTest(
+        ValidationTest.APEX_DOMAIN.createResultBuilder()
+          .setMessage("Domain (" + lowerCaseDomainWithoutRoot + ") is an apex domain")
+          .succeed()
+      );
     }
 
     /**

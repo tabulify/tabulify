@@ -82,6 +82,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
               listImportJobStatus = ListImportJobRowStatus.GREY_BAN;
               break;
             case EMAIL_ADDRESS_INVALID:
+            case NOT_AN_APEX_DOMAIN:
               listImportJobStatus = ListImportJobRowStatus.EMAIL_ADDRESS_INVALID;
               break;
             case DOMAIN_BLOCKED:

@@ -1,11 +1,11 @@
 package net.bytle.tower.eraldy.api.implementer.callback;
 
 import io.vertx.ext.web.RoutingContext;
-import jakarta.mail.internet.AddressException;
-import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
+import net.bytle.type.EmailAddress;
+import net.bytle.type.EmailCastException;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.auth.AuthJwtClaims;
@@ -48,10 +48,10 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
     }
 
     String email = jwtClaims.getSubjectEmail();
-    BMailInternetAddress bMailInternetAddress;
+    EmailAddress emailAddress;
     try {
-      bMailInternetAddress = BMailInternetAddress.of(email);
-    } catch (AddressException e) {
+      emailAddress = EmailAddress.of(email);
+    } catch (EmailCastException e) {
       TowerFailureException
         .builder()
         .setMessage("The AUTH subject email (" + email + ") is not valid.")
@@ -64,7 +64,7 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
     EraldyApiApp apiApp = (EraldyApiApp) this.getWebFlow().getApp();
     apiApp
       .getAuthProvider()
-      .getAuthUserForSessionByEmailNotNull(bMailInternetAddress, realmIdentifier)
+      .getAuthUserForSessionByEmailNotNull(emailAddress, realmIdentifier)
       .onFailure(ctx::fail)
       .onSuccess(authUserForSession -> apiApp.getAuthNContextManager().newAuthNContext(ctx, webFlow, authUserForSession, OAuthState.createEmpty(), jwtClaims)
         .redirectViaHttp(apiApp.getEraldyModel().getMemberAppUri().setPath(FRONT_END_UPDATE_OPERATION_PATH))

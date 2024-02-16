@@ -5,12 +5,12 @@ public enum EmailAddressValidationStatus {
   /**
    * The email address is legit
    */
-  LEGIT(0, "legit",0),
+  LEGIT(0, "legit", 0),
   /**
    * A fatal error has occurred during
    * validation
    */
-  FATAL_ERROR(1, "fatalError",999),
+  FATAL_ERROR(1, "fatalError", 999),
   /**
    * The email address is invalid
    */
@@ -42,7 +42,12 @@ public enum EmailAddressValidationStatus {
    * spam email. More validation is needed
    */
   GREY_BAN(7, "greyBan", 100),
-  ;
+
+  /**
+   * A valid email for a mailing list should be an apex domain
+   * The chance of the domain being on a sub apex domain is nihil
+   */
+  NOT_AN_APEX_DOMAIN(8, "apexDomain", 100);
 
   private final int statusCode;
   private final String statusName;

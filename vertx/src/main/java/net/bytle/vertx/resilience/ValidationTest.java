@@ -37,7 +37,12 @@ public enum ValidationTest {
   /**
    * Test if the domain is not on the grey list
    */
-  GREY_LIST("greyList", EmailAddressValidationStatus.GREY_BAN);
+  GREY_LIST("greyList", EmailAddressValidationStatus.GREY_BAN),
+
+  /**
+   * Test if the domain is an apex domain
+   */
+  APEX_DOMAIN("apexDomain", EmailAddressValidationStatus.NOT_AN_APEX_DOMAIN);
   private final String name;
   private final EmailAddressValidationStatus emailAddressValidationStatus;
 

@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * A class tha handles
@@ -109,8 +110,19 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
   }
 
   public List<ListImportJobStatus> getJobsStatuses(String listIdentifier) {
+
+    /**
+     * Actual Jobs
+     */
+    List<ListImportJobStatus> listImportJobStatuses = this.importJobQueue
+      .stream()
+      .map(ListImportJob::getStatus)
+      .collect(Collectors.toList());
+
+    /**
+     * Add the Past jobs
+     */
     List<Path> files = Fs.getChildrenFiles(this.getListDirectory(listIdentifier));
-    List<ListImportJobStatus> listImportJobStatuses = new ArrayList<>();
     for (Path file : files) {
       if (Files.isDirectory(file)) {
         continue;
@@ -130,6 +142,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
       }
       listImportJobStatuses.add(listImportStatus);
     }
+
     return listImportJobStatuses;
   }
 

@@ -170,4 +170,8 @@ public class DnsName {
     }
     return labels;
   }
+
+  public boolean isApexDomain() {
+    return getApexName().equals(this);
+  }
 }
