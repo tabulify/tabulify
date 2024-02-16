@@ -12,8 +12,10 @@ import net.bytle.dns.*;
 import net.bytle.email.BMailSmtpClient;
 import net.bytle.email.BMailStartTls;
 import net.bytle.exception.AssertionException;
+import net.bytle.exception.InternalException;
 import net.bytle.html.HtmlGrading;
 import net.bytle.html.HtmlStructureException;
+import net.bytle.java.JavaEnvs;
 import net.bytle.type.DnsName;
 import net.bytle.vertx.HttpClientBuilder;
 import net.bytle.vertx.Server;
@@ -66,7 +68,12 @@ public class DomainValidator {
     whiteListApexDomains = new HashSet<>();
     whiteListApexDomains.add("aol.com");
     whiteListApexDomains.add("bigmir.net"); // ukrainian portal
-    whiteListApexDomains.add("unam.mx"); // it's not an apex domain but is a university student
+    // Example: zackdavid@comunidad.unam.mx
+    // it's not an apex domain but is a university student
+    // Not in dev to test the validation of subdomain
+    if (!JavaEnvs.IS_DEV) {
+      whiteListApexDomains.add("unam.mx");
+    }
     whiteListApexDomains.add("free.fr");
     whiteListApexDomains.add("hotmail.com");
     whiteListApexDomains.add("icloud.com");
@@ -140,42 +147,77 @@ public class DomainValidator {
       return Future.succeededFuture(domainValidatorResult);
     }
 
-    /**
-     * A future for all checks
-     */
-    List<Future<Void>> checksFutureTests = new ArrayList<>();
 
     /**
      * Dns Check: The domain name should have Mx record
      */
-    checksFutureTests.add(this.mxChecks(dnsNameToCheck, domainValidatorResult));
+    Future<ValidationTestResult> mxChecksFutureTestResult = this.mxChecks(dnsNameToCheck);
 
     /**
      * Dns Check: Domain blocked?
      * (Not yet async)
      */
-    checksFutureTests.add(this.externalBlockLists(dnsNameToCheck, domainValidatorResult));
+    Future<ValidationTestResult> dnsBlockListFutureTestResult = this.externalBlockLists(dnsNameToCheck);
 
     /**
      * Home page Checks (A record + HTML page)
+     * Apex domain and Sub-domain if passed
+     * Example of valid subdomain email address: zackdavid@comunidad.unam.mx
      */
-    checksFutureTests.add(this.getHomePageFutureCheck(dnsNameToCheck, domainValidatorResult));
+    Future<Set<ValidationTestResult>> homePageFutureTestResults = this.getHomePageFutureCheck(dnsNameToCheck.getApexName())
+      .compose(testResults -> {
+        if (dnsNameToCheck.isApexDomain()) {
+          return Future.succeededFuture(testResults);
+        }
+        /**
+         * If the apex domain has not passed
+         * don't check the subdomain
+         */
+        for (ValidationTestResult validationTestResult : testResults) {
+          if (!validationTestResult.hasPassed()) {
+            return Future.succeededFuture(testResults);
+          }
+        }
+        return this.getHomePageFutureCheck(dnsNameToCheck);
+      });
 
     /**
-     * DNS Checks Composite execution
+     * Checks Composite execution
      */
+    List<Future<?>> futures = Arrays.asList(mxChecksFutureTestResult, dnsBlockListFutureTestResult, homePageFutureTestResults);
     CompositeFuture compositeFuture;
     if (failEarly) {
-      compositeFuture = Future.all(checksFutureTests);
+      compositeFuture = Future.all(futures);
     } else {
-      compositeFuture = Future.join(checksFutureTests);
+      compositeFuture = Future.join(futures);
     }
     return compositeFuture
-      .compose(results -> Future.succeededFuture(domainValidatorResult));
+      .compose(results -> {
+        if (results.failed()) {
+          // should not,  the tests should not return a failed future, it should not
+          return Future.failedFuture(new InternalException("A fatal error has occurred", results.cause()));
+        }
+        ValidationTestResult mxChecksRes = results.resultAt(0);
+        // may be null if error has happened
+        if (mxChecksRes != null) {
+          domainValidatorResult.addTestResult(mxChecksRes);
+        }
+        ValidationTestResult dnsBlockListRes = results.resultAt(1);
+        // may be null if error has happened
+        if (dnsBlockListRes != null) {
+          domainValidatorResult.addTestResult(dnsBlockListRes);
+        }
+        Set<ValidationTestResult> homePages = results.resultAt(2);
+        // may be null if error has happened
+        if (homePages != null) {
+          domainValidatorResult.addTests(homePages);
+        }
+        return Future.succeededFuture(domainValidatorResult);
+      });
 
   }
 
-  private Future<Void> externalBlockLists(DnsName dnsName, DomainValidatorResult domainValidatorResult) {
+  private Future<ValidationTestResult> externalBlockLists(DnsName dnsName) {
 
     ValidationTestResult.Builder blockListTestBuilder = ValidationTest.BLOCK_LIST.createResultBuilder();
     /**
@@ -189,44 +231,42 @@ public class DomainValidator {
     return dnsClient.resolveA(dnsBlockListQueryHelper.getDnsNameToQuery())
       .compose(dnsIps -> {
         if (dnsIps.isEmpty()) {
-          domainValidatorResult.addTestResult(
+          return Future.succeededFuture(
             blockListTestBuilder
               .setMessage("The apex domain (" + dnsName + ") is not blocked by " + dnsBlockListQueryHelper.getBlockList())
               .succeed()
           );
-          return Future.succeededFuture();
         }
         DnsIp dnsIp = dnsIps.iterator().next();
         DnsBlockListResponseCode dnsBlockListResponse = dnsBlockListQueryHelper.createResponseCode(dnsIp);
         if (dnsBlockListResponse.getBlocked()) {
-          domainValidatorResult.addTestResult(
+          return Future.succeededFuture(
             blockListTestBuilder
               .setMessage("The apex domain (" + dnsName + ") is blocked by " + dnsBlockListQueryHelper.getBlockList())
               .fail()
           );
-          return Future.succeededFuture();
         }
         return Future.succeededFuture();
-      }, err -> {
-        domainValidatorResult.addTestResult(blockListTestBuilder.setFatalError(err).fail());
-        return Future.succeededFuture();
-      });
+      }, err -> Future.succeededFuture(
+        blockListTestBuilder
+          .setFatalError(err)
+          .fail()
+      ));
 
   }
 
   /**
    * Test the MX of a DNS name
    * @param dnsNameToCheck - the DNS name to check
-   * @param domainValidatorResult - the validator object result
    */
-  private Future<Void> mxChecks(DnsName dnsNameToCheck, DomainValidatorResult domainValidatorResult) {
+  private Future<ValidationTestResult> mxChecks(DnsName dnsNameToCheck) {
     ValidationTestResult.Builder mxValidCheckTestBuilder = ValidationTest.MX_RECORD.createResultBuilder();
+
     return dnsClient.resolveMx(dnsNameToCheck)
       .compose(records -> {
         String noMxRecordMessage = "The domain (" + dnsNameToCheck + ") has no MX records";
         if (records.isEmpty()) {
-          domainValidatorResult.addTestResult(mxValidCheckTestBuilder.setMessage(noMxRecordMessage).fail());
-          return Future.succeededFuture();
+          return Future.succeededFuture(mxValidCheckTestBuilder.setMessage(noMxRecordMessage).fail());
         } else {
           List<DnsMxRecord> mxDnsRecords = records
             .stream()
@@ -271,21 +311,17 @@ public class DomainValidator {
               } else {
                 result = mxValidCheckTestBuilder.setFatalError(smtpError, message + " but no smtp server has responded (" + mxLists + ")").fail();
               }
-              domainValidatorResult.addTestResult(result);
-              return Future.succeededFuture();
+              return Future.succeededFuture(result);
             });
         }
-      }, err -> {
-        domainValidatorResult.addTestResult(mxValidCheckTestBuilder.setFatalError(err).fail());
-        return Future.succeededFuture();
-      });
+      }, err -> Future.succeededFuture(mxValidCheckTestBuilder.setFatalError(err).fail()));
   }
 
   /**
    * Test the HOME HTML page of a domain
    * (A record, Certificate, Page content)
    */
-  private Future<Void> getHomePageFutureCheck(DnsName dnsName, DomainValidatorResult domainValidatorResult) {
+  private Future<Set<ValidationTestResult>> getHomePageFutureCheck(DnsName dnsName) {
 
     /**
      * These tests have dependencies
@@ -296,6 +332,7 @@ public class DomainValidator {
     ValidationTestResult.Builder aRecordsValidCheck = ValidationTest.A_RECORD.createResultBuilder();
     ValidationTestResult.Builder webServer = ValidationTest.WEB_SERVER.createResultBuilder();
     ValidationTestResult.Builder homePage = ValidationTest.HOME_PAGE.createResultBuilder();
+    Set<ValidationTestResult> validationTestResults = new HashSet<>();
 
     /**
      * The `A` record DNS check
@@ -304,22 +341,22 @@ public class DomainValidator {
       .compose(
         aRecords -> {
           if (aRecords.isEmpty()) {
-            domainValidatorResult.addTestResult(aRecordsValidCheck.setMessage("The apex domain (" + dnsName + ") has no A records").fail());
-            domainValidatorResult.addTestResult(webServer.setMessage("No A record were found for (" + dnsName + ")").skipped());
-            domainValidatorResult.addTestResult(homePage.setMessage("No A record were found for (" + dnsName + ")").skipped());
+            validationTestResults.add(aRecordsValidCheck.setMessage("The apex domain (" + dnsName + ") has no A records").fail());
+            validationTestResults.add(webServer.setMessage("No A record were found for (" + dnsName + ")").skipped());
+            validationTestResults.add(homePage.setMessage("No A record were found for (" + dnsName + ")").skipped());
             return Future.succeededFuture();
           }
-          domainValidatorResult.addTestResult(aRecordsValidCheck.setMessage("A records were found").succeed());
+          validationTestResults.add(aRecordsValidCheck.setMessage("A records were found").succeed());
           return Future.succeededFuture();
         }
         , err -> {
           /**
            * We don't go further
            */
-          aRecordsValidCheck.setFatalError(err);
-          webServer.setMessage("Fatal Error on A records").skipped();
-          homePage.setMessage("Fatal Error on A records").skipped();
-          return Future.failedFuture(aRecordsValidCheck.setFatalError(err));
+          validationTestResults.add(aRecordsValidCheck.setFatalError(err).fail());
+          validationTestResults.add(webServer.setMessage("Fatal Error on A records").skipped());
+          validationTestResults.add(homePage.setMessage("Fatal Error on A records").skipped());
+          return Future.succeededFuture(validationTestResults);
         }
       )
       .compose(v -> {
@@ -328,22 +365,32 @@ public class DomainValidator {
          */
         return this.getHomePageResponse(dnsName)
           .compose(response -> {
-              domainValidatorResult.addTestResult(webServer.setMessage("The web server is legit").succeed());
+              validationTestResults.add(webServer.setMessage("The web server is legit").succeed());
               String html = response.bodyAsString();
               try {
                 HtmlGrading.grade(html, dnsName);
-                domainValidatorResult.addTestResult(homePage.setMessage("HTML page legit at (" + dnsName + ")").succeed());
-                return Future.succeededFuture();
+                validationTestResults.add(homePage.setMessage("HTML page legit at (" + dnsName + ")").succeed());
+                return Future.succeededFuture(validationTestResults);
               } catch (HtmlStructureException e) {
-                domainValidatorResult.addTestResult(homePage.setMessage("The HTML page (" + dnsName + ") is not legit" + e.getMessage()).fail());
-                return Future.succeededFuture();
+                validationTestResults.add(homePage.setMessage("The HTML page (" + dnsName + ") is not legit" + e.getMessage()).fail());
+                return Future.succeededFuture(validationTestResults);
               }
             },
             err -> {
+
+
               String message = "The web server (http(s)://" + dnsName + ") has an error.";
 
               Set<Class<?>> nonFatalError = new HashSet<>();
-              // Bad certificate
+
+              /**
+               * Bad certificate
+               * Valid domain may have a mismatch domain. Example:
+               * Chrome SSLCommonNameMismatchHandling: Redirecting navigation comunidad.unam.mx -> www.comunidad.unam.mx
+               * because the server presented a certificate valid for www.comunidad.unam.mx
+               * but not for comunidad.unam.mx.
+               * To disable such redirects launch Chrome with the following flag: --disable-features=SSLCommonNameMismatchHandling
+               */
               nonFatalError.add(SSLHandshakeException.class);
               // Default throwable when the future is failed
               nonFatalError.add(NoStackTraceThrowable.class);
@@ -351,7 +398,7 @@ public class DomainValidator {
               /**
                * Skipped test
                */
-              domainValidatorResult.addTestResult(homePage.setMessage("Web server test failed").skipped());
+              validationTestResults.add(homePage.setMessage("Web server test failed").skipped());
 
               /**
                * Fatal error example due to network that could be solved when run twice
@@ -364,8 +411,8 @@ public class DomainValidator {
               } else {
                 webServer.setFatalError(err, message);
               }
-              domainValidatorResult.addTestResult(webServer.fail());
-              return Future.succeededFuture();
+              validationTestResults.add(webServer.fail());
+              return Future.succeededFuture(validationTestResults);
             }
           );
       });
@@ -392,7 +439,7 @@ public class DomainValidator {
         httpsErr -> {
           /**
            * Try a redirection on http
-           * to see if we land on a HTTPS url (example: ntlworld.com, orange.fr)
+           * to see if we land on an HTTPS url (example: ntlworld.com, orange.fr)
            */
           String httpUri = "http://" + dnsName.toStringWithoutRoot();
           return webClient.getAbs(httpUri)
