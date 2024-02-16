@@ -11,6 +11,7 @@ import org.jsoup.select.Elements;
 
 /**
  * Grade a HTML page
+ * as a legit page
  */
 public class HtmlGrading {
 
@@ -18,6 +19,10 @@ public class HtmlGrading {
   /**
    * Check if this is a legit HTML page
    * for a specific domain
+   * https with valid certificate at minima
+   * content: one image at minima
+   * example:
+   * <a href="http://take-ur-vites.org/">...</a>
    */
   static public void grade(String html, DnsName apexDomainNameAsString) throws HtmlStructureException {
     if (html == null) {
@@ -78,6 +83,12 @@ public class HtmlGrading {
     if (externalLink > internalLink) {
       throw new HtmlStructureException("Too much external links (" + externalLink + ") compared to internal links (" + internalLink + ")");
     }
+
+    Elements images = document.select("img");
+    if(images.isEmpty()){
+      throw new HtmlStructureException("No images were found");
+    }
+
   }
 
 }

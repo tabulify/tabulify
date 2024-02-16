@@ -137,9 +137,9 @@ public class ValidationTestResult {
       return this;
     }
 
-    public Builder skipped() {
+    public ValidationTestResult skipped() {
       this.status = ValidationTestStatus.SKIPPED;
-      return this;
+      return new ValidationTestResult(this);
     }
 
   }

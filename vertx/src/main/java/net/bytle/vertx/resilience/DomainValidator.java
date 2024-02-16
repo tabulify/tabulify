@@ -12,7 +12,6 @@ import net.bytle.dns.*;
 import net.bytle.email.BMailSmtpClient;
 import net.bytle.email.BMailStartTls;
 import net.bytle.exception.AssertionException;
-import net.bytle.exception.NotFoundException;
 import net.bytle.html.HtmlGrading;
 import net.bytle.html.HtmlStructureException;
 import net.bytle.type.DnsName;
@@ -36,7 +35,7 @@ public class DomainValidator {
   /**
    * ESP Domains
    */
-  private final Set<String> whiteListDomains;
+  private final Set<String> whiteListApexDomains;
   private final Vertx vertx;
   private final Boolean checkPingMx;
 
@@ -44,8 +43,8 @@ public class DomainValidator {
    * Grey List are not allowed on import
    * but via email validation
    */
-  private final HashSet<String> greyListDomains;
-  private final HashSet<String> blockListDomains;
+  private final HashSet<String> greyListApexDomains;
+  private final HashSet<String> blockListApexDomains;
 
 
   public DomainValidator(TowerApp towerApp) {
@@ -64,112 +63,170 @@ public class DomainValidator {
     /**
      * The known white list that we don't test
      */
-    whiteListDomains = new HashSet<>();
-    whiteListDomains.add("aol.com");
-    whiteListDomains.add("bigmir.net"); // ukrainian portal
-    whiteListDomains.add("comunidad.unam.mx"); // it's not an apex domain but is a university student
-    whiteListDomains.add("free.fr");
-    whiteListDomains.add("hotmail.com");
-    whiteListDomains.add("icloud.com");
-    whiteListDomains.add("gmail.com");
-    whiteListDomains.add("gmx.com");
-    whiteListDomains.add("googlemail.com");
-    whiteListDomains.add("outlook.com");
-    whiteListDomains.add("live.com");
-    whiteListDomains.add("mail.com");
-    whiteListDomains.add("mail.ru"); // mail.ru: https://en.wikipedia.org/wiki/VK_(company)
-    whiteListDomains.add("orange.fr"); // mail.ru: https://en.wikipedia.org/wiki/VK_(company)
-    whiteListDomains.add("protonmail.com");
-    whiteListDomains.add("wanadoo.fr");
-    whiteListDomains.add("yahoo.com");
-    whiteListDomains.add("yandex.com");
-    whiteListDomains.add("yandex.ru");
-    whiteListDomains.add("zoho.com");
+    whiteListApexDomains = new HashSet<>();
+    whiteListApexDomains.add("aol.com");
+    whiteListApexDomains.add("bigmir.net"); // ukrainian portal
+    whiteListApexDomains.add("unam.mx"); // it's not an apex domain but is a university student
+    whiteListApexDomains.add("free.fr");
+    whiteListApexDomains.add("hotmail.com");
+    whiteListApexDomains.add("icloud.com");
+    whiteListApexDomains.add("gmail.com");
+    whiteListApexDomains.add("gmx.com");
+    whiteListApexDomains.add("googlemail.com");
+    whiteListApexDomains.add("outlook.com");
+    whiteListApexDomains.add("live.com");
+    whiteListApexDomains.add("mail.com");
+    whiteListApexDomains.add("mail.ru"); // mail.ru: https://en.wikipedia.org/wiki/VK_(company)
+    whiteListApexDomains.add("orange.fr"); // mail.ru: https://en.wikipedia.org/wiki/VK_(company)
+    whiteListApexDomains.add("protonmail.com");
+    whiteListApexDomains.add("wanadoo.fr");
+    whiteListApexDomains.add("yahoo.com");
+    whiteListApexDomains.add("yandex.com");
+    whiteListApexDomains.add("yandex.ru");
+    whiteListApexDomains.add("zoho.com");
 
     /**
      * The known blocked domain list that we don't test
      */
-    greyListDomains = new HashSet<>();
-    greyListDomains.add("163.com");
+    greyListApexDomains = new HashSet<>();
+    greyListApexDomains.add("163.com");
 
     /**
      * Blocking
      */
-    blockListDomains = new HashSet<>();
-    blockListDomains.add("backlinksgenerator.in");
-    blockListDomains.add("horsetipstersreview.com"); // betting platform
-    blockListDomains.add("tremunpiercing.com"); // 3 email prueba3@..., prueba4@..., prueba5@...
+    blockListApexDomains = new HashSet<>();
+    blockListApexDomains.add("backlinksgenerator.in");
+    blockListApexDomains.add("horsetipstersreview.com"); // betting platform
+    blockListApexDomains.add("tremunpiercing.com"); // 3 email prueba3@..., prueba4@..., prueba5@...
 
 
   }
 
   /**
-   * @param dnsName   - the domain to validate
+   * @param dnsNameToCheck   - the domain to validate
    * @param failEarly - if true, will stop to the first failure and return it
    * @return a list of validation
    */
-  public Future<DomainValidatorResult> validate(DnsName dnsName, boolean failEarly) {
+  public Future<DomainValidatorResult> validate(DnsName dnsNameToCheck, boolean failEarly) {
 
     DomainValidatorResult domainValidatorResult = new DomainValidatorResult();
 
     /**
-     * White List / Legit Domains
+     * White List / Legit Apex Domains
      */
-    String lowerCaseDomainWithoutRoot = dnsName.toStringWithoutRoot().toLowerCase();
-    if (whiteListDomains.contains(lowerCaseDomainWithoutRoot)) {
-      domainValidatorResult.addTest(ValidationTest.WHITE_LIST.createResultBuilder()
-        .setMessage("Domain (" + lowerCaseDomainWithoutRoot + ") is on the white list")
+    DnsName apexDomain = dnsNameToCheck.getApexName();
+    String apexDomainNameOnList = apexDomain.toStringWithoutRoot().toLowerCase();
+    if (whiteListApexDomains.contains(apexDomainNameOnList)) {
+      domainValidatorResult.addTestResult(ValidationTest.WHITE_LIST.createResultBuilder()
+        .setMessage("Domain (" + apexDomainNameOnList + ") is on the white list")
         .succeed());
       return Future.succeededFuture(domainValidatorResult);
     }
 
-    if (greyListDomains.contains(lowerCaseDomainWithoutRoot)) {
-      domainValidatorResult.addTest(
+    if (greyListApexDomains.contains(apexDomainNameOnList)) {
+      domainValidatorResult.addTestResult(
         ValidationTest.GREY_LIST.createResultBuilder()
-          .setMessage("Domain (" + lowerCaseDomainWithoutRoot + ") is on the grey list")
+          .setMessage("Domain (" + apexDomainNameOnList + ") is on the grey list")
           .fail()
       );
       return Future.succeededFuture(domainValidatorResult);
     }
-    if (blockListDomains.contains(lowerCaseDomainWithoutRoot)) {
-      domainValidatorResult.addTest(
+    if (blockListApexDomains.contains(apexDomainNameOnList)) {
+      domainValidatorResult.addTestResult(
         ValidationTest.BLOCK_LIST.createResultBuilder()
-          .setMessage("Domain (" + lowerCaseDomainWithoutRoot + ") is on the block list")
+          .setMessage("Domain (" + apexDomainNameOnList + ") is on the block list")
           .fail()
       );
       return Future.succeededFuture(domainValidatorResult);
     }
 
     /**
-     * No email domain where we need to send an email has more than 2 labels
-     * (example: `mail.backlinksgenerator.in`)
+     * A future for all checks
      */
-    if(!dnsName.isApexDomain()){
-      domainValidatorResult.addTest(
-        ValidationTest.APEX_DOMAIN.createResultBuilder()
-          .setMessage("Domain (" + lowerCaseDomainWithoutRoot + ") is not an apex domain")
-          .fail()
-      );
-      if(failEarly){
-        return Future.succeededFuture(domainValidatorResult);
-      }
-    } else {
-      domainValidatorResult.addTest(
-        ValidationTest.APEX_DOMAIN.createResultBuilder()
-          .setMessage("Domain (" + lowerCaseDomainWithoutRoot + ") is an apex domain")
-          .succeed()
-      );
-    }
+    List<Future<Void>> checksFutureTests = new ArrayList<>();
 
     /**
-     * Mx record
+     * Dns Check: The domain name should have Mx record
      */
-    ValidationTestResult.Builder mxValidCheck = ValidationTest.MX_RECORD.createResultBuilder();
-    Future<ValidationTestResult.Builder> mxRecords = dnsClient.resolveMx(dnsName)
+    checksFutureTests.add(this.mxChecks(dnsNameToCheck, domainValidatorResult));
+
+    /**
+     * Dns Check: Domain blocked?
+     * (Not yet async)
+     */
+    checksFutureTests.add(this.externalBlockLists(dnsNameToCheck, domainValidatorResult));
+
+    /**
+     * Home page Checks (A record + HTML page)
+     */
+    checksFutureTests.add(this.getHomePageFutureCheck(dnsNameToCheck, domainValidatorResult));
+
+    /**
+     * DNS Checks Composite execution
+     */
+    CompositeFuture compositeFuture;
+    if (failEarly) {
+      compositeFuture = Future.all(checksFutureTests);
+    } else {
+      compositeFuture = Future.join(checksFutureTests);
+    }
+    return compositeFuture
+      .compose(results -> Future.succeededFuture(domainValidatorResult));
+
+  }
+
+  private Future<Void> externalBlockLists(DnsName dnsName, DomainValidatorResult domainValidatorResult) {
+
+    ValidationTestResult.Builder blockListTestBuilder = ValidationTest.BLOCK_LIST.createResultBuilder();
+    /**
+     * For now, there is only one block list wherw we test
+     */
+    DnsBlockListQueryHelper dnsBlockListQueryHelper = DnsBlockListQueryHelper
+      .forDomain(dnsName).addBlockList(DnsBlockList.DBL_SPAMHAUS_ORG)
+      .build()
+      .get(0);
+
+    return dnsClient.resolveA(dnsBlockListQueryHelper.getDnsNameToQuery())
+      .compose(dnsIps -> {
+        if (dnsIps.isEmpty()) {
+          domainValidatorResult.addTestResult(
+            blockListTestBuilder
+              .setMessage("The apex domain (" + dnsName + ") is not blocked by " + dnsBlockListQueryHelper.getBlockList())
+              .succeed()
+          );
+          return Future.succeededFuture();
+        }
+        DnsIp dnsIp = dnsIps.iterator().next();
+        DnsBlockListResponseCode dnsBlockListResponse = dnsBlockListQueryHelper.createResponseCode(dnsIp);
+        if (dnsBlockListResponse.getBlocked()) {
+          domainValidatorResult.addTestResult(
+            blockListTestBuilder
+              .setMessage("The apex domain (" + dnsName + ") is blocked by " + dnsBlockListQueryHelper.getBlockList())
+              .fail()
+          );
+          return Future.succeededFuture();
+        }
+        return Future.succeededFuture();
+      }, err -> {
+        domainValidatorResult.addTestResult(blockListTestBuilder.setFatalError(err).fail());
+        return Future.succeededFuture();
+      });
+
+  }
+
+  /**
+   * Test the MX of a DNS name
+   * @param dnsNameToCheck - the DNS name to check
+   * @param domainValidatorResult - the validator object result
+   */
+  private Future<Void> mxChecks(DnsName dnsNameToCheck, DomainValidatorResult domainValidatorResult) {
+    ValidationTestResult.Builder mxValidCheckTestBuilder = ValidationTest.MX_RECORD.createResultBuilder();
+    return dnsClient.resolveMx(dnsNameToCheck)
       .compose(records -> {
-        String noMxRecordMessage = "The domain (" + dnsName + ") has no MX records";
+        String noMxRecordMessage = "The domain (" + dnsNameToCheck + ") has no MX records";
         if (records.isEmpty()) {
-          return Future.failedFuture(mxValidCheck.setMessage(noMxRecordMessage));
+          domainValidatorResult.addTestResult(mxValidCheckTestBuilder.setMessage(noMxRecordMessage).fail());
+          return Future.succeededFuture();
         } else {
           List<DnsMxRecord> mxDnsRecords = records
             .stream()
@@ -185,7 +242,6 @@ public class DomainValidator {
               Throwable smtpException = null;
               String smtpHost;
               for (DnsMxRecord dnsMxRecord : mxDnsRecords) {
-
                 smtpHost = dnsMxRecord.getTarget().toStringWithoutRoot();
                 String finalSmtpHost = smtpHost;
                 try {
@@ -195,8 +251,7 @@ public class DomainValidator {
                     .setStartTls(BMailStartTls.ENABLE)
                     .setConnectionTimeout(1000)
                     .build()
-                    .ping();
-                  return null;
+                    .pingHello();
                 } catch (MessagingException e) {
                   smtpException = e;
                 }
@@ -205,217 +260,124 @@ public class DomainValidator {
             })
             .compose(smtpError -> {
               String message = "Mx records were found";
+              ValidationTestResult result;
               if (smtpError == null) {
                 if (this.checkPingMx) {
                   message += " and smtp servers pinged (" + mxLists + ")";
                 } else {
                   message += " and smtp servers ping is disabled (" + mxLists + ")";
                 }
-                return Future.succeededFuture(mxValidCheck.setMessage(message));
+                result = mxValidCheckTestBuilder.setMessage(message).succeed();
               } else {
-                return Future.failedFuture(mxValidCheck.setFatalError(smtpError, message + " but no smtp server has responded (" + mxLists + ")"));
+                result = mxValidCheckTestBuilder.setFatalError(smtpError, message + " but no smtp server has responded (" + mxLists + ")").fail();
               }
+              domainValidatorResult.addTestResult(result);
+              return Future.succeededFuture();
             });
         }
-      }, err -> Future.failedFuture(mxValidCheck.setFatalError(err)));
-
-    /**
-     * The DNS checks
-     */
-    List<Future<ValidationTestResult.Builder>> dnsChecksFutureTests = new ArrayList<>();
-    dnsChecksFutureTests.add(mxRecords);
-
-    /**
-     * A records
-     */
-    ValidationTestResult.Builder aRecordsValidCheck = ValidationTest.A_RECORD.createResultBuilder();
-    DnsName apexDomain = dnsName.getApexName();
-    Future<ValidationTestResult.Builder> aRecordFuture = dnsClient.resolveA(apexDomain)
-      .compose(
-        aRecords -> {
-          if (aRecords.isEmpty()) {
-            return Future.failedFuture(aRecordsValidCheck.setMessage("The apex domain (" + apexDomain + ") has no A records"));
-          }
-          return Future.succeededFuture(aRecordsValidCheck.setMessage("A records were found"));
-
-        }
-        , err -> Future.failedFuture(aRecordsValidCheck.setFatalError(err))
-      );
-    dnsChecksFutureTests.add(aRecordFuture);
-
-    /**
-     * Domain blocked?
-     * (Not yet async)
-     */
-    ValidationTestResult.Builder blockListCheck = ValidationTest.BLOCK_LIST.createResultBuilder();
-    List<DnsBlockListQueryHelper> dnsBlockLists = DnsBlockListQueryHelper.forDomain(apexDomain).addBlockList(DnsBlockList.DBL_SPAMHAUS_ORG)
-      .build();
-    for (DnsBlockListQueryHelper dnsBlockListQueryHelper : dnsBlockLists) {
-      DnsName dnsNameToQuery = dnsBlockListQueryHelper.getDnsNameToQuery();
-      Future<ValidationTestResult.Builder> futureBlockListCheck = dnsClient.resolveA(dnsNameToQuery)
-        .compose(dnsIps -> {
-
-          if (dnsIps.isEmpty()) {
-            return Future.succeededFuture(blockListCheck.setMessage("The apex domain (" + apexDomain + ") is not blocked by " + dnsBlockListQueryHelper.getBlockList()));
-          }
-
-          DnsIp dnsIp = dnsIps.iterator().next();
-          DnsBlockListResponseCode dnsBlockListResponse = dnsBlockListQueryHelper.createResponseCode(dnsIp);
-          if (dnsBlockListResponse.getBlocked()) {
-            return Future.failedFuture(blockListCheck.setMessage("The apex domain (" + apexDomain + ") is blocked by " + dnsBlockListQueryHelper.getBlockList()));
-          }
-
-          return Future.succeededFuture(blockListCheck.setMessage("The apex domain (" + apexDomain + ") is not blocked by " + dnsBlockListQueryHelper.getBlockList()));
-        }, err -> Future.failedFuture(blockListCheck.setFatalError(err)));
-      dnsChecksFutureTests.add(futureBlockListCheck);
-    }
-
-
-    /**
-     * DNS Checks Composite execution
-     */
-    CompositeFuture compositeFuture;
-    if (failEarly) {
-      compositeFuture = Future.all(dnsChecksFutureTests);
-    } else {
-      compositeFuture = Future.join(dnsChecksFutureTests);
-    }
-    return compositeFuture
-      .compose(
-        results ->
-          // the dns checks futures have all succeeded
-          Future.succeededFuture(
-            domainValidatorResult.addTests(results
-              .list()
-              .stream()
-              .map(e -> ((ValidationTestResult.Builder) e).succeed())
-              .collect(Collectors.toSet())
-            ))
-        ,
-        err -> {
-          if (!(err instanceof ValidationTestResult.Builder)) {
-            return Future.failedFuture(err);
-          }
-          // one the future has not succeeded
-          Set<ValidationTestResult> validationTestResults = new HashSet<>();
-          // We add the error to be sure that we register the error
-          // The set make it certain that we don't get 2 validation results
-          ValidationTestResult validationError = ((ValidationTestResult.Builder) err).fail();
-          validationTestResults.add(validationError);
-          for (int i = 0; i < compositeFuture.size(); i++) {
-            if (compositeFuture.failed(i)) {
-              Throwable cause = compositeFuture.cause(i);
-              if (cause instanceof ValidationTestResult.Builder) {
-                ValidationTestResult validationTestResultBuilder = ((ValidationTestResult.Builder) cause).fail();
-                validationTestResults.add(validationTestResultBuilder);
-                continue;
-              }
-              return Future.failedFuture(cause);
-            }
-            if (compositeFuture.succeeded(i)) {
-              ValidationTestResult validationTestResult = ((ValidationTestResult.Builder) compositeFuture.resultAt(i)).succeed();
-              validationTestResults.add(validationTestResult);
-            }
-          }
-          return Future.succeededFuture(domainValidatorResult.addTests(validationTestResults));
-        }
-      )
-      .compose(v -> {
-        // All DNS checks Records test have run
-        // if the A record was positive, we can check the home page and the certificate of the web server
-        boolean aRecordsResultHasPassed;
-        try {
-          aRecordsResultHasPassed = domainValidatorResult.getResult(ValidationTest.A_RECORD).hasPassed();
-        } catch (NotFoundException e) {
-          // should not but yeah
-          aRecordsResultHasPassed = false;
-        }
-        Future<ValidationTestResult.Builder> homePageCheckBuilderFuture;
-        if (aRecordsResultHasPassed) {
-          homePageCheckBuilderFuture = this.getHomePageFutureCheck(apexDomain);
-        } else {
-          homePageCheckBuilderFuture = Future.failedFuture(
-            ValidationTest.WEB_SERVER.createResultBuilder()
-              .setMessage("No A records, web server and home page checks skipped.")
-              .skipped()
-          );
-        }
-        return homePageCheckBuilderFuture;
-      })
-      .compose(
-        homePageCheckBuilderResult -> {
-          // the home page check has succeeded
-          ValidationTestResult homePageCheckResult = homePageCheckBuilderResult.succeed();
-          domainValidatorResult.addTest(homePageCheckResult);
-          return Future.succeededFuture(domainValidatorResult);
-        },
-        err -> {
-          if (!(err instanceof ValidationTestResult.Builder)) {
-            return Future.failedFuture(err);
-          }
-          ValidationTestResult homePageCheckResult = ((ValidationTestResult.Builder) err).fail();
-          domainValidatorResult.addTest(homePageCheckResult);
-          return Future.succeededFuture(domainValidatorResult);
-        });
+      }, err -> {
+        domainValidatorResult.addTestResult(mxValidCheckTestBuilder.setFatalError(err).fail());
+        return Future.succeededFuture();
+      });
   }
 
   /**
-   * HTML page test
-   * (Certificate)
-   *
+   * Test the HOME HTML page of a domain
+   * (A record, Certificate, Page content)
    */
-  private Future<ValidationTestResult.Builder> getHomePageFutureCheck(DnsName apexDomain) {
+  private Future<Void> getHomePageFutureCheck(DnsName dnsName, DomainValidatorResult domainValidatorResult) {
 
-    // https with valid certificate at minima
-    // content: one image at minima
-    // example:
-    // http://take-ur-vites.org/
-
-    // 163.com (tou522884141@163.com, ...)
-    // http://poker40.com/
-    // isaymur7rw5@bigmir.net
-    // gsalike@mail.ru
+    /**
+     * These tests have dependencies
+     * * A home page cannot be tested if the web server does not have any a record
+     * or does not respond
+     * * A web server cannot be tested if the web server does not have any a record
+     */
+    ValidationTestResult.Builder aRecordsValidCheck = ValidationTest.A_RECORD.createResultBuilder();
     ValidationTestResult.Builder webServer = ValidationTest.WEB_SERVER.createResultBuilder();
     ValidationTestResult.Builder homePage = ValidationTest.HOME_PAGE.createResultBuilder();
 
-    return this.getHomePageResponse(apexDomain)
-      .compose(response -> {
-          String html = response.bodyAsString();
-          try {
-            HtmlGrading.grade(html, apexDomain);
-            return Future.succeededFuture(homePage.setMessage("HTML page legit at (" + apexDomain + ")"));
-          } catch (HtmlStructureException e) {
-            return Future.failedFuture(homePage.setMessage("The HTML page (" + apexDomain + ") is not legit" + e.getMessage()));
+    /**
+     * The `A` record DNS check
+     */
+    return dnsClient.resolveA(dnsName)
+      .compose(
+        aRecords -> {
+          if (aRecords.isEmpty()) {
+            domainValidatorResult.addTestResult(aRecordsValidCheck.setMessage("The apex domain (" + dnsName + ") has no A records").fail());
+            domainValidatorResult.addTestResult(webServer.setMessage("No A record were found for (" + dnsName + ")").skipped());
+            domainValidatorResult.addTestResult(homePage.setMessage("No A record were found for (" + dnsName + ")").skipped());
+            return Future.succeededFuture();
           }
-        },
-        err -> {
-          String message = "The web server (http(s)://" + apexDomain + ") has an error.";
-
-          Set<Class<?>> nonFatalError = new HashSet<>();
-          // Bad certificate
-          nonFatalError.add(SSLHandshakeException.class);
-          // Default throwable when the future is failed
-          nonFatalError.add(NoStackTraceThrowable.class);
-          /**
-           * Fatal error example due to network that could be solved when run twice
-           * io.vertx.core.http.HttpClosedException
-           * java.net.UnknownHostException
-           * io.netty.channel.ConnectTimeoutException
-           */
-          if (nonFatalError.contains(err.getClass())) {
-            return Future.failedFuture(webServer.setNonFatalError(err, message));
-          }
-          return Future.failedFuture(webServer.setFatalError(err, message));
+          domainValidatorResult.addTestResult(aRecordsValidCheck.setMessage("A records were found").succeed());
+          return Future.succeededFuture();
         }
-      );
+        , err -> {
+          /**
+           * We don't go further
+           */
+          aRecordsValidCheck.setFatalError(err);
+          webServer.setMessage("Fatal Error on A records").skipped();
+          homePage.setMessage("Fatal Error on A records").skipped();
+          return Future.failedFuture(aRecordsValidCheck.setFatalError(err));
+        }
+      )
+      .compose(v -> {
+        /**
+         * We check the web server only if the A test has succeeded
+         */
+        return this.getHomePageResponse(dnsName)
+          .compose(response -> {
+              domainValidatorResult.addTestResult(webServer.setMessage("The web server is legit").succeed());
+              String html = response.bodyAsString();
+              try {
+                HtmlGrading.grade(html, dnsName);
+                domainValidatorResult.addTestResult(homePage.setMessage("HTML page legit at (" + dnsName + ")").succeed());
+                return Future.succeededFuture();
+              } catch (HtmlStructureException e) {
+                domainValidatorResult.addTestResult(homePage.setMessage("The HTML page (" + dnsName + ") is not legit" + e.getMessage()).fail());
+                return Future.succeededFuture();
+              }
+            },
+            err -> {
+              String message = "The web server (http(s)://" + dnsName + ") has an error.";
+
+              Set<Class<?>> nonFatalError = new HashSet<>();
+              // Bad certificate
+              nonFatalError.add(SSLHandshakeException.class);
+              // Default throwable when the future is failed
+              nonFatalError.add(NoStackTraceThrowable.class);
+
+              /**
+               * Skipped test
+               */
+              domainValidatorResult.addTestResult(homePage.setMessage("Web server test failed").skipped());
+
+              /**
+               * Fatal error example due to network that could be solved when run twice
+               * io.vertx.core.http.HttpClosedException
+               * java.net.UnknownHostException
+               * io.netty.channel.ConnectTimeoutException
+               */
+              if (nonFatalError.contains(err.getClass())) {
+                webServer.setNonFatalError(err, message);
+              } else {
+                webServer.setFatalError(err, message);
+              }
+              domainValidatorResult.addTestResult(webServer.fail());
+              return Future.succeededFuture();
+            }
+          );
+      });
+
   }
 
-  private Future<HttpResponse<Buffer>> getHomePageResponse(DnsName apexDomain) {
+  private Future<HttpResponse<Buffer>> getHomePageResponse(DnsName dnsName) {
 
     /**
      * HTTPS with redirect first (https://vertx.io/docs/vertx-core/java/#_30x_redirection_handling)
      */
-    String httpsUri = "https://" + apexDomain.toStringWithoutRoot();
+    String httpsUri = "https://" + dnsName.toStringWithoutRoot();
     return webClient.getAbs(httpsUri)
       .followRedirects(true)
       .send()
@@ -432,7 +394,7 @@ public class DomainValidator {
            * Try a redirection on http
            * to see if we land on a HTTPS url (example: ntlworld.com, orange.fr)
            */
-          String httpUri = "http://" + apexDomain.toStringWithoutRoot();
+          String httpUri = "http://" + dnsName.toStringWithoutRoot();
           return webClient.getAbs(httpUri)
             .followRedirects(true)
             .send()
@@ -445,7 +407,7 @@ public class DomainValidator {
                 }
                 List<String> followedRedirects = request.followedRedirects();
                 if (followedRedirects.isEmpty()) {
-                  return Future.failedFuture("The domain (" + apexDomain + ") is only on http, not on https");
+                  return Future.failedFuture("The domain (" + dnsName + ") is only on http, not on https");
                 }
                 String lastRedirect = followedRedirects.get(followedRedirects.size() - 1);
                 if (!lastRedirect.startsWith("https")) {

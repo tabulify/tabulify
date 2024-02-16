@@ -221,7 +221,7 @@ public class BMailSmtpClient {
    * We can't check if this is a network problem or that the server does not exist
    * So we throw by default
    */
-  public void ping() throws MessagingException {
+  public void pingHello() throws MessagingException {
     try {
       Transport transport = smtpSession.getTransport();
       transport.connect();

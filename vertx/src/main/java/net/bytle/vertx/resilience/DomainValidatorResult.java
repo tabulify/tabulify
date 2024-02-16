@@ -1,7 +1,5 @@
 package net.bytle.vertx.resilience;
 
-import net.bytle.exception.NotFoundException;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -17,7 +15,7 @@ public class DomainValidatorResult {
     return this.validationTestResult;
   }
 
-  public DomainValidatorResult addTest(ValidationTestResult validationTestResult) {
+  public DomainValidatorResult addTestResult(ValidationTestResult validationTestResult) {
     this.validationTestResult.add(validationTestResult);
     return this;
   }
@@ -27,11 +25,4 @@ public class DomainValidatorResult {
     return this;
   }
 
-  public ValidationTestResult getResult(ValidationTest validationTest) throws NotFoundException {
-    return this.validationTestResult
-      .stream()
-      .filter(validationTestResult->validationTestResult.getValidation().equals(validationTest))
-      .findFirst()
-      .orElseThrow(NotFoundException::new);
-  }
 }

@@ -20,6 +20,7 @@ public enum ValidationTest {
   MX_RECORD("mxRecord", EmailAddressValidationStatus.DOMAIN_SUSPICIOUS),
   /**
    * Test if an A Record is present
+   * for the domain
    */
   A_RECORD("aRecord", EmailAddressValidationStatus.DOMAIN_SUSPICIOUS),
   /**

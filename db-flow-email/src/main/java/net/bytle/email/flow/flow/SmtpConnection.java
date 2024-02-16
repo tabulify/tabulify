@@ -215,7 +215,7 @@ public class SmtpConnection extends Connection {
   @Override
   public Boolean ping() {
     try {
-      this.getSmtpServer().ping();
+      this.getSmtpServer().pingHello();
       return false;
     } catch (MessagingException e) {
       return true;
