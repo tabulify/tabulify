@@ -53,7 +53,7 @@ public class IpVerticle extends AbstractVerticle {
              */
             HttpServer httpServer;
             try {
-              httpServer = HttpServer.createFromServer(server)
+              httpServer = HttpServer.builderFromServer(server)
                 .addBodyHandler() // body transformation
                 .addWebLog() // web log
                 .setBehindProxy() // enable proxy forward

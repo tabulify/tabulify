@@ -11,12 +11,12 @@ public abstract class TowerService implements AutoCloseable, TowerServiceInterfa
   }
 
   @Override
-  public Future<Void> mount() throws Exception {
+  public Future<Void> mount() {
     return Future.succeededFuture();
   }
 
   @Override
-  public Future<Void> start() throws Exception {
+  public Future<Void> start() {
     return Future.succeededFuture();
   }
 

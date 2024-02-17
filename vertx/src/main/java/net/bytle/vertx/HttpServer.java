@@ -16,8 +16,8 @@ import net.bytle.java.JavaEnvs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class represents an HTTP server:
@@ -41,7 +41,7 @@ public class HttpServer implements AutoCloseable {
   }
 
 
-  public static builder createFromServer(Server server) {
+  public static builder builderFromServer(Server server) {
 
     return new HttpServer.builder(server);
 
@@ -76,14 +76,15 @@ public class HttpServer implements AutoCloseable {
     }
     io.vertx.core.http.HttpServer httpServer = this.builder.server.getVertx().createHttpServer(options);
 
-
     /**
+     * Mount the services
      * Future.join and not Future.all to finish all futures
      * With Future.all if there is an error, the handlers of the future still
      * running produce an error when we close Vertx and it adds noise
      */
-    return Future.join(this.servicesToMount)
-      .recover(err -> Future.failedFuture(new InternalException("A future failed while building the http server", err)))
+    List<Future<Void>> servicesFutureMount = this.getServer().getServices().stream().map(TowerService::mount).collect(Collectors.toList());
+    return Future.join(servicesFutureMount)
+      .recover(err -> Future.failedFuture(new InternalException("A service mount failed while building the http server", err)))
       .compose(asyncResult -> {
         /**
          * Health Check
@@ -192,18 +193,6 @@ public class HttpServer implements AutoCloseable {
     return this.bodyHandler;
   }
 
-  /**
-   * Future to execute on build
-   */
-  List<Future<?>> servicesToMount = new ArrayList<>();
-
-  /**
-   * @deprecated the object should become a {@link TowerService} that registers itself
-   */
-  @Deprecated
-  public void addFutureToExecuteOnBuild(Future<?> future) {
-    servicesToMount.add(future);
-  }
 
   public static class builder {
 

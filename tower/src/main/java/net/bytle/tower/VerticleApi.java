@@ -47,24 +47,23 @@ public class VerticleApi extends AbstractVerticle {
             /**
              * Create the server
              */
-          Server server = Server.create("http", vertx, configAccessor)
-            .setFromConfigAccessorWithPort(PORT_DEFAULT)
-            .enableApiKeyAuth()
-            .enableJwt()
-            .enableHashId()
-            .enablePostgresDatabase()
-            .enableJsonToken()
-            .enableSmtpClient()
-            .enableMapDb()
-            .enableTrackerAnalytics()
-            .enableDnsClient()
-            .build();
+            Server server = Server.create("http", vertx, configAccessor)
+              .setFromConfigAccessorWithPort(PORT_DEFAULT)
+              .enableApiKeyAuth()
+              .enableJwt()
+              .enableHashId()
+              .enablePostgresDatabase()
+              .enableJsonToken()
+              .enableSmtpClient()
+              .enableMapDb()
+              .enableTrackerAnalytics()
+              .enableDnsClient()
+              .build();
 
             /**
              * Create the HTTP server
              */
-            HttpServer httpServer;
-            httpServer = HttpServer.createFromServer(server)
+            HttpServer httpServer = HttpServer.builderFromServer(server)
               .addBodyHandler() // body transformation
               .addWebLog() // web log
               .setBehindProxy() // enable proxy forward
@@ -74,14 +73,12 @@ public class VerticleApi extends AbstractVerticle {
               .build();
 
             /**
-             * App
+             * Create the App
              */
-            apiApp = EraldyApiApp.create(httpServer);
+            apiApp = EraldyApiApp.createForHttpServer(httpServer);
 
             /**
-             * Create the server
-             * https://vertx.io/docs/vertx-core/java/#_writing_http_servers_and_clients
-             *  0.0.0.0 means listen on all available addresses
+             * Mount the HTTP server
              */
             return httpServer.mountListenAndStart();
 

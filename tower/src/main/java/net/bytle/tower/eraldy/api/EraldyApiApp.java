@@ -89,6 +89,7 @@ public class EraldyApiApp extends TowerApp  {
 
   public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
     super(httpServer, EraldyDomain.getOrCreate(httpServer));
+
     ConfigAccessor configAccessor = httpServer.getServer().getConfigAccessor();
 
     // data directory
@@ -203,7 +204,7 @@ public class EraldyApiApp extends TowerApp  {
   }
 
 
-  public static EraldyApiApp create(HttpServer httpServer) throws ConfigIllegalException {
+  public static EraldyApiApp createForHttpServer(HttpServer httpServer) throws ConfigIllegalException {
 
     return new EraldyApiApp(httpServer);
 

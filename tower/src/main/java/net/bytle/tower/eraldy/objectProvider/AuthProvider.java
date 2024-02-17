@@ -545,10 +545,13 @@ public class AuthProvider {
       return;
     }
     /**
-     * Member client?
-     * (Only the member app is authorised to make proxy call)
+     * Technically all valid client should be able to
+     * do the same as the member app.
+     * Why? Because the member app proxy all client
+     * We have only Eraldy client, we give the authorization to them
+     * As of now, there is no notion of proxy by in the auth client
      */
-    if (!this.apiApp.getEraldyModel().getMemberClient().getGuid().equals(authClient.getGuid())) {
+    if (!this.apiApp.getEraldyModel().getRealmLocalId().equals(authClient.getApp().getRealm().getLocalId())) {
       throw new NotAuthorizedException();
     }
   }

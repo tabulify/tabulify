@@ -108,6 +108,9 @@ public class Server implements AutoCloseable {
 
   }
 
+  /**
+   * @return the listening port
+   */
   public Integer getListeningPort() {
     return this.builder.listeningPort;
   }
@@ -240,6 +243,10 @@ public class Server implements AutoCloseable {
 
   public JdbcConnectionInfo getPostgresDatabaseConnectionInfo() {
     return this.pgConnectionInfo;
+  }
+
+  public List<TowerService> getServices() {
+      return this.services;
   }
 
 

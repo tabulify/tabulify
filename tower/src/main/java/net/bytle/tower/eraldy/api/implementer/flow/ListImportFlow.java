@@ -180,7 +180,7 @@ public class ListImportFlow extends TowerService implements WebFlow {
   }
 
   @Override
-  public Future<Void> start() throws Exception {
+  public Future<Void> start() {
 
     /**
      * Job

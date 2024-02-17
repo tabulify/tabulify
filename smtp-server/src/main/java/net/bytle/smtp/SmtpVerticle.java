@@ -140,7 +140,7 @@ public class SmtpVerticle extends AbstractVerticle {
              * Create the HTTP server
              */
             try {
-              this.httpServer = HttpServer.createFromServer(server)
+              this.httpServer = HttpServer.builderFromServer(server)
                 .addBodyHandler()
                 .addWebLog()
                 .setBehindProxy()

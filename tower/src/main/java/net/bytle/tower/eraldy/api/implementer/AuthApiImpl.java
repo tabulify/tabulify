@@ -194,9 +194,9 @@ public class AuthApiImpl implements AuthApi {
     /**
      * Valid email
      */
-    EmailAddress bMailInternetAddress;
+    EmailAddress emailAddress;
     try {
-      bMailInternetAddress = EmailAddress.of(authEmailPost.getUserEmail());
+      emailAddress = EmailAddress.of(authEmailPost.getUserEmail());
     } catch (EmailCastException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
@@ -211,7 +211,7 @@ public class AuthApiImpl implements AuthApi {
      */
     UriEnhanced redirectUri = ValidationUtil.validateAndGetRedirectUriAsUri(authEmailPost.getRedirectUri());
     Realm requestingRealm = this.apiApp.getRealmProvider().getRequestingRealm(routingContext);
-    return this.apiApp.getUserProvider().getUserByEmail(bMailInternetAddress, requestingRealm)
+    return this.apiApp.getUserProvider().getUserByEmail(emailAddress, requestingRealm)
       .compose(user -> {
         if (user == null) {
           /**
@@ -219,7 +219,7 @@ public class AuthApiImpl implements AuthApi {
            */
           return this.apiApp.getUserRegistrationFlow().handleStep1SendEmail(
             routingContext,
-            bMailInternetAddress,
+            emailAddress,
             requestingRealm,
             redirectUri
           );
