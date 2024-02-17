@@ -90,7 +90,7 @@ public class TowerAppRequestBuilder {
 
   private String getSuperToken() {
     try {
-      return towerApp.getApexDomain().getHttpServer().getServer().getApiKeyAuthProvider().getSuperToken();
+      return towerApp.getHttpServer().getServer().getApiKeyAuthProvider().getSuperToken();
     } catch (NullValueException e) {
       throw new InternalException("no API key set/enabled for the server");
     }

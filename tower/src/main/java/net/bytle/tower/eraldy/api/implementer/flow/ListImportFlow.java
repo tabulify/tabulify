@@ -1,6 +1,6 @@
 package net.bytle.tower.eraldy.api.implementer.flow;
 
-import io.vertx.core.Vertx;
+import io.vertx.core.Future;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.healthchecks.Status;
@@ -27,17 +27,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * A class tha handles
+ * A class that handles
  * the list import flow
  */
-public class ListImportFlow implements WebFlow, AutoCloseable {
+public class ListImportFlow extends TowerService implements WebFlow {
 
   private static final String FILE_SUFFIX_JOB_STATUS = "-status.json";
 
   private final EraldyApiApp apiApp;
   private final Path runtimeDataDirectory;
-
-  private final Vertx vertx;
   /**
    * If a validation fail with a fatal error
    * (DNS timeout, DNS servfail error, ...)
@@ -59,7 +57,15 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
    * the jobs.
    */
   private final Integer executionPeriodInMs;
-  private final int purgeDelayMs;
+  /**
+   * The period of purge
+   */
+  private final int purgeJobPeriodMs;
+
+  /**
+   * Utility variable to get quickly the server
+   */
+  private final Server server;
   /**
    * The last execution time to check that the job execution is still healthy
    */
@@ -101,28 +107,29 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
       .resolve(jobIdentifier + FILE_SUFFIX_JOB_STATUS);
   }
 
-  Path getListDirectory(String listIdentifier) {
+  Path getListDirectory(String listGuid) {
     Path listDirectory = this
       .getRuntimeDataDirectory()
-      .resolve(listIdentifier);
+      .resolve(listGuid);
     Fs.createDirectoryIfNotExists(listDirectory);
     return listDirectory;
   }
 
-  public List<ListImportJobStatus> getJobsStatuses(String listIdentifier) {
+  public List<ListImportJobStatus> getJobsStatuses(String listGuid) {
 
     /**
      * Actual Jobs
      */
     List<ListImportJobStatus> listImportJobStatuses = this.importJobQueue
       .stream()
+      .filter(importJob -> importJob.getList().getGuid().equals(listGuid))
       .map(ListImportJob::getStatus)
       .collect(Collectors.toList());
 
     /**
      * Add the Past jobs
      */
-    List<Path> files = Fs.getChildrenFiles(this.getListDirectory(listIdentifier));
+    List<Path> files = Fs.getChildrenFiles(this.getListDirectory(listGuid));
     for (Path file : files) {
       if (Files.isDirectory(file)) {
         continue;
@@ -173,62 +180,24 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
   }
 
   @Override
-  public void close() {
-    InternalException e = new InternalException("The server has restarted while this job was running. We are Sorry. You need to re-create a new import job.");
-    for (ListImportJob listImportJob : this.importJobQueue) {
-      listImportJob.closeJobWithFatalError(e, null);
-    }
-  }
-
-
-  /**
-   * The fields in the import file
-   */
-  enum IMPORT_FIELD {
-    GIVEN_NAME, FAMILY_NAME, OPT_IN_TIME, OPT_IN_IP, CONFIRM_TIME, LOCATION, CONFIRM_IP, OPT_IN_ORIGIN, EMAIL_ADDRESS
-  }
-
-  /**
-   * Import Job by JobId String
-   */
-  Queue<ListImportJob> importJobQueue = new LinkedList<>();
-
-  public ListImportFlow(EraldyApiApp apiApp) {
-    this.apiApp = apiApp;
-    Server server = apiApp.getApexDomain().getHttpServer().getServer();
+  public Future<Void> start() throws Exception {
 
     /**
-     * Config
+     * Job
      */
-    this.vertx = server.getVertx();
-    this.runtimeDataDirectory = this.apiApp.getRuntimeDataDirectory().resolve("list-import");
-    Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
-    ConfigAccessor configAccessor = server.getConfigAccessor();
-    this.rowValidationFailureRetryCount = configAccessor.getInteger("list.import.execution.row.validation.retry.count", 2);
-
-    /**
-     * Close running job when the app is stopped
-     */
-    server.addCloseableService(this);
-
-    /**
-     * Timer Queue Execution
-     */
-    this.executionPeriodInMs = configAccessor.getInteger("list.import.execution.delay.ms", 5000);
     this.executionLastTime = LocalDateTime.now();
     this.scheduleNextJob();
 
     /**
-     * Purge
+     * Purge Job
      */
-    purgeDelayMs = 24 * 60 * 60000;
-    int purgeHistoryDelay = configAccessor.getInteger("list.import.purge.history.delay", purgeDelayMs);
-    vertx.setPeriodic(6000, purgeHistoryDelay, jobId -> purgeJobHistory());
+    server.getVertx().setPeriodic(6000, this.purgeJobPeriodMs, jobId -> purgeJobHistory());
 
     /**
      * Health Checks
      */
-    server.getServerHealthCheck()
+    this.server
+      .getServerHealthCheck()
       .register(ListImportFlow.class, promise -> {
 
         /**
@@ -238,7 +207,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
         Duration agoLastExecution = Duration.between(this.executionLastTime, LocalDateTime.now());
         boolean executionTest = agoLastExecution.toMillis() <= this.executionPeriodInMs + 1000;
         Duration agoLastPurge = Duration.between(this.purgeLastTime, LocalDateTime.now());
-        boolean purgeTest = agoLastPurge.toMillis() <= this.purgeDelayMs + 1000;
+        boolean purgeTest = agoLastPurge.toMillis() <= this.purgeJobPeriodMs + 1000;
 
 
         /**
@@ -279,6 +248,61 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
         promise.complete(status);
       });
 
+    return Future.succeededFuture();
+
+  }
+
+  @Override
+  public void close() {
+    InternalException e = new InternalException("The server has restarted while this job was running. We are Sorry. You need to re-create a new import job.");
+    for (ListImportJob listImportJob : this.importJobQueue) {
+      listImportJob.closeJobWithFatalError(e, null);
+    }
+  }
+
+
+  /**
+   * The fields in the import file
+   */
+  enum IMPORT_FIELD {
+    GIVEN_NAME, FAMILY_NAME, OPT_IN_TIME, OPT_IN_IP, CONFIRM_TIME, LOCATION, CONFIRM_IP, OPT_IN_ORIGIN, EMAIL_ADDRESS
+  }
+
+  /**
+   * Import Job by JobId String
+   */
+  Queue<ListImportJob> importJobQueue = new LinkedList<>();
+
+  public ListImportFlow(EraldyApiApp apiApp) {
+
+    this.apiApp = apiApp;
+    this.server = apiApp.getHttpServer().getServer();
+
+    /**
+     * Config
+     */
+    this.runtimeDataDirectory = this.apiApp.getRuntimeDataDirectory().resolve("list-import");
+    Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
+    ConfigAccessor configAccessor = server.getConfigAccessor();
+    this.rowValidationFailureRetryCount = configAccessor.getInteger("list.import.execution.row.validation.retry.count", 2);
+
+    /**
+     * Mount, Start, Close when the server is started
+     */
+    server.registerService(this);
+
+    /**
+     * Timer Queue Execution
+     */
+    this.executionPeriodInMs = configAccessor.getInteger("list.import.execution.delay.ms", 5000);
+
+    /**
+     * Purge
+     */
+    int purgeDelayMsDefault = 24 * 60 * 60000;
+    this.purgeJobPeriodMs = configAccessor.getInteger("list.import.purge.history.delay", purgeDelayMsDefault);
+
+
     /**
      * The number of files created by job import
      * - The original file
@@ -288,10 +312,11 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
     int numberOfFilesToPurgeByJob = 3;
     this.maxJobHistoryByList = 10 * numberOfFilesToPurgeByJob;
     this.maxJobHistoryRetentionInDays = 30;
+
   }
 
   private void scheduleNextJob() {
-    vertx.setTimer(executionPeriodInMs, jobId -> step2ExecuteNextJob());
+    this.server.getVertx().setTimer(executionPeriodInMs, jobId -> step2ExecuteNextJob());
   }
 
   private void purgeJobHistory() {
@@ -394,7 +419,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
     long maxExecutionTimeSecond = 60 * 5; // 5 minutes
     TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
     String workerExecutor = "list-import-flow";
-    return vertx.createSharedWorkerExecutor(workerExecutor, poolSize, maxExecutionTimeSecond, maxExecuteTimeUnit);
+    return this.server.getVertx().createSharedWorkerExecutor(workerExecutor, poolSize, maxExecutionTimeSecond, maxExecuteTimeUnit);
   }
 
   private void closeExecutionAndExecuteNextJob(ListImportJob executingJob, WorkerExecutor executor) {

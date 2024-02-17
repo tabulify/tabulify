@@ -32,7 +32,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
 
   public WebFlowEmailCallbackAbs(WebFlow webFlow) {
     this.webFlow = webFlow;
-    this.jsonToken = webFlow.getApp().getApexDomain().getHttpServer().getServer().getJsonToken();
+    this.jsonToken = webFlow.getApp().getHttpServer().getServer().getJsonToken();
   }
 
   /**
@@ -79,7 +79,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
     /**
      * Template
      */
-    net.bytle.template.api.TemplateEngine templateEngine = TemplateEngine.getEmailEngine(webFlow.getApp().getApexDomain().getHttpServer().getServer().getVertx());
+    net.bytle.template.api.TemplateEngine templateEngine = TemplateEngine.getEmailEngine(webFlow.getApp().getHttpServer().getServer().getVertx());
     BMailTransactionalTemplate template = BMailTransactionalTemplate
       .createFromName(BMailTransactionalTemplate.DEFAULT_TEMPLATE_NAME, templateEngine);
 

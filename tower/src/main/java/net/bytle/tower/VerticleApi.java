@@ -2,7 +2,6 @@ package net.bytle.tower;
 
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.util.GlobalUtilityObjectsCreation;
@@ -48,19 +47,18 @@ public class VerticleApi extends AbstractVerticle {
             /**
              * Create the server
              */
-            Server server;
-            server = Server.create("http", vertx, configAccessor)
-              .setFromConfigAccessorWithPort(PORT_DEFAULT)
-              .enableApiKeyAuth()
-              .enableJwt()
-              .enableHashId()
-              .enablePostgresDatabase()
-              .enableJsonToken()
-              .enableSmtpClient()
-              .enableMapDb()
-              .enableTrackerAnalytics()
-              .enableDnsClient()
-              .build();
+          Server server = Server.create("http", vertx, configAccessor)
+            .setFromConfigAccessorWithPort(PORT_DEFAULT)
+            .enableApiKeyAuth()
+            .enableJwt()
+            .enableHashId()
+            .enablePostgresDatabase()
+            .enableJsonToken()
+            .enableSmtpClient()
+            .enableMapDb()
+            .enableTrackerAnalytics()
+            .enableDnsClient()
+            .build();
 
             /**
              * Create the HTTP server
@@ -78,36 +76,26 @@ public class VerticleApi extends AbstractVerticle {
             /**
              * App
              */
-            EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
-            apiApp = EraldyApiApp.create(eraldyDomain);
-
-            /**
-             * Future to be executed before the HTTP server listen
-             */
-            Future<Void> publicApiFuture = apiApp.mount();
-            httpServer.addFutureToExecuteOnBuild(publicApiFuture);
+            apiApp = EraldyApiApp.create(httpServer);
 
             /**
              * Create the server
              * https://vertx.io/docs/vertx-core/java/#_writing_http_servers_and_clients
              *  0.0.0.0 means listen on all available addresses
              */
-            return httpServer.buildVertxHttpServer();
+            return httpServer.mountListenAndStart();
+
           })
+          /**
+           * On Failure of blocking code
+           * ie NPE
+           */
           .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
-          .onSuccess(httpServerFuture -> httpServerFuture
-            .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
-            .onSuccess(vertxHttpServer -> vertxHttpServer
-              .listen(ar -> {
-                if (ar.succeeded()) {
-                  LOGGER.info("API HTTP server running on port " + ar.result().actualPort());
-                  verticlePromise.complete();
-                } else {
-                  LOGGER.error("Could not start the API HTTP server " + ar.cause());
-                  this.handlePromiseFailure(verticlePromise, ar.cause());
-                }
-              })))
-      );
+      )
+      /**
+       * On Failure of server start
+       */
+      .onFailure(err -> this.handlePromiseFailure(verticlePromise, err));
 
 
   }
@@ -150,7 +138,7 @@ public class VerticleApi extends AbstractVerticle {
     vertx.executeBlocking(() -> {
 
       LOGGER.info("Closing Server services");
-      this.getApp().getApexDomain().getHttpServer().close(); // close also server
+      this.getApp().getHttpServer().close(); // close also server
 
       stopPromise.complete();
       return null;

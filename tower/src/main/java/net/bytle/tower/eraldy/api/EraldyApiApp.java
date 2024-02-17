@@ -45,8 +45,7 @@ import static net.bytle.tower.util.Guid.*;
 /**
  * The api application
  */
-public class EraldyApiApp extends TowerApp {
-
+public class EraldyApiApp extends TowerApp  {
 
   private static final String RUNTIME_DATA_DIR_CONF = "data.runtime.dir.path";
 
@@ -88,9 +87,9 @@ public class EraldyApiApp extends TowerApp {
   private final RealmSequenceProvider realmSequenceProvider;
 
 
-  public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
-    super(apexDomain);
-    ConfigAccessor configAccessor = apexDomain.getHttpServer().getServer().getConfigAccessor();
+  public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
+    super(httpServer, EraldyDomain.getOrCreate(httpServer));
+    ConfigAccessor configAccessor = httpServer.getServer().getConfigAccessor();
 
     // data directory
     Path runtime = Paths.get("data/runtime");
@@ -114,7 +113,7 @@ public class EraldyApiApp extends TowerApp {
     this.serviceProvider = new ServiceProvider(this);
     this.organizationUserProvider = new OrganizationUserProvider(this);
     this.organizationRoleProvider = new OrganizationRoleProvider(this);
-    this.hashIds = this.getApexDomain().getHttpServer().getServer().getHashId();
+    this.hashIds = this.getHttpServer().getServer().getHashId();
     this.authClientProvider = new AuthClientProvider(this);
     this.realmSequenceProvider = new RealmSequenceProvider();
 
@@ -179,7 +178,7 @@ public class EraldyApiApp extends TowerApp {
      */
     int idleSessionTimeoutMs = cookieMaxAgeOneWeekInSec * 1000;
     this.sessionHandler = RealmSessionHandler
-      .createWithDomain(this.getApexDomain())
+      .createForApp(this)
       .setSessionTimeout(idleSessionTimeoutMs)
       .setRealmHandleContextAndSessionKey(realmHandleContextAndSessionKey)
       .setRealmGuidContextAndSessionKey(realmGuidContextAndSessionKey)
@@ -195,7 +194,7 @@ public class EraldyApiApp extends TowerApp {
      * as Api Key is supported
      */
     try {
-      this.apiKeyUserProvider = this.getApexDomain().getHttpServer().getServer().getApiKeyAuthProvider();
+      this.apiKeyUserProvider = this.getHttpServer().getServer().getApiKeyAuthProvider();
     } catch (NullValueException e) {
       throw new ConfigIllegalException("Api Key should be enabled", e);
     }
@@ -204,9 +203,9 @@ public class EraldyApiApp extends TowerApp {
   }
 
 
-  public static EraldyApiApp create(TowerApexDomain topLevelDomain) throws ConfigIllegalException {
+  public static EraldyApiApp create(HttpServer httpServer) throws ConfigIllegalException {
 
-    return new EraldyApiApp(topLevelDomain);
+    return new EraldyApiApp(httpServer);
 
   }
 
@@ -500,17 +499,17 @@ public class EraldyApiApp extends TowerApp {
      * We mount the session after then
      */
     LOGGER.info("Add Auth Session Cookie");
-    Router router = this.getApexDomain().getHttpServer().getRouter();
+    Router router = this.getHttpServer().getRouter();
     router.route().handler(this.authClientIdHandler);
     router.route().handler(this.sessionHandler);
 
     TowerApexDomain apexDomain = this.getApexDomain();
     LOGGER.info("Allow CORS on the domain (" + apexDomain + ")");
     // Allow Browser cross-origin request in the domain
-    BrowserCorsUtil.allowCorsForApexDomain(router, apexDomain);
+    BrowserCorsUtil.allowCorsForApexDomain(router, this);
 
     LOGGER.info("EraldyApp Db Migration");
-    JdbcConnectionInfo postgresDatabaseConnectionInfo = apexDomain.getHttpServer().getServer().getPostgresDatabaseConnectionInfo();
+    JdbcConnectionInfo postgresDatabaseConnectionInfo = this.getHttpServer().getServer().getPostgresDatabaseConnectionInfo();
     JdbcSchemaManager jdbcSchemaManager = JdbcSchemaManager.create(postgresDatabaseConnectionInfo);
     // Realms
     String schema = JdbcSchemaManager.getSchemaFromHandle("realms");
@@ -569,4 +568,6 @@ public class EraldyApiApp extends TowerApp {
   public RealmSequenceProvider getRealmSequenceProvider() {
     return this.realmSequenceProvider;
   }
+
+
 }

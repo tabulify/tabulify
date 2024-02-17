@@ -29,7 +29,7 @@ public class AppApiImpl implements AppApi {
 
   public AppApiImpl(TowerApp towerApp) {
     this.apiApp = (EraldyApiApp) towerApp;
-    this.apiMapper = apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
+    this.apiMapper = apiApp.getHttpServer().getServer().getJacksonMapperManager()
       .jsonMapperBuilder()
       .addMixIn(App.class, AppPublicMixinWithRealm.class)
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)

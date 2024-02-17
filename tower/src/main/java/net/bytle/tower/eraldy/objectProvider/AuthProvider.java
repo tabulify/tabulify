@@ -397,7 +397,6 @@ public class AuthProvider {
           signUpEvent.getRequest().setFlowGuid(webFlow.getFlowType().getId().toString());
           signUpEvent.getRequest().setFlowHandle(webFlow.getFlowType().getHandle());
           this.apiApp
-            .getApexDomain()
             .getHttpServer()
             .getServer()
             .getTrackerAnalytics()

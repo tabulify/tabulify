@@ -33,7 +33,7 @@ import net.bytle.type.UriEnhanced;
  * * the static resource path: the path of the static files in the java main resources
  * * the template resource path: the path of the html template file in the java main resources
  */
-public abstract class TowerApp {
+public abstract class TowerApp extends TowerService {
 
 
   public static final String OPENAPI_YAML_PATH = "/openapi.yaml";
@@ -43,17 +43,31 @@ public abstract class TowerApp {
    * for the location of the spec file
    */
   private static final String OPEN_API_RESOURCES_PREFIX = "openapi-spec-file";
-  private final TowerApexDomain apexDomain;
+
   private final ConfigAccessor configAccessor;
+  private final HttpServer httpServer;
   private ForwardProxy proxy;
   private WebClient webClient;
   private OpenApiManager openApi;
+  private final TowerApexDomain apexDomain;
 
 
-  public TowerApp(TowerApexDomain towerApexDomain) {
+  /**
+   *
+   * @param httpServer - the HTTP server
+   * @param apexDomain - the Apex Domain (mandatory for openAPI)
+   */
+  public TowerApp(HttpServer httpServer, TowerApexDomain apexDomain) {
 
-    this.apexDomain = towerApexDomain;
-    this.configAccessor = apexDomain.getHttpServer().getServer().getConfigAccessor();
+    this.httpServer = httpServer;
+    this.apexDomain = apexDomain;
+
+    this.configAccessor = httpServer.getServer().getConfigAccessor();
+
+    /**
+     * An app is a service
+     */
+    httpServer.getServer().registerService(this);
 
     /**
      * Built OpenApi
@@ -100,7 +114,7 @@ public abstract class TowerApp {
    */
   public UriEnhanced getOperationUriForLocalhost(String operationPath) {
 
-    HttpServer httpServer = this.apexDomain.getHttpServer();
+
     String scheme = httpServer.getHttpScheme();
     UriEnhanced uri;
     try {
@@ -178,13 +192,13 @@ public abstract class TowerApp {
    */
   public Template getTemplate(String templateName) {
     String templateResourcesPath = getApexDomain().getPathName() + "/" + this.getAppName() + "/" + templateName;
-    return TemplateEngine.getLocalHtmlEngine(this.apexDomain.getHttpServer().getServer().getVertx())
+    return TemplateEngine.getLocalHtmlEngine(this.httpServer.getServer().getVertx())
       .compile(templateResourcesPath);
   }
 
   public TowerAppRequestBuilder getRequestBuilder(String path) {
     if (webClient == null) {
-      Server server = this.getApexDomain().getHttpServer().getServer();
+      Server server = this.httpServer.getServer();
       webClient = HttpClientBuilder.builder(server.getVertx())
         .withServerProperties(server)
         .buildWebClient();
@@ -197,8 +211,8 @@ public abstract class TowerApp {
    * (ie it contains the port part)
    */
   public String getPublicDomainHost() {
-    String apexName = getApexDomain().getApexNameWithPort();
-    String apexNameWithoutPort = getApexDomain().getApexNameWithoutPort();
+    String apexName = getApexDomain().getUrlAuthority();
+    String apexNameWithoutPort = getApexDomain().getDnsApexName();
     if (apexNameWithoutPort.equals("localhost")) {
       /**
        * Localhost does not have subdomain
@@ -235,7 +249,7 @@ public abstract class TowerApp {
   private Future<Void> mountOnRouter() {
 
 
-    Router rootRouter = apexDomain.getHttpServer().getRouter();
+    Router rootRouter = httpServer.getRouter();
 
     /**
      * Browser Specific
@@ -269,7 +283,6 @@ public abstract class TowerApp {
      * <p>
      * The Strict-Transport-Security HTTP header tells browsers to always use HTTPS.
      */
-    HttpServer httpServer = this.getApexDomain().getHttpServer();
     if (httpServer.isHttpsEnabled()) {
       String pathMount = this.getPathMount();
       Route route;
@@ -456,7 +469,7 @@ public abstract class TowerApp {
      * We create a URI each time as it may be accessed multiple time in one request,
      * and we don't want to mix query parameters
      */
-    String scheme = apexDomain.getHttpServer().getHttpScheme();
+    String scheme = httpServer.getHttpScheme();
     try {
       return UriEnhanced.create()
         .setScheme(scheme)
@@ -476,8 +489,8 @@ public abstract class TowerApp {
   }
 
 
-  public TowerApexDomain getApexDomain() {
-    return this.apexDomain;
+  public TowerApexDomain getApexDomain(){
+   return this.apexDomain;
   }
 
   @Override
@@ -490,5 +503,9 @@ public abstract class TowerApp {
     return openApi;
   }
 
+
+  public HttpServer getHttpServer() {
+    return this.httpServer;
+  }
 
 }

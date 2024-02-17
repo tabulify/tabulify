@@ -1,6 +1,5 @@
 package net.bytle.vertx;
 
-import net.bytle.exception.AssertionException;
 import net.bytle.exception.InternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +18,7 @@ public class EraldyDomain extends TowerApexDomain {
    * On prod, the domain is named: eraldy.com
    */
   private static final String COMBO_APEX_DOMAIN_CONFIG_KEY = "eraldy.apex.domain";
-  private static final long ERALDY_ORGANIZATION_ID = 1L;
-  private static final long ERALDY_REALM_ID = ERALDY_ORGANIZATION_ID;
+  private static final long ERALDY_REALM_ID = 1L;
   private static final String REALM_HANDLE = "eraldy";
   private static final String REALM_NAME = "Eraldy";
 
@@ -31,16 +29,16 @@ public class EraldyDomain extends TowerApexDomain {
   private static EraldyDomain eraldyDomain;
 
 
-  public EraldyDomain(String publicHost, HttpServer httpServer) {
-    super(publicHost, httpServer);
+  public EraldyDomain(String dnsName, int publicPort) {
+    super(dnsName, publicPort);
   }
 
-  public static EraldyDomain getOrCreate(HttpServer httpServer, ConfigAccessor configAccessor) {
+  public static EraldyDomain getOrCreate(HttpServer httpServer) {
     if (eraldyDomain != null) {
       return eraldyDomain;
     }
-    String publicHost = configAccessor.getString(COMBO_APEX_DOMAIN_CONFIG_KEY, DEFAULT_VHOST);
-    eraldyDomain = new EraldyDomain(publicHost, httpServer);
+    String publicHost = httpServer.getServer().getConfigAccessor().getString(COMBO_APEX_DOMAIN_CONFIG_KEY, DEFAULT_VHOST);
+    eraldyDomain = new EraldyDomain(publicHost, httpServer.getPublicPort());
     return eraldyDomain;
   }
 
@@ -67,11 +65,6 @@ public class EraldyDomain extends TowerApexDomain {
   }
 
   @Override
-  public Long getOrganisationId() {
-    return ERALDY_ORGANIZATION_ID;
-  }
-
-  @Override
   public Long getRealmLocalId() {
     return ERALDY_REALM_ID;
   }
@@ -94,16 +87,6 @@ public class EraldyDomain extends TowerApexDomain {
 
   public boolean isEraldyId(Long realmId) {
     return getRealmLocalId().equals(realmId);
-  }
-
-  public void assertIsEraldyUser(Long realmId) throws AssertionException {
-
-    boolean isEraldyUser = eraldyDomain.isEraldyId(realmId);
-    if (!isEraldyUser) {
-
-      throw new AssertionException();
-
-    }
   }
 
 

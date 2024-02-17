@@ -6,30 +6,25 @@ package net.bytle.vertx;
  * also known as top-level site or apex site
  * <p>
  * To be exact, the top-level domain name is `com`, we use therefore `apex`
+ * The apex name are the 2 firsts label (ie the root, the tld and a label)
  */
 public abstract class TowerApexDomain {
 
 
   private final String apexNameWithoutPort;
 
-  private final String apexName;
-  private final HttpServer httpServer;
+  private final String authority;
+  //private final HttpServer httpServer;
 
 
-  public TowerApexDomain(String apexName, HttpServer httpServer) {
+  public TowerApexDomain(String apexName, int publicPort) {
     this.apexNameWithoutPort = apexName;
-    int publicPort = httpServer.getPublicPort();
     if (publicPort != 80) {
-      this.apexName = this.apexNameWithoutPort + ":" + publicPort;
+      this.authority = this.apexNameWithoutPort + ":" + publicPort;
     } else {
-      this.apexName = this.apexNameWithoutPort;
+      this.authority = this.apexNameWithoutPort;
     }
-    this.httpServer = httpServer;
 
-  }
-
-  public HttpServer getHttpServer(){
-    return this.httpServer;
   }
 
   /**
@@ -46,22 +41,17 @@ public abstract class TowerApexDomain {
   public abstract String getPathName();
 
   /**
-   * The public domain host
-   * for instance `combostrap.com`
-   * <p>
-   * The apex is the top level domain + its subdomain
-   * <p>
-   * We follow most of the web server out there, where
-   * the apex name contains the port, if not 80
+   * The authority (ie dns name + optional port)
+   * The authority contains the port, if not 80
    */
-  public String getApexNameWithPort() {
-    return apexName;
+  public String getUrlAuthority() {
+    return authority;
   }
 
   /**
    * @return the apex name without the port (cookie scope)
    */
-  public String getApexNameWithoutPort() {
+  public String getDnsApexName() {
     return apexNameWithoutPort;
   }
 
@@ -77,11 +67,6 @@ public abstract class TowerApexDomain {
   }
 
   public abstract String getRealmHandle();
-
-  /**
-   * @return the organisation local id
-   */
-  public abstract Long getOrganisationId();
 
   /**
    * @return the realm local id

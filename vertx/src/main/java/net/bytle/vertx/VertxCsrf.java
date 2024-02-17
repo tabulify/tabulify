@@ -30,13 +30,13 @@ public class VertxCsrf {
      * at {@link io.vertx.ext.web.handler.impl.CSRFHandlerImpl#isValidRequest(RoutingContext)}
      * after server restart
      */
-    String secret = app.getApexDomain().getHttpServer().getServer().getConfigAccessor().getString(CSRF_SECRET_KEY_CONF);
+    String secret = app.getHttpServer().getServer().getConfigAccessor().getString(CSRF_SECRET_KEY_CONF);
     if (secret == null) {
       throw new InternalException("The secret CSRF configuration was not found (" + CSRF_SECRET_KEY_CONF + ").");
     }
     String path = app.getPathMount() + "/*";
     rootRouter.route(path).handler(
-      CSRFHandler.create(app.getApexDomain().getHttpServer().getServer().getVertx(), secret)
+      CSRFHandler.create(app.getHttpServer().getServer().getVertx(), secret)
         .setCookieName(getCsrfCookieName())
         .setHeaderName(getCsrfName())
     );
@@ -53,6 +53,7 @@ public class VertxCsrf {
    * <input type="hidden" name="X-XSRF-TOKEN" th:value="${X-XSRF-TOKEN}">
    * ```
    */
+  @SuppressWarnings("unused")
   public static String getCsrfToken(RoutingContext routingContext) throws NotFoundException {
 
     Session session = routingContext.session();

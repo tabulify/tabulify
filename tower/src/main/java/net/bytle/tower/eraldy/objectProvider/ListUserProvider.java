@@ -1,7 +1,6 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
@@ -14,7 +13,6 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.ListItemMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
@@ -66,8 +64,8 @@ public class ListUserProvider {
   public ListUserProvider(EraldyApiApp apiApp) {
 
     this.apiApp = apiApp;
-    this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool();
-    this.apiMapper = apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
+    this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresDatabaseConnectionPool();
+    this.apiMapper = apiApp.getHttpServer().getServer().getJacksonMapperManager()
       .jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
@@ -434,16 +432,4 @@ public class ListUserProvider {
     return this.apiMapper;
   }
 
-  public String toTemplateJson(ListUser listUser) {
-    JsonObject jsonObject = JsonObject.mapFrom(listUser);
-    /**
-     * TODO: replace the name
-     * {@link UsersUtil.getNameOrNameFromEmail(user)}
-     */
-    try {
-      return this.getApiMapper().writeValueAsString(jsonObject);
-    } catch (JsonProcessingException e) {
-      throw new InternalException("The list User (" + listUser + ") could not be transformed as Json. ", e);
-    }
-  }
 }

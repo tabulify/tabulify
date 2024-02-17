@@ -135,13 +135,13 @@ public class UserRegistrationFlow extends WebFlowAbs {
         );
 
 
-    return this.getApp().getApexDomain().getHttpServer().getServer().getVertx()
+    return this.getApp().getHttpServer().getServer().getVertx()
       .executeBlocking(letter::generateHTMLForEmail)
       .compose(html -> {
         String text = letter.generatePlainText();
 
         String mailSubject = "Registration to " + realmNameOrHandle;
-        TowerSmtpClient towerSmtpClient = this.getApp().getApexDomain().getHttpServer().getServer().getSmtpClient();
+        TowerSmtpClient towerSmtpClient = this.getApp().getHttpServer().getServer().getSmtpClient();
 
         MailClient mailClientForListOwner = towerSmtpClient
           .getVertxMailClientForSenderWithSigning(realmOwnerSender.getEmail());

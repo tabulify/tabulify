@@ -184,7 +184,7 @@ public class ListImportJob {
       .map(e -> (Handler<Promise<ListImportJobRow>>) e)
       .collect(Collectors.toList());
 
-    return this.listImportFlow.getApp().getApexDomain().getHttpServer().getServer().getFutureSchedulers()
+    return this.listImportFlow.getApp().getHttpServer().getServer().getFutureSchedulers()
       .createSequentialScheduler(ListImportJobRow.class)
       .setListener(this.listImportJobStatus)
       .setBatchSize(batchSize)

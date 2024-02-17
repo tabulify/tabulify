@@ -235,7 +235,6 @@ public class AuthNContext {
        */
       this.flow
         .getApp()
-        .getApexDomain()
         .getHttpServer()
         .getServer()
         .getTrackerAnalytics()

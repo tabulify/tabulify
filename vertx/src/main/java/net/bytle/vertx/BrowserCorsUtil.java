@@ -18,7 +18,7 @@ public class BrowserCorsUtil {
    *
    * @param router - the rooter
    */
-  public static void allowCorsForApexDomain(Router router, TowerApexDomain towerApexDomain) {
+  public static void allowCorsForApexDomain(Router router, TowerApp towerApexDomain) {
 
     /**
      * Cors
@@ -39,7 +39,7 @@ public class BrowserCorsUtil {
     allowedMethods.add(HttpMethod.DELETE);
     allowedMethods.add(HttpMethod.PATCH);
     allowedMethods.add(HttpMethod.PUT);
-    String routePath = towerApexDomain.getAbsoluteLocalPath() + "/*";
+    String routePath = towerApexDomain.getApexDomain().getAbsoluteLocalPath() + "/*";
     String scheme = towerApexDomain.getHttpServer().getHttpScheme();
     /**
      * Allow to receive credentials from everywhere

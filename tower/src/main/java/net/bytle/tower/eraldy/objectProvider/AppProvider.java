@@ -68,8 +68,8 @@ public class AppProvider {
 
   public AppProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
-    this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool();
-    this.apiMapper = apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
+    this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresDatabaseConnectionPool();
+    this.apiMapper = apiApp.getHttpServer().getServer().getJacksonMapperManager()
       .jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)

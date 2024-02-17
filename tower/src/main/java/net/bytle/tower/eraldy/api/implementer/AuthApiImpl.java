@@ -253,7 +253,6 @@ public class AuthApiImpl implements AuthApi {
     }
 
     OAuthAccessTokenResponse oAuthAccessTokenResponse = apiApp
-      .getApexDomain()
       .getHttpServer()
       .getServer()
       .getJwtAuth()

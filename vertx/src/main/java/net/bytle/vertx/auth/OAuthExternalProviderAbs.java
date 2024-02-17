@@ -39,7 +39,7 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
     this.authProvider = authProvider;
     towerApp = oAuthExternal.getFlow().getApp();
     this.oAuthExternal = oAuthExternal;
-    this.prng = VertxContextPRNG.current(towerApp.getApexDomain().getHttpServer().getServer().getVertx());
+    this.prng = VertxContextPRNG.current(towerApp.getHttpServer().getServer().getVertx());
     LOGGER.info("The OAuth provider (" + this + ") was added with the callback URL: " + this.getCallbackOperationPath());
 
   }

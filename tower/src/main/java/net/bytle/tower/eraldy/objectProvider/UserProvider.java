@@ -86,12 +86,12 @@ public class UserProvider {
   public UserProvider(EraldyApiApp apiApp) {
 
     this.apiApp = apiApp;
-    Server server = this.apiApp.getApexDomain().getHttpServer().getServer();
+    Server server = this.apiApp.getHttpServer().getServer();
     this.jdbcPool = server.getPostgresDatabaseConnectionPool();
     this.databaseMapper = server.getJacksonMapperManager().jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .build();
-    this.apiMapper = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager().jsonMapperBuilder()
+    this.apiMapper = this.apiApp.getHttpServer().getServer().getJacksonMapperManager().jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
@@ -857,7 +857,6 @@ public class UserProvider {
         signUpEvent.getRequest().setFlowGuid(flowType.getId().toString());
         signUpEvent.getRequest().setFlowHandle(flowType.getHandle());
         this.apiApp
-          .getApexDomain()
           .getHttpServer()
           .getServer()
           .getTrackerAnalytics()

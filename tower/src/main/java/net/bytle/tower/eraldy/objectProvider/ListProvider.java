@@ -65,7 +65,7 @@ public class ListProvider {
 
   public ListProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
-    Server server = apiApp.getApexDomain().getHttpServer().getServer();
+    Server server = apiApp.getHttpServer().getServer();
     this.jdbcPool = server.getPostgresDatabaseConnectionPool();
     this.apiMapper = server.getJacksonMapperManager()
       .jsonMapperBuilder()

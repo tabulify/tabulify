@@ -31,7 +31,7 @@ public class AuthClientProvider {
   public AuthClientProvider(EraldyApiApp eraldyApiApp) {
 
     this.apiApp = eraldyApiApp;
-    this.publicJsonMapper = eraldyApiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
+    this.publicJsonMapper = eraldyApiApp.getHttpServer().getServer().getJacksonMapperManager()
       .jsonMapperBuilder()
       .addMixIn(App.class, AppPublicMixinWithRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)

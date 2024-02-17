@@ -58,10 +58,6 @@ public class ListRegistrationValidationLetter {
     return template.generateHTMLForEmail();
   }
 
-  public String getPlainText() {
-    return template.generatePlainText();
-  }
-
   public static class Config {
 
 
@@ -72,7 +68,7 @@ public class ListRegistrationValidationLetter {
     private ListItem listItem;
 
     public Config(TowerApp towerApp) {
-      Vertx vertx = towerApp.getApexDomain().getHttpServer().getServer().getVertx();
+      Vertx vertx = towerApp.getHttpServer().getServer().getVertx();
       this.towerApp = towerApp;
       net.bytle.template.api.TemplateEngine towerEngine = TemplateEngine.getEmailEngine(vertx);
       transactionalTemplate = BMailTransactionalTemplate
@@ -113,7 +109,7 @@ public class ListRegistrationValidationLetter {
         .addOptInContext(routingContext)
         .setFromListObject(listUserPostObject)
         .build();
-      JsonToken jsonToken = this.towerApp.getApexDomain().getHttpServer().getServer().getJsonToken();
+      JsonToken jsonToken = this.towerApp.getHttpServer().getServer().getJsonToken();
       UriEnhanced validationUri = getValidationUri(listRegistrationConfirmationToken, jsonToken);
       String validationUrl = validationUri.toUri().toString();
 

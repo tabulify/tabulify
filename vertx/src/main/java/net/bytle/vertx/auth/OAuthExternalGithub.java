@@ -42,7 +42,7 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
       /**
        * same as GithubAuth.create(verticle.getVertx(), this.clientId, this.clientSecret);
        */
-      OAuth2Auth.create(oAuthExternal.getFlow().getApp().getApexDomain().getHttpServer().getServer().getVertx(), new OAuth2Options()
+      OAuth2Auth.create(oAuthExternal.getFlow().getApp().getHttpServer().getServer().getVertx(), new OAuth2Options()
         .setHttpClientOptions(new HttpClientOptions())
         .setFlow(OAuth2FlowType.AUTH_CODE)
         .setClientId(clientId)
@@ -79,7 +79,7 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
         throw new InternalException("GitHub Avatar URL (" + githubUserAvatarUrl + ") is not valid", e);
       }
       String githubUserGravatarId = userInfo.getString("gravatar_id");
-      if (githubUserGravatarId != null && !githubUserGravatarId.equals("")) {
+      if (githubUserGravatarId != null && !githubUserGravatarId.isEmpty()) {
         String gravatarUrl = "https://www.gravatar.com/avatar/" + githubUserGravatarId;
         try {
           githubUserAvatarUri = new URI(gravatarUrl);

@@ -9,12 +9,12 @@ import net.bytle.vertx.*;
 public class IpApp extends TowerApp {
 
 
-  public IpApp(TowerApexDomain towerApexDomain) {
-    super(towerApexDomain);
+  public IpApp(HttpServer httpServer) {
+    super(httpServer, EraldyDomain.getOrCreate(httpServer));
   }
 
-  public static IpApp createForDomain(EraldyDomain eraldyDomain) {
-    return new IpApp(eraldyDomain);
+  public static IpApp createForDomain(HttpServer httpServer) {
+    return new IpApp(httpServer);
   }
 
 
@@ -38,7 +38,7 @@ public class IpApp extends TowerApp {
      */
     builder
       .securityHandler(OpenApiSecurityNames.APIKEY_AUTH_SECURITY_SCHEME)
-      .bindBlocking(config -> this.getApexDomain().getHttpServer().getApiKeyAuthHandler());
+      .bindBlocking(config -> this.getHttpServer().getApiKeyAuthHandler());
 
     return this;
   }

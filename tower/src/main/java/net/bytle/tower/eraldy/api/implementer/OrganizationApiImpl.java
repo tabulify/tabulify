@@ -28,7 +28,7 @@ public class OrganizationApiImpl implements OrganizationApi {
 
   public OrganizationApiImpl(TowerApp towerApp) {
     this.apiApp = (EraldyApiApp) towerApp;
-    this.orgUserMapper = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager().jsonMapperBuilder()
+    this.orgUserMapper = this.apiApp.getHttpServer().getServer().getJacksonMapperManager().jsonMapperBuilder()
       .addMixIn(Organization.class, OrganizationPublicMixin.class)
       .addMixIn(User.class, UserPublicMixinWithRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)

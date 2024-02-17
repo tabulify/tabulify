@@ -49,7 +49,7 @@ public class SqlAnalytics implements Handler<Long> {
   public SqlAnalytics(EraldyApiApp apiApp) throws ConfigIllegalException {
 
     this.apiApp = apiApp;
-    Server server = apiApp.getApexDomain().getHttpServer().getServer();
+    Server server = apiApp.getHttpServer().getServer();
 
     /**
      * Analytics Directory
@@ -134,7 +134,7 @@ public class SqlAnalytics implements Handler<Long> {
       this.isRunning = true;
     }
 
-    PgPool jdbcPool = this.apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool();
+    PgPool jdbcPool = this.apiApp.getHttpServer().getServer().getPostgresDatabaseConnectionPool();
 
     List<Future<RowSet<Row>>> futures = new ArrayList<>();
     this.executedPaths = new ArrayList<>();

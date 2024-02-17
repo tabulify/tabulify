@@ -150,24 +150,11 @@ public class SmtpVerticle extends AbstractVerticle {
               return Future.failedFuture(e);
             }
             return httpServer
-              .buildVertxHttpServer();
+              .mountListenAndStart();
           });
       }))
-      .onFailure(e -> this.handleVerticleFailure(verticlePromise, e))
-      .onSuccess(vertxHttpServerFuture -> vertxHttpServerFuture
-        .onFailure(e -> this.handleVerticleFailure(verticlePromise, e))
-        .onSuccess(vertxHttpServer -> vertxHttpServer
-          .listen(ar -> {
-            if (ar.succeeded()) {
-              LOGGER.info("HTTP server running on port " + ar.result().actualPort());
-              verticlePromise.complete();
-            } else {
-              Throwable cause = ar.cause();
-              LOGGER.error("Could not start the HTTP server:" + cause, cause);
-              this.handleVerticleFailure(verticlePromise, cause);
-            }
-          }))
-      );
+      .onFailure(e -> this.handleVerticleFailure(verticlePromise, e));
+
 
 
   }

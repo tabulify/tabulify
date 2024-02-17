@@ -23,7 +23,7 @@ import java.nio.file.Paths;
  * will persist over a simple loop.
  * The project was not updated for a couple of years.
  */
-public class MapDb implements AutoCloseable {
+public class MapDb extends TowerService {
 
   private static final String MAPDB_FILE_HOME_CONF = "mapdb.file.home";
   static Logger LOGGER = LogManager.getLogger(MapDb.class);
@@ -88,7 +88,9 @@ public class MapDb implements AutoCloseable {
 
 
   public void close() {
+
     mapDb.close();
+
   }
 
   @SuppressWarnings("unused")
@@ -105,5 +107,7 @@ public class MapDb implements AutoCloseable {
   public void commit() {
     this.mapDb.commit();
   }
+
+
 
 }

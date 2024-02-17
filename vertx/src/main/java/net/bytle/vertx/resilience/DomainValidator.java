@@ -51,7 +51,7 @@ public class DomainValidator {
 
   public DomainValidator(TowerApp towerApp) {
 
-    Server server = towerApp.getApexDomain().getHttpServer().getServer();
+    Server server = towerApp.getHttpServer().getServer();
     webClient = HttpClientBuilder.builder(server.getVertx())
       .setMaxHeaderSize(8192 * 10) // mail.ru has HTTP headers that are bigger than 8192 bytes
       .setConnectTimeout(1000) // 1 second, 163.com

@@ -17,6 +17,7 @@ import io.vertx.ext.web.sstore.impl.SessionInternal;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.vertx.TowerApexDomain;
+import net.bytle.vertx.TowerApp;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,6 +79,7 @@ public class RealmSessionHandler implements SessionHandler {
 
   private final SessionStore sessionStore;
   private final TowerApexDomain eraldyDomain;
+  private final TowerApp towerApp;
 
   private long sessionTimeout = DEFAULT_SESSION_TIMEOUT;
   private boolean nagHttps = DEFAULT_NAG_HTTPS;
@@ -105,14 +107,15 @@ public class RealmSessionHandler implements SessionHandler {
   private String realmHandleContextAndSessionKey = "realm-handle";
 
 
-  public RealmSessionHandler(TowerApexDomain apexDomain) {
-    this.sessionStore = apexDomain.getHttpServer().getPersistentSessionStore();
-    this.eraldyDomain = apexDomain;
+  public RealmSessionHandler(TowerApp towerApp) {
+    this.towerApp = towerApp;
+    this.sessionStore = towerApp.getHttpServer().getPersistentSessionStore();
+    this.eraldyDomain = towerApp.getApexDomain();
   }
 
-  public static RealmSessionHandler createWithDomain(TowerApexDomain eraldyDomain) {
+  public static RealmSessionHandler createForApp(TowerApp towerApp) {
     if (RealmSessionHandler.realmSessionHandler == null) {
-      RealmSessionHandler.realmSessionHandler = new RealmSessionHandler(eraldyDomain);
+      RealmSessionHandler.realmSessionHandler = new RealmSessionHandler(towerApp);
     }
     return RealmSessionHandler.realmSessionHandler;
   }
@@ -235,12 +238,12 @@ public class RealmSessionHandler implements SessionHandler {
     /**
      * Create a cross domain cookie
      */
-    cookie.setDomain(eraldyDomain.getApexNameWithoutPort());
+    cookie.setDomain(eraldyDomain.getDnsApexName());
 
     /**
      * Over Https
      */
-    cookie.setSecure(eraldyDomain.getHttpServer().isHttpsEnabled());
+    cookie.setSecure(towerApp.getHttpServer().isHttpsEnabled());
 
     if (!expired) {
       // set max age if user requested it - else it's a session cookie

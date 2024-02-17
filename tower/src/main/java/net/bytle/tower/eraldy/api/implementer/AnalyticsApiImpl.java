@@ -98,7 +98,7 @@ public class AnalyticsApiImpl implements AnalyticsApi {
     /**
      * Pass the event
      */
-    this.apiApp.getApexDomain().getHttpServer().getServer().getTrackerAnalytics()
+    this.apiApp.getHttpServer().getServer().getTrackerAnalytics()
       .eventBuilder(analyticsEvent)
       .setRoutingContext(routingContext)
       .processEvent();

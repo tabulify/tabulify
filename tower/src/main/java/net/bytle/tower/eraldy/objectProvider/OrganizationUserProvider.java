@@ -51,7 +51,7 @@ public class OrganizationUserProvider {
 
   public OrganizationUserProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
-    this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool();
+    this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresDatabaseConnectionPool();
   }
 
 

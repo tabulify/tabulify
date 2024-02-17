@@ -22,7 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -88,7 +87,7 @@ public class OpenApiManager {
      * https://vertx.io/docs/vertx-web-openapi/java/
      */
     String specFileString = specFile.toString();
-    Vertx vertx = towerApp.getApexDomain().getHttpServer().getServer().getVertx();
+    Vertx vertx = towerApp.getHttpServer().getServer().getVertx();
     return RouterBuilder.create(vertx, specFileString)
       .recover(err -> {
         InternalError error = new InternalError("Unable to build the openapi memory model for the spec file (" + specFileString + "). Check the inputScope to see where the error is.", err);
@@ -114,7 +113,7 @@ public class OpenApiManager {
          * See {@link OpenAPI3RouterBuilderImpl#createRouter()}
          */
         try {
-          BodyHandler bodyHandler = towerApp.getApexDomain().getHttpServer().getBodyHandler();
+          BodyHandler bodyHandler = towerApp.getHttpServer().getBodyHandler();
           routerBuilder.rootHandler(bodyHandler);
         } catch (NotFoundException e) {
           // default body handler of openapi is used
@@ -122,7 +121,7 @@ public class OpenApiManager {
 
         try {
           towerApp
-            .openApiBindSecurityScheme(routerBuilder, towerApp.getApexDomain().getHttpServer().getServer().getConfigAccessor())
+            .openApiBindSecurityScheme(routerBuilder, towerApp.getHttpServer().getServer().getConfigAccessor())
             .openApiMount(routerBuilder);
         } catch (IllegalConfiguration e) {
           return Future.failedFuture(e);
@@ -200,14 +199,6 @@ public class OpenApiManager {
 
   public TowerApp getTowerApp() {
     return this.towerApp;
-  }
-
-  /**
-   *
-   * @return the path used by the docs
-   */
-  public List<String> getDocPaths() {
-    return this.openApiDoc.getRouterDocPaths();
   }
 
 

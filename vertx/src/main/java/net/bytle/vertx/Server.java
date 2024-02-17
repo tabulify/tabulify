@@ -68,7 +68,7 @@ public class Server implements AutoCloseable {
   private AnalyticsTracker analyticsTracker;
   private TowerSmtpClient smtpClient;
   private MapDb mapDb;
-  private final List<AutoCloseable> closeableServices = new ArrayList<>();
+  private final List<TowerService> services = new ArrayList<>();
   private TowerDnsClient dnsClient;
 
   Server(builder builder) {
@@ -136,6 +136,7 @@ public class Server implements AutoCloseable {
     return this.pgDatabaseConnectionPool;
   }
 
+  @SuppressWarnings("unused")
   public IpGeolocation getIpGeolocation() {
     if (this.ipGeolocation == null) {
       throw new InternalException("No IpGeolocation configured for the server");
@@ -213,7 +214,7 @@ public class Server implements AutoCloseable {
   @Override
   public void close() throws Exception {
     MainLauncher.prometheus.close();
-    for (AutoCloseable closable : this.closeableServices) {
+    for (AutoCloseable closable : this.services) {
       LOGGER.info("Closing " + closable.getClass().getSimpleName());
       closable.close();
     }
@@ -223,8 +224,8 @@ public class Server implements AutoCloseable {
     return new TowerFutures(this);
   }
 
-  public void addCloseableService(AutoCloseable autoCloseable) {
-    this.closeableServices.add(autoCloseable);
+  public void registerService(TowerService service) {
+    this.services.add(service);
   }
 
 
@@ -399,7 +400,7 @@ public class Server implements AutoCloseable {
       if (this.enableMapdb) {
         LOGGER.info("MapDb enabled");
         server.mapDb = new MapDb(server);
-        server.closeableServices.add(server.mapDb);
+        server.services.add(server.mapDb);
       } else {
         LOGGER.info("MapDb disabled");
       }

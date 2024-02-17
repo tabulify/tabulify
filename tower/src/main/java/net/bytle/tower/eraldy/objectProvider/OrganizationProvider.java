@@ -38,6 +38,7 @@ public class OrganizationProvider {
   private final EraldyApiApp apiApp;
   public static final String ORGA_HANDLE_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "handle";
   public static final String ORGA_DATA_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "data";
+  @SuppressWarnings("unused")
   private static final String ORGA_MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private static final String ORGA_CREATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private final PgPool jdbcPool;
@@ -45,8 +46,8 @@ public class OrganizationProvider {
 
   public OrganizationProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
-    this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool();
-    this.databaseMapper = apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
+    this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresDatabaseConnectionPool();
+    this.databaseMapper = apiApp.getHttpServer().getServer().getJacksonMapperManager()
       .jsonMapperBuilder()
       .addMixIn(Organization.class, OrganizationDatabaseMixin.class)
       .build();
@@ -60,9 +61,7 @@ public class OrganizationProvider {
   @SuppressWarnings("SameParameterValue")
   private <T extends Organization> Future<T> getById(Long orgaId, Class<T> clazz) {
 
-    return jdbcPool.withConnection(sqlConnection -> {
-      return getById(orgaId, clazz, sqlConnection);
-    });
+    return jdbcPool.withConnection(sqlConnection -> getById(orgaId, clazz, sqlConnection));
   }
 
   private <T extends Organization> Future<T> getById(Long orgaId, Class<T> clazz, SqlConnection sqlConnection) {
@@ -107,11 +106,6 @@ public class OrganizationProvider {
 
   public Guid createGuid(String guid) throws CastException {
     return apiApp.createGuidFromHashWithOneId(GUID_PREFIX, guid);
-  }
-
-  public void updateGuid(Organization organization) {
-    Guid guid = this.computeGuid(organization);
-    organization.setGuid(guid.toString());
   }
 
   /**
@@ -171,7 +165,4 @@ public class OrganizationProvider {
     }
   }
 
-  private Future<Organization> insert(Organization organization) {
-    return this.jdbcPool.withConnection(sqlConnection -> this.insert(organization, sqlConnection));
-  }
 }

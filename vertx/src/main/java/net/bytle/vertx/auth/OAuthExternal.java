@@ -63,7 +63,7 @@ public class OAuthExternal {
      */
     TowerApp app = flow.getApp();
     String clientIdConf = app.getAppConfName() + ".oauth." + provider + ".client.id";
-    ConfigAccessor configAccessor = app.getApexDomain().getHttpServer().getServer().getConfigAccessor();
+    ConfigAccessor configAccessor = app.getHttpServer().getServer().getConfigAccessor();
     String clientId = configAccessor.getString(clientIdConf);
     if (clientId == null) {
       throw new ConfigIllegalException("The client id configuration (" + clientIdConf + ") was not found");

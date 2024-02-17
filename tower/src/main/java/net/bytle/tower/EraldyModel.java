@@ -58,8 +58,8 @@ public class EraldyModel {
 
   public EraldyModel(EraldyApiApp apiApp) throws ConfigIllegalException {
     this.apiApp = apiApp;
-    ConfigAccessor configAccessor = apiApp.getApexDomain().getHttpServer().getServer().getConfigAccessor();
-    String interactUri = configAccessor.getString(INTERACT_APP_URI_CONF, "https://interact." + apiApp.getApexDomain().getApexNameWithPort());
+    ConfigAccessor configAccessor = apiApp.getHttpServer().getServer().getConfigAccessor();
+    String interactUri = configAccessor.getString(INTERACT_APP_URI_CONF, "https://interact." + apiApp.getApexDomain().getUrlAuthority());
     try {
       this.interactAppUri = URI.create(interactUri);
       LOGGER.info("The interact app URI was set to ({}) via the conf ({})", interactUri, INTERACT_APP_URI_CONF);
@@ -69,7 +69,7 @@ public class EraldyModel {
     /**
      * For redirect
      */
-    String memberUri = configAccessor.getString(MEMBER_APP_URI_CONF, "https://member." + apiApp.getApexDomain().getApexNameWithPort());
+    String memberUri = configAccessor.getString(MEMBER_APP_URI_CONF, "https://member." + apiApp.getApexDomain().getUrlAuthority());
     try {
       this.memberAppUri = URI.create(memberUri);
       LOGGER.info("The member app URI was set to ({}) via the conf ({})", memberUri, MEMBER_APP_URI_CONF);
@@ -167,7 +167,7 @@ public class EraldyModel {
 
     LOGGER.info("Get/Inserting the Eraldy Organization, Realm and User");
 
-    return apiApp.getApexDomain().getHttpServer().getServer().getPostgresDatabaseConnectionPool()
+    return apiApp.getHttpServer().getServer().getPostgresDatabaseConnectionPool()
       .withTransaction(sqlConnection -> sqlConnection
         /**
          * There are foreign-key circular constraints that cannot be resolved by simple insertion.

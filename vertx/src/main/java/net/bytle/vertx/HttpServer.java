@@ -13,6 +13,8 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.exception.NullValueException;
 import net.bytle.java.JavaEnvs;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.List;
  */
 public class HttpServer implements AutoCloseable {
 
+  static private final Logger LOGGER = LogManager.getLogger(HttpServer.class);
   private final HttpServer.builder builder;
   private Router router;
 
@@ -51,11 +54,9 @@ public class HttpServer implements AutoCloseable {
 
 
   /**
-   * This port is the port that is all external communication
-   * (in email, in oauth callback, ...)
+   * Mount, Listen and starts
    */
-
-  public Future<io.vertx.core.http.HttpServer> buildVertxHttpServer() {
+  public Future<HttpServer> mountListenAndStart() {
     HttpServerOptions options = new HttpServerOptions()
       .setLogActivity(false)
       .setHost(this.builder.server.getListeningHost())
@@ -74,12 +75,14 @@ public class HttpServer implements AutoCloseable {
         .setSsl(true);
     }
     io.vertx.core.http.HttpServer httpServer = this.builder.server.getVertx().createHttpServer(options);
+
+
     /**
      * Future.join and not Future.all to finish all futures
-     * With Future.all if there is an error, the future still
+     * With Future.all if there is an error, the handlers of the future still
      * running produce an error when we close Vertx and it adds noise
      */
-    return Future.join(this.futuresToExecuteOnBuild)
+    return Future.join(this.servicesToMount)
       .recover(err -> Future.failedFuture(new InternalException("A future failed while building the http server", err)))
       .compose(asyncResult -> {
         /**
@@ -92,8 +95,13 @@ public class HttpServer implements AutoCloseable {
           HttpServerHealth.addHandler(this);
         }
         httpServer.requestHandler(router); // https://vertx.io/docs/vertx-core/java/#_handling_requests
-        return Future.succeededFuture(httpServer);
+        return httpServer.listen();
+      })
+      .compose(vertxHttpServer -> {
+        LOGGER.info("API HTTP server running on port " + vertxHttpServer.actualPort());
+        return Future.succeededFuture(this);
       });
+
   }
 
   public int getPublicPort() {
@@ -187,10 +195,14 @@ public class HttpServer implements AutoCloseable {
   /**
    * Future to execute on build
    */
-  List<Future<?>> futuresToExecuteOnBuild = new ArrayList<>();
+  List<Future<?>> servicesToMount = new ArrayList<>();
 
+  /**
+   * @deprecated the object should become a {@link TowerService} that registers itself
+   */
+  @Deprecated
   public void addFutureToExecuteOnBuild(Future<?> future) {
-    futuresToExecuteOnBuild.add(future);
+    servicesToMount.add(future);
   }
 
   public static class builder {

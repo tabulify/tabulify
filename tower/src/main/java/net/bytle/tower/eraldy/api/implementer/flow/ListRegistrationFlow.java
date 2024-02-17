@@ -199,13 +199,13 @@ public class ListRegistrationFlow extends WebFlowAbs {
               "<br>Just reply to this email, I ❤ to help."
           );
 
-        return this.getApp().getApexDomain().getHttpServer().getServer().getVertx()
+        return this.getApp().getHttpServer().getServer().getVertx()
           .executeBlocking(letter::generateHTMLForEmail)
           .compose(html -> {
             String text = letter.generatePlainText();
 
             String mailSubject = "Registration validation to the list `" + listItem.getName() + "`";
-            TowerSmtpClient towerSmtpClient = this.getApp().getApexDomain().getHttpServer().getServer().getSmtpClient();
+            TowerSmtpClient towerSmtpClient = this.getApp().getHttpServer().getServer().getSmtpClient();
 
             String ownerEmailAddressInRfcFormat;
             try {
