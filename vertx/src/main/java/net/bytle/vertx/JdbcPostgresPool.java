@@ -20,10 +20,6 @@ import java.util.Map;
 public class JdbcPostgresPool {
 
 
-  private static PgPool jdbcPool = null;
-
-
-
   public static PgPool create(Vertx vertx, JdbcConnectionInfo jdbcConnectionInfo) {
     String user = jdbcConnectionInfo.getUser();
 
@@ -32,7 +28,7 @@ public class JdbcPostgresPool {
     // https://www.postgresql.org/docs/current/runtime-config-client.html
     Map<String, String> connectionProps = new HashMap<>();
     try {
-      String schemaPath  = jdbcConnectionInfo.getSchemaPath();
+      String schemaPath = jdbcConnectionInfo.getSchemaPath();
       connectionProps.put("search_path", schemaPath);
     } catch (NullValueException e) {
       // not set, null
@@ -43,19 +39,22 @@ public class JdbcPostgresPool {
     PgConnectOptions pgConnectOptions = PgConnectOptions.fromUri(postgresUri)
       .setUser(user)
       .setPassword(jdbcConnectionInfo.getPassword())
+      .setConnectTimeout(PgConnectOptions.DEFAULT_CONNECT_TIMEOUT)
       .setProperties(connectionProps);
 
-    PoolOptions poolOptions = new PoolOptions().setMaxSize(jdbcConnectionInfo.getMaxPoolSize());
+    PoolOptions poolOptions = new PoolOptions()
+      .setMaxSize(jdbcConnectionInfo.getMaxPoolSize())
+      .setConnectionTimeout(PoolOptions.DEFAULT_CONNECTION_TIMEOUT)
+      .setConnectionTimeoutUnit(PoolOptions.DEFAULT_CONNECTION_TIMEOUT_TIME_UNIT);
 
     /**
      * Then create the pool and return
      */
-    jdbcPool = PgPool.pool(
+    return PgPool.pool(
       vertx,
       pgConnectOptions,
       poolOptions
     );
-    return jdbcPool;
 
   }
 }

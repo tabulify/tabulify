@@ -16,6 +16,8 @@ import net.bytle.vertx.*;
 import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.WebFlow;
 import net.bytle.vertx.resilience.EmailAddressValidator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,6 +34,7 @@ import java.util.stream.Collectors;
  */
 public class ListImportFlow extends TowerService implements WebFlow {
 
+  static Logger LOGGER = LogManager.getLogger(ListImportFlow.class);
   private static final String FILE_SUFFIX_JOB_STATUS = "-status.json";
 
   private final EraldyApiApp apiApp;
@@ -185,12 +188,14 @@ public class ListImportFlow extends TowerService implements WebFlow {
     /**
      * Job
      */
+    LOGGER.info("Starting the job cron");
     this.executionLastTime = LocalDateTime.now();
     this.scheduleNextJob();
 
     /**
      * Purge Job
      */
+    LOGGER.info("Starting the purge history job cron");
     server.getVertx().setPeriodic(6000, this.purgeJobPeriodMs, jobId -> purgeJobHistory());
 
     /**

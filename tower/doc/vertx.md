@@ -52,3 +52,22 @@ There is no way to wrap the error and to propagate it (return it as failed futur
 methods expect a returned value and not a failed future.
 
 [Thread](https://groups.google.com/g/vertx/c/ui5djawjmRE/m/RProZKIpAwAJ)
+
+
+## NoStackTraceThrowable
+
+`NoStackTraceThrowable` are failed future created without any exceptions.
+
+Example: if you get a `NoStackTraceThrowable: Timeout`, it was created with
+```
+Future.failedFuture("Timeout")
+```
+
+
+## Sql Database Timeout ???
+
+In 4.4.8, I have some connection timeout created by this [line](https://github.com/eclipse-vertx/vertx-sql-client/blob/a2d2f9002a5fce562c8236c3310faad98038bb0d/vertx-sql-client/src/main/java/io/vertx/sqlclient/impl/pool/SqlConnectionPool.java#L219)
+but I have the default setting (30 seconds).
+
+Don't do `pool.query`
+https://github.com/eclipse-vertx/vertx-sql-client/issues/1232

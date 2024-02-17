@@ -204,7 +204,8 @@ public class OrganizationUserProvider {
   }
 
   public Future<OrganizationUser> getOrganizationUserByLocalId(Long userId, Long realmId, Realm realm) {
-    return apiApp.getUserProvider()
+    return apiApp
+      .getUserProvider()
       .getUserByLocalId(userId, realmId, OrganizationUser.class, realm)
       .compose(user -> {
         if (user == null) {

@@ -3,7 +3,12 @@ package net.bytle.vertx;
 public enum JdbcConnectionAttribute {
 
   URL("url", "jdbc:postgresql://localhost:5432/postgres"),
-  POOL_SIZE("pool_size", 2),
+  /**
+   * Default valus should be above 2
+   * because 2 futures in parallel will use 2 connections
+   * (For instance, building an app with a user and a realm, needs 2)
+   */
+  POOL_SIZE("pool_size", 4),
   PASSWORD("password", "welcome"),
   USER("user", "postgres"),
   /**

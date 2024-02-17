@@ -439,6 +439,7 @@ public class UserProvider {
   public <T extends User> Future<T> getUserByLocalId(Long userId, Long realmId, Class<T> userClass, Realm realm) {
 
     return this.jdbcPool.withConnection(sqlConnection -> getUserByLocalId(userId, realmId, userClass, realm, sqlConnection));
+
   }
 
 
