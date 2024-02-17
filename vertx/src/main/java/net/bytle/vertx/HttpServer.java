@@ -84,22 +84,32 @@ public class HttpServer implements AutoCloseable {
      */
     List<Future<Void>> servicesFutureMount = this.getServer().getServices().stream().map(TowerService::mount).collect(Collectors.toList());
     return Future.join(servicesFutureMount)
-      .recover(err -> Future.failedFuture(new InternalException("A service mount failed while building the http server", err)))
+      .recover(err -> Future.failedFuture(new InternalException("A service mount failed while mounting the http server", err)))
       .compose(asyncResult -> {
         /**
          * Health Check
          * At the end because the services can register
-         * during the build
+         * during the mount
          * (The argument is passed by reference, it may then also work at the beginning?)
          */
         if (this.builder.enableHealthCheck) {
           HttpServerHealth.addHandler(this);
         }
-        httpServer.requestHandler(router); // https://vertx.io/docs/vertx-core/java/#_handling_requests
-        return httpServer.listen();
+        /**
+         * Listen
+         */
+        return httpServer
+          .requestHandler(router)
+          .listen();
       })
       .compose(vertxHttpServer -> {
-        LOGGER.info("API HTTP server running on port " + vertxHttpServer.actualPort());
+        LOGGER.info("HTTP server mounted on port " + vertxHttpServer.actualPort());
+        List<Future<Void>> servicesFutureToStart = this.getServer().getServices().stream().map(TowerService::start).collect(Collectors.toList());
+        return Future.join(servicesFutureToStart);
+      })
+      .recover(err -> Future.failedFuture(new InternalException("A service start failed while starting the http server", err)))
+      .compose(asyncResult -> {
+        LOGGER.info("HTTP server services started");
         return Future.succeededFuture(this);
       });
 
