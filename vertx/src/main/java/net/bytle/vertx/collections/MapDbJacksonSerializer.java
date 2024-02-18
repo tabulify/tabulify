@@ -1,4 +1,4 @@
-package net.bytle.vertx;
+package net.bytle.vertx.collections;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.jetbrains.annotations.NotNull;

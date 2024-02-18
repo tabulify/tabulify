@@ -13,6 +13,7 @@ import io.vertx.ext.web.sstore.SessionStore;
 import io.vertx.ext.web.sstore.impl.SharedDataSessionImpl;
 import net.bytle.exception.InternalException;
 import net.bytle.java.JavaEnvs;
+import net.bytle.vertx.collections.MapDb;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;

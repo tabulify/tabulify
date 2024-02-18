@@ -5,6 +5,7 @@ import io.vertx.core.WorkerExecutor;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.healthchecks.Status;
 import io.vertx.ext.web.FileUpload;
+import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
 import net.bytle.fs.Fs;
@@ -13,6 +14,7 @@ import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.type.Strings;
 import net.bytle.vertx.*;
+import net.bytle.vertx.collections.QueueWriteThrough;
 import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.WebFlow;
 import net.bytle.vertx.resilience.EmailAddressValidator;
@@ -24,7 +26,10 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -276,12 +281,31 @@ public class ListImportFlow extends TowerService implements WebFlow {
   /**
    * Import Job by JobId String
    */
-  Queue<ListImportJob> importJobQueue = new LinkedList<>();
+  final Queue<ListImportJob> importJobQueue;
 
   public ListImportFlow(EraldyApiApp apiApp) {
 
     this.apiApp = apiApp;
     this.server = apiApp.getHttpServer().getServer();
+
+    LOGGER.info("Runtime Db Migration");
+    JdbcConnectionInfo postgresDatabaseConnectionInfo = this.server.getPostgresDatabaseConnectionInfo();
+    JdbcSchemaManager jdbcSchemaManager = JdbcSchemaManager.create(postgresDatabaseConnectionInfo);
+    String schema = JdbcSchemaManager.getSchemaFromHandle("runtime");
+    JdbcSchema realmSchema = JdbcSchema.builder()
+      .setLocation("classpath:db/cs-runtime")
+      .setSchema(schema)
+      .build();
+    try {
+      jdbcSchemaManager.migrate(realmSchema);
+    } catch (DbMigrationException e) {
+      throw new InternalException("The runtime database migration failed", e);
+    }
+
+    importJobQueue = QueueWriteThrough.builder(ListImportJob.class, "list-import")
+      .setPool(server.getPostgresDatabaseConnectionPool())
+      .setJsonMapper(server.getJacksonMapperManager().jsonMapperBuilder().build())
+      .build();
 
     /**
      * Config

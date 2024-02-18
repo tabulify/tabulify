@@ -1,4 +1,4 @@
-package net.bytle.vertx;
+package net.bytle.vertx.collections;
 
 import com.github.benmanes.caffeine.cache.RemovalCause;
 

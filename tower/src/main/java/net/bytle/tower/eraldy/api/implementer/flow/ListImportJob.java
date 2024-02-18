@@ -488,4 +488,23 @@ public class ListImportJob {
   public boolean getFailEarly() {
     return false;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ListImportJob that = (ListImportJob) o;
+    return Objects.equals(list.getGuid(), that.list.getGuid()) && Objects.equals(jobId, that.jobId);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(list.getGuid(), jobId);
+  }
+
+  @Override
+  public String toString() {
+    return list.getGuid() + " -> " + jobId;
+  }
+
 }

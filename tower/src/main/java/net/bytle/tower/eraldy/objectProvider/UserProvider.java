@@ -81,6 +81,7 @@ public class UserProvider {
    * Mapper for the API
    */
   private final JsonMapper apiMapper;
+  private final String insertPreparedQuery;
 
 
   public UserProvider(EraldyApiApp apiApp) {
@@ -96,6 +97,16 @@ public class UserProvider {
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .build();
+
+    this.insertPreparedQuery = "INSERT INTO\n" +
+      QUALIFIED_TABLE_NAME + " (\n" +
+      "  " + REALM_COLUMN + ",\n" +
+      "  " + ID_COLUMN + ",\n" +
+      "  " + EMAIL_COLUMN + ",\n" +
+      "  " + DATA_COLUMN + ",\n" +
+      "  " + CREATION_COLUMN + "\n" +
+      "  )\n" +
+      " values ($1, $2, $3, $4, $5)\n";
   }
 
 
@@ -869,15 +880,6 @@ public class UserProvider {
   }
 
   private <T extends User> Future<T> insertUser(T user, SqlConnection sqlConnection) {
-    String sql = "INSERT INTO\n" +
-      QUALIFIED_TABLE_NAME + " (\n" +
-      "  " + REALM_COLUMN + ",\n" +
-      "  " + ID_COLUMN + ",\n" +
-      "  " + EMAIL_COLUMN + ",\n" +
-      "  " + DATA_COLUMN + ",\n" +
-      "  " + CREATION_COLUMN + "\n" +
-      "  )\n" +
-      " values ($1, $2, $3, $4, $5)\n";
 
     return this.apiApp.getRealmSequenceProvider()
       .getNextIdForTableAndRealm(sqlConnection, user.getRealm(), REALM_USER_TABLE_NAME)
@@ -909,7 +911,7 @@ public class UserProvider {
           return Future.failedFuture(new InternalError("The email value (" + email + ") is not valid", e));
         }
         return sqlConnection
-          .preparedQuery(sql)
+          .preparedQuery(insertPreparedQuery)
           .execute(Tuple.of(
               user.getRealm().getLocalId(),
               user.getLocalId(),
@@ -922,7 +924,7 @@ public class UserProvider {
       .recover(error -> Future.failedFuture(
         TowerFailureException.builder()
           .setCauseException(error)
-          .setMessage("Insert User Error:" + error.getMessage() + ". Sql: " + sql)
+          .setMessage("Insert User Error:" + error.getMessage() + ". Sql: " + insertPreparedQuery)
           .build()
       ))
       .compose(rows -> Future.succeededFuture(user));
