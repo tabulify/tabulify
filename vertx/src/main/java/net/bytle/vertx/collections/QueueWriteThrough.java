@@ -1,6 +1,5 @@
 package net.bytle.vertx.collections;
 
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.pgclient.PgPool;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,19 +11,19 @@ import java.util.Queue;
 /**
  * A queue cache backed by a store (database)
  */
-public class QueueWriteThrough<E extends CollectionWriteThroughElement> implements Queue<E> {
+public class QueueWriteThrough<E> implements Queue<E> {
 
   private final LinkedList<E> queue;
-  private final QueueWriteThroughDatabaseSink writeThrough;
+  private final QueueWriteThroughDatabaseSink<E> writeThrough;
 
 
   public QueueWriteThrough(Builder<E> eBuilder) {
     this.queue = new LinkedList<>();
-    this.writeThrough = new QueueWriteThroughDatabaseSink(eBuilder);
+    this.writeThrough = new QueueWriteThroughDatabaseSink<>(eBuilder);
   }
 
   @SuppressWarnings("unused")
-  public static <E extends CollectionWriteThroughElement > Builder<E> builder(Class<E> clazz, String name) {
+  public static <E> Builder<E> builder(Class<E> clazz, String name) {
     return new Builder<>(name);
   }
 
@@ -141,11 +140,11 @@ public class QueueWriteThrough<E extends CollectionWriteThroughElement> implemen
     return this.queue.peek();
   }
 
-  public static class Builder<E extends CollectionWriteThroughElement> {
+  public static class Builder<E> {
 
     final String queueName;
     PgPool pool;
-    JsonMapper mapper;
+    CollectionWriteThroughSerializer<E> serializer;
 
     public Builder(String name) {
       this.queueName = name;
@@ -157,14 +156,14 @@ public class QueueWriteThrough<E extends CollectionWriteThroughElement> implemen
       return self;
     }
 
-    public <E1 extends E> Builder<E1> setJsonMapper(JsonMapper mapper) {
+    public <E1 extends E> Builder<E1> setSerializer(CollectionWriteThroughSerializer<E> serializer) {
       @SuppressWarnings("unchecked") Builder<E1> self = (Builder<E1>) this;
-      this.mapper = mapper;
+      this.serializer = serializer;
       return self;
     }
     public QueueWriteThrough<E> build() {
       assert pool != null;
-      assert mapper != null;
+      assert serializer != null;
       return new QueueWriteThrough<>(this);
     }
 

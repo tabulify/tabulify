@@ -10,27 +10,23 @@ import io.vertx.core.Promise;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.FileUpload;
 import net.bytle.exception.CastException;
 import net.bytle.fs.Fs;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
-import net.bytle.type.time.Timestamp;
-import net.bytle.vertx.collections.CollectionWriteThroughElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static net.bytle.tower.eraldy.api.implementer.flow.ListImportJobRowStatus.FATAL_ERROR;
 
-public class ListImportJob implements CollectionWriteThroughElement {
+public class ListImportJob {
 
   static final Logger LOGGER = LogManager.getLogger(ListImportJob.class);
   private static final int RUNNING_STATUS_CODE = -1;
@@ -42,10 +38,10 @@ public class ListImportJob implements CollectionWriteThroughElement {
 
 
   private final ListImportFlow listImportFlow;
-  private final ListItem list;
-  private final Path uploadedCsvFile;
+
+  private final Path sourceCsvFile;
   private final String jobId;
-  private final Path originalFileName;
+
   private final ListImportJobStatus listImportJobStatus;
 
   private final Integer maxRowCountToProcess;
@@ -65,38 +61,32 @@ public class ListImportJob implements CollectionWriteThroughElement {
    * execution. We log only the first 5 to not be overwhelmed with error.
    */
   private int rowFatalErrorExecutionCounter = 0;
+  private ListItem list;
 
-  public ListImportJob(Builder builder) {
-    this.listImportFlow = builder.listImportFlow;
-    this.list = builder.list;
-    this.uploadedCsvFile = Paths.get(builder.fileUpload.uploadedFileName());
-    Timestamp creationTime = Timestamp.createFromNowLocalSystem();
-    this.originalFileName = Path.of(builder.fileUpload.fileName());
-    // time + list make the job unique
-    this.jobId = creationTime.toFileSystemString();
+  public ListImportJob(ListImportFlow listImportFlow, ListImportJobStatus listImportJobStatus, Path sourceCsvFile) {
+    this.listImportFlow = listImportFlow;
+
+    this.sourceCsvFile = sourceCsvFile;
+
+    /**
+     * All new job should be processed
+     * (if they are created via the API or via the database at mount time)
+     */
+    listImportJobStatus.setStatusCode(ListImportJob.TO_PROCESS_STATUS_CODE);
+
     // Init all field
     // to avoid dealing with empty value when returning the data object
-    this.listImportJobStatus = new ListImportJobStatus();
-    listImportJobStatus.setJobId(this.getIdentifier());
-    listImportJobStatus.setListGuid(builder.list.getGuid());
-    listImportJobStatus.setStatusCode(TO_PROCESS_STATUS_CODE);
-    listImportJobStatus.setUploadedFileName(builder.fileUpload.fileName());
-    listImportJobStatus.setCountTotal(0);
-    listImportJobStatus.setCountComplete(0);
-    listImportJobStatus.setCountSuccess(0);
-    listImportJobStatus.setCreationTime(creationTime.toLocalDateTime());
-    this.maxRowCountToProcess = Objects.requireNonNullElse(builder.maxRowCountToProcess, 5000);
+    this.listImportJobStatus = listImportJobStatus;
+    this.jobId = listImportJobStatus.getJobId();
+
+    this.maxRowCountToProcess = listImportJobStatus.getMaxRowCountToProcess();
     // list user action
-    this.listUserAction = Objects.requireNonNull(builder.listUserAction);
-    listImportJobStatus.setListUserActionCode(this.listUserAction.getActionCode());
+    this.listUserAction = this.listImportJobStatus.getListUserActionCode();
     // user action
-    this.userAction = Objects.requireNonNullElse(builder.userAction, ListImportUserAction.NOTHING);
-    listImportJobStatus.setUserActionCode(this.userAction.getActionCode());
+    this.userAction = this.listImportJobStatus.getUserActionCode();
+
   }
 
-  public static ListImportJob.Builder builder(ListImportFlow listImportFlow, ListItem list, FileUpload filoeUpload, ListImportListUserAction action) {
-    return new ListImportJob.Builder(listImportFlow, list, filoeUpload, action);
-  }
 
   public ListImportUserAction getUserAction() {
     return this.userAction;
@@ -111,51 +101,10 @@ public class ListImportJob implements CollectionWriteThroughElement {
     return this.rowFatalErrorExecutionCounter;
   }
 
-  @Override
-  public String getObjectId() {
-    return this.list.getGuid()+"/lij-"+jobId;
+  public String getGuid() {
+    return this.listImportJobStatus.getListGuid() + "/lij-" + this.jobId;
   }
 
-  @Override
-  public Object toJacksonObject() {
-    return this.getStatus();
-  }
-
-
-  public static class Builder {
-    private final FileUpload fileUpload;
-    private final ListImportFlow listImportFlow;
-    private final ListItem list;
-    private Integer maxRowCountToProcess;
-    private final ListImportListUserAction listUserAction;
-    private ListImportUserAction userAction;
-
-    Builder(ListImportFlow listImportFlow, ListItem list, FileUpload fileUpload, ListImportListUserAction listUserAction) {
-      this.listImportFlow = listImportFlow;
-      this.list = list;
-      this.fileUpload = fileUpload;
-      this.listUserAction = listUserAction;
-    }
-
-    public Builder setMaxRowCountToProcess(Integer maxRowCountToProcess) {
-      this.maxRowCountToProcess = maxRowCountToProcess;
-      return this;
-    }
-
-    public ListImportJob build() {
-      return new ListImportJob(this);
-    }
-
-    public Builder setUserAction(ListImportUserAction userAction) {
-      this.userAction = userAction;
-      return this;
-    }
-  }
-
-
-  Path getFileNameWithExtension() {
-    return this.originalFileName;
-  }
 
   /**
    * @return execute incrementally the job
@@ -279,7 +228,7 @@ public class ListImportJob implements CollectionWriteThroughElement {
       // This setting will transform the json as array to get a String[]
       .with(CsvParser.Feature.WRAP_AS_ARRAY)
       .with(schema)
-      .readValues(uploadedCsvFile.toFile())) {
+      .readValues(sourceCsvFile.toFile())) {
 
       int counter = -1;
       List<ListImportJobRow> listImportJobRows = new ArrayList<>();
@@ -340,7 +289,7 @@ public class ListImportJob implements CollectionWriteThroughElement {
           Integer emailIndex = headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS);
           if (emailIndex == null) {
 
-            String statusMessage = "An email address header could not be found in the file (" + this.getFileNameWithExtension() + "). Headers found: " + Arrays.toString(row);
+            String statusMessage = "An email address header could not be found in the file (" + this.listImportJobStatus.getUploadedFileName() + "). Headers found: " + Arrays.toString(row);
             listImportJobStatus.setStatusMessage(statusMessage);
             this.executionStatusCode = BAD_FILE_STATUS;
             throw new CastException(statusMessage);
@@ -407,7 +356,7 @@ public class ListImportJob implements CollectionWriteThroughElement {
       }
       return listImportJobRows;
     } catch (IOException e) {
-      String message = "List import couldn't read the csv file (" + this.getFileNameWithExtension() + ").";
+      String message = "List import couldn't read the csv file (" + this.listImportJobStatus.getUploadedFileName() + ").";
       throw new IOException(message, e);
     }
   }
@@ -426,7 +375,7 @@ public class ListImportJob implements CollectionWriteThroughElement {
     }
     listImportJobStatus.setStatusMessage(message);
     this.executionStatusCode = FAILURE_STATUS_CODE;
-    LOGGER.error("A fatal error has occurred with the list import job (" + list.getGuid() + "," + listImportJobStatus.getJobId() + ")", e);
+    LOGGER.error("A fatal error has occurred with the list import job (" + this.listImportJobStatus.getListGuid() + "," + listImportJobStatus.getJobId() + ")", e);
     return this.closeJob();
   }
 
@@ -436,20 +385,13 @@ public class ListImportJob implements CollectionWriteThroughElement {
     /**
      * Write the row status
      */
-    Path resultFile = this.listImportFlow.getRowStatusFileJobByIdentifier(this.list.getGuid(), this.getIdentifier());
+    Path resultFile = this.listImportFlow.getRowStatusFileJobByIdentifier(this.listImportJobStatus.getListGuid(), this.getJobId());
     List<ListImportJobRowStatus> listJobRowStatus = this.resultImportJobRows
       .stream()
       .map(ListImportJobRow::toListJobRowStatus)
       .collect(Collectors.toList());
     String resultString = new JsonArray(listJobRowStatus).toString();
     Fs.write(resultFile, resultString);
-
-
-    /**
-     * Move the csv file
-     */
-    Path csvFile = this.listImportFlow.getListDirectory(this.list.getGuid()).resolve(this.getIdentifier() + ".csv");
-    Fs.move(this.uploadedCsvFile, csvFile);
 
     /**
      * Write the job report
@@ -463,7 +405,7 @@ public class ListImportJob implements CollectionWriteThroughElement {
       this.executionStatusCode = SUCCESS_STATUS_CODE;
     }
     listImportJobStatus.setStatusCode(this.executionStatusCode);
-    Path statusPath = this.listImportFlow.getStatusFileJobByIdentifier(this.list.getGuid(), this.getIdentifier());
+    Path statusPath = this.listImportFlow.getStatusFileJobByIdentifier(this.listImportJobStatus.getListGuid(), this.getJobId());
     Fs.write(statusPath, JsonObject.mapFrom(listImportJobStatus).toString());
 
     /**
@@ -473,16 +415,12 @@ public class ListImportJob implements CollectionWriteThroughElement {
 
   }
 
-  public String getIdentifier() {
+  public String getJobId() {
     return this.jobId;
   }
 
   public ListImportJobStatus getStatus() {
     return this.listImportJobStatus;
-  }
-
-  public ListItem getList() {
-    return this.list;
   }
 
 
@@ -507,17 +445,30 @@ public class ListImportJob implements CollectionWriteThroughElement {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     ListImportJob that = (ListImportJob) o;
-    return Objects.equals(list.getGuid(), that.list.getGuid()) && Objects.equals(jobId, that.jobId);
+    return Objects.equals(this.listImportJobStatus.getListGuid(), that.listImportJobStatus.getListGuid()) && Objects.equals(jobId, that.jobId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(list.getGuid(), jobId);
+    return Objects.hash(this.listImportJobStatus.getListGuid(), jobId);
   }
 
   @Override
   public String toString() {
-    return list.getGuid() + " -> " + jobId;
+    return this.getGuid();
   }
 
+  public Future<ListItem> getList() {
+    if (this.list != null) {
+      return Future.succeededFuture(this.list);
+    }
+    return this.listImportFlow.getApp()
+      .getListProvider()
+      .getListByGuidHashIdentifier(this.listImportJobStatus.getListGuid())
+      .onFailure(err -> LOGGER.error("Error while getting the list with the guid (" + this.listImportJobStatus.getListGuid() + ") for the job (" + this + ")", err))
+      .compose(list -> {
+        this.list = list;
+        return Future.succeededFuture(list);
+      });
+  }
 }

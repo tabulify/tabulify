@@ -16,7 +16,6 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.ListImportFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListImportJob;
 import net.bytle.tower.eraldy.api.implementer.flow.ListImportListUserAction;
-import net.bytle.tower.eraldy.api.implementer.flow.ListImportUserAction;
 import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationConfirmationLetter;
 import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationValidationLetter;
 import net.bytle.tower.eraldy.api.openapi.interfaces.ListApi;
@@ -105,11 +104,13 @@ public class ListApiImpl implements ListApi {
         return this.apiApp.getAuthProvider().checkListAuthorization(routingContext, list, AuthUserScope.LIST_IMPORT);
       })
       .compose(list -> {
-        ListImportJob importJob = this.apiApp.getListImportFlow()
-          .buildJob(list, fileBinary, ListImportListUserAction.IN)
-          .setMaxRowCountToProcess(finalRowCountToProcess)
-          .setUserAction(ListImportUserAction.UPDATE)
-          .build();
+        ListImportJobStatus listImportJobStatus = new ListImportJobStatus();
+        listImportJobStatus.setListGuid(list.getGuid());
+        listImportJobStatus.setListUserActionCode(ListImportListUserAction.IN);
+        listImportJobStatus.setMaxRowCountToProcess(finalRowCountToProcess);
+        listImportJobStatus.setListGuid(list.getGuid());
+        listImportJobStatus.setUploadedFileName(fileBinary.fileName());
+        ListImportJob importJob = this.apiApp.getListImportFlow().createJobFromApi(listImportJobStatus, fileBinary);
         String jobId;
         try {
           jobId = this.apiApp.getListImportFlow().step1AddJobToQueue(importJob);

@@ -8,7 +8,10 @@ import net.bytle.dns.DnsIp;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
-import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.model.openapi.ListUser;
+import net.bytle.tower.eraldy.model.openapi.ListUserSource;
+import net.bytle.tower.eraldy.model.openapi.ListUserStatus;
+import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.ListUserProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.EmailAddress;
@@ -105,110 +108,109 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
         } catch (NullValueException e) {
           return Future.failedFuture(new InternalException("Email address was null but the email was validated. It should not happen."));
         }
-        ListItem list = this.listImportJob.getList();
-        return userProvider
-          .getUserByEmail(emailInternetAddress, list.getRealm().getLocalId(), User.class, list.getRealm())
-          .compose(userFromRegistry -> {
-            if (userFromRegistry != null) {
-              if (this.listImportJob.getUserAction() == ListImportUserAction.UPDATE) {
-                boolean userShouldUpdate = false;
-                if (!this.givenName.isBlank() && !userFromRegistry.getGivenName().equals(this.givenName)) {
-                  userFromRegistry.setGivenName(this.givenName);
-                  userShouldUpdate = true;
+        return this.listImportJob.getList()
+          .compose(list-> userProvider
+            .getUserByEmail(emailInternetAddress, list.getRealm().getLocalId(), User.class, list.getRealm())
+            .compose(userFromRegistry -> {
+              if (userFromRegistry != null) {
+                if (this.listImportJob.getUserAction() == ListImportUserAction.UPDATE) {
+                  boolean userShouldUpdate = false;
+                  if (!this.givenName.isBlank() && !userFromRegistry.getGivenName().equals(this.givenName)) {
+                    userFromRegistry.setGivenName(this.givenName);
+                    userShouldUpdate = true;
+                  }
+                  if (!this.familyName.isBlank() && !userFromRegistry.getFamilyName().equals(this.familyName)) {
+                    userFromRegistry.setFamilyName(this.familyName);
+                    userShouldUpdate = true;
+                  }
+                  if (userShouldUpdate) {
+                    this.userStatus = ListImportUserStatus.UPDATED;
+                    return userProvider.updateUser(userFromRegistry);
+                  }
                 }
-                if (!this.familyName.isBlank() && !userFromRegistry.getFamilyName().equals(this.familyName)) {
-                  userFromRegistry.setFamilyName(this.familyName);
-                  userShouldUpdate = true;
-                }
-                if (userShouldUpdate) {
-                  this.userStatus = ListImportUserStatus.UPDATED;
-                  return userProvider.updateUser(userFromRegistry);
-                }
+                return Future.succeededFuture(userFromRegistry);
+              } else {
+                User newUser = new User();
+                newUser.setEmail(emailInternetAddress.toNormalizedString());
+                newUser.setGivenName(this.givenName);
+                newUser.setFamilyName(this.familyName);
+                newUser.setLocation(this.location);
+                newUser.setRealm(list.getRealm());
+                this.userStatus = ListImportUserStatus.CREATED;
+                return userProvider.insertUserAndTrackEvent(newUser, FlowType.LIST_IMPORT);
               }
-              return Future.succeededFuture(userFromRegistry);
-            } else {
-              User newUser = new User();
-              newUser.setEmail(emailInternetAddress.toNormalizedString());
-              newUser.setGivenName(this.givenName);
-              newUser.setFamilyName(this.familyName);
-              newUser.setLocation(this.location);
-              newUser.setRealm(list.getRealm());
-              this.userStatus = ListImportUserStatus.CREATED;
-              return userProvider.insertUserAndTrackEvent(newUser, FlowType.LIST_IMPORT);
-            }
-          })
-          .compose(user -> {
-            this.userGuid = user.getGuid();
-            ListUserProvider listUserProvider = this.listImportJob.getListImportFlow().getApp().getListRegistrationProvider();
-            return listUserProvider.
-              getListUsersByListAndUser(list, user)
-              .compose(listUser -> {
-                if (listUser != null) {
-                  this.listUserStatus = ListImportListUserStatus.NOTHING;
-                  this.listUserGuid = listUser.getGuid();
-                  return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
-                }
-                /**
-                 * Action OUT not yet implemented
-                 */
-                if (this.listImportJob.getListUserAction() != ListImportListUserAction.IN) {
-                  return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
-                }
-                ListUser listUserToInsert = new ListUser();
-                listUserToInsert.setUser(user);
-                listUserToInsert.setList(list);
-                listUserToInsert.setInSourceId(ListUserSource.IMPORT);
-                listUserToInsert.setStatus(ListUserStatus.OK);
-                if (this.optInOrigin == null) {
-                  listUserToInsert.setInOptInOrigin(ListUserSource.IMPORT.toString());
-                } else {
-                  listUserToInsert.setInOptInOrigin(this.optInOrigin);
-                }
-                if (optInIp != null) {
-                  DnsIp optInIpAsDnsIp;
-                  try {
-                    optInIpAsDnsIp = DnsIp.createFromString(optInIp);
-                  } catch (DnsException e) {
-                    return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInIp (" + optInIp + ") is not a valid ipv4 or ipv6.");
-                  }
-                  listUserToInsert.setInOptInIp(optInIpAsDnsIp.getAddress());
-                }
-                if (optInTime != null) {
-                  LocalDateTime optInTimeAsObject;
-                  try {
-                    optInTimeAsObject = Timestamp.createFromString(optInTime).toLocalDateTime();
-                  } catch (CastException e) {
-                    return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInTime (" + optInTime + ") is not a known time string.");
-                  }
-                  listUserToInsert.setInOptInTime(optInTimeAsObject);
-                }
-                if (confirmIp != null) {
-                  DnsIp confirmIpAsDnsIp;
-                  try {
-                    confirmIpAsDnsIp = DnsIp.createFromString(confirmIp);
-                  } catch (DnsException e) {
-                    return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmIp (" + confirmIp + ") is not a valid ipv4 or ipv6.");
-                  }
-                  listUserToInsert.setInOptInConfirmationIp(confirmIpAsDnsIp.getAddress());
-                }
-                if (confirmTime != null) {
-                  LocalDateTime confirmTimeAsObject;
-                  try {
-                    confirmTimeAsObject = Timestamp.createFromString(confirmTime).toLocalDateTime();
-                  } catch (CastException e) {
-                    return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmTime (" + confirmTime + ") is not a known time string.");
-                  }
-                  listUserToInsert.setInOptInConfirmationTime(confirmTimeAsObject);
-                }
-                return listUserProvider.insertRegistration(listUserToInsert)
-                  .compose(listRegistrationInserted -> {
-                    this.listUserStatus = ListImportListUserStatus.ADDED;
-                    this.listUserGuid = listRegistrationInserted.getGuid();
+            })
+            .compose(user -> {
+              this.userGuid = user.getGuid();
+              ListUserProvider listUserProvider = this.listImportJob.getListImportFlow().getApp().getListRegistrationProvider();
+              return listUserProvider.
+                getListUsersByListAndUser(list, user)
+                .compose(listUser -> {
+                  if (listUser != null) {
+                    this.listUserStatus = ListImportListUserStatus.NOTHING;
+                    this.listUserGuid = listUser.getGuid();
                     return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
-                  });
-              });
-          });
-
+                  }
+                  /**
+                   * Action OUT not yet implemented
+                   */
+                  if (this.listImportJob.getListUserAction() != ListImportListUserAction.IN) {
+                    return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
+                  }
+                  ListUser listUserToInsert = new ListUser();
+                  listUserToInsert.setUser(user);
+                  listUserToInsert.setList(list);
+                  listUserToInsert.setInSourceId(ListUserSource.IMPORT);
+                  listUserToInsert.setStatus(ListUserStatus.OK);
+                  if (this.optInOrigin == null) {
+                    listUserToInsert.setInOptInOrigin(ListUserSource.IMPORT.toString());
+                  } else {
+                    listUserToInsert.setInOptInOrigin(this.optInOrigin);
+                  }
+                  if (optInIp != null) {
+                    DnsIp optInIpAsDnsIp;
+                    try {
+                      optInIpAsDnsIp = DnsIp.createFromString(optInIp);
+                    } catch (DnsException e) {
+                      return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInIp (" + optInIp + ") is not a valid ipv4 or ipv6.");
+                    }
+                    listUserToInsert.setInOptInIp(optInIpAsDnsIp.getAddress());
+                  }
+                  if (optInTime != null) {
+                    LocalDateTime optInTimeAsObject;
+                    try {
+                      optInTimeAsObject = Timestamp.createFromString(optInTime).toLocalDateTime();
+                    } catch (CastException e) {
+                      return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInTime (" + optInTime + ") is not a known time string.");
+                    }
+                    listUserToInsert.setInOptInTime(optInTimeAsObject);
+                  }
+                  if (confirmIp != null) {
+                    DnsIp confirmIpAsDnsIp;
+                    try {
+                      confirmIpAsDnsIp = DnsIp.createFromString(confirmIp);
+                    } catch (DnsException e) {
+                      return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmIp (" + confirmIp + ") is not a valid ipv4 or ipv6.");
+                    }
+                    listUserToInsert.setInOptInConfirmationIp(confirmIpAsDnsIp.getAddress());
+                  }
+                  if (confirmTime != null) {
+                    LocalDateTime confirmTimeAsObject;
+                    try {
+                      confirmTimeAsObject = Timestamp.createFromString(confirmTime).toLocalDateTime();
+                    } catch (CastException e) {
+                      return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmTime (" + confirmTime + ") is not a known time string.");
+                    }
+                    listUserToInsert.setInOptInConfirmationTime(confirmTimeAsObject);
+                  }
+                  return listUserProvider.insertRegistration(listUserToInsert)
+                    .compose(listRegistrationInserted -> {
+                      this.listUserStatus = ListImportListUserStatus.ADDED;
+                      this.listUserGuid = listRegistrationInserted.getGuid();
+                      return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
+                    });
+                });
+            }));
       });
   }
 
@@ -297,7 +299,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
            * We log only 3 because we don't want 10 thousand error
            * if the same error repeat on each row of a 10 thousand file
            */
-          LOGGER.error("A fatal error has occurred on the row (" + this.rowId + ", " + this.email + ") with the list import job (" + listImportJob.getList().getGuid() + "," + listImportJob.getStatus().getJobId() + ")", err);
+          LOGGER.error("A fatal error has occurred on the row (" + this.rowId + ", " + this.email + ") with the list import job (" + listImportJob.getStatus().getListGuid() + "," + listImportJob.getStatus().getJobId() + ")", err);
         }
         event.complete(this);
       })

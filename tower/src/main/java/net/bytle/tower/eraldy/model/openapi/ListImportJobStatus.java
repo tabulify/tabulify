@@ -2,12 +2,15 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.api.implementer.flow.ListImportListUserAction;
+import net.bytle.tower.eraldy.api.implementer.flow.ListImportUserAction;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * This object represents the status of a job that imports users for a list.
+ * This Jackson serializable object represents the request and the status of a job
+ * that imports users for a list.
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutureListener {
@@ -19,9 +22,9 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
 
   protected String statusMessage;
 
-  protected Integer listUserActionCode;
+  protected ListImportListUserAction listUserActionCode;
 
-  protected Integer userActionCode;
+  protected ListImportUserAction userActionCode;
 
   protected String uploadedFileName;
 
@@ -39,6 +42,7 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
 
   protected LocalDateTime endTime;
   private String listGuid;
+  private Integer maxRowCountToProcess;
 
   /**
   * The empty constructor is
@@ -59,6 +63,7 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
 
   /**
   * @param jobId The job id
+   *              To get the guid, add the list guid
   */
   @SuppressWarnings("unused")
   public void setJobId(String jobId) {
@@ -101,15 +106,15 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   * @return listUserActionCode The action on the list user: 0: add (in), 1: delete (out)
   */
   @JsonProperty("listUserActionCode")
-  public Integer getListUserActionCode() {
+  public ListImportListUserAction getListUserActionCode() {
     return listUserActionCode;
   }
 
   /**
-  * @param listUserActionCode The action on the list user: 0: add (in), 1: delete (out)
+  * @param listUserActionCode The action on the list user (ie add (in) or delete (out))
   */
   @SuppressWarnings("unused")
-  public void setListUserActionCode(Integer listUserActionCode) {
+  public void setListUserActionCode(ListImportListUserAction listUserActionCode) {
     this.listUserActionCode = listUserActionCode;
   }
 
@@ -117,7 +122,7 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   * @return userActionCode The action on the user: 0: no update (create only), 1: update
   */
   @JsonProperty("userActionCode")
-  public Integer getUserActionCode() {
+  public ListImportUserAction getUserActionCode() {
     return userActionCode;
   }
 
@@ -125,7 +130,7 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   * @param userActionCode The action on the user: 0: no update (create only), 1: update
   */
   @SuppressWarnings("unused")
-  public void setUserActionCode(Integer userActionCode) {
+  public void setUserActionCode(ListImportUserAction userActionCode) {
     this.userActionCode = userActionCode;
   }
 
@@ -289,9 +294,19 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   public String getListGuid() {
     return listGuid;
   }
+
   public ListImportJobStatus setListGuid(String listGuid) {
     this.listGuid = listGuid;
     return this;
+  }
+
+  @JsonProperty("maxRowCountToProcess")
+  public Integer getMaxRowCountToProcess() {
+    return maxRowCountToProcess;
+  }
+
+  public void setMaxRowCountToProcess(Integer finalRowCountToProcess) {
+    this.maxRowCountToProcess = finalRowCountToProcess;
   }
 
 }

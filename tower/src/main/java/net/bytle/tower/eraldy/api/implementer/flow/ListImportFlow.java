@@ -11,8 +11,8 @@ import net.bytle.exception.NullValueException;
 import net.bytle.fs.Fs;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
-import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.type.Strings;
+import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
 import net.bytle.vertx.collections.QueueWriteThrough;
 import net.bytle.vertx.flow.FlowType;
@@ -23,13 +23,11 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -130,8 +128,8 @@ public class ListImportFlow extends TowerService implements WebFlow {
      */
     List<ListImportJobStatus> listImportJobStatuses = this.importJobQueue
       .stream()
-      .filter(importJob -> importJob.getList().getGuid().equals(listGuid))
       .map(ListImportJob::getStatus)
+      .filter(status -> status.getListGuid().equals(listGuid))
       .collect(Collectors.toList());
 
     /**
@@ -168,7 +166,7 @@ public class ListImportFlow extends TowerService implements WebFlow {
      * In the queue
      */
     for (ListImportJob listImportJob : this.importJobQueue) {
-      if (listImportJob.getIdentifier().equals(jobIdentifier)) {
+      if (listImportJob.getJobId().equals(jobIdentifier)) {
         return listImportJob;
       }
     }
@@ -181,10 +179,6 @@ public class ListImportFlow extends TowerService implements WebFlow {
    */
   public int getRowValidationFailureRetryCount() {
     return this.rowValidationFailureRetryCount;
-  }
-
-  public ListImportJob.Builder buildJob(ListItem list, FileUpload fileBinary, ListImportListUserAction action) {
-    return ListImportJob.builder(this, list, fileBinary, action);
   }
 
   @Override
@@ -270,6 +264,50 @@ public class ListImportFlow extends TowerService implements WebFlow {
     }
   }
 
+  public ListImportJob createJobFromApi(ListImportJobStatus listImportJobStatus, FileUpload fileUpload) {
+    listImportJobStatus.setCountTotal(0);
+    listImportJobStatus.setCountComplete(0);
+    listImportJobStatus.setCountSuccess(0);
+    Timestamp nowInUtc = Timestamp.createFromNowUtc();
+    listImportJobStatus.setCreationTime(nowInUtc.toLocalDateTime());
+    String jobId = nowInUtc.toFileSystemString();
+    listImportJobStatus.setJobId(jobId);
+    if (listImportJobStatus.getMaxRowCountToProcess() == null) {
+      listImportJobStatus.setMaxRowCountToProcess(5000);
+    }
+    Objects.requireNonNull(listImportJobStatus.getListUserActionCode());
+    if(listImportJobStatus.getUserActionCode()==null){
+      listImportJobStatus.setUserActionCode(ListImportUserAction.UPDATE);
+    }
+    Objects.requireNonNull(listImportJobStatus.getUploadedFileName());
+    /**
+     * Move the csv file
+     */
+    Path csvFile = this.getSourceFilePathFromJobStatus(listImportJobStatus);
+    Path source = Paths.get(fileUpload.uploadedFileName());
+    Fs.move(source, csvFile);
+    return new ListImportJob(this, listImportJobStatus, csvFile);
+  }
+
+  /**
+   *
+   * @param listImportJobStatus - the metadata
+   * @return the path of the source csv file used for the job
+   */
+  private Path getSourceFilePathFromJobStatus(ListImportJobStatus listImportJobStatus) {
+    return this.getListDirectory(listImportJobStatus.getListGuid()).resolve(listImportJobStatus.getJobId() + ".csv");
+  }
+
+  /**
+   * Create a job from the database store
+   * @param listImportStatus - the import status
+   * @return the job
+   */
+  public ListImportJob createJobFromDatabase(ListImportJobStatus listImportStatus) {
+    Path csvFile = this.getSourceFilePathFromJobStatus(listImportStatus);
+    return new ListImportJob(this, listImportStatus, csvFile);
+  }
+
 
   /**
    * The fields in the import file
@@ -304,7 +342,7 @@ public class ListImportFlow extends TowerService implements WebFlow {
 
     importJobQueue = QueueWriteThrough.builder(ListImportJob.class, "list-import")
       .setPool(server.getPostgresDatabaseConnectionPool())
-      .setJsonMapper(server.getJacksonMapperManager().jsonMapperBuilder().build())
+      .setSerializer(new ListImportJobSerializer(this))
       .build();
 
     /**
@@ -383,17 +421,17 @@ public class ListImportFlow extends TowerService implements WebFlow {
 
   public String step1AddJobToQueue(ListImportJob importJob) throws TowerFailureException {
 
-    ListItem list = importJob.getList();
+    String listGuid = importJob.getStatus().getListGuid();
     for (ListImportJob listImportJob : importJobQueue) {
-      if (listImportJob.getList().equals(list)) {
+      if (listImportJob.getStatus().getListGuid().equals(listGuid)) {
         throw TowerFailureException.builder()
           .setType(TowerFailureTypeEnum.ALREADY_EXIST_409)
-          .setMessage("The list (" + list + ") has already a job in the queue")
+          .setMessage("The list (" + listGuid + ") has already a job in the queue")
           .build();
       }
     }
 
-    String identifier = importJob.getIdentifier();
+    String identifier = importJob.getJobId();
     importJobQueue.add(importJob);
     return identifier;
   }
