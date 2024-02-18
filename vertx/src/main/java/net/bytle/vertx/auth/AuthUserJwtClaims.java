@@ -30,9 +30,9 @@ public enum AuthUserJwtClaims {
   SUBJECT("sub"),
   /**
    * <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.6">Issued At Claim</a>
+   * In Utc because we use it everywhere
    */
   ISSUED_AT("iat"),
-
   /**
    * <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.4">Exp Claim</a>
    * NumericDate is a number in seconds since 1st Jan 1970 in UTC

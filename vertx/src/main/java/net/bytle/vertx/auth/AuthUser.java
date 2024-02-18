@@ -6,9 +6,11 @@ import io.vertx.ext.auth.User;
 import net.bytle.exception.*;
 import net.bytle.type.Casts;
 import net.bytle.type.time.Timestamp;
+import net.bytle.vertx.DateTimeUtil;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -44,11 +46,15 @@ public class AuthUser {
 
   public JsonObject toClaimsWithExpiration(Integer expirationInMinutes) {
     /**
-     * This is the now used to test if the JWT is {@link io.vertx.ext.auth.User#expired(int)}
+     * Note Time is everywhere in UTC.
+     * It will not work with {@link io.vertx.ext.auth.User#expired(int)},
+     * because they use local system time
+     * ie long now = System.currentTimeMillis() / 1000;
      */
-    long now = (System.currentTimeMillis() / 1000);
+    long now = DateTimeUtil.getNowInUtc().toEpochSecond(ZoneOffset.UTC);
     claims.put(AuthUserJwtClaims.ISSUED_AT.toString(), now);
     claims.put(AuthUserJwtClaims.EXPIRATION.toString(), now + expirationInMinutes * 60);
+
     return claims;
   }
 
@@ -98,7 +104,7 @@ public class AuthUser {
 
 
   /**
-   * @return the date
+   * @return the issued date in UTC
    */
   public Timestamp  getIssuedAt() {
     Long issuedAtInSec = claims.getLong(AuthUserJwtClaims.ISSUED_AT.toString());

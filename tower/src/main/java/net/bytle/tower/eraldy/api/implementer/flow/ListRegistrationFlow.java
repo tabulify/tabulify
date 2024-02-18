@@ -86,7 +86,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         listUser.setUser(user);
         listUser.setStatus(ListUserStatus.OK);
         listUser.setInOptInTime(optInTime);
-        listUser.setInOptInConfirmationTime(LocalDateTime.now());
+        listUser.setInOptInConfirmationTime(DateTimeUtil.getNowInUtc());
         listUser.setInOptInIp(optInIp);
         try {
           String realRemoteClient = HttpRequestUtil.getRealRemoteClientIp(ctx.request());
