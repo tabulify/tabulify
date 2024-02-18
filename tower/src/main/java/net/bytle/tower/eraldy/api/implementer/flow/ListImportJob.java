@@ -17,6 +17,7 @@ import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.type.time.Timestamp;
+import net.bytle.vertx.collections.CollectionWriteThroughElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
 
 import static net.bytle.tower.eraldy.api.implementer.flow.ListImportJobRowStatus.FATAL_ERROR;
 
-public class ListImportJob {
+public class ListImportJob implements CollectionWriteThroughElement {
 
   static final Logger LOGGER = LogManager.getLogger(ListImportJob.class);
   private static final int RUNNING_STATUS_CODE = -1;
@@ -77,6 +78,7 @@ public class ListImportJob {
     // to avoid dealing with empty value when returning the data object
     this.listImportJobStatus = new ListImportJobStatus();
     listImportJobStatus.setJobId(this.getIdentifier());
+    listImportJobStatus.setListGuid(builder.list.getGuid());
     listImportJobStatus.setStatusCode(TO_PROCESS_STATUS_CODE);
     listImportJobStatus.setUploadedFileName(builder.fileUpload.fileName());
     listImportJobStatus.setCountTotal(0);
@@ -108,6 +110,17 @@ public class ListImportJob {
     this.rowFatalErrorExecutionCounter++;
     return this.rowFatalErrorExecutionCounter;
   }
+
+  @Override
+  public String getObjectId() {
+    return this.list.getGuid()+"/lij-"+jobId;
+  }
+
+  @Override
+  public Object toJacksonObject() {
+    return this.getStatus();
+  }
+
 
   public static class Builder {
     private final FileUpload fileUpload;

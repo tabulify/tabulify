@@ -12,7 +12,7 @@ import java.util.Queue;
 /**
  * A queue cache backed by a store (database)
  */
-public class QueueWriteThrough<E> implements Queue<E> {
+public class QueueWriteThrough<E extends CollectionWriteThroughElement> implements Queue<E> {
 
   private final LinkedList<E> queue;
   private final QueueWriteThroughDatabaseSink writeThrough;
@@ -24,7 +24,7 @@ public class QueueWriteThrough<E> implements Queue<E> {
   }
 
   @SuppressWarnings("unused")
-  public static <E> Builder<E> builder(Class<E> clazz, String name) {
+  public static <E extends CollectionWriteThroughElement > Builder<E> builder(Class<E> clazz, String name) {
     return new Builder<>(name);
   }
 
@@ -141,7 +141,7 @@ public class QueueWriteThrough<E> implements Queue<E> {
     return this.queue.peek();
   }
 
-  public static class Builder<E> {
+  public static class Builder<E extends CollectionWriteThroughElement> {
 
     final String queueName;
     PgPool pool;

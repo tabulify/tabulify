@@ -27,13 +27,13 @@ public class QueueWriteThroughDatabaseSink {
   private final JsonMapper mapper;
   private final String removeHeadSql;
 
-  public <E> QueueWriteThroughDatabaseSink(QueueWriteThrough.Builder<E> queuBuilder) {
+  public <E extends CollectionWriteThroughElement> QueueWriteThroughDatabaseSink(QueueWriteThrough.Builder<E> queuBuilder) {
     this.queueName = queuBuilder.queueName;
     this.pool = queuBuilder.pool;
     String queueTable = "cs_runtime.queues";
-    deleteSql = "delete from " + queueTable + " where queue_name = $1 and hash_code = $2";
+    deleteSql = "delete from " + queueTable + " where queue_name = $1 and object_id = $2";
     clearSql = "delete from " + queueTable + " where queue_name = $1";
-    addSql = "insert into " + queueTable + " (queue_name, hash_code, to_string, creation_time, data) values($1, $2, $3, $4, $5)";
+    addSql = "insert into " + queueTable + " (queue_name, object_id, creation_time, data) values($1, $2, $3, $4)";
     removeHeadSql = "insert into " + queueTable + " (queue_name, hash_code, to_string, creation_time, data) values($1, $2, $3, $4, $5)";
     mapper = queuBuilder.mapper;
   }
@@ -42,11 +42,12 @@ public class QueueWriteThroughDatabaseSink {
 
   public void remove(Object o) {
 
+    String objectId = ((CollectionWriteThroughElement) o).getObjectId();
     this.pool.preparedQuery(deleteSql)
       .execute(
         Tuple.of(
           this.queueName,
-          o.hashCode()
+          objectId
         )
       )
       .onFailure(err -> LOGGER.error("Unable to delete with the SQL\n" + deleteSql, err));
@@ -65,24 +66,23 @@ public class QueueWriteThroughDatabaseSink {
   /**
    * Add at the tail
    */
-  public <E> void addToTail(E e) {
+  public <E extends CollectionWriteThroughElement> void addToTail(E e) {
     String data;
     try {
-      data = this.mapper.writeValueAsString(e);
+      data = this.mapper.writeValueAsString(e.toJacksonObject());
     } catch (JsonProcessingException ex) {
       LOGGER.error("Unable to write the value (" + e + ") as jackson json string", ex);
       return;
     }
     Tuple tuple = Tuple.of(
       this.queueName,
-      e.hashCode(),
-      e.toString().substring(0, 50),
+      e.getObjectId(),
       DateTimeUtil.getNowInUtc(),
       data
     );
     this.pool.preparedQuery(addSql)
       .execute(tuple)
-      .onFailure(err -> LOGGER.error("Unable to delete with the SQL\n" + deleteSql, err));
+      .onFailure(err -> LOGGER.error("Unable to add with the SQL\n" + addSql, err));
   }
 
   /**

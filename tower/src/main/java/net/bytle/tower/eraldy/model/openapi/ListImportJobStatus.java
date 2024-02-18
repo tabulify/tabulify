@@ -38,6 +38,7 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   protected LocalDateTime startTime;
 
   protected LocalDateTime endTime;
+  private String listGuid;
 
   /**
   * The empty constructor is
@@ -279,6 +280,18 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   @Override
   public String toString() {
     return jobId;
+  }
+
+  /**
+   * @return userActionCode The action on the user: 0: no update (create only), 1: update
+   */
+  @JsonProperty("listGuid")
+  public String getListGuid() {
+    return listGuid;
+  }
+  public ListImportJobStatus setListGuid(String listGuid) {
+    this.listGuid = listGuid;
+    return this;
   }
 
 }
