@@ -55,8 +55,9 @@ public class HttpServer implements AutoCloseable {
 
   /**
    * Mount, Listen and starts
+   * @param appName = the App Name for logging
    */
-  public Future<HttpServer> mountListenAndStart() {
+  public Future<HttpServer> mountListenAndStart(String appName) {
     HttpServerOptions options = new HttpServerOptions()
       .setLogActivity(false)
       .setHost(this.builder.server.getListeningHost())
@@ -103,13 +104,28 @@ public class HttpServer implements AutoCloseable {
           .listen();
       })
       .compose(vertxHttpServer -> {
-        LOGGER.info("HTTP server mounted on port " + vertxHttpServer.actualPort());
+        LOGGER.info(appName + " HTTP server mounted on port " + vertxHttpServer.actualPort());
         List<Future<Void>> servicesFutureToStart = this.getServer().getServices().stream().map(TowerService::start).collect(Collectors.toList());
         return Future.join(servicesFutureToStart);
       })
       .recover(err -> Future.failedFuture(new InternalException("A service start failed while starting the http server", err)))
       .compose(asyncResult -> {
-        LOGGER.info("HTTP server services started");
+        LOGGER.info(appName + " HTTP server services started");
+        /**
+         * Health checks
+         */
+        return this.getServer().getServerHealthCheck().getServerHealthCheckReport();
+      })
+      .recover(err -> Future.failedFuture(new InternalException("A service start failed while starting the http server", err)))
+      .compose(serverHealthReport -> {
+        if (!serverHealthReport.isOk()) {
+          String message = "The app (" + appName + ") does not pass the health checks after the start.\n" +
+            serverHealthReport.getReportForConsole();
+          Throwable failure = serverHealthReport.getFailure();
+          LOGGER.error(message, failure);
+          return Future.failedFuture(new InternalException(message, failure));
+        }
+        LOGGER.info("App " + appName + " is healthy (passed the health checks)");
         return Future.succeededFuture(this);
       });
 

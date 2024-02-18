@@ -73,14 +73,14 @@ public class VerticleApi extends AbstractVerticle {
               .build();
 
             /**
-             * Create the App
+             * Create the web App
+             * and mount the App (HTTP server, ...)
              */
-            apiApp = EraldyApiApp.createForHttpServer(httpServer);
-
-            /**
-             * Mount the HTTP server
-             */
-            return httpServer.mountListenAndStart();
+            return EraldyApiApp
+              .createForHttpServer(httpServer)
+              .mountListenAndStart()
+              .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
+              .onSuccess(app-> apiApp = (EraldyApiApp) app);
 
           })
           /**

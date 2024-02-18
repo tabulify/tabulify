@@ -66,9 +66,9 @@ public class IpVerticle extends AbstractVerticle {
               return;
             }
 
-            ipApp = IpApp.createForDomain(httpServer);
-
-            httpServer.mountListenAndStart()
+            IpApp.createForDomain(httpServer)
+              .mountListenAndStart()
+              .onSuccess(app -> ipApp = (IpApp) app)
               .onFailure(err -> this.handlePromiseFailure(verticlePromise, err));
           });
 

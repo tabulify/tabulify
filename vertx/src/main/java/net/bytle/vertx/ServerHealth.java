@@ -1,5 +1,6 @@
 package net.bytle.vertx;
 
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -10,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 public class ServerHealth {
 
-  private static Logger LOGGER = LogManager.getLogger(HttpServerHealth.class);
+  private static final Logger LOGGER = LogManager.getLogger(HttpServerHealth.class);
 
   /**
    * <a href="https://vertx.io/docs/vertx-core/java/#_addressing">...</a>
@@ -88,4 +89,13 @@ public class ServerHealth {
     register(aClass.getSimpleName(), promiseHandler);
   }
 
+  public Future<ServerHealthReport> getServerHealthCheckReport() {
+
+    return this.healthChecks.checkStatus()
+      .compose(checkResult-> Future.succeededFuture(new ServerHealthReport(checkResult)));
+
+
+
+
+  }
 }

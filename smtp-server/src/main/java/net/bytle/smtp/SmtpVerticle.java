@@ -97,7 +97,6 @@ public class SmtpVerticle extends AbstractVerticle {
             .setIdleTimeout(smtpServer.getIdleTimeoutSecond())
             .setSslHandshakeTimeout(smtpServer.getHandShakeTimeoutSecond());
 
-
           Future<NetServer> futureNetServer = vertx.createNetServer(serverOption)
             .exceptionHandler(SmtpExceptionHandler.create())
             .connectHandler(smtpService::handle)
@@ -149,8 +148,11 @@ public class SmtpVerticle extends AbstractVerticle {
             } catch (IllegalConfiguration e) {
               return Future.failedFuture(e);
             }
+            /**
+             * No App for now
+             */
             return httpServer
-              .mountListenAndStart();
+              .mountListenAndStart("Smtp");
           });
       }))
       .onFailure(e -> this.handleVerticleFailure(verticlePromise, e));

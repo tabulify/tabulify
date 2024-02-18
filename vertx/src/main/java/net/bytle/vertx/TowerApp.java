@@ -55,19 +55,19 @@ public abstract class TowerApp extends TowerService {
   /**
    *
    * @param httpServer - the HTTP server
-   * @param apexDomain - the Apex Domain (mandatory for openAPI)
+   * @param apexDomain - the Apex Domain (mandatory for location of assets such as openAPI)
    */
   public TowerApp(HttpServer httpServer, TowerApexDomain apexDomain) {
 
     this.httpServer = httpServer;
     this.apexDomain = apexDomain;
 
-    this.configAccessor = httpServer.getServer().getConfigAccessor();
-
     /**
      * An app is a service
      */
     httpServer.getServer().registerService(this);
+
+    this.configAccessor = httpServer.getServer().getConfigAccessor();
 
     /**
      * Built OpenApi
@@ -508,4 +508,8 @@ public abstract class TowerApp extends TowerService {
     return this.httpServer;
   }
 
+  public Future<TowerApp> mountListenAndStart() {
+    return this.httpServer.mountListenAndStart(this.getAppName())
+      .compose(v->Future.succeededFuture(this));
+  }
 }

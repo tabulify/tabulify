@@ -190,6 +190,7 @@ public class ListImportFlow extends TowerService implements WebFlow {
      */
     LOGGER.info("Starting the job cron");
     this.executionLastTime = LocalDateTime.now();
+    this.purgeLastTime = LocalDateTime.now();
     this.scheduleNextJob();
 
     /**
@@ -213,7 +214,6 @@ public class ListImportFlow extends TowerService implements WebFlow {
         boolean executionTest = agoLastExecution.toMillis() <= this.executionPeriodInMs + 1000;
         Duration agoLastPurge = Duration.between(this.purgeLastTime, LocalDateTime.now());
         boolean purgeTest = agoLastPurge.toMillis() <= this.purgeJobPeriodMs + 1000;
-
 
         /**
          * Data
