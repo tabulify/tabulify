@@ -12,12 +12,12 @@ public interface AppApi  {
     /**
      * Get the lists for an app
     */
-    Future<ApiResponse<List<ListItemAnalytics>>> appAppIdentifierListsGet(RoutingContext routingContext, String appIdentifier);
+    Future<ApiResponse<List<ListObjectAnalytics>>> appAppIdentifierListsGet(RoutingContext routingContext, String appIdentifier);
 
     /**
      * Create a list where users can register
     */
-    Future<ApiResponse<ListItem>> appAppListPost(RoutingContext routingContext, String appIdentifier, ListBody listBody, String realmIdentifier);
+    Future<ApiResponse<ListObject>> appAppListPost(RoutingContext routingContext, String appIdentifier, ListBody listBody, String realmIdentifier);
 
     /**
      * Retrieve an app by identifier (ie guid or handle)

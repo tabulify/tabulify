@@ -12,7 +12,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.implementer.model.ListRegistrationValidationToken;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.App;
-import net.bytle.tower.eraldy.model.openapi.ListItem;
+import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.ListUserPostBody;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.type.Booleans;
@@ -65,7 +65,7 @@ public class ListRegistrationValidationLetter {
     private final TowerApp towerApp;
     private RoutingContext routingContext;
     private ListUserPostBody listUserPostObject;
-    private ListItem listItem;
+    private ListObject listObject;
 
     public Config(TowerApp towerApp) {
       Vertx vertx = towerApp.getHttpServer().getServer().getVertx();
@@ -105,7 +105,7 @@ public class ListRegistrationValidationLetter {
        * - we may send back a html page (openapi does not allow to send back html for the moment)
        */
       ListRegistrationValidationToken listRegistrationConfirmationToken = ListRegistrationValidationToken
-        .config(listItem)
+        .config(listObject)
         .addOptInContext(routingContext)
         .setFromListObject(listUserPostObject)
         .build();
@@ -126,9 +126,9 @@ public class ListRegistrationValidationLetter {
       }
 
       String publisherName;
-      User publisher = listItem.getOwnerUser();
+      User publisher = listObject.getOwnerUser();
       if (publisher == null) {
-        publisher = listItem.getOwnerApp().getUser();
+        publisher = listObject.getOwnerApp().getUser();
       }
 
       try {
@@ -138,14 +138,14 @@ public class ListRegistrationValidationLetter {
         throw new InternalException(e);
       }
 
-      App publisherApp = listItem.getOwnerApp();
+      App publisherApp = listObject.getOwnerApp();
 
       transactionalTemplate
-        .setPreview("Validate your subscription to `" + listItem.getName() + "`")
+        .setPreview("Validate your subscription to `" + listObject.getName() + "`")
         .setSalutation("Hy")
         .setRecipientName(recipientName)
         .addIntroParagraph(
-          "I just got a subscription request to the <mark>" + listItem.getName() + "</mark> publication with your email." +
+          "I just got a subscription request to the <mark>" + listObject.getName() + "</mark> publication with your email." +
             "<br>For bot and consent protections, I need to check that it was really you asking.")
         .setActionUrl(validationUrl)
         .setActionName("Click on this link to validate your subscription.")
@@ -177,8 +177,8 @@ public class ListRegistrationValidationLetter {
       return this;
     }
 
-    public Config withRegistrationList(ListItem listItem) {
-      this.listItem = listItem;
+    public Config withRegistrationList(ListObject listObject) {
+      this.listObject = listObject;
       return this;
     }
   }

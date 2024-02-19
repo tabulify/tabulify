@@ -413,7 +413,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/ListItemAnalytics'
+                  $ref: '#/components/schemas/ListObjectAnalytics'
                 type: array
           description: Return a list of lists for the app
         "403":
@@ -1028,7 +1028,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListItemAnalytics'
+                $ref: '#/components/schemas/ListObjectAnalytics'
           description: Ok
       security: []
       summary: |
@@ -1071,7 +1071,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListItem'
+                $ref: '#/components/schemas/ListObject'
           description: Ok
       security:
       - apiKeyAuth: []
@@ -1110,7 +1110,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListItem'
+                $ref: '#/components/schemas/ListObject'
           description: Ok
       security:
       - apiKeyAuth: []
@@ -1138,7 +1138,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/ListItemAnalytics'
+                  $ref: '#/components/schemas/ListObjectAnalytics'
                 type: array
           description: Return a list of lists for the app
         "403":
@@ -1711,6 +1711,102 @@ components:
       description: The data needed to create or update a list
       required: true
   schemas:
+    Drive:
+      description: A drive for a file is a container
+      properties:
+        localId:
+          description: The drive id in the database
+          format: int64
+          type: integer
+        guid:
+          description: |
+            The public id
+            (derived from the database/local id)
+          format: int64
+          type: string
+        name:
+          description: A short description of the drive
+          type: string
+        app:
+          $ref: '#/components/schemas/App'
+        realm:
+          $ref: '#/components/schemas/Realm'
+      type: object
+    FileObject:
+      description: A file
+      properties:
+        localId:
+          description: The file id in the database (unique inside the realm)
+          format: int64
+          type: integer
+        guid:
+          description: |
+            The public id
+            (derived from the database/local id)
+          format: int64
+          type: string
+        name:
+          description: The file name
+          type: string
+        path:
+          description: The full path (derived)
+          type: string
+        fileType:
+          description: The type of file (regular or directory)
+          type: integer
+        mimeType:
+          description: The mime type of the content (to parse it)
+          type: string
+        thirdType:
+          description: |
+            A third functional type for the content
+            For instance:
+            * an xml file can represent a document or a fragment.
+            * a yaml file can be an open api file
+          type: string
+        parentFile:
+          $ref: '#/components/schemas/FileObject'
+        drive:
+          $ref: '#/components/schemas/Drive'
+        creationTime:
+          description: The creation time of the listing
+          format: date-time
+          type: string
+        modificationTime:
+          description: The last modification time of the listing
+          format: date-time
+          type: string
+      type: object
+    Mailing:
+      description: A mailing represents the sending of an email to one or more users
+      properties:
+        localId:
+          description: The mailing id in the database
+          format: int64
+          type: integer
+        guid:
+          description: |
+            The public id
+            (derived from the database/local id)
+          format: int64
+          type: string
+        name:
+          description: A short description of the mailing
+          type: string
+        senderUser:
+          $ref: '#/components/schemas/OrganizationUser'
+        emailTemplate:
+          description: The body of the email in a template format
+        recipientList:
+          $ref: '#/components/schemas/ListObject'
+        realm:
+          $ref: '#/components/schemas/Realm'
+      required:
+      - guid
+      type: object
+      x-fields-to-string:
+      - guid
+      - name
     ListImportPostResponse:
       description: |
         The successful response to the submission of a import job for a list
@@ -2275,9 +2371,9 @@ components:
             referrer.
           type: string
       type: object
-    ListItemAnalytics:
+    ListObjectAnalytics:
       allOf:
-      - $ref: '#/components/schemas/ListItem'
+      - $ref: '#/components/schemas/ListObject'
       - properties:
           userCount:
             description: The number of users for the list (subscribed/unsubscribed
@@ -2288,7 +2384,7 @@ components:
             type: integer
         type: object
       description: "List Analytics (count, ...)"
-    ListItem:
+    ListObject:
       description: |
         A list where a user can register.
 
@@ -2590,7 +2686,7 @@ components:
           format: int64
           type: string
         name:
-          description: A shor description of the realm
+          description: A short description of the realm
           type: string
         organization:
           $ref: '#/components/schemas/Organization'
@@ -3344,7 +3440,7 @@ components:
         status:
           $ref: '#/components/schemas/ListUserStatus'
         list:
-          $ref: '#/components/schemas/ListItem'
+          $ref: '#/components/schemas/ListObject'
         user:
           $ref: '#/components/schemas/User'
         inSourceId:
@@ -3395,7 +3491,7 @@ components:
           type: string
       required:
       - guid
-      title: A user in a list (A listing)
+      title: A user in a list (A listing or list item)
       type: object
     ListUserStatus:
       description: The status of the user on the list

@@ -18,7 +18,7 @@ public interface ListApi  {
     /**
      * Get list information  Access by: * id with the listGuid * name with the listHandle and realmIdentifier
     */
-    Future<ApiResponse<ListItemAnalytics>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
+    Future<ApiResponse<ListObjectAnalytics>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
 
     /**
      * Register a public user to a list by sending an email for validation
@@ -48,7 +48,7 @@ public interface ListApi  {
     /**
      * Update a list
     */
-    Future<ApiResponse<ListItem>> listListPatch(RoutingContext routingContext, String listIdentifier, ListBody listBody, String realmIdentifier);
+    Future<ApiResponse<ListObject>> listListPatch(RoutingContext routingContext, String listIdentifier, ListBody listBody, String realmIdentifier);
 
     /**
      * List the users for a list

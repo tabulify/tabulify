@@ -70,7 +70,7 @@ public class ListUserProvider {
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
-      .addMixIn(ListItem.class, ListItemMixinWithoutRealm.class)
+      .addMixIn(ListObject.class, ListItemMixinWithoutRealm.class)
       .build();
 
     // the sql is too big to be inlined in Java
@@ -98,19 +98,19 @@ public class ListUserProvider {
     if (userId == null) {
       throw new InternalException("The user local id of a user object should not be null");
     }
-    ListItem listItem = listUser.getList();
-    if (listItem == null) {
+    ListObject listObject = listUser.getList();
+    if (listObject == null) {
       return Future.failedFuture(new InternalError("The list is mandatory when upserting a user in a list"));
     }
 
     /**
      * Realm check
      */
-    if (!(user.getRealm().getLocalId().equals(listItem.getRealm().getLocalId()))) {
-      return Future.failedFuture(new InternalError("Inconsistency: The realm is not the same for the list (" + listItem.getRealm().getHandle() + " and the user (" + user.getRealm().getHandle() + ")"));
+    if (!(user.getRealm().getLocalId().equals(listObject.getRealm().getLocalId()))) {
+      return Future.failedFuture(new InternalError("Inconsistency: The realm is not the same for the list (" + listObject.getRealm().getHandle() + " and the user (" + user.getRealm().getHandle() + ")"));
     }
 
-    Long listId = listItem.getLocalId();
+    Long listId = listObject.getLocalId();
     if (listId == null) {
       return Future.failedFuture(new InternalError("The list id is mandatory when inserting a registration"));
     }
@@ -220,7 +220,7 @@ public class ListUserProvider {
       .compose(realm -> {
 
         Long listId = row.getLong(LIST_ID_COLUMN);
-        Future<ListItem> publicationFuture = apiApp.getListProvider().getListById(listId, realm, ListItem.class);
+        Future<ListObject> publicationFuture = apiApp.getListProvider().getListById(listId, realm, ListObject.class);
 
         Long userId = row.getLong(USER_ID_COLUMN);
         Future<User> publisherFuture = apiApp.getUserProvider()
@@ -234,10 +234,10 @@ public class ListUserProvider {
             JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
             ListUser listUser = Json.decodeValue(jsonAppData.toBuffer(), ListUser.class);
 
-            ListItem listItemResult = compositeFuture.resultAt(0);
+            ListObject listObjectResult = compositeFuture.resultAt(0);
             User userResult = compositeFuture.resultAt(1);
 
-            listUser.setList(listItemResult);
+            listUser.setList(listObjectResult);
             listUser.setUser(userResult);
 
             listUser.setStatus(ListUserStatus.fromValue(row.getInteger(STATUS_COLUMN)));
@@ -254,11 +254,11 @@ public class ListUserProvider {
 
   }
 
-  public Future<ListUser> getListUsersByListAndUser(ListItem listItem, User user) {
-    if (!Objects.equals(listItem.getRealm().getLocalId(), user.getRealm().getLocalId())) {
+  public Future<ListUser> getListUsersByListAndUser(ListObject listObject, User user) {
+    if (!Objects.equals(listObject.getRealm().getLocalId(), user.getRealm().getLocalId())) {
       throw new InternalException("The realm should be the same between a list and a user for a registration");
     }
-    return getListUserByLocalIds(listItem.getLocalId(), user.getLocalId(), listItem.getRealm().getLocalId());
+    return getListUserByLocalIds(listObject.getLocalId(), user.getLocalId(), listObject.getRealm().getLocalId());
   }
 
   private Future<ListUser> getListUserByLocalIds(Long listId, Long userId, Long realmId) {

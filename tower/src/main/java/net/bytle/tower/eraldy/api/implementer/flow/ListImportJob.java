@@ -14,7 +14,7 @@ import net.bytle.exception.CastException;
 import net.bytle.fs.Fs;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
-import net.bytle.tower.eraldy.model.openapi.ListItem;
+import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.vertx.DateTimeUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,7 +61,7 @@ public class ListImportJob {
    * execution. We log only the first 5 to not be overwhelmed with error.
    */
   private int rowFatalErrorExecutionCounter = 0;
-  private ListItem list;
+  private ListObject list;
 
   /**
    * The id in the store
@@ -480,7 +480,7 @@ public class ListImportJob {
     return this.getStoreId();
   }
 
-  public Future<ListItem> getList() {
+  public Future<ListObject> getList() {
     if (this.list != null) {
       return Future.succeededFuture(this.list);
     }

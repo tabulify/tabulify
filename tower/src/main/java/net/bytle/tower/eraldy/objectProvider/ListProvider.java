@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Manage the get/upsert of a {@link ListItem} object asynchronously
+ * Manage the get/upsert of a {@link ListObject} object asynchronously
  */
 public class ListProvider {
 
@@ -72,7 +72,7 @@ public class ListProvider {
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
-      .addMixIn(ListItem.class, ListItemMixinWithRealm.class)
+      .addMixIn(ListObject.class, ListItemMixinWithRealm.class)
       .build();
 
   }
@@ -82,17 +82,17 @@ public class ListProvider {
    * This function was created to be sure that the data is consistent
    * between guid and (id and realm id)
    *
-   * @param listItem - the registration list
+   * @param listObject - the registration list
    */
-  private void updateGuid(ListItem listItem) {
-    if (listItem.getGuid() != null) {
+  private void updateGuid(ListObject listObject) {
+    if (listObject.getGuid() != null) {
       return;
     }
-    String guid = apiApp.createGuidFromRealmAndObjectId(LIST_GUID_PREFIX, listItem.getRealm(), listItem.getLocalId()).toString();
-    listItem.setGuid(guid);
+    String guid = apiApp.createGuidFromRealmAndObjectId(LIST_GUID_PREFIX, listObject.getRealm(), listObject.getLocalId()).toString();
+    listObject.setGuid(guid);
   }
 
-  public static User getOwnerUser(ListItem list) {
+  public static User getOwnerUser(ListObject list) {
     User ownerUser = list.getOwnerUser();
     if (ownerUser != null) {
       return ownerUser;
@@ -110,17 +110,17 @@ public class ListProvider {
 
 
   /**
-   * @param listItem the publication to upsert
+   * @param listObject the publication to upsert
    * @return the realm with the id
    */
-  public Future<ListItem> upsertList(ListItem listItem) {
+  public Future<ListObject> upsertList(ListObject listObject) {
 
-    Realm realm = listItem.getRealm();
+    Realm realm = listObject.getRealm();
     if (realm == null) {
       return Future.failedFuture(new InternalError("The realm is mandatory when upserting a list"));
     }
 
-    User owner = listItem.getOwnerUser();
+    User owner = listObject.getOwnerUser();
     Long ownerId;
     if (owner != null) {
       ownerId = owner.getLocalId();
@@ -129,7 +129,7 @@ public class ListProvider {
       }
     }
 
-    App app = listItem.getOwnerApp();
+    App app = listObject.getOwnerApp();
     if (app == null) {
       return Future.failedFuture(new InternalError("The app is mandatory when upserting a list"));
     }
@@ -138,27 +138,27 @@ public class ListProvider {
       return Future.failedFuture(new InternalError("The app id is mandatory when upserting a list"));
     }
 
-    if (listItem.getLocalId() != null) {
-      return updateList(listItem);
+    if (listObject.getLocalId() != null) {
+      return updateList(listObject);
     }
 
     /**
      * No upsert SQL statement
      * See identifier.md for more info
      */
-    return updateListByHandleAndGetRowSet(listItem)
+    return updateListByHandleAndGetRowSet(listObject)
       .compose(rowSet -> {
         if (rowSet.size() == 0) {
-          return insertList(listItem);
+          return insertList(listObject);
         }
         Long registrationListId = rowSet.iterator().next().getLong(ID_COLUMN);
-        listItem.setLocalId(registrationListId);
-        return Future.succeededFuture(listItem);
+        listObject.setLocalId(registrationListId);
+        return Future.succeededFuture(listObject);
       });
 
   }
 
-  private Future<ListItem> insertList(ListItem listItem) {
+  private Future<ListObject> insertList(ListObject listObject) {
 
 
     final String insertSql = "INSERT INTO\n" +
@@ -177,26 +177,26 @@ public class ListProvider {
     return jdbcPool
       .withTransaction(sqlConnection ->
         this.apiApp.getRealmSequenceProvider()
-          .getNextIdForTableAndRealm(sqlConnection, listItem.getRealm(), TABLE_NAME)
+          .getNextIdForTableAndRealm(sqlConnection, listObject.getRealm(), TABLE_NAME)
           .compose(nextId -> {
-            listItem.setLocalId(nextId);
-            updateGuid(listItem);
+            listObject.setLocalId(nextId);
+            updateGuid(listObject);
             return sqlConnection
               .preparedQuery(insertSql)
               .execute(Tuple.of(
-                listItem.getRealm().getLocalId(),
-                listItem.getLocalId(),
-                listItem.getHandle(),
-                this.getDatabaseJsonObject(listItem),
-                listItem.getOwnerApp().getLocalId(),
-                listItem.getOwnerUser() != null ? listItem.getOwnerUser().getLocalId() : null,
+                listObject.getRealm().getLocalId(),
+                listObject.getLocalId(),
+                listObject.getHandle(),
+                this.getDatabaseJsonObject(listObject),
+                listObject.getOwnerApp().getLocalId(),
+                listObject.getOwnerUser() != null ? listObject.getOwnerUser().getLocalId() : null,
                 DateTimeUtil.getNowInUtc()
               ))
               .onFailure(e -> LOGGER.error("Insert List: Sql Error " + e.getMessage() + ". With Sql" + insertSql, e));
           })
           .compose(rowSet -> {
-            Long realmId = listItem.getRealm().getLocalId();
-            Long listId = listItem.getLocalId();
+            Long realmId = listObject.getRealm().getLocalId();
+            Long listId = listObject.getLocalId();
             final String createListRegistrationPartition =
               "CREATE TABLE IF NOT EXISTS " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "_" + realmId + "_" + listId + "\n" +
                 "    partition of " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "\n" +
@@ -208,21 +208,21 @@ public class ListProvider {
               .onFailure(e -> LOGGER.error("List Registration Partition creation Error: Sql Error " + e.getMessage() + ". With Sql" + createListRegistrationPartition, e));
           })
           .onFailure(e -> LOGGER.error("List creation Error: Sql Error " + e.getMessage(), e))
-          .compose(rows -> Future.succeededFuture(listItem)));
+          .compose(rows -> Future.succeededFuture(listObject)));
   }
 
-  public Future<ListItem> updateList(ListItem listItem) {
+  public Future<ListObject> updateList(ListObject listObject) {
 
-    if (listItem.getRealm() == null) {
+    if (listObject.getRealm() == null) {
       InternalException internalException = new InternalException("The realm is null. You can't update a list without a realm");
       return Future.failedFuture(internalException);
     }
-    if (listItem.getRealm().getLocalId() == null) {
+    if (listObject.getRealm().getLocalId() == null) {
       InternalException internalException = new InternalException("The realm id is null. You can't update a list without a realm id");
       return Future.failedFuture(internalException);
     }
 
-    if (listItem.getLocalId() != null) {
+    if (listObject.getLocalId() != null) {
 
       String updateByIdSql = "UPDATE \n" +
         JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
@@ -239,36 +239,36 @@ public class ListProvider {
       return jdbcPool
         .preparedQuery(updateByIdSql)
         .execute(Tuple.of(
-          listItem.getHandle(),
-          this.getDatabaseJsonObject(listItem),
-          listItem.getOwnerApp().getLocalId(),
-          listItem.getOwnerUser() != null ? listItem.getOwnerUser().getLocalId() : null,
+          listObject.getHandle(),
+          this.getDatabaseJsonObject(listObject),
+          listObject.getOwnerApp().getLocalId(),
+          listObject.getOwnerUser() != null ? listObject.getOwnerUser().getLocalId() : null,
           DateTimeUtil.getNowInUtc(),
-          listItem.getLocalId(),
-          listItem.getRealm().getLocalId()
+          listObject.getLocalId(),
+          listObject.getRealm().getLocalId()
         ))
         .onFailure(e -> LOGGER.error("Update List by Id Error: Sql Error " + e.getMessage() + ". With Sql" + updateByIdSql, e))
-        .compose(ok -> Future.succeededFuture(listItem));
+        .compose(ok -> Future.succeededFuture(listObject));
     }
 
-    if (listItem.getHandle() == null) {
+    if (listObject.getHandle() == null) {
       InternalException internalException = new InternalException("The list id and handle are null. You can't update a list without an id or an handle");
       return Future.failedFuture(internalException);
     }
 
-    return updateListByHandleAndGetRowSet(listItem)
+    return updateListByHandleAndGetRowSet(listObject)
       .compose(rowSet -> {
         if (rowSet.size() == 0) {
-          InternalException internalException = new InternalException("No list where updated with the handle (" + listItem.getHandle() + ") for the realm (" + listItem.getRealm().getHandle() + ")");
+          InternalException internalException = new InternalException("No list where updated with the handle (" + listObject.getHandle() + ") for the realm (" + listObject.getRealm().getHandle() + ")");
           return Future.failedFuture(internalException);
         }
         Long registrationListId = rowSet.iterator().next().getLong(ID_COLUMN);
-        listItem.setLocalId(registrationListId);
-        return Future.succeededFuture(listItem);
+        listObject.setLocalId(registrationListId);
+        return Future.succeededFuture(listObject);
       });
   }
 
-  private Future<RowSet<Row>> updateListByHandleAndGetRowSet(ListItem listItem) {
+  private Future<RowSet<Row>> updateListByHandleAndGetRowSet(ListObject listObject) {
 
     String updateByHandleSql = "UPDATE \n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
@@ -285,19 +285,19 @@ public class ListProvider {
     return jdbcPool
       .preparedQuery(updateByHandleSql)
       .execute(Tuple.of(
-        this.getDatabaseJsonObject(listItem),
-        listItem.getOwnerApp().getLocalId(),
-        listItem.getOwnerUser() != null ? listItem.getOwnerUser().getLocalId() : null,
+        this.getDatabaseJsonObject(listObject),
+        listObject.getOwnerApp().getLocalId(),
+        listObject.getOwnerUser() != null ? listObject.getOwnerUser().getLocalId() : null,
         DateTimeUtil.getNowInUtc(),
-        listItem.getHandle(),
-        listItem.getRealm().getLocalId()
+        listObject.getHandle(),
+        listObject.getRealm().getLocalId()
       ))
       .onFailure(e -> LOGGER.error("Error Update List by Handle: Sql Error " + e.getMessage() + ". With Sql" + updateByHandleSql, e));
   }
 
-  private JsonObject getDatabaseJsonObject(ListItem listItem) {
+  private JsonObject getDatabaseJsonObject(ListObject listObject) {
 
-    JsonObject data = JsonObject.mapFrom(listItem);
+    JsonObject data = JsonObject.mapFrom(listObject);
     data.remove("id");
     data.remove(Guid.GUID);
     data.remove(RealmProvider.TABLE_PREFIX);
@@ -312,7 +312,7 @@ public class ListProvider {
    * @param realm - the realmId
    * @return the realm
    */
-  public Future<java.util.List<ListItemAnalytics>> getListsForRealm(Realm realm) {
+  public Future<java.util.List<ListObjectAnalytics>> getListsForRealm(Realm realm) {
 
 
     String selectListsForRealmSql = "SELECT * FROM " +
@@ -330,9 +330,9 @@ public class ListProvider {
          * the {@link CompositeFuture#all(java.util.List) all function} does not
          * take other thing than a raw future
          */
-        List<Future<ListItemAnalytics>> futurePublications = new ArrayList<>();
+        List<Future<ListObjectAnalytics>> futurePublications = new ArrayList<>();
         for (Row row : rowSet) {
-          Future<ListItemAnalytics> futurePublication = getListFromRow(row, null, realm, ListItemAnalytics.class);
+          Future<ListObjectAnalytics> futurePublication = getListFromRow(row, null, realm, ListObjectAnalytics.class);
           futurePublications.add(futurePublication);
         }
 
@@ -343,12 +343,12 @@ public class ListProvider {
         return Future
           .all(futurePublications)
           .onFailure(FailureStatic::failFutureWithTrace)
-          .map(CompositeFuture::<ListItemAnalytics>list);
+          .map(CompositeFuture::<ListObjectAnalytics>list);
       });
 
   }
 
-  private <T extends ListItem> Future<T> getListFromRow(Row row, App knownApp, Realm knownRealm, Class<T> aClass) {
+  private <T extends ListObject> Future<T> getListFromRow(Row row, App knownApp, Realm knownRealm, Class<T> aClass) {
 
 
     Realm appRealm = knownRealm;
@@ -392,8 +392,8 @@ public class ListProvider {
 
             JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
             T listItem = Json.decodeValue(jsonAppData.toBuffer(), aClass);
-            if (listItem instanceof ListItemAnalytics) {
-              ListItemAnalytics listItemAnalytics = (ListItemAnalytics) listItem;
+            if (listItem instanceof ListObjectAnalytics) {
+              ListObjectAnalytics listItemAnalytics = (ListObjectAnalytics) listItem;
               JsonObject jsonAnalytics = Postgres.getFromJsonB(row, ANALYTICS_COLUMN);
               Integer userCount = 0;
               Integer userInCount = 0;
@@ -444,7 +444,7 @@ public class ListProvider {
 
   }
 
-  public <T extends ListItem> Future<T> getListById(long listId, Realm realm, Class<T> aClass) {
+  public <T extends ListObject> Future<T> getListById(long listId, Realm realm, Class<T> aClass) {
 
     String sql = "SELECT * " +
       "FROM \n" +
@@ -475,7 +475,7 @@ public class ListProvider {
    * @return the list created
    */
 
-  public Future<ListItem> postList(ListBody listPostBody, App app) {
+  public Future<ListObject> postList(ListBody listPostBody, App app) {
 
 
     /**
@@ -490,25 +490,25 @@ public class ListProvider {
 
     return futureUser
       .compose(user -> {
-        ListItem listItem = new ListItem();
-        listItem.setRealm(app.getRealm());
-        listItem.setName(listPostBody.getListName());
-        listItem.setTitle(listPostBody.getListTitle());
-        listItem.setDescription(listPostBody.getListDescription());
-        listItem.setHandle(listPostBody.getListHandle());
-        listItem.setOwnerUser(user); // may be null
-        listItem.setOwnerApp(app);
-        return this.insertList(listItem);
+        ListObject listObject = new ListObject();
+        listObject.setRealm(app.getRealm());
+        listObject.setName(listPostBody.getListName());
+        listObject.setTitle(listPostBody.getListTitle());
+        listObject.setDescription(listPostBody.getListDescription());
+        listObject.setHandle(listPostBody.getListHandle());
+        listObject.setOwnerUser(user); // may be null
+        listObject.setOwnerApp(app);
+        return this.insertList(listObject);
       });
 
   }
 
 
-  public Future<ListItem> getListByGuidObject(Guid listGuid) {
+  public Future<ListObject> getListByGuidObject(Guid listGuid) {
 
     return this.apiApp.getRealmProvider()
       .getRealmFromLocalId(listGuid.getRealmOrOrganizationId())
-      .compose(realm -> getListById(listGuid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm, ListItem.class));
+      .compose(realm -> getListById(listGuid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm, ListObject.class));
   }
 
   public Future<java.util.List<ListSummary>> getListsSummary(Realm realm) {
@@ -561,7 +561,7 @@ public class ListProvider {
       });
   }
 
-  public Future<java.util.List<ListItemAnalytics>> getListsForApp(App app) {
+  public Future<java.util.List<ListObjectAnalytics>> getListsForApp(App app) {
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " where \n" +
@@ -576,16 +576,16 @@ public class ListProvider {
          * the {@link CompositeFuture#all(java.util.List)}  all function } does not
          * take other thing than a raw future
          */
-        java.util.List<Future<ListItemAnalytics>> futureLists = new ArrayList<>();
+        java.util.List<Future<ListObjectAnalytics>> futureLists = new ArrayList<>();
         for (Row row : listRows) {
-          Future<ListItemAnalytics> futurePublication = getListFromRow(row, app, app.getRealm(), ListItemAnalytics.class);
+          Future<ListObjectAnalytics> futurePublication = getListFromRow(row, app, app.getRealm(), ListObjectAnalytics.class);
           futureLists.add(futurePublication);
         }
 
         return Future
           .all(futureLists)
           .onFailure(FailureStatic::failFutureWithTrace)
-          .map(CompositeFuture::<ListItemAnalytics>list);
+          .map(CompositeFuture::<ListObjectAnalytics>list);
       });
   }
 
@@ -593,7 +593,7 @@ public class ListProvider {
     return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(ListProvider.LIST_GUID_PREFIX, listGuid);
   }
 
-  public <T extends ListItem> Future<T> getListByHandle(String listHandle, Realm realm, Class<T> aClass) {
+  public <T extends ListObject> Future<T> getListByHandle(String listHandle, Realm realm, Class<T> aClass) {
     String sql = "SELECT * " +
       "FROM \n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
@@ -651,7 +651,7 @@ public class ListProvider {
    * Utility function to return a list via a Guid identifier
    * @param listIdentifier - a guid hash
    */
-  public Future<ListItem> getListByGuidHashIdentifier(String listIdentifier) {
+  public Future<ListObject> getListByGuidHashIdentifier(String listIdentifier) {
     Guid listGuid;
     try {
       listGuid = this.getGuidObject(listIdentifier);
@@ -665,7 +665,7 @@ public class ListProvider {
     return this.getListByGuidObject(listGuid);
   }
 
-  public <T extends ListItem> Future<T> getListByIdentifier(RoutingContext routingContext, AuthUserScope scope, Class<T> aClass) {
+  public <T extends ListObject> Future<T> getListByIdentifier(RoutingContext routingContext, AuthUserScope scope, Class<T> aClass) {
     RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
     String listIdentifier;
     try {
@@ -707,8 +707,8 @@ public class ListProvider {
       });
   }
 
-  public Future<Void> deleteByList(ListItem listItem) {
-    return deleteById(listItem.getLocalId(), listItem.getRealm());
+  public Future<Void> deleteByList(ListObject listObject) {
+    return deleteById(listObject.getLocalId(), listObject.getRealm());
   }
 
 

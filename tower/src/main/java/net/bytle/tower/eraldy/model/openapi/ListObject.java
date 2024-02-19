@@ -10,7 +10,7 @@ import java.util.Objects;
  * A list where a user can register.  Example: * Newsletter * Sign up to a waiting list
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListItem   {
+public class ListObject   {
 
 
   protected Long localId;
@@ -39,7 +39,7 @@ public class ListItem   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public ListItem () {
+  public ListObject () {
   }
 
   /**
@@ -211,8 +211,8 @@ public class ListItem   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ListItem listItem = (ListItem) o;
-    return Objects.equals(guid, listItem.guid);
+    ListObject listObject = (ListObject) o;
+    return Objects.equals(guid, listObject.guid);
   }
 
   @Override

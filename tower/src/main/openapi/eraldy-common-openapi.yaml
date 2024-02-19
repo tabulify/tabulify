@@ -379,7 +379,7 @@ components:
           format: uri
           description: An image avatar of a user
           example: 'https://en.gravatar.com/userimage/john.doe.png'
-    ListItem:
+    ListObject:
       # not List because this is a reserved java word
       # ListItem and not List because list is a language reserved word
       # (for openapi generator and will create a ModelList class)
@@ -612,7 +612,7 @@ components:
       # we use listUser as name and not listRegistration or listSubscription
       # because it can be confusing as it depends on the type of list
       # ListUser = A user in a list
-      title: A user in a list (A listing)
+      title: A user in a list (A listing or list item)
       description: |
         A user in a list (ie a subscription or a registration)
       type: object
@@ -627,7 +627,7 @@ components:
           $ref: '#/components/schemas/ListUserStatus'
         list:
           description: The list
-          $ref: '#/components/schemas/ListItem'
+          $ref: '#/components/schemas/ListObject'
         user:
           description: The user (subscriber, registered)
           $ref: '#/components/schemas/User'
@@ -919,7 +919,7 @@ components:
             (derived from the database id)
         name:
           type: string
-          description: A shor description of the realm
+          description: A short description of the realm
         organization:
           $ref: '#/components/schemas/Organization'
           description: The organization owner
@@ -999,10 +999,10 @@ components:
               type: string
               format: date-time
               description: the last active time (should be on date level)
-    ListItemAnalytics:
+    ListObjectAnalytics:
       description: "List Analytics (count, ...)"
       allOf:
-        - $ref: "#/components/schemas/ListItem"
+        - $ref: "#/components/schemas/ListObject"
         - type: object
           properties:
             userCount:

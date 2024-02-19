@@ -67,7 +67,7 @@ public class Realm   {
   }
 
   /**
-  * @return name A shor description of the realm
+  * @return name A short description of the realm
   */
   @JsonProperty("name")
   public String getName() {
@@ -75,7 +75,7 @@ public class Realm   {
   }
 
   /**
-  * @param name A shor description of the realm
+  * @param name A short description of the realm
   */
   @SuppressWarnings("unused")
   public void setName(String name) {

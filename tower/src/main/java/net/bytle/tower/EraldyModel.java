@@ -311,9 +311,9 @@ public class EraldyModel {
 
   /**
    * A private utility function used at build time to test if the URI is valid.
-   * That's why the signature does not have the {@link ListItem} object but 2 strings
+   * That's why the signature does not have the {@link ListObject} object but 2 strings
    * <p>
-   * The public function {@link #getMemberListRegistrationPath(ListItem)} does have a {@link ListItem}
+   * The public function {@link #getMemberListRegistrationPath(ListObject)} does have a {@link ListObject}
    * as signature
    */
   private URI getMemberListRegistrationPath(String appGuid, String listGuid) throws URISyntaxException {
@@ -322,9 +322,9 @@ public class EraldyModel {
 
   }
 
-  public URI getMemberListRegistrationPath(ListItem listItem) {
+  public URI getMemberListRegistrationPath(ListObject listObject) {
     try {
-      return getMemberListRegistrationPath(listItem.getOwnerApp().getGuid(), listItem.getGuid());
+      return getMemberListRegistrationPath(listObject.getOwnerApp().getGuid(), listObject.getGuid());
     } catch (URISyntaxException e) {
       throw new InternalException("The URI should have been tested at build time of Eraldy Model", e);
     }

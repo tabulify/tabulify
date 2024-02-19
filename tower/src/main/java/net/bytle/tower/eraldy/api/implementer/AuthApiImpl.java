@@ -82,7 +82,7 @@ public class AuthApiImpl implements AuthApi {
     }
 
     listGuid = routingContextWrapper.getRequestQueryParameterAsString(AuthQueryProperty.LIST_GUID.toString());
-    Future<ListItem> futureList;
+    Future<ListObject> futureList;
     if (listGuid != null) {
       futureList = this.apiApp.getListProvider().getListByGuidHashIdentifier(listGuid);
     } else {

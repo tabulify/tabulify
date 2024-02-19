@@ -138,7 +138,7 @@ public class ListApiImpl implements ListApi {
 
     ListProvider listProvider = this.apiApp.getListProvider();
     return listProvider
-      .getListByIdentifier(routingContext, AuthUserScope.LIST_DELETE, ListItem.class)
+      .getListByIdentifier(routingContext, AuthUserScope.LIST_DELETE, ListObject.class)
       .compose(listItem -> {
 
         if (listItem == null) {
@@ -157,10 +157,10 @@ public class ListApiImpl implements ListApi {
 
 
   @Override
-  public Future<ApiResponse<ListItemAnalytics>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier) {
+  public Future<ApiResponse<ListObjectAnalytics>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier) {
     ListProvider listProvider = this.apiApp.getListProvider();
     return listProvider
-      .getListByIdentifier(routingContext, AuthUserScope.LIST_GET, ListItemAnalytics.class)
+      .getListByIdentifier(routingContext, AuthUserScope.LIST_GET, ListObjectAnalytics.class)
       .compose(listItemAnalytics -> {
         if (listItemAnalytics == null) {
           return Future.failedFuture(
@@ -171,7 +171,7 @@ public class ListApiImpl implements ListApi {
               .build()
           );
         }
-        ApiResponse<ListItemAnalytics> apiResult = new ApiResponse<>(listItemAnalytics)
+        ApiResponse<ListObjectAnalytics> apiResult = new ApiResponse<>(listItemAnalytics)
           .setMapper(listProvider.getApiMapper());
         return Future.succeededFuture(apiResult);
       });
@@ -233,9 +233,9 @@ public class ListApiImpl implements ListApi {
 
 
   @Override
-  public Future<ApiResponse<ListItem>> listListPatch(RoutingContext routingContext, String listIdentifier, ListBody listBody, String realmIdentifier) {
+  public Future<ApiResponse<ListObject>> listListPatch(RoutingContext routingContext, String listIdentifier, ListBody listBody, String realmIdentifier) {
     ListProvider listProvider = this.apiApp.getListProvider();
-    return listProvider.getListByIdentifier(routingContext, AuthUserScope.LIST_PATCH, ListItem.class)
+    return listProvider.getListByIdentifier(routingContext, AuthUserScope.LIST_PATCH, ListObject.class)
       .compose(list -> {
         String listHandle = listBody.getListHandle();
         if (listHandle != null) {

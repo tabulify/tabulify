@@ -503,7 +503,7 @@ public class AuthProvider {
       });
   }
 
-  public Future<ListItem> checkListAuthorization(RoutingContext routingContext, ListItem list, AuthUserScope authUserScope) {
+  public Future<ListObject> checkListAuthorization(RoutingContext routingContext, ListObject list, AuthUserScope authUserScope) {
     return this.checkRealmAuthorization(routingContext, list.getRealm(), authUserScope)
       .compose(realm -> Future.succeededFuture(list));
   }

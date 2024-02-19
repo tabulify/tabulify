@@ -9,7 +9,7 @@ import java.util.Objects;
  * List Analytics (count, ...)
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListItemAnalytics extends ListItem  {
+public class ListObjectAnalytics extends ListObject  {
 
 
   protected Integer userCount;
@@ -22,7 +22,7 @@ public class ListItemAnalytics extends ListItem  {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public ListItemAnalytics () {
+  public ListObjectAnalytics () {
   }
 
   /**
@@ -66,10 +66,10 @@ public class ListItemAnalytics extends ListItem  {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ListItemAnalytics listItemAnalytics = (ListItemAnalytics) o;
+    ListObjectAnalytics listObjectAnalytics = (ListObjectAnalytics) o;
     return super.equals(o) &&
 
-            Objects.equals(userCount, listItemAnalytics.userCount) && Objects.equals(userInCount, listItemAnalytics.userInCount);
+            Objects.equals(userCount, listObjectAnalytics.userCount) && Objects.equals(userInCount, listObjectAnalytics.userInCount);
   }
 
   @Override

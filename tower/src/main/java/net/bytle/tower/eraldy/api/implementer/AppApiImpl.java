@@ -38,7 +38,7 @@ public class AppApiImpl implements AppApi {
   }
 
   @Override
-  public Future<ApiResponse<List<ListItemAnalytics>>> appAppIdentifierListsGet(RoutingContext routingContext, String appIdentifier) {
+  public Future<ApiResponse<List<ListObjectAnalytics>>> appAppIdentifierListsGet(RoutingContext routingContext, String appIdentifier) {
 
     ListProvider listProvider = this.apiApp.getListProvider();
     Future<Realm> realmFuture;
@@ -63,7 +63,7 @@ public class AppApiImpl implements AppApi {
   }
 
   @Override
-  public Future<ApiResponse<ListItem>> appAppListPost(RoutingContext routingContext, String appIdentifier, ListBody listBody, String realmIdentifier) {
+  public Future<ApiResponse<ListObject>> appAppListPost(RoutingContext routingContext, String appIdentifier, ListBody listBody, String realmIdentifier) {
 
     RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
     try {

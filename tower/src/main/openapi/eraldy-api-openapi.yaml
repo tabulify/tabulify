@@ -88,6 +88,111 @@ components:
           schema:
             $ref: '#/components/schemas/PasswordOnly'
   schemas:
+    Drive:
+      description: A drive for a file is a container
+      type: object
+      properties:
+        localId:
+          type: integer
+          format: int64
+          description: The drive id in the database
+        guid:
+          type: string
+          format: int64
+          description: |
+            The public id
+            (derived from the database/local id)
+        name:
+          type: string
+          description: A short description of the drive
+        app:
+          description: For publication, the drive should belongs to an app.
+          $ref: './eraldy-common-openapi.yaml#/components/schemas/App'
+        realm:
+          $ref: './eraldy-common-openapi.yaml#/components/schemas/Realm'
+    FileObject:
+      description: A file
+      type: object
+      properties:
+        localId:
+          type: integer
+          format: int64
+          description: The file id in the database (unique inside the realm)
+        guid:
+          type: string
+          format: int64
+          description: |
+            The public id
+            (derived from the database/local id)
+        name:
+          type: string
+          description: The file name
+        path:
+          type: string
+          description: The full path (derived)
+        fileType:
+          type: integer
+          description: The type of file (regular or directory)
+        mimeType:
+          type: string
+          description: The mime type of the content (to parse it)
+        thirdType:
+          type: string
+          description: |
+            A third functional type for the content
+            For instance:
+            * an xml file can represent a document or a fragment.
+            * a yaml file can be an open api file
+        parentFile:
+          $ref: '#/components/schemas/FileObject'
+        drive:
+          $ref: '#/components/schemas/Drive'
+        creationTime:
+          description: The creation time of the listing
+          type: string
+          format: date-time
+        modificationTime:
+          description: The last modification time of the listing
+          type: string
+          format: date-time
+    Mailing:
+      description: A mailing represents the sending of an email to one or more users
+      type: object
+      required:
+        - guid
+      x-fields-to-string:
+        - guid
+        - name
+      properties:
+        localId:
+          type: integer
+          format: int64
+          description: The mailing id in the database
+        guid:
+          type: string
+          format: int64
+          description: |
+            The public id
+            (derived from the database/local id)
+        name:
+          type: string
+          description: A short description of the mailing
+        senderUser:
+          description: |
+            The sender of the email (ie the from field in the message)
+            On a smtp level, this is not the sender but the author.
+          $ref: './eraldy-common-openapi.yaml#/components/schemas/OrganizationUser'
+        emailTemplate:
+          description: The body of the email in a template format
+        recipientList:
+          description: |
+            The list of users that are recipients.
+            They are:
+            - the to field in the message
+            - the RCPT field in smtp
+          $ref: './eraldy-common-openapi.yaml#/components/schemas/ListObject'
+        realm:
+          $ref: './eraldy-common-openapi.yaml#/components/schemas/Realm'
     ListImportPostResponse:
       description: |
         The successful response to the submission of a import job for a list
@@ -598,7 +703,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListItemAnalytics'
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListObjectAnalytics'
         '403':
           description: "Not authenticated"
   /realm/{realmIdentifier}/users:
@@ -1110,7 +1215,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './eraldy-common-openapi.yaml#/components/schemas/ListItemAnalytics'
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/ListObjectAnalytics'
     patch:
       operationId: listListPatch
       summary: |
@@ -1146,7 +1251,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './eraldy-common-openapi.yaml#/components/schemas/ListItem'
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/ListObject'
     delete:
       operationId: listListDelete
       summary: Delete the list
@@ -1208,7 +1313,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './eraldy-common-openapi.yaml#/components/schemas/ListItem'
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/ListObject'
   /app/{appIdentifier}/lists:
     get:
       operationId: appAppIdentifierListsGet
@@ -1233,7 +1338,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListItemAnalytics'
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListObjectAnalytics'
         '403':
           description: "Not authenticated"
   /lists/summary:

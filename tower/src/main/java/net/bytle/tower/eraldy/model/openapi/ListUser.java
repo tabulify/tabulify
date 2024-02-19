@@ -17,7 +17,7 @@ public class ListUser   {
 
   protected ListUserStatus status;
 
-  protected ListItem list;
+  protected ListObject list;
 
   protected User user;
 
@@ -84,7 +84,7 @@ public class ListUser   {
   * @return list
   */
   @JsonProperty("list")
-  public ListItem getList() {
+  public ListObject getList() {
     return list;
   }
 
@@ -92,7 +92,7 @@ public class ListUser   {
   * @param list Set list
   */
   @SuppressWarnings("unused")
-  public void setList(ListItem list) {
+  public void setList(ListObject list) {
     this.list = list;
   }
 

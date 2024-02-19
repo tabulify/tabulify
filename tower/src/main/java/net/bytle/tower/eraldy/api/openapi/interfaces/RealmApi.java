@@ -22,7 +22,7 @@ public interface RealmApi  {
     /**
      * Get the lists for an realm
     */
-    Future<ApiResponse<List<ListItemAnalytics>>> realmRealmIdentifierListsGet(RoutingContext routingContext, String realmIdentifier);
+    Future<ApiResponse<List<ListObjectAnalytics>>> realmRealmIdentifierListsGet(RoutingContext routingContext, String realmIdentifier);
 
     /**
      * Get users for the realm for pagination

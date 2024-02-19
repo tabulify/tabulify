@@ -7,7 +7,7 @@ import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.eraldy.model.openapi.ListItem;
+import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.ListUserPostBody;
 import net.bytle.tower.util.Env;
 import net.bytle.type.UriEnhanced;
@@ -42,12 +42,12 @@ public class ListRegistrationValidationToken {
   private String userEmail;
   private final String listGuid;
 
-  public ListRegistrationValidationToken(ListItem listItem) {
-    this.listGuid = listItem.getGuid();
+  public ListRegistrationValidationToken(ListObject listObject) {
+    this.listGuid = listObject.getGuid();
   }
 
-  public static config config(ListItem listItem) {
-    return new config(listItem);
+  public static config config(ListObject listObject) {
+    return new config(listObject);
   }
 
   @JsonProperty("optInIp")
@@ -83,8 +83,8 @@ public class ListRegistrationValidationToken {
       return token;
     }
 
-    public config(ListItem listItem) {
-      this.token = new ListRegistrationValidationToken(listItem);
+    public config(ListObject listObject) {
+      this.token = new ListRegistrationValidationToken(listObject);
     }
 
     public config setOptInIp(String optInIp) {

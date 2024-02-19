@@ -55,7 +55,7 @@ public class RealmApiImpl implements RealmApi {
   }
 
   @Override
-  public Future<ApiResponse<List<ListItemAnalytics>>> realmRealmIdentifierListsGet(RoutingContext routingContext, String realmIdentifier) {
+  public Future<ApiResponse<List<ListObjectAnalytics>>> realmRealmIdentifierListsGet(RoutingContext routingContext, String realmIdentifier) {
     ListProvider listProvider = this.apiApp.getListProvider();
     AuthProvider authProvider = this.apiApp.getAuthProvider();
     return this.apiApp.getRealmProvider()
