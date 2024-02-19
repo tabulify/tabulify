@@ -5,7 +5,6 @@ import io.vertx.core.WorkerExecutor;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.healthchecks.Status;
 import io.vertx.ext.web.FileUpload;
-import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
 import net.bytle.fs.Fs;
@@ -282,7 +281,7 @@ public class ListImportFlow extends TowerService implements WebFlow {
       listImportJobStatus.setMaxRowCountToProcess(5000);
     }
     Objects.requireNonNull(listImportJobStatus.getListUserActionCode());
-    if(listImportJobStatus.getUserActionCode()==null){
+    if (listImportJobStatus.getUserActionCode() == null) {
       listImportJobStatus.setUserActionCode(ListImportUserAction.UPDATE);
     }
     Objects.requireNonNull(listImportJobStatus.getUploadedFileName());
@@ -332,24 +331,12 @@ public class ListImportFlow extends TowerService implements WebFlow {
     this.apiApp = apiApp;
     this.server = apiApp.getHttpServer().getServer();
 
-    LOGGER.info("Runtime Db Migration");
-    JdbcConnectionInfo postgresDatabaseConnectionInfo = this.server.getPostgresDatabaseConnectionInfo();
-    JdbcSchemaManager jdbcSchemaManager = JdbcSchemaManager.create(postgresDatabaseConnectionInfo);
-    String schema = JdbcSchemaManager.getSchemaFromHandle("runtime");
-    JdbcSchema realmSchema = JdbcSchema.builder()
-      .setLocation("classpath:db/cs-runtime")
-      .setSchema(schema)
-      .build();
-    try {
-      jdbcSchemaManager.migrate(realmSchema);
-    } catch (DbMigrationException e) {
-      throw new InternalException("The runtime database migration failed", e);
-    }
-
-    importJobQueue = WriteThroughQueue.builder(ListImportJob.class, "list-import")
-      .setPool(server.getPostgresDatabaseConnectionPool())
-      .setSerializer(new ListImportJobSerializer(this))
-      .build();
+    importJobQueue = this.server.getWriteThroughCollection()
+      .createQueue(
+        ListImportJob.class,
+        "list-import",
+        new ListImportJobSerializer(this)
+      );
 
     /**
      * Config

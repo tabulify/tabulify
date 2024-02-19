@@ -29,7 +29,7 @@ public class WriteThroughQueueDatabaseSink<E> {
 
   private final String removeHeadElementSql;
 
-  final static String queueTable = "cs_runtime.queues";
+  final String queueTable;
   private final WriteThroughElementSerializer<E> serializer;
   private final String initSelectAllSql;
   private final String OBJECT_ID_COLUMN = "object_id";
@@ -38,7 +38,8 @@ public class WriteThroughQueueDatabaseSink<E> {
   public WriteThroughQueueDatabaseSink(WriteThroughQueue.Builder<E> queueBuilder) {
     this.queueName = queueBuilder.queueName;
     serializer = queueBuilder.serializer;
-    this.pool = queueBuilder.pool;
+    this.pool = queueBuilder.writeThroughCollection.getPool();
+    this.queueTable = queueBuilder.writeThroughCollection.getTableSchema()+".queues";
     deleteSql = "delete from " + queueTable + " where queue_name = $1 and object_id = $2";
     clearSql = "delete from " + queueTable + " where queue_name = $1";
     addSql = "insert into " + queueTable + " (queue_name, " + OBJECT_ID_COLUMN + ", creation_time, " + DATA_COLUMN + ") values($1, $2, $3, $4)";

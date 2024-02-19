@@ -1,6 +1,5 @@
 package net.bytle.vertx.collections;
 
-import io.vertx.pgclient.PgPool;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -23,8 +22,8 @@ public class WriteThroughQueue<E> implements Queue<E> {
   }
 
   @SuppressWarnings("unused")
-  public static <E> Builder<E> builder(Class<E> clazz, String name) {
-    return new Builder<>(name);
+  public static <E> Builder<E> builder(WriteThroughCollection writeThroughCollection, Class<E> clazz, String name) {
+    return new Builder<>(writeThroughCollection, name);
   }
 
   @Override
@@ -150,17 +149,12 @@ public class WriteThroughQueue<E> implements Queue<E> {
   public static class Builder<E> {
 
     final String queueName;
-    PgPool pool;
+    final WriteThroughCollection writeThroughCollection;
     WriteThroughElementSerializer<E> serializer;
 
-    public Builder(String name) {
+    public Builder(WriteThroughCollection writeThroughCollection, String name) {
       this.queueName = name;
-    }
-
-    public <E1 extends E> Builder<E1> setPool(PgPool pool) {
-      @SuppressWarnings("unchecked") Builder<E1> self = (Builder<E1>) this;
-      this.pool = pool;
-      return self;
+      this.writeThroughCollection = writeThroughCollection;
     }
 
     public <E1 extends E> Builder<E1> setSerializer(WriteThroughElementSerializer<E> serializer) {
@@ -169,7 +163,6 @@ public class WriteThroughQueue<E> implements Queue<E> {
       return self;
     }
     public WriteThroughQueue<E> build() {
-      assert pool != null;
       assert serializer != null;
       return new WriteThroughQueue<>(this);
     }

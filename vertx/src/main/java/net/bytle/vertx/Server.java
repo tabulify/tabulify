@@ -12,6 +12,7 @@ import net.bytle.exception.NullValueException;
 import net.bytle.vertx.analytics.AnalyticsTracker;
 import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
 import net.bytle.vertx.collections.MapDb;
+import net.bytle.vertx.collections.WriteThroughCollection;
 import net.bytle.vertx.future.TowerFutures;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -71,6 +72,7 @@ public class Server implements AutoCloseable {
   private MapDb mapDb;
   private final List<TowerService> services = new ArrayList<>();
   private TowerDnsClient dnsClient;
+  private WriteThroughCollection writeThroughCollection;
 
   Server(builder builder) {
 
@@ -247,7 +249,14 @@ public class Server implements AutoCloseable {
   }
 
   public List<TowerService> getServices() {
-      return this.services;
+    return this.services;
+  }
+
+  public WriteThroughCollection getWriteThroughCollection() {
+    if (this.writeThroughCollection == null) {
+      throw new InternalException("Write Through Collection is not enabled");
+    }
+    return this.writeThroughCollection;
   }
 
 
@@ -272,6 +281,7 @@ public class Server implements AutoCloseable {
     private boolean enableMapdb = false;
     private boolean enableDnsClient = false;
     private ServerHealth serverHealth;
+    private boolean enableWriteThroughCollection = false;
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
       this.name = name;
@@ -413,6 +423,13 @@ public class Server implements AutoCloseable {
         LOGGER.info("MapDb disabled");
       }
 
+      if (this.enableWriteThroughCollection) {
+        LOGGER.info("Write Through Collection enabled");
+        server.writeThroughCollection = new WriteThroughCollection(server);
+      } else {
+        LOGGER.info("Write Through Collection disabled");
+      }
+
       if (this.enableAnalytics) {
         LOGGER.info("Analytics tracker enabled");
         server.analyticsTracker = AnalyticsTracker.createFromServer(server);
@@ -471,6 +488,15 @@ public class Server implements AutoCloseable {
       return this;
     }
 
+    /**
+     * Add a write-through to database runtime collection
+     * capabilities
+     * If enabled, this service will create a schema called cs_collection
+     */
+    public Server.builder enableWriteThroughCollection() {
+      this.enableWriteThroughCollection = true;
+      return this;
+    }
 
     /**
      * Disable jackson time handling
