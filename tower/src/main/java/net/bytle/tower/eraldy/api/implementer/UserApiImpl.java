@@ -110,7 +110,8 @@ public class UserApiImpl implements UserApi {
 
   @Override
   public Future<ApiResponse<User>> userGuidGet(RoutingContext routingContext, String guid) {
-    return apiApp.getUserProvider()
+    UserProvider userProvider = apiApp.getUserProvider();
+    return userProvider
       .getUserByGuid(guid, User.class, null)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(user -> {
@@ -122,7 +123,7 @@ public class UserApiImpl implements UserApi {
               .build()
           );
         }
-        ApiResponse<User> apiResponse = new ApiResponse<>(user);
+        ApiResponse<User> apiResponse = new ApiResponse<>(user).setMapper(userProvider.getApiMapper());
         return Future.succeededFuture(apiResponse);
       });
   }
