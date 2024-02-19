@@ -141,8 +141,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                     String timeZoneId = TimeZoneUtil.getTimeZoneWithValidation(timeZoneString).getID();
                     newUser.setTimeZone(timeZoneId);
                   } catch (TimeZoneCast e) {
-                    // bad zone id
-                    this.buildStatusMessage("The timezone (" + timeZoneString + ") is not a valid time zone. Skipped.");
+                    return Future.failedFuture(new CastException("The timezone (" + timeZoneString + ") is not a valid time zone. Skipped.", e));
                   }
                 }
                 newUser.setRealm(list.getRealm());
@@ -150,77 +149,86 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                 return userProvider.insertUserAndTrackEvent(newUser, FlowType.LIST_IMPORT);
               }
             })
-            .compose(user -> {
-              this.userGuid = user.getGuid();
-              ListUserProvider listUserProvider = this.listImportJob.getListImportFlow().getApp().getListRegistrationProvider();
-              return listUserProvider.
-                getListUsersByListAndUser(list, user)
-                .compose(listUser -> {
-                  if (listUser != null) {
-                    this.listUserStatus = ListImportListUserStatus.NOTHING;
-                    this.listUserGuid = listUser.getGuid();
-                    return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
-                  }
-                  /**
-                   * Action OUT not yet implemented
-                   */
-                  if (this.listImportJob.getListUserAction() != ListImportListUserAction.IN) {
-                    return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
-                  }
-                  ListUser listUserToInsert = new ListUser();
-                  listUserToInsert.setUser(user);
-                  listUserToInsert.setList(list);
-                  listUserToInsert.setInSourceId(ListUserSource.IMPORT);
-                  listUserToInsert.setStatus(ListUserStatus.OK);
-                  if (this.optInOrigin == null) {
-                    listUserToInsert.setInOptInOrigin(ListUserSource.IMPORT.toString());
-                  } else {
-                    listUserToInsert.setInOptInOrigin(this.optInOrigin);
-                  }
-                  if (optInIp != null) {
-                    DnsIp optInIpAsDnsIp;
-                    try {
-                      optInIpAsDnsIp = DnsIp.createFromString(optInIp);
-                    } catch (DnsException e) {
-                      return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInIp (" + optInIp + ") is not a valid ipv4 or ipv6.");
-                    }
-                    listUserToInsert.setInOptInIp(optInIpAsDnsIp.getAddress());
-                  }
-                  if (optInTime != null) {
-                    LocalDateTime optInTimeAsObject;
-                    try {
-                      optInTimeAsObject = Timestamp.createFromString(optInTime).toLocalDateTime();
-                    } catch (CastException e) {
-                      return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInTime (" + optInTime + ") is not a known time string.");
-                    }
-                    listUserToInsert.setInOptInTime(optInTimeAsObject);
-                  }
-                  if (confirmIp != null) {
-                    DnsIp confirmIpAsDnsIp;
-                    try {
-                      confirmIpAsDnsIp = DnsIp.createFromString(confirmIp);
-                    } catch (DnsException e) {
-                      return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmIp (" + confirmIp + ") is not a valid ipv4 or ipv6.");
-                    }
-                    listUserToInsert.setInOptInConfirmationIp(confirmIpAsDnsIp.getAddress());
-                  }
-                  if (confirmTime != null) {
-                    LocalDateTime confirmTimeAsObject;
-                    try {
-                      confirmTimeAsObject = Timestamp.createFromString(confirmTime).toLocalDateTime();
-                    } catch (CastException e) {
-                      return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmTime (" + confirmTime + ") is not a known time string.");
-                    }
-                    listUserToInsert.setInOptInConfirmationTime(confirmTimeAsObject);
-                  }
-                  return listUserProvider.insertRegistration(listUserToInsert)
-                    .compose(listRegistrationInserted -> {
-                      this.listUserStatus = ListImportListUserStatus.ADDED;
-                      this.listUserGuid = listRegistrationInserted.getGuid();
+            .compose(
+              user -> {
+                this.userGuid = user.getGuid();
+                ListUserProvider listUserProvider = this.listImportJob.getListImportFlow().getApp().getListRegistrationProvider();
+                return listUserProvider.
+                  getListUsersByListAndUser(list, user)
+                  .compose(listUser -> {
+                    if (listUser != null) {
+                      this.listUserStatus = ListImportListUserStatus.NOTHING;
+                      this.listUserGuid = listUser.getGuid();
                       return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
-                    });
-                });
-            }));
+                    }
+                    /**
+                     * Action OUT not yet implemented
+                     */
+                    if (this.listImportJob.getListUserAction() != ListImportListUserAction.IN) {
+                      return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
+                    }
+                    ListUser listUserToInsert = new ListUser();
+                    listUserToInsert.setUser(user);
+                    listUserToInsert.setList(list);
+                    listUserToInsert.setInSourceId(ListUserSource.IMPORT);
+                    listUserToInsert.setStatus(ListUserStatus.OK);
+                    if (this.optInOrigin == null) {
+                      listUserToInsert.setInOptInOrigin(ListUserSource.IMPORT.toString());
+                    } else {
+                      listUserToInsert.setInOptInOrigin(this.optInOrigin);
+                    }
+                    if (optInIp != null) {
+                      DnsIp optInIpAsDnsIp;
+                      try {
+                        optInIpAsDnsIp = DnsIp.createFromString(optInIp);
+                      } catch (DnsException e) {
+                        return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInIp (" + optInIp + ") is not a valid ipv4 or ipv6.");
+                      }
+                      listUserToInsert.setInOptInIp(optInIpAsDnsIp.getAddress());
+                    }
+                    if (optInTime != null) {
+                      LocalDateTime optInTimeAsObject;
+                      try {
+                        optInTimeAsObject = Timestamp.createFromString(optInTime).toLocalDateTime();
+                      } catch (CastException e) {
+                        return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInTime (" + optInTime + ") is not a known time string.");
+                      }
+                      listUserToInsert.setInOptInTime(optInTimeAsObject);
+                    }
+                    if (confirmIp != null) {
+                      DnsIp confirmIpAsDnsIp;
+                      try {
+                        confirmIpAsDnsIp = DnsIp.createFromString(confirmIp);
+                      } catch (DnsException e) {
+                        return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmIp (" + confirmIp + ") is not a valid ipv4 or ipv6.");
+                      }
+                      listUserToInsert.setInOptInConfirmationIp(confirmIpAsDnsIp.getAddress());
+                    }
+                    if (confirmTime != null) {
+                      LocalDateTime confirmTimeAsObject;
+                      try {
+                        confirmTimeAsObject = Timestamp.createFromString(confirmTime).toLocalDateTime();
+                      } catch (CastException e) {
+                        return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmTime (" + confirmTime + ") is not a known time string.");
+                      }
+                      listUserToInsert.setInOptInConfirmationTime(confirmTimeAsObject);
+                    }
+                    return listUserProvider.insertRegistration(listUserToInsert)
+                      .compose(listRegistrationInserted -> {
+                        this.listUserStatus = ListImportListUserStatus.ADDED;
+                        this.listUserGuid = listRegistrationInserted.getGuid();
+                        return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
+                      });
+                  });
+              },
+              err -> {
+                if (err instanceof CastException) {
+                  return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, err.getMessage());
+                }
+                return Future.failedFuture(err);
+              }
+            )
+          );
       });
   }
 
