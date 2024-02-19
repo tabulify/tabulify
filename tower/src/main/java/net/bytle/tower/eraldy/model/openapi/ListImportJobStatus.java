@@ -2,15 +2,12 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.api.implementer.flow.ListImportListUserAction;
-import net.bytle.tower.eraldy.api.implementer.flow.ListImportUserAction;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * This Jackson serializable object represents the request and the status of a job
- * that imports users for a list.
+ * This object represents the request job and the status of a job that imports users for a list. It&#39;s stored in the database
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutureListener {
@@ -18,13 +15,17 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
 
   protected String jobId;
 
+  protected String listGuid;
+
+  protected Integer maxRowCountToProcess;
+
   protected Integer statusCode;
 
   protected String statusMessage;
 
-  protected ListImportListUserAction listUserActionCode;
+  protected Integer listUserActionCode;
 
-  protected ListImportUserAction userActionCode;
+  protected Integer userActionCode;
 
   protected String uploadedFileName;
 
@@ -41,8 +42,6 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   protected LocalDateTime startTime;
 
   protected LocalDateTime endTime;
-  private String listGuid;
-  private Integer maxRowCountToProcess;
 
   /**
   * The empty constructor is
@@ -54,7 +53,7 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   }
 
   /**
-  * @return jobId The job id
+  * @return jobId The job id To get a guid, you need to add the list guid
   */
   @JsonProperty("jobId")
   public String getJobId() {
@@ -62,12 +61,43 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   }
 
   /**
-  * @param jobId The job id
-   *              To get the guid, add the list guid
+  * @param jobId The job id To get a guid, you need to add the list guid
   */
   @SuppressWarnings("unused")
   public void setJobId(String jobId) {
     this.jobId = jobId;
+  }
+
+  /**
+  * @return listGuid The list guid
+  */
+  @JsonProperty("listGuid")
+  public String getListGuid() {
+    return listGuid;
+  }
+
+  /**
+  * @param listGuid The list guid
+  */
+  @SuppressWarnings("unused")
+  public void setListGuid(String listGuid) {
+    this.listGuid = listGuid;
+  }
+
+  /**
+  * @return maxRowCountToProcess the maximum row to import Above this limit, the rows are ignored
+  */
+  @JsonProperty("maxRowCountToProcess")
+  public Integer getMaxRowCountToProcess() {
+    return maxRowCountToProcess;
+  }
+
+  /**
+  * @param maxRowCountToProcess the maximum row to import Above this limit, the rows are ignored
+  */
+  @SuppressWarnings("unused")
+  public void setMaxRowCountToProcess(Integer maxRowCountToProcess) {
+    this.maxRowCountToProcess = maxRowCountToProcess;
   }
 
   /**
@@ -103,18 +133,18 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   }
 
   /**
-  * @return listUserActionCode The action on the list user: 0: add (in), 1: delete (out)
+  * @return listUserActionCode The action on the user in the list (list user): 0: add (in), 1: delete (out)
   */
   @JsonProperty("listUserActionCode")
-  public ListImportListUserAction getListUserActionCode() {
+  public Integer getListUserActionCode() {
     return listUserActionCode;
   }
 
   /**
-  * @param listUserActionCode The action on the list user (ie add (in) or delete (out))
+  * @param listUserActionCode The action on the user in the list (list user): 0: add (in), 1: delete (out)
   */
   @SuppressWarnings("unused")
-  public void setListUserActionCode(ListImportListUserAction listUserActionCode) {
+  public void setListUserActionCode(Integer listUserActionCode) {
     this.listUserActionCode = listUserActionCode;
   }
 
@@ -122,7 +152,7 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   * @return userActionCode The action on the user: 0: no update (create only), 1: update
   */
   @JsonProperty("userActionCode")
-  public ListImportUserAction getUserActionCode() {
+  public Integer getUserActionCode() {
     return userActionCode;
   }
 
@@ -130,7 +160,7 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   * @param userActionCode The action on the user: 0: no update (create only), 1: update
   */
   @SuppressWarnings("unused")
-  public void setUserActionCode(ListImportUserAction userActionCode) {
+  public void setUserActionCode(Integer userActionCode) {
     this.userActionCode = userActionCode;
   }
 
@@ -285,28 +315,6 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   @Override
   public String toString() {
     return jobId;
-  }
-
-  /**
-   * @return userActionCode The action on the user: 0: no update (create only), 1: update
-   */
-  @JsonProperty("listGuid")
-  public String getListGuid() {
-    return listGuid;
-  }
-
-  public ListImportJobStatus setListGuid(String listGuid) {
-    this.listGuid = listGuid;
-    return this;
-  }
-
-  @JsonProperty("maxRowCountToProcess")
-  public Integer getMaxRowCountToProcess() {
-    return maxRowCountToProcess;
-  }
-
-  public void setMaxRowCountToProcess(Integer finalRowCountToProcess) {
-    this.maxRowCountToProcess = finalRowCountToProcess;
   }
 
 }

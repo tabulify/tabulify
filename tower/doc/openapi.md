@@ -77,16 +77,7 @@ schema:
   type: integer
 ```
 
-### Default
-
-Default value is in the schema
-
-```yaml
-schema:
-  default: true
-```
-
-### Enum
+#### Enum
 
 Enum should be integer, not string as the label may change
 (Ref: https://openapi-generator.tech/docs/templating#all-generators-core)
@@ -121,6 +112,55 @@ to not be label dependent as it can change
       - 'asc'
       - 'desc'
 ```
+
+#### Custom Type
+
+As of now, bringing your own type works with
+the generator but not with Vertx and Open API validation.
+
+We get the following error:
+`allowedValues: array, boolean, integer, number, object, string`
+
+If you want to generate bean, you can but if you want to use them
+in the api, you can't.
+
+
+Example with the `TimeZone` custom type
+
+Steps:
+* 1 - in the openapi file define the type and the deserializer that extends `JsonDeserializer<TimeZone>`)
+```yaml
+schema:
+  TimeZone:
+  type: TimeZone
+  x-field-extra-annotation: '@com.fasterxml.jackson.databind.annotation.JsonSerialize(using = net.bytle.vertx.jackson.TimeZoneSerializer.class) @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = net.bytle.vertx.jackson.TimeZoneDeserializer.class)'
+  description: The timezone full name id
+  example: 'Europe/Amsterdam'
+user:
+  timeZone:
+    # ref is mandatory for vertx
+    # to avoid ValidationExceptionImpl: provided object should contain property $ref
+    $ref: '#components/schema/Timezone'
+```
+
+* 2 - in the configuration file
+```yaml
+schemaMappings:
+  TimeZone: "TimeZone" # The name of the type
+importMappings:
+  TimeZone: "java.util.TimeZone" # the string used in the import statement
+```
+
+### Default
+
+Default value is in the schema
+
+```yaml
+schema:
+  default: true
+```
+
+
 ### Rename / Refactor / Alias
 
 If the field name change, use the [jackson alias](json-jackson.md) with the `x-field-extra-annotation`
@@ -131,6 +171,7 @@ optInOrigin:
   type: string
   x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"optInUri"})'
 ```
+
 
 ### Data Type Migration
 

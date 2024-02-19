@@ -90,7 +90,7 @@ components:
   schemas:
     ListImportPostResponse:
       description: |
-        The succesful response to the submission of a import job for a list
+        The successful response to the submission of a import job for a list
       type: object
       properties:
         jobIdentifier:
@@ -133,7 +133,8 @@ components:
     ListImportJobStatus:
       type: object
       description: |
-        This object represents the status of a job that imports users for a list.
+        This object represents the request job and the status of a job that imports users for a list.
+        It's stored in the database
       required:
         - jobId
       x-implements:
@@ -141,9 +142,19 @@ components:
       properties:
         jobId:
           type: string
-          # the job id is not a guid, you also need the list guid
-          description: The job id
+          description: |
+            The job id
+            To get a guid, you need to add the list guid
           example: xmmmN
+        listGuid:
+          type: string
+          description: The list guid
+          example: 'lis-xxxxx'
+        maxRowCountToProcess:
+          type: integer
+          description: |
+            the maximum row to import
+            Above this limit, the rows are ignored
         statusCode:
           type: integer
           description: "The status code: -2: queued, -1: processing, 0: done, 1: fatal error, 2: quota reached"
@@ -151,11 +162,11 @@ components:
           type: string
           description: A description of any fatal error if any
         listUserActionCode:
+          description: "The action on the user in the list (list user): 0: add (in), 1: delete (out)"
           type: integer
-          description: "The action on the list user: 0: add (in), 1: delete (out)"
         userActionCode:
-          type: integer
           description: "The action on the user: 0: no update (create only), 1: update"
+          type: integer
         uploadedFileName:
           type: string
           description: The original file name

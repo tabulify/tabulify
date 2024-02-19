@@ -91,10 +91,21 @@ public class ListImportJob {
     this.jobId = listImportJobStatus.getJobId();
     this.storeId = this.listImportJobStatus.getListGuid() + "/lij-" + this.jobId;
     this.maxRowCountToProcess = listImportJobStatus.getMaxRowCountToProcess();
+
     // list user action
-    this.listUserAction = this.listImportJobStatus.getListUserActionCode();
+    Integer listUserActionCode = this.listImportJobStatus.getListUserActionCode();
+    try {
+      this.listUserAction = ListImportListUserAction.fromCode(listUserActionCode);
+    } catch (CastException e) {
+      throw new IllegalArgumentException("The list user action code is not valid (" + listUserActionCode + ")", e);
+    }
     // user action
-    this.userAction = this.listImportJobStatus.getUserActionCode();
+    Integer userActionCode = this.listImportJobStatus.getUserActionCode();
+    try {
+      this.userAction = ListImportUserAction.fromCode(userActionCode);
+    } catch (CastException e) {
+      throw new IllegalArgumentException("The user action code is not valid (" + userActionCode + ")", e);
+    }
 
   }
 
@@ -288,9 +299,8 @@ public class ListImportJob {
               case "confirmationip":
                 headerMapping.put(ListImportFlow.IMPORT_FIELD.CONFIRM_IP, i);
                 break;
-              case "location":
-              case "region":
-                headerMapping.put(ListImportFlow.IMPORT_FIELD.LOCATION, i);
+              case "timezone":
+                headerMapping.put(ListImportFlow.IMPORT_FIELD.TIMEZONE, i);
                 break;
               default:
                 break;
@@ -352,10 +362,10 @@ public class ListImportJob {
           String confirmTime = row[confirmTimeIndex];
           listImportJobRow.setConfirmTime(confirmTime);
         }
-        Integer locationIndex = headerMapping.get(ListImportFlow.IMPORT_FIELD.LOCATION);
-        if (locationIndex != null) {
-          String location = row[locationIndex];
-          listImportJobRow.setLocation(location);
+        Integer timeZoneIndex = headerMapping.get(ListImportFlow.IMPORT_FIELD.TIMEZONE);
+        if (timeZoneIndex != null) {
+          String timeZoneString = row[timeZoneIndex];
+          listImportJobRow.setTimeZone(timeZoneString);
         }
         listImportJobRows.add(listImportJobRow);
         int maxRowsProcessedByImport = this.getMaxRowCountToProcess();

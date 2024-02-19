@@ -282,7 +282,7 @@ public class ListImportFlow extends TowerService implements WebFlow {
     }
     Objects.requireNonNull(listImportJobStatus.getListUserActionCode());
     if (listImportJobStatus.getUserActionCode() == null) {
-      listImportJobStatus.setUserActionCode(ListImportUserAction.UPDATE);
+      listImportJobStatus.setUserActionCode(ListImportUserAction.UPDATE.getActionCode());
     }
     Objects.requireNonNull(listImportJobStatus.getUploadedFileName());
     /**
@@ -318,7 +318,7 @@ public class ListImportFlow extends TowerService implements WebFlow {
    * The fields in the import file
    */
   enum IMPORT_FIELD {
-    GIVEN_NAME, FAMILY_NAME, OPT_IN_TIME, OPT_IN_IP, CONFIRM_TIME, LOCATION, CONFIRM_IP, OPT_IN_ORIGIN, EMAIL_ADDRESS
+    GIVEN_NAME, FAMILY_NAME, OPT_IN_TIME, OPT_IN_IP, CONFIRM_TIME, TIMEZONE, CONFIRM_IP, OPT_IN_ORIGIN, EMAIL_ADDRESS
   }
 
   /**

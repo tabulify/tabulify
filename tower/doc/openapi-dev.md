@@ -1,7 +1,7 @@
 # How to develop
 
 ## About
-This page is a getting started on how to develop/modify the [applications](openapi.md)
+This page is a getting started on how to develop/modify the [openapi applications](openapi.md)
 
 ## Step by step
 

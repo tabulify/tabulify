@@ -41,6 +41,8 @@ public class User   {
 
   protected String location;
 
+  protected String timeZone;
+
   protected LocalDateTime creationTime;
 
   protected LocalDateTime modificationTime;
@@ -252,7 +254,7 @@ public class User   {
   }
 
   /**
-  * @return location The location of the user
+  * @return location The location of the user A free text that the user updates
   */
   @JsonProperty("location")
   public String getLocation() {
@@ -260,11 +262,27 @@ public class User   {
   }
 
   /**
-  * @param location The location of the user
+  * @param location The location of the user A free text that the user updates
   */
   @SuppressWarnings("unused")
   public void setLocation(String location) {
     this.location = location;
+  }
+
+  /**
+  * @return timeZone The timezone full name id
+  */
+  @JsonProperty("timeZone")
+  public String getTimeZone() {
+    return timeZone;
+  }
+
+  /**
+  * @param timeZone The timezone full name id
+  */
+  @SuppressWarnings("unused")
+  public void setTimeZone(String timeZone) {
+    this.timeZone = timeZone;
   }
 
   /**

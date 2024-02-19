@@ -106,7 +106,7 @@ public class ListApiImpl implements ListApi {
       .compose(list -> {
         ListImportJobStatus listImportJobStatus = new ListImportJobStatus();
         listImportJobStatus.setListGuid(list.getGuid());
-        listImportJobStatus.setListUserActionCode(ListImportListUserAction.IN);
+        listImportJobStatus.setListUserActionCode(ListImportListUserAction.IN.getActionCode());
         listImportJobStatus.setMaxRowCountToProcess(finalRowCountToProcess);
         listImportJobStatus.setListGuid(list.getGuid());
         listImportJobStatus.setUploadedFileName(fileBinary.fileName());

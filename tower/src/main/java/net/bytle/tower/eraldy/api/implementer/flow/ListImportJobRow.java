@@ -15,6 +15,8 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.ListUserProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.EmailAddress;
+import net.bytle.type.time.TimeZoneCast;
+import net.bytle.type.time.TimeZoneUtil;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.resilience.EmailAddressValidationStatus;
@@ -45,7 +47,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
   private String optInTime;
   private String confirmIp;
   private String confirmTime;
-  private String location;
+  private String timeZoneString;
   private String userGuid;
   private ListImportListUserStatus listUserStatus = ListImportListUserStatus.NOTHING;
   private ListImportUserStatus userStatus = ListImportUserStatus.NOTHING;
@@ -109,7 +111,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
           return Future.failedFuture(new InternalException("Email address was null but the email was validated. It should not happen."));
         }
         return this.listImportJob.getList()
-          .compose(list-> userProvider
+          .compose(list -> userProvider
             .getUserByEmail(emailInternetAddress, list.getRealm().getLocalId(), User.class, list.getRealm())
             .compose(userFromRegistry -> {
               if (userFromRegistry != null) {
@@ -134,7 +136,15 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                 newUser.setEmail(emailInternetAddress.toNormalizedString());
                 newUser.setGivenName(this.givenName);
                 newUser.setFamilyName(this.familyName);
-                newUser.setLocation(this.location);
+                if (!timeZoneString.isEmpty()) {
+                  try {
+                    String timeZoneId = TimeZoneUtil.getTimeZoneWithValidation(timeZoneString).getID();
+                    newUser.setTimeZone(timeZoneId);
+                  } catch (TimeZoneCast e) {
+                    // bad zone id
+                    this.buildStatusMessage("The timezone (" + timeZoneString + ") is not a valid time zone. Skipped.");
+                  }
+                }
                 newUser.setRealm(list.getRealm());
                 this.userStatus = ListImportUserStatus.CREATED;
                 return userProvider.insertUserAndTrackEvent(newUser, FlowType.LIST_IMPORT);
@@ -215,12 +225,19 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
   }
 
   private Future<ListImportJobRow> closeExecution(ListImportJobRowStatus status, String message) {
-    this.setStatusMessage(message);
+    this.buildStatusMessage(message);
     this.setStatusCode(status.getStatusCode());
     return Future.succeededFuture(this);
   }
 
-  private void setStatusMessage(String message) {
+  /**
+   * @param message - the message to add to the status message
+   */
+  private void buildStatusMessage(String message) {
+    if (this.statusMessage != null) {
+      this.statusMessage += message;
+      return;
+    }
     this.statusMessage = message;
   }
 
@@ -282,8 +299,8 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
     this.confirmTime = confirmTime;
   }
 
-  public void setLocation(String location) {
-    this.location = location;
+  public void setTimeZone(String timeZone) {
+    this.timeZoneString = timeZone;
   }
 
   @Override

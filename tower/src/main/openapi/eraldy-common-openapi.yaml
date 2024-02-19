@@ -324,8 +324,14 @@ components:
           example: 'https://mywebsite'
         location:
           type: string
-          description: The location of the user
+          description: |
+            The location of the user
+            A free text that the user updates
           example: 'The world'
+        timeZone:
+          type: string
+          description: The timezone full name (In Java, the timezone id)
+          example: 'Europe/Amsterdam'
         creationTime:
           type: string
           format: date-time
@@ -874,6 +880,7 @@ components:
         realmIdentifier:
           type: string
           description: The realm identifier (guid or handle)
+    TimeZone:
     Realm:
       type: object
       # A realm is a container/scope for a user login

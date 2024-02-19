@@ -11,5 +11,11 @@ importMappings:
   # Import Analytics objects from the common vertx module
   AnalyticsEvent: "net.bytle.vertx.analytics.model.AnalyticsEvent"
   JsonObject: "io.vertx.core.json.JsonObject"
+  TimeZone: "java.util.TimeZone"
+  ListImportListUserAction: "net.bytle.tower.eraldy.api.implementer.flow.ListImportListUserAction"
+  ListImportUserAction: "net.bytle.tower.eraldy.api.implementer.flow.ListImportUserAction"
 schemaMappings:
   JsonObject: "JsonObject"
+  TimeZone: "TimeZone"
+  ListImportUserAction: "ListImportUserAction"
+  ListImportListUserAction: "ListImportListUserAction"

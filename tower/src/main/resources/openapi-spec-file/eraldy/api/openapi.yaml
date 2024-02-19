@@ -1743,7 +1743,7 @@ components:
   schemas:
     ListImportPostResponse:
       description: |
-        The succesful response to the submission of a import job for a list
+        The successful response to the submission of a import job for a list
       example:
         jobIdentifier: xmmmN
       properties:
@@ -1798,26 +1798,40 @@ components:
       type: object
     ListImportJobStatus:
       description: |
-        This object represents the status of a job that imports users for a list.
+        This object represents the request job and the status of a job that imports users for a list.
+        It's stored in the database
       example:
-        countComplete: 5
+        countComplete: 2
         uploadedFileName: uploadedFileName
         creationTime: 2000-01-23T04:56:07.000+00:00
-        countFailure: 7
+        listGuid: lis-xxxxx
+        countFailure: 9
         statusMessage: statusMessage
-        listUserActionCode: 6
+        maxRowCountToProcess: 0
+        listUserActionCode: 1
         jobId: xmmmN
         countTotal: 5
         startTime: 2000-01-23T04:56:07.000+00:00
         endTime: 2000-01-23T04:56:07.000+00:00
-        userActionCode: 1
-        statusCode: 0
-        countSuccess: 2
+        userActionCode: 5
+        statusCode: 6
+        countSuccess: 7
       properties:
         jobId:
-          description: The job id
+          description: |
+            The job id
+            To get a guid, you need to add the list guid
           example: xmmmN
           type: string
+        listGuid:
+          description: The list guid
+          example: lis-xxxxx
+          type: string
+        maxRowCountToProcess:
+          description: |
+            the maximum row to import
+            Above this limit, the rows are ignored
+          type: integer
         statusCode:
           description: "The status code: -2: queued, -1: processing, 0: done, 1: fatal\
             \ error, 2: quota reached"
@@ -1826,7 +1840,8 @@ components:
           description: A description of any fatal error if any
           type: string
         listUserActionCode:
-          description: "The action on the list user: 0: add (in), 1: delete (out)"
+          description: "The action on the user in the list (list user): 0: add (in),\
+            \ 1: delete (out)"
           type: integer
         userActionCode:
           description: "The action on the user: 0: no update (create only), 1: update"
@@ -2317,6 +2332,7 @@ components:
           creationTime: 2000-01-23T04:56:07.000+00:00
           givenName: John
           bio: bio
+          timeZone: Europe/Amsterdam
           handle: foo
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer
@@ -2438,6 +2454,7 @@ components:
         creationTime: 2000-01-23T04:56:07.000+00:00
         givenName: John
         bio: bio
+        timeZone: Europe/Amsterdam
         handle: foo
         avatar: https://en.gravatar.com/userimage/john.doe.png
         title: Chief Executive Officer
@@ -2536,8 +2553,14 @@ components:
           format: uri
           type: string
         location:
-          description: The location of the user
+          description: |
+            The location of the user
+            A free text that the user updates
           example: The world
+          type: string
+        timeZone:
+          description: The timezone full name id
+          example: Europe/Amsterdam
           type: string
         creationTime:
           description: The creation time of the user in UTC
@@ -2858,6 +2881,7 @@ components:
           creationTime: 2000-01-23T04:56:07.000+00:00
           givenName: John
           bio: bio
+          timeZone: Europe/Amsterdam
           handle: foo
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer
@@ -3235,6 +3259,7 @@ components:
             creationTime: 2000-01-23T04:56:07.000+00:00
             givenName: John
             bio: bio
+            timeZone: Europe/Amsterdam
             handle: foo
             avatar: https://en.gravatar.com/userimage/john.doe.png
             title: Chief Executive Officer
@@ -3315,6 +3340,7 @@ components:
           creationTime: 2000-01-23T04:56:07.000+00:00
           givenName: John
           bio: bio
+          timeZone: Europe/Amsterdam
           handle: foo
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer

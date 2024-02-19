@@ -7,6 +7,9 @@ package net.bytle.exception;
 public class CastException extends Exception {
 
 
+  public CastException() {
+  }
+
   public CastException(String message) {
     super(message);
   }
