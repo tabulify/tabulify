@@ -270,7 +270,7 @@ public class User   {
   }
 
   /**
-  * @return timeZone The timezone full name id
+  * @return timeZone The timezone full name (In Java, the timezone id)
   */
   @JsonProperty("timeZone")
   public String getTimeZone() {
@@ -278,7 +278,7 @@ public class User   {
   }
 
   /**
-  * @param timeZone The timezone full name id
+  * @param timeZone The timezone full name (In Java, the timezone id)
   */
   @SuppressWarnings("unused")
   public void setTimeZone(String timeZone) {

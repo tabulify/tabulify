@@ -23,45 +23,10 @@ this.api = api;
 }
 
 public void mount(RouterBuilder builder) {
-    builder.operation("userGet").handler(this::userGet);
-    builder.operation("userGuidGet").handler(this::userGuidGet);
     builder.operation("userMeGet").handler(this::userMeGet);
     builder.operation("userPost").handler(this::userPost);
+    builder.operation("userUserIdentifierGet").handler(this::userUserIdentifierGet);
 }
-
-    private void userGet(RoutingContext routingContext) {
-    logger.info("userGet()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-            String userIdentifier = requestParameters.queryParameter("userIdentifier") != null ? requestParameters.queryParameter("userIdentifier").getString() : null;
-        String realmIdentifier = requestParameters.queryParameter("realmIdentifier") != null ? requestParameters.queryParameter("realmIdentifier").getString() : null;
-
-      logger.debug("Parameter userIdentifier is {}", userIdentifier);
-      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
-
-    // Based on Route#respond
-    api.userGet(routingContext, userIdentifier, realmIdentifier)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
-
-    private void userGuidGet(RoutingContext routingContext) {
-    logger.info("userGuidGet()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-            String guid = requestParameters.pathParameter("guid") != null ? requestParameters.pathParameter("guid").getString() : null;
-
-      logger.debug("Parameter guid is {}", guid);
-
-    // Based on Route#respond
-    api.userGuidGet(routingContext, guid)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
 
     private void userMeGet(RoutingContext routingContext) {
     logger.info("userMeGet()");
@@ -90,6 +55,24 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.userPost(routingContext, userPostBody)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void userUserIdentifierGet(RoutingContext routingContext) {
+    logger.info("userUserIdentifierGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String userIdentifier = requestParameters.pathParameter("userIdentifier") != null ? requestParameters.pathParameter("userIdentifier").getString() : null;
+        String realmIdentifier = requestParameters.queryParameter("realmIdentifier") != null ? requestParameters.queryParameter("realmIdentifier").getString() : null;
+
+      logger.debug("Parameter userIdentifier is {}", userIdentifier);
+      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
+
+    // Based on Route#respond
+    api.userUserIdentifierGet(routingContext, userIdentifier, realmIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

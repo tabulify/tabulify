@@ -31,8 +31,7 @@ public class UserApiImpl implements UserApi {
 
 
   @Override
-  public Future<ApiResponse<User>> userGet(RoutingContext routingContext, String userIdentifier, String realmIdentifier) {
-
+  public Future<ApiResponse<User>> userUserIdentifierGet(RoutingContext routingContext, String userIdentifier, String realmIdentifier) {
     Future<Realm> realmFuture;
     UserProvider userProvider = apiApp.getUserProvider();
     RealmProvider realmProvider = apiApp.getRealmProvider();
@@ -99,27 +98,6 @@ public class UserApiImpl implements UserApi {
             TowerFailureException.builder()
               .setType(TowerFailureTypeEnum.NOT_FOUND_404)
               .setMessage("The realm was found but not the user")
-              .build()
-          );
-        }
-        ApiResponse<User> apiResponse = new ApiResponse<>(user).setMapper(userProvider.getApiMapper());
-        return Future.succeededFuture(apiResponse);
-      });
-
-  }
-
-  @Override
-  public Future<ApiResponse<User>> userGuidGet(RoutingContext routingContext, String guid) {
-    UserProvider userProvider = apiApp.getUserProvider();
-    return userProvider
-      .getUserByGuid(guid, User.class, null)
-      .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-      .compose(user -> {
-        if (user == null) {
-          return Future.failedFuture(
-            TowerFailureException.builder()
-              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-              .setMessage("The user with the guid (" + guid + ") was not found")
               .build()
           );
         }

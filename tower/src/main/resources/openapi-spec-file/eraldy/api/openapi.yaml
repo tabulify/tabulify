@@ -795,42 +795,6 @@ paths:
       - app
       x-accepts: application/json
   /user:
-    get:
-      operationId: userGet
-      parameters:
-      - description: "A user identifier (A guid, an email or a handle)"
-        explode: true
-        in: query
-        name: userIdentifier
-        required: true
-        schema:
-          example: "[\"usr-xjkkLmi\",\"john@doe.com\"]"
-          type: string
-        style: form
-      - description: A realm identifier (a guid or handle) if the user identifier
-          is not a guid
-        explode: true
-        in: query
-        name: realmIdentifier
-        required: false
-        schema:
-          type: string
-        style: form
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-          description: Ok
-      security:
-      - apiKeyAuth:
-        - read:user
-      summary: |
-        Get a user by guid or email
-      tags:
-      - user
-      x-accepts: application/json
     post:
       operationId: userPost
       requestBody:
@@ -867,19 +831,28 @@ paths:
       tags:
       - user
       x-accepts: application/json
-  /user/{guid}:
+  /user/{userIdentifier}:
     get:
-      operationId: userGuidGet
+      operationId: userUserIdentifierGet
       parameters:
-      - description: The guid of the user
+      - description: "A user identifier (A guid, an email or a handle)"
         explode: false
         in: path
-        name: guid
+        name: userIdentifier
         required: true
         schema:
-          example: xjkkLmi
+          example: "[\"usr-xjkkLmi\",\"john@doe.com\"]"
           type: string
         style: simple
+      - description: A realm identifier (a guid or handle) if the user identifier
+          is not a guid
+        explode: true
+        in: query
+        name: realmIdentifier
+        required: false
+        schema:
+          type: string
+        style: form
       responses:
         "200":
           content:
@@ -890,10 +863,7 @@ paths:
       security:
       - apiKeyAuth: []
       summary: |
-        Get a user by guid
-
-        If you want to use the email has identifier,
-        you should use the `userGet` operation passing the email as query parameter
+        Get a user by identifier (guid or email)
       tags:
       - user
       x-accepts: application/json
@@ -2559,7 +2529,7 @@ components:
           example: The world
           type: string
         timeZone:
-          description: The timezone full name id
+          description: "The timezone full name (In Java, the timezone id)"
           example: Europe/Amsterdam
           type: string
         creationTime:

@@ -918,36 +918,6 @@ paths:
                 items:
                   $ref: './eraldy-common-openapi.yaml#/components/schemas/App'
   /user:
-    get:
-      operationId: userGet
-      summary: |
-        Get a user by guid or email
-      tags:
-        - user
-      security:
-        - apiKeyAuth: [ 'read:user' ]
-      parameters:
-        - name: userIdentifier
-          description: "A user identifier (A guid, an email or a handle)"
-          in: query
-          required: true
-          schema:
-            type: string
-            example:
-              - "usr-xjkkLmi"
-              - "john@doe.com"
-        - name: realmIdentifier
-          description: "A realm identifier (a guid or handle) if the user identifier is not a guid"
-          in: query
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Ok
-          content:
-            application/json:
-              schema:
-                $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
     post:
       operationId: userPost
       summary: "Create or modify a user (a guid or a email should be given)"
@@ -981,30 +951,34 @@ paths:
                 $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
         '401':
           description: Requires authentication if not authenticated
-  /user/{guid}:
+  /user/{userIdentifier}:
     get:
-      operationId: userGuidGet
+      operationId: userUserIdentifierGet
       # The parameter is guid and not an email because @ is a special URL character
       # and the openApi router will then not find the route (resource not found)
       summary: |
-        Get a user by guid
-
-        If you want to use the email has identifier,
-        you should use the `userGet` operation passing the email as query parameter
+        Get a user by identifier (guid or email)
       tags:
         - user
       security:
         - apiKeyAuth: [ ]
       parameters:
-        - name: guid
-          description: "The guid of the user"
+        - name: userIdentifier
+          description: "A user identifier (A guid, an email or a handle)"
           # Path parameters are mandatory
           # https://github.com/OAI/OpenAPI-Specification/issues/622
           required: true
           in: path
           schema:
             type: string
-            example: "xjkkLmi"
+            example:
+              - "usr-xjkkLmi"
+              - "john@doe.com"
+        - name: realmIdentifier
+          description: "A realm identifier (a guid or handle) if the user identifier is not a guid"
+          in: query
+          schema:
+            type: string
       responses:
         '200':
           description: Ok

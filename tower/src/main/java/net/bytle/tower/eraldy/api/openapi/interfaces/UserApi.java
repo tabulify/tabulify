@@ -9,16 +9,6 @@ import net.bytle.tower.eraldy.model.openapi.UserPostBody;
 public interface UserApi  {
 
     /**
-     * Get a user by guid or email
-    */
-    Future<ApiResponse<User>> userGet(RoutingContext routingContext, String userIdentifier, String realmIdentifier);
-
-    /**
-     * Get a user by guid  If you want to use the email has identifier, you should use the `userGet` operation passing the email as query parameter
-    */
-    Future<ApiResponse<User>> userGuidGet(RoutingContext routingContext, String guid);
-
-    /**
      * Get the authenticated user
     */
     Future<ApiResponse<User>> userMeGet(RoutingContext routingContext);
@@ -27,4 +17,9 @@ public interface UserApi  {
      * Create or modify a user (a guid or a email should be given)
     */
     Future<ApiResponse<User>> userPost(RoutingContext routingContext, UserPostBody userPostBody);
+
+    /**
+     * Get a user by identifier (guid or email)
+    */
+    Future<ApiResponse<User>> userUserIdentifierGet(RoutingContext routingContext, String userIdentifier, String realmIdentifier);
 }
