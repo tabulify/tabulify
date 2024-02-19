@@ -14,7 +14,7 @@ import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.type.Strings;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
-import net.bytle.vertx.collections.QueueWriteThrough;
+import net.bytle.vertx.collections.WriteThroughQueue;
 import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.WebFlow;
 import net.bytle.vertx.resilience.EmailAddressValidator;
@@ -27,7 +27,10 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -185,6 +188,11 @@ public class ListImportFlow extends TowerService implements WebFlow {
   public Future<Void> start() {
 
     /**
+     * Load job (from database, ie not processed or were processing)
+     */
+    importJobQueue.loadElementsFromSink();
+
+    /**
      * Job
      */
     LOGGER.info("Starting the job cron");
@@ -265,9 +273,7 @@ public class ListImportFlow extends TowerService implements WebFlow {
   }
 
   public ListImportJob createJobFromApi(ListImportJobStatus listImportJobStatus, FileUpload fileUpload) {
-    listImportJobStatus.setCountTotal(0);
-    listImportJobStatus.setCountComplete(0);
-    listImportJobStatus.setCountSuccess(0);
+
     Timestamp nowInUtc = Timestamp.createFromNowUtc();
     listImportJobStatus.setCreationTime(nowInUtc.toLocalDateTime());
     String jobId = nowInUtc.toFileSystemString();
@@ -319,7 +325,7 @@ public class ListImportFlow extends TowerService implements WebFlow {
   /**
    * Import Job by JobId String
    */
-  final Queue<ListImportJob> importJobQueue;
+  final WriteThroughQueue<ListImportJob> importJobQueue;
 
   public ListImportFlow(EraldyApiApp apiApp) {
 
@@ -340,7 +346,7 @@ public class ListImportFlow extends TowerService implements WebFlow {
       throw new InternalException("The runtime database migration failed", e);
     }
 
-    importJobQueue = QueueWriteThrough.builder(ListImportJob.class, "list-import")
+    importJobQueue = WriteThroughQueue.builder(ListImportJob.class, "list-import")
       .setPool(server.getPostgresDatabaseConnectionPool())
       .setSerializer(new ListImportJobSerializer(this))
       .build();

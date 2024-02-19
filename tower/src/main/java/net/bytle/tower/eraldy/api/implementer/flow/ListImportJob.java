@@ -15,12 +15,12 @@ import net.bytle.fs.Fs;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
+import net.bytle.vertx.DateTimeUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -63,6 +63,12 @@ public class ListImportJob {
   private int rowFatalErrorExecutionCounter = 0;
   private ListItem list;
 
+  /**
+   * The id in the store
+   * (It's also the guid)
+   */
+  private String storeId;
+
   public ListImportJob(ListImportFlow listImportFlow, ListImportJobStatus listImportJobStatus, Path sourceCsvFile) {
     this.listImportFlow = listImportFlow;
 
@@ -71,14 +77,19 @@ public class ListImportJob {
     /**
      * All new job should be processed
      * (if they are created via the API or via the database at mount time)
+     * Even if they were processing while the server was restarted
+     * We consider them as new for now.
      */
     listImportJobStatus.setStatusCode(ListImportJob.TO_PROCESS_STATUS_CODE);
+    listImportJobStatus.setCountTotal(0);
+    listImportJobStatus.setCountSuccess(0);
+    listImportJobStatus.setCountComplete(0);
 
     // Init all field
     // to avoid dealing with empty value when returning the data object
     this.listImportJobStatus = listImportJobStatus;
     this.jobId = listImportJobStatus.getJobId();
-
+    this.storeId = this.listImportJobStatus.getListGuid() + "/lij-" + this.jobId;
     this.maxRowCountToProcess = listImportJobStatus.getMaxRowCountToProcess();
     // list user action
     this.listUserAction = this.listImportJobStatus.getListUserActionCode();
@@ -101,8 +112,8 @@ public class ListImportJob {
     return this.rowFatalErrorExecutionCounter;
   }
 
-  public String getGuid() {
-    return this.listImportJobStatus.getListGuid() + "/lij-" + this.jobId;
+  public String getStoreId() {
+    return this.storeId;
   }
 
 
@@ -117,7 +128,7 @@ public class ListImportJob {
       }
       executionStatusCode = RUNNING_STATUS_CODE;
     }
-    listImportJobStatus.setStartTime(LocalDateTime.now());
+    listImportJobStatus.setStartTime(DateTimeUtil.getNowInUtc());
     listImportJobStatus.setStatusCode(executionStatusCode);
 
     List<ListImportJobRow> listImportJobRows;
@@ -396,7 +407,8 @@ public class ListImportJob {
     /**
      * Write the job report
      */
-    listImportJobStatus.setEndTime(LocalDateTime.now());
+    listImportJobStatus.setEndTime(DateTimeUtil.getNowInUtc());
+
     /**
      * If the job is in a running state (<0), the status is success
      * The status code is written at the end because the client may query it to see if the job has terminated
@@ -455,7 +467,7 @@ public class ListImportJob {
 
   @Override
   public String toString() {
-    return this.getGuid();
+    return this.getStoreId();
   }
 
   public Future<ListItem> getList() {
@@ -470,5 +482,9 @@ public class ListImportJob {
         this.list = list;
         return Future.succeededFuture(list);
       });
+  }
+
+  public void setStoreId(String storeId) {
+    this.storeId = storeId;
   }
 }

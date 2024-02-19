@@ -11,15 +11,15 @@ import java.util.Queue;
 /**
  * A queue cache backed by a store (database)
  */
-public class QueueWriteThrough<E> implements Queue<E> {
+public class WriteThroughQueue<E> implements Queue<E> {
 
   private final LinkedList<E> queue;
-  private final QueueWriteThroughDatabaseSink<E> writeThrough;
+  private final WriteThroughQueueDatabaseSink<E> writeThrough;
 
 
-  public QueueWriteThrough(Builder<E> eBuilder) {
+  public WriteThroughQueue(Builder<E> eBuilder) {
     this.queue = new LinkedList<>();
-    this.writeThrough = new QueueWriteThroughDatabaseSink<>(eBuilder);
+    this.writeThrough = new WriteThroughQueueDatabaseSink<>(eBuilder);
   }
 
   @SuppressWarnings("unused")
@@ -140,11 +140,18 @@ public class QueueWriteThrough<E> implements Queue<E> {
     return this.queue.peek();
   }
 
+  /**
+   * Load the elements
+   */
+  public void loadElementsFromSink() {
+    this.writeThrough.initAll(this.queue);
+  }
+
   public static class Builder<E> {
 
     final String queueName;
     PgPool pool;
-    CollectionWriteThroughSerializer<E> serializer;
+    WriteThroughElementSerializer<E> serializer;
 
     public Builder(String name) {
       this.queueName = name;
@@ -156,15 +163,15 @@ public class QueueWriteThrough<E> implements Queue<E> {
       return self;
     }
 
-    public <E1 extends E> Builder<E1> setSerializer(CollectionWriteThroughSerializer<E> serializer) {
+    public <E1 extends E> Builder<E1> setSerializer(WriteThroughElementSerializer<E> serializer) {
       @SuppressWarnings("unchecked") Builder<E1> self = (Builder<E1>) this;
       this.serializer = serializer;
       return self;
     }
-    public QueueWriteThrough<E> build() {
+    public WriteThroughQueue<E> build() {
       assert pool != null;
       assert serializer != null;
-      return new QueueWriteThrough<>(this);
+      return new WriteThroughQueue<>(this);
     }
 
   }
