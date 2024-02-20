@@ -519,7 +519,7 @@ public class ListProvider {
       " LEFT JOIN " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + " realm_list_user\n" +
       "    on list.list_id = realm_list_user.list_user_list_id\n" +
       " JOIN " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + AppProvider.REALM_APP_TABLE_NAME + " app\n" +
-      "    on list.list_owner_app_id = app.app_id\n" +
+      "    on list.list_app_id = app.app_id\n" +
       "where list_realm_id = $1\n" +
       "group by list.list_id, list.list_handle, app.app_uri";
     return jdbcPool.preparedQuery(

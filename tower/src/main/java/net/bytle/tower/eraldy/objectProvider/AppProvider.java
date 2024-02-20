@@ -47,7 +47,7 @@ public class AppProvider {
   private static final String APP_GUID_PREFIX = "app";
   public static final String REALM_APP_TABLE_NAME = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + COLUMN_PREFIX;
   public static final String REALM_ID_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
-  public static final String USER_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
+  public static final String USER_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + "owner" + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
 
   /**
    * Domain is used as specified in
@@ -367,7 +367,7 @@ public class AppProvider {
     }
     return Future
       .all(userFuture, realmFuture)
-      .recover(t -> Future.failedFuture(new InternalException("AppProvider getFromRows Error ("+t.getMessage()+")", t)))
+      .recover(t -> Future.failedFuture(new InternalException("AppProvider getFromRows Error (" + t.getMessage() + ")", t)))
       .compose(compositeFuture -> {
         OrganizationUser organizationUser = compositeFuture.resultAt(0);
         Realm realmResult = compositeFuture.resultAt(1);
@@ -388,7 +388,7 @@ public class AppProvider {
 
   public Future<App> getAppByHandle(String handle, Realm realm) {
 
-    return this.jdbcPool.withConnection(sqlConnection->getAppByHandle(handle, realm, sqlConnection));
+    return this.jdbcPool.withConnection(sqlConnection -> getAppByHandle(handle, realm, sqlConnection));
   }
 
 
@@ -477,7 +477,7 @@ public class AppProvider {
   }
 
   public Future<App> getAppById(long appId, Realm realm) {
-    return this.jdbcPool.withConnection(sqlConnection->getAppById(appId,realm, sqlConnection));
+    return this.jdbcPool.withConnection(sqlConnection -> getAppById(appId, realm, sqlConnection));
   }
 
   public ObjectMapper getApiMapper() {
@@ -576,13 +576,13 @@ public class AppProvider {
       .getNextIdForTableAndRealm(sqlConnection, app.getRealm(), REALM_APP_TABLE_NAME)
       .compose(finalAppId -> {
         Long askedLocalId = app.getLocalId();
-        if(askedLocalId!=null && !askedLocalId.equals(finalAppId)){
+        if (askedLocalId != null && !askedLocalId.equals(finalAppId)) {
           /**
            * When we insert a startup
            * with {@link #getsertOnStartup(App, SqlConnection)}
            * where there is no data
            */
-          return Future.failedFuture("The asked local id ("+askedLocalId+") is different of the id given ("+finalAppId+"). Be careful that on the insertion order.");
+          return Future.failedFuture("The asked local id (" + askedLocalId + ") is different of the id given (" + finalAppId + "). Be careful that on the insertion order.");
         }
         app.setLocalId(finalAppId);
         this.updateGuid(app);

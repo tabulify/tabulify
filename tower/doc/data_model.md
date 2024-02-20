@@ -9,11 +9,49 @@
 
 ## Relationship
 
-* An organization may have several realms
-* A [realm](realm.md) is a repository
-* An app belongs to a realm
-* A list belongs to a app lists
-* A user belongs to a list
+* An organization
+  * is the root container
+  * id is unique in the global scope
+* A [realm](realm.md):
+  * belongs to an org
+  * id is unique in the global scope
+* A user:
+  * belongs to a realm
+  * id is unique in the realm
+* An app:
+  * belongs to a realm
+  * id is unique in the realm
+* A list
+  * belongs to an app
+  * id is unique in the realm
+  * User (user of a list)
+    * belongs to a list and a user
+    * id is the combination of realm, user and list id
+* A mailing
+  * belongs to an app and list
+  * id is unique in the realm
+...
+
+## De-normalization
+
+We have denormalized the realm and orga columns
+
+### Realm
+
+* The unit of storage and request redirection is the realm.
+* The sequence of object id (known as id in the database or local id) starts
+at one in each realm. (The most rows that we may get is the number of users).
+* All object guid are the realm id and the object id.
+
+### Organization
+
+Why the org is present in table while it can be derived from the realm?
+Because all owner user are organizational user, and we want to have a constraint
+on that.
+
+The organization value should not change at all. We may implement this feature,
+but the change is pretty, pretty low.
+
 
 ## Primary Key
 

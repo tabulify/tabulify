@@ -1,3 +1,7 @@
+-- realm orga unique key
+alter table realm
+  add unique (realm_id, realm_orga_id);
+
 --
 -- owner user is not a realm user but on org user
 -- ---------------------------------------------------
@@ -5,10 +9,31 @@
 comment on column realm_app.APP_USER_ID is 'The organizational user used for brand communication by default (user in realm 1 that belongs to the organization of the realm)';
 -- constraint is on the app level (for now)
 alter table realm_app drop constraint realm_app_app_realm_id_app_user_id_fkey;
+alter table realm_app add column app_orga_id BIGINT;
+update realm_app set app_orga_id = 1;
+alter table realm_app alter column app_orga_id set not null;
+alter table realm_app
+  add foreign key (app_orga_id, app_user_id) REFERENCES organization_user (orga_user_orga_id, orga_user_user_id);
+alter table realm_app
+  rename column app_user_id to app_owner_user_id;
+alter table realm_app
+  add foreign key (app_realm_id, app_orga_id) REFERENCES realm (realm_id, realm_orga_id);
 
+-- Realm list refactoring
+-- owner on app is not needed as you can have only one app for a list
+alter table cs_realms.realm_list
+  rename column list_owner_app_id to list_app_id;
+-- orga user list is not a realm user but on org user
 comment on column realm_list.LIST_OWNER_USER_ID is 'The owner of the list (The organizational user used for brand communication by default (user in realm 1 that belongs to the organization of the realm)';
 alter table realm_list drop constraint realm_list_list_realm_id_list_owner_user_id_fkey;
-
+alter table realm_list add column list_orga_id BIGINT;
+comment on column realm_list.list_orga_id is 'The organization id (added for foreign constraint on the user, the value should never change)';
+update realm_list set list_orga_id = 1;
+alter table realm_list alter column list_orga_id set not null;
+alter table realm_list
+  add foreign key (list_orga_id, list_owner_user_id) REFERENCES organization_user (orga_user_orga_id, orga_user_user_id);
+alter table realm_list
+  add foreign key (list_realm_id, list_orga_id) REFERENCES realm (realm_id, realm_orga_id);
 
 -- the file system drive
 create table IF NOT EXISTS realm_drive
@@ -68,6 +93,7 @@ comment on column realm_file.FILE_THIRD_TYPE is 'A third type to define the logi
 create table IF NOT EXISTS realm_mailing
 (
   MAILING_REALM_ID           BIGINT                    NOT NULL references "realm" (REALM_ID),
+  MAILING_ORGA_ID            BIGINT                    NOT NULL references "organization" (ORGA_ID),
   MAILING_ID                 BIGINT                    NOT NULL,
   MAILING_RCPT_LIST_ID       BIGINT                    NOT NULL,
   MAILING_BODY_FILE_ID       BIGINT                    NOT NULL,
@@ -83,7 +109,11 @@ alter table realm_mailing
   add foreign key (MAILING_REALM_ID, MAILING_RCPT_LIST_ID) REFERENCES realm_list (LIST_REALM_ID, LIST_ID);
 alter table realm_mailing
   add foreign key (MAILING_REALM_ID, MAILING_BODY_FILE_ID) REFERENCES realm_file (FILE_REALM_ID, FILE_ID);
-comment on table realm_mailing is 'A mailing (sending email to users)';
+alter table realm_mailing
+  add foreign key (MAILING_ORGA_ID, MAILING_AUTHOR_USER_ID) REFERENCES organization_user (orga_user_orga_id, orga_user_user_id);
+alter table realm_mailing
+  add foreign key (MAILING_ORGA_ID, MAILING_REALM_ID) REFERENCES realm (realm_id, realm_orga_id);
+comment on table realm_mailing is 'A mailing (the sending of an email to users)';
 comment on column realm_mailing.MAILING_REALM_ID is 'The realm id of the mailing';
 comment on column realm_mailing.MAILING_ID is 'The unique sequential id on the realm';
 comment on column realm_mailing.MAILING_RCPT_LIST_ID is 'The list of recipients';
