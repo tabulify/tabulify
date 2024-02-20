@@ -48,6 +48,7 @@ public class AppProvider {
   public static final String REALM_APP_TABLE_NAME = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + COLUMN_PREFIX;
   public static final String REALM_ID_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
   public static final String USER_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + "owner" + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
+  public static final String ORG_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN;
 
   /**
    * Domain is used as specified in
@@ -65,6 +66,9 @@ public class AppProvider {
   private final EraldyApiApp apiApp;
   private final PgPool jdbcPool;
   private final JsonMapper apiMapper;
+  private final String updateSqlById;
+  private final String insertSql;
+
 
   public AppProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
@@ -74,6 +78,28 @@ public class AppProvider {
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .build();
+
+    this.updateSqlById = "UPDATE \n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME + "\n" +
+      "set\n" +
+      "  " + HANDLE_COLUMN + " = $1,\n" +
+      "  " + USER_COLUMN + " = $2, \n" +
+      "  " + DATA_COLUMN + " = $3 \n" +
+      "where\n" +
+      "  " + REALM_ID_COLUMN + "= $4\n" +
+      " AND " + APP_ID_COLUMN + "= $5";
+
+    this.insertSql = "INSERT INTO\n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME + " (\n" +
+      "  " + REALM_ID_COLUMN + ",\n" +
+      "  " + APP_ID_COLUMN + ",\n" +
+      "  " + HANDLE_COLUMN + ",\n" +
+      "  " + ORG_COLUMN + ",\n" +
+      "  " + USER_COLUMN + ",\n" +
+      "  " + DATA_COLUMN + ",\n" +
+      "  " + CREATION_TIME + "\n" +
+      "  )\n" +
+      " values ($1, $2, $3, $4, $5, $6, $7)\n";
   }
 
 
@@ -181,15 +207,6 @@ public class AppProvider {
   private Future<App> updateApp(App app) {
 
     if (app.getLocalId() != null) {
-      String updateSqlById = "UPDATE \n" +
-        JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME + "\n" +
-        "set\n" +
-        "  " + HANDLE_COLUMN + " = $1,\n" +
-        "  " + USER_COLUMN + " = $2, \n" +
-        "  " + DATA_COLUMN + " = $3 \n" +
-        "where\n" +
-        "  " + REALM_ID_COLUMN + "= $4\n" +
-        " AND " + APP_ID_COLUMN + "= $5";
 
       JsonObject databaseJsonObject = this.getDatabaseJsonObject(app);
       return jdbcPool
@@ -562,16 +579,6 @@ public class AppProvider {
    */
   private Future<App> insertApp(App app, SqlConnection sqlConnection) {
 
-    String sql = "INSERT INTO\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME + " (\n" +
-      "  " + REALM_ID_COLUMN + ",\n" +
-      "  " + APP_ID_COLUMN + ",\n" +
-      "  " + HANDLE_COLUMN + ",\n" +
-      "  " + USER_COLUMN + ",\n" +
-      "  " + DATA_COLUMN + ",\n" +
-      "  " + CREATION_TIME + "\n" +
-      "  )\n" +
-      " values ($1, $2, $3, $4, $5, $6)\n";
     return this.apiApp.getRealmSequenceProvider()
       .getNextIdForTableAndRealm(sqlConnection, app.getRealm(), REALM_APP_TABLE_NAME)
       .compose(finalAppId -> {
@@ -587,19 +594,20 @@ public class AppProvider {
         app.setLocalId(finalAppId);
         this.updateGuid(app);
         return sqlConnection
-          .preparedQuery(sql)
+          .preparedQuery(insertSql)
           .execute(
             Tuple.of(
               app.getRealm().getLocalId(),
               app.getLocalId(),
               app.getHandle(),
+              app.getUser().getOrganization().getLocalId(),
               app.getUser().getLocalId(),
               this.getDatabaseJsonObject(app),
               DateTimeUtil.getNowInUtc()
             )
           );
       })
-      .onFailure(e -> LOGGER.error("App Insert Error:" + e.getMessage() + ". Sql: " + sql, e))
+      .onFailure(e -> LOGGER.error("App Insert Error:" + e.getMessage() + ". Sql: " + insertSql, e))
       .compose(rows -> Future.succeededFuture(app));
   }
 

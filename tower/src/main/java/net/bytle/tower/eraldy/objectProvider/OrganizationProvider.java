@@ -23,7 +23,8 @@ import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
 public class OrganizationProvider {
 
 
-  protected static final Logger LOGGER = LoggerFactory.getLogger(OrganizationProvider.class);
+
+    protected static final Logger LOGGER = LoggerFactory.getLogger(OrganizationProvider.class);
   public static final String TABLE_NAME = "organization";
 
   public static final String QUALIFIED_TABLE_NAME = JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME;

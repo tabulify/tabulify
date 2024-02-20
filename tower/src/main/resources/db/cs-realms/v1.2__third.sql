@@ -28,8 +28,7 @@ comment on column realm_list.LIST_OWNER_USER_ID is 'The owner of the list (The o
 alter table realm_list drop constraint realm_list_list_realm_id_list_owner_user_id_fkey;
 alter table realm_list add column list_orga_id BIGINT;
 comment on column realm_list.list_orga_id is 'The organization id (added for foreign constraint on the user, the value should never change)';
-update realm_list set list_orga_id = 1;
-alter table realm_list alter column list_orga_id set not null;
+update realm_list set list_orga_id = 1 where list_owner_user_id is not null;
 alter table realm_list
   add foreign key (list_orga_id, list_owner_user_id) REFERENCES organization_user (orga_user_orga_id, orga_user_user_id);
 alter table realm_list
@@ -93,10 +92,10 @@ comment on column realm_file.FILE_THIRD_TYPE is 'A third type to define the logi
 create table IF NOT EXISTS realm_mailing
 (
   MAILING_REALM_ID           BIGINT                    NOT NULL references "realm" (REALM_ID),
-  MAILING_ORGA_ID            BIGINT                    NOT NULL references "organization" (ORGA_ID),
   MAILING_ID                 BIGINT                    NOT NULL,
   MAILING_RCPT_LIST_ID       BIGINT                    NOT NULL,
   MAILING_BODY_FILE_ID       BIGINT                    NOT NULL,
+  MAILING_ORGA_ID            BIGINT                    NOT NULL,
   MAILING_AUTHOR_USER_ID     BIGINT                    NOT NULL,
   MAILING_STATUS             INT                       NOT NULL,
   MAILING_CREATION_TIME      TIMESTAMP WITHOUT TIME ZONE NOT NULL,

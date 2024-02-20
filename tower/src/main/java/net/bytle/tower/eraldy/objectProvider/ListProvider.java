@@ -47,7 +47,7 @@ public class ListProvider {
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String OWNER_PREFIX = "owner";
   private static final String LIST_PREFIX = "list";
-  public static final String APP_OWNER_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + OWNER_PREFIX + COLUMN_PART_SEP + AppProvider.APP_ID_COLUMN;
+  public static final String APP_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + AppProvider.APP_ID_COLUMN;
   public static final String USER_OWNER_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + OWNER_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   public static final String DATA_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "data";
   public static final String ANALYTICS_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "analytics";
@@ -167,7 +167,7 @@ public class ListProvider {
       "  " + ID_COLUMN + ",\n" +
       "  " + HANDLE_COLUMN + ",\n" +
       "  " + DATA_COLUMN + ",\n" +
-      "  " + APP_OWNER_COLUMN + ",\n" +
+      "  " + APP_COLUMN + ",\n" +
       "  " + USER_OWNER_COLUMN + ",\n" +
       "  " + CREATION_COLUMN + "\n" +
       "  )\n" +
@@ -229,7 +229,7 @@ public class ListProvider {
         " set" +
         "  " + HANDLE_COLUMN + " = $1,\n" +
         "  " + DATA_COLUMN + " = $2,\n" +
-        "  " + APP_OWNER_COLUMN + " = $3,\n" +
+        "  " + APP_COLUMN + " = $3,\n" +
         "  " + USER_OWNER_COLUMN + " = $4,\n" +
         "  " + MODIFICATION_COLUMN + " = $5\n" +
         "where\n" +
@@ -274,7 +274,7 @@ public class ListProvider {
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
       " set" +
       "  " + DATA_COLUMN + " = $1,\n" +
-      "  " + APP_OWNER_COLUMN + " = $2,\n" +
+      "  " + APP_COLUMN + " = $2,\n" +
       "  " + USER_OWNER_COLUMN + " = $3,\n" +
       "  " + MODIFICATION_COLUMN + " = $4\n" +
       "where\n" +
@@ -373,7 +373,7 @@ public class ListProvider {
         String listHandle = row.getString(HANDLE_COLUMN);
         Future<App> appFuture = Future.succeededFuture(knownApp);
         if (knownApp == null) {
-          Long publisherAppId = row.getLong(APP_OWNER_COLUMN);
+          Long publisherAppId = row.getLong(APP_COLUMN);
           appFuture = this.apiApp.getAppProvider()
             .getAppById(publisherAppId, realmResult);
         }
@@ -565,7 +565,7 @@ public class ListProvider {
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " where \n" +
-      " " + APP_OWNER_COLUMN + " = $1" +
+      " " + APP_COLUMN + " = $1" +
       " AND " + REALM_COLUMN + " = $2";
     return jdbcPool.preparedQuery(sql)
       .execute(Tuple.of(app.getLocalId(), app.getRealm().getLocalId()))
