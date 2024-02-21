@@ -25,7 +25,7 @@ public class ListObject   {
 
   protected String description;
 
-  protected User ownerUser;
+  protected OrganizationUser ownerUser;
 
   protected App ownerApp;
 
@@ -142,7 +142,7 @@ public class ListObject   {
   * @return ownerUser
   */
   @JsonProperty("ownerUser")
-  public User getOwnerUser() {
+  public OrganizationUser getOwnerUser() {
     return ownerUser;
   }
 
@@ -150,7 +150,7 @@ public class ListObject   {
   * @param ownerUser Set ownerUser
   */
   @SuppressWarnings("unused")
-  public void setOwnerUser(User ownerUser) {
+  public void setOwnerUser(OrganizationUser ownerUser) {
     this.ownerUser = ownerUser;
   }
 
@@ -158,7 +158,7 @@ public class ListObject   {
   * @return ownerApp
   */
   @JsonProperty("ownerApp")
-  public App getOwnerApp() {
+  public App getApp() {
     return ownerApp;
   }
 
@@ -166,7 +166,7 @@ public class ListObject   {
   * @param ownerApp Set ownerApp
   */
   @SuppressWarnings("unused")
-  public void setOwnerApp(App ownerApp) {
+  public void setApp(App ownerApp) {
     this.ownerApp = ownerApp;
   }
 

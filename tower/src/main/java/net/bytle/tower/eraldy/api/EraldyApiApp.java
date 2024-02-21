@@ -85,6 +85,7 @@ public class EraldyApiApp extends TowerApp  {
   private final OrganizationRoleProvider organizationRoleProvider;
 
   private final RealmSequenceProvider realmSequenceProvider;
+  private final MailingProvider mailingProvider;
 
 
   public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
@@ -117,6 +118,7 @@ public class EraldyApiApp extends TowerApp  {
     this.hashIds = this.getHttpServer().getServer().getHashId();
     this.authClientProvider = new AuthClientProvider(this);
     this.realmSequenceProvider = new RealmSequenceProvider();
+    this.mailingProvider = new MailingProvider(this);
 
     /**
      * Model and app
@@ -569,4 +571,7 @@ public class EraldyApiApp extends TowerApp  {
   }
 
 
+  public MailingProvider getMailingProvider() {
+    return this.mailingProvider;
+  }
 }

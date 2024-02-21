@@ -355,10 +355,10 @@ public class ListRegistrationFlow extends WebFlowAbs {
               /**
                * Analytics Claims
                */
-              jwtClaims.setAppGuid(listUser.getList().getOwnerApp().getGuid());
-              jwtClaims.setAppHandle(listUser.getList().getOwnerApp().getHandle());
-              jwtClaims.setRealmGuid(listUser.getList().getOwnerApp().getRealm().getGuid());
-              jwtClaims.setRealmHandle(listUser.getList().getOwnerApp().getRealm().getHandle());
+              jwtClaims.setAppGuid(listUser.getList().getApp().getGuid());
+              jwtClaims.setAppHandle(listUser.getList().getApp().getHandle());
+              jwtClaims.setRealmGuid(listUser.getList().getApp().getRealm().getGuid());
+              jwtClaims.setRealmHandle(listUser.getList().getApp().getRealm().getHandle());
 
               /**
                * Authenticate

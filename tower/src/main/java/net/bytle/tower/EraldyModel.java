@@ -325,7 +325,7 @@ public class EraldyModel {
 
   public URI getMemberListRegistrationPath(ListObject listObject) {
     try {
-      return getMemberListRegistrationPath(listObject.getOwnerApp().getGuid(), listObject.getGuid());
+      return getMemberListRegistrationPath(listObject.getApp().getGuid(), listObject.getGuid());
     } catch (URISyntaxException e) {
       throw new InternalException("The URI should have been tested at build time of Eraldy Model", e);
     }

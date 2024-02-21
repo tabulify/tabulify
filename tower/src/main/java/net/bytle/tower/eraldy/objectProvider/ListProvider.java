@@ -92,16 +92,16 @@ public class ListProvider {
     listObject.setGuid(guid);
   }
 
-  public static User getOwnerUser(ListObject list) {
-    User ownerUser = list.getOwnerUser();
+  public static OrganizationUser getOwnerUser(ListObject list) {
+    OrganizationUser ownerUser = list.getOwnerUser();
     if (ownerUser != null) {
       return ownerUser;
     }
-    ownerUser = list.getOwnerApp().getUser();
+    ownerUser = list.getApp().getUser();
     if (ownerUser != null) {
       return ownerUser;
     }
-    ownerUser = list.getOwnerApp().getRealm().getOwnerUser();
+    ownerUser = list.getApp().getRealm().getOwnerUser();
     if (ownerUser != null) {
       return ownerUser;
     }
@@ -129,7 +129,7 @@ public class ListProvider {
       }
     }
 
-    App app = listObject.getOwnerApp();
+    App app = listObject.getApp();
     if (app == null) {
       return Future.failedFuture(new InternalError("The app is mandatory when upserting a list"));
     }
@@ -188,7 +188,7 @@ public class ListProvider {
                 listObject.getLocalId(),
                 listObject.getHandle(),
                 this.getDatabaseJsonObject(listObject),
-                listObject.getOwnerApp().getLocalId(),
+                listObject.getApp().getLocalId(),
                 listObject.getOwnerUser() != null ? listObject.getOwnerUser().getLocalId() : null,
                 DateTimeUtil.getNowInUtc()
               ))
@@ -241,7 +241,7 @@ public class ListProvider {
         .execute(Tuple.of(
           listObject.getHandle(),
           this.getDatabaseJsonObject(listObject),
-          listObject.getOwnerApp().getLocalId(),
+          listObject.getApp().getLocalId(),
           listObject.getOwnerUser() != null ? listObject.getOwnerUser().getLocalId() : null,
           DateTimeUtil.getNowInUtc(),
           listObject.getLocalId(),
@@ -286,7 +286,7 @@ public class ListProvider {
       .preparedQuery(updateByHandleSql)
       .execute(Tuple.of(
         this.getDatabaseJsonObject(listObject),
-        listObject.getOwnerApp().getLocalId(),
+        listObject.getApp().getLocalId(),
         listObject.getOwnerUser() != null ? listObject.getOwnerUser().getLocalId() : null,
         DateTimeUtil.getNowInUtc(),
         listObject.getHandle(),
@@ -379,10 +379,10 @@ public class ListProvider {
         }
 
         Long ownerId = row.getLong(USER_OWNER_COLUMN);
-        Future<User> ownerFuture = Future.succeededFuture();
+        Future<OrganizationUser> ownerFuture = Future.succeededFuture();
         if (ownerId != null) {
-          ownerFuture = apiApp.getUserProvider()
-            .getUserByLocalId(ownerId, realmResult.getLocalId(), User.class, realmResult);
+          ownerFuture = apiApp.getOrganizationUserProvider()
+            .getOrganizationUserByLocalId(ownerId, realmResult.getLocalId(), realmResult);
         }
 
         return Future
@@ -427,8 +427,8 @@ public class ListProvider {
             if (appResult == null) {
               throw ValidationException.create("The app was not found", "appId", null);
             }
-            listItem.setOwnerApp(appResult);
-            User publisher = mapper.resultAt(1);
+            listItem.setApp(appResult);
+            OrganizationUser publisher = mapper.resultAt(1);
             if (publisher != null) {
               listItem.setOwnerUser(publisher);
             }
@@ -482,10 +482,10 @@ public class ListProvider {
      * User
      */
     String ownerIdentifier = listPostBody.getOwnerUserIdentifier();
-    Future<User> futureUser = Future.succeededFuture(null);
+    Future<OrganizationUser> futureUser = Future.succeededFuture(null);
     if (ownerIdentifier != null) {
-      UserProvider userProvider = apiApp.getUserProvider();
-      futureUser = userProvider.getUserByIdentifier(ownerIdentifier, app.getRealm(), User.class);
+      OrganizationUserProvider userProvider = apiApp.getOrganizationUserProvider();
+      futureUser = userProvider.getOrganizationUserByIdentifier(ownerIdentifier, app.getRealm());
     }
 
     return futureUser
@@ -497,7 +497,7 @@ public class ListProvider {
         listObject.setDescription(listPostBody.getListDescription());
         listObject.setHandle(listPostBody.getListHandle());
         listObject.setOwnerUser(user); // may be null
-        listObject.setOwnerApp(app);
+        listObject.setApp(app);
         return this.insertList(listObject);
       });
 

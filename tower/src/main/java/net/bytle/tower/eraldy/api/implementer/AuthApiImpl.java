@@ -98,7 +98,7 @@ public class AuthApiImpl implements AuthApi {
         String requestingAppGuid = requestingApp.getGuid();
         if (listItem != null) {
 
-          String listAppGuid = listItem.getOwnerApp().getGuid();
+          String listAppGuid = listItem.getApp().getGuid();
           if (!requestingAppGuid.equals(listAppGuid)) {
             return Future.failedFuture(
               TowerFailureException.builder()

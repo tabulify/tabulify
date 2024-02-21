@@ -24,6 +24,7 @@ import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.ListUserProvider;
+import net.bytle.tower.eraldy.objectProvider.MailingProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Casts;
 import net.bytle.type.Strings;
@@ -180,9 +181,25 @@ public class ListApiImpl implements ListApi {
   @Override
   public Future<ApiResponse<Mailing>> listListIdentifierMailingPost(RoutingContext routingContext, String listIdentifier, ListMailingPost listMailingPost) {
 
-//    this.apiApp.getListProvider()
-//      .getListByIdentifier(routingContext,AuthUserScope.LIST_MAILING,List.class);
-    return Future.succeededFuture();
+    ListProvider listProvider = this.apiApp.getListProvider();
+    MailingProvider mailingProvider = this.apiApp.getMailingProvider();
+    return listProvider
+      .getListByIdentifier(routingContext,AuthUserScope.LIST_MAILING,ListObject.class)
+      .compose(list->{
+        Mailing mailingToInsert = new Mailing();
+        mailingToInsert.setEmailAuthor(ListProvider.getOwnerUser(list));
+        mailingToInsert.setRecipientList(list);
+        mailingToInsert.setName(listMailingPost.getName());
+        mailingToInsert.setEmailSubject(listMailingPost.getSubject());
+        mailingToInsert.setRealm(list.getRealm());
+        return mailingProvider
+          .insertMailing(mailingToInsert);
+      })
+      .compose(mailingRes-> Future.succeededFuture(
+        new ApiResponse<>(mailingRes)
+          .setMapper(mailingProvider.getApiMapper())
+      ));
+
   }
 
   @Override
@@ -262,13 +279,13 @@ public class ListApiImpl implements ListApi {
           list.setDescription(listDescription);
         }
         String ownerIdentifier = listBody.getOwnerUserIdentifier();
-        Future<User> futureOwner;
-        User actualOwnerUser = list.getOwnerUser();
+        Future<OrganizationUser> futureOwner;
+        OrganizationUser actualOwnerUser = list.getOwnerUser();
         if (ownerIdentifier != null) {
           if (ownerIdentifier.isEmpty()) {
             futureOwner = Future.succeededFuture(null);
           } else {
-            Future<User> futureOwnerByIdentifier = this.apiApp.getUserProvider().getUserByIdentifier(ownerIdentifier, list.getRealm(), User.class);
+            Future<OrganizationUser> futureOwnerByIdentifier = this.apiApp.getUserProvider().getUserByIdentifier(ownerIdentifier, list.getRealm(), OrganizationUser.class);
             if (actualOwnerUser == null) {
               futureOwner = futureOwnerByIdentifier;
             } else if (!(actualOwnerUser.getGuid().equals(ownerIdentifier) || actualOwnerUser.getEmail().equals(ownerIdentifier))) {

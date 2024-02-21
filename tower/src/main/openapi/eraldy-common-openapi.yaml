@@ -425,8 +425,8 @@ components:
           example: "The last news ...."
         ownerUser:
           description: The user owner of the list
-          $ref: '#/components/schemas/User'
-        ownerApp:
+          $ref: '#/components/schemas/OrganizationUser'
+        app:
           description: The app owner of the list
           $ref: '#/components/schemas/App'
         realm:

@@ -128,7 +128,7 @@ public class ListRegistrationValidationLetter {
       String publisherName;
       User publisher = listObject.getOwnerUser();
       if (publisher == null) {
-        publisher = listObject.getOwnerApp().getUser();
+        publisher = listObject.getApp().getUser();
       }
 
       try {
@@ -138,7 +138,7 @@ public class ListRegistrationValidationLetter {
         throw new InternalException(e);
       }
 
-      App publisherApp = listObject.getOwnerApp();
+      App publisherApp = listObject.getApp();
 
       transactionalTemplate
         .setPreview("Validate your subscription to `" + listObject.getName() + "`")
