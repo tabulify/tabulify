@@ -10,11 +10,8 @@ dependencies {
   api(project(":bytle-base"))
 
   api("com.google.code.gson:gson:2.8.9")
-  api("com.fasterxml.jackson.core:jackson-core:2.13.3")
+  api("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
 
-  // yaml has it in its dependencies (should be the same value)
-  // ..\gradlew dependencies | grep snake
-  // gradle dependencyInsight --dependency  snakeyaml
   // should be the same as for Jackson
   api("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion")
   // json path

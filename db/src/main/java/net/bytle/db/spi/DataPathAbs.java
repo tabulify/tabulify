@@ -12,6 +12,7 @@ import net.bytle.db.uri.DataUri;
 import net.bytle.exception.*;
 import net.bytle.type.*;
 import net.bytle.type.yaml.DefaultTimestampWithoutTimeZoneConstructor;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.scanner.ScannerException;
 
@@ -284,7 +285,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
       foreignKeys = this.getOrCreateRelationDef().getForeignKeys();
     }
     Set<DataPath> parentDataPaths = new HashSet<>();
-    if (foreignKeys.size() > 0) {
+    if (!foreignKeys.isEmpty()) {
 
       for (ForeignKeyDef foreignKeyDef : foreignKeys) {
         parentDataPaths.add(foreignKeyDef.getForeignPrimaryKey().getRelationDef().getDataPath());
@@ -504,7 +505,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
     }
 
     // Transform the file in properties
-    Yaml yaml = new Yaml(new DefaultTimestampWithoutTimeZoneConstructor());
+    Yaml yaml = new Yaml(new DefaultTimestampWithoutTimeZoneConstructor(new LoaderOptions()));
 
     // Every document is one dataDef
     List<Map<String, Object>> documents = new ArrayList<>();

@@ -4,9 +4,11 @@ val log4jVersion = "2.20.0"
 // https://mvnrepository.com/artifact/org.assertj/assertj-core
 val assertJAssertionVersion = "3.24.2"
 // 4.5 brings virtual thread and traffic bandwidth limiting https://vertx.io/blog/whats-new-in-vert-x-4-5/
-val vertxVersion = "4.4.8"
+val vertxVersion = "4.5.3"
 // Jackson same as vertx
-val jacksonVersion = "2.13.4"
+// Check the vertx web artifact dependencies
+// https://mvnrepository.com/artifact/io.vertx/vertx-web
+val jacksonVersion = "2.16.1"
 // Guava same as vertx
 val guavaVersion = "31.1.2"
 val junit4Version = "4.13.2"
