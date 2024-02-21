@@ -1,8 +1,9 @@
 package net.bytle.vertx;
 
 import io.vertx.core.Vertx;
+import io.vertx.pgclient.PgBuilder;
 import io.vertx.pgclient.PgConnectOptions;
-import io.vertx.pgclient.PgPool;
+import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.PoolOptions;
 import net.bytle.exception.NullValueException;
 
@@ -10,17 +11,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A wrapper around {@link PgPool} that handle the
+ * A wrapper around Vertx JDBC Postgress that handle the
  * creation (and the {@link JdbcSchemaManager}
  * <p>
  * <p>
  * A JdbcPool is not dependent of any {@link io.vertx.core.Verticle} as they
  * can be shutdown. It depends on {@link Vertx}
  */
-public class JdbcPostgresPool {
+public class JdbcPostgres extends TowerService implements JdbcClient {
 
 
-  public static PgPool create(Vertx vertx, JdbcConnectionInfo jdbcConnectionInfo) {
+  private final JdbcSchemaManager pgSchemaManager;
+  private final JdbcConnectionInfo jdbcConnectionInfo;
+  private final Pool pool;
+
+  public JdbcPostgres(Server server, String connectionInfoPrefix) {
+
+    server.registerService(this);
+
+    jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(connectionInfoPrefix, server.getConfigAccessor());
+    pgSchemaManager = JdbcSchemaManager.create(jdbcConnectionInfo);
+
     String user = jdbcConnectionInfo.getUser();
 
     // Set the working schema
@@ -47,14 +58,40 @@ public class JdbcPostgresPool {
       .setConnectionTimeout(PoolOptions.DEFAULT_CONNECTION_TIMEOUT)
       .setConnectionTimeoutUnit(PoolOptions.DEFAULT_CONNECTION_TIMEOUT_TIME_UNIT);
 
-    /**
-     * Then create the pool and return
-     */
-    return PgPool.pool(
-      vertx,
-      pgConnectOptions,
-      poolOptions
-    );
+
+    this.pool = PgBuilder
+      .pool()
+      .with(poolOptions)
+      .connectingTo(pgConnectOptions)
+      .using(server.getVertx())
+      .build();
 
   }
+
+  public static JdbcClient create(Server vertx, String jdbcConnectionInfo) {
+
+    return new JdbcPostgres(vertx, jdbcConnectionInfo);
+
+  }
+
+  @Override
+  public JdbcSchemaManager getSchemaManager() {
+    return pgSchemaManager;
+  }
+
+  @Override
+  public Pool getPool() {
+    return pool;
+  }
+
+  @Override
+  public void close() throws Exception {
+    this.pool.close();
+  }
+
+  @Override
+  public JdbcConnectionInfo getConnectionInfo() {
+    return this.jdbcConnectionInfo;
+  }
+
 }

@@ -9,7 +9,7 @@ import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
-import io.vertx.pgclient.PgPool;
+import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
@@ -59,14 +59,14 @@ public class ListProvider {
   public static final String HANDLE_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "handle";
   private static final String MODIFICATION_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private static final String CREATION_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
-  private final PgPool jdbcPool;
+  private final Pool jdbcPool;
   private final JsonMapper apiMapper;
 
 
   public ListProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
     Server server = apiApp.getHttpServer().getServer();
-    this.jdbcPool = server.getPostgresDatabaseConnectionPool();
+    this.jdbcPool = server.getPostgresClient().getPool();
     this.apiMapper = server.getJacksonMapperManager()
       .jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)

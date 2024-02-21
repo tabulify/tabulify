@@ -9,11 +9,7 @@ import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
-import io.vertx.pgclient.PgPool;
-import io.vertx.sqlclient.Row;
-import io.vertx.sqlclient.RowSet;
-import io.vertx.sqlclient.SqlConnection;
-import io.vertx.sqlclient.Tuple;
+import io.vertx.sqlclient.*;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
@@ -64,7 +60,7 @@ public class AppProvider {
   private static final String CREATION_TIME = COLUMN_PREFIX + COLUMN_PART_SEP + CREATION_TIME_COLUMN_SUFFIX;
 
   private final EraldyApiApp apiApp;
-  private final PgPool jdbcPool;
+  private final Pool jdbcPool;
   private final JsonMapper apiMapper;
   private final String updateSqlById;
   private final String insertSql;
@@ -72,7 +68,7 @@ public class AppProvider {
 
   public AppProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
-    this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresDatabaseConnectionPool();
+    this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
     this.apiMapper = apiApp.getHttpServer().getServer().getJacksonMapperManager()
       .jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)

@@ -6,7 +6,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.json.schema.ValidationException;
-import io.vertx.pgclient.PgPool;
+import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
@@ -57,14 +57,14 @@ public class ServiceProvider {
 
 
   private final EraldyApiApp apiApp;
-  private final PgPool jdbcPool;
+  private final Pool jdbcPool;
   private final ObjectMapper apiMapper;
 
 
   public ServiceProvider(EraldyApiApp apiApp) {
 
     this.apiApp = apiApp;
-    this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresDatabaseConnectionPool();
+    this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
     this.apiMapper = this.apiApp.getHttpServer().getServer().getJacksonMapperManager().jsonMapperBuilder()
       .addMixIn(Service.class, ServicePublicMixinWithRealm.class)
       .build();

@@ -510,9 +510,7 @@ public class EraldyApiApp extends TowerApp  {
     BrowserCorsUtil.allowCorsForApexDomain(router, this);
 
     LOGGER.info("EraldyApp Db Migration");
-    JdbcConnectionInfo postgresDatabaseConnectionInfo = this.getHttpServer().getServer().getPostgresDatabaseConnectionInfo();
-    JdbcSchemaManager jdbcSchemaManager = JdbcSchemaManager.create(postgresDatabaseConnectionInfo);
-    // Realms
+    JdbcSchemaManager jdbcSchemaManager = this.getHttpServer().getServer().getPostgresClient().getSchemaManager();
     String schema = JdbcSchemaManager.getSchemaFromHandle("realms");
     JdbcSchema realmSchema = JdbcSchema.builder()
       .setLocation("classpath:db/cs-realms")

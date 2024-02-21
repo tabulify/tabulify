@@ -19,11 +19,11 @@ public class FileObject   {
 
   protected String name;
 
-  protected String path;
+  protected String fullPath;
 
   protected Integer fileType;
 
-  protected String mimeType;
+  protected String mediaType;
 
   protected String thirdType;
 
@@ -93,23 +93,23 @@ public class FileObject   {
   }
 
   /**
-  * @return path The full path (derived)
+  * @return fullPath The full path (derived)
   */
-  @JsonProperty("path")
-  public String getPath() {
-    return path;
+  @JsonProperty("fullPath")
+  public String getFullPath() {
+    return fullPath;
   }
 
   /**
-  * @param path The full path (derived)
+  * @param fullPath The full path (derived)
   */
   @SuppressWarnings("unused")
-  public void setPath(String path) {
-    this.path = path;
+  public void setFullPath(String fullPath) {
+    this.fullPath = fullPath;
   }
 
   /**
-  * @return fileType The type of file (regular or directory)
+  * @return fileType The type of file (ie regular file or directory)
   */
   @JsonProperty("fileType")
   public Integer getFileType() {
@@ -117,7 +117,7 @@ public class FileObject   {
   }
 
   /**
-  * @param fileType The type of file (regular or directory)
+  * @param fileType The type of file (ie regular file or directory)
   */
   @SuppressWarnings("unused")
   public void setFileType(Integer fileType) {
@@ -125,19 +125,19 @@ public class FileObject   {
   }
 
   /**
-  * @return mimeType The mime type of the content (to parse it)
+  * @return mediaType The media type of the content (to parse it)
   */
-  @JsonProperty("mimeType")
-  public String getMimeType() {
-    return mimeType;
+  @JsonProperty("mediaType")
+  public String getMediaType() {
+    return mediaType;
   }
 
   /**
-  * @param mimeType The mime type of the content (to parse it)
+  * @param mediaType The media type of the content (to parse it)
   */
   @SuppressWarnings("unused")
-  public void setMimeType(String mimeType) {
-    this.mimeType = mimeType;
+  public void setMediaType(String mediaType) {
+    this.mediaType = mediaType;
   }
 
   /**
@@ -189,7 +189,7 @@ public class FileObject   {
   }
 
   /**
-  * @return creationTime The creation time of the listing
+  * @return creationTime The creation time of the file
   */
   @JsonProperty("creationTime")
   public LocalDateTime getCreationTime() {
@@ -197,7 +197,7 @@ public class FileObject   {
   }
 
   /**
-  * @param creationTime The creation time of the listing
+  * @param creationTime The creation time of the file
   */
   @SuppressWarnings("unused")
   public void setCreationTime(LocalDateTime creationTime) {
@@ -205,7 +205,7 @@ public class FileObject   {
   }
 
   /**
-  * @return modificationTime The last modification time of the listing
+  * @return modificationTime The last modification time of the file
   */
   @JsonProperty("modificationTime")
   public LocalDateTime getModificationTime() {
@@ -213,7 +213,7 @@ public class FileObject   {
   }
 
   /**
-  * @param modificationTime The last modification time of the listing
+  * @param modificationTime The last modification time of the file
   */
   @SuppressWarnings("unused")
   public void setModificationTime(LocalDateTime modificationTime) {
@@ -232,12 +232,12 @@ public class FileObject   {
     FileObject fileObject = (FileObject) o;
     return
 
-            Objects.equals(localId, fileObject.localId) && Objects.equals(guid, fileObject.guid) && Objects.equals(name, fileObject.name) && Objects.equals(path, fileObject.path) && Objects.equals(fileType, fileObject.fileType) && Objects.equals(mimeType, fileObject.mimeType) && Objects.equals(thirdType, fileObject.thirdType) && Objects.equals(parentFile, fileObject.parentFile) && Objects.equals(drive, fileObject.drive) && Objects.equals(creationTime, fileObject.creationTime) && Objects.equals(modificationTime, fileObject.modificationTime);
+            Objects.equals(localId, fileObject.localId) && Objects.equals(guid, fileObject.guid) && Objects.equals(name, fileObject.name) && Objects.equals(fullPath, fileObject.fullPath) && Objects.equals(fileType, fileObject.fileType) && Objects.equals(mediaType, fileObject.mediaType) && Objects.equals(thirdType, fileObject.thirdType) && Objects.equals(parentFile, fileObject.parentFile) && Objects.equals(drive, fileObject.drive) && Objects.equals(creationTime, fileObject.creationTime) && Objects.equals(modificationTime, fileObject.modificationTime);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(localId, guid, name, path, fileType, mimeType, thirdType, parentFile, drive, creationTime, modificationTime);
+    return Objects.hash(localId, guid, name, fullPath, fileType, mediaType, thirdType, parentFile, drive, creationTime, modificationTime);
   }
 
   @Override

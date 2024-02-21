@@ -178,6 +178,14 @@ public class ListApiImpl implements ListApi {
   }
 
   @Override
+  public Future<ApiResponse<Mailing>> listListIdentifierMailingPost(RoutingContext routingContext, String listIdentifier, ListMailingPost listMailingPost) {
+
+//    this.apiApp.getListProvider()
+//      .getListByIdentifier(routingContext,AuthUserScope.LIST_MAILING,List.class);
+    return Future.succeededFuture();
+  }
+
+  @Override
   public Future<ApiResponse<Void>> listListIdentifierRegisterPost(RoutingContext routingContext, String listIdentifier, ListUserPostBody listUserPostBody) {
 
     return this.apiApp.getUserListRegistrationFlow().handleStep1SendingValidationEmail(routingContext, listIdentifier, listUserPostBody)

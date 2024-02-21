@@ -10,6 +10,7 @@ import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.model.openapi.ListBody;
+import net.bytle.tower.eraldy.model.openapi.ListMailingPost;
 import net.bytle.tower.eraldy.model.openapi.ListUserPostBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ this.api = api;
 public void mount(RouterBuilder builder) {
     builder.operation("listListDelete").handler(this::listListDelete);
     builder.operation("listListGet").handler(this::listListGet);
+    builder.operation("listListIdentifierMailingPost").handler(this::listListIdentifierMailingPost);
     builder.operation("listListIdentifierRegisterPost").handler(this::listListIdentifierRegisterPost);
     builder.operation("listListImportJobDetailsGet").handler(this::listListImportJobDetailsGet);
     builder.operation("listListImportJobGet").handler(this::listListImportJobGet);
@@ -72,6 +74,25 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listListGet(routingContext, listIdentifier, realmIdentifier)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void listListIdentifierMailingPost(RoutingContext routingContext) {
+    logger.info("listListIdentifierMailingPost()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
+  RequestParameter requestParameterBody = requestParameters.body();
+  ListMailingPost listMailingPost = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<ListMailingPost>(){}) : null;
+
+      logger.debug("Parameter listIdentifier is {}", listIdentifier);
+      logger.debug("Parameter listMailingPost is {}", listMailingPost);
+
+    // Based on Route#respond
+    api.listListIdentifierMailingPost(routingContext, listIdentifier, listMailingPost)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

@@ -1,7 +1,7 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.Future;
-import io.vertx.pgclient.PgPool;
+import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
@@ -47,11 +47,11 @@ public class OrganizationUserProvider {
   public static final String ORGA_USER_ORGA_ROLE_ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "orga_role_id";
   public static final String ORGA_USER_CREATION_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   public static final String ORGA_USER_MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
-  private final PgPool jdbcPool;
+  private final Pool jdbcPool;
 
   public OrganizationUserProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
-    this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresDatabaseConnectionPool();
+    this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
   }
 
 

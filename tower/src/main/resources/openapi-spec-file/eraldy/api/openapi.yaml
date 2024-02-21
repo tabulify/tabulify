@@ -1554,6 +1554,35 @@ paths:
       tags:
       - list
       x-accepts: application/json
+  /list/{listIdentifier}/mailing:
+    post:
+      operationId: listListIdentifierMailingPost
+      parameters:
+      - description: The identifier of the list (guid)
+        explode: false
+        in: path
+        name: listIdentifier
+        required: true
+        schema:
+          example: lis-xjkkLmi
+          type: string
+        style: simple
+      requestBody:
+        $ref: '#/components/requestBodies/ListMailingPostBody'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mailing'
+          description: Mailing
+      security:
+      - apiKeyAuth: []
+      summary: Create a new mailing for a list
+      tags:
+      - list
+      x-content-type: application/json
+      x-accepts: application/json
 components:
   parameters:
     response_type:
@@ -1607,6 +1636,16 @@ components:
           schema:
             $ref: '#/components/schemas/PasswordCredentials'
       description: The data needed to log a user in by password credentials
+      required: true
+    ListMailingPostBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListMailingPost'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/ListMailingPost'
+      description: "Creation, modification of a mailing for a list"
       required: true
     LoginEmailPostBody:
       content:
@@ -1713,6 +1752,48 @@ components:
   schemas:
     Drive:
       description: A drive for a file is a container
+      example:
+        app:
+          terms: https://openapi-generator.tech
+          name: Doe
+          primaryColor: '#3498db'
+          guid: xmmmN
+          logo: https://doe.com/_media/android-chrome-192x192.png
+          handle: "[\"doe\"]"
+          realm:
+            ownerUser: null
+            organization:
+              creationTime: 2000-01-23T04:56:07.000+00:00
+              modificationTime: 2000-01-23T04:56:07.000+00:00
+              name: name
+              guid: org-xmmmN
+              handle: handle
+              localId: 1
+            name: name
+            guid: guid
+            handle: handle
+            localId: 0
+          localId: 1
+          uri: https://app.doe.com
+          slogan: "Doe, Be You"
+          user: null
+          home: https://doe.com/landing
+        name: name
+        guid: guid
+        realm:
+          ownerUser: null
+          organization:
+            creationTime: 2000-01-23T04:56:07.000+00:00
+            modificationTime: 2000-01-23T04:56:07.000+00:00
+            name: name
+            guid: org-xmmmN
+            handle: handle
+            localId: 1
+          name: name
+          guid: guid
+          handle: handle
+          localId: 0
+        localId: 5
       properties:
         localId:
           description: The drive id in the database
@@ -1734,6 +1815,59 @@ components:
       type: object
     FileObject:
       description: A file
+      example:
+        fullPath: fullPath
+        parentFile: null
+        creationTime: 2000-01-23T04:56:07.000+00:00
+        modificationTime: 2000-01-23T04:56:07.000+00:00
+        name: name
+        guid: guid
+        mediaType: mediaType
+        drive:
+          app:
+            terms: https://openapi-generator.tech
+            name: Doe
+            primaryColor: '#3498db'
+            guid: xmmmN
+            logo: https://doe.com/_media/android-chrome-192x192.png
+            handle: "[\"doe\"]"
+            realm:
+              ownerUser: null
+              organization:
+                creationTime: 2000-01-23T04:56:07.000+00:00
+                modificationTime: 2000-01-23T04:56:07.000+00:00
+                name: name
+                guid: org-xmmmN
+                handle: handle
+                localId: 1
+              name: name
+              guid: guid
+              handle: handle
+              localId: 0
+            localId: 1
+            uri: https://app.doe.com
+            slogan: "Doe, Be You"
+            user: null
+            home: https://doe.com/landing
+          name: name
+          guid: guid
+          realm:
+            ownerUser: null
+            organization:
+              creationTime: 2000-01-23T04:56:07.000+00:00
+              modificationTime: 2000-01-23T04:56:07.000+00:00
+              name: name
+              guid: org-xmmmN
+              handle: handle
+              localId: 1
+            name: name
+            guid: guid
+            handle: handle
+            localId: 0
+          localId: 5
+        localId: 6
+        thirdType: thirdType
+        fileType: 1
       properties:
         localId:
           description: The file id in the database (unique inside the realm)
@@ -1748,14 +1882,14 @@ components:
         name:
           description: The file name
           type: string
-        path:
+        fullPath:
           description: The full path (derived)
           type: string
         fileType:
-          description: The type of file (regular or directory)
+          description: The type of file (ie regular file or directory)
           type: integer
-        mimeType:
-          description: The mime type of the content (to parse it)
+        mediaType:
+          description: The media type of the content (to parse it)
           type: string
         thirdType:
           description: |
@@ -1769,16 +1903,164 @@ components:
         drive:
           $ref: '#/components/schemas/Drive'
         creationTime:
-          description: The creation time of the listing
+          description: The creation time of the file
           format: date-time
           type: string
         modificationTime:
-          description: The last modification time of the listing
+          description: The last modification time of the file
           format: date-time
           type: string
       type: object
     Mailing:
       description: A mailing represents the sending of an email to one or more users
+      example:
+        emailBody:
+          fullPath: fullPath
+          parentFile: null
+          creationTime: 2000-01-23T04:56:07.000+00:00
+          modificationTime: 2000-01-23T04:56:07.000+00:00
+          name: name
+          guid: guid
+          mediaType: mediaType
+          drive:
+            app:
+              terms: https://openapi-generator.tech
+              name: Doe
+              primaryColor: '#3498db'
+              guid: xmmmN
+              logo: https://doe.com/_media/android-chrome-192x192.png
+              handle: "[\"doe\"]"
+              realm:
+                ownerUser: null
+                organization:
+                  creationTime: 2000-01-23T04:56:07.000+00:00
+                  modificationTime: 2000-01-23T04:56:07.000+00:00
+                  name: name
+                  guid: org-xmmmN
+                  handle: handle
+                  localId: 1
+                name: name
+                guid: guid
+                handle: handle
+                localId: 0
+              localId: 1
+              uri: https://app.doe.com
+              slogan: "Doe, Be You"
+              user: null
+              home: https://doe.com/landing
+            name: name
+            guid: guid
+            realm:
+              ownerUser: null
+              organization:
+                creationTime: 2000-01-23T04:56:07.000+00:00
+                modificationTime: 2000-01-23T04:56:07.000+00:00
+                name: name
+                guid: org-xmmmN
+                handle: handle
+                localId: 1
+              name: name
+              guid: guid
+              handle: handle
+              localId: 0
+            localId: 5
+          localId: 6
+          thirdType: thirdType
+          fileType: 1
+        name: name
+        guid: guid
+        realm:
+          ownerUser: null
+          organization:
+            creationTime: 2000-01-23T04:56:07.000+00:00
+            modificationTime: 2000-01-23T04:56:07.000+00:00
+            name: name
+            guid: org-xmmmN
+            handle: handle
+            localId: 1
+          name: name
+          guid: guid
+          handle: handle
+          localId: 0
+        emailAuthor: null
+        recipientList:
+          ownerUser:
+            disabledReason: disabledReason
+            website: https://mywebsite
+            creationTime: 2000-01-23T04:56:07.000+00:00
+            givenName: John
+            bio: bio
+            timeZone: Europe/Amsterdam
+            handle: foo
+            avatar: https://en.gravatar.com/userimage/john.doe.png
+            title: Chief Executive Officer
+            localId: 1
+            modificationTime: 2000-01-23T04:56:07.000+00:00
+            familyName: Doe
+            guid: xmmmN
+            disabled: true
+            location: The world
+            realm:
+              ownerUser: null
+              organization:
+                creationTime: 2000-01-23T04:56:07.000+00:00
+                modificationTime: 2000-01-23T04:56:07.000+00:00
+                name: name
+                guid: org-xmmmN
+                handle: handle
+                localId: 1
+              name: name
+              guid: guid
+              handle: handle
+              localId: 0
+            email: john@doe.com
+          name: Mailing list
+          guid: xmmmN
+          description: The last news ....
+          handle: newsletter
+          realm:
+            ownerUser: null
+            organization:
+              creationTime: 2000-01-23T04:56:07.000+00:00
+              modificationTime: 2000-01-23T04:56:07.000+00:00
+              name: name
+              guid: org-xmmmN
+              handle: handle
+              localId: 1
+            name: name
+            guid: guid
+            handle: handle
+            localId: 0
+          title: The top Newsletters
+          localId: 1
+          registrationUrl: https://openapi-generator.tech
+          ownerApp:
+            terms: https://openapi-generator.tech
+            name: Doe
+            primaryColor: '#3498db'
+            guid: xmmmN
+            logo: https://doe.com/_media/android-chrome-192x192.png
+            handle: "[\"doe\"]"
+            realm:
+              ownerUser: null
+              organization:
+                creationTime: 2000-01-23T04:56:07.000+00:00
+                modificationTime: 2000-01-23T04:56:07.000+00:00
+                name: name
+                guid: org-xmmmN
+                handle: handle
+                localId: 1
+              name: name
+              guid: guid
+              handle: handle
+              localId: 0
+            localId: 1
+            uri: https://app.doe.com
+            slogan: "Doe, Be You"
+            user: null
+            home: https://doe.com/landing
+        localId: 0
+        emailSubject: emailSubject
       properties:
         localId:
           description: The mailing id in the database
@@ -1793,10 +2075,13 @@ components:
         name:
           description: A short description of the mailing
           type: string
-        senderUser:
+        emailSubject:
+          description: The subject of the email
+          type: string
+        emailAuthor:
           $ref: '#/components/schemas/OrganizationUser'
-        emailTemplate:
-          description: The body of the email in a template format
+        emailBody:
+          $ref: '#/components/schemas/FileObject'
         recipientList:
           $ref: '#/components/schemas/ListObject'
         realm:
@@ -1957,6 +2242,23 @@ components:
       required:
       - redirectUri
       - userEmail
+      type: object
+    ListMailingPost:
+      description: A post mailing object
+      example:
+        subject: subject
+        name: name
+        authorGuid: authorGuid
+      properties:
+        name:
+          description: The name of the mailing
+          type: string
+        subject:
+          description: The subject of the mailing
+          type: string
+        authorGuid:
+          description: The author of the mailing
+          type: string
       type: object
     PasswordOnly:
       description: To update a password

@@ -3,7 +3,6 @@ package net.bytle.vertx;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.pgclient.PgPool;
 import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
@@ -57,10 +56,8 @@ public class Server implements AutoCloseable {
 
 
   private final builder builder;
-  private PgPool pgDatabaseConnectionPool;
-  private JdbcConnectionInfo pgConnectionInfo;
+  private JdbcClient pgDatabaseConnectionPool;
   private IpGeolocation ipGeolocation;
-  private JdbcSchemaManager pgSchemaManager;
   private JwtAuthManager jwtAuthManager;
   private ApiKeyAuthenticationProvider apiKeyAuth;
   private HashId hashId;
@@ -135,7 +132,7 @@ public class Server implements AutoCloseable {
     return this.builder.configAccessor;
   }
 
-  public PgPool getPostgresDatabaseConnectionPool() {
+  public JdbcClient getPostgresClient() {
     if (this.pgDatabaseConnectionPool == null) {
       throw new InternalException("No Pg Jdbc Pool for the server");
     }
@@ -242,10 +239,6 @@ public class Server implements AutoCloseable {
 
     return this.builder.serverHealth;
 
-  }
-
-  public JdbcConnectionInfo getPostgresDatabaseConnectionInfo() {
-    return this.pgConnectionInfo;
   }
 
   public List<TowerService> getServices() {
@@ -357,13 +350,12 @@ public class Server implements AutoCloseable {
 
       if (this.postgresPoolName != null) {
         LOGGER.info("Start creation of JDBC Pool (" + this.postgresPoolName + ")");
-        server.pgConnectionInfo = JdbcConnectionInfo.createFromJson(this.postgresPoolName, server.getConfigAccessor());
-        server.pgDatabaseConnectionPool = JdbcPostgresPool.create(server.getVertx(), server.pgConnectionInfo);
-        server.pgSchemaManager = JdbcSchemaManager.create(server.pgConnectionInfo);
+
+        server.pgDatabaseConnectionPool = JdbcPostgres.create(server, this.postgresPoolName);
       }
       if (this.enableIpGeoLocation) {
         try {
-          server.ipGeolocation = IpGeolocation.create(server.pgDatabaseConnectionPool, server.pgSchemaManager);
+          server.ipGeolocation = IpGeolocation.create(server.pgDatabaseConnectionPool);
         } catch (DbMigrationException e) {
           throw new ConfigIllegalException("Ip geolocation bad schema migration", e);
         }

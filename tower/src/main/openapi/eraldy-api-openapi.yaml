@@ -54,6 +54,17 @@ components:
         multipart/form-data:
           schema:
             $ref: './eraldy-common-openapi.yaml#/components/schemas/PasswordCredentials'
+    ListMailingPostBody:
+      description: Creation, modification of a mailing for a list
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListMailingPost'
+        #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/ListMailingPost'
     LoginEmailPostBody:
       description: The data needed to log a user in by email
       required: true
@@ -127,15 +138,15 @@ components:
         name:
           type: string
           description: The file name
-        path:
+        fullPath:
           type: string
           description: The full path (derived)
         fileType:
           type: integer
-          description: The type of file (regular or directory)
-        mimeType:
+          description: The type of file (ie regular file or directory)
+        mediaType:
           type: string
-          description: The mime type of the content (to parse it)
+          description: The media type of the content (to parse it)
         thirdType:
           type: string
           description: |
@@ -148,11 +159,11 @@ components:
         drive:
           $ref: '#/components/schemas/Drive'
         creationTime:
-          description: The creation time of the listing
+          description: The creation time of the file
           type: string
           format: date-time
         modificationTime:
-          description: The last modification time of the listing
+          description: The last modification time of the file
           type: string
           format: date-time
     Mailing:
@@ -177,13 +188,17 @@ components:
         name:
           type: string
           description: A short description of the mailing
-        senderUser:
+        emailSubject:
+          type: string
+          description: The subject of the email
+        emailAuthor:
           description: |
-            The sender of the email (ie the from field in the message)
+            The author of the email (ie the from field in the message)
             On a smtp level, this is not the sender but the author.
           $ref: './eraldy-common-openapi.yaml#/components/schemas/OrganizationUser'
-        emailTemplate:
+        emailBody:
           description: The body of the email in a template format
+          $ref: '#/components/schemas/FileObject'
         recipientList:
           description: |
             The list of users that are recipients.
@@ -312,6 +327,19 @@ components:
         redirectUri:
           type: string
           description: The uri where to redirect the user after successful registration
+    ListMailingPost:
+      type: object
+      description: A post mailing object
+      properties:
+        name:
+          type: string
+          description: The name of the mailing
+        subject:
+          type: string
+          description: The subject of the mailing
+        authorGuid:
+          type: string
+          description: The author of the mailing
     PasswordOnly:
       title: To update a password
       description: To update a password
@@ -1680,3 +1708,28 @@ paths:
                 type: array
                 items:
                   $ref: './eraldy-common-openapi.yaml#/components/schemas/ListUserShort'
+  /list/{listIdentifier}/mailing:
+    post:
+      operationId: listListIdentifierMailingPost
+      summary: "Create a new mailing for a list"
+      tags:
+        - list
+      security:
+        - apiKeyAuth: [ ]
+      parameters:
+        - name: listIdentifier
+          description: "The identifier of the list (guid)"
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "lis-xjkkLmi"
+      requestBody:
+        $ref: '#/components/requestBodies/ListMailingPostBody'
+      responses:
+        '200':
+          description: "Mailing"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mailing'

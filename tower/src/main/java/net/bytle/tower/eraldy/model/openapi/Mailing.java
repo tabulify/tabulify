@@ -18,9 +18,11 @@ public class Mailing   {
 
   protected String name;
 
-  protected OrganizationUser senderUser;
+  protected String emailSubject;
 
-  protected Object emailTemplate = null;
+  protected OrganizationUser emailAuthor;
+
+  protected FileObject emailBody;
 
   protected ListObject recipientList;
 
@@ -84,35 +86,51 @@ public class Mailing   {
   }
 
   /**
-  * @return senderUser
+  * @return emailSubject The subject of the email
   */
-  @JsonProperty("senderUser")
-  public OrganizationUser getSenderUser() {
-    return senderUser;
+  @JsonProperty("emailSubject")
+  public String getEmailSubject() {
+    return emailSubject;
   }
 
   /**
-  * @param senderUser Set senderUser
+  * @param emailSubject The subject of the email
   */
   @SuppressWarnings("unused")
-  public void setSenderUser(OrganizationUser senderUser) {
-    this.senderUser = senderUser;
+  public void setEmailSubject(String emailSubject) {
+    this.emailSubject = emailSubject;
   }
 
   /**
-  * @return emailTemplate The body of the email in a template format
+  * @return emailAuthor
   */
-  @JsonProperty("emailTemplate")
-  public Object getEmailTemplate() {
-    return emailTemplate;
+  @JsonProperty("emailAuthor")
+  public OrganizationUser getEmailAuthor() {
+    return emailAuthor;
   }
 
   /**
-  * @param emailTemplate The body of the email in a template format
+  * @param emailAuthor Set emailAuthor
   */
   @SuppressWarnings("unused")
-  public void setEmailTemplate(Object emailTemplate) {
-    this.emailTemplate = emailTemplate;
+  public void setEmailAuthor(OrganizationUser emailAuthor) {
+    this.emailAuthor = emailAuthor;
+  }
+
+  /**
+  * @return emailBody
+  */
+  @JsonProperty("emailBody")
+  public FileObject getEmailBody() {
+    return emailBody;
+  }
+
+  /**
+  * @param emailBody Set emailBody
+  */
+  @SuppressWarnings("unused")
+  public void setEmailBody(FileObject emailBody) {
+    this.emailBody = emailBody;
   }
 
   /**

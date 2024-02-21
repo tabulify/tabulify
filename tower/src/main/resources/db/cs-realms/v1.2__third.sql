@@ -87,14 +87,17 @@ comment on column realm_file.FILE_NAME is 'The name of the file with or without 
 comment on column realm_file.FILE_TYPE is 'The type of file (0: directory, 1 regular file)';
 comment on column realm_file.FILE_MEDIA_TYPE is 'The media type (the structure of the file so that we can create an AST). ie text/csv, text/json';
 comment on column realm_file.FILE_THIRD_TYPE is 'A third type to define the logical use (for instance, xml may be a full document or a fragment, may contain raw data or ui description)';
+comment on column realm_file.FILE_PARENT_ID is 'The parent file (if null, the root)';
 
 -- represents a mailing (sending an email to a list of users)
 create table IF NOT EXISTS realm_mailing
 (
   MAILING_REALM_ID           BIGINT                    NOT NULL references "realm" (REALM_ID),
   MAILING_ID                 BIGINT                    NOT NULL,
+  MAILING_NAME               VARCHAR(50)               NOT NULL,
+  MAILING_SUBJECT            VARCHAR(250)              NULL,
   MAILING_RCPT_LIST_ID       BIGINT                    NOT NULL,
-  MAILING_BODY_FILE_ID       BIGINT                    NOT NULL,
+  MAILING_BODY_FILE_ID       BIGINT                    NULL,
   MAILING_ORGA_ID            BIGINT                    NOT NULL,
   MAILING_AUTHOR_USER_ID     BIGINT                    NOT NULL,
   MAILING_STATUS             INT                       NOT NULL,
@@ -111,11 +114,13 @@ alter table realm_mailing
 alter table realm_mailing
   add foreign key (MAILING_ORGA_ID, MAILING_AUTHOR_USER_ID) REFERENCES organization_user (orga_user_orga_id, orga_user_user_id);
 alter table realm_mailing
-  add foreign key (MAILING_ORGA_ID, MAILING_REALM_ID) REFERENCES realm (realm_id, realm_orga_id);
+  add foreign key (MAILING_REALM_ID, MAILING_ORGA_ID) REFERENCES realm (realm_id, realm_orga_id);
 comment on table realm_mailing is 'A mailing (the sending of an email to users)';
 comment on column realm_mailing.MAILING_REALM_ID is 'The realm id of the mailing';
 comment on column realm_mailing.MAILING_ID is 'The unique sequential id on the realm';
+comment on column realm_mailing.MAILING_NAME is 'The name of the mailing';
+comment on column realm_mailing.MAILING_SUBJECT is 'The subject of the email';
 comment on column realm_mailing.MAILING_RCPT_LIST_ID is 'The list of recipients';
 comment on column realm_mailing.MAILING_BODY_FILE_ID is 'The email body template';
 comment on column realm_mailing.MAILING_AUTHOR_USER_ID is 'The author of the email (An organizational user, the id of the user in the realm 1)';
-comment on column realm_mailing.MAILING_STATUS is 'The status (send, scheduled, ...)';
+comment on column realm_mailing.MAILING_STATUS is 'The status (draft, send, scheduled, ...)';

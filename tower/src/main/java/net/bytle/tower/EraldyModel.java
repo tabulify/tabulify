@@ -167,7 +167,8 @@ public class EraldyModel {
 
     LOGGER.info("Get/Inserting the Eraldy Organization, Realm and User");
 
-    return apiApp.getHttpServer().getServer().getPostgresDatabaseConnectionPool()
+    return apiApp.getHttpServer().getServer().getPostgresClient()
+      .getPool()
       .withTransaction(sqlConnection -> sqlConnection
         /**
          * There are foreign-key circular constraints that cannot be resolved by simple insertion.

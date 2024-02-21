@@ -1,24 +1,21 @@
 package net.bytle.vertx.collections;
 
-import io.vertx.pgclient.PgPool;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
-import net.bytle.vertx.JdbcConnectionInfo;
-import net.bytle.vertx.JdbcSchema;
-import net.bytle.vertx.JdbcSchemaManager;
-import net.bytle.vertx.Server;
+import net.bytle.vertx.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class WriteThroughCollection {
 
   static Logger LOGGER = LogManager.getLogger(WriteThroughCollection.class);
-  private final PgPool pool;
   private final String schema;
+  private final JdbcClient postgresServer;
 
   public WriteThroughCollection(Server server) {
     LOGGER.info("Write Through Collection Db Migration");
-    JdbcConnectionInfo postgresDatabaseConnectionInfo = server.getPostgresDatabaseConnectionInfo();
+    postgresServer = server.getPostgresClient();
+    JdbcConnectionInfo postgresDatabaseConnectionInfo = postgresServer.getConnectionInfo();
     JdbcSchemaManager jdbcSchemaManager = JdbcSchemaManager.create(postgresDatabaseConnectionInfo);
     schema = JdbcSchemaManager.getSchemaFromHandle("collection");
     JdbcSchema realmSchema = JdbcSchema.builder()
@@ -30,7 +27,7 @@ public class WriteThroughCollection {
     } catch (DbMigrationException e) {
       throw new InternalException("The Write Through Collection database migration failed", e);
     }
-    this.pool = server.getPostgresDatabaseConnectionPool();
+
   }
 
   public <E> WriteThroughQueue<E> createQueue(Class<E> clazz, String queueName, WriteThroughElementSerializer<E> serializer) {
@@ -41,8 +38,8 @@ public class WriteThroughCollection {
 
   }
 
-  public PgPool getPool() {
-    return this.pool;
+  public JdbcClient getJdbcServer() {
+    return this.postgresServer;
   }
 
   public String getTableSchema() {

@@ -1,6 +1,6 @@
 package net.bytle.vertx.collections;
 
-import io.vertx.pgclient.PgPool;
+import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
@@ -21,7 +21,7 @@ public class WriteThroughQueueDatabaseSink<E> {
 
   private final Logger LOGGER = LogManager.getLogger(WriteThroughQueueDatabaseSink.class);
 
-  private final PgPool pool;
+  private final Pool pool;
   private final String queueName;
   private final String deleteSql;
   private final String clearSql;
@@ -38,7 +38,7 @@ public class WriteThroughQueueDatabaseSink<E> {
   public WriteThroughQueueDatabaseSink(WriteThroughQueue.Builder<E> queueBuilder) {
     this.queueName = queueBuilder.queueName;
     serializer = queueBuilder.serializer;
-    this.pool = queueBuilder.writeThroughCollection.getPool();
+    this.pool = queueBuilder.writeThroughCollection.getJdbcServer().getPool();
     this.queueTable = queueBuilder.writeThroughCollection.getTableSchema()+".queues";
     deleteSql = "delete from " + queueTable + " where queue_name = $1 and object_id = $2";
     clearSql = "delete from " + queueTable + " where queue_name = $1";

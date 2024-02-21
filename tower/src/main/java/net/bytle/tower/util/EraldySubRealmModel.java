@@ -29,7 +29,8 @@ public class EraldySubRealmModel {
     initialOwnerUser.setRealm(eraldyRealm);
     initialOwnerUser.setEmail("owner@datacadamia.com");
 
-    return this.apiApp.getHttpServer().getServer().getPostgresDatabaseConnectionPool()
+    return this.apiApp.getHttpServer().getServer().getPostgresClient()
+      .getPool()
       .withConnection(sqlConnection -> apiApp.getUserProvider()
         .getsertOnServerStartup(initialOwnerUser, sqlConnection, OrganizationUser.class)
         .recover(err->Future.failedFuture(new InternalException("Error on user getsert",err)))

@@ -5,7 +5,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.healthchecks.Status;
-import io.vertx.pgclient.PgPool;
+import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import net.bytle.fs.Fs;
@@ -134,7 +134,7 @@ public class SqlAnalytics implements Handler<Long> {
       this.isRunning = true;
     }
 
-    PgPool jdbcPool = this.apiApp.getHttpServer().getServer().getPostgresDatabaseConnectionPool();
+    Pool jdbcPool = this.apiApp.getHttpServer().getServer().getPostgresClient().getPool();
 
     List<Future<RowSet<Row>>> futures = new ArrayList<>();
     this.executedPaths = new ArrayList<>();

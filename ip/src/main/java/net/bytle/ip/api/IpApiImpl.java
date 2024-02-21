@@ -38,7 +38,7 @@ public class IpApiImpl implements IpApi {
     routingContext.response().putHeader("Content-Type", "application/json");
     routingContext.response().putHeader(HttpHeaders.CACHE_CONTROL, HttpHeaders.CACHE_CONTROL_NO_STORE);
 
-    return this.ipApp.getApexDomain().getHttpServer().getServer().getIpGeolocation().ipGet(ip);
+    return this.ipApp.getHttpServer().getServer().getIpGeolocation().ipGet(ip);
 
   }
 

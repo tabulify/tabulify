@@ -1,7 +1,6 @@
 package net.bytle.vertx;
 
 import io.vertx.core.Future;
-import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.db.Tabular;
@@ -9,6 +8,7 @@ import net.bytle.db.csv.CsvDataPath;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.exception.DbMigrationException;
+import net.bytle.exception.InternalException;
 import net.bytle.type.Ip;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,32 +19,35 @@ import java.net.URL;
 import java.nio.file.*;
 import java.sql.Types;
 
-public class IpGeolocation {
+public class IpGeolocation extends TowerService {
 
   public static final String CS_IP_SCHEMA = JdbcSchemaManager.getSchemaFromHandle("ip");
   static Logger LOGGER = LogManager.getLogger(IpGeolocation.class);
-  private final PgPool pgPool;
-  private final JdbcSchemaManager jdbcManager;
+  private final JdbcClient jdbcClient;
 
-  public IpGeolocation(PgPool pgPool, JdbcSchemaManager jdbcSchemaManager) {
-    this.pgPool = pgPool;
-    this.jdbcManager = jdbcSchemaManager;
-  }
-
-  public static IpGeolocation create(PgPool builder,JdbcSchemaManager jdbcSchemaManager) throws DbMigrationException {
-      return new IpGeolocation(builder, jdbcSchemaManager)
-        .init();
-  }
-
-  private IpGeolocation init() throws DbMigrationException {
+  public IpGeolocation(JdbcClient jdbcClient) throws DbMigrationException {
+    this.jdbcClient = jdbcClient;
     JdbcSchema ipSchema = JdbcSchema.builder()
       .setLocation("classpath:db/cs-ip")
       .setSchema(CS_IP_SCHEMA)
       .build();
-    this.jdbcManager.migrate(ipSchema);
-    loadIpDataIfNeeded(jdbcManager.getConnectionInfo());
-    return this;
+    this.jdbcClient.getSchemaManager().migrate(ipSchema);
   }
+
+  public static IpGeolocation create(JdbcClient jdbcClient) throws DbMigrationException {
+    return new IpGeolocation(jdbcClient);
+  }
+
+  @Override
+  public Future<Void> start() {
+    try {
+      loadIpDataIfNeeded(this.jdbcClient.getConnectionInfo());
+    } catch (DbMigrationException e) {
+      return Future.failedFuture(new InternalException("Unable to load ip data", e));
+    }
+    return super.start();
+  }
+
   public static void loadIpDataIfNeeded(JdbcConnectionInfo jdbcConnectionInfo) throws DbMigrationException {
     // Load meta
     LOGGER.info("Loading Ip data");
@@ -127,7 +130,8 @@ public class IpGeolocation {
       "WHERE " +
       "ip_from <= $1 " +
       "and ip_to >= $2";
-    return this.pgPool.preparedQuery(sql)
+    return this.jdbcClient.getPool()
+      .preparedQuery(sql)
       .execute(Tuple.of(numericIp, numericIp))
       .onFailure(e -> LOGGER.error("Database query error with Sql:\n" + sql, e))
       .compose(rows -> {

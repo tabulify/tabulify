@@ -21,6 +21,11 @@ public interface ListApi  {
     Future<ApiResponse<ListObjectAnalytics>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
 
     /**
+     * Create a new mailing for a list
+    */
+    Future<ApiResponse<Mailing>> listListIdentifierMailingPost(RoutingContext routingContext, String listIdentifier, ListMailingPost listMailingPost);
+
+    /**
      * Register a public user to a list by sending an email for validation
     */
     Future<ApiResponse<Void>> listListIdentifierRegisterPost(RoutingContext routingContext, String listIdentifier, ListUserPostBody listUserPostBody);
