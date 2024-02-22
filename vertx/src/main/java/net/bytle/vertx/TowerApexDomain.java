@@ -38,7 +38,7 @@ public abstract class TowerApexDomain {
    * The name of the domain
    * `combo` for combostrap for instance
    */
-  public abstract String getPathName();
+  public abstract String getFileSystemPathName();
 
   /**
    * The authority (ie dns name + optional port)
@@ -57,7 +57,7 @@ public abstract class TowerApexDomain {
 
 
   public String getAbsoluteLocalPath() {
-    return "/" + this.getPathName();
+    return "/" + this.getFileSystemPathName();
   }
 
 

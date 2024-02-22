@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.api.implementer.flow;
 import io.vertx.core.Future;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import jakarta.mail.internet.AddressException;
@@ -196,4 +197,13 @@ public class EmailLoginFlow extends WebFlowAbs {
 
   }
 
+  /**
+   * Add the email login validation callback
+   */
+  @Override
+  public Future<Void> mount() {
+    Router router = this.getApp().getHttpServer().getRouter();
+    this.step2Callback.addCallback(router);
+    return super.mount();
+  }
 }

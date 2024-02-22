@@ -55,7 +55,7 @@ public class EraldyDomain extends TowerApexDomain {
   }
 
   @Override
-  public String getPathName() {
+  public String getFileSystemPathName() {
     return NAME;
   }
 

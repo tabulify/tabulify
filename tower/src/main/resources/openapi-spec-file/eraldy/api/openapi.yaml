@@ -20,6 +20,8 @@ tags:
   name: user
 - description: "List module (creation, registration)"
   name: list
+- description: Mailing module
+  name: mailing
 - description: App module
   name: app
 - description: Analytics module
@@ -1583,6 +1585,32 @@ paths:
       - list
       x-content-type: application/json
       x-accepts: application/json
+  /mailing/{mailingIdentifier}:
+    get:
+      operationId: mailingIdentifierGet
+      parameters:
+      - description: A mailing identifier (guid)
+        explode: false
+        in: path
+        name: mailingIdentifier
+        required: true
+        schema:
+          example: mai-xjkkLmi
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mailing'
+          description: The mailing
+      security:
+      - apiKeyAuth: []
+      summary: The mailing
+      tags:
+      - mailing
+      x-accepts: application/json
 components:
   parameters:
     response_type:
@@ -1967,6 +1995,8 @@ components:
           localId: 6
           thirdType: thirdType
           fileType: 1
+        creationTime: 2000-01-23T04:56:07.000+00:00
+        modificationTime: 2000-01-23T04:56:07.000+00:00
         name: name
         guid: guid
         realm:
@@ -1984,57 +2014,7 @@ components:
           localId: 0
         emailAuthor: null
         recipientList:
-          ownerUser:
-            disabledReason: disabledReason
-            website: https://mywebsite
-            creationTime: 2000-01-23T04:56:07.000+00:00
-            givenName: John
-            bio: bio
-            timeZone: Europe/Amsterdam
-            handle: foo
-            avatar: https://en.gravatar.com/userimage/john.doe.png
-            title: Chief Executive Officer
-            localId: 1
-            modificationTime: 2000-01-23T04:56:07.000+00:00
-            familyName: Doe
-            guid: xmmmN
-            disabled: true
-            location: The world
-            realm:
-              ownerUser: null
-              organization:
-                creationTime: 2000-01-23T04:56:07.000+00:00
-                modificationTime: 2000-01-23T04:56:07.000+00:00
-                name: name
-                guid: org-xmmmN
-                handle: handle
-                localId: 1
-              name: name
-              guid: guid
-              handle: handle
-              localId: 0
-            email: john@doe.com
-          name: Mailing list
-          guid: xmmmN
-          description: The last news ....
-          handle: newsletter
-          realm:
-            ownerUser: null
-            organization:
-              creationTime: 2000-01-23T04:56:07.000+00:00
-              modificationTime: 2000-01-23T04:56:07.000+00:00
-              name: name
-              guid: org-xmmmN
-              handle: handle
-              localId: 1
-            name: name
-            guid: guid
-            handle: handle
-            localId: 0
-          title: The top Newsletters
-          localId: 1
-          registrationUrl: https://openapi-generator.tech
-          ownerApp:
+          app:
             terms: https://openapi-generator.tech
             name: Doe
             primaryColor: '#3498db'
@@ -2059,8 +2039,30 @@ components:
             slogan: "Doe, Be You"
             user: null
             home: https://doe.com/landing
+          ownerUser: null
+          name: Mailing list
+          guid: xmmmN
+          description: The last news ....
+          handle: newsletter
+          realm:
+            ownerUser: null
+            organization:
+              creationTime: 2000-01-23T04:56:07.000+00:00
+              modificationTime: 2000-01-23T04:56:07.000+00:00
+              name: name
+              guid: org-xmmmN
+              handle: handle
+              localId: 1
+            name: name
+            guid: guid
+            handle: handle
+            localId: 0
+          title: The top Newsletters
+          localId: 1
+          registrationUrl: https://openapi-generator.tech
         localId: 0
         emailSubject: emailSubject
+        status: 5
       properties:
         localId:
           description: The mailing id in the database
@@ -2084,6 +2086,17 @@ components:
           $ref: '#/components/schemas/FileObject'
         recipientList:
           $ref: '#/components/schemas/ListObject'
+        status:
+          description: The status of the mailing
+          type: integer
+        creationTime:
+          description: The creation time of the mailing in UTC
+          format: date-time
+          type: string
+        modificationTime:
+          description: The last modification time of the mailing in UTC
+          format: date-time
+          type: string
         realm:
           $ref: '#/components/schemas/Realm'
       required:
@@ -2092,6 +2105,8 @@ components:
       x-fields-to-string:
       - guid
       - name
+      x-fields-identity:
+      - guid
     ListImportPostResponse:
       description: |
         The successful response to the submission of a import job for a list
@@ -2694,57 +2709,7 @@ components:
         * Newsletter
         * Sign up to a waiting list
       example:
-        ownerUser:
-          disabledReason: disabledReason
-          website: https://mywebsite
-          creationTime: 2000-01-23T04:56:07.000+00:00
-          givenName: John
-          bio: bio
-          timeZone: Europe/Amsterdam
-          handle: foo
-          avatar: https://en.gravatar.com/userimage/john.doe.png
-          title: Chief Executive Officer
-          localId: 1
-          modificationTime: 2000-01-23T04:56:07.000+00:00
-          familyName: Doe
-          guid: xmmmN
-          disabled: true
-          location: The world
-          realm:
-            ownerUser: null
-            organization:
-              creationTime: 2000-01-23T04:56:07.000+00:00
-              modificationTime: 2000-01-23T04:56:07.000+00:00
-              name: name
-              guid: org-xmmmN
-              handle: handle
-              localId: 1
-            name: name
-            guid: guid
-            handle: handle
-            localId: 0
-          email: john@doe.com
-        name: Mailing list
-        guid: xmmmN
-        description: The last news ....
-        handle: newsletter
-        realm:
-          ownerUser: null
-          organization:
-            creationTime: 2000-01-23T04:56:07.000+00:00
-            modificationTime: 2000-01-23T04:56:07.000+00:00
-            name: name
-            guid: org-xmmmN
-            handle: handle
-            localId: 1
-          name: name
-          guid: guid
-          handle: handle
-          localId: 0
-        title: The top Newsletters
-        localId: 1
-        registrationUrl: https://openapi-generator.tech
-        ownerApp:
+        app:
           terms: https://openapi-generator.tech
           name: Doe
           primaryColor: '#3498db'
@@ -2769,6 +2734,27 @@ components:
           slogan: "Doe, Be You"
           user: null
           home: https://doe.com/landing
+        ownerUser: null
+        name: Mailing list
+        guid: xmmmN
+        description: The last news ....
+        handle: newsletter
+        realm:
+          ownerUser: null
+          organization:
+            creationTime: 2000-01-23T04:56:07.000+00:00
+            modificationTime: 2000-01-23T04:56:07.000+00:00
+            name: name
+            guid: org-xmmmN
+            handle: handle
+            localId: 1
+          name: name
+          guid: guid
+          handle: handle
+          localId: 0
+        title: The top Newsletters
+        localId: 1
+        registrationUrl: https://openapi-generator.tech
       properties:
         localId:
           description: "The list identifier in the realm scope. Without the realm,\
@@ -2797,8 +2783,8 @@ components:
           example: The last news ....
           type: string
         ownerUser:
-          $ref: '#/components/schemas/User'
-        ownerApp:
+          $ref: '#/components/schemas/OrganizationUser'
+        app:
           $ref: '#/components/schemas/App'
         realm:
           $ref: '#/components/schemas/Realm'
@@ -2814,6 +2800,22 @@ components:
       - guid
       - handle
       x-parent: true
+    OrganizationUser:
+      allOf:
+      - $ref: '#/components/schemas/User'
+      - properties:
+          organization:
+            $ref: '#/components/schemas/Organization'
+        type: object
+      description: |
+        A user in the organization
+        They are the users of the Eraldy realm
+        that are part of an organization.
+        They may own Realms, App, List.
+      type: object
+      x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
+        \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
+        \ property = \"guid\", scope = User.class)"
     User:
       description: A user
       example:
@@ -3047,22 +3049,6 @@ components:
           format: date-time
           type: string
       type: object
-    OrganizationUser:
-      allOf:
-      - $ref: '#/components/schemas/User'
-      - properties:
-          organization:
-            $ref: '#/components/schemas/Organization'
-        type: object
-      description: |
-        A user in the organization
-        They are the users of the Eraldy realm
-        that are part of an organization.
-        They may own Realms, App, List.
-      type: object
-      x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
-        \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
-        \ property = \"guid\", scope = User.class)"
     App:
       description: "An app is the container for branding elements (such as logo, color)"
       example:
@@ -3621,57 +3607,7 @@ components:
         creationTime: 2000-01-23T04:56:07.000+00:00
         inOptInOrigin: inOptInOrigin
         list:
-          ownerUser:
-            disabledReason: disabledReason
-            website: https://mywebsite
-            creationTime: 2000-01-23T04:56:07.000+00:00
-            givenName: John
-            bio: bio
-            timeZone: Europe/Amsterdam
-            handle: foo
-            avatar: https://en.gravatar.com/userimage/john.doe.png
-            title: Chief Executive Officer
-            localId: 1
-            modificationTime: 2000-01-23T04:56:07.000+00:00
-            familyName: Doe
-            guid: xmmmN
-            disabled: true
-            location: The world
-            realm:
-              ownerUser: null
-              organization:
-                creationTime: 2000-01-23T04:56:07.000+00:00
-                modificationTime: 2000-01-23T04:56:07.000+00:00
-                name: name
-                guid: org-xmmmN
-                handle: handle
-                localId: 1
-              name: name
-              guid: guid
-              handle: handle
-              localId: 0
-            email: john@doe.com
-          name: Mailing list
-          guid: xmmmN
-          description: The last news ....
-          handle: newsletter
-          realm:
-            ownerUser: null
-            organization:
-              creationTime: 2000-01-23T04:56:07.000+00:00
-              modificationTime: 2000-01-23T04:56:07.000+00:00
-              name: name
-              guid: org-xmmmN
-              handle: handle
-              localId: 1
-            name: name
-            guid: guid
-            handle: handle
-            localId: 0
-          title: The top Newsletters
-          localId: 1
-          registrationUrl: https://openapi-generator.tech
-          ownerApp:
+          app:
             terms: https://openapi-generator.tech
             name: Doe
             primaryColor: '#3498db'
@@ -3696,6 +3632,27 @@ components:
             slogan: "Doe, Be You"
             user: null
             home: https://doe.com/landing
+          ownerUser: null
+          name: Mailing list
+          guid: xmmmN
+          description: The last news ....
+          handle: newsletter
+          realm:
+            ownerUser: null
+            organization:
+              creationTime: 2000-01-23T04:56:07.000+00:00
+              modificationTime: 2000-01-23T04:56:07.000+00:00
+              name: name
+              guid: org-xmmmN
+              handle: handle
+              localId: 1
+            name: name
+            guid: guid
+            handle: handle
+            localId: 0
+          title: The top Newsletters
+          localId: 1
+          registrationUrl: https://openapi-generator.tech
         inOptInConfirmationIp: inOptInConfirmationIp
         modificationTime: 2000-01-23T04:56:07.000+00:00
         outOptOutTime: 2000-01-23T04:56:07.000+00:00

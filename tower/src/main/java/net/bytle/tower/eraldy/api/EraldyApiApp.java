@@ -86,6 +86,7 @@ public class EraldyApiApp extends TowerApp  {
 
   private final RealmSequenceProvider realmSequenceProvider;
   private final MailingProvider mailingProvider;
+  private final OpenApiService openApi;
 
 
   public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
@@ -135,7 +136,7 @@ public class EraldyApiApp extends TowerApp  {
     this.passwordLoginFlow = new PasswordLoginFlow(this);
 
     /**
-     * OAuth
+     * OAuth Service
      */
     String realmGuidContextAndSessionKey = "ey-realm-guid";
     String realmHandleContextAndSessionKey = "ey-realm-handle";
@@ -146,6 +147,12 @@ public class EraldyApiApp extends TowerApp  {
       .build();
     this.oauthExternalFlow = new OAuthExternalCodeFlow(this, "/auth/oauth", oAuthContextManager);
 
+    /**
+     * OpenApi
+     */
+    this.openApi = OpenApiService
+      .config(this)
+      .build();
     /**
      * The authN manager used by all flows
      */
@@ -253,7 +260,7 @@ public class EraldyApiApp extends TowerApp  {
         return new ApiKeyAndSessionUserAuthenticationHandler(this,headerName, apiKeyUserProvider);
       });
 
-    Handler<RoutingContext> authorizationHandler = this.getOpenApi().authorizationCheckHandler();
+    Handler<RoutingContext> authorizationHandler = this.openApi.authorizationCheckHandler();
     for (Operation operation : routerBuilder.operations()) {
       routerBuilder.operation(operation.getOperationId())
         .handler(authorizationHandler);
@@ -267,45 +274,6 @@ public class EraldyApiApp extends TowerApp  {
     return "api";
   }
 
-  @Override
-  protected TowerApp addSpecificAppHandlers(Router router) {
-
-    /**
-     * Add the external OAuths
-     */
-    this.oauthExternalFlow.step2AddProviderAndCallbacks(router);
-
-
-    /**
-     * Add the registration validation callback
-     */
-    getUserRegistrationFlow()
-      .getCallback()
-      .addCallback(router);
-
-    /**
-     * Add the email login validation callback
-     */
-    getUserEmailLoginFlow()
-      .getStep2Callback()
-      .addCallback(router);
-
-    /**
-     * Add the password reset callback
-     */
-    getPasswordResetFlow()
-      .getPasswordResetCallback()
-      .addCallback(router);
-
-    /**
-     * Add the user list registration callback
-     */
-    getUserListRegistrationFlow()
-      .getCallback()
-      .addCallback(router);
-
-    return this;
-  }
 
   public EmailLoginFlow getUserEmailLoginFlow() {
     return this.emailLoginFlow;
@@ -320,12 +288,6 @@ public class EraldyApiApp extends TowerApp  {
    */
   public UserRegistrationFlow getUserRegistrationFlow() {
     return this.userRegistrationFlow;
-  }
-
-
-  @Override
-  public boolean hasOpenApiSpec() {
-    return true;
   }
 
   @Override

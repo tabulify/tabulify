@@ -36,24 +36,15 @@ import net.bytle.type.UriEnhanced;
 public abstract class TowerApp extends TowerService {
 
 
-  public static final String OPENAPI_YAML_PATH = "/openapi.yaml";
-
-  /**
-   * The first directory in the resource main directory
-   * for the location of the spec file
-   */
-  private static final String OPEN_API_RESOURCES_PREFIX = "openapi-spec-file";
-
   private final ConfigAccessor configAccessor;
   private final HttpServer httpServer;
   private ForwardProxy proxy;
   private WebClient webClient;
-  private OpenApiManager openApi;
+
   private final TowerApexDomain apexDomain;
 
 
   /**
-   *
    * @param httpServer - the HTTP server
    * @param apexDomain - the Apex Domain (mandatory for location of assets such as openAPI)
    */
@@ -69,22 +60,6 @@ public abstract class TowerApp extends TowerService {
 
     this.configAccessor = httpServer.getServer().getConfigAccessor();
 
-    /**
-     * Built OpenApi
-     */
-    if (this.hasOpenApiSpec()) {
-      openApi = OpenApiManager.config(this).build();
-    }
-
-  }
-
-  public String getRelativeSpecFileResourcesPath() {
-    return OPEN_API_RESOURCES_PREFIX + getAbsoluteDomainName().toLowerCase() + "/" + getAppName().toLowerCase() + OPENAPI_YAML_PATH;
-  }
-
-
-  private String getAbsoluteDomainName() {
-    return "/" + getApexDomain().getPathName();
   }
 
 
@@ -164,6 +139,7 @@ public abstract class TowerApp extends TowerService {
 
   /**
    * Mount all openApi operations described in the spec
+   *
    * @param builder - the open api builder
    */
   public abstract TowerApp openApiMount(RouterBuilder builder);
@@ -191,11 +167,18 @@ public abstract class TowerApp extends TowerService {
    * @return the template
    */
   public Template getTemplate(String templateName) {
-    String templateResourcesPath = getApexDomain().getPathName() + "/" + this.getAppName() + "/" + templateName;
+    String templateResourcesPath = getApexDomain().getFileSystemPathName() + "/" + this.getAppName() + "/" + templateName;
     return TemplateEngine.getLocalHtmlEngine(this.httpServer.getServer().getVertx())
       .compile(templateResourcesPath);
   }
 
+  /**
+   * Returns a http request builder for this app that is used
+   * in test
+   *
+   * @param path - the operation
+   * @return - a http request builder ready
+   */
   public TowerAppRequestBuilder getRequestBuilder(String path) {
     if (webClient == null) {
       Server server = this.httpServer.getServer();
@@ -212,8 +195,8 @@ public abstract class TowerApp extends TowerService {
    */
   public String getPublicDomainHost() {
     String apexName = getApexDomain().getUrlAuthority();
-    String apexNameWithoutPort = getApexDomain().getDnsApexName();
-    if (apexNameWithoutPort.equals("localhost")) {
+    String dnsName = getApexDomain().getDnsApexName();
+    if (dnsName.equals("localhost")) {
       /**
        * Localhost does not have subdomain
        */
@@ -241,11 +224,16 @@ public abstract class TowerApp extends TowerService {
 
   }
 
+  @Override
   public Future<Void> mount() {
 
     return mountOnRouter();
+
   }
 
+  /**
+   * Mount handlers on router
+   */
   private Future<Void> mountOnRouter() {
 
 
@@ -300,49 +288,10 @@ public abstract class TowerApp extends TowerService {
       route.handler(HSTSHandler.create(31536000, true));
     }
 
+    return Future.succeededFuture();
 
-    /**
-     * Add specific handlers
-     * Note that as they may need a session, they are placed after the browser session
-     */
-    this.addSpecificAppHandlers(rootRouter);
 
-    /**
-     * Load the open api
-     * <p>
-     */
-    Future<Void> openApiMount;
-    if (this.openApi != null) {
-
-      openApiMount = openApi.mountOpenApi(rootRouter);
-
-    } else {
-
-      openApiMount = Future.succeededFuture();
-
-    }
-
-    return openApiMount
-      .compose(v -> {
-        /**
-         * The proxy handling is a `catch-all` handler
-         * and should then be at the end to get a lower priority
-         * than any other routes.
-         */
-        this.addProxyHandlerForUnknownResourceOfHtmlApp(rootRouter);
-        return Future.succeededFuture();
-      });
   }
-
-  /**
-   * Add handler to the rooter for this app
-   * This is used for custom handlers such as OAuthExternal
-   * or Authorization handlers
-   *
-   * @param router - the router
-   * @return for fluency
-   */
-  protected abstract TowerApp addSpecificAppHandlers(Router router);
 
   /**
    * This handler will pass through all
@@ -350,7 +299,7 @@ public abstract class TowerApp extends TowerService {
    * created by the dev server
    * such as reload, image,
    * <p>
-   * It should be at the end of the rout configuration
+   * It should be at the end of the router configuration
    * to get a low priority.
    */
   public void addProxyHandlerForUnknownResourceOfHtmlApp(Router router) {
@@ -359,12 +308,11 @@ public abstract class TowerApp extends TowerService {
     }
   }
 
-  /**
-   * @return does this app has an openapi file
-   */
-  public abstract boolean hasOpenApiSpec();
 
   /**
+   * Path mount feature.
+   * <p>
+   * Not really used anymore
    * We reroute public request to internal path
    * ie `api.combostrap.com/` to `combo/public/`
    * ie `api.combostrap.com/_private` to `combo/private/`
@@ -374,35 +322,30 @@ public abstract class TowerApp extends TowerService {
    * We redirect public request with an internal path to a full public request
    * ie `member.combostrap.local:8083/combo/member/oauth/protected` to `member.combostrap.local:8083/oauth/protected`
    */
-  public TowerApp reRouteOrRedirect(Router rootRouter) {
+  private TowerApp reRouteOrRedirect(Router rootRouter) {
 
     String pathMount = this.getPathMount();
-    if (pathMount == null) {
-      throw new InternalException("The public absolute path mount should not be null for the app (" + this + ")");
+    if (pathMount == null || pathMount.isEmpty() || pathMount.equals("/")) {
+      return this;
     }
 
     /**
-     * Reroute a URL without path to the default operation
-     * if this is not mounted to root
+     * Reroute
      */
-    if (
-      !pathMount.isEmpty()
-        && !pathMount.equals("/")
-    ) {
-      rootRouter
-        .get(pathMount)
-        .handler(ctx -> {
-          String publicDefaultOperationPath = this.getDefaultOperationPath();
-          if (publicDefaultOperationPath == null || publicDefaultOperationPath.isEmpty()) {
-            ctx.next();
-            return;
-          }
-          String uri = getOperationUriFromRequestContext(ctx, publicDefaultOperationPath).toUri().toString();
-          ctx.redirect(uri);
-        });
-    }
+    rootRouter
+      .get(pathMount)
+      .handler(ctx -> {
+        String publicDefaultOperationPath = this.getDefaultOperationPath();
+        if (publicDefaultOperationPath == null || publicDefaultOperationPath.isEmpty()) {
+          ctx.next();
+          return;
+        }
+        String uri = getOperationUriFromRequestContext(ctx, publicDefaultOperationPath).toUri().toString();
+        ctx.redirect(uri);
+      });
 
     return this;
+
 
   }
 
@@ -485,23 +428,19 @@ public abstract class TowerApp extends TowerService {
    * @return the name used in the configuration file
    */
   public String getAppConfName() {
-    return (this.getApexDomain().getPathName() + "." + this.getAppName()).toLowerCase();
+    return (this.getApexDomain().getFileSystemPathName() + "." + this.getAppName()).toLowerCase();
   }
 
 
-  public TowerApexDomain getApexDomain(){
-   return this.apexDomain;
+  public TowerApexDomain getApexDomain() {
+    return this.apexDomain;
   }
 
   @Override
   public String toString() {
-    return getApexDomain().getPathName() + "." + getAppName();
+    return getApexDomain().getFileSystemPathName() + "." + getAppName();
   }
 
-
-  public OpenApiManager getOpenApi() {
-    return openApi;
-  }
 
 
   public HttpServer getHttpServer() {
@@ -510,6 +449,14 @@ public abstract class TowerApp extends TowerService {
 
   public Future<TowerApp> mountListenAndStart() {
     return this.httpServer.mountListenAndStart(this.getAppName())
-      .compose(v->Future.succeededFuture(this));
+      .compose(v -> {
+        /**
+         * The proxy handling is a `catch-all` handler
+         * and should then be at the end to get a lower priority
+         * than any other routes.
+         */
+        this.addProxyHandlerForUnknownResourceOfHtmlApp(this.httpServer.getRouter());
+        return Future.succeededFuture(this);
+      });
   }
 }

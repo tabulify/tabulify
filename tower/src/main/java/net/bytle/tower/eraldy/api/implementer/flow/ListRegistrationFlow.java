@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import jakarta.mail.internet.AddressException;
@@ -373,7 +374,6 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
   }
 
-
   public ListRegistrationEmailCallback getCallback() {
     return this.callback;
   }
@@ -454,4 +454,15 @@ public class ListRegistrationFlow extends WebFlowAbs {
     };
   }
 
+  @Override
+  public Future<Void> mount() {
+    /**
+     * Add the user list registration callback
+     */
+    Router router = this.getApp().getHttpServer().getRouter();
+    this
+      .getCallback()
+      .addCallback(router);
+    return super.mount();
+  }
 }

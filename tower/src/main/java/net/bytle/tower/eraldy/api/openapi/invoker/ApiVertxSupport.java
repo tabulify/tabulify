@@ -7,46 +7,12 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.openapi.RouterBuilder;
-import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.tower.eraldy.api.implementer.*;
+import net.bytle.tower.eraldy.api.openapi.interfaces.*;
 import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.TowerFailureTypeEnum;
+
 import java.util.function.Function;
-
-
-import net.bytle.tower.eraldy.api.openapi.interfaces.AnalyticsApiHandler;
-import net.bytle.tower.eraldy.api.implementer.AnalyticsApiImpl;
-
-import net.bytle.tower.eraldy.api.openapi.interfaces.AppApiHandler;
-import net.bytle.tower.eraldy.api.implementer.AppApiImpl;
-
-import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApiHandler;
-import net.bytle.tower.eraldy.api.implementer.AuthApiImpl;
-
-import net.bytle.tower.eraldy.api.openapi.interfaces.CampaignApiHandler;
-import net.bytle.tower.eraldy.api.implementer.CampaignApiImpl;
-
-import net.bytle.tower.eraldy.api.openapi.interfaces.CspApiHandler;
-import net.bytle.tower.eraldy.api.implementer.CspApiImpl;
-
-import net.bytle.tower.eraldy.api.openapi.interfaces.EmailApiHandler;
-import net.bytle.tower.eraldy.api.implementer.EmailApiImpl;
-
-import net.bytle.tower.eraldy.api.openapi.interfaces.EnvApiHandler;
-import net.bytle.tower.eraldy.api.implementer.EnvApiImpl;
-
-import net.bytle.tower.eraldy.api.openapi.interfaces.ListApiHandler;
-import net.bytle.tower.eraldy.api.implementer.ListApiImpl;
-
-import net.bytle.tower.eraldy.api.openapi.interfaces.OrganizationApiHandler;
-import net.bytle.tower.eraldy.api.implementer.OrganizationApiImpl;
-
-import net.bytle.tower.eraldy.api.openapi.interfaces.RealmApiHandler;
-import net.bytle.tower.eraldy.api.implementer.RealmApiImpl;
-
-import net.bytle.tower.eraldy.api.openapi.interfaces.ServiceApiHandler;
-import net.bytle.tower.eraldy.api.implementer.ServiceApiImpl;
-
-import net.bytle.tower.eraldy.api.openapi.interfaces.UserApiHandler;
-import net.bytle.tower.eraldy.api.implementer.UserApiImpl;
 
 
 /**
@@ -71,6 +37,7 @@ public class ApiVertxSupport {
     new EmailApiHandler(new EmailApiImpl(towerApp)).mount(builder);
     new EnvApiHandler(new EnvApiImpl(towerApp)).mount(builder);
     new ListApiHandler(new ListApiImpl(towerApp)).mount(builder);
+    new MailingApiHandler(new MailingApiImpl(towerApp)).mount(builder);
     new OrganizationApiHandler(new OrganizationApiImpl(towerApp)).mount(builder);
     new RealmApiHandler(new RealmApiImpl(towerApp)).mount(builder);
     new ServiceApiHandler(new ServiceApiImpl(towerApp)).mount(builder);

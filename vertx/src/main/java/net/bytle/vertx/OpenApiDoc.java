@@ -14,16 +14,16 @@ public class OpenApiDoc {
   static Logger LOGGER = LogManager.getLogger(OpenApiDoc.class);
 
   public static final String DOC_OPERATION_PATH = "/doc";
-  private final OpenApiManager openApiManager;
+  private final OpenApiService openApiService;
   private final String routerDirPath;
   private final String routerYamlRootPath;
   private final String routerYamlDocPath;
   private final List<String> routerPaths;
 
-  public OpenApiDoc(OpenApiManager openApiManager) {
+  public OpenApiDoc(OpenApiService openApiService) {
     String tempLocalPath;
-    this.openApiManager = openApiManager;
-    TowerApp towerApp = this.openApiManager.getTowerApp();
+    this.openApiService = openApiService;
+    TowerApp towerApp = this.openApiService.getTowerApp();
     tempLocalPath = towerApp.getPathMount();
     if (tempLocalPath.isEmpty()) {
       tempLocalPath = "/" + towerApp.getAppName().toLowerCase();
@@ -31,8 +31,8 @@ public class OpenApiDoc {
     String rootPath = tempLocalPath;
 
     this.routerDirPath = rootPath + DOC_OPERATION_PATH;
-    this.routerYamlRootPath = rootPath + TowerApp.OPENAPI_YAML_PATH;
-    this.routerYamlDocPath = routerDirPath + TowerApp.OPENAPI_YAML_PATH;
+    this.routerYamlRootPath = rootPath + OpenApiService.OPENAPI_YAML_PATH;
+    this.routerYamlDocPath = routerDirPath + OpenApiService.OPENAPI_YAML_PATH;
 
     /**
      * The path segment uses in the router
@@ -58,14 +58,14 @@ public class OpenApiDoc {
     StaticHandler staticHandler = StaticResourcesUtil.getStaticHandlerForRelativeResourcePath("openapi-doc");
     String allFilesJavascriptIncluded = "*";
     router.get(routerDirPath + allFilesJavascriptIncluded).handler(staticHandler);
-    TowerApp towerApp = this.openApiManager.getTowerApp();
+    TowerApp towerApp = this.openApiService.getTowerApp();
     LOGGER.info("Serving API doc at " + towerApp.getOperationUriForLocalhost(routerDirPath) + " and " + towerApp.getOperationUriForPublicHost(routerDirPath));
 
     /**
      * Serve the spec (root OpenAPI document) at the root
      * as specified by the [spec](https://spec.openapis.org/oas/v3.1.0#document-structure)
      */
-    String resourceOpenApiFile = towerApp.getRelativeSpecFileResourcesPath();
+    String resourceOpenApiFile = openApiService.getRelativeOpenApiSpecFileResourcesPath();
     router.get(routerYamlDocPath).handler(ctx -> ctx.response().sendFile(resourceOpenApiFile));
     LOGGER.info("Serving open API file at " + towerApp.getOperationUriForLocalhost(routerYamlDocPath) + " and " + towerApp.getOperationUriForPublicHost(routerYamlDocPath));
     router.get(routerYamlRootPath).handler(ctx -> ctx.response().sendFile(resourceOpenApiFile));

@@ -20,7 +20,8 @@ public enum AuthUserScope {
 
   APP_LISTS_GET("get the lists of an app", false),
   REALM_LISTS_GET("get the lists of a realm", false),
-  LIST_MAILING("create/modify a mailing for a list", false);
+  MAILING_LIST("create/modify a mailing for a list", false),
+  MAILING_GET("get a mailing", false);
 
 
   private final String humanActionName;

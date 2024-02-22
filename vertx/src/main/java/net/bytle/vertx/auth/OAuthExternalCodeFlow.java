@@ -89,4 +89,12 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
   public AuthNContextManager getAuthContextManager() {
     return this.authNContextManager;
   }
+
+  @Override
+  public Future<Void> mount() {
+    Router router = this.getApp().getHttpServer().getRouter();
+    this.step2AddProviderAndCallbacks(router);
+    return super.mount();
+  }
+
 }

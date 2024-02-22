@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
@@ -62,8 +63,6 @@ public class UserRegistrationFlow extends WebFlowAbs {
 
   /**
    * Handle the registration post
-   *
-   *
    */
   public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext,
                                                         EmailAddress bMailInternetAddress,
@@ -206,7 +205,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
   /**
    * Second steps:
    *
-   * @param ctx              - the context
+   * @param ctx       - the context
    * @param jwtClaims - the claims
    */
   public void handleStep2ClickOnEmailValidationLink(RoutingContext ctx, AuthJwtClaims jwtClaims) {
@@ -355,4 +354,15 @@ public class UserRegistrationFlow extends WebFlowAbs {
 
     };
   }
+
+  /**
+   * Add the registration validation callback
+   */
+  @Override
+  public Future<Void> mount() {
+    Router router = this.getApp().getHttpServer().getRouter();
+    this.userCallback.addCallback(router);
+    return super.mount();
+  }
+
 }

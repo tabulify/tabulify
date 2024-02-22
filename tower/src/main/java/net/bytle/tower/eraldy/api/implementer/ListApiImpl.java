@@ -184,7 +184,7 @@ public class ListApiImpl implements ListApi {
     ListProvider listProvider = this.apiApp.getListProvider();
     MailingProvider mailingProvider = this.apiApp.getMailingProvider();
     return listProvider
-      .getListByIdentifier(routingContext,AuthUserScope.LIST_MAILING,ListObject.class)
+      .getListByIdentifier(routingContext,AuthUserScope.MAILING_LIST,ListObject.class)
       .compose(list->{
         Mailing mailingToInsert = new Mailing();
         mailingToInsert.setEmailAuthor(ListProvider.getOwnerUser(list));

@@ -27,7 +27,7 @@ public class ListObject   {
 
   protected OrganizationUser ownerUser;
 
-  protected App ownerApp;
+  protected App app;
 
   protected Realm realm;
 
@@ -155,19 +155,19 @@ public class ListObject   {
   }
 
   /**
-  * @return ownerApp
+  * @return app
   */
-  @JsonProperty("ownerApp")
+  @JsonProperty("app")
   public App getApp() {
-    return ownerApp;
+    return app;
   }
 
   /**
-  * @param ownerApp Set ownerApp
+  * @param app Set app
   */
   @SuppressWarnings("unused")
-  public void setApp(App ownerApp) {
-    this.ownerApp = ownerApp;
+  public void setApp(App app) {
+    this.app = app;
   }
 
   /**

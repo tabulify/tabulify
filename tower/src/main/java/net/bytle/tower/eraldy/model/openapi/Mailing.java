@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.model.openapi;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -25,6 +26,12 @@ public class Mailing   {
   protected FileObject emailBody;
 
   protected ListObject recipientList;
+
+  protected Integer status;
+
+  protected LocalDateTime creationTime;
+
+  protected LocalDateTime modificationTime;
 
   protected Realm realm;
 
@@ -150,6 +157,54 @@ public class Mailing   {
   }
 
   /**
+  * @return status The status of the mailing
+  */
+  @JsonProperty("status")
+  public Integer getStatus() {
+    return status;
+  }
+
+  /**
+  * @param status The status of the mailing
+  */
+  @SuppressWarnings("unused")
+  public void setStatus(Integer status) {
+    this.status = status;
+  }
+
+  /**
+  * @return creationTime The creation time of the mailing in UTC
+  */
+  @JsonProperty("creationTime")
+  public LocalDateTime getCreationTime() {
+    return creationTime;
+  }
+
+  /**
+  * @param creationTime The creation time of the mailing in UTC
+  */
+  @SuppressWarnings("unused")
+  public void setCreationTime(LocalDateTime creationTime) {
+    this.creationTime = creationTime;
+  }
+
+  /**
+  * @return modificationTime The last modification time of the mailing in UTC
+  */
+  @JsonProperty("modificationTime")
+  public LocalDateTime getModificationTime() {
+    return modificationTime;
+  }
+
+  /**
+  * @param modificationTime The last modification time of the mailing in UTC
+  */
+  @SuppressWarnings("unused")
+  public void setModificationTime(LocalDateTime modificationTime) {
+    this.modificationTime = modificationTime;
+  }
+
+  /**
   * @return realm
   */
   @JsonProperty("realm")
@@ -175,9 +230,7 @@ public class Mailing   {
       return false;
     }
     Mailing mailing = (Mailing) o;
-    return
-            Objects.equals(guid, mailing.guid);
-
+    return Objects.equals(guid, mailing.guid);
   }
 
   @Override

@@ -22,6 +22,8 @@ tags:
     description: User module
   - name: list
     description: List module (creation, registration)
+  - name: mailing
+    description: Mailing module
   - name: app
     description: App module
   - name: analytics
@@ -174,6 +176,8 @@ components:
       x-fields-to-string:
         - guid
         - name
+      x-fields-identity: # hashCode
+        - guid
       properties:
         localId:
           type: integer
@@ -206,6 +210,17 @@ components:
             - the to field in the message
             - the RCPT field in smtp
           $ref: './eraldy-common-openapi.yaml#/components/schemas/ListObject'
+        status:
+          type: integer
+          description: The status of the mailing
+        creationTime:
+          type: string
+          format: date-time
+          description: The creation time of the mailing in UTC
+        modificationTime:
+          type: string
+          format: date-time
+          description: The last modification time of the mailing in UTC
         realm:
           $ref: './eraldy-common-openapi.yaml#/components/schemas/Realm'
     ListImportPostResponse:
@@ -1729,6 +1744,29 @@ paths:
       responses:
         '200':
           description: "Mailing"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mailing'
+  /mailing/{mailingIdentifier}:
+    get:
+      operationId: mailingIdentifierGet
+      summary: "The mailing"
+      tags:
+        - mailing
+      security:
+        - apiKeyAuth: [ ]
+      parameters:
+        - name: mailingIdentifier
+          description: "A mailing identifier (guid)"
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "mai-xjkkLmi"
+      responses:
+        '200':
+          description: "The mailing"
           content:
             application/json:
               schema:

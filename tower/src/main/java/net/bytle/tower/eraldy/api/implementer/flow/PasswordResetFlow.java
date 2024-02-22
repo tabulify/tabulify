@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.api.implementer.flow;
 import io.vertx.core.Future;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
@@ -25,7 +26,6 @@ import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
-import net.bytle.vertx.flow.WebFlowEmailCallback;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -43,9 +43,6 @@ public class PasswordResetFlow extends WebFlowAbs {
     this.step2Callback = new PasswordResetEmailCallback(this);
   }
 
-  public WebFlowEmailCallback getPasswordResetCallback() {
-    return this.step2Callback;
-  }
 
   @Override
   public EraldyApiApp getApp() {
@@ -109,7 +106,7 @@ public class PasswordResetFlow extends WebFlowAbs {
           this.getApp().getAuthProvider().checkClientAuthorization(authClient, listRegistration);
         } catch (NotAuthorizedException e) {
           return Future.failedFuture(TowerFailureException.builder()
-            .setMessage("You don't have any permission to "+listRegistration.getHumanActionName())
+            .setMessage("You don't have any permission to " + listRegistration.getHumanActionName())
             .buildWithContextFailing(routingContext)
           );
         }
@@ -195,5 +192,15 @@ public class PasswordResetFlow extends WebFlowAbs {
               });
           });
       });
+  }
+
+  @Override
+  public Future<Void> mount() {
+    /**
+     * Add the password reset callback
+     */
+    Router router = this.getApp().getHttpServer().getRouter();
+    this.step2Callback.addCallback(router);
+    return super.mount();
   }
 }
