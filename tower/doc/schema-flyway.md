@@ -116,6 +116,54 @@ eating a number in the sequence.
 
 See [identifier](identifier.md)
 
+### Json data type
+
+We don't use Json datatype as storage structure for an object.
+
+Why?
+#### Polluted Json data, possible data loss
+
+Because if you transform an existing object into json, say a list, you have to :
+* exclude all data that is already stored in the row
+* exclude all derived data served (for instance, registration URL)
+* take into account that the name may change (from ownerApp to app) as we use an object mapper to exclude field.
+
+The chance that you get unwanted Json data in the database is high.
+Therefore, the chance that you get error while decoding is high.
+
+When using a collection (a map), this a no-brainer but when you
+get into relational model, it should be banned.
+
+#### Counter More difficult to update
+
+If you have the analytics in Json format, it's a little bit more difficult
+to increment the counter (for instance, when a user is added to a list)
+
+#### The update of Json will not fail even with a bad Json schema
+
+If you have the analytics in Json format, the update
+may not fail but the Json format stored may not be the good one.
+By putting the data in the table, we give it a structure.
+
+#### Json as string non queryable
+If you store it as string, Jackson will escape the quote
+making it non queryable by Postgres
+
+Example:
+
+```json
+"{\"name\":\"Eraldy\"}"
+```
+in place of
+```json
+"{"name":"Eraldy"}"
+```
+
+You need then:
+```json
+SELECT (trim( replace(realm_data::text,'\',''),'"'))::jsonb->'name' FROM realm;
+```
+
 
 ## Flyway Refactoring (Baseline)
 

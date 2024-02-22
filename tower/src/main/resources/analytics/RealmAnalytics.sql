@@ -1,12 +1,7 @@
 UPDATE realm
-SET realm_analytics      =
-      (
-        '{' ||
-        ' "userCount": ' || analytics.userCount::text || ',' ||
-        ' "appCount": ' || analytics.appCount::text || ',' ||
-        ' "listCount": ' || analytics.listCount::text ||
-        '}')::jsonb,
-    realm_analytics_time = now()
+SET realm_user_count = analytics.userCount,
+    realm_app_count = analytics.appCount,
+    realm_list_count = analytics.listCount
 from (select realm.realm_id,
              coalesce(userCount.userCount, 0) as userCount,
              coalesce(appCount.appCount, 0)   as appCount,

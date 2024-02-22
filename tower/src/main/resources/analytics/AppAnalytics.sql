@@ -1,9 +1,5 @@
 UPDATE realm_app
-SET app_analytics      =
-        ('{' ||
-        ' "listCount": ' || analytics.listCount::text ||
-        '}')::jsonb,
-    app_analytics_time = now()
+SET app_list_count  =  analytics.listCount
 from (select realm_app.app_id,
              realm_app.app_realm_id,
              coalesce(listCount.listCount, 0) as listCount
