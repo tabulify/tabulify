@@ -5,9 +5,6 @@ import io.vertx.ext.web.handler.StaticHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
-
 
 public class OpenApiDoc {
 
@@ -18,12 +15,11 @@ public class OpenApiDoc {
   private final String routerDirPath;
   private final String routerYamlRootPath;
   private final String routerYamlDocPath;
-  private final List<String> routerPaths;
 
   public OpenApiDoc(OpenApiService openApiService) {
     String tempLocalPath;
     this.openApiService = openApiService;
-    TowerApp towerApp = this.openApiService.getTowerApp();
+    TowerApp towerApp = this.openApiService.getOpenApiInstance().getApp();
     tempLocalPath = towerApp.getPathMount();
     if (tempLocalPath.isEmpty()) {
       tempLocalPath = "/" + towerApp.getAppName().toLowerCase();
@@ -34,14 +30,6 @@ public class OpenApiDoc {
     this.routerYamlRootPath = rootPath + OpenApiService.OPENAPI_YAML_PATH;
     this.routerYamlDocPath = routerDirPath + OpenApiService.OPENAPI_YAML_PATH;
 
-    /**
-     * The path segment uses in the router
-     * (without glob)
-     */
-    this.routerPaths = new ArrayList<>();
-    this.routerPaths.add(this.routerDirPath);
-    this.routerPaths.add(routerYamlRootPath);
-    this.routerPaths.add(routerYamlDocPath);
   }
 
   /**
@@ -58,7 +46,7 @@ public class OpenApiDoc {
     StaticHandler staticHandler = StaticResourcesUtil.getStaticHandlerForRelativeResourcePath("openapi-doc");
     String allFilesJavascriptIncluded = "*";
     router.get(routerDirPath + allFilesJavascriptIncluded).handler(staticHandler);
-    TowerApp towerApp = this.openApiService.getTowerApp();
+    TowerApp towerApp = this.openApiService.getOpenApiInstance().getApp();
     LOGGER.info("Serving API doc at " + towerApp.getOperationUriForLocalhost(routerDirPath) + " and " + towerApp.getOperationUriForPublicHost(routerDirPath));
 
     /**
@@ -73,7 +61,5 @@ public class OpenApiDoc {
 
   }
 
-  public List<String> getRouterDocPaths() {
-    return this.routerPaths;
-  }
+
 }

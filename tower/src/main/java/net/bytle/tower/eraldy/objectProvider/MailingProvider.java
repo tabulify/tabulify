@@ -160,7 +160,10 @@ public class MailingProvider {
 
         Row row = rows.iterator().next();
         Mailing mailing = new Mailing();
+        mailing.setLocalId(localId);
         mailing.setRealm(realm);
+        // realm and id should be first set for guid update
+        this.updateGuid(mailing);
         mailing.setName(row.getString(NAME_COLUMN));
         mailing.setEmailSubject(row.getString(SUBJECT_COLUMN));
         mailing.setStatus(row.getInteger(MAILING_STATUS_COLUMN));

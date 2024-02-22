@@ -1,16 +1,16 @@
 package net.bytle.ip;
 
-import io.vertx.ext.web.Router;
-import io.vertx.ext.web.openapi.RouterBuilder;
-import net.bytle.ip.api.IpApiImpl;
-import net.bytle.ip.handler.IpHandler;
-import net.bytle.vertx.*;
+import net.bytle.vertx.EraldyDomain;
+import net.bytle.vertx.HttpServer;
+import net.bytle.vertx.OpenApiService;
+import net.bytle.vertx.TowerApp;
 
 public class IpApp extends TowerApp {
 
 
   public IpApp(HttpServer httpServer) {
     super(httpServer, EraldyDomain.getOrCreate(httpServer));
+    new OpenApiService(new IpOpenApi(this));
   }
 
   public static IpApp createForDomain(HttpServer httpServer) {
@@ -23,40 +23,12 @@ public class IpApp extends TowerApp {
     return "ip";
   }
 
-  @Override
-  public TowerApp openApiMount(RouterBuilder builder) {
-    new IpHandler(new IpApiImpl(this)).mount(builder);
-    return this;
-  }
-
-
-  @Override
-  public TowerApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor) {
-
-    /**
-     * Only authentication via super token
-     */
-    builder
-      .securityHandler(OpenApiSecurityNames.APIKEY_AUTH_SECURITY_SCHEME)
-      .bindBlocking(config -> this.getHttpServer().getApiKeyAuthHandler());
-
-    return this;
-  }
 
   @Override
   protected String getPublicSubdomainName() {
     return "api";
   }
 
-  @Override
-  protected TowerApp addSpecificAppHandlers(Router router) {
-    return this;
-  }
-
-  @Override
-  public boolean hasOpenApiSpec() {
-    return true;
-  }
 
   /**
    * @return default is ipGet (ie /ip)

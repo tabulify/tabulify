@@ -7,8 +7,6 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.HSTSHandler;
-import io.vertx.ext.web.openapi.RouterBuilder;
-import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
@@ -23,7 +21,6 @@ import net.bytle.type.UriEnhanced;
  * It's the entry point for app related operations such as:
  * * {@link #getTemplate(String) getting a template}
  * * {@link #getRequestUriForStaticResource(UriEnhanced, String) getting the URL of a static resources}
- * * building the Route with {@link #openApiMount(RouterBuilder)} and the {@link #openApiBindSecurityScheme(RouterBuilder, ConfigAccessor) security}
  * <p>
  * This class gives three kinds of path:
  * * the relative path (path that does not start with a / - used in resources path)
@@ -137,19 +134,6 @@ public abstract class TowerApp extends TowerService {
   }
 
 
-  /**
-   * Mount all openApi operations described in the spec
-   *
-   * @param builder - the open api builder
-   */
-  public abstract TowerApp openApiMount(RouterBuilder builder);
-
-  /**
-   * To add security handlers for the openApi Security handler
-   * Configuring `AuthenticationHandler`s defined in the OpenAPI document
-   * <a href="https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document">...</a>
-   */
-  public abstract TowerApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor) throws IllegalConfiguration;
 
 
   /**

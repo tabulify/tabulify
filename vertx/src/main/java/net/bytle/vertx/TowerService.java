@@ -2,7 +2,7 @@ package net.bytle.vertx;
 
 import io.vertx.core.Future;
 
-public abstract class TowerService implements AutoCloseable, TowerServiceInterface {
+public abstract class TowerService implements TowerServiceInterface {
 
 
   @Override

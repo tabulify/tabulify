@@ -1,22 +1,16 @@
 package net.bytle.tower.eraldy.api;
 
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NullValueException;
 import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
 import net.bytle.tower.AuthClient;
 import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.implementer.flow.*;
-import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
-import net.bytle.tower.eraldy.auth.ApiKeyAndSessionUserAuthenticationHandler;
 import net.bytle.tower.eraldy.auth.AuthClientHandler;
 import net.bytle.tower.eraldy.auth.RealmSessionHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
@@ -27,7 +21,6 @@ import net.bytle.tower.util.EraldySubRealmModel;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
 import net.bytle.vertx.auth.AuthNContextManager;
 import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
@@ -80,13 +73,12 @@ public class EraldyApiApp extends TowerApp  {
   private final AuthClientProvider authClientProvider;
   private final AuthClientHandler authClientIdHandler;
   private final RealmSessionHandler sessionHandler;
-  private final ApiKeyAuthenticationProvider apiKeyUserProvider;
+
   private final AuthNContextManager authNContextManager;
   private final OrganizationRoleProvider organizationRoleProvider;
 
   private final RealmSequenceProvider realmSequenceProvider;
   private final MailingProvider mailingProvider;
-  private final OpenApiService openApi;
 
 
   public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
@@ -150,11 +142,10 @@ public class EraldyApiApp extends TowerApp  {
     /**
      * OpenApi
      */
-    this.openApi = OpenApiService
-      .config(this)
-      .build();
+    new OpenApiService(new EraldyOpenApi(this));
+
     /**
-     * The authN manager used by all flows
+     * The authN manager used by all flows to authenticate a user
      */
     this.authNContextManager = AuthNContextManager.builder().setRealmGuidSessionKey(realmGuidContextAndSessionKey).build();
 
@@ -198,16 +189,7 @@ public class EraldyApiApp extends TowerApp  {
     /**
      * OpenApi Auth Handler
      */
-    /**
-     * Add the API Key authentication handler
-     * on the router to fill the user in the context
-     * as Api Key is supported
-     */
-    try {
-      this.apiKeyUserProvider = this.getHttpServer().getServer().getApiKeyAuthProvider();
-    } catch (NullValueException e) {
-      throw new ConfigIllegalException("Api Key should be enabled", e);
-    }
+
 
 
   }
@@ -227,47 +209,6 @@ public class EraldyApiApp extends TowerApp  {
   }
 
 
-  @Override
-  public EraldyApiApp openApiMount(RouterBuilder builder) {
-    ApiVertxSupport.mount(builder, this);
-    return this;
-  }
-
-  @Override
-  public EraldyApiApp openApiBindSecurityScheme(RouterBuilder routerBuilder, ConfigAccessor configAccessor) {
-
-    /**
-     * We trick the open api security scheme apiKey define in the openapi file
-     * to support a cookie authentication by realm
-     * This scheme below is implemented by
-     * the {@link ApiAuthenticationHandler} that just check if the user is on the vertx context.
-     * <p>
-     * We to add the needed Authentication handler to fill the user
-     * {@link #mountSessionHandlers()}
-     */
-    routerBuilder
-      .securityHandler(OpenApiSecurityNames.APIKEY_AUTH_SECURITY_SCHEME)
-      .bindBlocking(jsonObject -> {
-        String type = jsonObject.getString("type");
-        if (!type.equals("apiKey")) {
-          throw new InternalException("The security scheme type should be apiKey, not " + type);
-        }
-        String in = jsonObject.getString("in");
-        if (!in.equals("header")) {
-          throw new InternalException("The security scheme in should be a header, not " + in);
-        }
-        String headerName = jsonObject.getString("name");
-        return new ApiKeyAndSessionUserAuthenticationHandler(this,headerName, apiKeyUserProvider);
-      });
-
-    Handler<RoutingContext> authorizationHandler = this.openApi.authorizationCheckHandler();
-    for (Operation operation : routerBuilder.operations()) {
-      routerBuilder.operation(operation.getOperationId())
-        .handler(authorizationHandler);
-    }
-    return this;
-
-  }
 
   @Override
   protected String getPublicSubdomainName() {
