@@ -30,8 +30,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 
 import static net.bytle.tower.util.Guid.*;
 
@@ -427,17 +425,14 @@ public class EraldyApiApp extends TowerApp  {
       return Future.failedFuture(new InternalException("The database migration failed", e));
     }
 
-    List<Future<Void>> futureMounts = new ArrayList<>();
-    futureMounts.add(eraldyModel.mount());
-    futureMounts.add(super.mount());
-
-    return Future
-      .all(futureMounts)
-      .recover(err -> Future.failedFuture(new InternalException("One of the Api App mount future has failed", err)))
+    /**
+     * The Eraldy base realm and base apps
+     */
+    return eraldyModel.mount()
+      .recover(err -> Future.failedFuture(new InternalException("Eraldy model mount has failed", err)))
       .compose(v -> {
-
         /**
-         * Model
+         * Dev only
          */
         Future<Void> datacadamiaModel = Future.succeededFuture();
         if (Env.IS_DEV) {
@@ -445,7 +440,9 @@ public class EraldyApiApp extends TowerApp  {
           datacadamiaModel = eraldySubRealmModel.insertModelInDatabase();
         }
         return datacadamiaModel;
-      });
+      })
+      .recover(err -> Future.failedFuture(new InternalException("Datacadamia model mount has failed", err)))
+      .compose(v-> super.mount());
   }
 
   public AuthClientProvider getAuthClientProvider() {

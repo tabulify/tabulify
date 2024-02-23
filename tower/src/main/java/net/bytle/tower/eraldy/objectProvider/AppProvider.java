@@ -105,7 +105,7 @@ public class AppProvider {
       "  " + APP_USER_COLUMN + ",\n" +
       "  " + APP_CREATION_TIME + "\n" +
       "  )\n" +
-      " values ($1, $2, $3, $4, $5, $6, $7)\n";
+      " values ($1, $2, $3, $4, $5, $6, $7, $8)\n";
   }
 
 
@@ -384,6 +384,7 @@ public class AppProvider {
          */
         Long appId = row.getLong(APP_ID_COLUMN);
         app.setLocalId(appId);
+        app.setRealm(realmResult);
         this.updateGuid(app);
         app.setHandle(uri);
 
@@ -405,7 +406,6 @@ public class AppProvider {
          * Foreign Objects
          */
         app.setUser(organizationUser);
-        app.setRealm(realmResult);
 
         return Future.succeededFuture(app);
       });
@@ -597,7 +597,7 @@ public class AppProvider {
            * with {@link #getsertOnStartup(App, SqlConnection)}
            * where there is no data
            */
-          return Future.failedFuture("The asked local id (" + askedLocalId + ") is different of the id given (" + finalAppId + "). Be careful that on the insertion order.");
+          return Future.failedFuture("The asked local id (" + askedLocalId + ") is different of the id given (" + finalAppId + "). The insertion order in the Eraldy model is not good.");
         }
         app.setLocalId(finalAppId);
         this.updateGuid(app);
