@@ -47,6 +47,8 @@ public class User   {
 
   protected LocalDateTime modificationTime;
 
+  protected LocalDateTime lastActiveTime;
+
   protected Realm realm;
 
   /**
@@ -315,6 +317,22 @@ public class User   {
   @SuppressWarnings("unused")
   public void setModificationTime(LocalDateTime modificationTime) {
     this.modificationTime = modificationTime;
+  }
+
+  /**
+  * @return lastActiveTime the last active time (should be on date level)
+  */
+  @JsonProperty("lastActiveTime")
+  public LocalDateTime getLastActiveTime() {
+    return lastActiveTime;
+  }
+
+  /**
+  * @param lastActiveTime the last active time (should be on date level)
+  */
+  @SuppressWarnings("unused")
+  public void setLastActiveTime(LocalDateTime lastActiveTime) {
+    this.lastActiveTime = lastActiveTime;
   }
 
   /**

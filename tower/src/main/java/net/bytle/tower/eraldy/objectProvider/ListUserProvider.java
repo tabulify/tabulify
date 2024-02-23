@@ -46,11 +46,11 @@ public class ListUserProvider {
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String LIST_USER_PREFIX = "list_user";
   public static final String STATUS_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "status";
-  public static final String ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
-  public static final String LIST_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
+  public static final String ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN;
+  public static final String LIST_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN;
   public static final String USER_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   private static final String GUID_PREFIX = "liu";
-  static final String REALM_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
+  static final String REALM_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
   public static final Integer OK_STATUS = 0;
   private static final String DATA_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "data";
   private final EraldyApiApp apiApp;
@@ -220,7 +220,7 @@ public class ListUserProvider {
       .compose(realm -> {
 
         Long listId = row.getLong(LIST_ID_COLUMN);
-        Future<ListObject> publicationFuture = apiApp.getListProvider().getListById(listId, realm, ListObject.class);
+        Future<ListObject> publicationFuture = apiApp.getListProvider().getListById(listId, realm);
 
         Long userId = row.getLong(USER_ID_COLUMN);
         Future<User> publisherFuture = apiApp.getUserProvider()

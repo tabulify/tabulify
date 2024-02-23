@@ -415,7 +415,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/ListObjectAnalytics'
+                  $ref: '#/components/schemas/ListObject'
                 type: array
           description: Return a list of lists for the app
         "403":
@@ -501,7 +501,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RealmAnalytics'
+                $ref: '#/components/schemas/Realm'
           description: Ok
       security:
       - apiKeyAuth: []
@@ -589,7 +589,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/RealmAnalytics'
+                  $ref: '#/components/schemas/Realm'
                 type: array
           description: Return the list of realms owned by the authenticated user
         "403":
@@ -1030,7 +1030,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListObjectAnalytics'
+                $ref: '#/components/schemas/ListObject'
           description: Ok
       security: []
       summary: |
@@ -1140,7 +1140,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/ListObjectAnalytics'
+                  $ref: '#/components/schemas/ListObject'
                 type: array
           description: Return a list of lists for the app
         "403":
@@ -1789,7 +1789,9 @@ components:
           logo: https://doe.com/_media/android-chrome-192x192.png
           handle: "[\"doe\"]"
           realm:
+            appCount: 1
             ownerUser: null
+            userCount: 6
             organization:
               creationTime: 2000-01-23T04:56:07.000+00:00
               modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -1797,9 +1799,11 @@ components:
               guid: org-xmmmN
               handle: handle
               localId: 1
+            listUserInCount: 5
             name: name
             guid: guid
             handle: handle
+            listCount: 5
             localId: 0
           localId: 1
           uri: https://app.doe.com
@@ -1809,7 +1813,9 @@ components:
         name: name
         guid: guid
         realm:
+          appCount: 1
           ownerUser: null
+          userCount: 6
           organization:
             creationTime: 2000-01-23T04:56:07.000+00:00
             modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -1817,9 +1823,11 @@ components:
             guid: org-xmmmN
             handle: handle
             localId: 1
+          listUserInCount: 5
           name: name
           guid: guid
           handle: handle
+          listCount: 5
           localId: 0
         localId: 5
       properties:
@@ -1860,7 +1868,9 @@ components:
             logo: https://doe.com/_media/android-chrome-192x192.png
             handle: "[\"doe\"]"
             realm:
+              appCount: 1
               ownerUser: null
+              userCount: 6
               organization:
                 creationTime: 2000-01-23T04:56:07.000+00:00
                 modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -1868,9 +1878,11 @@ components:
                 guid: org-xmmmN
                 handle: handle
                 localId: 1
+              listUserInCount: 5
               name: name
               guid: guid
               handle: handle
+              listCount: 5
               localId: 0
             localId: 1
             uri: https://app.doe.com
@@ -1880,7 +1892,9 @@ components:
           name: name
           guid: guid
           realm:
+            appCount: 1
             ownerUser: null
+            userCount: 6
             organization:
               creationTime: 2000-01-23T04:56:07.000+00:00
               modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -1888,9 +1902,11 @@ components:
               guid: org-xmmmN
               handle: handle
               localId: 1
+            listUserInCount: 5
             name: name
             guid: guid
             handle: handle
+            listCount: 5
             localId: 0
           localId: 5
         localId: 6
@@ -1959,7 +1975,9 @@ components:
               logo: https://doe.com/_media/android-chrome-192x192.png
               handle: "[\"doe\"]"
               realm:
+                appCount: 1
                 ownerUser: null
+                userCount: 6
                 organization:
                   creationTime: 2000-01-23T04:56:07.000+00:00
                   modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -1967,9 +1985,11 @@ components:
                   guid: org-xmmmN
                   handle: handle
                   localId: 1
+                listUserInCount: 5
                 name: name
                 guid: guid
                 handle: handle
+                listCount: 5
                 localId: 0
               localId: 1
               uri: https://app.doe.com
@@ -1979,7 +1999,9 @@ components:
             name: name
             guid: guid
             realm:
+              appCount: 1
               ownerUser: null
+              userCount: 6
               organization:
                 creationTime: 2000-01-23T04:56:07.000+00:00
                 modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -1987,9 +2009,11 @@ components:
                 guid: org-xmmmN
                 handle: handle
                 localId: 1
+              listUserInCount: 5
               name: name
               guid: guid
               handle: handle
+              listCount: 5
               localId: 0
             localId: 5
           localId: 6
@@ -2000,7 +2024,9 @@ components:
         name: name
         guid: guid
         realm:
+          appCount: 1
           ownerUser: null
+          userCount: 6
           organization:
             creationTime: 2000-01-23T04:56:07.000+00:00
             modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -2008,9 +2034,11 @@ components:
             guid: org-xmmmN
             handle: handle
             localId: 1
+          listUserInCount: 5
           name: name
           guid: guid
           handle: handle
+          listCount: 5
           localId: 0
         emailAuthor: null
         recipientList:
@@ -2022,7 +2050,9 @@ components:
             logo: https://doe.com/_media/android-chrome-192x192.png
             handle: "[\"doe\"]"
             realm:
+              appCount: 1
               ownerUser: null
+              userCount: 6
               organization:
                 creationTime: 2000-01-23T04:56:07.000+00:00
                 modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -2030,22 +2060,30 @@ components:
                 guid: org-xmmmN
                 handle: handle
                 localId: 1
+              listUserInCount: 5
               name: name
               guid: guid
               handle: handle
+              listCount: 5
               localId: 0
             localId: 1
             uri: https://app.doe.com
             slogan: "Doe, Be You"
             user: null
             home: https://doe.com/landing
-          ownerUser: null
-          name: Mailing list
-          guid: xmmmN
           description: The last news ....
           handle: newsletter
+          title: The top Newsletters
+          localId: 1
+          ownerUser: null
+          userCount: 2
+          userInCount: 7
+          name: Mailing list
+          guid: xmmmN
           realm:
+            appCount: 1
             ownerUser: null
+            userCount: 6
             organization:
               creationTime: 2000-01-23T04:56:07.000+00:00
               modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -2053,12 +2091,13 @@ components:
               guid: org-xmmmN
               handle: handle
               localId: 1
+            listUserInCount: 5
             name: name
             guid: guid
             handle: handle
+            listCount: 5
             localId: 0
-          title: The top Newsletters
-          localId: 1
+          mailingCount: 9
           registrationUrl: https://openapi-generator.tech
         localId: 0
         emailSubject: emailSubject
@@ -2688,19 +2727,6 @@ components:
             referrer.
           type: string
       type: object
-    ListObjectAnalytics:
-      allOf:
-      - $ref: '#/components/schemas/ListObject'
-      - properties:
-          userCount:
-            description: The number of users for the list (subscribed/unsubscribed
-              - registered/unregistered)
-            type: integer
-          userInCount:
-            description: The number of users that are still in the list
-            type: integer
-        type: object
-      description: "List Analytics (count, ...)"
     ListObject:
       description: |
         A list where a user can register.
@@ -2717,7 +2743,9 @@ components:
           logo: https://doe.com/_media/android-chrome-192x192.png
           handle: "[\"doe\"]"
           realm:
+            appCount: 1
             ownerUser: null
+            userCount: 6
             organization:
               creationTime: 2000-01-23T04:56:07.000+00:00
               modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -2725,22 +2753,30 @@ components:
               guid: org-xmmmN
               handle: handle
               localId: 1
+            listUserInCount: 5
             name: name
             guid: guid
             handle: handle
+            listCount: 5
             localId: 0
           localId: 1
           uri: https://app.doe.com
           slogan: "Doe, Be You"
           user: null
           home: https://doe.com/landing
-        ownerUser: null
-        name: Mailing list
-        guid: xmmmN
         description: The last news ....
         handle: newsletter
+        title: The top Newsletters
+        localId: 1
+        ownerUser: null
+        userCount: 2
+        userInCount: 7
+        name: Mailing list
+        guid: xmmmN
         realm:
+          appCount: 1
           ownerUser: null
+          userCount: 6
           organization:
             creationTime: 2000-01-23T04:56:07.000+00:00
             modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -2748,12 +2784,13 @@ components:
             guid: org-xmmmN
             handle: handle
             localId: 1
+          listUserInCount: 5
           name: name
           guid: guid
           handle: handle
+          listCount: 5
           localId: 0
-        title: The top Newsletters
-        localId: 1
+        mailingCount: 9
         registrationUrl: https://openapi-generator.tech
       properties:
         localId:
@@ -2792,6 +2829,19 @@ components:
           description: The public page where to register for this list
           format: uri
           type: string
+        userCount:
+          description: The number of users for the list (subscribed/unsubscribed -
+            registered/unregistered)
+          format: int64
+          type: integer
+        userInCount:
+          description: The number of users that are still in the list
+          format: int64
+          type: integer
+        mailingCount:
+          description: The number of mailing for this list
+          format: int64
+          type: integer
       title: A list of users
       type: object
       x-fields-identity:
@@ -2799,7 +2849,6 @@ components:
       x-fields-to-string:
       - guid
       - handle
-      x-parent: true
     OrganizationUser:
       allOf:
       - $ref: '#/components/schemas/User'
@@ -2821,6 +2870,7 @@ components:
       example:
         disabledReason: disabledReason
         website: https://mywebsite
+        lastActiveTime: 2000-01-23T04:56:07.000+00:00
         creationTime: 2000-01-23T04:56:07.000+00:00
         givenName: John
         bio: bio
@@ -2835,7 +2885,9 @@ components:
         disabled: true
         location: The world
         realm:
+          appCount: 1
           ownerUser: null
+          userCount: 6
           organization:
             creationTime: 2000-01-23T04:56:07.000+00:00
             modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -2843,9 +2895,11 @@ components:
             guid: org-xmmmN
             handle: handle
             localId: 1
+          listUserInCount: 5
           name: name
           guid: guid
           handle: handle
+          listCount: 5
           localId: 0
         email: john@doe.com
       properties:
@@ -2940,6 +2994,10 @@ components:
           description: The last modification time of the user in UTC
           format: date-time
           type: string
+        lastActiveTime:
+          description: the last active time (should be on date level)
+          format: date-time
+          type: string
         realm:
           $ref: '#/components/schemas/Realm'
       title: A user
@@ -2966,7 +3024,9 @@ components:
         * In a security level, this is the authentication realm.
         * In an infrastructure level, this is called a tenant.
       example:
+        appCount: 1
         ownerUser: null
+        userCount: 6
         organization:
           creationTime: 2000-01-23T04:56:07.000+00:00
           modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -2974,9 +3034,11 @@ components:
           guid: org-xmmmN
           handle: handle
           localId: 1
+        listUserInCount: 5
         name: name
         guid: guid
         handle: handle
+        listCount: 5
         localId: 0
       properties:
         localId:
@@ -2987,7 +3049,6 @@ components:
           description: |
             The public id
             (derived from the database id)
-          format: int64
           type: string
         name:
           description: A short description of the realm
@@ -3003,6 +3064,21 @@ components:
               - basic authentication: "WWW-Authenticate: Basic realm="WallyWorld"
               - database schema, dns name
           type: string
+        userCount:
+          description: The number of users for the realm
+          format: int64
+          type: integer
+        appCount:
+          description: The number of apps for the realm
+          format: int64
+          type: integer
+        listCount:
+          description: The number of lists for the realm
+          format: int64
+          type: integer
+        listUserInCount:
+          description: The number of active user on the list
+          type: integer
       required:
       - guid
       - handle
@@ -3010,7 +3086,6 @@ components:
       x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
         \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
         \ property = \"guid\", scope = Realm.class)"
-      x-parent: true
     Organization:
       description: |
         Organization for the users using the Combostrap product
@@ -3059,7 +3134,9 @@ components:
         logo: https://doe.com/_media/android-chrome-192x192.png
         handle: "[\"doe\"]"
         realm:
+          appCount: 1
           ownerUser: null
+          userCount: 6
           organization:
             creationTime: 2000-01-23T04:56:07.000+00:00
             modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -3067,9 +3144,11 @@ components:
             guid: org-xmmmN
             handle: handle
             localId: 1
+          listUserInCount: 5
           name: name
           guid: guid
           handle: handle
+          listCount: 5
           localId: 0
         localId: 1
         uri: https://app.doe.com
@@ -3145,24 +3224,6 @@ components:
       x-fields-to-string:
       - guid
       - handle
-    RealmAnalytics:
-      allOf:
-      - $ref: '#/components/schemas/Realm'
-      - properties:
-          userCount:
-            description: The number of users for the realm
-            type: integer
-          appCount:
-            description: The number of apps for the realm
-            type: integer
-          listCount:
-            description: The number of lists for the realm
-            type: integer
-          subscriberCount:
-            description: The number of subscribers for the realm
-            type: integer
-        type: object
-      description: "Realm Analytics (count, ...)"
     RealmPostBody:
       description: Realm creation
       example:
@@ -3214,7 +3275,9 @@ components:
         data: "{}"
         guid: xmllKD23
         realm:
+          appCount: 1
           ownerUser: null
+          userCount: 6
           organization:
             creationTime: 2000-01-23T04:56:07.000+00:00
             modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -3222,9 +3285,11 @@ components:
             guid: org-xmmmN
             handle: handle
             localId: 1
+          listUserInCount: 5
           name: name
           guid: guid
           handle: handle
+          listCount: 5
           localId: 0
         type: smtp
         localId: 1
@@ -3232,6 +3297,7 @@ components:
         impersonatedUser:
           disabledReason: disabledReason
           website: https://mywebsite
+          lastActiveTime: 2000-01-23T04:56:07.000+00:00
           creationTime: 2000-01-23T04:56:07.000+00:00
           givenName: John
           bio: bio
@@ -3246,7 +3312,9 @@ components:
           disabled: true
           location: The world
           realm:
+            appCount: 1
             ownerUser: null
+            userCount: 6
             organization:
               creationTime: 2000-01-23T04:56:07.000+00:00
               modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -3254,9 +3322,11 @@ components:
               guid: org-xmmmN
               handle: handle
               localId: 1
+            listUserInCount: 5
             name: name
             guid: guid
             handle: handle
+            listCount: 5
             localId: 0
           email: john@doe.com
       properties:
@@ -3615,7 +3685,9 @@ components:
             logo: https://doe.com/_media/android-chrome-192x192.png
             handle: "[\"doe\"]"
             realm:
+              appCount: 1
               ownerUser: null
+              userCount: 6
               organization:
                 creationTime: 2000-01-23T04:56:07.000+00:00
                 modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -3623,22 +3695,30 @@ components:
                 guid: org-xmmmN
                 handle: handle
                 localId: 1
+              listUserInCount: 5
               name: name
               guid: guid
               handle: handle
+              listCount: 5
               localId: 0
             localId: 1
             uri: https://app.doe.com
             slogan: "Doe, Be You"
             user: null
             home: https://doe.com/landing
-          ownerUser: null
-          name: Mailing list
-          guid: xmmmN
           description: The last news ....
           handle: newsletter
+          title: The top Newsletters
+          localId: 1
+          ownerUser: null
+          userCount: 2
+          userInCount: 7
+          name: Mailing list
+          guid: xmmmN
           realm:
+            appCount: 1
             ownerUser: null
+            userCount: 6
             organization:
               creationTime: 2000-01-23T04:56:07.000+00:00
               modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -3646,12 +3726,13 @@ components:
               guid: org-xmmmN
               handle: handle
               localId: 1
+            listUserInCount: 5
             name: name
             guid: guid
             handle: handle
+            listCount: 5
             localId: 0
-          title: The top Newsletters
-          localId: 1
+          mailingCount: 9
           registrationUrl: https://openapi-generator.tech
         inOptInConfirmationIp: inOptInConfirmationIp
         modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -3662,6 +3743,7 @@ components:
         user:
           disabledReason: disabledReason
           website: https://mywebsite
+          lastActiveTime: 2000-01-23T04:56:07.000+00:00
           creationTime: 2000-01-23T04:56:07.000+00:00
           givenName: John
           bio: bio
@@ -3676,7 +3758,9 @@ components:
           disabled: true
           location: The world
           realm:
+            appCount: 1
             ownerUser: null
+            userCount: 6
             organization:
               creationTime: 2000-01-23T04:56:07.000+00:00
               modificationTime: 2000-01-23T04:56:07.000+00:00
@@ -3684,9 +3768,11 @@ components:
               guid: org-xmmmN
               handle: handle
               localId: 1
+            listUserInCount: 5
             name: name
             guid: guid
             handle: handle
+            listCount: 5
             localId: 0
           email: john@doe.com
         status: null

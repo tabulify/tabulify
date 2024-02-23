@@ -95,3 +95,12 @@ Therefore, we may back up and apply features by realm and/or an application.
 ## Schema
 
 See [Schema](schema-flyway.md) for the schema definitions
+
+## Object inheritance
+
+We don't use object inheritance if the object have the same id.
+Why?
+Because:
+* you can't cache it by id (or you need 2 caches)
+* inheritance in this context just add properties (in our case analytics such as count) that are small and needed in the front end (for instance total count is needed to show a table navigation widget without fetching all instances)
+* it is easier to manage only one Class

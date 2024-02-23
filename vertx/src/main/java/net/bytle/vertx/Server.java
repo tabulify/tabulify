@@ -217,7 +217,7 @@ public class Server implements AutoCloseable {
   @Override
   public void close() throws Exception {
     MainLauncher.prometheus.close();
-    for (AutoCloseable closable : this.services) {
+    for (TowerService closable : this.services) {
       LOGGER.info("Closing " + closable.getClass().getSimpleName());
       closable.close();
     }
@@ -350,7 +350,6 @@ public class Server implements AutoCloseable {
 
       if (this.postgresPoolName != null) {
         LOGGER.info("Start creation of JDBC Pool (" + this.postgresPoolName + ")");
-
         server.pgDatabaseConnectionPool = JdbcPostgres.create(server, this.postgresPoolName);
       }
       if (this.enableIpGeoLocation) {

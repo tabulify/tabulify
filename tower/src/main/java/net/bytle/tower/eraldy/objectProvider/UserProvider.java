@@ -61,7 +61,7 @@ public class UserProvider {
   private static final String DATA = "data";
 
   public static final String DATA_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + DATA;
-  private static final String REALM_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
+  private static final String REALM_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
   protected static final String ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "id";
 
   public static final String USR_GUID_PREFIX = "usr";
@@ -570,7 +570,7 @@ public class UserProvider {
         throw ValidationException.create("With the userEmail, a realm Handle or Guid should be given", "realmHandle", null);
       }
       realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromIdentifier(realmIdentifier, Realm.class);
+        .getRealmFromIdentifier(realmIdentifier);
     } else {
 
       Guid guid;

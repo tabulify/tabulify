@@ -12,7 +12,7 @@ public interface RealmApi  {
     /**
      * Return the asked realm
     */
-    Future<ApiResponse<RealmAnalytics>> realmGet(RoutingContext routingContext, String realmIdentifier);
+    Future<ApiResponse<Realm>> realmGet(RoutingContext routingContext, String realmIdentifier);
 
     /**
      * Create a realm
@@ -22,7 +22,7 @@ public interface RealmApi  {
     /**
      * Get the lists for an realm
     */
-    Future<ApiResponse<List<ListObjectAnalytics>>> realmRealmIdentifierListsGet(RoutingContext routingContext, String realmIdentifier);
+    Future<ApiResponse<List<ListObject>>> realmRealmIdentifierListsGet(RoutingContext routingContext, String realmIdentifier);
 
     /**
      * Get users for the realm for pagination
@@ -42,5 +42,5 @@ public interface RealmApi  {
     /**
      * Return the list of realms owned by the authenticated user. The authenticated user needs to be an organizational user.
     */
-    Future<ApiResponse<List<RealmAnalytics>>> realmsOwnedByMeGet(RoutingContext routingContext);
+    Future<ApiResponse<List<Realm>>> realmsOwnedByMeGet(RoutingContext routingContext);
 }

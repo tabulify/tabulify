@@ -5,14 +5,18 @@ import io.vertx.sqlclient.Pool;
 /**
  * An object that:
  * * wraps a client (ie pool)
- * * and augment it with a schema manager and the connection information
+ * * and expands it with a schema manager and the connection information
  */
-public interface JdbcClient extends TowerServiceInterface {
+public abstract class JdbcClient extends TowerService {
 
-  JdbcSchemaManager getSchemaManager();
+  public JdbcClient(Server server) {
+    super(server);
+  }
 
-  Pool getPool();
+  abstract public JdbcSchemaManager getSchemaManager();
 
-  JdbcConnectionInfo getConnectionInfo();
+  abstract public Pool getPool();
+
+  abstract public JdbcConnectionInfo getConnectionInfo();
 
 }

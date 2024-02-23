@@ -18,7 +18,7 @@ public interface ListApi  {
     /**
      * Get list information  Access by: * id with the listGuid * name with the listHandle and realmIdentifier
     */
-    Future<ApiResponse<ListObjectAnalytics>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
+    Future<ApiResponse<ListObject>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
 
     /**
      * Create a new mailing for a list

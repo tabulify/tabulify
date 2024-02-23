@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import io.vertx.sqlclient.*;
@@ -18,7 +16,6 @@ import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +26,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static net.bytle.vertx.JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
+import static net.bytle.vertx.JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
 
 /**
  * Manage the get/upsert of a {@link App} object asynchronously
@@ -39,31 +37,28 @@ public class AppProvider {
   protected static final Logger LOGGER = LoggerFactory.getLogger(AppProvider.class);
 
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
-  private static final String COLUMN_PREFIX = "app";
+  private static final String APP_COLUMN_PREFIX = "app";
   private static final String APP_GUID_PREFIX = "app";
-  public static final String REALM_APP_TABLE_NAME = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + COLUMN_PREFIX;
-  public static final String REALM_ID_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
-  public static final String USER_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + "owner" + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
-  public static final String ORG_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN;
-
-  /**
-   * Domain is used as specified in
-   * <a href="https://www.rfc-editor.org/rfc/rfc1034#section-3.5|Preferred">name syntax</a>
-   */
-  private static final String URI = "uri";
-  protected static final String APP_ID_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + "id";
-  private static final String DATA_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + "data";
-  public static final String GUID = "guid";
+  public static final String APP_TABLE_NAME = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + APP_COLUMN_PREFIX;
+  public static final String APP_REALM_ID_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
+  public static final String APP_USER_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "owner" + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
+  public static final String APP_ORG_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN;
 
 
-  public static final String HANDLE_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + "handle";
-  private static final String CREATION_TIME = COLUMN_PREFIX + COLUMN_PART_SEP + CREATION_TIME_COLUMN_SUFFIX;
+  protected static final String APP_ID_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "id";
+
+  public static final String APP_HANDLE_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "handle";
+  private static final String APP_CREATION_TIME = APP_COLUMN_PREFIX + COLUMN_PART_SEP + CREATION_TIME_COLUMN_SUFFIX;
+  private static final String APP_NAME_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "name";
+  private static final String APP_HOME_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "home";
+  private static final String APP_MODIFICATION_TIME = APP_COLUMN_PREFIX + COLUMN_PART_SEP + MODIFICATION_TIME_COLUMN_SUFFIX;
 
   private final EraldyApiApp apiApp;
   private final Pool jdbcPool;
   private final JsonMapper apiMapper;
   private final String updateSqlById;
   private final String insertSql;
+  private final String updateSqlByHandle;
 
 
   public AppProvider(EraldyApiApp apiApp) {
@@ -76,24 +71,39 @@ public class AppProvider {
       .build();
 
     this.updateSqlById = "UPDATE \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME + "\n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + APP_TABLE_NAME + "\n" +
       "set\n" +
-      "  " + HANDLE_COLUMN + " = $1,\n" +
-      "  " + USER_COLUMN + " = $2, \n" +
-      "  " + DATA_COLUMN + " = $3 \n" +
+      "  " + APP_HANDLE_COLUMN + " = $1,\n" +
+      "  " + APP_NAME_COLUMN + " = $2, \n" +
+      "  " + APP_HOME_COLUMN + " = $3, \n" +
+      "  " + APP_USER_COLUMN + " = $4, \n" +
+      "  " + APP_MODIFICATION_TIME + " = $5 \n" +
       "where\n" +
-      "  " + REALM_ID_COLUMN + "= $4\n" +
-      " AND " + APP_ID_COLUMN + "= $5";
+      "  " + APP_REALM_ID_COLUMN + "= $6\n" +
+      " AND " + APP_ID_COLUMN + "= $7";
+
+    updateSqlByHandle = "UPDATE \n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + APP_TABLE_NAME + " \n" +
+      "set \n" +
+      "  " + APP_USER_COLUMN + " = $1, \n" +
+      "  " + APP_NAME_COLUMN + " = $2, \n" +
+      "  " + APP_HOME_COLUMN + " = $3, \n" +
+      "  " + APP_MODIFICATION_TIME + " = $4 \n" +
+      "where\n" +
+      "  " + APP_REALM_ID_COLUMN + " = $5\n" +
+      " AND " + APP_HANDLE_COLUMN + " = $6\n" +
+      " RETURNING " + APP_ID_COLUMN;
 
     this.insertSql = "INSERT INTO\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME + " (\n" +
-      "  " + REALM_ID_COLUMN + ",\n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + APP_TABLE_NAME + " (\n" +
+      "  " + APP_REALM_ID_COLUMN + ",\n" +
       "  " + APP_ID_COLUMN + ",\n" +
-      "  " + HANDLE_COLUMN + ",\n" +
-      "  " + ORG_COLUMN + ",\n" +
-      "  " + USER_COLUMN + ",\n" +
-      "  " + DATA_COLUMN + ",\n" +
-      "  " + CREATION_TIME + "\n" +
+      "  " + APP_HANDLE_COLUMN + ",\n" +
+      "  " + APP_NAME_COLUMN + ", \n" +
+      "  " + APP_HOME_COLUMN + ",\n" +
+      "  " + APP_ORG_COLUMN + ",\n" +
+      "  " + APP_USER_COLUMN + ",\n" +
+      "  " + APP_CREATION_TIME + "\n" +
       "  )\n" +
       " values ($1, $2, $3, $4, $5, $6, $7)\n";
   }
@@ -204,13 +214,14 @@ public class AppProvider {
 
     if (app.getLocalId() != null) {
 
-      JsonObject databaseJsonObject = this.getDatabaseJsonObject(app);
       return jdbcPool
         .preparedQuery(updateSqlById)
         .execute(Tuple.of(
           app.getHandle(),
           app.getUser().getLocalId(),
-          databaseJsonObject,
+          app.getName(),
+          app.getHome(),
+          DateTimeUtil.getNowInUtc(),
           app.getRealm().getLocalId(),
           app.getLocalId())
         )
@@ -241,26 +252,20 @@ public class AppProvider {
 
 
   private Future<RowSet<Row>> updateAppByHandle(App app) {
-    String updateSqlByUri = "UPDATE \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME + " \n" +
-      "set \n" +
-      "  " + USER_COLUMN + " = $1, \n" +
-      "  " + DATA_COLUMN + " = $2 \n" +
-      "where\n" +
-      "  " + REALM_ID_COLUMN + " = $3\n" +
-      " AND " + HANDLE_COLUMN + " = $4\n" +
-      " RETURNING " + APP_ID_COLUMN;
+
 
     return jdbcPool
-      .preparedQuery(updateSqlByUri)
+      .preparedQuery(updateSqlByHandle)
       .execute(Tuple.of(
           app.getUser().getLocalId(),
-          this.getDatabaseJsonObject(app),
+          app.getName(),
+          app.getHome(),
+          DateTimeUtil.getNowInUtc(),
           app.getRealm().getLocalId(),
           app.getHandle()
         )
       )
-      .onFailure(t -> LOGGER.error("Error while updating the app by uri and realm. Sql: \n" + updateSqlByUri, t));
+      .onFailure(t -> LOGGER.error("Error while updating the app by uri and realm. Sql: \n" + updateSqlByHandle, t));
   }
 
   /**
@@ -273,9 +278,9 @@ public class AppProvider {
     Future<RowSet<Row>> futureResponse;
     if (app.getLocalId() != null) {
       sql = "select " + APP_ID_COLUMN +
-        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME +
+        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + APP_TABLE_NAME +
         " where " +
-        " " + REALM_ID_COLUMN + " = ?" +
+        " " + APP_REALM_ID_COLUMN + " = ?" +
         " AND " + APP_ID_COLUMN + " = ?";
       futureResponse = jdbcPool
         .preparedQuery(sql)
@@ -291,10 +296,10 @@ public class AppProvider {
         return Future.failedFuture(internalException);
       }
       sql = "select " + APP_ID_COLUMN +
-        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME +
+        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + APP_TABLE_NAME +
         " where " +
-        " " + REALM_ID_COLUMN + " = ?" +
-        " AND " + HANDLE_COLUMN + " = ?";
+        " " + APP_REALM_ID_COLUMN + " = ?" +
+        " AND " + APP_HANDLE_COLUMN + " = ?";
       futureResponse = jdbcPool
         .preparedQuery(sql)
         .execute(Tuple.of(
@@ -313,20 +318,6 @@ public class AppProvider {
       });
   }
 
-  /**
-   * @param app - the app
-   * @return the PgJson object to insert in the database
-   */
-  private JsonObject getDatabaseJsonObject(App app) {
-
-    JsonObject data = JsonObject.mapFrom(app);
-    data.remove(APP_ID_COLUMN);
-    data.remove(GUID);
-    data.remove(URI);
-    data.remove(RealmProvider.TABLE_PREFIX);
-    data.remove("user");
-    return data;
-  }
 
   /**
    * @param realm - the realmId
@@ -336,8 +327,8 @@ public class AppProvider {
 
     return jdbcPool
       .preparedQuery(
-        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME
-          + " where " + REALM_ID_COLUMN + " = $1")
+        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + APP_TABLE_NAME
+          + " where " + APP_REALM_ID_COLUMN + " = $1")
       .execute(Tuple.of(realm.getLocalId()))
       .onFailure(FailureStatic::failFutureWithTrace)
       .compose(rows -> {
@@ -361,12 +352,12 @@ public class AppProvider {
   }
 
   private Future<App> getFromRow(Row row, Realm realm) {
-    Long userId = row.getLong(USER_COLUMN);
+    Long userId = row.getLong(APP_USER_COLUMN);
     Future<OrganizationUser> userFuture = apiApp
       .getOrganizationUserProvider()
       .getOrganizationUserByLocalId(userId, realm.getLocalId(), realm);
     Future<Realm> realmFuture;
-    Long realmId = row.getLong(REALM_ID_COLUMN);
+    Long realmId = row.getLong(APP_REALM_ID_COLUMN);
     RealmProvider realmProvider = this.apiApp.getRealmProvider();
     //noinspection ConstantConditions
     if (realm == null) {
@@ -384,15 +375,38 @@ public class AppProvider {
       .compose(compositeFuture -> {
         OrganizationUser organizationUser = compositeFuture.resultAt(0);
         Realm realmResult = compositeFuture.resultAt(1);
-        String uri = row.getString(HANDLE_COLUMN);
-        JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
-        App app = Json.decodeValue(jsonAppData.toBuffer(), App.class);
-        app.setUser(organizationUser);
-        app.setHandle(uri);
-        app.setRealm(realmResult);
+        String uri = row.getString(APP_HANDLE_COLUMN);
+
+        App app = new App();
+
+        /**
+         * Identifiers
+         */
         Long appId = row.getLong(APP_ID_COLUMN);
         app.setLocalId(appId);
         this.updateGuid(app);
+        app.setHandle(uri);
+
+        /**
+         * Scalars
+         */
+        app.setName(row.getString(APP_NAME_COLUMN));
+        String home = row.getString(APP_HOME_COLUMN);
+        if (home != null) {
+          try {
+            app.setHome(java.net.URI.create(home));
+          } catch (IllegalArgumentException e) {
+            // should not happen as we are responsible for the insertion
+            throw new InternalException("The home realm value is not a valid URI", e);
+          }
+        }
+
+        /**
+         * Foreign Objects
+         */
+        app.setUser(organizationUser);
+        app.setRealm(realmResult);
+
         return Future.succeededFuture(app);
       });
 
@@ -407,7 +421,7 @@ public class AppProvider {
 
   /**
    * @param appPostBody - the post object
-   * @param realm - the realm
+   * @param realm       - the realm
    * @return the app in a future
    */
   public Future<App> postApp(AppPostBody appPostBody, Realm realm) {
@@ -521,17 +535,16 @@ public class AppProvider {
   }
 
   /**
-   *
-   * @param appHandle - the app handle
-   * @param realm - the realm to insert to
+   * @param appHandle     - the app handle
+   * @param realm         - the realm to insert to
    * @param sqlConnection - a connection with or without transaction
    * @return the app or null
    */
   private Future<App> getAppByHandle(String appHandle, Realm realm, SqlConnection sqlConnection) {
     return sqlConnection.preparedQuery(
-        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME
-          + " WHERE " + HANDLE_COLUMN + " = $1 "
-          + "and " + REALM_ID_COLUMN + " = $2 ")
+        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + APP_TABLE_NAME
+          + " WHERE " + APP_HANDLE_COLUMN + " = $1 "
+          + "and " + APP_REALM_ID_COLUMN + " = $2 ")
       .execute(Tuple.of(
         appHandle,
         realm.getLocalId()
@@ -550,9 +563,9 @@ public class AppProvider {
 
   private Future<App> getAppById(Long appId, Realm realm, SqlConnection sqlConnection) {
     return sqlConnection.preparedQuery(
-        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_APP_TABLE_NAME
+        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + APP_TABLE_NAME
           + " WHERE " + APP_ID_COLUMN + " = $1 "
-          + " AND " + REALM_ID_COLUMN + " = $2 "
+          + " AND " + APP_REALM_ID_COLUMN + " = $2 "
       )
       .execute(Tuple.of(appId, realm.getLocalId()))
       .onFailure(t -> LOGGER.error("Error with Sql to retrieve an app by Guid. Error: " + t.getMessage(), t))
@@ -568,15 +581,14 @@ public class AppProvider {
   }
 
   /**
-   *
-   * @param app - the app to insert (realm is mandatory)
+   * @param app           - the app to insert (realm is mandatory)
    * @param sqlConnection - the sql connection (with or without a transaction)
-   * @return the app given with a id and a guid
+   * @return the app given with an id and a guid
    */
   private Future<App> insertApp(App app, SqlConnection sqlConnection) {
 
     return this.apiApp.getRealmSequenceProvider()
-      .getNextIdForTableAndRealm(sqlConnection, app.getRealm(), REALM_APP_TABLE_NAME)
+      .getNextIdForTableAndRealm(sqlConnection, app.getRealm(), APP_TABLE_NAME)
       .compose(finalAppId -> {
         Long askedLocalId = app.getLocalId();
         if (askedLocalId != null && !askedLocalId.equals(finalAppId)) {
@@ -596,9 +608,10 @@ public class AppProvider {
               app.getRealm().getLocalId(),
               app.getLocalId(),
               app.getHandle(),
+              app.getName(),
+              app.getHome().toString(),
               app.getUser().getOrganization().getLocalId(),
               app.getUser().getLocalId(),
-              this.getDatabaseJsonObject(app),
               DateTimeUtil.getNowInUtc()
             )
           );

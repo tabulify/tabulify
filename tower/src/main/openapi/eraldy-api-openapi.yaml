@@ -746,7 +746,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListObjectAnalytics'
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListObject'
         '403':
           description: "Not authenticated"
   /realm/{realmIdentifier}/users:
@@ -818,7 +818,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './eraldy-common-openapi.yaml#/components/schemas/RealmAnalytics'
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/Realm'
   /realm:
     post:
       operationId: "realmPost"
@@ -902,7 +902,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: './eraldy-common-openapi.yaml#/components/schemas/RealmAnalytics'
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/Realm'
         '403':
           description: "Not authenticated"
   /services:
@@ -1258,7 +1258,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './eraldy-common-openapi.yaml#/components/schemas/ListObjectAnalytics'
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/ListObject'
     patch:
       operationId: listListPatch
       summary: |
@@ -1381,7 +1381,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListObjectAnalytics'
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListObject'
         '403':
           description: "Not authenticated"
   /lists/summary:

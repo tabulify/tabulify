@@ -33,6 +33,12 @@ public class ListObject   {
 
   protected URI registrationUrl;
 
+  protected Long userCount;
+
+  protected Long userInCount;
+
+  protected Long mailingCount;
+
   /**
   * The empty constructor is
   * needed for the construction of the pojo
@@ -200,6 +206,54 @@ public class ListObject   {
   @SuppressWarnings("unused")
   public void setRegistrationUrl(URI registrationUrl) {
     this.registrationUrl = registrationUrl;
+  }
+
+  /**
+  * @return userCount The number of users for the list (subscribed/unsubscribed - registered/unregistered)
+  */
+  @JsonProperty("userCount")
+  public Long getUserCount() {
+    return userCount;
+  }
+
+  /**
+  * @param userCount The number of users for the list (subscribed/unsubscribed - registered/unregistered)
+  */
+  @SuppressWarnings("unused")
+  public void setUserCount(Long userCount) {
+    this.userCount = userCount;
+  }
+
+  /**
+  * @return userInCount The number of users that are still in the list
+  */
+  @JsonProperty("userInCount")
+  public Long getUserInCount() {
+    return userInCount;
+  }
+
+  /**
+  * @param userInCount The number of users that are still in the list
+  */
+  @SuppressWarnings("unused")
+  public void setUserInCount(Long userInCount) {
+    this.userInCount = userInCount;
+  }
+
+  /**
+  * @return mailingCount The number of mailing for this list
+  */
+  @JsonProperty("mailingCount")
+  public Long getMailingCount() {
+    return mailingCount;
+  }
+
+  /**
+  * @param mailingCount The number of mailing for this list
+  */
+  @SuppressWarnings("unused")
+  public void setMailingCount(Long mailingCount) {
+    this.mailingCount = mailingCount;
   }
 
 

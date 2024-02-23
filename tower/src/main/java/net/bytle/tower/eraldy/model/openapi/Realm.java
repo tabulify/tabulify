@@ -25,6 +25,14 @@ public class Realm   {
 
   protected String handle;
 
+  protected Long userCount;
+
+  protected Long appCount;
+
+  protected Long listCount;
+
+  protected Integer listUserInCount;
+
   /**
   * The empty constructor is
   * needed for the construction of the pojo
@@ -128,6 +136,70 @@ public class Realm   {
   @SuppressWarnings("unused")
   public void setHandle(String handle) {
     this.handle = handle;
+  }
+
+  /**
+  * @return userCount The number of users for the realm
+  */
+  @JsonProperty("userCount")
+  public Long getUserCount() {
+    return userCount;
+  }
+
+  /**
+  * @param userCount The number of users for the realm
+  */
+  @SuppressWarnings("unused")
+  public void setUserCount(Long userCount) {
+    this.userCount = userCount;
+  }
+
+  /**
+  * @return appCount The number of apps for the realm
+  */
+  @JsonProperty("appCount")
+  public Long getAppCount() {
+    return appCount;
+  }
+
+  /**
+  * @param appCount The number of apps for the realm
+  */
+  @SuppressWarnings("unused")
+  public void setAppCount(Long appCount) {
+    this.appCount = appCount;
+  }
+
+  /**
+  * @return listCount The number of lists for the realm
+  */
+  @JsonProperty("listCount")
+  public Long getListCount() {
+    return listCount;
+  }
+
+  /**
+  * @param listCount The number of lists for the realm
+  */
+  @SuppressWarnings("unused")
+  public void setListCount(Long listCount) {
+    this.listCount = listCount;
+  }
+
+  /**
+  * @return listUserInCount The number of active user on the list
+  */
+  @JsonProperty("listUserInCount")
+  public Integer getListUserInCount() {
+    return listUserInCount;
+  }
+
+  /**
+  * @param listUserInCount The number of active user on the list
+  */
+  @SuppressWarnings("unused")
+  public void setListUserInCount(Integer listUserInCount) {
+    this.listUserInCount = listUserInCount;
   }
 
 

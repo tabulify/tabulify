@@ -38,7 +38,7 @@ public class AppApiImpl implements AppApi {
   }
 
   @Override
-  public Future<ApiResponse<List<ListObjectAnalytics>>> appAppIdentifierListsGet(RoutingContext routingContext, String appIdentifier) {
+  public Future<ApiResponse<List<ListObject>>> appAppIdentifierListsGet(RoutingContext routingContext, String appIdentifier) {
 
     ListProvider listProvider = this.apiApp.getListProvider();
     Future<Realm> realmFuture;
@@ -206,7 +206,7 @@ public class AppApiImpl implements AppApi {
     AppProvider appProvider = apiApp.getAppProvider();
     AuthProvider authProvider = apiApp.getAuthProvider();
     return this.apiApp.getRealmProvider()
-      .getRealmFromIdentifier(appPostBody.getRealmIdentifier(), Realm.class)
+      .getRealmFromIdentifier(appPostBody.getRealmIdentifier())
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(
@@ -234,7 +234,7 @@ public class AppApiImpl implements AppApi {
 
 
     return this.apiApp.getRealmProvider()
-      .getRealmFromIdentifierNotNull(realmIdentifier, Realm.class)
+      .getRealmFromIdentifierNotNull(realmIdentifier)
       .compose(realm -> this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_APPS_GET))
       .compose(
         realm -> apiApp.getAppProvider().getApps(realm),

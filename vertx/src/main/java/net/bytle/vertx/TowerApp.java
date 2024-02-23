@@ -46,6 +46,7 @@ public abstract class TowerApp extends TowerService {
    * @param apexDomain - the Apex Domain (mandatory for location of assets such as openAPI)
    */
   public TowerApp(HttpServer httpServer, TowerApexDomain apexDomain) {
+    super(httpServer.getServer());
 
     this.httpServer = httpServer;
     this.apexDomain = apexDomain;

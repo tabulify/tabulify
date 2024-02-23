@@ -340,6 +340,10 @@ components:
           type: string
           format: date-time
           description: The last modification time of the user in UTC
+        lastActiveTime:
+          type: string
+          format: date-time
+          description: the last active time (should be on date level)
         realm:
           $ref: '#/components/schemas/Realm'
     UserPostBody:
@@ -435,6 +439,21 @@ components:
           description: The public page where to register for this list
           type: string
           format: uri
+        userCount:
+          type: integer
+          format: int64
+          description: The number of users for the list (subscribed/unsubscribed - registered/unregistered)
+          # userCount and not usersCount
+          # https://forum.wordreference.com/threads/user-count-vs-users-count.3983032/
+          # User is being used in an adjectival role, and we don't pluralize adjectives. Therefore, as a rule, we don't pluralize attributive nouns.
+        userInCount:
+          type: integer
+          format: int64
+          description: The number of users that are still in the list
+        mailingCount:
+          type: integer
+          format: int64
+          description: The number of mailing for this list
     PasswordCredentials:
       title: The password credentials object
       description: |
@@ -913,7 +932,6 @@ components:
           description: The realm id in the database
         guid:
           type: string
-          format: int64
           description: |
             The public id
             (derived from the database id)
@@ -938,6 +956,24 @@ components:
             It's used as:
               - basic authentication: "WWW-Authenticate: Basic realm="WallyWorld"
               - database schema, dns name
+        userCount:
+          type: integer
+          format: int64
+          description: The number of users for the realm
+          # userCount and not usersCount
+          # https://forum.wordreference.com/threads/user-count-vs-users-count.3983032/
+          # User is being used in an adjectival role, and we don't pluralize adjectives. Therefore, as a rule, we don't pluralize attributive nouns.
+        appCount:
+          type: integer
+          format: int64
+          description: The number of apps for the realm
+        listCount:
+          type: integer
+          format: int64
+          description: The number of lists for the realm
+        listUserInCount:
+          type: integer
+          description: The number of active user on the list
     Organization:
       description: |
         Organization for the users using the Combostrap product
@@ -985,62 +1021,6 @@ components:
           properties:
             organization:
               $ref: '#/components/schemas/Organization'
-    UserAnalytics:
-      description: "User and Analytics"
-      x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(
-                          generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,
-                          property = "guid",
-                          scope = User.class)'
-      allOf:
-        - $ref: '#/components/schemas/User'
-        - type: object
-          properties:
-            lastActiveTime:
-              type: string
-              format: date-time
-              description: the last active time (should be on date level)
-    ListObjectAnalytics:
-      description: "List Analytics (count, ...)"
-      allOf:
-        - $ref: "#/components/schemas/ListObject"
-        - type: object
-          properties:
-            userCount:
-              type: integer
-              description: The number of users for the list (subscribed/unsubscribed - registered/unregistered)
-              # userCount and not usersCount
-              # https://forum.wordreference.com/threads/user-count-vs-users-count.3983032/
-              # User is being used in an adjectival role, and we don't pluralize adjectives. Therefore, as a rule, we don't pluralize attributive nouns.
-            userInCount:
-              type: integer
-              description: The number of users that are still in the list
-    RealmAnalytics:
-      description: "Realm Analytics (count, ...)"
-      allOf:
-        - $ref: "#/components/schemas/Realm"
-        - type: object
-          properties:
-            userCount:
-              type: integer
-              description: The number of users for the realm
-              # userCount and not usersCount
-              # https://forum.wordreference.com/threads/user-count-vs-users-count.3983032/
-              # User is being used in an adjectival role, and we don't pluralize adjectives. Therefore, as a rule, we don't pluralize attributive nouns.
-            appCount:
-              type: integer
-              description: The number of apps for the realm
-            listCount:
-              type: integer
-              description: The number of lists for the realm
-            subscriberCount:
-              type: integer
-              description: The number of subscribers for the realm
-    #    FatRealm:
-    #      description: The public realm (The real returned from an API request)
-    #      type: object
-    #      allOf:
-    #        - $ref: "#/components/schemas/Realm"
-    #        - $ref: "#/components/schemas/RealmAnalytics"
     RealmWithAppUris:
       type: object
       description: |

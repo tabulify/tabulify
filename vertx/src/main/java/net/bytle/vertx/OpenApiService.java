@@ -48,6 +48,7 @@ public class OpenApiService extends TowerService {
 
   public OpenApiService(OpenApiInstance openApiInstance) {
 
+    super(openApiInstance.getApp().getServer());
     this.openApiInstance = openApiInstance;
 
     TowerApp towerApp = openApiInstance.getApp();

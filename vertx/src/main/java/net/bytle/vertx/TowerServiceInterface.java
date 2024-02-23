@@ -4,13 +4,17 @@ import io.vertx.core.Future;
 
 /**
  * A service is a class that the server mount, start and close
- * The class should add itself to the lists of
+ * <p>
+ * Every service should extend {@link TowerService}
+ * <p>
+ * The class add itself to the lists of
  * service in the {@link Server#registerService(TowerService)}
- *
+ * via the constructor of {@link TowerService}
+ * <p>
  * The services have 4 points of management
  * * Their construction (mostly read configuration)
- * * Mounting (operations that are needed so that the server may answer)
- * * Start (operations that are needed just after. Example: health check, job, ...)
+ * * Mounting (router construction (operations that are needed so that the server may answer))
+ * * Start (operations that are needed just after. Example: health check, job, metadata load ...)
  * * Close (release resource and save runtime data)
  */
 public interface TowerServiceInterface {
@@ -36,4 +40,5 @@ public interface TowerServiceInterface {
    */
   void close() throws Exception;
 
+    Server getServer();
 }

@@ -420,7 +420,7 @@ public class AuthProvider {
     Future<OrganizationUser> futureOrgaUser;
     if (user instanceof OrganizationUser) {
       OrganizationUser orgUser = (OrganizationUser) user;
-      futureRealmOwnerList = this.apiApp.getRealmProvider().getRealmsForOwner(orgUser, Realm.class);
+      futureRealmOwnerList = this.apiApp.getRealmProvider().getRealmsForOwner(orgUser);
       futureOrgaUser = this.apiApp.getOrganizationUserProvider().getOrganizationUserEnrichedWithOrganizationDataEventually(orgUser);
     } else {
       futureRealmOwnerList = Future.succeededFuture();

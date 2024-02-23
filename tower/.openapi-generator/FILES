@@ -40,7 +40,6 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportJobStatus.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportPostResponse.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListMailingPost.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListObject.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/ListObjectAnalytics.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListSummary.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUser.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserPostBody.java
@@ -54,7 +53,6 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/OrganizationUser.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/PasswordCredentials.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/PasswordOnly.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Realm.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/RealmAnalytics.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RealmPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RealmWithAppUris.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Service.java

@@ -139,7 +139,7 @@ public class ListApiImpl implements ListApi {
 
     ListProvider listProvider = this.apiApp.getListProvider();
     return listProvider
-      .getListByIdentifier(routingContext, AuthUserScope.LIST_DELETE, ListObject.class)
+      .getListByIdentifier(routingContext, AuthUserScope.LIST_DELETE)
       .compose(listItem -> {
 
         if (listItem == null) {
@@ -158,10 +158,10 @@ public class ListApiImpl implements ListApi {
 
 
   @Override
-  public Future<ApiResponse<ListObjectAnalytics>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier) {
+  public Future<ApiResponse<ListObject>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier) {
     ListProvider listProvider = this.apiApp.getListProvider();
     return listProvider
-      .getListByIdentifier(routingContext, AuthUserScope.LIST_GET, ListObjectAnalytics.class)
+      .getListByIdentifier(routingContext, AuthUserScope.LIST_GET)
       .compose(listItemAnalytics -> {
         if (listItemAnalytics == null) {
           return Future.failedFuture(
@@ -172,7 +172,7 @@ public class ListApiImpl implements ListApi {
               .build()
           );
         }
-        ApiResponse<ListObjectAnalytics> apiResult = new ApiResponse<>(listItemAnalytics)
+        ApiResponse<ListObject> apiResult = new ApiResponse<>(listItemAnalytics)
           .setMapper(listProvider.getApiMapper());
         return Future.succeededFuture(apiResult);
       });
@@ -184,7 +184,7 @@ public class ListApiImpl implements ListApi {
     ListProvider listProvider = this.apiApp.getListProvider();
     MailingProvider mailingProvider = this.apiApp.getMailingProvider();
     return listProvider
-      .getListByIdentifier(routingContext,AuthUserScope.MAILING_LIST,ListObject.class)
+      .getListByIdentifier(routingContext,AuthUserScope.MAILING_LIST)
       .compose(list->{
         Mailing mailingToInsert = new Mailing();
         mailingToInsert.setEmailAuthor(ListProvider.getOwnerUser(list));
@@ -260,7 +260,7 @@ public class ListApiImpl implements ListApi {
   @Override
   public Future<ApiResponse<ListObject>> listListPatch(RoutingContext routingContext, String listIdentifier, ListBody listBody, String realmIdentifier) {
     ListProvider listProvider = this.apiApp.getListProvider();
-    return listProvider.getListByIdentifier(routingContext, AuthUserScope.LIST_PATCH, ListObject.class)
+    return listProvider.getListByIdentifier(routingContext, AuthUserScope.LIST_PATCH)
       .compose(list -> {
         String listHandle = listBody.getListHandle();
         if (listHandle != null) {

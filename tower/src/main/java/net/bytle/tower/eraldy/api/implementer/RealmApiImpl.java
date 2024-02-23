@@ -34,9 +34,9 @@ public class RealmApiImpl implements RealmApi {
   }
 
   @Override
-  public Future<ApiResponse<Realm>> realmPost(RoutingContext routingContext, RealmPostBody realmPost) {
+  public Future<ApiResponse<net.bytle.tower.eraldy.model.openapi.Realm>> realmPost(RoutingContext routingContext, RealmPostBody realmPost) {
 
-    Realm realm = new Realm();
+    net.bytle.tower.eraldy.model.openapi.Realm realm = new net.bytle.tower.eraldy.model.openapi.Realm();
     String handle = realmPost.getHandle();
     realm.setHandle(handle);
     realm.setName(realmPost.getName());
@@ -46,7 +46,7 @@ public class RealmApiImpl implements RealmApi {
       .upsertRealm(realm)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(newRealm -> {
-          ApiResponse<Realm> response = new ApiResponse<>(newRealm)
+          ApiResponse<net.bytle.tower.eraldy.model.openapi.Realm> response = new ApiResponse<>(newRealm)
             .setMapper(this.apiApp.getRealmProvider().getPublicJsonMapper());
           return Future.succeededFuture(response);
         }
@@ -55,11 +55,11 @@ public class RealmApiImpl implements RealmApi {
   }
 
   @Override
-  public Future<ApiResponse<List<ListObjectAnalytics>>> realmRealmIdentifierListsGet(RoutingContext routingContext, String realmIdentifier) {
+  public Future<ApiResponse<List<ListObject>>> realmRealmIdentifierListsGet(RoutingContext routingContext, String realmIdentifier) {
     ListProvider listProvider = this.apiApp.getListProvider();
     AuthProvider authProvider = this.apiApp.getAuthProvider();
     return this.apiApp.getRealmProvider()
-      .getRealmFromIdentifier(realmIdentifier, Realm.class)
+      .getRealmFromIdentifier(realmIdentifier)
       .compose(realm-> authProvider.checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_LISTS_GET))
       .compose(listProvider::getListsForRealm)
       .compose(lists->Future.succeededFuture(new ApiResponse<>(lists).setMapper(listProvider.getApiMapper())));
@@ -102,7 +102,7 @@ public class RealmApiImpl implements RealmApi {
 
 
   @Override
-  public Future<ApiResponse<RealmAnalytics>> realmGet(RoutingContext routingContext, String realmIdentifier) {
+  public Future<ApiResponse<Realm>> realmGet(RoutingContext routingContext, String realmIdentifier) {
 
     RealmProvider realmProvider = this.apiApp.getRealmProvider();
     return realmProvider
@@ -117,7 +117,7 @@ public class RealmApiImpl implements RealmApi {
               .build()
           );
         }
-        ApiResponse<RealmAnalytics> result = new ApiResponse<>(realm)
+        ApiResponse<Realm> result = new ApiResponse<>(realm)
           .setMapper(this.apiApp.getRealmProvider().getPublicJsonMapper());
 
         return Future.succeededFuture(result);
@@ -136,25 +136,25 @@ public class RealmApiImpl implements RealmApi {
   }
 
   @Override
-  public Future<ApiResponse<List<Realm>>> realmsOwnedByGet(RoutingContext routingContext, String userGuid) {
+  public Future<ApiResponse<List<net.bytle.tower.eraldy.model.openapi.Realm>>> realmsOwnedByGet(RoutingContext routingContext, String userGuid) {
     return apiApp.getOrganizationUserProvider()
       .getOrganizationUserByIdentifier(userGuid, null)
       .compose(user -> this.apiApp.getRealmProvider()
-        .getRealmsForOwner(user, Realm.class)
+        .getRealmsForOwner(user)
         .compose(realms -> Future.succeededFuture(new ApiResponse<>(new ArrayList<>(realms)))));
   }
 
   @Override
-  public Future<ApiResponse<List<RealmAnalytics>>> realmsOwnedByMeGet(RoutingContext routingContext) {
+  public Future<ApiResponse<List<Realm>>> realmsOwnedByMeGet(RoutingContext routingContext) {
 
     return this.apiApp
       .getAuthProvider().getSignedInOrganizationalUser(routingContext)
       .compose(authSignedInUser -> this.apiApp
         .getRealmProvider()
-        .getRealmsForOwner(authSignedInUser, RealmAnalytics.class)
+        .getRealmsForOwner(authSignedInUser)
         .compose(
           realms -> {
-            List<RealmAnalytics> realmAnalytics = new ArrayList<>(realms);
+            List<Realm> realmAnalytics = new ArrayList<>(realms);
             return Future.succeededFuture(
               new ApiResponse<>(realmAnalytics)
                 .setMapper(apiApp.getRealmProvider().getPublicJsonMapper())

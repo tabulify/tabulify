@@ -46,7 +46,7 @@ public class ServiceProvider {
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   public static final String DATA_COLUMN = COL_PREFIX + COLUMN_PART_SEP + "data";
   public static final String TYPE_COLUMN = COL_PREFIX + COLUMN_PART_SEP + "type";
-  public static final String REALM_COLUMN = COL_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
+  public static final String REALM_COLUMN = COL_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
   private static final String ID_COLUMN = COL_PREFIX + COLUMN_PART_SEP + "id";
   public static final String URI_COLUMN = COL_PREFIX + COLUMN_PART_SEP + "uri";
   private static final String IMPERSONATED_PREFIX = "impersonated";

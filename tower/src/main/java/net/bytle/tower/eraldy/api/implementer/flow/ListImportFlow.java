@@ -15,7 +15,7 @@ import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
 import net.bytle.vertx.collections.WriteThroughQueue;
 import net.bytle.vertx.flow.FlowType;
-import net.bytle.vertx.flow.WebFlow;
+import net.bytle.vertx.flow.WebFlowAbs;
 import net.bytle.vertx.resilience.EmailAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * A class that handles
  * the list import flow
  */
-public class ListImportFlow extends TowerService implements WebFlow {
+public class ListImportFlow extends WebFlowAbs {
 
   static Logger LOGGER = LogManager.getLogger(ListImportFlow.class);
   private static final String FILE_SUFFIX_JOB_STATUS = "-status.json";
@@ -295,7 +295,6 @@ public class ListImportFlow extends TowerService implements WebFlow {
   }
 
   /**
-   *
    * @param listImportJobStatus - the metadata
    * @return the path of the source csv file used for the job
    */
@@ -305,6 +304,7 @@ public class ListImportFlow extends TowerService implements WebFlow {
 
   /**
    * Create a job from the database store
+   *
    * @param listImportStatus - the import status
    * @return the job
    */
@@ -327,7 +327,7 @@ public class ListImportFlow extends TowerService implements WebFlow {
   final WriteThroughQueue<ListImportJob> importJobQueue;
 
   public ListImportFlow(EraldyApiApp apiApp) {
-
+    super(apiApp);
     this.apiApp = apiApp;
     this.server = apiApp.getHttpServer().getServer();
 
@@ -346,10 +346,6 @@ public class ListImportFlow extends TowerService implements WebFlow {
     ConfigAccessor configAccessor = server.getConfigAccessor();
     this.rowValidationFailureRetryCount = configAccessor.getInteger("list.import.execution.row.validation.retry.count", 2);
 
-    /**
-     * Mount, Start, Close when the server is started
-     */
-    server.registerService(this);
 
     /**
      * Timer Queue Execution

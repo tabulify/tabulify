@@ -18,7 +18,7 @@ import java.util.Map;
  * A JdbcPool is not dependent of any {@link io.vertx.core.Verticle} as they
  * can be shutdown. It depends on {@link Vertx}
  */
-public class JdbcPostgres extends TowerService implements JdbcClient {
+public class JdbcPostgres extends JdbcClient {
 
 
   private final JdbcSchemaManager pgSchemaManager;
@@ -27,7 +27,7 @@ public class JdbcPostgres extends TowerService implements JdbcClient {
 
   public JdbcPostgres(Server server, String connectionInfoPrefix) {
 
-    server.registerService(this);
+    super(server);
 
     jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(connectionInfoPrefix, server.getConfigAccessor());
     pgSchemaManager = JdbcSchemaManager.create(jdbcConnectionInfo);

@@ -35,7 +35,8 @@ public class MapDb extends TowerService {
 
 
   public MapDb(Server server) {
-    DB mapDbTemp;
+      super(server);
+      DB mapDbTemp;
 
     String defaultHome = "mapdb/";
     if (JavaEnvs.IS_DEV) {

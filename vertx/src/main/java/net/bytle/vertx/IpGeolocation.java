@@ -26,6 +26,7 @@ public class IpGeolocation extends TowerService {
   private final JdbcClient jdbcClient;
 
   public IpGeolocation(JdbcClient jdbcClient) throws DbMigrationException {
+    super(jdbcClient.getServer());
     this.jdbcClient = jdbcClient;
     JdbcSchema ipSchema = JdbcSchema.builder()
       .setLocation("classpath:db/cs-ip")

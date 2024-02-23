@@ -34,14 +34,14 @@ public class MailingProvider {
 
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String MAILING_PREFIX = "mailing";
-  public static final String LIST_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "rcpt" + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
+  public static final String LIST_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "rcpt" + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN;
 
   private static final String ORGA_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN;
   public static final String AUTHOR_USER_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "author" + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   static final String ID_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "id";
   static final String NAME_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "name";
   static final String SUBJECT_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "subject";
-  private static final String REALM_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
+  private static final String REALM_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
   private static final String MAILING_STATUS_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "status";
   static final String MAILING_GUID_PREFIX = "mai";
   private final EraldyApiApp apiApp;
@@ -182,8 +182,8 @@ public class MailingProvider {
 
         // list
         Long listId = row.getLong(LIST_COLUMN);
-        Future<ListObjectAnalytics> listFuture = this.apiApp.getListProvider()
-          .getListById(listId, realm, ListObjectAnalytics.class);
+        Future<ListObject> listFuture = this.apiApp.getListProvider()
+          .getListById(listId, realm);
 
         return Future.all(authorFuture, listFuture)
           .recover(err->Future.failedFuture(new InternalException("Future all of mailing building failed",err)))

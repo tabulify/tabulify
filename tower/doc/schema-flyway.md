@@ -118,9 +118,12 @@ See [identifier](identifier.md)
 
 ### Json data type
 
-We don't use Json datatype as storage structure for an object.
+We:
+  * use JSON storage in map/collection structure (ie to persist between restart)
+  * don't use Json datatype as storage structure for an object in a relational model
 
-Why?
+Why not in a relation model?
+
 #### Polluted Json data, possible data loss
 
 Because if you transform an existing object into json, say a list, you have to :
