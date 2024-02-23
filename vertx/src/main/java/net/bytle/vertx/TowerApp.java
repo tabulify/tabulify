@@ -30,7 +30,7 @@ import net.bytle.type.UriEnhanced;
  * * the static resource path: the path of the static files in the java main resources
  * * the template resource path: the path of the html template file in the java main resources
  */
-public abstract class TowerApp extends TowerService {
+public abstract class TowerApp {
 
 
   private final ConfigAccessor configAccessor;
@@ -46,15 +46,10 @@ public abstract class TowerApp extends TowerService {
    * @param apexDomain - the Apex Domain (mandatory for location of assets such as openAPI)
    */
   public TowerApp(HttpServer httpServer, TowerApexDomain apexDomain) {
-    super(httpServer.getServer());
+
 
     this.httpServer = httpServer;
     this.apexDomain = apexDomain;
-
-    /**
-     * An app is a service
-     */
-    httpServer.getServer().registerService(this);
 
     this.configAccessor = httpServer.getServer().getConfigAccessor();
 
@@ -135,8 +130,6 @@ public abstract class TowerApp extends TowerService {
   }
 
 
-
-
   /**
    * @return the location of the static resources
    * We mount it as a path operation
@@ -209,18 +202,10 @@ public abstract class TowerApp extends TowerService {
 
   }
 
-  @Override
-  public Future<Void> mount() {
-
-    return mountOnRouter();
-
-  }
-
   /**
-   * Mount handlers on router
+   * Mount Web handlers on router
    */
-  private Future<Void> mountOnRouter() {
-
+  public Future<Void> mount() {
 
     Router rootRouter = httpServer.getRouter();
 
@@ -275,8 +260,8 @@ public abstract class TowerApp extends TowerService {
 
     return Future.succeededFuture();
 
-
   }
+
 
   /**
    * This handler will pass through all
@@ -427,13 +412,13 @@ public abstract class TowerApp extends TowerService {
   }
 
 
-
   public HttpServer getHttpServer() {
     return this.httpServer;
   }
 
   public Future<TowerApp> mountListenAndStart() {
-    return this.httpServer.mountListenAndStart(this.getAppName())
+    return mount()
+      .recover(err -> Future.failedFuture(new Exception("Error on App mount for the app (" + this + ")", err)))
       .compose(v -> {
         /**
          * The proxy handling is a `catch-all` handler
@@ -441,7 +426,11 @@ public abstract class TowerApp extends TowerService {
          * than any other routes.
          */
         this.addProxyHandlerForUnknownResourceOfHtmlApp(this.httpServer.getRouter());
-        return Future.succeededFuture(this);
-      });
+        return this.httpServer.mountListenAndStart(this.getAppName());
+      })
+      .recover(err -> Future.failedFuture(new Exception("Error on HTTP Server mount for the app (" + this + ")", err)))
+      .compose(v -> Future.succeededFuture(this));
   }
+
+
 }

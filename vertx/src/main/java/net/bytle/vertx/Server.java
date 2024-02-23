@@ -18,8 +18,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A server represents a TCP/IP server
@@ -27,7 +27,7 @@ import java.util.List;
  * and used by apps.
  * It wraps a {@link Vertx object}
  */
-public class Server implements AutoCloseable {
+public class Server {
 
   static Logger LOGGER = LogManager.getLogger(Server.class);
 
@@ -67,7 +67,7 @@ public class Server implements AutoCloseable {
   private AnalyticsTracker analyticsTracker;
   private TowerSmtpClient smtpClient;
   private MapDb mapDb;
-  private final List<TowerService> services = new ArrayList<>();
+  private final Set<TowerService> services = new HashSet<>();
   private TowerDnsClient dnsClient;
   private WriteThroughCollection writeThroughCollection;
 
@@ -214,8 +214,8 @@ public class Server implements AutoCloseable {
 
   }
 
-  @Override
-  public void close() throws Exception {
+
+  public void closeServices() throws Exception {
     MainLauncher.prometheus.close();
     for (TowerService closable : this.services) {
       LOGGER.info("Closing " + closable.getClass().getSimpleName());
@@ -241,7 +241,7 @@ public class Server implements AutoCloseable {
 
   }
 
-  public List<TowerService> getServices() {
+  public Set<TowerService> getServices() {
     return this.services;
   }
 

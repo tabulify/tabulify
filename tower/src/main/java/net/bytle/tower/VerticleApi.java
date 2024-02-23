@@ -136,7 +136,7 @@ public class VerticleApi extends AbstractVerticle {
     vertx.executeBlocking(() -> {
 
       LOGGER.info("Closing Server services");
-      this.getApp().getHttpServer().close(); // close also server
+      this.getApp().getHttpServer().getServer().closeServices();
 
       stopPromise.complete();
       return null;

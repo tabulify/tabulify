@@ -90,7 +90,7 @@ public class SmtpVerticle extends AbstractVerticle {
            */
           NetServerOptions serverOption = new NetServerOptions()
             .setPort(smtpService.getListeningPort())
-            .setPemKeyCertOptions(pemKeyCertOptions)
+            .setKeyCertOptions(pemKeyCertOptions)
             .setSsl(smtpService.getIsTlsEnabled())
             // SNI returns the certificate for the indicated server name in a SSL connection
             .setSni(smtpService.getIsSniEnabled())
@@ -174,7 +174,7 @@ public class SmtpVerticle extends AbstractVerticle {
 
   @Override
   public void stop() throws Exception {
-    this.httpServer.close();
+    this.httpServer.getServer().closeServices();
   }
 
 }

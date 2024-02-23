@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  * This class represents an HTTP server:
  * with standard handlers
  */
-public class HttpServer implements AutoCloseable {
+public class HttpServer {
 
   static private final Logger LOGGER = LogManager.getLogger(HttpServer.class);
   private final HttpServer.builder builder;
@@ -55,7 +55,7 @@ public class HttpServer implements AutoCloseable {
 
   /**
    * Mount, Listen and starts
-   * @param appName = the App Name for logging
+   * @param appName - the App name for logging
    */
   public Future<HttpServer> mountListenAndStart(String appName) {
     HttpServerOptions options = new HttpServerOptions()
@@ -70,9 +70,7 @@ public class HttpServer implements AutoCloseable {
         return Future.failedFuture(new InternalException("In non-dev environment, the management of certificate is not done. Ssl should off and handled by the proxy"));
       }
       options
-        .setPemKeyCertOptions(
-          new PemKeyCertOptions().addKeyPath(Server.DEV_KEY_PEM).addCertPath(Server.DEV_CERT_PEM)
-        )
+        .setKeyCertOptions(new PemKeyCertOptions().addKeyPath(Server.DEV_KEY_PEM).addCertPath(Server.DEV_CERT_PEM))
         .setSsl(true);
     }
     io.vertx.core.http.HttpServer httpServer = this.builder.server.getVertx().createHttpServer(options);
@@ -194,15 +192,6 @@ public class HttpServer implements AutoCloseable {
       }
     }
     return this.basicAuthenticator;
-  }
-
-
-  @Override
-  public void close() throws Exception {
-    if (this.persistentSessionStore != null) {
-      this.persistentSessionStore.close();
-    }
-    this.getServer().close();
   }
 
   public SessionStore getPersistentSessionStore() {

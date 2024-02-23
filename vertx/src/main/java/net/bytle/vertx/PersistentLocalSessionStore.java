@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This is a {@link io.vertx.ext.web.sstore.LocalSessionStore} that
  * was adapted to persist the session in MapDb
  */
-public class PersistentLocalSessionStore implements SessionStore, LocalSessionStore, Handler<Long> {
+public class PersistentLocalSessionStore extends TowerService implements SessionStore, LocalSessionStore, Handler<Long> {
 
   static final Logger LOGGER  = LogManager.getLogger(PersistentLocalSessionStore.class);
   /**
@@ -60,21 +60,21 @@ public class PersistentLocalSessionStore implements SessionStore, LocalSessionSt
    *
    */
   public PersistentLocalSessionStore(HttpServer httpServer) {
-    Server server = httpServer.getServer();
+      super(httpServer.getServer());
 
     // initialize a secure random
-    this.random = VertxContextPRNG.current(server.getVertx());
+    this.random = VertxContextPRNG.current(this.getServer().getVertx());
 
     // How often, in ms, to process sessions (sync and delete)
     long defaultSyncInterval = PersistentLocalSessionStore.INTERVAL_60_SEC;
     if (JavaEnvs.IS_DEV) {
       defaultSyncInterval = PersistentLocalSessionStore.INTERVAL_5_SEC;
     }
-    long syncInterval = server.getConfigAccessor().getLong(SYNC_INTERVAL_CONF, defaultSyncInterval);
+    long syncInterval = this.getServer().getConfigAccessor().getLong(SYNC_INTERVAL_CONF, defaultSyncInterval);
 
     // localMap = vertx.sharedData().getLocalMap(options.getString(MAP_NAME_CONF, DEFAULT_SESSION_MAP_NAME));
-    this.mapDb = server.getMapDb();
-    this.sessionMap = server.getMapDb()
+    this.mapDb = this.getServer().getMapDb();
+    this.sessionMap = this.getServer().getMapDb()
       .hashMap("sessions", Serializer.STRING, new Serializer<Session>() {
         @Override
         public void serialize(@NotNull DataOutput2 out, @NotNull Session session) throws IOException {
@@ -105,7 +105,7 @@ public class PersistentLocalSessionStore implements SessionStore, LocalSessionSt
 
     this.httpServer = httpServer;
     if (syncInterval != 0) {
-      timerID = server.getVertx().setTimer(syncInterval, this);
+      timerID = this.getServer().getVertx().setTimer(syncInterval, this);
     }
     // run once to see if the store is still correct
     // may block if there is a problem

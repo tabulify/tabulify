@@ -90,7 +90,7 @@ public class EraldyModel {
   }
 
   public Future<Void> mount() {
-    return defferedConnectionMount()
+    return deferredConnectionMount()
       .compose(v -> connectionMount());
   }
 
@@ -163,7 +163,7 @@ public class EraldyModel {
    * We use a transaction to defer the constraint check
    * at the end (ie commit)
    */
-  public Future<Void> defferedConnectionMount() {
+  public Future<Void> deferredConnectionMount() {
 
     LOGGER.info("Get/Inserting the Eraldy Organization, Realm and User");
 
@@ -304,10 +304,7 @@ public class EraldyModel {
   public UriEnhanced getMemberAppUri() {
 
     return UriEnhanced.createFromUri(this.memberAppUri);
-  }
 
-  public AuthClient getMemberClient() {
-    return this.memberClient;
   }
 
   /**

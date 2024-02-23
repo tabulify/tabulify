@@ -12,7 +12,7 @@ public abstract class WebFlowAbs extends TowerService implements WebFlow {
   private final TowerApp towerApp;
 
   public WebFlowAbs(TowerApp towerApp) {
-    super(towerApp.getServer());
+    super(towerApp.getHttpServer().getServer());
     this.towerApp = towerApp;
   }
 
