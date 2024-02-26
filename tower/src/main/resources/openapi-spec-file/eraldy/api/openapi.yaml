@@ -1585,6 +1585,34 @@ paths:
       - list
       x-content-type: application/json
       x-accepts: application/json
+  /list/{listIdentifier}/mailings:
+    get:
+      operationId: listListIdentifierMailingsGet
+      parameters:
+      - description: The identifier of the list (guid)
+        explode: false
+        in: path
+        name: listIdentifier
+        required: true
+        schema:
+          example: lis-xjkkLmi
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Mailings'
+                type: array
+          description: Mailing
+      security:
+      - apiKeyAuth: []
+      summary: Retrieve a list of mailings for a list
+      tags:
+      - list
+      x-accepts: application/json
   /mailing/{mailingIdentifier}:
     get:
       operationId: mailingIdentifierGet
@@ -1955,6 +1983,38 @@ components:
           format: date-time
           type: string
       type: object
+    Mailings:
+      description: Dailing data send for a list a mailing (ie mailings)
+      example:
+        creationTime: 2000-01-23T04:56:07.000+00:00
+        name: name
+        guid: guid
+        status: 0
+      properties:
+        guid:
+          description: |
+            The public id
+            (derived from the database/local id)
+          format: int64
+          type: string
+        name:
+          description: A short description of the mailing
+          type: string
+        status:
+          description: The status of the mailing
+          type: integer
+        creationTime:
+          description: The creation time of the mailing in UTC
+          format: date-time
+          type: string
+      required:
+      - guid
+      type: object
+      x-fields-to-string:
+      - guid
+      - name
+      x-fields-identity:
+      - guid
     Mailing:
       description: A mailing represents the sending of an email to one or more users
       example:

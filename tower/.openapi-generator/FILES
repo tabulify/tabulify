@@ -47,6 +47,7 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserShort.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserSource.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserStatus.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Mailing.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/Mailings.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/OAuthAccessTokenResponse.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Organization.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/OrganizationUser.java

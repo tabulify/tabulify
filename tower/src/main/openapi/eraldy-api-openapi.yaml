@@ -168,6 +168,33 @@ components:
           description: The last modification time of the file
           type: string
           format: date-time
+    Mailings:
+      description: Dailing data send for a list a mailing (ie mailings)
+      type: object
+      required:
+        - guid
+      x-fields-to-string:
+        - guid
+        - name
+      x-fields-identity: # hashCode
+        - guid
+      properties:
+        guid:
+          type: string
+          format: int64
+          description: |
+            The public id
+            (derived from the database/local id)
+        name:
+          type: string
+          description: A short description of the mailing
+        status:
+          type: integer
+          description: The status of the mailing
+        creationTime:
+          type: string
+          format: date-time
+          description: The creation time of the mailing in UTC
     Mailing:
       description: A mailing represents the sending of an email to one or more users
       type: object
@@ -1748,6 +1775,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Mailing'
+  /list/{listIdentifier}/mailings:
+    get:
+      operationId: listListIdentifierMailingsGet
+      summary: "Retrieve a list of mailings for a list"
+      tags:
+        - list
+      security:
+        - apiKeyAuth: [ ]
+      parameters:
+        - name: listIdentifier
+          description: "The identifier of the list (guid)"
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "lis-xjkkLmi"
+      responses:
+        '200':
+          description: "Mailing"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Mailings'
   /mailing/{mailingIdentifier}:
     get:
       operationId: mailingIdentifierGet

@@ -139,7 +139,7 @@ public class ListApiImpl implements ListApi {
 
     ListProvider listProvider = this.apiApp.getListProvider();
     return listProvider
-      .getListByIdentifier(routingContext, AuthUserScope.LIST_DELETE)
+      .getListByIdentifierFoundInPathParameterAndVerifyScope(routingContext, AuthUserScope.LIST_DELETE)
       .compose(listItem -> {
 
         if (listItem == null) {
@@ -161,7 +161,7 @@ public class ListApiImpl implements ListApi {
   public Future<ApiResponse<ListObject>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier) {
     ListProvider listProvider = this.apiApp.getListProvider();
     return listProvider
-      .getListByIdentifier(routingContext, AuthUserScope.LIST_GET)
+      .getListByIdentifierFoundInPathParameterAndVerifyScope(routingContext, AuthUserScope.LIST_GET)
       .compose(listItemAnalytics -> {
         if (listItemAnalytics == null) {
           return Future.failedFuture(
@@ -184,8 +184,8 @@ public class ListApiImpl implements ListApi {
     ListProvider listProvider = this.apiApp.getListProvider();
     MailingProvider mailingProvider = this.apiApp.getMailingProvider();
     return listProvider
-      .getListByIdentifier(routingContext,AuthUserScope.MAILING_LIST)
-      .compose(list->{
+      .getListByIdentifierFoundInPathParameterAndVerifyScope(routingContext, AuthUserScope.MAILING_LIST)
+      .compose(list -> {
         Mailing mailingToInsert = new Mailing();
         mailingToInsert.setEmailAuthor(ListProvider.getOwnerUser(list));
         mailingToInsert.setRecipientList(list);
@@ -195,11 +195,21 @@ public class ListApiImpl implements ListApi {
         return mailingProvider
           .insertMailing(mailingToInsert);
       })
-      .compose(mailingRes-> Future.succeededFuture(
+      .compose(mailingRes -> Future.succeededFuture(
         new ApiResponse<>(mailingRes)
           .setMapper(mailingProvider.getApiMapper())
       ));
 
+  }
+
+  @Override
+  public Future<ApiResponse<List<Mailings>>> listListIdentifierMailingsGet(RoutingContext routingContext, String listIdentifier) {
+
+    return this.apiApp
+      .getListProvider()
+      .getListByIdentifierFoundInPathParameterAndVerifyScope(routingContext, AuthUserScope.MAILINGS_LIST_GET)
+      .compose(list -> this.apiApp.getMailingProvider().getMailingsByList(list))
+      .compose(mailings -> Future.succeededFuture(new ApiResponse<>(mailings)));
   }
 
   @Override
@@ -255,12 +265,10 @@ public class ListApiImpl implements ListApi {
   }
 
 
-
-
   @Override
   public Future<ApiResponse<ListObject>> listListPatch(RoutingContext routingContext, String listIdentifier, ListBody listBody, String realmIdentifier) {
     ListProvider listProvider = this.apiApp.getListProvider();
-    return listProvider.getListByIdentifier(routingContext, AuthUserScope.LIST_PATCH)
+    return listProvider.getListByIdentifierFoundInPathParameterAndVerifyScope(routingContext, AuthUserScope.LIST_PATCH)
       .compose(list -> {
         String listHandle = listBody.getListHandle();
         if (listHandle != null) {

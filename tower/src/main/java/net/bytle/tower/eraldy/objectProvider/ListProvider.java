@@ -424,7 +424,7 @@ public class ListProvider {
 
   }
 
-  public  Future<ListObject> getListById(long listId, Realm realm) {
+  public Future<ListObject> getListById(long listId, Realm realm) {
 
     String sql = "SELECT * " +
       "FROM \n" +
@@ -646,13 +646,24 @@ public class ListProvider {
     return this.getListByGuidObject(listGuid);
   }
 
-  public Future<ListObject> getListByIdentifier(RoutingContext routingContext, AuthUserScope scope) {
+  /**
+   * Retrieve a list identifier in the path, check the scope and return a list
+   * @param routingContext - the routing context
+   * @param scope - the scope
+   * @return the list object or null if not found
+   */
+  public Future<ListObject> getListByIdentifierFoundInPathParameterAndVerifyScope(RoutingContext routingContext, AuthUserScope scope) {
     RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
     String listIdentifier;
     try {
       listIdentifier = routingContextWrapper.getRequestPathParameter("listIdentifier").getString();
     } catch (NotFoundException e) {
-      return Future.failedFuture(e);
+      // our fault
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setMessage("The list identifier was not found in the path")
+          .build()
+      );
     }
     String realmIdentifier = routingContextWrapper.getRequestQueryParameterAsString("realmIdentifier");
     ListProvider listProvider = apiApp.getListProvider();

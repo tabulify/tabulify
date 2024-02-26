@@ -119,7 +119,7 @@ See [identifier](identifier.md)
 ### Json data type
 
 We:
-  * use JSON storage in map/collection structure (ie to persist between restart)
+  * use JSON storage to store the whole object in map/collection structure (ie to persist between restart or for archivage)
   * don't use Json datatype as storage structure for an object in a relational model
 
 Why not in a relation model?

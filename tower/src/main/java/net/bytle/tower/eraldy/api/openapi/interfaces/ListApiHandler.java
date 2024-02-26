@@ -29,6 +29,7 @@ public void mount(RouterBuilder builder) {
     builder.operation("listListDelete").handler(this::listListDelete);
     builder.operation("listListGet").handler(this::listListGet);
     builder.operation("listListIdentifierMailingPost").handler(this::listListIdentifierMailingPost);
+    builder.operation("listListIdentifierMailingsGet").handler(this::listListIdentifierMailingsGet);
     builder.operation("listListIdentifierRegisterPost").handler(this::listListIdentifierRegisterPost);
     builder.operation("listListImportJobDetailsGet").handler(this::listListImportJobDetailsGet);
     builder.operation("listListImportJobGet").handler(this::listListImportJobGet);
@@ -93,6 +94,22 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listListIdentifierMailingPost(routingContext, listIdentifier, listMailingPost)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void listListIdentifierMailingsGet(RoutingContext routingContext) {
+    logger.info("listListIdentifierMailingsGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
+
+      logger.debug("Parameter listIdentifier is {}", listIdentifier);
+
+    // Based on Route#respond
+    api.listListIdentifierMailingsGet(routingContext, listIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

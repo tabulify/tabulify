@@ -19,6 +19,8 @@ import net.bytle.vertx.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -38,16 +40,16 @@ public class MailingProvider {
 
   private static final String ORGA_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN;
   public static final String AUTHOR_USER_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "author" + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
-  static final String ID_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "id";
-  static final String NAME_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "name";
+  static final String MAILING_ID_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "id";
+  static final String MAILING_NAME_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "name";
   static final String SUBJECT_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "subject";
-  private static final String REALM_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
+  private static final String MAILING_REALM_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
   private static final String MAILING_STATUS_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "status";
   static final String MAILING_GUID_PREFIX = "mai";
   private final EraldyApiApp apiApp;
 
   private static final String MODIFICATION_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
-  private static final String CREATION_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
+  private static final String MAILING_CREATION_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private final Pool jdbcPool;
   private final JsonMapper apiMapper;
 
@@ -78,7 +80,7 @@ public class MailingProvider {
     if (mailing.getGuid() != null) {
       return;
     }
-    String guid = apiApp.createGuidFromRealmAndObjectId(MAILING_GUID_PREFIX, mailing.getRealm(), mailing.getLocalId()).toString();
+    String guid = this.getGuidHash(mailing.getRealm().getLocalId(),mailing.getLocalId());
     mailing.setGuid(guid);
   }
 
@@ -91,14 +93,14 @@ public class MailingProvider {
 
     final String insertSql = "INSERT INTO\n" +
       FULL_QUALIFIED_TABLE_NAME + " (\n" +
-      "  " + REALM_COLUMN + ",\n" +
-      "  " + ID_COLUMN + ",\n" +
-      "  " + NAME_COLUMN + ",\n" +
+      "  " + MAILING_REALM_COLUMN + ",\n" +
+      "  " + MAILING_ID_COLUMN + ",\n" +
+      "  " + MAILING_NAME_COLUMN + ",\n" +
       "  " + SUBJECT_COLUMN + ",\n" +
       "  " + LIST_COLUMN + ",\n" +
       "  " + ORGA_COLUMN + ",\n" +
       "  " + AUTHOR_USER_COLUMN + ",\n" +
-      "  " + CREATION_COLUMN + ",\n" +
+      "  " + MAILING_CREATION_COLUMN + ",\n" +
       "  " + MAILING_STATUS_COLUMN + "\n" +
       "  )\n" +
       " values ($1, $2, $3, $4, $5, $6, $7, $8, $9)";
@@ -136,7 +138,7 @@ public class MailingProvider {
 
   public Future<Mailing> getByLocalId(Long localId, Realm realm) {
 
-    final String selectSql = "select * from " + FULL_QUALIFIED_TABLE_NAME + " where " + REALM_COLUMN + " = $1 and " + ID_COLUMN + " =$2";
+    final String selectSql = "select * from " + FULL_QUALIFIED_TABLE_NAME + " where " + MAILING_REALM_COLUMN + " = $1 and " + MAILING_ID_COLUMN + " =$2";
     Tuple tuple = Tuple.of(
       realm.getLocalId(),
       localId
@@ -164,10 +166,10 @@ public class MailingProvider {
         mailing.setRealm(realm);
         // realm and id should be first set for guid update
         this.updateGuid(mailing);
-        mailing.setName(row.getString(NAME_COLUMN));
+        mailing.setName(row.getString(MAILING_NAME_COLUMN));
         mailing.setEmailSubject(row.getString(SUBJECT_COLUMN));
         mailing.setStatus(row.getInteger(MAILING_STATUS_COLUMN));
-        mailing.setCreationTime(row.getLocalDateTime(CREATION_COLUMN));
+        mailing.setCreationTime(row.getLocalDateTime(MAILING_CREATION_COLUMN));
         mailing.setModificationTime(row.getLocalDateTime(MODIFICATION_COLUMN));
 
         // file system is not yet done
@@ -210,5 +212,31 @@ public class MailingProvider {
 
   public Guid getGuid(String mailingIdentifier) throws CastException {
     return this.apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(MAILING_GUID_PREFIX, mailingIdentifier);
+  }
+
+  public Future<List<Mailings>> getMailingsByList(ListObject list) {
+    final String sql = "select * from "+FULL_QUALIFIED_TABLE_NAME+" where "+LIST_COLUMN+" = $1 and "+ MAILING_REALM_COLUMN +" = $2";
+    Tuple tuple = Tuple.of(list.getLocalId(), list.getRealm().getLocalId());
+    return this.jdbcPool
+      .preparedQuery(sql)
+      .execute(tuple)
+      .recover(err->Future.failedFuture(new InternalException("Getting mailings for the list ("+tuple+") failed. Error: "+err.getMessage()+". Sql:\n"+sql,err)))
+      .compose(rows->{
+        List<Mailings> mailingList = new ArrayList<>();
+        for(Row row: rows){
+          Mailings mailings = new Mailings();
+          mailings.setGuid(this.getGuidHash(row.getLong(MAILING_REALM_COLUMN), row.getLong(MAILING_ID_COLUMN)));
+          mailings.setName(row.getString(MAILING_NAME_COLUMN));
+          mailings.setCreationTime(row.getLocalDateTime(MAILING_CREATION_COLUMN));
+          mailings.setStatus(row.getInteger(MAILING_STATUS_COLUMN));
+          mailingList.add(mailings);
+        }
+        return Future.succeededFuture(mailingList);
+      });
+
+  }
+
+  private String getGuidHash(Long realmId, Long mailingId) {
+    return apiApp.createGuidFromRealmAndObjectId(MAILING_GUID_PREFIX, realmId, mailingId).toString();
   }
 }
