@@ -6,17 +6,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 /**
- * A post mailing object
+ * A post mailing object to update a mailing
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListMailingPost   {
+public class MailingUpdatePost   {
 
 
   protected String name;
 
-  protected String subject;
-
-  protected String authorGuid;
+  protected String authorUserGuid;
 
   /**
   * The empty constructor is
@@ -24,7 +22,7 @@ public class ListMailingPost   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public ListMailingPost () {
+  public MailingUpdatePost () {
   }
 
   /**
@@ -44,35 +42,19 @@ public class ListMailingPost   {
   }
 
   /**
-  * @return subject The subject of the mailing
+  * @return authorUserGuid The author of the mailing
   */
-  @JsonProperty("subject")
-  public String getSubject() {
-    return subject;
+  @JsonProperty("authorUserGuid")
+  public String getAuthorUserGuid() {
+    return authorUserGuid;
   }
 
   /**
-  * @param subject The subject of the mailing
+  * @param authorUserGuid The author of the mailing
   */
   @SuppressWarnings("unused")
-  public void setSubject(String subject) {
-    this.subject = subject;
-  }
-
-  /**
-  * @return authorGuid The author of the mailing
-  */
-  @JsonProperty("authorGuid")
-  public String getAuthorGuid() {
-    return authorGuid;
-  }
-
-  /**
-  * @param authorGuid The author of the mailing
-  */
-  @SuppressWarnings("unused")
-  public void setAuthorGuid(String authorGuid) {
-    this.authorGuid = authorGuid;
+  public void setAuthorUserGuid(String authorUserGuid) {
+    this.authorUserGuid = authorUserGuid;
   }
 
 
@@ -84,15 +66,15 @@ public class ListMailingPost   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ListMailingPost listMailingPost = (ListMailingPost) o;
+    MailingUpdatePost mailingUpdatePost = (MailingUpdatePost) o;
     return
 
-            Objects.equals(name, listMailingPost.name) && Objects.equals(subject, listMailingPost.subject) && Objects.equals(authorGuid, listMailingPost.authorGuid);
+            Objects.equals(name, mailingUpdatePost.name) && Objects.equals(authorUserGuid, mailingUpdatePost.authorUserGuid);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, subject, authorGuid);
+    return Objects.hash(name, authorUserGuid);
   }
 
   @Override

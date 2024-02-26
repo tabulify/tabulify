@@ -56,17 +56,28 @@ components:
         multipart/form-data:
           schema:
             $ref: './eraldy-common-openapi.yaml#/components/schemas/PasswordCredentials'
-    ListMailingPostBody:
-      description: Creation, modification of a mailing for a list
+    MailingCreationPostBody:
+      description: Creation of a mailing for a list
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ListMailingPost'
+            $ref: '#/components/schemas/ListMailingCreationPost'
         #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
         multipart/form-data:
           schema:
-            $ref: '#/components/schemas/ListMailingPost'
+            $ref: '#/components/schemas/ListMailingCreationPost'
+    MailingUpdatePostBody:
+      description: Modification of a mailing
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MailingUpdatePost'
+        #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/MailingUpdatePost'
     LoginEmailPostBody:
       description: The data needed to log a user in by email
       required: true
@@ -369,17 +380,21 @@ components:
         redirectUri:
           type: string
           description: The uri where to redirect the user after successful registration
-    ListMailingPost:
+    ListMailingCreationPost:
       type: object
-      description: A post mailing object
+      description: A post mailing object to create a mailing
       properties:
         name:
           type: string
           description: The name of the mailing
-        subject:
+    MailingUpdatePost:
+      type: object
+      description: A post mailing object to update a mailing
+      properties:
+        name:
           type: string
-          description: The subject of the mailing
-        authorGuid:
+          description: The name of the mailing
+        authorUserGuid:
           type: string
           description: The author of the mailing
     PasswordOnly:
@@ -1767,7 +1782,7 @@ paths:
             type: string
             example: "lis-xjkkLmi"
       requestBody:
-        $ref: '#/components/requestBodies/ListMailingPostBody'
+        $ref: '#/components/requestBodies/MailingCreationPostBody'
       responses:
         '200':
           description: "Mailing"
@@ -1819,6 +1834,30 @@ paths:
       responses:
         '200':
           description: "The mailing"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mailing'
+    post:
+      operationId: mailingIdentifierPost
+      summary: "Mailing Update"
+      tags:
+        - mailing
+      security:
+        - apiKeyAuth: [ ]
+      parameters:
+        - name: mailingIdentifier
+          description: "The mailing identifier (guid)"
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "mai-xjkkLmi"
+      requestBody:
+        $ref: '#/components/requestBodies/MailingUpdatePostBody'
+      responses:
+        '200':
+          description: "The updated mailing"
           content:
             application/json:
               schema:

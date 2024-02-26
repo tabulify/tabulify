@@ -138,7 +138,7 @@ public class RealmApiImpl implements RealmApi {
   @Override
   public Future<ApiResponse<List<net.bytle.tower.eraldy.model.openapi.Realm>>> realmsOwnedByGet(RoutingContext routingContext, String userGuid) {
     return apiApp.getOrganizationUserProvider()
-      .getOrganizationUserByIdentifier(userGuid, null)
+      .getOrganizationUserByIdentifier(userGuid)
       .compose(user -> this.apiApp.getRealmProvider()
         .getRealmsForOwner(user)
         .compose(realms -> Future.succeededFuture(new ApiResponse<>(new ArrayList<>(realms)))));

@@ -1,10 +1,14 @@
 package net.bytle.tower.eraldy.api.openapi.interfaces;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import io.vertx.ext.web.validation.RequestParameter;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
+import net.bytle.tower.eraldy.model.openapi.MailingUpdatePost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +24,7 @@ this.api = api;
 
 public void mount(RouterBuilder builder) {
     builder.operation("mailingIdentifierGet").handler(this::mailingIdentifierGet);
+    builder.operation("mailingIdentifierPost").handler(this::mailingIdentifierPost);
 }
 
     private void mailingIdentifierGet(RoutingContext routingContext) {
@@ -34,6 +39,25 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.mailingIdentifierGet(routingContext, mailingIdentifier)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void mailingIdentifierPost(RoutingContext routingContext) {
+    logger.info("mailingIdentifierPost()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String mailingIdentifier = requestParameters.pathParameter("mailingIdentifier") != null ? requestParameters.pathParameter("mailingIdentifier").getString() : null;
+  RequestParameter requestParameterBody = requestParameters.body();
+  MailingUpdatePost mailingUpdatePost = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<MailingUpdatePost>(){}) : null;
+
+      logger.debug("Parameter mailingIdentifier is {}", mailingIdentifier);
+      logger.debug("Parameter mailingUpdatePost is {}", mailingUpdatePost);
+
+    // Based on Route#respond
+    api.mailingIdentifierPost(routingContext, mailingIdentifier, mailingUpdatePost)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

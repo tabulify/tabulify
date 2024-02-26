@@ -471,7 +471,7 @@ public class AppProvider {
       futureOrgUser = Future.succeededFuture();
     } else {
       futureOrgUser = apiApp.getOrganizationUserProvider()
-        .getOrganizationUserByIdentifier(userIdentifier, realm);
+        .getOrganizationUserByIdentifier(userIdentifier);
     }
     return futureOrgUser
       .compose(organizationUser -> {

@@ -10,7 +10,7 @@ import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.model.openapi.ListBody;
-import net.bytle.tower.eraldy.model.openapi.ListMailingPost;
+import net.bytle.tower.eraldy.model.openapi.ListMailingCreationPost;
 import net.bytle.tower.eraldy.model.openapi.ListUserPostBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,13 +87,13 @@ public void mount(RouterBuilder builder) {
 
             String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
   RequestParameter requestParameterBody = requestParameters.body();
-  ListMailingPost listMailingPost = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<ListMailingPost>(){}) : null;
+  ListMailingCreationPost listMailingCreationPost = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<ListMailingCreationPost>(){}) : null;
 
       logger.debug("Parameter listIdentifier is {}", listIdentifier);
-      logger.debug("Parameter listMailingPost is {}", listMailingPost);
+      logger.debug("Parameter listMailingCreationPost is {}", listMailingCreationPost);
 
     // Based on Route#respond
-    api.listListIdentifierMailingPost(routingContext, listIdentifier, listMailingPost)
+    api.listListIdentifierMailingPost(routingContext, listIdentifier, listMailingCreationPost)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

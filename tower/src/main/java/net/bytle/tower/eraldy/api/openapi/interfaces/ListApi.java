@@ -23,7 +23,7 @@ public interface ListApi  {
     /**
      * Create a new mailing for a list
     */
-    Future<ApiResponse<Mailing>> listListIdentifierMailingPost(RoutingContext routingContext, String listIdentifier, ListMailingPost listMailingPost);
+    Future<ApiResponse<Mailing>> listListIdentifierMailingPost(RoutingContext routingContext, String listIdentifier, ListMailingCreationPost listMailingCreationPost);
 
     /**
      * Retrieve a list of mailings for a list

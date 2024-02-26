@@ -1570,7 +1570,7 @@ paths:
           type: string
         style: simple
       requestBody:
-        $ref: '#/components/requestBodies/ListMailingPostBody'
+        $ref: '#/components/requestBodies/MailingCreationPostBody'
       responses:
         "200":
           content:
@@ -1639,6 +1639,34 @@ paths:
       tags:
       - mailing
       x-accepts: application/json
+    post:
+      operationId: mailingIdentifierPost
+      parameters:
+      - description: The mailing identifier (guid)
+        explode: false
+        in: path
+        name: mailingIdentifier
+        required: true
+        schema:
+          example: mai-xjkkLmi
+          type: string
+        style: simple
+      requestBody:
+        $ref: '#/components/requestBodies/MailingUpdatePostBody'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mailing'
+          description: The updated mailing
+      security:
+      - apiKeyAuth: []
+      summary: Mailing Update
+      tags:
+      - mailing
+      x-content-type: application/json
+      x-accepts: application/json
 components:
   parameters:
     response_type:
@@ -1693,15 +1721,25 @@ components:
             $ref: '#/components/schemas/PasswordCredentials'
       description: The data needed to log a user in by password credentials
       required: true
-    ListMailingPostBody:
+    MailingCreationPostBody:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ListMailingPost'
+            $ref: '#/components/schemas/ListMailingCreationPost'
         multipart/form-data:
           schema:
-            $ref: '#/components/schemas/ListMailingPost'
-      description: "Creation, modification of a mailing for a list"
+            $ref: '#/components/schemas/ListMailingCreationPost'
+      description: Creation of a mailing for a list
+      required: true
+    MailingUpdatePostBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MailingUpdatePost'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/MailingUpdatePost'
+      description: Modification of a mailing
       required: true
     LoginEmailPostBody:
       content:
@@ -2357,20 +2395,25 @@ components:
       - redirectUri
       - userEmail
       type: object
-    ListMailingPost:
-      description: A post mailing object
+    ListMailingCreationPost:
+      description: A post mailing object to create a mailing
       example:
-        subject: subject
         name: name
-        authorGuid: authorGuid
       properties:
         name:
           description: The name of the mailing
           type: string
-        subject:
-          description: The subject of the mailing
+      type: object
+    MailingUpdatePost:
+      description: A post mailing object to update a mailing
+      example:
+        name: name
+        authorUserGuid: authorUserGuid
+      properties:
+        name:
+          description: The name of the mailing
           type: string
-        authorGuid:
+        authorUserGuid:
           description: The author of the mailing
           type: string
       type: object

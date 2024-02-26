@@ -179,7 +179,7 @@ public class ListApiImpl implements ListApi {
   }
 
   @Override
-  public Future<ApiResponse<Mailing>> listListIdentifierMailingPost(RoutingContext routingContext, String listIdentifier, ListMailingPost listMailingPost) {
+  public Future<ApiResponse<Mailing>> listListIdentifierMailingPost(RoutingContext routingContext, String listIdentifier, ListMailingCreationPost listMailingPost) {
 
     ListProvider listProvider = this.apiApp.getListProvider();
     MailingProvider mailingProvider = this.apiApp.getMailingProvider();
@@ -190,10 +190,10 @@ public class ListApiImpl implements ListApi {
         mailingToInsert.setEmailAuthor(ListProvider.getOwnerUser(list));
         mailingToInsert.setRecipientList(list);
         mailingToInsert.setName(listMailingPost.getName());
-        mailingToInsert.setEmailSubject(listMailingPost.getSubject());
         mailingToInsert.setRealm(list.getRealm());
         return mailingProvider
           .insertMailing(mailingToInsert);
+
       })
       .compose(mailingRes -> Future.succeededFuture(
         new ApiResponse<>(mailingRes)

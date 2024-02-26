@@ -465,7 +465,7 @@ public class ListProvider {
     Future<OrganizationUser> futureUser = Future.succeededFuture(null);
     if (ownerIdentifier != null) {
       OrganizationUserProvider userProvider = apiApp.getOrganizationUserProvider();
-      futureUser = userProvider.getOrganizationUserByIdentifier(ownerIdentifier, app.getRealm());
+      futureUser = userProvider.getOrganizationUserByIdentifier(ownerIdentifier);
     }
 
     return futureUser

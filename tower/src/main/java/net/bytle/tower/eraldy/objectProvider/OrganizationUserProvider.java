@@ -55,10 +55,11 @@ public class OrganizationUserProvider {
   }
 
 
-  public Future<OrganizationUser> getOrganizationUserByIdentifier(String identifier, Realm realm) {
+  public Future<OrganizationUser> getOrganizationUserByIdentifier(String identifier) {
 
+    Realm eraldyRealm = this.apiApp.getEraldyModel().getRealm();
     return apiApp.getUserProvider()
-      .getUserByIdentifier(identifier, realm, OrganizationUser.class)
+      .getUserByIdentifier(identifier, eraldyRealm, OrganizationUser.class)
       .compose(user -> {
         if (user == null) {
           return Future.succeededFuture();
