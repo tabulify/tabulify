@@ -117,7 +117,7 @@ function listReport() {
   OLD_IFS=$IFS
   IFS=$'\n'
   counter=0
-  json=$(curl -s 'http://localhost/php-status?full&json')
+  json=$(curl -s 'http://localhost/php-fpm/status?full&json')
   while IFS=" " read -r pid cpu mem; do
     # extract the state and the request uri
     # --raw-output is to delete the quotes of the string created at the end of the jq pipeline with jq string interpolation
@@ -153,6 +153,17 @@ function infoReport() {
   echo "Cpu Usage: $cpu"
   echo "Memory Usage: $mem"
   echo "Php-fpm data: $(getPhpStatusData "$pid")"
+
+}
+
+function lock() {
+
+  cd /opt/www/datacadamia.com/dokudata/locks || exit 1
+  while :; do
+    ls -A1
+    sleep 0.1
+    clear
+  done
 
 }
 
@@ -413,6 +424,9 @@ kill)
   ;;
 control)
   control "${OPTIONS[@]}"
+  ;;
+lock)
+  lock "${OPTIONS[@]}"
   ;;
 help)
   print_usage
