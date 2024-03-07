@@ -742,6 +742,14 @@ public class UserProvider {
 
   public <T extends User> Future<T> getUserByIdentifier(String identifier, Realm realm, Class<T> userClass) {
 
+    if (identifier.isEmpty()) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setMessage("A user identifier can not be the empty string")
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .build()
+      );
+    }
+
     if (this.isGuid(identifier)) {
       return getUserByGuid(identifier, userClass, realm);
     } else {
@@ -887,13 +895,13 @@ public class UserProvider {
       ))
       .compose(seqUserId -> {
         Long askedLocalId = user.getLocalId();
-        if(askedLocalId!=null && !askedLocalId.equals(seqUserId)){
+        if (askedLocalId != null && !askedLocalId.equals(seqUserId)) {
           /**
            * When we insert a startup
            * with {@link #getsertOnServerStartup(User, SqlConnection, Class)}
            * where there is no data
            */
-          return Future.failedFuture("The asked local id ("+askedLocalId+") is different of the id given ("+seqUserId+"). Be careful that on the insertion order.");
+          return Future.failedFuture("The asked local id (" + askedLocalId + ") is different of the id given (" + seqUserId + "). Be careful that on the insertion order.");
         }
         user.setLocalId(seqUserId);
         this.updateGuid(user);

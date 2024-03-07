@@ -14,6 +14,7 @@
     gpgcheck: no
     repo_gpgcheck: no
     enabled: yes
+    priority: '10' # less than 99 (epel)
 
 # https://packagecloud.io/app/netdata/netdata/gpg
 - name: "Netdata - Adds the gpg key"
@@ -27,7 +28,3 @@
     name: netdata
     state: present
     enablerepo: netdata
-
-
-
-
