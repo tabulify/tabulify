@@ -46,15 +46,15 @@ public class JdbcSchemaManager {
   /**
    * Tabular does not support actually directly to wrap a SQL connection
    */
-  private final JdbcConnectionInfo jdbcConnectionInfo;
+  private final JdbcClient jdbcClient;
 
-  public JdbcSchemaManager(JdbcConnectionInfo jdbcConnectionInfo) {
-    this.jdbcConnectionInfo = jdbcConnectionInfo;
+  public JdbcSchemaManager(JdbcClient jdbcClient) {
+    this.jdbcClient = jdbcClient;
   }
 
-  public static JdbcSchemaManager create(JdbcConnectionInfo jdbcConnectionInfo) {
+  public static JdbcSchemaManager create(JdbcClient jdbcClient) {
 
-    jdbcSchemaManager = new JdbcSchemaManager(jdbcConnectionInfo);
+    jdbcSchemaManager = new JdbcSchemaManager(jdbcClient);
     LOGGER.info("Schema Manager created");
     return jdbcSchemaManager;
 
@@ -70,17 +70,17 @@ public class JdbcSchemaManager {
 
 
   private FluentConfiguration getFlyWayCommonConf() {
+
+    int OneSec = 1000;
     return Flyway
       .configure()
       .sqlMigrationPrefix(SCRIPT_MIGRATION_PREFIX)
       .cleanDisabled(true)
       .table(VERSION_LOG_TABLE)
       .createSchemas(true)
-      .dataSource(
-        this.jdbcConnectionInfo.getUrl(),
-        this.jdbcConnectionInfo.getUser(),
-        this.jdbcConnectionInfo.getPassword()
-      );
+      .connectRetries(2)
+      .connectRetriesInterval(OneSec)
+      .dataSource(this.jdbcClient.getDataSource());
   }
 
   /**
@@ -127,9 +127,5 @@ public class JdbcSchemaManager {
     return SCHEMA_PREFIX + handle;
   }
 
-
-  public JdbcConnectionInfo getConnectionInfo() {
-    return this.jdbcConnectionInfo;
-  }
 
 }

@@ -6,7 +6,9 @@ import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.PoolOptions;
 import net.bytle.exception.NullValueException;
+import org.postgresql.ds.PGSimpleDataSource;
 
+import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +32,7 @@ public class JdbcPostgres extends JdbcClient {
     super(server);
 
     jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(connectionInfoPrefix, server.getConfigAccessor());
-    pgSchemaManager = JdbcSchemaManager.create(jdbcConnectionInfo);
+    pgSchemaManager = JdbcSchemaManager.create(this);
 
     String user = jdbcConnectionInfo.getUser();
 
@@ -50,7 +52,7 @@ public class JdbcPostgres extends JdbcClient {
     PgConnectOptions pgConnectOptions = PgConnectOptions.fromUri(postgresUri)
       .setUser(user)
       .setPassword(jdbcConnectionInfo.getPassword())
-      .setConnectTimeout(PgConnectOptions.DEFAULT_CONNECT_TIMEOUT)
+      .setConnectTimeout(jdbcConnectionInfo.getConnectTimeout())
       .setProperties(connectionProps);
 
     PoolOptions poolOptions = new PoolOptions()
@@ -92,6 +94,18 @@ public class JdbcPostgres extends JdbcClient {
   @Override
   public JdbcConnectionInfo getConnectionInfo() {
     return this.jdbcConnectionInfo;
+  }
+
+  @Override
+  public DataSource getDataSource() {
+    PGSimpleDataSource dataSource = new PGSimpleDataSource();
+    dataSource.setConnectTimeout(this.jdbcConnectionInfo.getConnectTimeout());
+    dataSource.setSocketTimeout(this.jdbcConnectionInfo.getConnectTimeout());
+    dataSource.setLoginTimeout(this.jdbcConnectionInfo.getConnectTimeout());
+    dataSource.setURL(this.jdbcConnectionInfo.getUrl());
+    dataSource.setUser(this.jdbcConnectionInfo.getUser());
+    dataSource.setPassword(this.jdbcConnectionInfo.getPassword());
+    return dataSource;
   }
 
 }

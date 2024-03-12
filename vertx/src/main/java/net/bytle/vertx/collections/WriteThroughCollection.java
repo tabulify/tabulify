@@ -2,7 +2,10 @@ package net.bytle.vertx.collections;
 
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
-import net.bytle.vertx.*;
+import net.bytle.vertx.JdbcClient;
+import net.bytle.vertx.JdbcSchema;
+import net.bytle.vertx.JdbcSchemaManager;
+import net.bytle.vertx.Server;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,8 +18,7 @@ public class WriteThroughCollection {
   public WriteThroughCollection(Server server) {
     LOGGER.info("Write Through Collection Db Migration");
     postgresServer = server.getPostgresClient();
-    JdbcConnectionInfo postgresDatabaseConnectionInfo = postgresServer.getConnectionInfo();
-    JdbcSchemaManager jdbcSchemaManager = JdbcSchemaManager.create(postgresDatabaseConnectionInfo);
+    JdbcSchemaManager jdbcSchemaManager = postgresServer.getSchemaManager();
     schema = JdbcSchemaManager.getSchemaFromHandle("collection");
     JdbcSchema realmSchema = JdbcSchema.builder()
       .setLocation("classpath:db/cs-collection")

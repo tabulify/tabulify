@@ -2,6 +2,8 @@ package net.bytle.vertx;
 
 import io.vertx.sqlclient.Pool;
 
+import javax.sql.DataSource;
+
 /**
  * An object that:
  * * wraps a client (ie pool)
@@ -13,10 +15,17 @@ public abstract class JdbcClient extends TowerService {
     super(server);
   }
 
+
   abstract public JdbcSchemaManager getSchemaManager();
 
   abstract public Pool getPool();
 
   abstract public JdbcConnectionInfo getConnectionInfo();
+
+  /**
+   *
+   * @return a data source to be used with third services such as Flyway with configuration
+   */
+  abstract public DataSource getDataSource();
 
 }

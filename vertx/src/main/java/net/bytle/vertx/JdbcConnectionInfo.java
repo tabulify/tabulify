@@ -153,4 +153,12 @@ public class JdbcConnectionInfo {
       .orElse("");
   }
 
+  /**
+   *
+   * @return the connect timeout in ms
+   */
+  public int getConnectTimeout() {
+    // the vertx default
+    return 6000;
+  }
 }
