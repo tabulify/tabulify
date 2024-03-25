@@ -165,7 +165,7 @@ public class AppProvider {
    */
   public Future<App> upsertApp(App app) {
 
-    if (app.getUser() == null) {
+    if (app.getOwnerUser() == null) {
       throw new InternalException("The app user is mandatory.");
     }
 
@@ -218,7 +218,7 @@ public class AppProvider {
         .preparedQuery(updateSqlById)
         .execute(Tuple.of(
           app.getHandle(),
-          app.getUser().getLocalId(),
+          app.getOwnerUser().getLocalId(),
           app.getName(),
           app.getHome(),
           DateTimeUtil.getNowInUtc(),
@@ -257,7 +257,7 @@ public class AppProvider {
     return jdbcPool
       .preparedQuery(updateSqlByHandle)
       .execute(Tuple.of(
-          app.getUser().getLocalId(),
+          app.getOwnerUser().getLocalId(),
           app.getName(),
           app.getHome(),
           DateTimeUtil.getNowInUtc(),
@@ -405,7 +405,7 @@ public class AppProvider {
         /**
          * Foreign Objects
          */
-        app.setUser(organizationUser);
+        app.setOwnerUser(organizationUser);
 
         return Future.succeededFuture(app);
       });
@@ -476,7 +476,7 @@ public class AppProvider {
     return futureOrgUser
       .compose(organizationUser -> {
         if (organizationUser != null) {
-          app.setUser(organizationUser);
+          app.setOwnerUser(organizationUser);
         }
         return upsertApp(app);
       });
@@ -610,8 +610,8 @@ public class AppProvider {
               app.getHandle(),
               app.getName(),
               app.getHome().toString(),
-              app.getUser().getOrganization().getLocalId(),
-              app.getUser().getLocalId(),
+              app.getOwnerUser().getOrganization().getLocalId(),
+              app.getOwnerUser().getLocalId(),
               DateTimeUtil.getNowInUtc()
             )
           );

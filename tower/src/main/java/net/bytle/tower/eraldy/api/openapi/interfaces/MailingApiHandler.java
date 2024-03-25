@@ -8,6 +8,7 @@ import io.vertx.ext.web.validation.RequestParameter;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
+import net.bytle.tower.eraldy.model.openapi.MailingEmailPost;
 import net.bytle.tower.eraldy.model.openapi.MailingUpdatePost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,13 +54,13 @@ public void mount(RouterBuilder builder) {
 
             String mailingIdentifier = requestParameters.pathParameter("mailingIdentifier") != null ? requestParameters.pathParameter("mailingIdentifier").getString() : null;
   RequestParameter requestParameterBody = requestParameters.body();
-  MailingUpdatePost mailingUpdatePost = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<MailingUpdatePost>(){}) : null;
+  MailingEmailPost mailingEmailPost = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<MailingEmailPost>(){}) : null;
 
       logger.debug("Parameter mailingIdentifier is {}", mailingIdentifier);
-      logger.debug("Parameter mailingUpdatePost is {}", mailingUpdatePost);
+      logger.debug("Parameter mailingEmailPost is {}", mailingEmailPost);
 
     // Based on Route#respond
-    api.mailingIdentifierEmailPost(routingContext, mailingIdentifier, mailingUpdatePost)
+    api.mailingIdentifierEmailPost(routingContext, mailingIdentifier, mailingEmailPost)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

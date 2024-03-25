@@ -128,7 +128,7 @@ public class ListRegistrationValidationLetter {
       String publisherName;
       User publisher = listObject.getOwnerUser();
       if (publisher == null) {
-        publisher = listObject.getApp().getUser();
+        publisher = listObject.getApp().getOwnerUser();
       }
 
       try {

@@ -110,7 +110,7 @@ public class EraldyModel {
     memberApp.setName("Members");
     memberApp.setHandle("members");
     memberApp.setHome(URI.create("https://eraldy.com"));
-    memberApp.setUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
+    memberApp.setOwnerUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
     memberApp.setRealm(this.eraldyRealm);
     return this.apiApp.getAppProvider().getsertOnStartup(memberApp)
       .compose(memberAppRes -> {
@@ -131,7 +131,7 @@ public class EraldyModel {
         interactApp.setName("Interact");
         interactApp.setHandle("interact");
         interactApp.setHome(URI.create("https://eraldy.com"));
-        interactApp.setUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
+        interactApp.setOwnerUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
         interactApp.setRealm(this.eraldyRealm);
         return this.apiApp.getAppProvider().getsertOnStartup(interactApp);
       })

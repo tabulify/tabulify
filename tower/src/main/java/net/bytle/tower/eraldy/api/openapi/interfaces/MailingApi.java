@@ -5,6 +5,7 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.Email;
 import net.bytle.tower.eraldy.model.openapi.Mailing;
+import net.bytle.tower.eraldy.model.openapi.MailingEmailPost;
 import net.bytle.tower.eraldy.model.openapi.MailingUpdatePost;
 
 public interface MailingApi  {
@@ -17,7 +18,7 @@ public interface MailingApi  {
     /**
      * Create or update an email template
     */
-    Future<ApiResponse<Void>> mailingIdentifierEmailPost(RoutingContext routingContext, String mailingIdentifier, MailingUpdatePost mailingUpdatePost);
+    Future<ApiResponse<Void>> mailingIdentifierEmailPost(RoutingContext routingContext, String mailingIdentifier, MailingEmailPost mailingEmailPost);
 
     /**
      * The mailing

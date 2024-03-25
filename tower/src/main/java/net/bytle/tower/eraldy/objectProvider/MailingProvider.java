@@ -43,9 +43,9 @@ public class MailingProvider {
   public static final String MAILING_AUTHOR_USER_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "author" + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   static final String MAILING_ID_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "id";
   static final String MAILING_NAME_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "name";
-  static final String SUBJECT_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "subject";
   private static final String MAILING_REALM_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
   private static final String MAILING_STATUS_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "status";
+  private static final String MAILING_EMAIL_FILE_ID_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "email_file_id";
   static final String MAILING_GUID_PREFIX = "mai";
   private final EraldyApiApp apiApp;
 
@@ -97,14 +97,13 @@ public class MailingProvider {
       "  " + MAILING_REALM_COLUMN + ",\n" +
       "  " + MAILING_ID_COLUMN + ",\n" +
       "  " + MAILING_NAME_COLUMN + ",\n" +
-      "  " + SUBJECT_COLUMN + ",\n" +
       "  " + LIST_COLUMN + ",\n" +
       "  " + MAILING_ORGA_COLUMN + ",\n" +
       "  " + MAILING_AUTHOR_USER_COLUMN + ",\n" +
       "  " + MAILING_CREATION_COLUMN + ",\n" +
       "  " + MAILING_STATUS_COLUMN + "\n" +
       "  )\n" +
-      " values ($1, $2, $3, $4, $5, $6, $7, $8, $9)";
+      " values ($1, $2, $3, $4, $5, $6, $7, $8)";
 
 
     return jdbcPool
@@ -120,7 +119,6 @@ public class MailingProvider {
                 mailing.getRealm().getLocalId(),
                 mailing.getLocalId(),
                 mailing.getName(),
-                mailing.getEmailSubject(),
                 mailing.getRecipientList().getLocalId(),
                 mailing.getEmailAuthor().getOrganization().getLocalId(),
                 mailing.getEmailAuthor().getLocalId(),
@@ -168,13 +166,12 @@ public class MailingProvider {
         // realm and id should be first set for guid update
         this.updateGuid(mailing);
         mailing.setName(row.getString(MAILING_NAME_COLUMN));
-        mailing.setEmailSubject(row.getString(SUBJECT_COLUMN));
         mailing.setStatus(row.getInteger(MAILING_STATUS_COLUMN));
         mailing.setCreationTime(row.getLocalDateTime(MAILING_CREATION_COLUMN));
         mailing.setModificationTime(row.getLocalDateTime(MAILING_MODIFICATION_COLUMN));
 
-        // file system is not yet done
-        mailing.setEmailBody(null);
+        // Email has file
+        mailing.setEmailFileId(row.getLong(MAILING_EMAIL_FILE_ID_COLUMN));
 
         // orga user
         Long orgaId = row.getLong(MAILING_ORGA_COLUMN);

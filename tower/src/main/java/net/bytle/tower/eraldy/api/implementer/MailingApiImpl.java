@@ -8,10 +8,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.MailingApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
-import net.bytle.tower.eraldy.model.openapi.Email;
-import net.bytle.tower.eraldy.model.openapi.Mailing;
-import net.bytle.tower.eraldy.model.openapi.MailingUpdatePost;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
+import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.MailingProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.TowerApp;
@@ -60,12 +57,19 @@ public class MailingApiImpl implements MailingApi {
             .build()
           );
         }
+        if (mailing.getEmailFileId() == null) {
+          Email email = new Email();
+          // null == undefined
+          email.setSubject(null);
+          email.setBody(null);
+          email.setPreview(null);
+          return Future.succeededFuture(new ApiResponse<>(email));
+        }
         return Future.succeededFuture();
       });
   }
 
-  @Override
-  public Future<ApiResponse<Void>> mailingIdentifierEmailPost(RoutingContext routingContext, String mailingIdentifier, MailingUpdatePost mailingUpdatePost) {
+  public Future<ApiResponse<Void>> mailingIdentifierEmailPost(RoutingContext routingContext, String mailingIdentifier, MailingEmailPost mailingEmailPost) {
     MailingProvider mailingProvider = this.apiApp.getMailingProvider();
     Guid guid;
     try {

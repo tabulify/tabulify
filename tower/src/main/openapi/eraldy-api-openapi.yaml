@@ -170,23 +170,21 @@ components:
           description: The type of file (ie regular file or directory)
         mediaType:
           type: string
-          description: The media type of the content (to parse it)
-        thirdType:
-          type: string
           description: |
-            A third functional type for the content
-            For instance:
-            * an xml file can represent a document or a fragment.
-            * a yaml file can be an open api file
+            The media type of the content
+            It defines:
+            * the raw type to parse it (ie Json, Xml, ...)
+            * and the logical structure
+            Example: Json as Mdast application/vnd.mdast+json
         logicalType:
           type: string
           description: |
-            Why? A document may be saved in different format
-            An email may be saved as json or in a eml format.
-            * Media type defines the raw type (ie json, ...)
-            * Third type defines the structure of the the raw type (ie ast, ...)
-            * Logical type defines the logical type (ie email)
-            It defines the metadata.
+            The logical type (email, document, fragment, ...)
+            For instance:
+            * an xml file can represent a document or a fragment.
+            * a yaml file can be an open api file
+            * a json can be an email
+            The logical type defines the metadata structure.
         parentFile:
           $ref: '#/components/schemas/FileObject'
         drive:
@@ -252,7 +250,7 @@ components:
         emailFileId:
           type: integer
           format: int64
-          description: The email file id (body and subject)
+          description: The email file id (body, subject, preview)
         emailAuthor:
           description: |
             The author of the email (ie the from field in the message)
@@ -279,39 +277,24 @@ components:
         realm:
           $ref: './eraldy-common-openapi.yaml#/components/schemas/Realm'
     Email:
-      description: An email template
+      description: |
+        An email
+        (The object stored in the file system)
       type: object
-      required:
-        - guid
       x-fields-to-string:
-        - guid
-        - name
-      x-fields-identity: # hashCode
-        - guid
+        - subject
       properties:
-        guid:
-          type: string
-          description: |
-            The file guid
-        name:
-          type: string
-          description: the file name (for human)
         subject:
           type: string
           description: The subject of the email
         body:
-          description: The body of the email
-          type: string
-        creationTime:
-          type: string
-          format: date-time
-          description: The creation time of the mailing in UTC
-        modificationTime:
-          type: string
-          format: date-time
-          description: The last modification time of the mailing in UTC
-        realm:
-          $ref: './eraldy-common-openapi.yaml#/components/schemas/Realm'
+          description: The body of the email (Rich Slate Format)
+          type: object
+          additionalProperties: true
+        preview:
+          description: The preview of the email (Rich Slate Format)
+          type: object
+          additionalProperties: true
     ListImportPostResponse:
       description: |
         The successful response to the submission of a import job for a list
@@ -457,10 +440,9 @@ components:
           description: The email subject
         mediaType:
           type: string
-          description: The email body media type (text/json for an AST)
-        thirdType:
-          type: string
-          description: The structure of the media type (the AST for Json)
+          description: |
+            The email body media type
+            For a RichSlate AST, 'application/vnd.rsast+json'
         body:
           type: string
           description: The email body
@@ -1968,7 +1950,7 @@ paths:
             type: string
             example: "mai-xjkkLmi"
       requestBody:
-        $ref: '#/components/requestBodies/MailingUpdatePostBody'
+        $ref: '#/components/requestBodies/MailingEmailPostBody'
       responses:
         '200':
           description: "Success"

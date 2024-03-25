@@ -141,11 +141,6 @@ subprojects {
     maven {
       url = uri("https://jitpack.io")
     }
-    maven {
-      // for oracle jdbc
-      // url = "https://repo.boundlessgeo.com/main/"
-      url = uri("https://maven.icm.edu.pl/artifactory/repo/")
-    }
 
   }
 

@@ -25,7 +25,7 @@ public class FileObject   {
 
   protected String mediaType;
 
-  protected String thirdType;
+  protected String logicalType;
 
   protected FileObject parentFile;
 
@@ -125,7 +125,7 @@ public class FileObject   {
   }
 
   /**
-  * @return mediaType The media type of the content (to parse it)
+  * @return mediaType The media type of the content It defines: * the raw type to parse it (ie Json, Xml, ...) * and the logical structure Example: Json as Mdast application/vnd.mdast+json
   */
   @JsonProperty("mediaType")
   public String getMediaType() {
@@ -133,7 +133,7 @@ public class FileObject   {
   }
 
   /**
-  * @param mediaType The media type of the content (to parse it)
+  * @param mediaType The media type of the content It defines: * the raw type to parse it (ie Json, Xml, ...) * and the logical structure Example: Json as Mdast application/vnd.mdast+json
   */
   @SuppressWarnings("unused")
   public void setMediaType(String mediaType) {
@@ -141,19 +141,19 @@ public class FileObject   {
   }
 
   /**
-  * @return thirdType A third functional type for the content For instance: * an xml file can represent a document or a fragment. * a yaml file can be an open api file
+  * @return logicalType The logical type (email, document, fragment, ...) For instance: * an xml file can represent a document or a fragment. * a yaml file can be an open api file * a json can be an email The logical type defines the metadata structure.
   */
-  @JsonProperty("thirdType")
-  public String getThirdType() {
-    return thirdType;
+  @JsonProperty("logicalType")
+  public String getLogicalType() {
+    return logicalType;
   }
 
   /**
-  * @param thirdType A third functional type for the content For instance: * an xml file can represent a document or a fragment. * a yaml file can be an open api file
+  * @param logicalType The logical type (email, document, fragment, ...) For instance: * an xml file can represent a document or a fragment. * a yaml file can be an open api file * a json can be an email The logical type defines the metadata structure.
   */
   @SuppressWarnings("unused")
-  public void setThirdType(String thirdType) {
-    this.thirdType = thirdType;
+  public void setLogicalType(String logicalType) {
+    this.logicalType = logicalType;
   }
 
   /**
@@ -232,12 +232,12 @@ public class FileObject   {
     FileObject fileObject = (FileObject) o;
     return
 
-            Objects.equals(localId, fileObject.localId) && Objects.equals(guid, fileObject.guid) && Objects.equals(name, fileObject.name) && Objects.equals(fullPath, fileObject.fullPath) && Objects.equals(fileType, fileObject.fileType) && Objects.equals(mediaType, fileObject.mediaType) && Objects.equals(thirdType, fileObject.thirdType) && Objects.equals(parentFile, fileObject.parentFile) && Objects.equals(drive, fileObject.drive) && Objects.equals(creationTime, fileObject.creationTime) && Objects.equals(modificationTime, fileObject.modificationTime);
+            Objects.equals(localId, fileObject.localId) && Objects.equals(guid, fileObject.guid) && Objects.equals(name, fileObject.name) && Objects.equals(fullPath, fileObject.fullPath) && Objects.equals(fileType, fileObject.fileType) && Objects.equals(mediaType, fileObject.mediaType) && Objects.equals(logicalType, fileObject.logicalType) && Objects.equals(parentFile, fileObject.parentFile) && Objects.equals(drive, fileObject.drive) && Objects.equals(creationTime, fileObject.creationTime) && Objects.equals(modificationTime, fileObject.modificationTime);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(localId, guid, name, fullPath, fileType, mediaType, thirdType, parentFile, drive, creationTime, modificationTime);
+    return Objects.hash(localId, guid, name, fullPath, fileType, mediaType, logicalType, parentFile, drive, creationTime, modificationTime);
   }
 
   @Override

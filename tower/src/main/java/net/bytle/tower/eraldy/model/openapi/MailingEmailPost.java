@@ -16,8 +16,6 @@ public class MailingEmailPost   {
 
   protected String mediaType;
 
-  protected String thirdType;
-
   protected String body;
 
   /**
@@ -46,7 +44,7 @@ public class MailingEmailPost   {
   }
 
   /**
-  * @return mediaType The email body media type (text/json for an AST)
+  * @return mediaType The email body media type For a RichSlate AST, 'application/vnd.rsast+json'
   */
   @JsonProperty("mediaType")
   public String getMediaType() {
@@ -54,27 +52,11 @@ public class MailingEmailPost   {
   }
 
   /**
-  * @param mediaType The email body media type (text/json for an AST)
+  * @param mediaType The email body media type For a RichSlate AST, 'application/vnd.rsast+json'
   */
   @SuppressWarnings("unused")
   public void setMediaType(String mediaType) {
     this.mediaType = mediaType;
-  }
-
-  /**
-  * @return thirdType The structure of the media type (the AST for Json)
-  */
-  @JsonProperty("thirdType")
-  public String getThirdType() {
-    return thirdType;
-  }
-
-  /**
-  * @param thirdType The structure of the media type (the AST for Json)
-  */
-  @SuppressWarnings("unused")
-  public void setThirdType(String thirdType) {
-    this.thirdType = thirdType;
   }
 
   /**
@@ -105,12 +87,12 @@ public class MailingEmailPost   {
     MailingEmailPost mailingEmailPost = (MailingEmailPost) o;
     return
 
-            Objects.equals(subject, mailingEmailPost.subject) && Objects.equals(mediaType, mailingEmailPost.mediaType) && Objects.equals(thirdType, mailingEmailPost.thirdType) && Objects.equals(body, mailingEmailPost.body);
+            Objects.equals(subject, mailingEmailPost.subject) && Objects.equals(mediaType, mailingEmailPost.mediaType) && Objects.equals(body, mailingEmailPost.body);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(subject, mediaType, thirdType, body);
+    return Objects.hash(subject, mediaType, body);
   }
 
   @Override

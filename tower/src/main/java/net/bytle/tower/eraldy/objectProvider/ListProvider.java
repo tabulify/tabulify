@@ -96,7 +96,7 @@ public class ListProvider {
     if (ownerUser != null) {
       return ownerUser;
     }
-    ownerUser = list.getApp().getUser();
+    ownerUser = list.getApp().getOwnerUser();
     if (ownerUser != null) {
       return ownerUser;
     }

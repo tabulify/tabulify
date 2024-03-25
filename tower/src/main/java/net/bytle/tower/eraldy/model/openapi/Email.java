@@ -3,29 +3,22 @@ package net.bytle.tower.eraldy.model.openapi;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
- * An email template
+ * An email (The object stored in the file system)
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Email   {
 
 
-  protected String guid;
-
-  protected String name;
-
   protected String subject;
 
-  protected String body;
+  protected Map<String, Object> body = new HashMap<>();
 
-  protected LocalDateTime creationTime;
-
-  protected LocalDateTime modificationTime;
-
-  protected Realm realm;
+  protected Map<String, Object> preview = new HashMap<>();
 
   /**
   * The empty constructor is
@@ -34,38 +27,6 @@ public class Email   {
   */
   @SuppressWarnings("unused")
   public Email () {
-  }
-
-  /**
-  * @return guid The file guid
-  */
-  @JsonProperty("guid")
-  public String getGuid() {
-    return guid;
-  }
-
-  /**
-  * @param guid The file guid
-  */
-  @SuppressWarnings("unused")
-  public void setGuid(String guid) {
-    this.guid = guid;
-  }
-
-  /**
-  * @return name the file name (for human)
-  */
-  @JsonProperty("name")
-  public String getName() {
-    return name;
-  }
-
-  /**
-  * @param name the file name (for human)
-  */
-  @SuppressWarnings("unused")
-  public void setName(String name) {
-    this.name = name;
   }
 
   /**
@@ -85,67 +46,35 @@ public class Email   {
   }
 
   /**
-  * @return body The body of the email
+  * @return body The body of the email (Rich Slate Format)
   */
   @JsonProperty("body")
-  public String getBody() {
+  public Map<String, Object> getBody() {
     return body;
   }
 
   /**
-  * @param body The body of the email
+  * @param body The body of the email (Rich Slate Format)
   */
   @SuppressWarnings("unused")
-  public void setBody(String body) {
+  public void setBody(Map<String, Object> body) {
     this.body = body;
   }
 
   /**
-  * @return creationTime The creation time of the mailing in UTC
+  * @return preview The preview of the email (Rich Slate Format)
   */
-  @JsonProperty("creationTime")
-  public LocalDateTime getCreationTime() {
-    return creationTime;
+  @JsonProperty("preview")
+  public Map<String, Object> getPreview() {
+    return preview;
   }
 
   /**
-  * @param creationTime The creation time of the mailing in UTC
+  * @param preview The preview of the email (Rich Slate Format)
   */
   @SuppressWarnings("unused")
-  public void setCreationTime(LocalDateTime creationTime) {
-    this.creationTime = creationTime;
-  }
-
-  /**
-  * @return modificationTime The last modification time of the mailing in UTC
-  */
-  @JsonProperty("modificationTime")
-  public LocalDateTime getModificationTime() {
-    return modificationTime;
-  }
-
-  /**
-  * @param modificationTime The last modification time of the mailing in UTC
-  */
-  @SuppressWarnings("unused")
-  public void setModificationTime(LocalDateTime modificationTime) {
-    this.modificationTime = modificationTime;
-  }
-
-  /**
-  * @return realm
-  */
-  @JsonProperty("realm")
-  public Realm getRealm() {
-    return realm;
-  }
-
-  /**
-  * @param realm Set realm
-  */
-  @SuppressWarnings("unused")
-  public void setRealm(Realm realm) {
-    this.realm = realm;
+  public void setPreview(Map<String, Object> preview) {
+    this.preview = preview;
   }
 
 
@@ -158,17 +87,19 @@ public class Email   {
       return false;
     }
     Email email = (Email) o;
-    return Objects.equals(guid, email.guid);
+    return
+
+            Objects.equals(subject, email.subject) && Objects.equals(body, email.body) && Objects.equals(preview, email.preview);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid);
+    return Objects.hash(subject, body, preview);
   }
 
   @Override
   public String toString() {
-    return guid + ", " + name;
+    return subject;
   }
 
 }

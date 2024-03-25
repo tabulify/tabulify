@@ -19,11 +19,9 @@ public class Mailing   {
 
   protected String name;
 
-  protected String emailSubject;
+  protected Long emailFileId;
 
   protected OrganizationUser emailAuthor;
-
-  protected FileObject emailBody;
 
   protected ListObject recipientList;
 
@@ -93,19 +91,19 @@ public class Mailing   {
   }
 
   /**
-  * @return emailSubject The subject of the email
+  * @return emailFileId The email file id (body, subject, preview)
   */
-  @JsonProperty("emailSubject")
-  public String getEmailSubject() {
-    return emailSubject;
+  @JsonProperty("emailFileId")
+  public Long getEmailFileId() {
+    return emailFileId;
   }
 
   /**
-  * @param emailSubject The subject of the email
+  * @param emailFileId The email file id (body, subject, preview)
   */
   @SuppressWarnings("unused")
-  public void setEmailSubject(String emailSubject) {
-    this.emailSubject = emailSubject;
+  public void setEmailFileId(Long emailFileId) {
+    this.emailFileId = emailFileId;
   }
 
   /**
@@ -122,22 +120,6 @@ public class Mailing   {
   @SuppressWarnings("unused")
   public void setEmailAuthor(OrganizationUser emailAuthor) {
     this.emailAuthor = emailAuthor;
-  }
-
-  /**
-  * @return emailBody
-  */
-  @JsonProperty("emailBody")
-  public FileObject getEmailBody() {
-    return emailBody;
-  }
-
-  /**
-  * @param emailBody Set emailBody
-  */
-  @SuppressWarnings("unused")
-  public void setEmailBody(FileObject emailBody) {
-    this.emailBody = emailBody;
   }
 
   /**

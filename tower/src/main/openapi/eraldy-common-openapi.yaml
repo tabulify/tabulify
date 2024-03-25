@@ -223,7 +223,7 @@ components:
           type: string
           description: The css primary color of the theme (rgb in hexadecimal)
           example: "#3498db"
-        user:
+        ownerUser:
           description: The user uses for all app level communications, the face of the app
           $ref: '#/components/schemas/OrganizationUser'
         realm:

@@ -32,7 +32,7 @@ public class App   {
 
   protected String primaryColor;
 
-  protected OrganizationUser user;
+  protected OrganizationUser ownerUser;
 
   protected Realm realm;
 
@@ -192,19 +192,19 @@ public class App   {
   }
 
   /**
-  * @return user
+  * @return ownerUser
   */
-  @JsonProperty("user")
-  public OrganizationUser getUser() {
-    return user;
+  @JsonProperty("ownerUser")
+  public OrganizationUser getOwnerUser() {
+    return ownerUser;
   }
 
   /**
-  * @param user Set user
+  * @param ownerUser Set ownerUser
   */
   @SuppressWarnings("unused")
-  public void setUser(OrganizationUser user) {
-    this.user = user;
+  public void setOwnerUser(OrganizationUser ownerUser) {
+    this.ownerUser = ownerUser;
   }
 
   /**
