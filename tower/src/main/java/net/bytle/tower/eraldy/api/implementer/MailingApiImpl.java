@@ -8,6 +8,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.MailingApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
+import net.bytle.tower.eraldy.model.openapi.Email;
 import net.bytle.tower.eraldy.model.openapi.Mailing;
 import net.bytle.tower.eraldy.model.openapi.MailingUpdatePost;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
@@ -24,6 +25,55 @@ public class MailingApiImpl implements MailingApi {
 
   public MailingApiImpl(TowerApp towerApp) {
     this.apiApp = (EraldyApiApp) towerApp;
+  }
+
+  @Override
+  public Future<ApiResponse<Email>> mailingIdentifierEmailGet(RoutingContext routingContext, String mailingIdentifier) {
+    MailingProvider mailingProvider = this.apiApp.getMailingProvider();
+    Guid guid;
+    try {
+      guid = mailingProvider.getGuid(mailingIdentifier);
+    } catch (CastException e) {
+      return Future.failedFuture(new IllegalArgumentException("The mailing guid (" + mailingIdentifier + ") is not valid", e));
+    }
+    return this.apiApp.getRealmProvider()
+      .getRealmFromLocalId(guid.getRealmOrOrganizationId())
+      .compose(realm -> {
+        if (realm == null) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setType(TowerFailureTypeEnum.NOT_FOUND_404) // our fault?, deleted a realm is pretty rare.
+            .setMessage("The realm of the mailing (" + mailingIdentifier + ") was not found")
+            .build()
+          );
+        }
+        return this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.MAILING_EMAIL_GET);
+      })
+      .compose(realm -> {
+        long localId = guid.validateRealmAndGetFirstObjectId(realm.getLocalId());
+        return mailingProvider.getByLocalId(localId, realm);
+      })
+      .compose(mailing -> {
+        if (mailing == null) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setType(TowerFailureTypeEnum.NOT_FOUND_404) // our fault
+            .setMessage("The mailing (" + mailingIdentifier + ") was not found")
+            .build()
+          );
+        }
+        return Future.succeededFuture();
+      });
+  }
+
+  @Override
+  public Future<ApiResponse<Void>> mailingIdentifierEmailPost(RoutingContext routingContext, String mailingIdentifier, MailingUpdatePost mailingUpdatePost) {
+    MailingProvider mailingProvider = this.apiApp.getMailingProvider();
+    Guid guid;
+    try {
+      guid = mailingProvider.getGuid(mailingIdentifier);
+    } catch (CastException e) {
+      return Future.failedFuture(new IllegalArgumentException("The mailing guid (" + mailingIdentifier + ") is not valid", e));
+    }
+    return Future.succeededFuture();
   }
 
   @Override
@@ -78,7 +128,7 @@ public class MailingApiImpl implements MailingApi {
 
     return this.apiApp.getRealmProvider()
       .getRealmFromLocalId(guid.getRealmOrOrganizationId())
-      .recover(err->Future.failedFuture(new InternalException("Error on realm get. Error: "+err.getMessage(),err)))
+      .recover(err -> Future.failedFuture(new InternalException("Error on realm get. Error: " + err.getMessage(), err)))
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(TowerFailureException.builder()
@@ -89,12 +139,12 @@ public class MailingApiImpl implements MailingApi {
         }
         return this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.MAILING_UPDATE);
       })
-      .recover(err->Future.failedFuture(new InternalException("Error on authorization check. Error: "+err.getMessage(),err)))
+      .recover(err -> Future.failedFuture(new InternalException("Error on authorization check. Error: " + err.getMessage(), err)))
       .compose(realm -> {
         long localId = guid.validateRealmAndGetFirstObjectId(realm.getLocalId());
         return mailingProvider.getByLocalId(localId, realm);
       })
-      .recover(err->Future.failedFuture(new InternalException("Error on mailing user get. Error: "+err.getMessage(),err)))
+      .recover(err -> Future.failedFuture(new InternalException("Error on mailing user get. Error: " + err.getMessage(), err)))
       .compose(mailing -> {
         if (mailing == null) {
           return Future.failedFuture(TowerFailureException.builder()
@@ -105,13 +155,13 @@ public class MailingApiImpl implements MailingApi {
         }
         Future<OrganizationUser> futureUser = this.apiApp.getOrganizationUserProvider()
           .getOrganizationUserByIdentifier(mailingUpdatePost.getAuthorUserGuid());
-        return Future.all(Future.succeededFuture(mailing),futureUser);
+        return Future.all(Future.succeededFuture(mailing), futureUser);
       })
-      .recover(err->Future.failedFuture(new InternalException("Error on mailing user getting for mailing update. Error: "+err.getMessage(),err)))
-      .compose(compositeFuture->{
-        if(compositeFuture.failed()){
+      .recover(err -> Future.failedFuture(new InternalException("Error on mailing user getting for mailing update. Error: " + err.getMessage(), err)))
+      .compose(compositeFuture -> {
+        if (compositeFuture.failed()) {
           // user get error as mailing is already succeeded
-          return Future.failedFuture(new InternalException("Error on composite mailing user getting for mailing update. Error: "+compositeFuture.cause()));
+          return Future.failedFuture(new InternalException("Error on composite mailing user getting for mailing update. Error: " + compositeFuture.cause()));
         }
         Mailing mailing = compositeFuture.resultAt(0);
         OrganizationUser organizationUser = compositeFuture.resultAt(1);
@@ -131,7 +181,7 @@ public class MailingApiImpl implements MailingApi {
         return mailingProvider.updateMailingNameAndAuthor(mailing);
 
       })
-      .compose(mailing->Future.succeededFuture(new ApiResponse<>(mailing).setMapper(mailingProvider.getApiMapper())));
+      .compose(mailing -> Future.succeededFuture(new ApiResponse<>(mailing).setMapper(mailingProvider.getApiMapper())));
   }
 
 }

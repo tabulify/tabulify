@@ -1667,6 +1667,56 @@ paths:
       - mailing
       x-content-type: application/json
       x-accepts: application/json
+  /mailing/{mailingIdentifier}/email:
+    get:
+      operationId: mailingIdentifierEmailGet
+      parameters:
+      - description: A mailing identifier (guid)
+        explode: false
+        in: path
+        name: mailingIdentifier
+        required: true
+        schema:
+          example: mai-xjkkLmi
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Email'
+          description: The email
+      security:
+      - apiKeyAuth: []
+      summary: Get the email template
+      tags:
+      - mailing
+      x-accepts: application/json
+    post:
+      operationId: mailingIdentifierEmailPost
+      parameters:
+      - description: The mailing identifier (guid)
+        explode: false
+        in: path
+        name: mailingIdentifier
+        required: true
+        schema:
+          example: mai-xjkkLmi
+          type: string
+        style: simple
+      requestBody:
+        $ref: '#/components/requestBodies/MailingUpdatePostBody'
+      responses:
+        "200":
+          description: Success
+      security:
+      - apiKeyAuth: []
+      summary: Create or update an email template
+      tags:
+      - mailing
+      x-content-type: application/json
+      x-accepts: application/json
 components:
   parameters:
     response_type:
@@ -1740,6 +1790,16 @@ components:
           schema:
             $ref: '#/components/schemas/MailingUpdatePost'
       description: Modification of a mailing
+      required: true
+    MailingEmailPostBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MailingEmailPost'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/MailingEmailPost'
+      description: Modification/Creation of a mailing email
       required: true
     LoginEmailPostBody:
       content:
@@ -2209,7 +2269,6 @@ components:
           description: |
             The public id
             (derived from the database/local id)
-          format: int64
           type: string
         name:
           description: A short description of the mailing
@@ -2226,6 +2285,64 @@ components:
         status:
           description: The status of the mailing
           type: integer
+        creationTime:
+          description: The creation time of the mailing in UTC
+          format: date-time
+          type: string
+        modificationTime:
+          description: The last modification time of the mailing in UTC
+          format: date-time
+          type: string
+        realm:
+          $ref: '#/components/schemas/Realm'
+      required:
+      - guid
+      type: object
+      x-fields-to-string:
+      - guid
+      - name
+      x-fields-identity:
+      - guid
+    Email:
+      description: An email template
+      example:
+        creationTime: 2000-01-23T04:56:07.000+00:00
+        subject: subject
+        modificationTime: 2000-01-23T04:56:07.000+00:00
+        name: name
+        guid: guid
+        realm:
+          appCount: 1
+          ownerUser: null
+          userCount: 6
+          organization:
+            creationTime: 2000-01-23T04:56:07.000+00:00
+            modificationTime: 2000-01-23T04:56:07.000+00:00
+            name: name
+            guid: org-xmmmN
+            handle: handle
+            localId: 1
+          listUserInCount: 5
+          name: name
+          guid: guid
+          handle: handle
+          listCount: 5
+          localId: 0
+        body: body
+      properties:
+        guid:
+          description: |
+            The file guid
+          type: string
+        name:
+          description: the file name (for human)
+          type: string
+        subject:
+          description: The subject of the email
+          type: string
+        body:
+          description: The body of the email
+          type: string
         creationTime:
           description: The creation time of the mailing in UTC
           format: date-time
@@ -2415,6 +2532,22 @@ components:
           type: string
         authorUserGuid:
           description: The author of the mailing
+          type: string
+      type: object
+    MailingEmailPost:
+      description: A post mailing email object to update/create an email
+      properties:
+        subject:
+          description: The email subject
+          type: string
+        mediaType:
+          description: The email body media type (text/json for an AST)
+          type: string
+        thirdType:
+          description: The structure of the media type (the AST for Json)
+          type: string
+        body:
+          description: The email body
           type: string
       type: object
     PasswordOnly:

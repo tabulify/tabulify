@@ -32,6 +32,7 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/CampaignEmailPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/CspObject.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/CspReport.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Drive.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/Email.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/EmailIdentifier.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/FileObject.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListBody.java
@@ -47,6 +48,7 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserShort.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserSource.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserStatus.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Mailing.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/MailingEmailPost.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/MailingUpdatePost.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Mailings.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/OAuthAccessTokenResponse.java

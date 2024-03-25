@@ -23,9 +23,46 @@ this.api = api;
 }
 
 public void mount(RouterBuilder builder) {
+    builder.operation("mailingIdentifierEmailGet").handler(this::mailingIdentifierEmailGet);
+    builder.operation("mailingIdentifierEmailPost").handler(this::mailingIdentifierEmailPost);
     builder.operation("mailingIdentifierGet").handler(this::mailingIdentifierGet);
     builder.operation("mailingIdentifierPost").handler(this::mailingIdentifierPost);
 }
+
+    private void mailingIdentifierEmailGet(RoutingContext routingContext) {
+    logger.info("mailingIdentifierEmailGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String mailingIdentifier = requestParameters.pathParameter("mailingIdentifier") != null ? requestParameters.pathParameter("mailingIdentifier").getString() : null;
+
+      logger.debug("Parameter mailingIdentifier is {}", mailingIdentifier);
+
+    // Based on Route#respond
+    api.mailingIdentifierEmailGet(routingContext, mailingIdentifier)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void mailingIdentifierEmailPost(RoutingContext routingContext) {
+    logger.info("mailingIdentifierEmailPost()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String mailingIdentifier = requestParameters.pathParameter("mailingIdentifier") != null ? requestParameters.pathParameter("mailingIdentifier").getString() : null;
+  RequestParameter requestParameterBody = requestParameters.body();
+  MailingUpdatePost mailingUpdatePost = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<MailingUpdatePost>(){}) : null;
+
+      logger.debug("Parameter mailingIdentifier is {}", mailingIdentifier);
+      logger.debug("Parameter mailingUpdatePost is {}", mailingUpdatePost);
+
+    // Based on Route#respond
+    api.mailingIdentifierEmailPost(routingContext, mailingIdentifier, mailingUpdatePost)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
 
     private void mailingIdentifierGet(RoutingContext routingContext) {
     logger.info("mailingIdentifierGet()");

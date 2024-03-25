@@ -78,6 +78,17 @@ components:
         multipart/form-data:
           schema:
             $ref: '#/components/schemas/MailingUpdatePost'
+    MailingEmailPostBody:
+      description: Modification/Creation of a mailing email
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MailingEmailPost'
+        #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/MailingEmailPost'
     LoginEmailPostBody:
       description: The data needed to log a user in by email
       required: true
@@ -167,6 +178,15 @@ components:
             For instance:
             * an xml file can represent a document or a fragment.
             * a yaml file can be an open api file
+        logicalType:
+          type: string
+          description: |
+            Why? A document may be saved in different format
+            An email may be saved as json or in a eml format.
+            * Media type defines the raw type (ie json, ...)
+            * Third type defines the structure of the the raw type (ie ast, ...)
+            * Logical type defines the logical type (ie email)
+            It defines the metadata.
         parentFile:
           $ref: '#/components/schemas/FileObject'
         drive:
@@ -223,24 +243,21 @@ components:
           description: The mailing id in the database
         guid:
           type: string
-          format: int64
           description: |
             The public id
             (derived from the database/local id)
         name:
           type: string
           description: A short description of the mailing
-        emailSubject:
-          type: string
-          description: The subject of the email
+        emailFileId:
+          type: integer
+          format: int64
+          description: The email file id (body and subject)
         emailAuthor:
           description: |
             The author of the email (ie the from field in the message)
             On a smtp level, this is not the sender but the author.
           $ref: './eraldy-common-openapi.yaml#/components/schemas/OrganizationUser'
-        emailBody:
-          description: The body of the email in a template format
-          $ref: '#/components/schemas/FileObject'
         recipientList:
           description: |
             The list of users that are recipients.
@@ -251,6 +268,40 @@ components:
         status:
           type: integer
           description: The status of the mailing
+        creationTime:
+          type: string
+          format: date-time
+          description: The creation time of the mailing in UTC
+        modificationTime:
+          type: string
+          format: date-time
+          description: The last modification time of the mailing in UTC
+        realm:
+          $ref: './eraldy-common-openapi.yaml#/components/schemas/Realm'
+    Email:
+      description: An email template
+      type: object
+      required:
+        - guid
+      x-fields-to-string:
+        - guid
+        - name
+      x-fields-identity: # hashCode
+        - guid
+      properties:
+        guid:
+          type: string
+          description: |
+            The file guid
+        name:
+          type: string
+          description: the file name (for human)
+        subject:
+          type: string
+          description: The subject of the email
+        body:
+          description: The body of the email
+          type: string
         creationTime:
           type: string
           format: date-time
@@ -397,6 +448,22 @@ components:
         authorUserGuid:
           type: string
           description: The author of the mailing
+    MailingEmailPost:
+      type: object
+      description: A post mailing email object to update/create an email
+      properties:
+        subject:
+          type: string
+          description: The email subject
+        mediaType:
+          type: string
+          description: The email body media type (text/json for an AST)
+        thirdType:
+          type: string
+          description: The structure of the media type (the AST for Json)
+        body:
+          type: string
+          description: The email body
     PasswordOnly:
       title: To update a password
       description: To update a password
@@ -1862,3 +1929,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Mailing'
+  /mailing/{mailingIdentifier}/email:
+    get:
+      operationId: mailingIdentifierEmailGet
+      summary: "Get the email template"
+      tags:
+        - mailing
+      security:
+        - apiKeyAuth: [ ]
+      parameters:
+        - name: mailingIdentifier
+          description: "A mailing identifier (guid)"
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "mai-xjkkLmi"
+      responses:
+        '200':
+          description: "The email"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Email'
+    post:
+      operationId: mailingIdentifierEmailPost
+      summary: "Create or update an email template"
+      tags:
+        - mailing
+      security:
+        - apiKeyAuth: [ ]
+      parameters:
+        - name: mailingIdentifier
+          description: "The mailing identifier (guid)"
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "mai-xjkkLmi"
+      requestBody:
+        $ref: '#/components/requestBodies/MailingUpdatePostBody'
+      responses:
+        '200':
+          description: "Success"

@@ -184,12 +184,6 @@ public class EraldyApiApp extends TowerApp  {
       .setCookieMaxAge(cookieMaxAgeOneWeekInSec)
       .setFailIfRealmNotFound(false);
 
-    /**
-     * OpenApi Auth Handler
-     */
-
-
-
   }
 
 
