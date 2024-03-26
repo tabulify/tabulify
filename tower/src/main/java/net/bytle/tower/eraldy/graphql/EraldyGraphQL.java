@@ -1,6 +1,8 @@
 package net.bytle.tower.eraldy.graphql;
 
 import graphql.GraphQL;
+import graphql.execution.instrumentation.ChainedInstrumentation;
+import graphql.execution.instrumentation.Instrumentation;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
@@ -11,6 +13,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.graphql.GraphQLHandler;
+import io.vertx.ext.web.handler.graphql.instrumentation.JsonObjectAdapter;
 import io.vertx.ext.web.handler.graphql.instrumentation.VertxFutureAdapter;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Mailing;
@@ -54,19 +57,31 @@ public class EraldyGraphQL implements GraphQLDef {
     GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
 
     /**
-     * Return Future (in place of CompletionStage)
-     * Instead of converting Vert.x Future to java.util.concurrent.CompletionStage manually
-     * for GraphQL Java in every data fetcher implementation,
-     * the VertxFutureAdapter instrumentation do it for you and you can return Future
+     * Allow to return Future (in place of a CompletionStage) in a data fetcher
      * https://vertx.io/docs/vertx-web-graphql/java/#_fetching_data
      */
-    VertxFutureAdapter instrumentation = VertxFutureAdapter.create();
+    VertxFutureAdapter completableToFuture = VertxFutureAdapter.create();
+
+    /**
+     * Allow to return a JSON Vertx object as result (ie map)
+     * https://vertx.io/docs/vertx-web-graphql/java/#_json_data_results
+     */
+    JsonObjectAdapter jsonObjectAdapter = new JsonObjectAdapter();
+
+    /**
+     * Instrumentation must be chained
+     * otherwise, the data may be null for field
+     */
+    List<Instrumentation> chainedList = new ArrayList<>();
+    chainedList.add(completableToFuture);
+    chainedList.add(jsonObjectAdapter);
+    ChainedInstrumentation chainedInstrumentation = new ChainedInstrumentation(chainedList);
 
     /**
      * GraphQL build
      */
     GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema)
-      .instrumentation(instrumentation)
+      .instrumentation(chainedInstrumentation)
       .build();
 
     /**
@@ -96,7 +111,9 @@ public class EraldyGraphQL implements GraphQLDef {
   }
 
   private Future<User> getMailingEmailAuthor(DataFetchingEnvironment dataFetchingEnvironment) {
-    return null;
+    User user = new User();
+    user.setGuid("123");
+    return Future.succeededFuture(user);
   }
 
   private Future<Boolean> patchMailing(DataFetchingEnvironment dataFetchingEnvironment) {

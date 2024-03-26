@@ -71,3 +71,8 @@ Each DataFetcher is passed a [graphql.schema.DataFetchingEnvironment object](htt
   * its parent type,
   * the query root object
   * or the query context object.
+
+
+### New Schema field type such as Email
+
+See [Custom scalar](https://www.graphql-java.com/documentation/scalars#writing-your-own-custom-scalars)
