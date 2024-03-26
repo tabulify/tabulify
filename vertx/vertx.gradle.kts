@@ -55,6 +55,8 @@ dependencies {
   // OpenApi is the follower of contract (Used to verify that the request has the good structure)
   // https://vertx.io/docs/vertx-web-openapi/java/
   implementation("io.vertx:vertx-web-openapi:$vertxVersion")
+  // Graphql (next architecture to not bind the frontend to the rest api)
+  implementation("io.vertx:vertx-web-graphql:$vertxVersion")
   // Mail
   implementation("io.vertx:vertx-mail-client:$vertxVersion")
   implementation(project(":bytle-smtp-client"))
@@ -80,6 +82,7 @@ dependencies {
 
   /**
    * Cache (used in Auth to purge entry after 1 minutes)
+   * and has pass through database
    */
   implementation("com.github.ben-manes.caffeine:caffeine:$caffeineVersion")
 

@@ -1,0 +1,22 @@
+type User {
+  guid: ID
+  email: String
+  givenName: String
+}
+
+type Mailing {
+  guid: ID
+  name: String
+  emailSubject: String
+  emailAuthor: User
+}
+
+type Query {
+  mailing(guid: ID!): Mailing
+  me: User
+}
+
+type Mutation {
+  # boolean to indicate the success ??
+  mailing(guid: ID!, name:String): Boolean
+}

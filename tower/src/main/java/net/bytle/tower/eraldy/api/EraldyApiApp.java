@@ -13,6 +13,7 @@ import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.implementer.flow.*;
 import net.bytle.tower.eraldy.auth.AuthClientHandler;
 import net.bytle.tower.eraldy.auth.RealmSessionHandler;
+import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
@@ -141,6 +142,11 @@ public class EraldyApiApp extends TowerApp  {
      * OpenApi
      */
     new OpenApiService(new EraldyOpenApi(this));
+
+    /**
+     * GraphQL
+     */
+    new GraphQLService(new EraldyGraphQL(this));
 
     /**
      * The authN manager used by all flows to authenticate a user

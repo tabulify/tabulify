@@ -4,7 +4,7 @@ import io.vertx.core.Future;
 
 public abstract class TowerService implements TowerServiceInterface {
 
-  private final Server server;
+  final Server server;
 
   public TowerService(Server server) {
     this.server = server;

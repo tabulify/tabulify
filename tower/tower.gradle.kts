@@ -91,6 +91,7 @@ dependencies {
   implementation("io.vertx:vertx-web:$vertxVersion")
   implementation("io.vertx:vertx-web-client:$vertxVersion")
   implementation("io.vertx:vertx-web-openapi:$vertxVersion")
+  implementation("io.vertx:vertx-web-graphql:$vertxVersion")
   // Health
   implementation("io.vertx:vertx-health-check:$vertxVersion")
   // Mail
