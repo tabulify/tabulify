@@ -2,7 +2,6 @@ package net.bytle.vertx;
 
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
-import io.vertx.ext.web.handler.graphql.GraphQLHandler;
 import io.vertx.ext.web.handler.graphql.GraphiQLHandler;
 import io.vertx.ext.web.handler.graphql.GraphiQLHandlerOptions;
 import net.bytle.java.JavaEnvs;
@@ -27,12 +26,12 @@ public class GraphQLService extends TowerService {
      * Server
      * (Get and post)
      */
-    GraphQLHandler graphQLHandler = GraphQLHandler.create(graphQL.getGraphQL());
+
     this.graphQL.getApp()
       .getHttpServer()
       .getRouter()
       .route("/graphql")
-      .handler(graphQLHandler);
+      .handler(this.graphQL.getHandler());
 
     /**
      * GraphiQL Client

@@ -38,10 +38,36 @@ You work by entity. You search it, you update it.
 * Multiple API fetches. Every field and nested object can get its own set of arguments while in Rest, you can only pass a single set of arguments (ie the query parameters and URL segments in your request).
 * Data transformations: you can even pass arguments into scalar fields, to implement data transformations
 
+```graphql
+{
+  human(id: "1000") {
+    name
+    height(unit: FOOT)
+  }
+}
+```
 ## Implementation
 
 See GraphQLService
 
-Implementation function:
-* The returned class field names must match those of the corresponding GraphQL schema type.
-*
+
+### Fetching / RuntimeWiring
+
+To [fetch](https://www.graphql-java.com/documentation/data-fetching), you need to map:
+  * operation
+  * field (optional)
+to a dataFetcher method with the `RuntimeWiring` builder object
+
+If a field of a type is not mapped, by default, it gets the `graphql.schema.PropertyDataFetcher`
+that supports
+  * pojo (searches for a getter `public String getField()`)
+  * map (searches for the key `field`)
+
+Each DataFetcher is passed a [graphql.schema.DataFetchingEnvironment object](https://www.graphql-java.com/documentation/data-fetching#the-interesting-parts-of-the-datafetchingenvironment) which contains:
+* what field is being fetched,
+* what arguments have been supplied to the field
+* and other information such as:
+  * the field's type,
+  * its parent type,
+  * the query root object
+  * or the query context object.
