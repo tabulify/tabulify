@@ -76,3 +76,17 @@ Each DataFetcher is passed a [graphql.schema.DataFetchingEnvironment object](htt
 ### New Schema field type such as Email
 
 See [Custom scalar](https://www.graphql-java.com/documentation/scalars#writing-your-own-custom-scalars)
+
+
+### Mutation
+
+Every mutation's response may include the modified data
+to avoid a followup query of the client (or to simply update the cache)
+```graphql
+type Mutation {
+  # This mutation takes id and email parameters and responds with a User
+  updateUserEmail(id: ID!, email: String!): User
+}
+```
+
+Mutation can insert or update

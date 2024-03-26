@@ -1,15 +1,77 @@
-type User {
-  guid: ID
-  email: String
+type User implements Node {
+  guid: ID!
+  emailAddress: String!
   givenName: String
 }
 
-type Mailing {
-  guid: ID
+type EmailDoc {
+  subject: String
+  preview: String
+  body: String
+}
+
+"""
+A mailing
+"""
+type Mailing implements Node {
+  """The Guid of the mailing"""
+  guid: ID!
+  name: String
+  email: EmailDoc
+  list: List
+  emailAuthor: User
+  status: Int
+  creationTime: String
+  modificationTime: String
+}
+
+"""An object with an ID"""
+interface Node {
+  """The id of the object."""
+  guid: ID!
+}
+
+"""Information about pagination in a connection."""
+type PageInfo {
+  """When paginating forwards, the cursor to continue."""
+  endCursor: String
+
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+
+  """When paginating backwards, the cursor to continue."""
+  startCursor: String
+}
+
+type List implements Node {
+  guid: ID!
+}
+
+interface MutationResponse {
+  code: String!
+  success: Boolean!
+  message: String!
+}
+
+input MailingInput {
   name: String
   emailSubject: String
-  emailAuthor: User
+  emailPreview: String
+  emailBody: String
+  emailAuthorGuid: ID
+  status: Int
 }
+
+type MailingMutationResponse implements MutationResponse {
+  code: String!
+  success: Boolean!
+  message: String!
+  mailing: Mailing
+}
+
 
 type Query {
   mailing(guid: ID!): Mailing
@@ -17,6 +79,6 @@ type Query {
 }
 
 type Mutation {
-  # boolean to indicate the success ??
-  mailing(guid: ID!, name:String): Boolean
+  mailingUpdate(guid: ID!, data:MailingInput!): MailingMutationResponse
+  mailingInsert(listGuid: ID!, data:MailingInput!): MailingMutationResponse
 }
