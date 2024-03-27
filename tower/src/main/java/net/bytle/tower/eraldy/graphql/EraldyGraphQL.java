@@ -11,15 +11,18 @@ import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.graphql.GraphQLHandler;
 import io.vertx.ext.web.handler.graphql.instrumentation.JsonObjectAdapter;
 import io.vertx.ext.web.handler.graphql.instrumentation.VertxFutureAdapter;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.graphql.input.MailingInputProps;
 import net.bytle.tower.eraldy.model.openapi.Mailing;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.vertx.GraphQLDef;
 import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.graphql.GraphQLDef;
+import net.bytle.vertx.graphql.GraphQLLocalDate;
 import org.dataloader.BatchLoaderWithContext;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderFactory;
@@ -27,6 +30,7 @@ import org.dataloader.DataLoaderRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring;
 
@@ -49,8 +53,9 @@ public class EraldyGraphQL implements GraphQLDef {
         // https://vertx.io/docs/vertx-web-graphql/java/#_fetching_data
         return builder.dataFetcher("mailing", this::getMailing);
       })
-      .type("Mutation", builder -> builder.dataFetcher("mailing", this::patchMailing))
+      .type("Mutation", builder -> builder.dataFetcher("mailingUpdate", this::patchMailing))
       .type("Mailing", typeWiring -> typeWiring.dataFetcher("emailAuthor", this::getMailingEmailAuthor))
+      .directive("dateFormat", new GraphQLLocalDate())
       .build();
 
     SchemaGenerator schemaGenerator = new SchemaGenerator();
@@ -110,14 +115,23 @@ public class EraldyGraphQL implements GraphQLDef {
       .build();
   }
 
+
   private Future<User> getMailingEmailAuthor(DataFetchingEnvironment dataFetchingEnvironment) {
     User user = new User();
     user.setGuid("123");
     return Future.succeededFuture(user);
   }
 
-  private Future<Boolean> patchMailing(DataFetchingEnvironment dataFetchingEnvironment) {
-    return Future.succeededFuture(true);
+  private Future<Mailing> patchMailing(DataFetchingEnvironment dataFetchingEnvironment) {
+    String guid = dataFetchingEnvironment.getArgument("guid");
+    Map<String, Object> mappingPropsMap = dataFetchingEnvironment.getArgument("props");
+    //
+    // Type safe Java objects to call our backing code with
+    //
+    MailingInputProps mailingInputProps = new JsonObject(mappingPropsMap).mapTo(MailingInputProps.class);
+
+
+    return Future.succeededFuture(new Mailing());
   }
 
   private Future<Mailing> getMailing(DataFetchingEnvironment dataFetchingEnvironment) {

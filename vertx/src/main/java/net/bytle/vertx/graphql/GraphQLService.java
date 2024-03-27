@@ -1,10 +1,11 @@
-package net.bytle.vertx;
+package net.bytle.vertx.graphql;
 
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.ext.web.handler.graphql.GraphiQLHandler;
 import io.vertx.ext.web.handler.graphql.GraphiQLHandlerOptions;
 import net.bytle.java.JavaEnvs;
+import net.bytle.vertx.TowerService;
 
 /**
  * A service to implement a GraphQL endpoint

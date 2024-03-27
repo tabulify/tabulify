@@ -1,6 +1,5 @@
 package net.bytle.vertx;
 
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -17,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 
 public class DateTimeUtil {
 
-  static private DateTimeFormatter defaultFormat() {
+  static DateTimeFormatter defaultFormat() {
     return DateTimeFormatter.ISO_LOCAL_DATE_TIME;
   }
 
@@ -35,7 +34,7 @@ public class DateTimeUtil {
 
   public static class LocalDateTimeDeserializer extends JsonDeserializer<LocalDateTime> {
     @Override
-    public LocalDateTime deserialize(JsonParser p, DeserializationContext ctx) throws IOException, JacksonException {
+    public LocalDateTime deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
       String value = p.getValueAsString();
       try {
         return LocalDateTime.parse(value, defaultFormat());

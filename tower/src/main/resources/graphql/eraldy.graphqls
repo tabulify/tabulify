@@ -1,4 +1,6 @@
-type User implements Node {
+directive @dateFormat on FIELD_DEFINITION
+
+type User {
   guid: ID!
   emailAddress: String!
   givenName: String
@@ -13,23 +15,23 @@ type EmailDoc {
 """
 A mailing
 """
-type Mailing implements Node {
+type Mailing {
   """The Guid of the mailing"""
   guid: ID!
+  """A short descriptive name"""
   name: String
   email: EmailDoc
   list: List
   emailAuthor: User
   status: Int
-  creationTime: String
-  modificationTime: String
+  """The creation time"""
+  creationTime: String @dateFormat
+  """The modification time"""
+  modificationTime: String @dateFormat
+  """The realm"""
+  realm: Realm
 }
 
-"""An object with an ID"""
-interface Node {
-  """The id of the object."""
-  guid: ID!
-}
 
 """Information about pagination in a connection."""
 type PageInfo {
@@ -46,30 +48,62 @@ type PageInfo {
   startCursor: String
 }
 
-type List implements Node {
+type Organization {
   guid: ID!
+  """A short descriptive name"""
+  name: String
+  """An unique human id"""
+  handle: String
+  """The creation time"""
+  creationTime: String @dateFormat
+  """The modification time"""
+  modificationTime: String @dateFormat
+}
+type Realm {
+  guid: ID!
+  """A short descriptive name"""
+  name: String
+  """An unique human id"""
+  handle: String
+  """The number of user in the realm"""
+  userCount: Int
+  """The number of app in the realm"""
+  appCount: Int
+  """The number of list in the realm"""
+  listCount: Int
 }
 
-interface MutationResponse {
-  code: String!
-  success: Boolean!
-  message: String!
+type App {
+  guid: ID!
+  realm: Realm
+  lists: [List]
 }
+
+type List {
+  guid: ID!
+  realm: Realm
+  app: App
+}
+
+#interface MutationResponse {
+#  code: String!
+#  success: Boolean!
+#  message: String!
+#}
 
 input MailingInput {
+  """A short descriptive name"""
   name: String
+  """The email subject"""
   emailSubject: String
+  """The email preview"""
   emailPreview: String
+  """The email body"""
   emailBody: String
+  """The email author guid"""
   emailAuthorGuid: ID
+  """The status"""
   status: Int
-}
-
-type MailingMutationResponse implements MutationResponse {
-  code: String!
-  success: Boolean!
-  message: String!
-  mailing: Mailing
 }
 
 
@@ -79,6 +113,6 @@ type Query {
 }
 
 type Mutation {
-  mailingUpdate(guid: ID!, data:MailingInput!): MailingMutationResponse
-  mailingInsert(listGuid: ID!, data:MailingInput!): MailingMutationResponse
+  mailingUpdate(guid: ID!, props:MailingInput!): Mailing
+  mailingInsert(listGuid: ID!, props:MailingInput!): Mailing
 }

@@ -28,6 +28,12 @@ to choose and not to the backend (Rest API)
 Listing granularity is pretty difficult to define in advance.
 With a rest api, if you don't want to send all data, you create a specialised point.
 
+### No Recursive Persistence Problem
+
+Because a user has a realm that has a user, the object build have recursion
+error with Jackson.
+To avoid this, we use Jackson Mixin but with GraphQL, you don't need it at all
+because this is the client burden (ie the query that determine it)
 
 ### Schema based
 No need to search for the endpoint path.
@@ -36,7 +42,7 @@ You work by entity. You search it, you update it.
 ### Query Aggregation and Transformation
 
 * Multiple API fetches. Every field and nested object can get its own set of arguments while in Rest, you can only pass a single set of arguments (ie the query parameters and URL segments in your request).
-* Data transformations: you can even pass arguments into scalar fields, to implement data transformations
+* Data transformations: you can even pass arguments into scalar fields, to implement data transformations (Called [directive](#transformation-on-field-with-directive-date-formatting))
 
 ```graphql
 {
@@ -48,7 +54,7 @@ You work by entity. You search it, you update it.
 ```
 ## Implementation
 
-See GraphQLService
+See GraphQLService.java
 
 
 ### Fetching / RuntimeWiring
@@ -80,6 +86,7 @@ See [Custom scalar](https://www.graphql-java.com/documentation/scalars#writing-y
 
 ### Mutation
 
+[Mutation](https://www.graphql-java.com/documentation/execution#mutations)
 Every mutation's response may include the modified data
 to avoid a followup query of the client (or to simply update the cache)
 ```graphql
@@ -89,4 +96,44 @@ type Mutation {
 }
 ```
 
+```graphql
+mutation {
+  mailingInsert(listGuid:"guid",props:{ name:"New Name" }){
+    name
+  }
+}
+```
+
 Mutation can insert or update
+
+
+### Authorization
+
+See:
+* https://www.graphql-java.com/documentation/sdl-directives
+* https://www.graphql-java.com/documentation/field-visibility
+
+
+### Transformation on field with directive (Date formatting,)
+
+https://www.graphql-java.com/documentation/sdl-directives
+
+Example: Date to String: https://www.graphql-java.com/documentation/sdl-directives#another-example---date-formatting
+
+### Interface / Union (Inheritance)
+
+There is no type resolver defined for interface / union 'MutationResponse' type
+For inheritance, you need to define a resolver. See
+https://www.graphql-java.com/documentation/schema/#datafetcher-and-typeresolver
+
+
+### Exception
+
+https://www.graphql-java.com/documentation/execution#exceptions-while-fetching-data
+
+
+### Pojo / Generator
+
+They are all Spring based.
+Parser comes from GraphQL Java. See [Example](
+https://github.com/kobylynskyi/graphql-java-codegen/blob/main/src/main/java/com/kobylynskyi/graphql/codegen/parser/GraphQLDocumentParser.java#L155)

@@ -25,6 +25,7 @@ import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthNContextManager;
 import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
+import net.bytle.vertx.graphql.GraphQLService;
 import net.bytle.vertx.resilience.EmailAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
