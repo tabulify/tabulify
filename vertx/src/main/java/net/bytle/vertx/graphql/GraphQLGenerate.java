@@ -2,6 +2,8 @@ package net.bytle.vertx.graphql;
 
 import graphql.language.Document;
 import graphql.parser.Parser;
+import graphql.schema.idl.SchemaParser;
+import graphql.schema.idl.TypeDefinitionRegistry;
 import net.bytle.fs.Fs;
 
 import java.nio.file.NoSuchFileException;
@@ -19,9 +21,20 @@ public class GraphQLGenerate {
 
   public static void main(String[] args) throws NoSuchFileException {
 
-    String file = Fs.getFileContent(Path.of("..","tower","src","main","resources","graphql","eraldy.graphqls"));
+    String schema = Fs.getFileContent(Path.of("..","tower","src","main","resources","graphql","eraldy.graphqls"));
+
+    /**
+     * High Level
+     */
+    SchemaParser schemaParser = new SchemaParser();
+    TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schema);
+    System.out.println(typeDefinitionRegistry.types().size());
+
+    /**
+     * Low Level
+     */
     Parser parser = new Parser();
-    Document document = parser.parseDocument(file);
+    Document document = parser.parseDocument(schema);
     System.out.println(document.getDefinitions().size());
 
   }

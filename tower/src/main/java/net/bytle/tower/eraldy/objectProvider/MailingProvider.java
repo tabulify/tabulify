@@ -4,19 +4,18 @@ package net.bytle.tower.eraldy.objectProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.mixin.*;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.vertx.DateTimeUtil;
-import net.bytle.vertx.JdbcSchemaManager;
-import net.bytle.vertx.Server;
-import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -275,6 +274,38 @@ public class MailingProvider {
             .build());
         }
         return Future.succeededFuture(mailing);
+      });
+  }
+
+  /**
+   * A request handler that returns a mailing by guid or null if not found
+   * (used in the rest and graphql api)
+   */
+  public Future<Mailing> getByGuidRequestHandler(String mailingGuidIdentifier, RoutingContext routingContext) {
+
+    MailingProvider mailingProvider = this.apiApp.getMailingProvider();
+    Guid guid;
+    try {
+      guid = mailingProvider.getGuid(mailingGuidIdentifier);
+    } catch (CastException e) {
+      return Future.failedFuture(new IllegalArgumentException("The mailing guid (" + mailingGuidIdentifier + ") is not valid", e));
+    }
+
+    return this.apiApp.getRealmProvider()
+      .getRealmFromLocalId(guid.getRealmOrOrganizationId())
+      .compose(realm -> {
+        if (realm == null) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setType(TowerFailureTypeEnum.NOT_FOUND_404) // our fault?, deleted a realm is pretty rare.
+            .setMessage("The realm of the mailing (" + mailingGuidIdentifier + ") was not found")
+            .build()
+          );
+        }
+        return this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.MAILING_GET);
+      })
+      .compose(realm -> {
+        long localId = guid.validateRealmAndGetFirstObjectId(realm.getLocalId());
+        return mailingProvider.getByLocalId(localId, realm);
       });
   }
 }

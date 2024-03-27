@@ -84,29 +84,8 @@ public class MailingApiImpl implements MailingApi {
   public Future<ApiResponse<Mailing>> mailingIdentifierGet(RoutingContext routingContext, String mailingGuidIdentifier) {
 
     MailingProvider mailingProvider = this.apiApp.getMailingProvider();
-    Guid guid;
-    try {
-      guid = mailingProvider.getGuid(mailingGuidIdentifier);
-    } catch (CastException e) {
-      return Future.failedFuture(new IllegalArgumentException("The mailing guid (" + mailingGuidIdentifier + ") is not valid", e));
-    }
-
-    return this.apiApp.getRealmProvider()
-      .getRealmFromLocalId(guid.getRealmOrOrganizationId())
-      .compose(realm -> {
-        if (realm == null) {
-          return Future.failedFuture(TowerFailureException.builder()
-            .setType(TowerFailureTypeEnum.NOT_FOUND_404) // our fault?, deleted a realm is pretty rare.
-            .setMessage("The realm of the mailing (" + mailingGuidIdentifier + ") was not found")
-            .build()
-          );
-        }
-        return this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.MAILING_GET);
-      })
-      .compose(realm -> {
-        long localId = guid.validateRealmAndGetFirstObjectId(realm.getLocalId());
-        return mailingProvider.getByLocalId(localId, realm);
-      })
+    return mailingProvider
+      .getByGuidRequestHandler(mailingGuidIdentifier, routingContext)
       .compose(mailing -> {
         if (mailing == null) {
           return Future.failedFuture(TowerFailureException.builder()

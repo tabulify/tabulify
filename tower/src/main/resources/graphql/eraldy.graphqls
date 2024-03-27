@@ -1,16 +1,60 @@
 directive @dateFormat on FIELD_DEFINITION
 
-type User {
+"""
+There is 2 kinds of user
+* The users of any realm
+* The users of an organization (Eraldy realm)
+"""
+interface User {
   guid: ID!
   emailAddress: String!
   givenName: String
   realm: Realm!
 }
 
+"""
+A realm user
+"""
+type User implements User {
+  guid: ID!
+  emailAddress: String!
+  givenName: String
+  realm: Realm!
+}
+
+"""
+A organizational user
+A realm user from the Eraldy Realm
+that belongs to an organization
+"""
+type OrganizationUser implements User {
+  """The global id"""
+  guid: ID!
+  """The email address"""
+  emailAddress: String!
+  """The given name"""
+  givenName: String
+  """The Eraldy realm"""
+  realm: Realm!
+}
+
+"""
+The email document (ie content)
+"""
 type EmailDoc {
   subject: String
   preview: String
   body: String
+}
+
+"""
+The mailing status
+"""
+type MailingStatus {
+  """The id"""
+  code: Int
+  """A short descriptive name"""
+  name: String
 }
 
 """
@@ -26,15 +70,13 @@ type Mailing {
   """The list"""
   list: List
   """The email author"""
-  emailAuthor: User
+  emailAuthor: OrganizationUser
   """The mailing status"""
-  status: Int
+  status: MailingStatus
   """The creation time"""
   creationTime: String @dateFormat
   """The modification time"""
   modificationTime: String @dateFormat
-  """The realm"""
-  realm: Realm
 }
 
 
@@ -78,6 +120,8 @@ type Realm {
   name: String!
   """An unique human id"""
   handle: String!
+  """The owner of the realm"""
+  ownerUser: OrganizationUser
   """The number of user in the realm"""
   userCount: Int!
   """The number of app in the realm"""
@@ -93,6 +137,11 @@ type App {
   guid: ID!
   """A short descriptive name"""
   name: String!
+  """
+  The owner of the App
+  This user is shown in AuthN page as support user
+  """
+  ownerUser: OrganizationUser
   """The realm of the App"""
   realm: Realm!
 }
@@ -102,6 +151,8 @@ type List {
   guid: ID!
   """A short descriptive name"""
   name: String!
+  """The owner of the list"""
+  ownerUser: OrganizationUser
   """The application"""
   app: App!
 }
@@ -138,5 +189,5 @@ type Mutation {
   """Update a mailing"""
   mailingUpdate(guid: ID!, props:MailingInput!): Mailing
   """Create a mailing"""
-  mailingInsert(listGuid: ID!, props:MailingInput!): Mailing
+  mailingInsert(listGuid: ID!, props:MailingInput): Mailing
 }
