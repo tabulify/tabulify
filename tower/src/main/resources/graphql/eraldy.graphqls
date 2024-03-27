@@ -5,7 +5,7 @@ There is 2 kinds of user
 * The users of any realm
 * The users of an organization (Eraldy realm)
 """
-interface User {
+interface UserI {
   guid: ID!
   emailAddress: String!
   givenName: String
@@ -15,7 +15,7 @@ interface User {
 """
 A realm user
 """
-type User implements User {
+type User implements UserI {
   guid: ID!
   emailAddress: String!
   givenName: String
@@ -27,7 +27,7 @@ A organizational user
 A realm user from the Eraldy Realm
 that belongs to an organization
 """
-type OrganizationUser implements User {
+type OrganizationUser implements UserI {
   """The global id"""
   guid: ID!
   """The email address"""
@@ -181,7 +181,7 @@ input MailingInput {
 
 type Query {
   mailing(guid: ID!): Mailing
-  me: User
+  me: UserI
   organizationRealms(orgaGuid: ID!): [Realm]
 }
 

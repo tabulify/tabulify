@@ -62,7 +62,7 @@ public class EraldyGraphQL implements GraphQLDef {
     RuntimeWiring runtimeWiring = newRuntimeWiring()
       .type(
         newTypeWiring("Query")
-          .dataFetcher("Mailing", mailingImpl::getMailing)
+          .dataFetcher("mailing", mailingImpl::getMailing)
           .build()
       )
       .type(
@@ -76,8 +76,8 @@ public class EraldyGraphQL implements GraphQLDef {
           .build()
       )
       .type(
-        newTypeWiring("User")
-          .typeResolver(this::getUserTypeResolver)
+        newTypeWiring("UserI")
+          .typeResolver(this::getUserInterfaceTypeResolver)
           .build()
       )
       .directive("dateFormat", new GraphQLLocalDate())
@@ -159,7 +159,7 @@ public class EraldyGraphQL implements GraphQLDef {
    * We need a resolver then
    * <a href="https://www.graphql-java.com/documentation/schema/#datafetcher-and-typeresolver">...</a>
    */
-  private GraphQLObjectType getUserTypeResolver(TypeResolutionEnvironment env) {
+  private GraphQLObjectType getUserInterfaceTypeResolver(TypeResolutionEnvironment env) {
     Object javaObject = env.getObject();
     if (javaObject instanceof OrganizationUser) {
       return env.getSchema().getObjectType("OrganizationUser");
