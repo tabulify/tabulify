@@ -129,7 +129,13 @@ https://www.graphql-java.com/documentation/schema/#datafetcher-and-typeresolver
 
 ### Exception / Error
 
+GraphQL returns always:
+  * `400` for a bad request (missing query or variable)
+  * otherwise `200` with errors.
+
 Errors can be found in the `errors` field
+
+Example:
 ```json
 {
     "errors": [
