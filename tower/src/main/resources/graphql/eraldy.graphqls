@@ -4,6 +4,7 @@ type User {
   guid: ID!
   emailAddress: String!
   givenName: String
+  realm: Realm!
 }
 
 type EmailDoc {
@@ -20,7 +21,7 @@ type Mailing {
   guid: ID!
   """A short descriptive name"""
   name: String
-  """The email doc"""
+  """The email document"""
   email: EmailDoc
   """The list"""
   list: List
@@ -63,31 +64,46 @@ type Organization {
   """The modification time"""
   modificationTime: String @dateFormat
 }
+
+"""
+The Realm
+It's equivalent to a domain.
+A realm has:
+* one or more users
+* one or more apps
+"""
 type Realm {
   guid: ID!
   """A short descriptive name"""
-  name: String
+  name: String!
   """An unique human id"""
-  handle: String
+  handle: String!
   """The number of user in the realm"""
-  userCount: Int
+  userCount: Int!
   """The number of app in the realm"""
-  appCount: Int
+  appCount: Int!
   """The number of list in the realm"""
-  listCount: Int
+  listCount: Int!
+  """The organization of the Realm"""
+  organization: Organization!
 }
 
 type App {
+  """The global uid"""
   guid: ID!
-  realm: Realm
-  lists: [List]
+  """A short descriptive name"""
+  name: String!
+  """The realm of the App"""
+  realm: Realm!
 }
 
 type List {
+  """The global uid"""
   guid: ID!
-  name: String
-  realm: Realm
-  app: App
+  """A short descriptive name"""
+  name: String!
+  """The application"""
+  app: App!
 }
 
 #interface MutationResponse {
@@ -115,9 +131,12 @@ input MailingInput {
 type Query {
   mailing(guid: ID!): Mailing
   me: User
+  organizationRealms(orgaGuid: ID!): [Realm]
 }
 
 type Mutation {
+  """Update a mailing"""
   mailingUpdate(guid: ID!, props:MailingInput!): Mailing
+  """Create a mailing"""
   mailingInsert(listGuid: ID!, props:MailingInput!): Mailing
 }
