@@ -127,8 +127,27 @@ For inheritance, you need to define a resolver. See
 https://www.graphql-java.com/documentation/schema/#datafetcher-and-typeresolver
 
 
-### Exception
+### Exception / Error
 
+Errors can be found in the `errors` field
+```json
+{
+    "errors": [
+        {
+            "message": "The field at path '/mailingUpdate/emailAuthor/emailAddress' was declared as a non null type, but the code involved in retrieving data has wrongly returned a null value.  The graphql specification requires that the parent field be set to null, or if that is non nullable that it bubble up null to its parent and so on. The non-nullable type is 'String' within parent type 'User'",
+            "path": [
+                "mailingUpdate",
+                "emailAuthor",
+                "emailAddress"
+            ],
+            "extensions": {
+                "classification": "NullValueInNonNullableField"
+            }
+        }
+    ],
+    "data": { ... }
+}
+```
 https://www.graphql-java.com/documentation/execution#exceptions-while-fetching-data
 
 

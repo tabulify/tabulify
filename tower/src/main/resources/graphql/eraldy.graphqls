@@ -20,9 +20,13 @@ type Mailing {
   guid: ID!
   """A short descriptive name"""
   name: String
+  """The email doc"""
   email: EmailDoc
+  """The list"""
   list: List
+  """The email author"""
   emailAuthor: User
+  """The mailing status"""
   status: Int
   """The creation time"""
   creationTime: String @dateFormat
@@ -81,6 +85,7 @@ type App {
 
 type List {
   guid: ID!
+  name: String
   realm: Realm
   app: App
 }
