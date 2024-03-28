@@ -16,6 +16,7 @@ import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.analytics.event.SignUpEvent;
 import net.bytle.vertx.analytics.model.AnalyticsUser;
+import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
 import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlow;
@@ -80,7 +81,7 @@ public class AuthProvider {
     if (user == null) {
       throw new NotFoundException();
     }
-    return AuthUser.createUserFromJsonClaims(user.principal().mergeIn(user.attributes()));
+    return AuthUser.createFromUser(user);
 
 
   }
@@ -232,7 +233,7 @@ public class AuthProvider {
   /**
    * @param routingContext - the http context
    * @param realm          - the realm to authorize
-   * @param authUserScope      - the scopes (permissions) - not implemented for now
+   * @param authUserScope  - the scopes (permissions) - not implemented for now
    * @return the realm if authorize or a failure
    */
   public Future<Realm> checkRealmAuthorization(RoutingContext routingContext, Realm realm, AuthUserScope authUserScope) {
@@ -248,6 +249,9 @@ public class AuthProvider {
     }
     return this.getSignedInAuthUserOrFail(routingContext)
       .compose(signedInUser -> {
+        if (ApiKeyAuthenticationProvider.ROOT_AUTHORIZATION.match(signedInUser.getVertxUser())) {
+          return Future.succeededFuture(realmId);
+        }
         Set<Long> realmGuids = getManagedRealmsId(signedInUser);
         if (!realmGuids.contains(realmId)) {
           return Future.failedFuture(
@@ -264,9 +268,10 @@ public class AuthProvider {
   /**
    * Utility class to get a realm from an id
    * and check the user authorization at the same time
+   *
    * @param routingContext the request context
-   * @param realmId - the realm id
-   * @param authUserScope - the scope
+   * @param realmId        - the realm id
+   * @param authUserScope  - the scope
    * @return the realm
    */
   public Future<Realm> getRealmByLocalIdWithAuthorizationCheck(Long realmId, AuthUserScope authUserScope, RoutingContext routingContext) {
@@ -351,8 +356,7 @@ public class AuthProvider {
   }
 
   /**
-   *
-   * @param email - the email
+   * @param email           - the email
    * @param realmIdentifier - the realm
    * @return an auth user to be stored in a session or null
    */
@@ -398,7 +402,7 @@ public class AuthProvider {
   /**
    * @param authUserAsClaims - the claims as auth user
    * @param routingContext   - the routing context for analytics (Maybe null when loading user without HTTP call, for instance for test
-   * @param webFlow - the flow that creates this user
+   * @param webFlow          - the flow that creates this user
    * @return a user suitable
    */
   public Future<AuthUser> insertUserFromLoginAuthUserClaims(AuthUser authUserAsClaims, RoutingContext routingContext, WebFlow webFlow) {

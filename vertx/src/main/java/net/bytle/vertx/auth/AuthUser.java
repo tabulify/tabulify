@@ -29,25 +29,9 @@ public class AuthUser {
   private final User user;
 
 
-  private AuthUser(Builder builder) {
-    this.claims = builder.claims;
-
-    /**
-     * Not completely finish
-     * A second argument attributes can be provided to provide extra metadata for later usage.
-     * One example are the following attributes:
-     * * exp - Expires at in seconds.
-     * * iat - Issued at in seconds.
-     * * nbf - Not before in seconds.
-     * * leeway - clock drift leeway in seconds.
-     * <p>
-     * The first 3 control how the expired method will compute the expiration of the user,
-     * the last can be used to allow clock drifting compensation while computing the expiration time.
-     */
-    this.user = User.create(claims);
-    for(Map.Entry<String,Set<Authorization>> entry: builder.authorizations.entrySet()){
-      this.user.authorizations().add(entry.getKey(), entry.getValue());
-    }
+  private AuthUser(User user) {
+    this.claims = user.principal().mergeIn(user.attributes());
+    this.user = user;
   }
 
   public static AuthUser createUserFromJsonClaims(JsonObject jsonObject) {
@@ -59,6 +43,9 @@ public class AuthUser {
     return new AuthUser.Builder(null);
   }
 
+  public static AuthUser createFromUser(User user) {
+    return new AuthUser(user);
+  }
 
 
   public String getAudience() {
@@ -304,7 +291,23 @@ public class AuthUser {
     }
 
     public AuthUser build() {
-      return new AuthUser(this);
+      /**
+       * Not completely finish
+       * A second argument attributes can be provided to provide extra metadata for later usage.
+       * One example are the following attributes:
+       * * exp - Expires at in seconds.
+       * * iat - Issued at in seconds.
+       * * nbf - Not before in seconds.
+       * * leeway - clock drift leeway in seconds.
+       * <p>
+       * The first 3 control how the expired method will compute the expiration of the user,
+       * the last can be used to allow clock drifting compensation while computing the expiration time.
+       */
+      User user = User.create(claims);
+      for(Map.Entry<String,Set<Authorization>> entry: authorizations.entrySet()){
+        user.authorizations().add(entry.getKey(), entry.getValue());
+      }
+      return new AuthUser(user);
     }
 
     public Builder addAuthorization(String providerId, Authorization authorization) {
