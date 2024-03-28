@@ -248,7 +248,7 @@ components:
         - guid
       x-fields-to-string:
         - guid
-        - email
+        - emailAddress
         - handle
       items:
       properties:
@@ -282,10 +282,10 @@ components:
           type: string
           description: The handle of the user
           example: 'foo'
-        email:
+        emailAddress:
           type: string
           format: email
-          description: The email of the user
+          description: The email address of the user
           example: 'john@doe.com'
         givenName:
           type: string
@@ -301,9 +301,9 @@ components:
           type: string
           description: The title of the user (a short user description such as a role used in signature)
           example: 'Chief Executive Officer'
-        disabled:
-          type: boolean
-          description: Soft deleted
+        status:
+          type: integer
+          description: Status code (Soft delete, ...)
         disabledReason:
           type: string
           description: The reason of the soft delete

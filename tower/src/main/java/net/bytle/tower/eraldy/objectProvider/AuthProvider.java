@@ -129,7 +129,7 @@ public class AuthProvider {
     if (subject == null && subjectEmail == null) {
       throw new InternalException("The subject and the subject email values should not be together null");
     }
-    userEraldy.setEmail(subjectEmail);
+    userEraldy.setEmailAddress(subjectEmail);
     if (subject != null) {
       /**
        * when retrieving an external Auth User from a social provider,
@@ -378,7 +378,7 @@ public class AuthProvider {
     AuthUser authUserClaims = new AuthUser();
     authUserClaims.setSubject(user.getGuid());
     authUserClaims.setSubjectHandle(user.getHandle());
-    authUserClaims.setSubjectEmail(user.getEmail());
+    authUserClaims.setSubjectEmail(user.getEmailAddress());
     authUserClaims.setRealmGuid(user.getRealm().getGuid());
     authUserClaims.setRealmHandle(user.getRealm().getHandle());
     if (user instanceof OrganizationUser) {
@@ -531,7 +531,7 @@ public class AuthProvider {
     AnalyticsUser analyticsUser = new AnalyticsUser();
     analyticsUser.setGuid(user.getGuid());
     // user.getHandle(), handle is email
-    analyticsUser.setEmail(user.getEmail());
+    analyticsUser.setEmail(user.getEmailAddress());
     analyticsUser.setGivenName(user.getGivenName());
     analyticsUser.setFamilyName(user.getFamilyName());
     analyticsUser.setAvatar(user.getAvatar());

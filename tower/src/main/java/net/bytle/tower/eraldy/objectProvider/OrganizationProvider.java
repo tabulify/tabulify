@@ -1,6 +1,5 @@
 package net.bytle.tower.eraldy.objectProvider;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
 import io.vertx.sqlclient.Pool;
@@ -38,7 +37,6 @@ public class OrganizationProvider {
   private static final String GUID_PREFIX = "org";
   private final EraldyApiApp apiApp;
   public static final String ORGA_HANDLE_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "handle";
-  public static final String ORGA_DATA_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "data";
   @SuppressWarnings("unused")
   private static final String ORGA_MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private static final String ORGA_CREATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
@@ -131,18 +129,15 @@ public class OrganizationProvider {
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
       "  " + ORGA_ID_COLUMN + ",\n" +
       "  " + ORGA_HANDLE_COLUMN + ",\n" +
-      "  " + ORGA_DATA_COLUMN + ",\n" +
       "  " + ORGA_CREATION_TIME_COLUMN + "\n" +
       "  )\n" +
-      " values ($1, $2, $3, $4)\n" +
+      " values ($1, $2, $3)\n" +
       " returning " + ORGA_ID_COLUMN;
 
-    String data = toDatabaseJsonString(organization);
     return sqlConnection.preparedQuery(sql)
       .execute(Tuple.of(
         organization.getLocalId(),
         organization.getHandle(),
-        data,
         DateTimeUtil.getNowInUtc()
       ))
       .recover(e -> Future.failedFuture(new InternalException("Error: " + e.getMessage() + ", while inserting the orga user with the sql\n" + sql, e)))
@@ -156,14 +151,6 @@ public class OrganizationProvider {
 
   private Future<Organization> getById(Long localId, SqlConnection sqlConnection) {
     return getById(localId,Organization.class,sqlConnection);
-  }
-
-  private String toDatabaseJsonString(Organization organization) {
-    try {
-      return this.databaseMapper.writeValueAsString(organization);
-    } catch (JsonProcessingException e) {
-      throw new InternalException("Could not transform organization as json string for database", e);
-    }
   }
 
 }

@@ -250,7 +250,7 @@ public class EraldyModel {
                      */
                     initialRealmOwnerUser.setRealm(eraldyRealm);
                     initialRealmOwnerUser.setGivenName(apexDomain.getOwnerName());
-                    initialRealmOwnerUser.setEmail(apexDomain.getOwnerEmail());
+                    initialRealmOwnerUser.setEmailAddress(apexDomain.getOwnerEmail());
                     try {
                       initialRealmOwnerUser.setAvatar(new URI("https://2.gravatar.com/avatar/cbc56a3848d90024bdc76629a1cfc1d9"));
                     } catch (URISyntaxException e) {

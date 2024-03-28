@@ -27,7 +27,7 @@ public class EraldySubRealmModel {
     datacadamiaRealm.setOrganization(eraldyRealm.getOrganization());
     OrganizationUser initialOwnerUser = new OrganizationUser();
     initialOwnerUser.setRealm(eraldyRealm);
-    initialOwnerUser.setEmail("owner@datacadamia.com");
+    initialOwnerUser.setEmailAddress("owner@datacadamia.com");
 
     return this.apiApp.getHttpServer().getServer().getPostgresClient()
       .getPool()

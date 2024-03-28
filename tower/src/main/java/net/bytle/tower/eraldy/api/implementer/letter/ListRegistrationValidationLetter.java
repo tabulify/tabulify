@@ -116,13 +116,13 @@ public class ListRegistrationValidationLetter {
 
       String recipientName = null;
       User subscriber = new User();
-      subscriber.setEmail(listUserPostObject.getUserEmail());
+      subscriber.setEmailAddress(listUserPostObject.getUserEmail());
       try {
         recipientName = UsersUtil.getNameOrNameFromEmail(subscriber);
       } catch (NotFoundException e) {
         // ok
       } catch (AddressException e) {
-        throw ValidationException.create("The provided email is not valid", "userEmail", subscriber.getEmail());
+        throw ValidationException.create("The provided email is not valid", "userEmail", subscriber.getEmailAddress());
       }
 
       String publisherName;
@@ -160,7 +160,7 @@ public class ListRegistrationValidationLetter {
         .setSenderName(publisherName)
         .setSenderFullName(publisher.getFamilyName())
         .setSenderAvatar(publisher.getAvatar() != null ? publisher.getAvatar().toString() : null)
-        .setSenderEmail(publisher.getEmail())
+        .setSenderEmail(publisher.getEmailAddress())
         .setSenderTitle(publisher.getTitle())
         .setBrandLogo(publisherApp.getLogo() != null ? publisherApp.getLogo().toString() : null)
         .setBrandName(publisherApp.getName())

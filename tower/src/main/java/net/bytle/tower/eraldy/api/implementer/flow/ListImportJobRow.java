@@ -133,7 +133,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                 return Future.succeededFuture(userFromRegistry);
               } else {
                 User newUser = new User();
-                newUser.setEmail(emailInternetAddress.toNormalizedString());
+                newUser.setEmailAddress(emailInternetAddress.toNormalizedString());
                 newUser.setGivenName(this.givenName);
                 newUser.setFamilyName(this.familyName);
                 if (!timeZoneString.isEmpty()) {

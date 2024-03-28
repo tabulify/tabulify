@@ -52,12 +52,12 @@ public class UserProvider {
 
 
   private static final String TABLE_PREFIX = "user";
-  public static final String EMAIL_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + "email";
+  public static final String EMAIL_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + "email_address";
   public static final String PASSWORD_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + "password";
 
 
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
-  private static final String DISABLED_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "disabled";
+  private static final String STATUS_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "status";
   private static final String DATA = "data";
 
   public static final String DATA_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + DATA;
@@ -120,7 +120,7 @@ public class UserProvider {
     Long userId = user.getLocalId();
 
     if (userId == null) {
-      if (user.getEmail() == null) {
+      if (user.getEmailAddress() == null) {
         return Future.failedFuture(new IllegalArgumentException("Without a user guid, the email should not be null"));
       }
       if (userRealm == null) {
@@ -202,7 +202,7 @@ public class UserProvider {
           user.getRealm().getLocalId()
         ));
     } else {
-      String email = user.getEmail();
+      String email = user.getEmailAddress();
       if (email == null) {
         String failureMessage = "An id or email should be given to check the existence of a user";
         InternalException internalException = new InternalException(failureMessage);
@@ -256,7 +256,7 @@ public class UserProvider {
       return jdbcPool
         .preparedQuery(sql)
         .execute(Tuple.of(
-          user.getEmail().toLowerCase(),
+          user.getEmailAddress().toLowerCase(),
           pgJsonString,
           DateTimeUtil.getNowInUtc(),
           user.getLocalId(),
@@ -266,14 +266,14 @@ public class UserProvider {
         .compose(ok -> Future.succeededFuture(user));
     }
 
-    if (user.getEmail() == null) {
+    if (user.getEmailAddress() == null) {
       InternalException internalException = new InternalException("A id or email is mandatory to update a user");
       return Future.failedFuture(internalException);
     }
     return updateUserByEmailAndReturnRowSet(user)
       .compose(rowSet -> {
         if (rowSet.size() != 1) {
-          NoSuchElementException noSuchElementException = new NoSuchElementException("No user was found with the handle (" + user.getEmail() + ")");
+          NoSuchElementException noSuchElementException = new NoSuchElementException("No user was found with the handle (" + user.getEmailAddress() + ")");
           return Future.failedFuture(noSuchElementException);
         }
         Long userId = rowSet.iterator().next().getLong(ID_COLUMN);
@@ -283,7 +283,7 @@ public class UserProvider {
   }
 
   private <T extends User> Future<RowSet<Row>> updateUserByEmailAndReturnRowSet(T user) {
-    String email = user.getEmail();
+    String email = user.getEmailAddress();
     if (email == null) {
       InternalException internalException = new InternalException("A email is mandatory");
       return Future.failedFuture(internalException);
@@ -303,7 +303,7 @@ public class UserProvider {
       .execute(Tuple.of(
         dataJsonString,
         DateTimeUtil.getNowInUtc(),
-        user.getEmail().toLowerCase(),
+        user.getEmailAddress().toLowerCase(),
         user.getRealm().getLocalId()
       ))
       .onFailure(error -> LOGGER.error("User Update by handle error: Error:" + error.getMessage() + ", Sql: " + updateSql, error));
@@ -410,12 +410,12 @@ public class UserProvider {
         user.setLocalId(id);
         user.setRealm(realm);
         this.updateGuid(user);
-        user.setEmail(row.getString(EMAIL_COLUMN));
-        Boolean disabled = row.getBoolean(DISABLED_COLUMN);
-        if (disabled == null) {
-          disabled = false;
+        user.setEmailAddress(row.getString(EMAIL_COLUMN));
+        Integer status = row.getInteger(STATUS_COLUMN);
+        if (status == null) {
+          status = 0;
         }
-        user.setDisabled(disabled);
+        user.setStatus(status);
         user.setCreationTime(row.getLocalDateTime(CREATION_COLUMN));
         user.setModificationTime(row.getLocalDateTime(MODIFICATION_TIME_COLUMN));
         return Future.succeededFuture(user);
@@ -559,7 +559,7 @@ public class UserProvider {
   public Future<Realm> getUserRealmAndUpdateUserIdEventuallyFromRequestData(String realmIdentifier, User userRequested) {
 
     String userGuid = userRequested.getGuid();
-    String userEmail = userRequested.getEmail();
+    String userEmail = userRequested.getEmailAddress();
 
     Future<Realm> realmFuture;
     if (userGuid == null) {
@@ -798,7 +798,7 @@ public class UserProvider {
       );
     } else {
 
-      String emailAddress = userToGetSert.getEmail();
+      String emailAddress = userToGetSert.getEmailAddress();
       if (emailAddress == null) {
         return Future.failedFuture(new InternalException("On user getSert an email or id should be given"));
       }
@@ -906,7 +906,7 @@ public class UserProvider {
         user.setLocalId(seqUserId);
         this.updateGuid(user);
         String databaseJsonString = this.toDatabaseJsonString(user);
-        String email = user.getEmail();
+        String email = user.getEmailAddress();
         String emailAddressNormalized;
         try {
           emailAddressNormalized = EmailAddress.of(email)

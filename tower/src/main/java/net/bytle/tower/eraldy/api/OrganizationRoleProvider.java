@@ -27,8 +27,8 @@ public class OrganizationRoleProvider {
         if (selectRows.size() == 1) {
           return Future.succeededFuture();
         }
-        String insertSql = "insert into cs_realms.organization_role(orga_role_id, orga_role_name, orga_role_data, orga_role_creation_time) values ($1, $2, $3, $4)";
-        Tuple insertTuple = Tuple.of(OWNER_ROLE_ID, "Owner", "{}", DateTimeUtil.getNowInUtc());
+        String insertSql = "insert into cs_realms.organization_role(orga_role_id, orga_role_name, orga_role_creation_time) values ($1, $2, $3)";
+        Tuple insertTuple = Tuple.of(OWNER_ROLE_ID, "Owner", DateTimeUtil.getNowInUtc());
         return sqlConnection
           .preparedQuery(insertSql)
           .execute(insertTuple)

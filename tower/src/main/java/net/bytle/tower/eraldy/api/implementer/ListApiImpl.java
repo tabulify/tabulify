@@ -262,7 +262,7 @@ public class ListApiImpl implements ListApi {
             Future<OrganizationUser> futureOwnerByIdentifier = this.apiApp.getUserProvider().getUserByIdentifier(ownerIdentifier, list.getRealm(), OrganizationUser.class);
             if (actualOwnerUser == null) {
               futureOwner = futureOwnerByIdentifier;
-            } else if (!(actualOwnerUser.getGuid().equals(ownerIdentifier) || actualOwnerUser.getEmail().equals(ownerIdentifier))) {
+            } else if (!(actualOwnerUser.getGuid().equals(ownerIdentifier) || actualOwnerUser.getEmailAddress().equals(ownerIdentifier))) {
               futureOwner = futureOwnerByIdentifier;
             } else {
               futureOwner = Future.succeededFuture(actualOwnerUser);

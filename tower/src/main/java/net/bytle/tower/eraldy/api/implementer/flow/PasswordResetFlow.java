@@ -139,11 +139,11 @@ public class PasswordResetFlow extends WebFlowAbs {
 
             String recipientEmailAddressInRfcFormat;
             try {
-              recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToResetPassword.getEmail(), recipientName).toString();
+              recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToResetPassword.getEmailAddress(), recipientName).toString();
             } catch (AddressException e) {
               return Future.failedFuture(TowerFailureException.builder()
                 .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-                .setMessage("The email for the user to reset (" + userToResetPassword.getEmail() + ") is not valid (" + e.getMessage() + ")")
+                .setMessage("The email for the user to reset (" + userToResetPassword.getEmailAddress() + ") is not valid (" + e.getMessage() + ")")
                 .setCauseException(e)
                 .buildWithContextFailing(routingContext)
               );
@@ -177,7 +177,7 @@ public class PasswordResetFlow extends WebFlowAbs {
               .compose(mailResult -> {
 
                 // Send feedback to the list owner
-                String title = "The user (" + userToResetPassword.getEmail() + ") received a password reset email for the realm (" + userToResetPassword.getRealm().getHandle() + ").";
+                String title = "The user (" + userToResetPassword.getEmailAddress() + ") received a password reset email for the realm (" + userToResetPassword.getRealm().getHandle() + ").";
                 MailMessage ownerFeedbackEmail = towerSmtpClient
                   .createVertxMailMessage()
                   .setTo(senderEmail)

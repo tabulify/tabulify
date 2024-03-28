@@ -3,7 +3,6 @@ create  table  organization
 (
   ORGA_ID                BIGSERIAL                   NOT NULL PRIMARY KEY,
   ORGA_NAME              varchar(255)                NOT NULL,
-  ORGA_DATA              jsonb                       NOT NULL,
   ORGA_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   ORGA_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
 );
@@ -13,7 +12,6 @@ create table organization_role
 (
   ORGA_ROLE_ID                BIGSERIAL                   NOT NULL PRIMARY KEY,
   ORGA_ROLE_NAME              varchar(255)                NOT NULL UNIQUE,
-  ORGA_ROLE_DATA              jsonb                       NOT NULL,
   ORGA_ROLE_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   ORGA_ROLE_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
 );

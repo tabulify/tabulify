@@ -9,6 +9,7 @@ import io.vertx.sqlclient.*;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.java.JavaEnvs;
 import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
@@ -234,7 +235,11 @@ public class RealmProvider {
            * Case when we insert a realm when we want the id
            * The Eraldy realm should be 1 is the main case
            */
-          return Future.failedFuture(new InternalException("The asked realm id (" + askedRealmLocalIdOnInsert + ") did not get the same id but the id (" + realmId + ")"));
+          String error = "The asked realm id (" + askedRealmLocalIdOnInsert + ") did not get the same id but the id (" + realmId + ")";
+          if(JavaEnvs.IS_DEV){
+            error += "In Dev, delete the SQL schema and restart. An error like that is due to an error on start between the 2 inserts";
+          }
+          return Future.failedFuture(new InternalException(error));
         }
         realm.setLocalId(realmId);
         this.updateGuid(realm);

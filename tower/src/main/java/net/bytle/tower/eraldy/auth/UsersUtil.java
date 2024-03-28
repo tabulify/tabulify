@@ -19,7 +19,7 @@ public class UsersUtil {
    */
   @Deprecated
   public static String getEmailAddressWithName(User user) {
-    String address = user.getEmail();
+    String address = user.getEmailAddress();
     if (address == null) {
       throw new InternalException("The user email should not be null");
     }
@@ -43,7 +43,7 @@ public class UsersUtil {
    */
   public static String getNameOrNameFromEmail(User user) throws NotFoundException, AddressException {
 
-    return AuthUserUtils.getNameOrNameFromEmail(user.getGivenName(), user.getEmail());
+    return AuthUserUtils.getNameOrNameFromEmail(user.getGivenName(), user.getEmailAddress());
 
   }
 
@@ -54,7 +54,7 @@ public class UsersUtil {
    */
   public static User getPublicUserForTemplateWithDefaultValues(User user) {
     User outputUser = new User();
-    outputUser.setEmail(user.getEmail());
+    outputUser.setEmailAddress(user.getEmailAddress());
     String defaultName;
     try {
       defaultName = UsersUtil.getNameOrNameFromEmail(user);
@@ -80,7 +80,7 @@ public class UsersUtil {
     } catch (NotFoundException | AddressException e) {
       throw new InternalException(e);
     }
-    smtpSender.setEmail(user.getEmail());
+    smtpSender.setEmail(user.getEmailAddress());
     smtpSender.setFullName(user.getFamilyName());
     smtpSender.setAvatar(user.getAvatar());
     smtpSender.setTitle(user.getTitle());

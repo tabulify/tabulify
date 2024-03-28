@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
  * Key utility function
  * @deprecated should be moved to {@link KeyNormalizer}
  */
+@Deprecated
 public class Key {
 
   /**

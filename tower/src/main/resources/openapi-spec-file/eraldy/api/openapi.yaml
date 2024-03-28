@@ -2563,10 +2563,10 @@ components:
         avatar: https://en.gravatar.com/userimage/john.doe.png
         title: Chief Executive Officer
         localId: 1
+        emailAddress: john@doe.com
         modificationTime: 2000-01-23T04:56:07.000+00:00
         familyName: Doe
         guid: xmmmN
-        disabled: true
         location: The world
         realm:
           appCount: 1
@@ -2585,7 +2585,7 @@ components:
           handle: handle
           listCount: 5
           localId: 0
-        email: john@doe.com
+        status: 0
       properties:
         guid:
           description: |
@@ -2618,8 +2618,8 @@ components:
           description: The handle of the user
           example: foo
           type: string
-        email:
-          description: The email of the user
+        emailAddress:
+          description: The email address of the user
           example: john@doe.com
           format: email
           type: string
@@ -2641,9 +2641,9 @@ components:
             used in signature)
           example: Chief Executive Officer
           type: string
-        disabled:
-          description: Soft deleted
-          type: boolean
+        status:
+          description: "Status code (Soft delete, ...)"
+          type: integer
         disabledReason:
           description: The reason of the soft delete
           type: string
@@ -2693,7 +2693,7 @@ components:
       - guid
       x-fields-to-string:
       - guid
-      - email
+      - emailAddress
       - handle
       x-parent: true
     Realm:
@@ -2990,10 +2990,10 @@ components:
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer
           localId: 1
+          emailAddress: john@doe.com
           modificationTime: 2000-01-23T04:56:07.000+00:00
           familyName: Doe
           guid: xmmmN
-          disabled: true
           location: The world
           realm:
             appCount: 1
@@ -3012,7 +3012,7 @@ components:
             handle: handle
             listCount: 5
             localId: 0
-          email: john@doe.com
+          status: 0
       properties:
         localId:
           description: The service id in the realm
@@ -3436,10 +3436,10 @@ components:
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer
           localId: 1
+          emailAddress: john@doe.com
           modificationTime: 2000-01-23T04:56:07.000+00:00
           familyName: Doe
           guid: xmmmN
-          disabled: true
           location: The world
           realm:
             appCount: 1
@@ -3458,7 +3458,7 @@ components:
             handle: handle
             listCount: 5
             localId: 0
-          email: john@doe.com
+          status: 0
         status: null
         inOptInConfirmationTime: 2000-01-23T04:56:07.000+00:00
       properties:

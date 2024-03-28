@@ -160,7 +160,11 @@ public class SqlAnalytics implements Handler<Long> {
           LOGGER.error("Error while running the analytics directory", async.cause());
         }
         CompositeFuture composite = async.result();
-        for(int i=0;i<composite.size();i++){
+        if (composite == null) {
+          // If an error occurs, it's null
+          return;
+        }
+        for (int i = 0; i < composite.size(); i++) {
           if (composite.failed(i)) {
             Throwable err = composite.causes().get(i);
             LOGGER.error("The SQL analytic (" + executedPaths.get(i) + ") with the SQL: " + sqls.get(i), composite.cause(i), err);

@@ -101,9 +101,9 @@ public class EmailLoginFlow extends WebFlowAbs {
     try {
       recipientName = UsersUtil.getNameOrNameFromEmail(userToLogin);
     } catch (NotFoundException e) {
-      throw ValidationException.create("A user name could not be found", "userToRegister", userToLogin.getEmail());
+      throw ValidationException.create("A user name could not be found", "userToRegister", userToLogin.getEmailAddress());
     } catch (AddressException e) {
-      throw ValidationException.create("The provided email is not valid", "email", userToLogin.getEmail());
+      throw ValidationException.create("The provided email is not valid", "email", userToLogin.getEmailAddress());
     }
     SmtpSender sender = UsersUtil.toSenderUser(userToLogin.getRealm().getOwnerUser());
 
@@ -139,12 +139,12 @@ public class EmailLoginFlow extends WebFlowAbs {
 
         String recipientEmailAddressInRfcFormat;
         try {
-          recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToLogin.getEmail(), userToLogin.getGivenName()).toString();
+          recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToLogin.getEmailAddress(), userToLogin.getGivenName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-              .setMessage("The recipient email (" + userToLogin.getEmail() + ") is not valid")
+              .setMessage("The recipient email (" + userToLogin.getEmailAddress() + ") is not valid")
               .setCauseException(e)
               .buildWithContextFailing(routingContext)
           );
@@ -179,7 +179,7 @@ public class EmailLoginFlow extends WebFlowAbs {
           .compose(mailResult -> {
 
             // Send feedback to the list owner
-            String title = "The user (" + userToLogin.getEmail() + ") received a login email for the realm (" + userToLogin.getRealm().getHandle() + ").";
+            String title = "The user (" + userToLogin.getEmailAddress() + ") received a login email for the realm (" + userToLogin.getRealm().getHandle() + ").";
             MailMessage ownerFeedbackEmail = towerSmtpClient
               .createVertxMailMessage()
               .setTo(senderEmailAddressInRfcFormat)

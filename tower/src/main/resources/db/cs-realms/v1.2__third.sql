@@ -124,3 +124,11 @@ comment on column realm_mailing.MAILING_RCPT_LIST_ID is 'The list of recipients'
 comment on column realm_mailing.MAILING_EMAIL_FILE_ID is 'The email file id';
 comment on column realm_mailing.MAILING_AUTHOR_USER_ID is 'The author of the email (An organizational user, the id of the user in the realm 1)';
 comment on column realm_mailing.MAILING_STATUS is 'The status (draft, send, scheduled, ...)';
+
+
+-- email as email address
+alter table realm_user rename user_email to user_email_address;
+-- drop disabled for status
+alter table realm_user DROP user_disabled;
+alter table realm_user add column user_status int not null default 0;
+comment on column realm_user.user_status is 'The status (active: 0, deleted, ...)';

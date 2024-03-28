@@ -21,7 +21,7 @@ public class User   {
 
   protected String handle;
 
-  protected String email;
+  protected String emailAddress;
 
   protected String givenName;
 
@@ -29,7 +29,7 @@ public class User   {
 
   protected String title;
 
-  protected Boolean disabled;
+  protected Integer status;
 
   protected String disabledReason;
 
@@ -110,19 +110,19 @@ public class User   {
   }
 
   /**
-  * @return email The email of the user
+  * @return emailAddress The email address of the user
   */
-  @JsonProperty("email")
-  public String getEmail() {
-    return email;
+  @JsonProperty("emailAddress")
+  public String getEmailAddress() {
+    return emailAddress;
   }
 
   /**
-  * @param email The email of the user
+  * @param emailAddress The email address of the user
   */
   @SuppressWarnings("unused")
-  public void setEmail(String email) {
-    this.email = email;
+  public void setEmailAddress(String emailAddress) {
+    this.emailAddress = emailAddress;
   }
 
   /**
@@ -176,19 +176,19 @@ public class User   {
   }
 
   /**
-  * @return disabled Soft deleted
+  * @return status Status code (Soft delete, ...)
   */
-  @JsonProperty("disabled")
-  public Boolean getDisabled() {
-    return disabled;
+  @JsonProperty("status")
+  public Integer getStatus() {
+    return status;
   }
 
   /**
-  * @param disabled Soft deleted
+  * @param status Status code (Soft delete, ...)
   */
   @SuppressWarnings("unused")
-  public void setDisabled(Boolean disabled) {
-    this.disabled = disabled;
+  public void setStatus(Integer status) {
+    this.status = status;
   }
 
   /**
@@ -371,7 +371,7 @@ public class User   {
 
   @Override
   public String toString() {
-    return guid + ", " + email + ", " + handle;
+    return guid + ", " + emailAddress + ", " + handle;
   }
 
 }

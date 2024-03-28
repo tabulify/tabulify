@@ -152,7 +152,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       .compose(listItem -> {
 
         User user = new User();
-        user.setEmail(validatedEmailAddress.toNormalizedString());
+        user.setEmailAddress(validatedEmailAddress.toNormalizedString());
         Realm listRealm = listItem.getRealm();
         user.setRealm(listRealm);
 
@@ -210,10 +210,10 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
             String ownerEmailAddressInRfcFormat;
             try {
-              ownerEmailAddressInRfcFormat = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getGivenName()).toString();
+              ownerEmailAddressInRfcFormat = BMailInternetAddress.of(listOwnerUser.getEmailAddress(), listOwnerUser.getGivenName()).toString();
             } catch (AddressException e) {
               return Future.failedFuture(TowerFailureException.builder().setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
-                .setMessage("The list owner email (" + listOwnerUser.getEmail() + ") is not good (" + e.getMessage() + ")")
+                .setMessage("The list owner email (" + listOwnerUser.getEmailAddress() + ") is not good (" + e.getMessage() + ")")
                 .setCauseException(e)
                 .buildWithContextFailing(routingContext)
               );
@@ -221,19 +221,19 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
             String subscriberAddressWithName;
             try {
-              subscriberAddressWithName = BMailInternetAddress.of(user.getEmail(), subscriberRecipientName).toString();
+              subscriberAddressWithName = BMailInternetAddress.of(user.getEmailAddress(), subscriberRecipientName).toString();
             } catch (AddressException e) {
               return Future.failedFuture(TowerFailureException
                 .builder()
                 .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-                .setMessage("The subscriber email (" + user.getEmail() + ") is not good (" + e.getMessage() + ")")
+                .setMessage("The subscriber email (" + user.getEmailAddress() + ") is not good (" + e.getMessage() + ")")
                 .setCauseException(e)
                 .buildWithContextFailing(routingContext)
               );
             }
 
             MailClient mailClientForListOwner = towerSmtpClient
-              .getVertxMailClientForSenderWithSigning(listOwnerUser.getEmail());
+              .getVertxMailClientForSenderWithSigning(listOwnerUser.getEmailAddress());
 
             MailMessage registrationEmail = towerSmtpClient
               .createVertxMailMessage()

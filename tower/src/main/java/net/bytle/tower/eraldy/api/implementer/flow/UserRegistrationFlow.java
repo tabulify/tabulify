@@ -85,7 +85,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
     }
 
     User newUser = new User();
-    newUser.setEmail(bMailInternetAddress.toNormalizedString());
+    newUser.setEmailAddress(bMailInternetAddress.toNormalizedString());
     newUser.setRealm(realm);
     String realmNameOrHandle = RealmProvider.getNameOrHandle(realm);
 
@@ -102,7 +102,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         TowerFailureException
           .builder()
           .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-          .setMessage("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
+          .setMessage("The new user email (" + newUser.getEmailAddress() + ") is not good (" + e.getMessage() + ")")
           .setCauseException(e)
           .buildWithContextFailing(routingContext)
       );
@@ -147,13 +147,13 @@ public class UserRegistrationFlow extends WebFlowAbs {
 
         String newUserAddressInRfcFormat;
         try {
-          newUserAddressInRfcFormat = BMailInternetAddress.of(newUser.getEmail(), newUserName).toString();
+          newUserAddressInRfcFormat = BMailInternetAddress.of(newUser.getEmailAddress(), newUserName).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
             TowerFailureException
               .builder()
               .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-              .setMessage("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
+              .setMessage("The new user email (" + newUser.getEmailAddress() + ") is not good (" + e.getMessage() + ")")
               .setCauseException(e)
               .buildWithContextFailing(routingContext)
           );
@@ -186,7 +186,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           .compose(mailResult -> {
 
             // Send feedback to the list owner
-            String title = "The user (" + newUser.getEmail() + ") received a registration email for the realm (" + realm.getHandle() + ").";
+            String title = "The user (" + newUser.getEmailAddress() + ") received a registration email for the realm (" + realm.getHandle() + ").";
             MailMessage ownerFeedbackEmail = towerSmtpClient
               .createVertxMailMessage()
               .setTo(senderEmailInRfc)
