@@ -66,6 +66,11 @@ public class EraldyGraphQL implements GraphQLDef {
           .build()
       )
       .type(
+        newTypeWiring("Query")
+          .dataFetcher("mailingsOfList", mailingImpl::getMailingsOfList)
+          .build()
+      )
+      .type(
         newTypeWiring("Mutation")
           .dataFetcher("mailingUpdate", mailingImpl::patchMailing)
           .build()

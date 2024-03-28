@@ -7,10 +7,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
-import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.InternalException;
 import net.bytle.vertx.ConfigAccessor;
-import net.bytle.vertx.TowerApp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,7 +19,7 @@ import org.apache.logging.log4j.Logger;
  * * in header
  * * in cookie
  * <p>
- * The binding of the open api scheme name and the handler is done in the {@link TowerApp#openApiMount(RouterBuilder)}
+ * You still need to create a {@link io.vertx.ext.web.handler.APIKeyHandler} and mount it on the router
  * with the <a href="https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document">Doc</a>
  */
 public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
@@ -87,4 +85,11 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
   }
 
 
+  public String getHeader() {
+    /**
+     * This is the default header where {@link io.vertx.ext.web.handler.APIKeyHandler}
+     * is searching
+     */
+    return "X-API-KEY";
+  }
 }

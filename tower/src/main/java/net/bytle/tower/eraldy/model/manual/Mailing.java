@@ -1,7 +1,10 @@
-package net.bytle.tower.eraldy.model.openapi;
+package net.bytle.tower.eraldy.model.manual;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.model.openapi.ListObject;
+import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
+import net.bytle.tower.eraldy.model.openapi.Realm;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -25,7 +28,7 @@ public class Mailing   {
 
   protected ListObject recipientList;
 
-  protected Integer status;
+  protected Status status;
 
   protected LocalDateTime creationTime;
 
@@ -142,7 +145,7 @@ public class Mailing   {
   * @return status The status of the mailing
   */
   @JsonProperty("status")
-  public Integer getStatus() {
+  public Status getStatus() {
     return status;
   }
 
@@ -150,7 +153,7 @@ public class Mailing   {
   * @param status The status of the mailing
   */
   @SuppressWarnings("unused")
-  public void setStatus(Integer status) {
+  public void setStatus(Status status) {
     this.status = status;
   }
 

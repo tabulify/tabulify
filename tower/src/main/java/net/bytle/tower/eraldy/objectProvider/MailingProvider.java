@@ -12,8 +12,10 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
-import net.bytle.tower.eraldy.graphql.input.MailingInputProps;
+import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputProps;
 import net.bytle.tower.eraldy.mixin.*;
+import net.bytle.tower.eraldy.model.manual.Mailing;
+import net.bytle.tower.eraldy.model.manual.Status;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeUtil;
@@ -169,7 +171,11 @@ public class MailingProvider {
         // realm and id should be first set for guid update
         this.updateGuid(mailing);
         mailing.setName(row.getString(MAILING_NAME_COLUMN));
-        mailing.setStatus(row.getInteger(MAILING_STATUS_COLUMN));
+        Integer statusCode = row.getInteger(MAILING_STATUS_COLUMN);
+        Status status = new Status();
+        status.setCode(statusCode);
+        status.setName(String.valueOf(statusCode));
+        mailing.setStatus(status);
         mailing.setCreationTime(row.getLocalDateTime(MAILING_CREATION_COLUMN));
         mailing.setModificationTime(row.getLocalDateTime(MAILING_MODIFICATION_COLUMN));
 
@@ -217,9 +223,9 @@ public class MailingProvider {
     return this.apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(MAILING_GUID_PREFIX, mailingIdentifier);
   }
 
-  public Future<List<Mailing>> getMailingsByList(ListObject list) {
+  public Future<List<Mailing>> getMailingsByListWithLocalId(long listId, Long realmId) {
     final String sql = "select * from " + FULL_QUALIFIED_TABLE_NAME + " where " + LIST_COLUMN + " = $1 and " + MAILING_REALM_COLUMN + " = $2";
-    Tuple tuple = Tuple.of(list.getLocalId(), list.getRealm().getLocalId());
+    Tuple tuple = Tuple.of(listId, realmId);
     return this.jdbcPool
       .preparedQuery(sql)
       .execute(tuple)
@@ -231,7 +237,10 @@ public class MailingProvider {
           mailings.setGuid(this.getGuidHash(row.getLong(MAILING_REALM_COLUMN), row.getLong(MAILING_ID_COLUMN)));
           mailings.setName(row.getString(MAILING_NAME_COLUMN));
           mailings.setCreationTime(row.getLocalDateTime(MAILING_CREATION_COLUMN));
-          mailings.setStatus(row.getInteger(MAILING_STATUS_COLUMN));
+          Integer statusCode = row.getInteger(MAILING_STATUS_COLUMN);
+          Status status = new Status();
+          status.setCode(statusCode);
+          mailings.setStatus(status);
           mailingList.add(mailings);
         }
         return Future.succeededFuture(mailingList);

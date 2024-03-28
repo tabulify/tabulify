@@ -82,6 +82,11 @@ with a function:
 No need to build the whole object
 Ie book has an owner if the owner is not requested don't make the request
 
+### Partial data on errors
+
+If there is an error to retrieve a sub-property, the
+main property is returned.
+
 ## Implementation
 
 See GraphQLService.java

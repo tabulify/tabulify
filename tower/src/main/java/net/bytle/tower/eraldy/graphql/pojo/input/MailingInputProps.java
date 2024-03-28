@@ -1,22 +1,21 @@
-package net.bytle.tower.eraldy.graphql.input;
+package net.bytle.tower.eraldy.graphql.pojo.input;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Mailing Props
+ * Mailing Input Props
+ * for the creation and or modification of a mailing
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class MailingInputProps {
-
-
 
   protected String guid;
 
   protected String name;
 
-  protected Integer status;
+  protected Integer statusCode;
   private String emailSubject;
   private String emailPreview;
   private String emailBody;
@@ -104,6 +103,16 @@ public class MailingInputProps {
   @SuppressWarnings("unused")
   public void setEmailAuthorGuid(String emailAuthorGuid) {
     this.emailAuthorGuid = emailAuthorGuid;
+  }
+
+  @JsonProperty("statusCode")
+  public Integer getStatusCode() {
+    return this.statusCode;
+  }
+
+  @SuppressWarnings("unused")
+  public void setStatusCode(Integer statusCode) {
+    this.statusCode = statusCode;
   }
 
 

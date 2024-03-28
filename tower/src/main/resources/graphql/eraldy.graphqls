@@ -180,9 +180,12 @@ input MailingInput {
 
 
 type Query {
+#  We follow the requested data. If you want a mailing, search for a mailing function
   mailing(guid: ID!): Mailing
+  """The mailings of a list"""
+  mailingsOfList(listGuid:ID!):[Mailing]
   me: UserI
-  organizationRealms(orgaGuid: ID!): [Realm]
+  realmsOfOrganization(orgaGuid: ID!): [Realm]
 }
 
 type Mutation {
