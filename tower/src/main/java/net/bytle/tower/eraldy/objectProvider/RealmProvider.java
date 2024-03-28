@@ -11,6 +11,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
@@ -649,12 +650,24 @@ public class RealmProvider {
       });
   }
 
+  /**
+   *
+   * @param realmId
+   * @param routingContext
+   * @return
+   * @deprecated should use/implement a map cache instead
+   */
+  @Deprecated
   public Future<Realm> getRealmFromLocalIdOrAutCli(long realmId, RoutingContext routingContext) {
     Realm authRealmClient = this.apiApp.getAuthClientProvider().getRequestingClient(routingContext).getApp().getRealm();
     if (authRealmClient.getLocalId() == realmId) {
       return Future.succeededFuture(authRealmClient);
     }
     return this.getRealmFromLocalId(realmId);
+  }
+
+  public Future<Realm> getRealmByLocalIdWithAuthorizationCheck(long realmId, AuthUserScope scope, RoutingContext routingContext){
+    return this.apiApp.getAuthProvider().getRealmByLocalIdWithAuthorizationCheck(realmId, scope, routingContext);
   }
 
   /**

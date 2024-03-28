@@ -12,10 +12,14 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
+import net.bytle.tower.eraldy.graphql.input.MailingInputProps;
 import net.bytle.tower.eraldy.mixin.*;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.vertx.*;
+import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.JdbcSchemaManager;
+import net.bytle.vertx.Server;
+import net.bytle.vertx.TowerFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -172,7 +176,9 @@ public class MailingProvider {
         // Email has file
         mailing.setEmailFileId(row.getLong(MAILING_EMAIL_FILE_ID_COLUMN));
 
-        // orga user
+        /**
+         * Orga User
+         */
         Long orgaId = row.getLong(MAILING_ORGA_COLUMN);
         assert Objects.equals(realm.getOrganization().getLocalId(), orgaId);
         Long userId = row.getLong(MAILING_AUTHOR_USER_COLUMN);
@@ -211,7 +217,7 @@ public class MailingProvider {
     return this.apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(MAILING_GUID_PREFIX, mailingIdentifier);
   }
 
-  public Future<List<Mailings>> getMailingsByList(ListObject list) {
+  public Future<List<Mailing>> getMailingsByList(ListObject list) {
     final String sql = "select * from " + FULL_QUALIFIED_TABLE_NAME + " where " + LIST_COLUMN + " = $1 and " + MAILING_REALM_COLUMN + " = $2";
     Tuple tuple = Tuple.of(list.getLocalId(), list.getRealm().getLocalId());
     return this.jdbcPool
@@ -219,9 +225,9 @@ public class MailingProvider {
       .execute(tuple)
       .recover(err -> Future.failedFuture(new InternalException("Getting mailings for the list (" + tuple + ") failed. Error: " + err.getMessage() + ". Sql:\n" + sql, err)))
       .compose(rows -> {
-        List<Mailings> mailingList = new ArrayList<>();
+        List<Mailing> mailingList = new ArrayList<>();
         for (Row row : rows) {
-          Mailings mailings = new Mailings();
+          Mailing mailings = new Mailing();
           mailings.setGuid(this.getGuidHash(row.getLong(MAILING_REALM_COLUMN), row.getLong(MAILING_ID_COLUMN)));
           mailings.setName(row.getString(MAILING_NAME_COLUMN));
           mailings.setCreationTime(row.getLocalDateTime(MAILING_CREATION_COLUMN));
@@ -238,11 +244,12 @@ public class MailingProvider {
   }
 
   /**
-   * Update the name and author
-   * @param mailing - the mailing
+   * Update
    * @return the same mailing
    */
-  public Future<Mailing> updateMailingNameAndAuthor(Mailing mailing) {
+  public Future<Mailing> updateMailingRequestHandler(String guid, MailingInputProps mailingInputProps, RoutingContext routingContext) {
+
+    Mailing mailing = new Mailing();
     final String sql = "update " + FULL_QUALIFIED_TABLE_NAME + " set \n"
       + MAILING_NAME_COLUMN + " = $1,\n"
       + MAILING_AUTHOR_USER_COLUMN + " = $2,\n"
@@ -281,7 +288,7 @@ public class MailingProvider {
    * A request handler that returns a mailing by guid or null if not found
    * (used in the rest and graphql api)
    */
-  public Future<Mailing> getByGuidRequestHandler(String mailingGuidIdentifier, RoutingContext routingContext) {
+  public Future<Mailing> getByGuidRequestHandler(String mailingGuidIdentifier, RoutingContext routingContext, AuthUserScope scope) {
 
     MailingProvider mailingProvider = this.apiApp.getMailingProvider();
     Guid guid;
@@ -292,17 +299,7 @@ public class MailingProvider {
     }
 
     return this.apiApp.getRealmProvider()
-      .getRealmFromLocalId(guid.getRealmOrOrganizationId())
-      .compose(realm -> {
-        if (realm == null) {
-          return Future.failedFuture(TowerFailureException.builder()
-            .setType(TowerFailureTypeEnum.NOT_FOUND_404) // our fault?, deleted a realm is pretty rare.
-            .setMessage("The realm of the mailing (" + mailingGuidIdentifier + ") was not found")
-            .build()
-          );
-        }
-        return this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.MAILING_GET);
-      })
+      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmOrOrganizationId(), scope,routingContext)
       .compose(realm -> {
         long localId = guid.validateRealmAndGetFirstObjectId(realm.getLocalId());
         return mailingProvider.getByLocalId(localId, realm);

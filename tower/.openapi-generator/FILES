@@ -12,8 +12,6 @@ src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/EnvApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/EnvApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/ListApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/ListApiHandler.java
-src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/MailingApi.java
-src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/MailingApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/OrganizationApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/OrganizationApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/RealmApi.java
@@ -39,7 +37,6 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/ListBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportJobRowStatus.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportJobStatus.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportPostResponse.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/ListMailingCreationPost.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListObject.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListSummary.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUser.java
@@ -48,9 +45,6 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserShort.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserSource.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserStatus.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Mailing.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/MailingEmailPost.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/MailingUpdatePost.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/Mailings.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/OAuthAccessTokenResponse.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Organization.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/OrganizationUser.java

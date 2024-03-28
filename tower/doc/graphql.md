@@ -52,6 +52,36 @@ You work by entity. You search it, you update it.
   }
 }
 ```
+
+### Facade Persistence
+
+No need to create multiple objects.
+
+* Private field: For instance, we can have an object with a private database id, and
+we don't need to use mixin or other functionality to not publish/cache it.
+* Dynamic Listing: Due to field selection, we can just create a SQL and send it back, no need to create a pojo for the endpoint to advertise a fixed set of fields returned. One pojo less.
+
+### Easy to find
+
+Example creation path for a mailing of a list:
+`/list/{listIdentifier}/mailing`
+or here
+`/mailing/list/{listIdentifier}`
+
+with a function:
+`mailingCreate(listIdentifier, xxx)`
+
+
+### Modeling
+
+* Match much more the code (no request body)
+* less boilerplate
+* Post or patch? Just create and update
+
+### Incremental Graph Building
+No need to build the whole object
+Ie book has an owner if the owner is not requested don't make the request
+
 ## Implementation
 
 See GraphQLService.java

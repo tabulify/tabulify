@@ -262,6 +262,20 @@ public class AuthProvider {
       });
   }
 
+  /**
+   * Utility class to get a realm from an id
+   * and check the user authorization at the same time
+   * @param routingContext the request context
+   * @param realmId - the realm id
+   * @param authUserScope - the scope
+   * @return the realm
+   */
+  public Future<Realm> getRealmByLocalIdWithAuthorizationCheck(Long realmId, AuthUserScope authUserScope, RoutingContext routingContext) {
+    return this.checkRealmAuthorization(routingContext,realmId, authUserScope)
+      .compose(futureRealmId-> this.apiApp.getRealmProvider()
+        .getRealmFromLocalId(futureRealmId));
+  }
+
   private Set<Long> getManagedRealmsId(AuthUser signedInUser) {
     return signedInUser.getSet(REALMS_ID_KEY, Long.class);
   }

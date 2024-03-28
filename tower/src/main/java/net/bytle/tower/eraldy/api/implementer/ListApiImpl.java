@@ -24,7 +24,6 @@ import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.ListUserProvider;
-import net.bytle.tower.eraldy.objectProvider.MailingProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Casts;
 import net.bytle.type.Strings;
@@ -178,39 +177,6 @@ public class ListApiImpl implements ListApi {
       });
   }
 
-  @Override
-  public Future<ApiResponse<Mailing>> listListIdentifierMailingPost(RoutingContext routingContext, String listIdentifier, ListMailingCreationPost listMailingPost) {
-
-    ListProvider listProvider = this.apiApp.getListProvider();
-    MailingProvider mailingProvider = this.apiApp.getMailingProvider();
-    return listProvider
-      .getListByIdentifierFoundInPathParameterAndVerifyScope(routingContext, AuthUserScope.MAILING_LIST)
-      .compose(list -> {
-        Mailing mailingToInsert = new Mailing();
-        mailingToInsert.setEmailAuthor(ListProvider.getOwnerUser(list));
-        mailingToInsert.setRecipientList(list);
-        mailingToInsert.setName(listMailingPost.getName());
-        mailingToInsert.setRealm(list.getRealm());
-        return mailingProvider
-          .insertMailing(mailingToInsert);
-
-      })
-      .compose(mailingRes -> Future.succeededFuture(
-        new ApiResponse<>(mailingRes)
-          .setMapper(mailingProvider.getApiMapper())
-      ));
-
-  }
-
-  @Override
-  public Future<ApiResponse<List<Mailings>>> listListIdentifierMailingsGet(RoutingContext routingContext, String listIdentifier) {
-
-    return this.apiApp
-      .getListProvider()
-      .getListByIdentifierFoundInPathParameterAndVerifyScope(routingContext, AuthUserScope.MAILINGS_LIST_GET)
-      .compose(list -> this.apiApp.getMailingProvider().getMailingsByList(list))
-      .compose(mailings -> Future.succeededFuture(new ApiResponse<>(mailings)));
-  }
 
   @Override
   public Future<ApiResponse<Void>> listListIdentifierRegisterPost(RoutingContext routingContext, String listIdentifier, ListUserPostBody listUserPostBody) {

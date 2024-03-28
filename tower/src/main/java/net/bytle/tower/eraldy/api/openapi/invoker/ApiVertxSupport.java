@@ -37,7 +37,6 @@ public class ApiVertxSupport {
     new EmailApiHandler(new EmailApiImpl(towerApp)).mount(builder);
     new EnvApiHandler(new EnvApiImpl(towerApp)).mount(builder);
     new ListApiHandler(new ListApiImpl(towerApp)).mount(builder);
-    new MailingApiHandler(new MailingApiImpl(towerApp)).mount(builder);
     new OrganizationApiHandler(new OrganizationApiImpl(towerApp)).mount(builder);
     new RealmApiHandler(new RealmApiImpl(towerApp)).mount(builder);
     new ServiceApiHandler(new ServiceApiImpl(towerApp)).mount(builder);

@@ -22,8 +22,6 @@ tags:
     description: User module
   - name: list
     description: List module (creation, registration)
-  - name: mailing
-    description: Mailing module
   - name: app
     description: App module
   - name: analytics
@@ -56,39 +54,6 @@ components:
         multipart/form-data:
           schema:
             $ref: './eraldy-common-openapi.yaml#/components/schemas/PasswordCredentials'
-    MailingCreationPostBody:
-      description: Creation of a mailing for a list
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ListMailingCreationPost'
-        #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
-        multipart/form-data:
-          schema:
-            $ref: '#/components/schemas/ListMailingCreationPost'
-    MailingUpdatePostBody:
-      description: Modification of a mailing
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/MailingUpdatePost'
-        #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
-        multipart/form-data:
-          schema:
-            $ref: '#/components/schemas/MailingUpdatePost'
-    MailingEmailPostBody:
-      description: Modification/Creation of a mailing email
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/MailingEmailPost'
-        #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
-        multipart/form-data:
-          schema:
-            $ref: '#/components/schemas/MailingEmailPost'
     LoginEmailPostBody:
       description: The data needed to log a user in by email
       required: true
@@ -197,33 +162,6 @@ components:
           description: The last modification time of the file
           type: string
           format: date-time
-    Mailings:
-      description: Dailing data send for a list a mailing (ie mailings)
-      type: object
-      required:
-        - guid
-      x-fields-to-string:
-        - guid
-        - name
-      x-fields-identity: # hashCode
-        - guid
-      properties:
-        guid:
-          type: string
-          format: int64
-          description: |
-            The public id
-            (derived from the database/local id)
-        name:
-          type: string
-          description: A short description of the mailing
-        status:
-          type: integer
-          description: The status of the mailing
-        creationTime:
-          type: string
-          format: date-time
-          description: The creation time of the mailing in UTC
     Mailing:
       description: A mailing represents the sending of an email to one or more users
       type: object
@@ -414,38 +352,6 @@ components:
         redirectUri:
           type: string
           description: The uri where to redirect the user after successful registration
-    ListMailingCreationPost:
-      type: object
-      description: A post mailing object to create a mailing
-      properties:
-        name:
-          type: string
-          description: The name of the mailing
-    MailingUpdatePost:
-      type: object
-      description: A post mailing object to update a mailing
-      properties:
-        name:
-          type: string
-          description: The name of the mailing
-        authorUserGuid:
-          type: string
-          description: The author of the mailing
-    MailingEmailPost:
-      type: object
-      description: A post mailing email object to update/create an email
-      properties:
-        subject:
-          type: string
-          description: The email subject
-        mediaType:
-          type: string
-          description: |
-            The email body media type
-            For a RichSlate AST, 'application/vnd.rsast+json'
-        body:
-          type: string
-          description: The email body
     PasswordOnly:
       title: To update a password
       description: To update a password
@@ -1814,143 +1720,3 @@ paths:
                 type: array
                 items:
                   $ref: './eraldy-common-openapi.yaml#/components/schemas/ListUserShort'
-  /list/{listIdentifier}/mailing:
-    post:
-      operationId: listListIdentifierMailingPost
-      summary: "Create a new mailing for a list"
-      tags:
-        - list
-      security:
-        - apiKeyAuth: [ ]
-      parameters:
-        - name: listIdentifier
-          description: "The identifier of the list (guid)"
-          required: true
-          in: path
-          schema:
-            type: string
-            example: "lis-xjkkLmi"
-      requestBody:
-        $ref: '#/components/requestBodies/MailingCreationPostBody'
-      responses:
-        '200':
-          description: "Mailing"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Mailing'
-  /list/{listIdentifier}/mailings:
-    get:
-      operationId: listListIdentifierMailingsGet
-      summary: "Retrieve a list of mailings for a list"
-      tags:
-        - list
-      security:
-        - apiKeyAuth: [ ]
-      parameters:
-        - name: listIdentifier
-          description: "The identifier of the list (guid)"
-          required: true
-          in: path
-          schema:
-            type: string
-            example: "lis-xjkkLmi"
-      responses:
-        '200':
-          description: "Mailing"
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Mailings'
-  /mailing/{mailingIdentifier}:
-    get:
-      operationId: mailingIdentifierGet
-      summary: "The mailing"
-      tags:
-        - mailing
-      security:
-        - apiKeyAuth: [ ]
-      parameters:
-        - name: mailingIdentifier
-          description: "A mailing identifier (guid)"
-          required: true
-          in: path
-          schema:
-            type: string
-            example: "mai-xjkkLmi"
-      responses:
-        '200':
-          description: "The mailing"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Mailing'
-    post:
-      operationId: mailingIdentifierPost
-      summary: "Mailing Update"
-      tags:
-        - mailing
-      security:
-        - apiKeyAuth: [ ]
-      parameters:
-        - name: mailingIdentifier
-          description: "The mailing identifier (guid)"
-          required: true
-          in: path
-          schema:
-            type: string
-            example: "mai-xjkkLmi"
-      requestBody:
-        $ref: '#/components/requestBodies/MailingUpdatePostBody'
-      responses:
-        '200':
-          description: "The updated mailing"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Mailing'
-  /mailing/{mailingIdentifier}/email:
-    get:
-      operationId: mailingIdentifierEmailGet
-      summary: "Get the email template"
-      tags:
-        - mailing
-      security:
-        - apiKeyAuth: [ ]
-      parameters:
-        - name: mailingIdentifier
-          description: "A mailing identifier (guid)"
-          required: true
-          in: path
-          schema:
-            type: string
-            example: "mai-xjkkLmi"
-      responses:
-        '200':
-          description: "The email"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Email'
-    post:
-      operationId: mailingIdentifierEmailPost
-      summary: "Create or update an email template"
-      tags:
-        - mailing
-      security:
-        - apiKeyAuth: [ ]
-      parameters:
-        - name: mailingIdentifier
-          description: "The mailing identifier (guid)"
-          required: true
-          in: path
-          schema:
-            type: string
-            example: "mai-xjkkLmi"
-      requestBody:
-        $ref: '#/components/requestBodies/MailingEmailPostBody'
-      responses:
-        '200':
-          description: "Success"
