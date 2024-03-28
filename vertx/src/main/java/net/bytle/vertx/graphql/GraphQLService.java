@@ -2,6 +2,8 @@ package net.bytle.vertx.graphql;
 
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
+import io.vertx.ext.web.Route;
+import io.vertx.ext.web.handler.APIKeyHandler;
 import io.vertx.ext.web.handler.graphql.GraphiQLHandler;
 import io.vertx.ext.web.handler.graphql.GraphiQLHandlerOptions;
 import net.bytle.exception.NullValueException;
@@ -29,42 +31,64 @@ public class GraphQLService extends TowerService {
      * Server
      * (Get and post)
      */
-
-    this.graphQL.getApp()
+    Route graphQLRoute = this.graphQL.getApp()
       .getHttpServer()
       .getRouter()
-      .route("/graphql")
-      .handler(this.graphQL.getHandler());
+      .route("/graphql");
 
     /**
      * GraphiQL Client
-     * GraphiQL is disabled by default
-     * and enabled automatically when Vert.x Web runs in development mode
-     * with Root access.
      */
     if (JavaEnvs.IS_DEV) {
-      GraphiQLHandlerOptions options = new GraphiQLHandlerOptions()
-        .setEnabled(true);
-      GraphiQLHandler handler = GraphiQLHandler.builder(this.graphQL.getApp().getHttpServer().getServer().getVertx())
+      /**
+       * Add key authentication
+       */
+      ApiKeyAuthenticationProvider authProvider;
+      try {
+        authProvider = this.getServer().getApiKeyAuthProvider();
+      } catch (NullValueException e) {
+        throw new RuntimeException("ApiKeyAuthProvider is not enabled but required by GraphiQL to authenticate");
+      }
+      APIKeyHandler apiKeyHandler = APIKeyHandler.create(authProvider).header(authProvider.getHeader());
+      graphQLRoute.handler(apiKeyHandler);
+
+      /**
+       * GraphiQL is disabled by default
+       */
+      boolean enabledGraphiQL = true;
+      /**
+       * GraphiQL building
+       */
+      GraphiQLHandlerOptions options = new GraphiQLHandlerOptions().setEnabled(enabledGraphiQL);
+      GraphiQLHandler graphiQLHandler = GraphiQLHandler
+        .builder(this.getServer().getVertx())
         .with(options)
-        .addingHeaders(rc -> {
-          // Authenticate as Root
-          ApiKeyAuthenticationProvider authProvider;
-          try {
-            authProvider = this.getServer().getApiKeyAuthProvider();
-          } catch (NullValueException e) {
-            throw new RuntimeException("ApiKeyAuthProvider is not enabled but required by GraphiQL to authenticate");
-          }
-          return MultiMap.caseInsensitiveMultiMap().add(authProvider.getHeader(), authProvider.getSuperToken());
-        })
+        .addingHeaders(rc ->
+          {
+            // no idea how it works but this will add the header to each GraphiQL browser request
+            // it's also possible to add it on the GUI Header panel
+            // { "x-api-key":"secret" }
+            // but if you do that, you get the value "secret, secret"
+            return MultiMap.caseInsensitiveMultiMap().add(authProvider.getHeader(), authProvider.getSuperToken());
+          })
         .build();
+      /**
+       * GraphiQL Handler
+       */
       this.graphQL
         .getApp()
         .getHttpServer()
         .getRouter()
         .route("/graphiql*")
-        .subRouter(handler.router());
+        .subRouter(graphiQLHandler.router());
     }
+
+    /**
+     * We add the GraphQL handler
+     * after GraphiQL because
+     * the GraphiQL block add conditionally the Api Key Authentication handler
+     */
+    graphQLRoute.handler(this.graphQL.getHandler());
 
     return super.mount();
   }

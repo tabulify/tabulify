@@ -40,13 +40,11 @@ public class EraldyOpenApi implements OpenApiInstance {
   public EraldyOpenApi openApiAddSecurityHandlers(RouterBuilder routerBuilder, OpenApiService openApiService) {
 
     /**
+     * Authentication:
      * We trick the open api security scheme apiKey define in the openapi file
-     * to support a cookie authentication by realm
-     * This scheme below is implemented by
-     * the {@link ApiAuthenticationHandler} that just check if the user is on the vertx context.
-     * <p>
-     * We to add the needed Authentication handler to fill the user
-     * {@link #mountSessionHandlers()}
+     * to support also a cookie authentication by realm
+     * This auth scheme is implemented by the {@link ApiKeyAndSessionUserAuthenticationHandler}
+     * that check the api key and if the user is on the vertx context.
      */
     routerBuilder
       .securityHandler(OpenApiSecurityNames.APIKEY_AUTH_SECURITY_SCHEME)
@@ -59,10 +57,13 @@ public class EraldyOpenApi implements OpenApiInstance {
         if (!in.equals("header")) {
           throw new InternalException("The security scheme in should be a header, not " + in);
         }
-        String headerName = jsonObject.getString("name");
-        return new ApiKeyAndSessionUserAuthenticationHandler(apiApp,headerName, apiKeyUserProvider);
+        String headerNameInOpenApiFile = jsonObject.getString("name");
+        return new ApiKeyAndSessionUserAuthenticationHandler(apiApp, headerNameInOpenApiFile, apiKeyUserProvider);
       });
 
+    /**
+     * Add authorization handlers to each operation
+     */
     Handler<RoutingContext> authorizationHandler = openApiService.authorizationCheckHandler();
     for (Operation operation : routerBuilder.operations()) {
       routerBuilder.operation(operation.getOperationId())

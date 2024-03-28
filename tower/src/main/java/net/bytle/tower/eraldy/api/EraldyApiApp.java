@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.api;
 
 import io.vertx.core.Future;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
@@ -397,15 +396,14 @@ public class EraldyApiApp extends TowerApp  {
   @Override
   public Future<Void> mount() {
 
-    /**
-     * Session Handlers needs the client id
-     * (because we support api key, the api key authentication handler of the open api spec
-     * should have run - ie {@link #openApiBindSecurityScheme(RouterBuilder, ConfigAccessor)}
-     * We mount the session after then
-     */
+
     LOGGER.info("Add Auth Session Cookie");
     Router router = this.getHttpServer().getRouter();
     router.route().handler(this.authClientIdHandler);
+    /**
+     * Session Handlers needs the client id
+     * We mount the session after the clientId handler
+     */
     router.route().handler(this.sessionHandler);
 
     TowerApexDomain apexDomain = this.getApexDomain();

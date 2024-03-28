@@ -85,6 +85,9 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
   }
 
 
+  /**
+   * @return the header name to search in the handler
+   */
   public String getHeader() {
     /**
      * This is the default header where {@link io.vertx.ext.web.handler.APIKeyHandler}
