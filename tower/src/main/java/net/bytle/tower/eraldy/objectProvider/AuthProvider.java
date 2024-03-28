@@ -40,7 +40,6 @@ public class AuthProvider {
   private final EraldyApiApp apiApp;
 
 
-
   public AuthProvider(EraldyApiApp eraldyApiApp) {
 
     this.apiApp = eraldyApiApp;
@@ -271,8 +270,8 @@ public class AuthProvider {
    * @return the realm
    */
   public Future<Realm> getRealmByLocalIdWithAuthorizationCheck(Long realmId, AuthUserScope authUserScope, RoutingContext routingContext) {
-    return this.checkRealmAuthorization(routingContext,realmId, authUserScope)
-      .compose(futureRealmId-> this.apiApp.getRealmProvider()
+    return this.checkRealmAuthorization(routingContext, realmId, authUserScope)
+      .compose(futureRealmId -> this.apiApp.getRealmProvider()
         .getRealmFromLocalId(futureRealmId));
   }
 
@@ -350,6 +349,7 @@ public class AuthProvider {
       });
 
   }
+
   /**
    *
    * @param email - the email
@@ -374,23 +374,24 @@ public class AuthProvider {
    * @param user - the user
    * @return a base auth user (that can be used as claims in order to create a token or to create an auth user for a session)
    */
-  public <T extends User> AuthUser toAuthUser(T user) {
-    AuthUser authUserClaims = new AuthUser();
-    authUserClaims.setSubject(user.getGuid());
-    authUserClaims.setSubjectHandle(user.getHandle());
-    authUserClaims.setSubjectEmail(user.getEmailAddress());
-    authUserClaims.setRealmGuid(user.getRealm().getGuid());
-    authUserClaims.setRealmHandle(user.getRealm().getHandle());
+  public <T extends User> AuthUser.Builder toAuthUserBuilder(T user) {
+    AuthUser.Builder authUserBuilder = AuthUser
+      .builder()
+      .setSubject(user.getGuid())
+      .setSubjectHandle(user.getHandle())
+      .setSubjectEmail(user.getEmailAddress())
+      .setRealmGuid(user.getRealm().getGuid())
+      .setRealmHandle(user.getRealm().getHandle());
     if (user instanceof OrganizationUser) {
       Organization organization = ((OrganizationUser) user).getOrganization();
       // An organization user object is
       // a Eraldy user with or without an organization
       if (organization != null) {
-        authUserClaims.setOrganizationGuid(organization.getGuid());
-        authUserClaims.setOrganizationHandle(organization.getHandle());
+        authUserBuilder.setOrganizationGuid(organization.getGuid());
+        authUserBuilder.setOrganizationHandle(organization.getHandle());
       }
     }
-    return authUserClaims;
+    return authUserBuilder;
   }
 
 
@@ -429,7 +430,7 @@ public class AuthProvider {
    */
   private Future<AuthUser> toAuthUserForSession(User user) {
 
-    AuthUser authUser = toAuthUser(user);
+    AuthUser.Builder authUserBuilder = toAuthUserBuilder(user);
     Future<List<Realm>> futureRealmOwnerList;
     Future<OrganizationUser> futureOrgaUser;
     if (user instanceof OrganizationUser) {
@@ -450,16 +451,16 @@ public class AuthProvider {
             List<Long> realmListLongId = realmList.stream()
               .map(Realm::getLocalId)
               .collect(Collectors.toList());
-            authUser.put(REALMS_ID_KEY, realmListLongId);
+            authUserBuilder.put(REALMS_ID_KEY, realmListLongId);
           }
           if (orgaUser != null) {
             Organization organization = orgaUser.getOrganization();
             if (organization != null) {
-              authUser.setOrganizationGuid(organization.getGuid());
-              authUser.setOrganizationHandle(organization.getHandle());
+              authUserBuilder.setOrganizationGuid(organization.getGuid());
+              authUserBuilder.setOrganizationHandle(organization.getHandle());
             }
           }
-          return Future.succeededFuture(authUser);
+          return Future.succeededFuture(authUserBuilder.build());
         });
 
   }
@@ -523,8 +524,8 @@ public class AuthProvider {
   }
 
   public AuthJwtClaims toJwtClaims(User userToLogin) {
-    AuthUser authUser = toAuthUser(userToLogin);
-    return AuthJwtClaims.createFromAuthUser(authUser);
+
+    return AuthJwtClaims.createFromAuthUser(toAuthUser(userToLogin));
   }
 
   public <T extends User> AnalyticsUser toAnalyticsUser(T user) {
@@ -569,4 +570,9 @@ public class AuthProvider {
       throw new NotAuthorizedException();
     }
   }
+
+  public AuthUser toAuthUser(User vertxUserToLogin) {
+    return toAuthUserBuilder(vertxUserToLogin).build();
+  }
+
 }

@@ -28,8 +28,7 @@ public class PasswordLoginFlow implements WebFlow {
   }
 
   public Future<Void> login(String realmIdentifier, String handle, String password, RoutingContext routingContext) {
-    AuthJwtClaims jwtClaims = AuthJwtClaims.createEmptyClaims();
-    jwtClaims.setRealmGuid(realmIdentifier);
+
     /**
      * TODO: We should get the clientId
      * This way we would have the realm identifier and the app identifier
@@ -44,7 +43,7 @@ public class PasswordLoginFlow implements WebFlow {
         .onFailure(err -> FailureStatic.failRoutingContextWithTrace(err, routingContext))
         .compose(authUserForSession -> {
           this.apiApp.getAuthNContextManager()
-            .newAuthNContext(routingContext, this, authUserForSession, OAuthState.createEmpty(), jwtClaims)
+            .newAuthNContext(routingContext, this, authUserForSession, OAuthState.createEmpty(), AuthJwtClaims.createEmptyClaims())
             .redirectViaClient()
             .authenticateSession();
           return Future.succeededFuture();

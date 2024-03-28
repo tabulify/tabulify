@@ -9,6 +9,7 @@ import net.bytle.type.EmailCastException;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.auth.AuthJwtClaims;
+import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.auth.OAuthState;
 import net.bytle.vertx.flow.WebFlowEmailCallbackAbs;
 
@@ -47,7 +48,8 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
       return;
     }
 
-    String email = jwtClaims.getSubjectEmail();
+    AuthUser authUser = jwtClaims.toAuthUser();
+    String email = authUser.getSubjectEmail();
     EmailAddress emailAddress;
     try {
       emailAddress = EmailAddress.of(email);
@@ -60,7 +62,7 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
       return;
     }
 
-    String realmIdentifier = jwtClaims.getRealmGuid();
+    String realmIdentifier = authUser.getRealmGuid();
     EraldyApiApp apiApp = (EraldyApiApp) this.getWebFlow().getApp();
     apiApp
       .getAuthProvider()

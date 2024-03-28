@@ -65,7 +65,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
    * Handle the registration post
    */
   public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext,
-                                                        EmailAddress bMailInternetAddress,
+                                                        EmailAddress emailAddress,
                                                         Realm realm,
                                                         UriEnhanced redirectUri
   ) {
@@ -85,7 +85,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
     }
 
     User newUser = new User();
-    newUser.setEmailAddress(bMailInternetAddress.toNormalizedString());
+    newUser.setEmailAddress(emailAddress.toNormalizedString());
     newUser.setRealm(realm);
     String realmNameOrHandle = RealmProvider.getNameOrHandle(realm);
 
@@ -210,7 +210,8 @@ public class UserRegistrationFlow extends WebFlowAbs {
    */
   public void handleStep2ClickOnEmailValidationLink(RoutingContext ctx, AuthJwtClaims jwtClaims) {
 
-    String subjectEmail = jwtClaims.getSubjectEmail();
+    AuthUser authUser = jwtClaims.toAuthUser();
+    String subjectEmail = authUser.getSubjectEmail();
     EmailAddress emailAddress;
     try {
       emailAddress = EmailAddress.of(subjectEmail);
@@ -228,11 +229,11 @@ public class UserRegistrationFlow extends WebFlowAbs {
      * The requested realm should be the same as the user realm
      */
     Realm requestingRealm = this.getApp().getRealmProvider().getRequestingRealm(ctx);
-    if (!requestingRealm.getGuid().equals(jwtClaims.getRealmGuid())) {
+    if (!requestingRealm.getGuid().equals(authUser.getRealmGuid())) {
       TowerFailureException
         .builder()
         .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500) // callback our fault
-        .setMessage("The requesting realm (" + requestingRealm.getGuid() + ") is not the same as the claims (" + jwtClaims.getRealmGuid() + ")")
+        .setMessage("The requesting realm (" + requestingRealm.getGuid() + ") is not the same as the claims (" + authUser.getRealmGuid() + ")")
         .buildWithContextFailingTerminal(ctx);
       return;
     }
@@ -260,14 +261,12 @@ public class UserRegistrationFlow extends WebFlowAbs {
         App requestingApp = this.getApp().getAppProvider().getRequestingApp(ctx);
         jwtClaims.setAppGuid(requestingApp.getGuid());
         jwtClaims.setAppHandle(requestingApp.getHandle());
-        jwtClaims.setOrganizationGuid(requestingApp.getRealm().getOrganization().getGuid());
-        jwtClaims.setOrganizationHandle(requestingApp.getRealm().getOrganization().getHandle());
 
         /**
          * Insert and login
          */
         authProvider
-          .insertUserFromLoginAuthUserClaims(jwtClaims, ctx, this)
+          .insertUserFromLoginAuthUserClaims(authUser, ctx, this)
           .onFailure(ctx::fail)
           .onSuccess(authUserInserted -> this
             .getApp()
@@ -291,8 +290,8 @@ public class UserRegistrationFlow extends WebFlowAbs {
   public Handler<AuthNContext> handleOAuthAuthentication() {
     return authContext -> {
 
-      AuthUser authUserClaims = authContext.getAuthUser();
-      if (authUserClaims.getSubject() != null) {
+      AuthUser authUser = authContext.getAuthUser();
+      if (authUser.getSubject() != null) {
         authContext.next();
         return;
       }
@@ -307,22 +306,24 @@ public class UserRegistrationFlow extends WebFlowAbs {
         return;
       }
 
+      AuthUser.Builder authUserBuilder = new AuthUser.Builder(authUser.getClaims());
       if (
         this.getApp()
           .getRealmProvider()
           .isRealmGuidIdentifier(realmIdentifier)
       ) {
-        authUserClaims.setRealmGuid(realmIdentifier);
+        authUserBuilder.setRealmGuid(realmIdentifier);
       } else {
-        authUserClaims.setRealmHandle(realmIdentifier);
+        authUserBuilder.setRealmHandle(realmIdentifier);
       }
+      AuthUser finalAuthUser = authUserBuilder.build();
 
       /**
        * Create our principal
        */
       this.getApp()
         .getAuthProvider()
-        .getAuthUserForSessionByClaims(authUserClaims)
+        .getAuthUserForSessionByClaims(finalAuthUser)
         .onFailure(err -> TowerFailureException
           .builder()
           .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
@@ -335,7 +336,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           if (authUserForSession == null) {
             futureFinalAuthUserForSession = this.getApp()
               .getAuthProvider()
-              .insertUserFromLoginAuthUserClaims(authUserClaims, authContext.getRoutingContext(), this);
+              .insertUserFromLoginAuthUserClaims(finalAuthUser, authContext.getRoutingContext(), this);
           } else {
             futureFinalAuthUserForSession = Future.succeededFuture(authUserForSession);
           }

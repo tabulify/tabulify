@@ -296,7 +296,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
       optInIp = "";
     }
 
-    String subjectEmail = jwtClaims.getSubjectEmail();
+    AuthUser authUser = jwtClaims.toAuthUser();
+    String subjectEmail = authUser.getSubjectEmail();
     EmailAddress bMailInternetAddress;
     try {
       bMailInternetAddress = EmailAddress.of(subjectEmail);
@@ -326,14 +327,14 @@ public class ListRegistrationFlow extends WebFlowAbs {
     AuthProvider authProvider = getApp().getAuthProvider();
 
     authProvider
-      .getAuthUserForSessionByEmail(bMailInternetAddress, jwtClaims.getAudience())
+      .getAuthUserForSessionByEmail(bMailInternetAddress, authUser.getAudience())
       .onFailure(ctx::fail)
       .onSuccess(authUserForSession -> {
         Future<AuthUser> futureFinaleAuthSessionUser;
         if (authUserForSession != null) {
           futureFinaleAuthSessionUser = Future.succeededFuture(authUserForSession);
         } else {
-          futureFinaleAuthSessionUser = authProvider.insertUserFromLoginAuthUserClaims(jwtClaims, ctx, this);
+          futureFinaleAuthSessionUser = authProvider.insertUserFromLoginAuthUserClaims(authUser, ctx, this);
         }
         futureFinaleAuthSessionUser
           .onFailure(ctx::fail)
@@ -358,8 +359,6 @@ public class ListRegistrationFlow extends WebFlowAbs {
                */
               jwtClaims.setAppGuid(listUser.getList().getApp().getGuid());
               jwtClaims.setAppHandle(listUser.getList().getApp().getHandle());
-              jwtClaims.setRealmGuid(listUser.getList().getApp().getRealm().getGuid());
-              jwtClaims.setRealmHandle(listUser.getList().getApp().getRealm().getHandle());
 
               /**
                * Authenticate

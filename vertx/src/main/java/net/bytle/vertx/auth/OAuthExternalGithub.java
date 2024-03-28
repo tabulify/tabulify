@@ -157,13 +157,14 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
           return Future.failedFuture("Your primary email is not verified on GitHub, authenticate via another method or verify the primary email (" + email + ")");
         }
 
-        AuthUser user = new AuthUser();
-        user.setSubjectEmail(email);
-        user.setSubjectGivenName(githubUserName);
-        user.setSubjectBio(githubBio);
-        user.setSubjectBlog(finalGithubUserBlog);
-        user.setSubjectLocation(githubUserLocation);
-        user.setSubjectAvatar(finalGithubUserAvatarUri);
+        AuthUser user = AuthUser.builder()
+          .setSubjectEmail(email)
+          .setSubjectGivenName(githubUserName)
+          .setSubjectBio(githubBio)
+          .setSubjectBlog(finalGithubUserBlog)
+          .setSubjectLocation(githubUserLocation)
+          .setSubjectAvatar(finalGithubUserAvatarUri)
+          .build();
         return Future.succeededFuture(user);
 
       });

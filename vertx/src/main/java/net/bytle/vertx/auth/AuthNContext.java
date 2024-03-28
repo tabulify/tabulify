@@ -43,7 +43,7 @@ public class AuthNContext {
 
   /**
    * @param authNContextManager - the authN manager with the configuration
-   * @param webFlow             - the flow that log the user in
+   * @param webFlow             - the flow that logs the user in
    * @param ctx                 - the context
    * @param user                - the user to set on the session
    * @param oAuthState          - the auth state from an external oauth endpoint
@@ -213,7 +213,7 @@ public class AuthNContext {
         }
       }
 
-      contextUser = authUser.toVertxUser();
+      contextUser = authUser.getVertxUser();
       ctx.setUser(contextUser);
 
       SignInEvent signInEvent;
@@ -303,25 +303,25 @@ public class AuthNContext {
     app.setAppHandle(appHandle);
     String realmIdentifier = this.oAuthState.getRealmGuid();
     if (realmIdentifier == null) {
-      realmIdentifier = this.jwtClaims.getRealmGuid();
+      realmIdentifier = this.authUser.getRealmGuid();
     }
     app.setAppRealmGuid(realmIdentifier);
 
     String realmHandle = this.oAuthState.getRealmHandle();
     if (realmHandle == null) {
-      realmHandle = this.jwtClaims.getRealmHandle();
+      realmHandle = this.authUser.getRealmHandle();
     }
     app.setAppRealmHandle(realmHandle);
 
     String orgIdentifier = this.oAuthState.getOrganisationGuid();
     if (orgIdentifier == null) {
-      orgIdentifier = this.jwtClaims.getOrganizationGuid();
+      orgIdentifier = this.authUser.getOrganizationGuid();
     }
     app.setAppOrganisationGuid(orgIdentifier);
 
     String orgHandle = this.oAuthState.getOrgHandle();
     if (orgHandle == null) {
-      orgHandle = this.jwtClaims.getOrganizationHandle();
+      orgHandle = this.authUser.getOrganizationHandle();
     }
     app.setAppOrganisationHandle(orgHandle);
 

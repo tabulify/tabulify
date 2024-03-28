@@ -66,11 +66,12 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     }
 
     if (superToken.equals(token)) {
-      AuthUser authUserClaims = new AuthUser();
-      authUserClaims.setSubject("root");
-      authUserClaims.setSubjectHandle("root");
-      User user = authUserClaims.toVertxUser();
-      user.authorizations().add(API_KEY_PROVIDER_ID, ROOT_AUTHORIZATION);
+      User user = AuthUser.builder()
+        .setSubject("root")
+        .setSubjectHandle("root")
+        .addAuthorization(API_KEY_PROVIDER_ID, ROOT_AUTHORIZATION)
+        .build()
+        .getVertxUser();
       resultHandler.handle(Future.succeededFuture(user));
       return;
     }

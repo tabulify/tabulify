@@ -22,8 +22,8 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
+import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.AuthQueryProperty;
-import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.auth.OAuthInternalSession;
 import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.SmtpSender;
@@ -59,7 +59,7 @@ public class EmailLoginFlow extends WebFlowAbs {
   }
 
 
-  public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext, User userToLogin, UriEnhanced redirectUri) {
+  public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext, User modelUserToLogin, UriEnhanced redirectUri) {
 
     AuthClient authClient = this.getApp().getAuthClientProvider().getRequestingClient(routingContext);
     AuthClientScope loginEmailFlow = AuthClientScope.LOGIN_EMAIL_FLOW;
@@ -82,16 +82,18 @@ public class EmailLoginFlow extends WebFlowAbs {
 
     App requestingApp = this.getApp().getAppProvider().getRequestingApp(routingContext);
 
-    AuthUser jwtClaims = getApp()
+    AuthJwtClaims jwtClaims = getApp()
       .getAuthProvider()
-      .toJwtClaims(userToLogin)
-      .addRequestClaims(routingContext)
-      .setAppGuid(requestingApp.getGuid())
-      .setAppHandle(requestingApp.getHandle())
+      .toAuthUserBuilder(modelUserToLogin)
       .setRealmGuid(requestingApp.getRealm().getGuid())
       .setRealmHandle(requestingApp.getRealm().getHandle())
       .setOrganizationGuid(requestingApp.getRealm().getOrganization().getGuid())
-      .setOrganizationHandle(requestingApp.getRealm().getOrganization().getHandle());
+      .setOrganizationHandle(requestingApp.getRealm().getOrganization().getHandle())
+      .build()
+      .toJwtClaims()
+      .addRequestClaims(routingContext)
+      .setAppGuid(requestingApp.getGuid())
+      .setAppHandle(requestingApp.getHandle());
 
 
     /**
@@ -99,13 +101,13 @@ public class EmailLoginFlow extends WebFlowAbs {
      */
     String recipientName;
     try {
-      recipientName = UsersUtil.getNameOrNameFromEmail(userToLogin);
+      recipientName = UsersUtil.getNameOrNameFromEmail(modelUserToLogin);
     } catch (NotFoundException e) {
-      throw ValidationException.create("A user name could not be found", "userToRegister", userToLogin.getEmailAddress());
+      throw ValidationException.create("A user name could not be found", "userToRegister", modelUserToLogin.getEmailAddress());
     } catch (AddressException e) {
-      throw ValidationException.create("The provided email is not valid", "email", userToLogin.getEmailAddress());
+      throw ValidationException.create("The provided email is not valid", "email", modelUserToLogin.getEmailAddress());
     }
-    SmtpSender sender = UsersUtil.toSenderUser(userToLogin.getRealm().getOwnerUser());
+    SmtpSender sender = UsersUtil.toSenderUser(modelUserToLogin.getRealm().getOwnerUser());
 
     /**
      * Add the calling client id
@@ -113,7 +115,7 @@ public class EmailLoginFlow extends WebFlowAbs {
     Map<String, String> clientCallbackQueryProperties = new HashMap<>();
     clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), authClient.getGuid());
 
-    String realmNameOrHandle = RealmProvider.getNameOrHandle(userToLogin.getRealm());
+    String realmNameOrHandle = RealmProvider.getNameOrHandle(modelUserToLogin.getRealm());
     BMailTransactionalTemplate letter = getApp()
       .getUserEmailLoginFlow()
       .getStep2Callback()
@@ -139,12 +141,12 @@ public class EmailLoginFlow extends WebFlowAbs {
 
         String recipientEmailAddressInRfcFormat;
         try {
-          recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToLogin.getEmailAddress(), userToLogin.getGivenName()).toString();
+          recipientEmailAddressInRfcFormat = BMailInternetAddress.of(modelUserToLogin.getEmailAddress(), modelUserToLogin.getGivenName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-              .setMessage("The recipient email (" + userToLogin.getEmailAddress() + ") is not valid")
+              .setMessage("The recipient email (" + modelUserToLogin.getEmailAddress() + ") is not valid")
               .setCauseException(e)
               .buildWithContextFailing(routingContext)
           );
@@ -179,7 +181,7 @@ public class EmailLoginFlow extends WebFlowAbs {
           .compose(mailResult -> {
 
             // Send feedback to the list owner
-            String title = "The user (" + userToLogin.getEmailAddress() + ") received a login email for the realm (" + userToLogin.getRealm().getHandle() + ").";
+            String title = "The user (" + modelUserToLogin.getEmailAddress() + ") received a login email for the realm (" + modelUserToLogin.getRealm().getHandle() + ").";
             MailMessage ownerFeedbackEmail = towerSmtpClient
               .createVertxMailMessage()
               .setTo(senderEmailAddressInRfcFormat)

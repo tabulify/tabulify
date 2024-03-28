@@ -13,7 +13,6 @@ import net.bytle.type.Booleans;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthJwtClaims;
-import net.bytle.vertx.auth.AuthUser;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -66,7 +65,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
    * @param extraCallbackQueryProperties - extra query properties added to the callback link
    * @return the email template to send for validation
    */
-  public BMailTransactionalTemplate getCallbackTransactionalEmailTemplateForClaims(RoutingContext routingContext, SmtpSender smtpSender, String recipientName, AuthUser authUser, Map<String, String> extraCallbackQueryProperties) {
+  public BMailTransactionalTemplate getCallbackTransactionalEmailTemplateForClaims(RoutingContext routingContext, SmtpSender smtpSender, String recipientName, AuthJwtClaims authUser, Map<String, String> extraCallbackQueryProperties) {
 
 
     JsonObject jwtClaims = authUser.toClaimsWithExpiration(EXPIRATION_IN_MINUTES);

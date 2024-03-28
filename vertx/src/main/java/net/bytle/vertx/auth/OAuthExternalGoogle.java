@@ -27,7 +27,6 @@ import static net.bytle.vertx.auth.OAuthExternalIdentifier.GOOGLE;
 public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
 
 
-
   public OAuthExternalGoogle(OAuthExternal oAuthExternal, String clientId, String clientSecret) {
 
     super(
@@ -99,11 +98,12 @@ public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
         throw new InternalException("Google Picture URL (" + pictureUrl + ") is not valid", e);
       }
     }
-    AuthUser user = new AuthUser();
-    user.setSubjectEmail(email);
-    user.setSubjectAvatar(googleUserAvatarUri);
-    user.setSubjectGivenName(AuthUserUtils.getGivenNameFromCase(givenName,familyName));
-    user.setSubjectFamilyName(AuthUserUtils.getFamilyNameFromCase(familyName, givenName));
+    AuthUser user = AuthUser.builder()
+      .setSubjectEmail(email)
+      .setSubjectAvatar(googleUserAvatarUri)
+      .setSubjectGivenName(AuthUserUtils.getGivenNameFromCase(givenName, familyName))
+      .setSubjectFamilyName(AuthUserUtils.getFamilyNameFromCase(familyName, givenName))
+      .build();
     return Future.succeededFuture(user);
 
   }
