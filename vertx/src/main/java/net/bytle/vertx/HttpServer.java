@@ -67,7 +67,7 @@ public class HttpServer {
      */
     if (this.getServer().getSsl()) {
       if (!JavaEnvs.IS_DEV) {
-        return Future.failedFuture(new InternalException("In non-dev environment, the management of certificate is not done. Ssl should off and handled by the proxy"));
+        return Future.failedFuture(new InternalException("In non-dev environment, the management of certificate is not done. Ssl should be set to off and handled by the proxy"));
       }
       options
         .setKeyCertOptions(new PemKeyCertOptions().addKeyPath(Server.DEV_KEY_PEM).addCertPath(Server.DEV_CERT_PEM))

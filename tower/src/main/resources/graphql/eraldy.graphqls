@@ -95,6 +95,9 @@ type PageInfo {
   startCursor: String
 }
 
+"""
+The Organization is the Eraldy client
+"""
 type Organization {
   guid: ID!
   """A short descriptive name"""

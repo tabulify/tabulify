@@ -1,5 +1,7 @@
 package net.bytle.java;
 
+import net.bytle.type.env.OsEnvs;
+
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 
@@ -18,6 +20,17 @@ public class JavaEnvs {
     Path sourceCodePath = Javas.getSourceCodePath(JavaEnvs.class);
     Path homePath = sourceCodePath.getParent().getParent();
     Boolean isDev = false;
+
+    /**
+     * For vertx, the Dev mode is :
+     * * with the VERTXWEB_ENVIRONMENT environment variable
+     * * or vertxweb.environment system property
+     * set to dev.
+     */
+    String env = OsEnvs.getEnvOrDefault("VERTXWEB_ENVIRONMENT", "prod");
+    if(env.equals("dev")){
+      isDev = true;
+    }
 
     try {
       Path buildPath = Javas.getBuildDirectory(JavaEnvs.class);

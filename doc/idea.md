@@ -97,3 +97,8 @@ If speed up is not good enough, please submit a support request https://intellij
 .\bin\ij-shared-indexes-tool-cli indexes-server --ij C:\IntelliJ-IDEA-2023.1 --project d:\code\java-mono
 .\bin\ij-shared-indexes-tool-cli indexes --ij C:\IntelliJ-IDEA-2023.1 --project d:\code\java-mono --base-url https://idea-shared-indexes.t0w0.c15.e2-3.dev/java-mono
 ```
+
+
+## Hot Swap
+
+https://www.jetbrains.com/help/idea/altering-the-program-s-execution-flow.html#hotswap-limitations

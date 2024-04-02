@@ -71,10 +71,3 @@ but I have the default setting (30 seconds).
 
 Don't do `pool.query`
 https://github.com/eclipse-vertx/vertx-sql-client/issues/1232
-
-## Dev Mode
-
-For vertx, the Dev mode is :
-* with the VERTXWEB_ENVIRONMENT environment variable
-* or vertxweb.environment system property
-set to dev.

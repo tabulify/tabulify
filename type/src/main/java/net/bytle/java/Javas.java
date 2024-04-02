@@ -6,6 +6,8 @@ import java.net.URL;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -83,13 +85,22 @@ public class Javas {
    * See Tabli.hasBuildFileInRunningDirectory
    */
   public static Path getBuildDirectory(Class<?> clazz) throws NotDirectoryException {
+
     Path sourceCodePath = Javas.getSourceCodePath(clazz);
-    String buildDirectoryName = "build";
-    Path buildPath = JavaEnvs.getPathUntilName(sourceCodePath.getParent(), buildDirectoryName);
-    if (buildPath == null) {
-      throw new NotDirectoryException("The build path was not found");
+    List<String> buildPathNames = Arrays.asList(
+      "build", // gradle
+      "out" // idea
+    );
+
+    for (String buildPathName : buildPathNames) {
+      Path buildPath = JavaEnvs.getPathUntilName(sourceCodePath.getParent(), buildPathName);
+      if (buildPath != null) {
+        return buildPath;
+      }
     }
-    return buildPath;
+
+    throw new NotDirectoryException("No build path was found");
+
   }
 
   /**
