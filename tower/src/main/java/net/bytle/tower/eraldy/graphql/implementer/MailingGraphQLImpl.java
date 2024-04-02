@@ -10,6 +10,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputProps;
+import net.bytle.tower.eraldy.model.manual.EmailDoc;
 import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
@@ -63,7 +64,21 @@ public class MailingGraphQLImpl {
         newTypeWiring("Mailing")
           .dataFetcher("recipientList", this::getMailingRecipientList)
           .build()
-      );
+      )
+    .type(
+      newTypeWiring("Mailing")
+        .dataFetcher("emailDoc", this::getMailingEmailDoc)
+        .build()
+    );
+  }
+
+  private Future<EmailDoc> getMailingEmailDoc(DataFetchingEnvironment dataFetchingEnvironment) {
+    Mailing mailing = dataFetchingEnvironment.getSource();
+    Long emailFileId = mailing.getEmailFileId();
+    if(emailFileId == null) {
+      return Future.succeededFuture(new EmailDoc());
+    }
+    return Future.succeededFuture(new EmailDoc());
   }
 
   public Future<Mailing> getMailing(DataFetchingEnvironment dataFetchingEnvironment) {

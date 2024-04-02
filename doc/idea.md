@@ -101,4 +101,5 @@ If speed up is not good enough, please submit a support request https://intellij
 
 ## Hot Swap
 
+Settings: Compile done by Idea and not by Gradle
 https://www.jetbrains.com/help/idea/altering-the-program-s-execution-flow.html#hotswap-limitations

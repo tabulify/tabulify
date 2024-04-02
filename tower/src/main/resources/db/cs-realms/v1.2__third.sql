@@ -68,6 +68,7 @@ create table IF NOT EXISTS realm_file
   FILE_TYPE               INT                       NOT NULL,
   FILE_MEDIA_TYPE         varchar(50)               NOT NULL,
   FILE_LOGICAL_TYPE       varchar(50)               NULL,
+  FILE_TEXT               TEXT                      NULL,
   FILE_METADATA           JSONB                     NULL,
   FILE_CREATION_TIME      TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   FILE_MODIFICATION_TIME  TIMESTAMP WITHOUT TIME ZONE NULL
@@ -88,6 +89,7 @@ comment on column realm_file.FILE_NAME is 'The name of the file with or without 
 comment on column realm_file.FILE_TYPE is 'The type of file (0: directory, 1 regular file)';
 comment on column realm_file.FILE_MEDIA_TYPE is 'The media type (the structure of the file so that we can create an AST). ie text/csv, text/json';
 comment on column realm_file.FILE_LOGICAL_TYPE is 'A logical type to define the logical use and type of metadata (Example: email as json, eml, ... or xml may be a full document or a fragment, may contain raw data or ui description)';
+comment on column realm_file.FILE_TEXT is 'The content of text file (binary file such as images are not stored in the database)';
 comment on column realm_file.FILE_METADATA is 'A json that holds extra metadata information. The type of metadata is given by the logical type';
 comment on column realm_file.FILE_PARENT_ID is 'The parent file (if null, the root)';
 
