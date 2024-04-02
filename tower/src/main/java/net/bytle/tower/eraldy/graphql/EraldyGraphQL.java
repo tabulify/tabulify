@@ -49,37 +49,23 @@ public class EraldyGraphQL implements GraphQLDef {
     SchemaParser schemaParser = new SchemaParser();
     TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schema);
 
+
+    /**
+     * Wiring Builder
+     * (The builder to attach the type to our implementation)
+     */
+    RuntimeWiring.Builder wiringBuilder = newRuntimeWiring();
+
     /**
      * Our implementation
      */
-    MailingGraphQLImpl mailingImpl = new MailingGraphQLImpl(this);
+    new MailingGraphQLImpl(this, wiringBuilder);
     UserGraphQLImpl userImpl = new UserGraphQLImpl(this);
 
     /**
-     * Wiring
-     * Attach the type to our implementation
+     * Wiring final object
      */
-    RuntimeWiring runtimeWiring = newRuntimeWiring()
-      .type(
-        newTypeWiring("Query")
-          .dataFetcher("mailing", mailingImpl::getMailing)
-          .build()
-      )
-      .type(
-        newTypeWiring("Query")
-          .dataFetcher("mailingsOfList", mailingImpl::getMailingsOfList)
-          .build()
-      )
-      .type(
-        newTypeWiring("Mutation")
-          .dataFetcher("mailingUpdate", mailingImpl::patchMailing)
-          .build()
-      )
-      .type(
-        newTypeWiring("Mailing")
-          .dataFetcher("emailAuthor", mailingImpl::getMailingEmailAuthor)
-          .build()
-      )
+    RuntimeWiring runtimeWiring = wiringBuilder
       .type(
         newTypeWiring("UserI")
           .typeResolver(this::getUserInterfaceTypeResolver)

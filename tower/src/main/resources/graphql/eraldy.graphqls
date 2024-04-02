@@ -66,9 +66,9 @@ type Mailing {
   """A short descriptive name"""
   name: String
   """The email document"""
-  email: EmailDoc
-  """The list"""
-  list: List
+  emailDoc: EmailDoc
+  """The recipient list"""
+  recipientList: List
   """The email author"""
   emailAuthor: OrganizationUser
   """The mailing status"""
@@ -155,6 +155,10 @@ type List {
   ownerUser: OrganizationUser
   """The application"""
   app: App!
+  """The number of users that are still active"""
+  userInCount: Int
+  """The number of users in the list"""
+  userCount: Int
 }
 
 #interface MutationResponse {
@@ -192,5 +196,5 @@ type Mutation {
   """Update a mailing"""
   mailingUpdate(guid: ID!, props:MailingInput!): Mailing
   """Create a mailing"""
-  mailingInsert(listGuid: ID!, props:MailingInput): Mailing
+  mailingCreate(listGuid: ID!, props:MailingInput): Mailing
 }

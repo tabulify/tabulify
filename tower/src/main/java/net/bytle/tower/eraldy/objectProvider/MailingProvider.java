@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.objectProvider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import graphql.schema.DataFetchingEnvironment;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.sqlclient.Pool;
@@ -18,13 +19,13 @@ import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.manual.Status;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.vertx.DateTimeUtil;
-import net.bytle.vertx.JdbcSchemaManager;
-import net.bytle.vertx.Server;
-import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -91,48 +92,88 @@ public class MailingProvider {
   }
 
 
-  public Future<Mailing> insertMailing(Mailing mailing) {
+  public Future<Mailing> insertMailingRequestHandler(String listGuid, MailingInputProps mailingInputProps, RoutingContext routingContext) {
 
-    if (mailing.getLocalId() != null) {
-      return Future.failedFuture(new InternalException("A mailing to insert should not have a local id"));
+    Guid listGuidObject;
+    try {
+      listGuidObject = this.apiApp.getListProvider().getGuidObject(listGuid);
+    } catch (CastException e) {
+      return Future.failedFuture(new IllegalArgumentException("The list guid (" + listGuid + ") is not valid", e));
     }
 
-    final String insertSql = "INSERT INTO\n" +
-      FULL_QUALIFIED_TABLE_NAME + " (\n" +
-      "  " + MAILING_REALM_COLUMN + ",\n" +
-      "  " + MAILING_ID_COLUMN + ",\n" +
-      "  " + MAILING_NAME_COLUMN + ",\n" +
-      "  " + LIST_COLUMN + ",\n" +
-      "  " + MAILING_ORGA_COLUMN + ",\n" +
-      "  " + MAILING_AUTHOR_USER_COLUMN + ",\n" +
-      "  " + MAILING_CREATION_COLUMN + ",\n" +
-      "  " + MAILING_STATUS_COLUMN + "\n" +
-      "  )\n" +
-      " values ($1, $2, $3, $4, $5, $6, $7, $8)";
+
+    return this.apiApp.getRealmProvider()
+      .getRealmByLocalIdWithAuthorizationCheck(listGuidObject.getRealmOrOrganizationId(), AuthUserScope.MAILING_CREATE, routingContext)
+      .compose(realm -> {
+        if (realm == null) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setMessage("The realm of the list ("+listGuid+") was not found")
+            .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+            .build()
+          );
+        }
+        return this.apiApp.getListProvider()
+          .getListById(listGuidObject.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm);
+      })
+      .compose(list -> {
+
+        if (list == null) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setMessage("The list ("+listGuid+") was not found")
+            .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+            .build()
+          );
+        }
+        final String insertSql = "INSERT INTO\n" +
+          FULL_QUALIFIED_TABLE_NAME + " (\n" +
+          "  " + MAILING_REALM_COLUMN + ",\n" +
+          "  " + MAILING_ID_COLUMN + ",\n" +
+          "  " + MAILING_NAME_COLUMN + ",\n" +
+          "  " + LIST_COLUMN + ",\n" +
+          "  " + MAILING_ORGA_COLUMN + ",\n" +
+          "  " + MAILING_AUTHOR_USER_COLUMN + ",\n" +
+          "  " + MAILING_CREATION_COLUMN + ",\n" +
+          "  " + MAILING_STATUS_COLUMN + "\n" +
+          "  )\n" +
+          " values ($1, $2, $3, $4, $5, $6, $7, $8)";
+
+        Mailing mailing = new Mailing();
+        return jdbcPool
+          .withTransaction(sqlConnection ->
+            this.apiApp.getRealmSequenceProvider()
+              .getNextIdForTableAndRealm(sqlConnection, list.getRealm(), TABLE_NAME)
+              .compose(nextId -> {
+
+                mailing.setLocalId(nextId);
+                mailing.setRealm(list.getRealm());
+                updateGuid(mailing);
+                String name = mailingInputProps.getName();
+                if (name == null) {
+                  name = "Mailing of " + LocalDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_DATE);
+                }
+                mailing.setName(name);
+                mailing.setRecipientList(list);
+                OrganizationUser ownerUser = ListProvider.getOwnerUser(list);
+                mailing.setEmailAuthor(ownerUser);
+
+                return sqlConnection
+                  .preparedQuery(insertSql)
+                  .execute(Tuple.of(
+                    mailing.getRealm().getLocalId(),
+                    mailing.getLocalId(),
+                    mailing.getName(),
+                    mailing.getRecipientList().getLocalId(),
+                    mailing.getEmailAuthor().getOrganization().getLocalId(),
+                    mailing.getEmailAuthor().getLocalId(),
+                    DateTimeUtil.getNowInUtc(),
+                    0
+                  ));
+              })
+              .recover(e -> Future.failedFuture(new InternalException("Mailing creation Error: Sql Error " + e.getMessage(), e)))
+              .compose(rows -> Future.succeededFuture(mailing)));
+      });
 
 
-    return jdbcPool
-      .withTransaction(sqlConnection ->
-        this.apiApp.getRealmSequenceProvider()
-          .getNextIdForTableAndRealm(sqlConnection, mailing.getRealm(), TABLE_NAME)
-          .compose(nextId -> {
-            mailing.setLocalId(nextId);
-            updateGuid(mailing);
-            return sqlConnection
-              .preparedQuery(insertSql)
-              .execute(Tuple.of(
-                mailing.getRealm().getLocalId(),
-                mailing.getLocalId(),
-                mailing.getName(),
-                mailing.getRecipientList().getLocalId(),
-                mailing.getEmailAuthor().getOrganization().getLocalId(),
-                mailing.getEmailAuthor().getLocalId(),
-                DateTimeUtil.getNowInUtc(),
-                0
-              ));
-          })
-          .recover(e -> Future.failedFuture(new InternalException("Mailing creation Error: Sql Error " + e.getMessage(), e)))
-          .compose(rows -> Future.succeededFuture(mailing)));
   }
 
 
@@ -184,37 +225,31 @@ public class MailingProvider {
 
         /**
          * Orga User
+         * The full user is retrieved if requested
+         * (In graphQl, by the function that is mapped to the type)
+         * ie {@link #getEmailAuthorAtRequestTime(Mailing)}
          */
         Long orgaId = row.getLong(MAILING_ORGA_COLUMN);
         assert Objects.equals(realm.getOrganization().getLocalId(), orgaId);
         Long userId = row.getLong(MAILING_AUTHOR_USER_COLUMN);
-        Future<OrganizationUser> authorFuture = this.apiApp.getOrganizationUserProvider()
-          .getOrganizationUserByLocalId(userId, realm.getLocalId(), realm);
+        OrganizationUser authorUser = new OrganizationUser();
+        authorUser.setLocalId(userId);
+        authorUser.setRealm(realm);
+        mailing.setEmailAuthor(authorUser);
 
-        // list
+        /**
+         * List
+         * The full list object is retrieved by the API
+         * (In graphQl, by the function that is mapped to the type)
+         * {@link net.bytle.tower.eraldy.graphql.implementer.MailingGraphQLImpl#getMailingRecipientList(DataFetchingEnvironment)}
+         */
         Long listId = row.getLong(LIST_COLUMN);
-        Future<ListObject> listFuture = this.apiApp.getListProvider()
-          .getListById(listId, realm);
+        ListObject recipientList = new ListObject();
+        recipientList.setLocalId(listId);
+        recipientList.setRealm(realm);
+        mailing.setRecipientList(recipientList);
 
-        return Future.all(authorFuture, listFuture)
-          .recover(err -> Future.failedFuture(new InternalException("Future all of mailing building failed", err)))
-          .compose(compositeFuture -> {
-            boolean futureFailed = compositeFuture.failed(0);
-            if (futureFailed) {
-              Throwable err = compositeFuture.cause(0);
-              return Future.failedFuture(new InternalException("Retrieving the mailing author gives us this error: " + err.getMessage(), err));
-            }
-            futureFailed = compositeFuture.failed(1);
-            if (futureFailed) {
-              Throwable err = compositeFuture.cause(1);
-              return Future.failedFuture(new InternalException("Retrieving the mailing list gives us this error: " + err.getMessage(), err));
-            }
-            OrganizationUser authorUser = compositeFuture.resultAt(0);
-            ListObject recipientList = compositeFuture.resultAt(1);
-            mailing.setEmailAuthor(authorUser);
-            mailing.setRecipientList(recipientList);
-            return Future.succeededFuture(mailing);
-          });
+        return Future.succeededFuture(mailing);
 
       });
   }
@@ -254,43 +289,77 @@ public class MailingProvider {
 
   /**
    * Update
+   *
    * @return the same mailing
    */
-  public Future<Mailing> updateMailingRequestHandler(String guid, MailingInputProps mailingInputProps, RoutingContext routingContext) {
+  public Future<Mailing> updateMailingRequestHandler(String mailingGuidIdentifier, MailingInputProps mailingInputProps, RoutingContext routingContext) {
 
-    Mailing mailing = new Mailing();
-    final String sql = "update " + FULL_QUALIFIED_TABLE_NAME + " set \n"
-      + MAILING_NAME_COLUMN + " = $1,\n"
-      + MAILING_AUTHOR_USER_COLUMN + " = $2,\n"
-      + MAILING_ORGA_COLUMN + " = $3,\n"
-      + MAILING_MODIFICATION_COLUMN + " = $4\n"
-      + "where\n"
-      + MAILING_ID_COLUMN + " = $5\n" +
-      " and " + MAILING_REALM_COLUMN + " = $6\n"
-      + "RETURNING " + MAILING_ID_COLUMN; // to check if the update has touched a row
-    Tuple tuple = Tuple.of(
-      mailing.getName(),
-      mailing.getEmailAuthor().getLocalId(),
-      mailing.getEmailAuthor().getOrganization().getLocalId(),
-      DateTimeUtil.getNowInUtc(),
-      mailing.getLocalId(),
-      mailing.getRealm().getLocalId()
-    );
-    return this.jdbcPool
-      .preparedQuery(sql)
-      .execute(tuple)
-      .recover(err -> Future.failedFuture(new InternalException("Updating mailing (" + tuple.deepToString() + ") failed. Error: " + err.getMessage() + ". Sql:\n" + sql, err)))
-      .compose(rowSet -> {
-        if (rowSet.size() != 1) {
-          // 1 because we use the RETURNING SQL clause
-          // 0 should not happen as we select it beforehand to build the mailing
+
+    return this.getByGuidRequestHandler( mailingGuidIdentifier, routingContext, AuthUserScope.MAILING_UPDATE)
+      .compose(mailing -> {
+
+        if (mailing == null) {
           return Future.failedFuture(TowerFailureException.builder()
-            .setMessage("Update Mailing: No mailing was updated for the tuple (" + Tuple.of(mailing.getLocalId(),
-              mailing.getRealm().getLocalId()).deepToString() + ")")
-            .build());
+            .setMessage("The mailing (" + mailingGuidIdentifier + ") was not found")
+            .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+            .build()
+          );
         }
-        return Future.succeededFuture(mailing);
+
+        /**
+         * Patch implementation
+         * We support for now only name and author
+         */
+        String newName = mailingInputProps.getName();
+        if (newName != null) {
+          mailing.setName(newName);
+        }
+        String newAuthorGuid = mailingInputProps.getEmailAuthorGuid();
+        Future<OrganizationUser> newAuthorFuture;
+        if (newAuthorGuid != null) {
+          newAuthorFuture = this.apiApp.getOrganizationUserProvider().getOrganizationUserByIdentifier(newAuthorGuid);
+        } else {
+          newAuthorFuture = this.getEmailAuthorAtRequestTime(mailing);
+        }
+        return newAuthorFuture.compose(newAuthor -> {
+
+          mailing.setEmailAuthor(newAuthor);
+          final String sql = "update " + FULL_QUALIFIED_TABLE_NAME + " set \n"
+            + MAILING_NAME_COLUMN + " = $1,\n"
+            + MAILING_AUTHOR_USER_COLUMN + " = $2,\n"
+            + MAILING_ORGA_COLUMN + " = $3,\n"
+            + MAILING_MODIFICATION_COLUMN + " = $4\n"
+            + "where\n"
+            + MAILING_ID_COLUMN + " = $5\n" +
+            " and " + MAILING_REALM_COLUMN + " = $6\n"
+            + "RETURNING " + MAILING_ID_COLUMN; // to check if the update has touched a row
+          Tuple tuple = Tuple.of(
+            mailing.getName(),
+            mailing.getEmailAuthor().getLocalId(),
+            mailing.getEmailAuthor().getOrganization().getLocalId(),
+            DateTimeUtil.getNowInUtc(),
+            mailing.getLocalId(),
+            mailing.getRealm().getLocalId()
+          );
+
+          return this.jdbcPool
+            .preparedQuery(sql)
+            .execute(tuple)
+            .recover(err -> Future.failedFuture(new InternalException("Updating mailing (" + tuple.deepToString() + ") failed. Error: " + err.getMessage() + ". Sql:\n" + sql, err)))
+            .compose(rowSet -> {
+              if (rowSet.size() != 1) {
+                // 1 because we use the RETURNING SQL clause
+                // 0 should not happen as we select it beforehand to build the mailing
+                return Future.failedFuture(TowerFailureException.builder()
+                  .setMessage("Update Mailing: No mailing was updated for the tuple (" + Tuple.of(mailing.getLocalId(),
+                    mailing.getRealm().getLocalId()).deepToString() + ")")
+                  .build());
+              }
+              return Future.succeededFuture(mailing);
+            });
+        });
       });
+
   }
 
   /**
@@ -299,19 +368,43 @@ public class MailingProvider {
    */
   public Future<Mailing> getByGuidRequestHandler(String mailingGuidIdentifier, RoutingContext routingContext, AuthUserScope scope) {
 
-    MailingProvider mailingProvider = this.apiApp.getMailingProvider();
+
     Guid guid;
     try {
-      guid = mailingProvider.getGuid(mailingGuidIdentifier);
+      guid = this.getGuid(mailingGuidIdentifier);
     } catch (CastException e) {
       return Future.failedFuture(new IllegalArgumentException("The mailing guid (" + mailingGuidIdentifier + ") is not valid", e));
     }
 
     return this.apiApp.getRealmProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmOrOrganizationId(), scope,routingContext)
+      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmOrOrganizationId(), scope, routingContext)
       .compose(realm -> {
+        if (realm == null) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setMessage("The realm was not found")
+            .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+            .build()
+          );
+        }
         long localId = guid.validateRealmAndGetFirstObjectId(realm.getLocalId());
-        return mailingProvider.getByLocalId(localId, realm);
+        return this.getByLocalId(localId, realm);
       });
   }
+
+
+  /**
+   * Email author
+   * The object is build at request time
+   * (Feature of GraphQL where a type can be matched to a function)
+   */
+  public Future<OrganizationUser> getEmailAuthorAtRequestTime(Mailing mailing) {
+    OrganizationUser emailAuthor = mailing.getEmailAuthor();
+    String guid = emailAuthor.getGuid();
+    if (guid != null) {
+      return Future.succeededFuture(emailAuthor);
+    }
+    return this.apiApp.getOrganizationUserProvider()
+      .getOrganizationUserByLocalId(emailAuthor.getLocalId(), emailAuthor.getRealm().getLocalId(), emailAuthor.getRealm());
+  }
+
 }

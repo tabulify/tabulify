@@ -52,7 +52,7 @@ public class UserProvider {
 
 
   private static final String TABLE_PREFIX = "user";
-  public static final String EMAIL_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + "email_address";
+  public static final String EMAIL_ADDRESS_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + "email_address";
   public static final String PASSWORD_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + "password";
 
 
@@ -98,7 +98,7 @@ public class UserProvider {
       QUALIFIED_TABLE_NAME + " (\n" +
       "  " + REALM_COLUMN + ",\n" +
       "  " + ID_COLUMN + ",\n" +
-      "  " + EMAIL_COLUMN + ",\n" +
+      "  " + EMAIL_ADDRESS_COLUMN + ",\n" +
       "  " + DATA_COLUMN + ",\n" +
       "  " + CREATION_COLUMN + "\n" +
       "  )\n" +
@@ -211,7 +211,7 @@ public class UserProvider {
       sql = "select " + ID_COLUMN +
         " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
         " where " +
-        EMAIL_COLUMN + " = $1 " +
+        EMAIL_ADDRESS_COLUMN + " = $1 " +
         "AND " + REALM_COLUMN + " = $2 ";
       futureResponse = jdbcPool
         .preparedQuery(sql)
@@ -245,7 +245,7 @@ public class UserProvider {
       sql = "UPDATE \n" +
         JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME + " \n" +
         "set \n" +
-        "  " + EMAIL_COLUMN + " = $1,\n" +
+        "  " + EMAIL_ADDRESS_COLUMN + " = $1,\n" +
         "  " + DATA_COLUMN + " = $2,\n" +
         "  " + MODIFICATION_TIME_COLUMN + " = $3\n" +
         "where\n" +
@@ -294,7 +294,7 @@ public class UserProvider {
       "  " + DATA_COLUMN + " = $1,\n" +
       "  " + MODIFICATION_TIME_COLUMN + " = $2\n" +
       "where\n" +
-      "  " + EMAIL_COLUMN + "= $3\n" +
+      "  " + EMAIL_ADDRESS_COLUMN + "= $3\n" +
       "AND " + REALM_COLUMN + " = $4\n" +
       "RETURNING " + ID_COLUMN;
     String dataJsonString = this.toDatabaseJsonString(user);
@@ -328,7 +328,7 @@ public class UserProvider {
     String searchTermFiltering = "";
     Tuple parametersTuples = Tuple.of(realm.getLocalId(), pageSize, pageId, pageSize, pageId + 1);
     if (searchTerm != null && !searchTerm.trim().isEmpty()) {
-      searchTermFiltering = " AND " + EMAIL_COLUMN + " like $6";
+      searchTermFiltering = " AND " + EMAIL_ADDRESS_COLUMN + " like $6";
       parametersTuples.addString("%" + searchTerm + "%");
     }
     String sql = "select *" +
@@ -410,7 +410,7 @@ public class UserProvider {
         user.setLocalId(id);
         user.setRealm(realm);
         this.updateGuid(user);
-        user.setEmailAddress(row.getString(EMAIL_COLUMN));
+        user.setEmailAddress(row.getString(EMAIL_ADDRESS_COLUMN));
         Integer status = row.getInteger(STATUS_COLUMN);
         if (status == null) {
           status = 0;
@@ -489,7 +489,7 @@ public class UserProvider {
 
     String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
       " WHERE " +
-      EMAIL_COLUMN + " = $1\n" +
+      EMAIL_ADDRESS_COLUMN + " = $1\n" +
       " AND " + REALM_COLUMN + " = $2";
     String lowerCaseEmailAddress = userEmail.toNormalizedString();
 
@@ -687,7 +687,7 @@ public class UserProvider {
 
     String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
       " WHERE " +
-      EMAIL_COLUMN + " = $1\n" +
+      EMAIL_ADDRESS_COLUMN + " = $1\n" +
       " AND " + REALM_COLUMN + " = $2" +
       " AND " + PASSWORD_COLUMN + " = $3";
     return jdbcPool.preparedQuery(sql)
