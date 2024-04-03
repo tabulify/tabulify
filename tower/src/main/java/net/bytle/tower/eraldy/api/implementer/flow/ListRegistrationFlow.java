@@ -206,7 +206,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
             String text = letter.generatePlainText();
 
             String mailSubject = "Registration validation to the list `" + listItem.getName() + "`";
-            TowerSmtpClient towerSmtpClient = this.getApp().getHttpServer().getServer().getSmtpClient();
+            TowerSmtpClientService towerSmtpClientService = this.getApp().getHttpServer().getServer().getSmtpClient();
 
             String ownerEmailAddressInRfcFormat;
             try {
@@ -232,10 +232,10 @@ public class ListRegistrationFlow extends WebFlowAbs {
               );
             }
 
-            MailClient mailClientForListOwner = towerSmtpClient
+            MailClient mailClientForListOwner = towerSmtpClientService
               .getVertxMailClientForSenderWithSigning(listOwnerUser.getEmailAddress());
 
-            MailMessage registrationEmail = towerSmtpClient
+            MailMessage registrationEmail = towerSmtpClientService
               .createVertxMailMessage()
               .setTo(subscriberAddressWithName)
               .setFrom(ownerEmailAddressInRfcFormat)
@@ -251,7 +251,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
                 // Send feedback to the list owner
                 String title = "The user (" + subscriberAddressWithName + ") received a validation email for the list (" + listItem.getHandle() + ").";
-                MailMessage ownerFeedbackEmail = towerSmtpClient
+                MailMessage ownerFeedbackEmail = towerSmtpClientService
                   .createVertxMailMessage()
                   .setTo(ownerEmailAddressInRfcFormat)
                   .setFrom(ownerEmailAddressInRfcFormat)

@@ -65,7 +65,7 @@ public class Server {
   private JsonToken jsonToken;
   private TowerFailureHandler failureHandler;
   private AnalyticsTracker analyticsTracker;
-  private TowerSmtpClient smtpClient;
+  private TowerSmtpClientService smtpClient;
   private MapDb mapDb;
   private final Set<TowerService> services = new HashSet<>();
   private TowerDnsClient dnsClient;
@@ -192,7 +192,7 @@ public class Server {
     return this.analyticsTracker;
   }
 
-  public TowerSmtpClient getSmtpClient() {
+  public TowerSmtpClientService getSmtpClient() {
     if (this.smtpClient == null) {
       throw new InternalException("Smtp Client is not enabled");
     }
@@ -388,7 +388,7 @@ public class Server {
       if (this.smtpClientUserAgentName != null) {
         LOGGER.info("Smtp Client Enabled: Start Instantiation of Email Engine");
         BMailSmtpConnectionParameters mailSmtpParameterFromConfig = ConfigMailSmtpParameters.createFromConfigAccessor(configAccessor);
-        server.smtpClient = TowerSmtpClient
+        server.smtpClient = TowerSmtpClientService
           .config(this.smtpClientUserAgentName, server, mailSmtpParameterFromConfig)
           .create();
         Log4jConfigure.configureOnVertxInit(mailSmtpParameterFromConfig);

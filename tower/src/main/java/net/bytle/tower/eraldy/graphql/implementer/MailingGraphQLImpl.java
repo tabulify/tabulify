@@ -4,8 +4,10 @@ import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.idl.RuntimeWiring;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
@@ -15,6 +17,10 @@ import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.objectProvider.MailingProvider;
 import net.bytle.tower.util.Guid;
+import net.bytle.type.EmailAddress;
+import net.bytle.type.EmailCastException;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerSmtpClientService;
 
 import java.util.List;
 import java.util.Map;
@@ -63,7 +69,48 @@ public class MailingGraphQLImpl {
         newTypeWiring("Mailing")
           .dataFetcher("emailRecipientList", this::getMailingRecipientList)
           .build()
+      )
+      .type(
+        newTypeWiring("Mutation")
+          .dataFetcher("mailingSendTestEmail", this::sendTestEmail)
+          .build()
       );
+  }
+
+  private Future<Boolean> sendTestEmail(DataFetchingEnvironment dataFetchingEnvironment) {
+    String guid = dataFetchingEnvironment.getArgument("guid");
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return mailingProvider.getByGuidRequestHandler(guid, routingContext, AuthUserScope.MAILING_SEND_TEST_EMAIL)
+      .compose(mailing -> this.app.getMailingProvider().getEmailAuthorAtRequestTime(mailing)
+        .compose(emailAuthor -> {
+
+          TowerSmtpClientService smtpClientService = this.app.getEmailSmtpClientService();
+          String emailAddressAsString = emailAuthor.getEmailAddress();
+          EmailAddress emailAddress;
+          try {
+            emailAddress = new EmailAddress(emailAddressAsString);
+          } catch (EmailCastException e) {
+            return Future.failedFuture(new InternalException("The email (" + emailAddressAsString + ") of the author is invalid", e));
+          }
+
+          MailMessage email = smtpClientService.createVertxMailMessage()
+            .setTo(emailAddressAsString)
+            .setFrom(emailAddressAsString)
+            .setSubject(mailing.getEmailSubject())
+            .setText(mailing.getEmailBody());
+
+          return smtpClientService
+            .getVertxMailClientForSenderWithSigning(emailAddress.getDomainName().toStringWithoutRoot())
+            .sendMail(email)
+            .recover(t -> Future.failedFuture(
+              TowerFailureException.builder()
+                .setMessage("Error while sending the test email. Message: " + t.getMessage())
+                .setCauseException(t)
+                .build()
+            ))
+            .compose(mailResult -> Future.succeededFuture(true));
+
+        }));
   }
 
 

@@ -140,9 +140,9 @@ public class UserRegistrationFlow extends WebFlowAbs {
         String text = letter.generatePlainText();
 
         String mailSubject = "Registration to " + realmNameOrHandle;
-        TowerSmtpClient towerSmtpClient = this.getApp().getHttpServer().getServer().getSmtpClient();
+        TowerSmtpClientService towerSmtpClientService = this.getApp().getHttpServer().getServer().getSmtpClient();
 
-        MailClient mailClientForListOwner = towerSmtpClient
+        MailClient mailClientForListOwner = towerSmtpClientService
           .getVertxMailClientForSenderWithSigning(realmOwnerSender.getEmail());
 
         String newUserAddressInRfcFormat;
@@ -172,7 +172,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           );
         }
 
-        MailMessage registrationEmail = towerSmtpClient
+        MailMessage registrationEmail = towerSmtpClientService
           .createVertxMailMessage()
           .setTo(newUserAddressInRfcFormat)
           .setFrom(senderEmailInRfc)
@@ -187,7 +187,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
 
             // Send feedback to the list owner
             String title = "The user (" + newUser.getEmailAddress() + ") received a registration email for the realm (" + realm.getHandle() + ").";
-            MailMessage ownerFeedbackEmail = towerSmtpClient
+            MailMessage ownerFeedbackEmail = towerSmtpClientService
               .createVertxMailMessage()
               .setTo(senderEmailInRfc)
               .setFrom(senderEmailInRfc)

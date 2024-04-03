@@ -137,7 +137,7 @@ public class EmailLoginFlow extends WebFlowAbs {
         String text = letter.generatePlainText();
 
         String mailSubject = "Login to " + realmNameOrHandle;
-        TowerSmtpClient towerSmtpClient = this.getApp().getHttpServer().getServer().getSmtpClient();
+        TowerSmtpClientService towerSmtpClientService = this.getApp().getHttpServer().getServer().getSmtpClient();
 
         String recipientEmailAddressInRfcFormat;
         try {
@@ -164,10 +164,10 @@ public class EmailLoginFlow extends WebFlowAbs {
           );
         }
 
-        MailClient mailClientForListOwner = towerSmtpClient
+        MailClient mailClientForListOwner = towerSmtpClientService
           .getVertxMailClientForSenderWithSigning(sender.getEmail());
 
-        MailMessage registrationEmail = towerSmtpClient
+        MailMessage registrationEmail = towerSmtpClientService
           .createVertxMailMessage()
           .setTo(recipientEmailAddressInRfcFormat)
           .setFrom(senderEmailAddressInRfcFormat)
@@ -182,7 +182,7 @@ public class EmailLoginFlow extends WebFlowAbs {
 
             // Send feedback to the list owner
             String title = "The user (" + modelUserToLogin.getEmailAddress() + ") received a login email for the realm (" + modelUserToLogin.getRealm().getHandle() + ").";
-            MailMessage ownerFeedbackEmail = towerSmtpClient
+            MailMessage ownerFeedbackEmail = towerSmtpClientService
               .createVertxMailMessage()
               .setTo(senderEmailAddressInRfcFormat)
               .setFrom(senderEmailAddressInRfcFormat)

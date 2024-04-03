@@ -181,4 +181,8 @@ type Mutation {
   mailingUpdate(guid: ID!, props:MailingInput!): Mailing
   """Create a mailing"""
   mailingCreate(listGuid: ID!, props:MailingInput): Mailing
+  """Send a test email for the mailing"""
+  mailingSendTestEmail(guid: ID!): Boolean
+  """Schedule the mailing"""
+  mailingSchedule(guid: ID!): Boolean
 }

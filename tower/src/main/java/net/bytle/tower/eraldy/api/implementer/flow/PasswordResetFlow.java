@@ -135,7 +135,7 @@ public class PasswordResetFlow extends WebFlowAbs {
             String text = letter.generatePlainText();
 
             String mailSubject = "Password reset on " + realmNameOrHandle;
-            TowerSmtpClient towerSmtpClient = this.getApp().getHttpServer().getServer().getSmtpClient();
+            TowerSmtpClientService towerSmtpClientService = this.getApp().getHttpServer().getServer().getSmtpClient();
 
             String recipientEmailAddressInRfcFormat;
             try {
@@ -160,10 +160,10 @@ public class PasswordResetFlow extends WebFlowAbs {
               );
             }
 
-            MailClient mailClientForListOwner = towerSmtpClient
+            MailClient mailClientForListOwner = towerSmtpClientService
               .getVertxMailClientForSenderWithSigning(sender.getEmail());
 
-            MailMessage registrationEmail = towerSmtpClient
+            MailMessage registrationEmail = towerSmtpClientService
               .createVertxMailMessage()
               .setTo(recipientEmailAddressInRfcFormat)
               .setFrom(senderEmail)
@@ -178,7 +178,7 @@ public class PasswordResetFlow extends WebFlowAbs {
 
                 // Send feedback to the list owner
                 String title = "The user (" + userToResetPassword.getEmailAddress() + ") received a password reset email for the realm (" + userToResetPassword.getRealm().getHandle() + ").";
-                MailMessage ownerFeedbackEmail = towerSmtpClient
+                MailMessage ownerFeedbackEmail = towerSmtpClientService
                   .createVertxMailMessage()
                   .setTo(senderEmail)
                   .setFrom(senderEmail)

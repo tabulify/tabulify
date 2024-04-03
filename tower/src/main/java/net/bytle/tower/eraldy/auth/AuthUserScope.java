@@ -23,7 +23,8 @@ public enum AuthUserScope {
   MAILING_GET("get a mailing", false),
   MAILINGS_LIST_GET("get the mailings for a list", false),
   MAILING_UPDATE("update of mailing", false),
-  MAILING_CREATE("create a mailing", false);
+  MAILING_CREATE("create a mailing", false),
+  MAILING_SEND_TEST_EMAIL("send a test email", false);
 
 
   private final String humanActionName;

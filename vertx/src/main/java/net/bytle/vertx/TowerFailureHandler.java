@@ -14,7 +14,7 @@ public class TowerFailureHandler implements Handler<Throwable> {
 
   private final Counter failureCounter;
 
-  private final TowerSmtpClient mailProvider;
+  private final TowerSmtpClientService mailProvider;
 
   public TowerFailureHandler(Server server) {
 

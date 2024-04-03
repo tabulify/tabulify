@@ -480,4 +480,7 @@ public class EraldyApiApp extends TowerApp  {
     return this.fileProvider;
   }
 
+  public TowerSmtpClientService getEmailSmtpClientService() {
+    return this.getHttpServer().getServer().getSmtpClient();
+  }
 }

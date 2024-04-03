@@ -37,9 +37,9 @@ import static net.bytle.email.BMailMimeMessageHeader.X_REPORT_ABUSE_TO;
  * // List-Unsubscribe: <https://yj227.infusionsoft.com/app/optOut/noConfirm/123594159/cc0796985bd11722>, <mailto:unsubscribe-yj227-1867071-129101-123594159-value@infusionmail.com>
  * </code>
  */
-public class TowerSmtpClient {
+public class TowerSmtpClientService {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(TowerSmtpClient.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(TowerSmtpClientService.class);
 
   /**
    * example of generated message id: combostrap_70165127_1668601688544_0
@@ -71,7 +71,7 @@ public class TowerSmtpClient {
   private MailClient wiserMailClient;
 
 
-  public TowerSmtpClient(MailServiceSmtpProviderConfig providerConfig) {
+  public TowerSmtpClientService(MailServiceSmtpProviderConfig providerConfig) {
     this.providerConfig = providerConfig;
   }
 
@@ -221,7 +221,7 @@ public class TowerSmtpClient {
     return vertxMailConfig;
   }
 
-  public TowerSmtpClient useWiserSmtpServerAsSmtpDestination(Boolean b) {
+  public TowerSmtpClientService useWiserSmtpServerAsSmtpDestination(Boolean b) {
     this.useWiserAsTransactionalClient = b;
     return this;
   }
@@ -270,9 +270,9 @@ public class TowerSmtpClient {
       this.userAgentName = userAgentName;
     }
 
-    public TowerSmtpClient create() {
+    public TowerSmtpClientService create() {
 
-      return new TowerSmtpClient(this);
+      return new TowerSmtpClientService(this);
 
     }
 

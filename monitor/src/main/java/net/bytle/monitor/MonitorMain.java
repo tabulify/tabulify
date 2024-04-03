@@ -10,7 +10,7 @@ import net.bytle.email.BMailMimeMessage;
 import net.bytle.ovh.OvhApiClient;
 import net.bytle.vertx.ConfigManager;
 import net.bytle.vertx.Server;
-import net.bytle.vertx.TowerSmtpClient;
+import net.bytle.vertx.TowerSmtpClientService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -59,7 +59,7 @@ public class MonitorMain extends AbstractVerticle {
             .build();
 
           LOGGER.info("Monitor Config");
-          TowerSmtpClient smtpMailProvider = server.getSmtpClient();
+          TowerSmtpClientService smtpMailProvider = server.getSmtpClient();
 
           List<MonitorReport> monitorReports = new ArrayList<>();
           LOGGER.info("Monitor Starting the API Token check");
