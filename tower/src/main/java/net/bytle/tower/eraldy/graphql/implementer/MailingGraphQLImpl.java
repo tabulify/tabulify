@@ -18,6 +18,7 @@ import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.objectProvider.MailingProvider;
 import net.bytle.tower.util.Guid;
+import net.bytle.tower.util.RichSlateAST;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
 import net.bytle.vertx.TowerFailureException;
@@ -113,11 +114,24 @@ public class MailingGraphQLImpl {
             return Future.failedFuture(new InternalException("The email (" + inputEmailAddress + ") of the recipient is invalid", e));
           }
 
+
+          String emailSubject = mailing.getEmailSubject();
+          if (emailSubject == null) {
+            emailSubject = "Test email of the mailing " + mailing.getName();
+          }
           MailMessage email = smtpClientService.createVertxMailMessage()
             .setTo(recipientEmailAddress.toNormalizedString())
             .setFrom(authorEmailAddress.toNormalizedString())
-            .setSubject(mailing.getEmailSubject())
-            .setText(mailing.getEmailBody());
+            .setSubject(emailSubject);
+
+          String mailBody = mailing.getEmailBody();
+
+          if (mailBody != null) {
+            RichSlateAST richSlateAST = RichSlateAST.ofJsonString(mailBody);
+            String html = richSlateAST.toEmailHTML();
+            email.setHtml(html);
+            email.setText(mailBody);
+          }
 
           return smtpClientService
             .getVertxMailClientForSenderWithSigning(recipientEmailAddress.getDomainName().toStringWithoutRoot())
