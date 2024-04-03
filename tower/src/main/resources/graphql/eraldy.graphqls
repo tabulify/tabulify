@@ -166,6 +166,12 @@ input MailingInput {
   status: Int
 }
 
+"""Input to send a test email address"""
+input MailingInputTestEmail {
+  """The email address where to send the test email"""
+  recipientEmailAddress: String!
+}
+
 
 type Query {
 #  We follow the requested data. If you want a mailing, search for a mailing function
@@ -182,7 +188,7 @@ type Mutation {
   """Create a mailing"""
   mailingCreate(listGuid: ID!, props:MailingInput): Mailing
   """Send a test email for the mailing"""
-  mailingSendTestEmail(guid: ID!): Boolean
+  mailingSendTestEmail(guid: ID!, props: MailingInputTestEmail!): Boolean
   """Schedule the mailing"""
   mailingSchedule(guid: ID!): Boolean
 }

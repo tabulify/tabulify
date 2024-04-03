@@ -12,6 +12,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputProps;
+import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputTestEmail;
 import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
@@ -80,27 +81,46 @@ public class MailingGraphQLImpl {
   private Future<Boolean> sendTestEmail(DataFetchingEnvironment dataFetchingEnvironment) {
     String guid = dataFetchingEnvironment.getArgument("guid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    Map<String, Object> mappingPropsMap = dataFetchingEnvironment.getArgument("props");
+    // Type safe (if null, the value was not passed)
+    MailingInputTestEmail mailingInputProps = new JsonObject(mappingPropsMap).mapTo(MailingInputTestEmail.class);
+
     return mailingProvider.getByGuidRequestHandler(guid, routingContext, AuthUserScope.MAILING_SEND_TEST_EMAIL)
       .compose(mailing -> this.app.getMailingProvider().getEmailAuthorAtRequestTime(mailing)
         .compose(emailAuthor -> {
 
           TowerSmtpClientService smtpClientService = this.app.getEmailSmtpClientService();
-          String emailAddressAsString = emailAuthor.getEmailAddress();
-          EmailAddress emailAddress;
+
+          /**
+           * Author
+           */
+          String authorEmailAsString = emailAuthor.getEmailAddress();
+          EmailAddress authorEmailAddress;
           try {
-            emailAddress = new EmailAddress(emailAddressAsString);
+            authorEmailAddress = new EmailAddress(authorEmailAsString);
           } catch (EmailCastException e) {
-            return Future.failedFuture(new InternalException("The email (" + emailAddressAsString + ") of the author is invalid", e));
+            return Future.failedFuture(new InternalException("The email (" + authorEmailAsString + ") of the author is invalid", e));
+          }
+
+          /**
+           * Recipient
+           */
+          String inputEmailAddress = mailingInputProps.getRecipientEmailAddress();
+          EmailAddress recipientEmailAddress;
+          try {
+            recipientEmailAddress = new EmailAddress(inputEmailAddress);
+          } catch (EmailCastException e) {
+            return Future.failedFuture(new InternalException("The email (" + inputEmailAddress + ") of the recipient is invalid", e));
           }
 
           MailMessage email = smtpClientService.createVertxMailMessage()
-            .setTo(emailAddressAsString)
-            .setFrom(emailAddressAsString)
+            .setTo(recipientEmailAddress.toNormalizedString())
+            .setFrom(authorEmailAddress.toNormalizedString())
             .setSubject(mailing.getEmailSubject())
             .setText(mailing.getEmailBody());
 
           return smtpClientService
-            .getVertxMailClientForSenderWithSigning(emailAddress.getDomainName().toStringWithoutRoot())
+            .getVertxMailClientForSenderWithSigning(recipientEmailAddress.getDomainName().toStringWithoutRoot())
             .sendMail(email)
             .recover(t -> Future.failedFuture(
               TowerFailureException.builder()
