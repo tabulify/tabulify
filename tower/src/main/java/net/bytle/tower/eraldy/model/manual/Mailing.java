@@ -22,11 +22,13 @@ public class Mailing   {
 
   protected String name;
 
-  protected Long emailFileId;
+  protected String emailSubject;
+  protected String emailBody;
+  protected String emailPreview;
 
   protected OrganizationUser emailAuthor;
 
-  protected ListObject recipientList;
+  protected ListObject emailRecipientList;
 
   protected Status status;
 
@@ -94,19 +96,51 @@ public class Mailing   {
   }
 
   /**
-  * @return emailFileId The email file id (body, subject, preview)
+  * @return emailSubject The email subject
   */
-  @JsonProperty("emailFileId")
-  public Long getEmailFileId() {
-    return emailFileId;
+  @JsonProperty("emailSubject")
+  public String getEmailSubject() {
+    return emailSubject;
   }
 
   /**
-  * @param emailFileId The email file id (body, subject, preview)
+  * @param emailSubject The email subject
   */
   @SuppressWarnings("unused")
-  public void setEmailFileId(Long emailFileId) {
-    this.emailFileId = emailFileId;
+  public void setEmailSubject(String emailSubject) {
+    this.emailSubject = emailSubject;
+  }
+
+  /**
+   * @return emailBody The email body
+   */
+  @JsonProperty("emailBody")
+  public String getEmailBody() {
+    return emailBody;
+  }
+
+  /**
+   * @param emailBody The email subject
+   */
+  @SuppressWarnings("unused")
+  public void setEmailBody(String emailBody) {
+    this.emailBody = emailBody;
+  }
+
+  /**
+   * @return emailPreview The email preview
+   */
+  @JsonProperty("emailPreview")
+  public String getEmailPreview() {
+    return emailPreview;
+  }
+
+  /**
+   * @param emailPreview The email subject
+   */
+  @SuppressWarnings("unused")
+  public void setEmailPreview(String emailPreview) {
+    this.emailPreview = emailPreview;
   }
 
   /**
@@ -129,16 +163,16 @@ public class Mailing   {
   * @return recipientList
   */
   @JsonProperty("recipientList")
-  public ListObject getRecipientList() {
-    return recipientList;
+  public ListObject getEmailRecipientList() {
+    return emailRecipientList;
   }
 
   /**
-  * @param recipientList Set recipientList
+  * @param emailRecipientList Set recipientList
   */
   @SuppressWarnings("unused")
-  public void setRecipientList(ListObject recipientList) {
-    this.recipientList = recipientList;
+  public void setEmailRecipientList(ListObject emailRecipientList) {
+    this.emailRecipientList = emailRecipientList;
   }
 
   /**

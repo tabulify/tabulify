@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.model.openapi;
+package net.bytle.tower.eraldy.model.manual;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,9 +27,9 @@ public class FileObject   {
 
   protected String logicalType;
 
-  protected FileObject parentFile;
+  protected Long parentFile;
 
-  protected Drive drive;
+  protected FileDrive fileDrive;
 
   protected LocalDateTime creationTime;
 
@@ -159,33 +159,33 @@ public class FileObject   {
   /**
   * @return parentFile
   */
-  @JsonProperty("parentFile")
-  public FileObject getParentFile() {
+  @JsonProperty("parentFileId")
+  public Long getParentFileId() {
     return parentFile;
   }
 
   /**
-  * @param parentFile Set parentFile
+  * @param parentFileId Set parentFileId
   */
   @SuppressWarnings("unused")
-  public void setParentFile(FileObject parentFile) {
-    this.parentFile = parentFile;
+  public void setParentFileId(Long parentFileId) {
+    this.parentFile = parentFileId;
   }
 
   /**
   * @return drive
   */
   @JsonProperty("drive")
-  public Drive getDrive() {
-    return drive;
+  public FileDrive getDrive() {
+    return fileDrive;
   }
 
   /**
-  * @param drive Set drive
+  * @param fileDrive Set drive
   */
   @SuppressWarnings("unused")
-  public void setDrive(Drive drive) {
-    this.drive = drive;
+  public void setDrive(FileDrive fileDrive) {
+    this.fileDrive = fileDrive;
   }
 
   /**
@@ -232,12 +232,12 @@ public class FileObject   {
     FileObject fileObject = (FileObject) o;
     return
 
-            Objects.equals(localId, fileObject.localId) && Objects.equals(guid, fileObject.guid) && Objects.equals(name, fileObject.name) && Objects.equals(fullPath, fileObject.fullPath) && Objects.equals(fileType, fileObject.fileType) && Objects.equals(mediaType, fileObject.mediaType) && Objects.equals(logicalType, fileObject.logicalType) && Objects.equals(parentFile, fileObject.parentFile) && Objects.equals(drive, fileObject.drive) && Objects.equals(creationTime, fileObject.creationTime) && Objects.equals(modificationTime, fileObject.modificationTime);
+            Objects.equals(localId, fileObject.localId) && Objects.equals(guid, fileObject.guid) && Objects.equals(name, fileObject.name) && Objects.equals(fullPath, fileObject.fullPath) && Objects.equals(fileType, fileObject.fileType) && Objects.equals(mediaType, fileObject.mediaType) && Objects.equals(logicalType, fileObject.logicalType) && Objects.equals(parentFile, fileObject.parentFile) && Objects.equals(fileDrive, fileObject.fileDrive) && Objects.equals(creationTime, fileObject.creationTime) && Objects.equals(modificationTime, fileObject.modificationTime);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(localId, guid, name, fullPath, fileType, mediaType, logicalType, parentFile, drive, creationTime, modificationTime);
+    return Objects.hash(localId, guid, name, fullPath, fileType, mediaType, logicalType, parentFile, fileDrive, creationTime, modificationTime);
   }
 
   @Override

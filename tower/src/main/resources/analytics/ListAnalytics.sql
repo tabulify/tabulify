@@ -17,10 +17,10 @@ from (select realm_list.list_id,
                              on realm_list.list_realm_id = userCount.list_user_realm_id
                                and realm_list.list_id = userCount.list_user_list_id
              LEFT OUTER JOIN (select mailing_realm_id
-                                   , mailing_rcpt_list_id
-                                   , count(*)                                          as mailingCount
+                                   , mailing_email_rcpt_list_id
+                                   , count(*)                                        as mailingCount
                               from realm_mailing
-                              group by mailing_realm_id, mailing_rcpt_list_id) as mailingCount
+                              group by mailing_realm_id, mailing_email_rcpt_list_id) as mailingCount
                              on realm_list.list_realm_id = userCount.list_user_realm_id
                                and realm_list.list_id = userCount.list_user_list_id) as analytics
 WHERE realm_list.list_id = analytics.list_id

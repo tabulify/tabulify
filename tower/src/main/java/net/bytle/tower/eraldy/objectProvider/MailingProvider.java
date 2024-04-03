@@ -43,15 +43,17 @@ public class MailingProvider {
 
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String MAILING_PREFIX = "mailing";
-  public static final String LIST_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "rcpt" + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN;
+  public static final String EMAIL_RCPT_LIST_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "email_rcpt" + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN;
 
   private static final String MAILING_ORGA_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN;
-  public static final String MAILING_AUTHOR_USER_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "author" + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
+  public static final String MAILING_EMAIL_AUTHOR_USER_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "email_author" + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   static final String MAILING_ID_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "id";
   static final String MAILING_NAME_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "name";
   private static final String MAILING_REALM_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
   private static final String MAILING_STATUS_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "status";
-  private static final String MAILING_EMAIL_FILE_ID_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + "email_file_id";
+  private static final String MAILING_EMAIL_SUBJECT = MAILING_PREFIX + COLUMN_PART_SEP + "email_subject";
+  private static final String MAILING_EMAIL_PREVIEW = MAILING_PREFIX + COLUMN_PART_SEP + "email_preview";
+  private static final String MAILING_EMAIL_BODY = MAILING_PREFIX + COLUMN_PART_SEP + "email_body";
   static final String MAILING_GUID_PREFIX = "mai";
   private final EraldyApiApp apiApp;
 
@@ -107,7 +109,7 @@ public class MailingProvider {
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(TowerFailureException.builder()
-            .setMessage("The realm of the list ("+listGuid+") was not found")
+            .setMessage("The realm of the list (" + listGuid + ") was not found")
             .setType(TowerFailureTypeEnum.NOT_FOUND_404)
             .build()
           );
@@ -119,7 +121,7 @@ public class MailingProvider {
 
         if (list == null) {
           return Future.failedFuture(TowerFailureException.builder()
-            .setMessage("The list ("+listGuid+") was not found")
+            .setMessage("The list (" + listGuid + ") was not found")
             .setType(TowerFailureTypeEnum.NOT_FOUND_404)
             .build()
           );
@@ -129,9 +131,9 @@ public class MailingProvider {
           "  " + MAILING_REALM_COLUMN + ",\n" +
           "  " + MAILING_ID_COLUMN + ",\n" +
           "  " + MAILING_NAME_COLUMN + ",\n" +
-          "  " + LIST_COLUMN + ",\n" +
+          "  " + EMAIL_RCPT_LIST_COLUMN + ",\n" +
           "  " + MAILING_ORGA_COLUMN + ",\n" +
-          "  " + MAILING_AUTHOR_USER_COLUMN + ",\n" +
+          "  " + MAILING_EMAIL_AUTHOR_USER_COLUMN + ",\n" +
           "  " + MAILING_CREATION_COLUMN + ",\n" +
           "  " + MAILING_STATUS_COLUMN + "\n" +
           "  )\n" +
@@ -152,7 +154,7 @@ public class MailingProvider {
                   name = "Mailing of " + LocalDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_DATE);
                 }
                 mailing.setName(name);
-                mailing.setRecipientList(list);
+                mailing.setEmailRecipientList(list);
                 OrganizationUser ownerUser = ListProvider.getOwnerUser(list);
                 mailing.setEmailAuthor(ownerUser);
 
@@ -162,7 +164,7 @@ public class MailingProvider {
                     mailing.getRealm().getLocalId(),
                     mailing.getLocalId(),
                     mailing.getName(),
-                    mailing.getRecipientList().getLocalId(),
+                    mailing.getEmailRecipientList().getLocalId(),
                     mailing.getEmailAuthor().getOrganization().getLocalId(),
                     mailing.getEmailAuthor().getLocalId(),
                     DateTimeUtil.getNowInUtc(),
@@ -220,8 +222,10 @@ public class MailingProvider {
         mailing.setCreationTime(row.getLocalDateTime(MAILING_CREATION_COLUMN));
         mailing.setModificationTime(row.getLocalDateTime(MAILING_MODIFICATION_COLUMN));
 
-        // Email has file
-        mailing.setEmailFileId(row.getLong(MAILING_EMAIL_FILE_ID_COLUMN));
+
+        mailing.setEmailSubject(row.getString(MAILING_EMAIL_SUBJECT));
+        mailing.setEmailPreview(row.getString(MAILING_EMAIL_PREVIEW));
+        mailing.setEmailBody(row.getString(MAILING_EMAIL_BODY));
 
         /**
          * Orga User
@@ -231,7 +235,7 @@ public class MailingProvider {
          */
         Long orgaId = row.getLong(MAILING_ORGA_COLUMN);
         assert Objects.equals(realm.getOrganization().getLocalId(), orgaId);
-        Long userId = row.getLong(MAILING_AUTHOR_USER_COLUMN);
+        Long userId = row.getLong(MAILING_EMAIL_AUTHOR_USER_COLUMN);
         OrganizationUser authorUser = new OrganizationUser();
         authorUser.setLocalId(userId);
         authorUser.setRealm(realm);
@@ -243,11 +247,11 @@ public class MailingProvider {
          * (In graphQl, by the function that is mapped to the type)
          * {@link net.bytle.tower.eraldy.graphql.implementer.MailingGraphQLImpl#getMailingRecipientList(DataFetchingEnvironment)}
          */
-        Long listId = row.getLong(LIST_COLUMN);
+        Long listId = row.getLong(EMAIL_RCPT_LIST_COLUMN);
         ListObject recipientList = new ListObject();
         recipientList.setLocalId(listId);
         recipientList.setRealm(realm);
-        mailing.setRecipientList(recipientList);
+        mailing.setEmailRecipientList(recipientList);
 
         return Future.succeededFuture(mailing);
 
@@ -259,7 +263,7 @@ public class MailingProvider {
   }
 
   public Future<List<Mailing>> getMailingsByListWithLocalId(long listId, Long realmId) {
-    final String sql = "select * from " + FULL_QUALIFIED_TABLE_NAME + " where " + LIST_COLUMN + " = $1 and " + MAILING_REALM_COLUMN + " = $2";
+    final String sql = "select * from " + FULL_QUALIFIED_TABLE_NAME + " where " + EMAIL_RCPT_LIST_COLUMN + " = $1 and " + MAILING_REALM_COLUMN + " = $2";
     Tuple tuple = Tuple.of(listId, realmId);
     return this.jdbcPool
       .preparedQuery(sql)
@@ -295,7 +299,7 @@ public class MailingProvider {
   public Future<Mailing> updateMailingRequestHandler(String mailingGuidIdentifier, MailingInputProps mailingInputProps, RoutingContext routingContext) {
 
 
-    return this.getByGuidRequestHandler( mailingGuidIdentifier, routingContext, AuthUserScope.MAILING_UPDATE)
+    return this.getByGuidRequestHandler(mailingGuidIdentifier, routingContext, AuthUserScope.MAILING_UPDATE)
       .compose(mailing -> {
 
         if (mailing == null) {
@@ -308,12 +312,27 @@ public class MailingProvider {
 
         /**
          * Patch implementation
-         * We support for now only name and author
          */
         String newName = mailingInputProps.getName();
         if (newName != null) {
           mailing.setName(newName);
         }
+
+        String subject = mailingInputProps.getEmailSubject();
+        if (subject != null) {
+          mailing.setEmailSubject(subject);
+        }
+
+        String preview = mailingInputProps.getEmailPreview();
+        if (preview != null) {
+          mailing.setEmailPreview(preview);
+        }
+
+        String body = mailingInputProps.getEmailBody();
+        if (body != null) {
+          mailing.setEmailBody(body);
+        }
+
         String newAuthorGuid = mailingInputProps.getEmailAuthorGuid();
         Future<OrganizationUser> newAuthorFuture;
         if (newAuthorGuid != null) {
@@ -326,17 +345,23 @@ public class MailingProvider {
           mailing.setEmailAuthor(newAuthor);
           final String sql = "update " + FULL_QUALIFIED_TABLE_NAME + " set \n"
             + MAILING_NAME_COLUMN + " = $1,\n"
-            + MAILING_AUTHOR_USER_COLUMN + " = $2,\n"
+            + MAILING_EMAIL_AUTHOR_USER_COLUMN + " = $2,\n"
             + MAILING_ORGA_COLUMN + " = $3,\n"
-            + MAILING_MODIFICATION_COLUMN + " = $4\n"
+            + MAILING_EMAIL_SUBJECT + " = $4,\n"
+            + MAILING_EMAIL_PREVIEW + " = $5,\n"
+            + MAILING_EMAIL_BODY + " = $6,\n"
+            + MAILING_MODIFICATION_COLUMN + " = $7\n"
             + "where\n"
-            + MAILING_ID_COLUMN + " = $5\n" +
-            " and " + MAILING_REALM_COLUMN + " = $6\n"
+            + MAILING_ID_COLUMN + " = $8\n" +
+            " and " + MAILING_REALM_COLUMN + " = $9\n"
             + "RETURNING " + MAILING_ID_COLUMN; // to check if the update has touched a row
           Tuple tuple = Tuple.of(
             mailing.getName(),
             mailing.getEmailAuthor().getLocalId(),
             mailing.getEmailAuthor().getOrganization().getLocalId(),
+            mailing.getEmailSubject(),
+            mailing.getEmailPreview(),
+            mailing.getEmailBody(),
             DateTimeUtil.getNowInUtc(),
             mailing.getLocalId(),
             mailing.getRealm().getLocalId()

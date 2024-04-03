@@ -350,7 +350,7 @@ public class ListUserProvider {
       sql = "SELECT registration_pages.list_user_creation_time,\n" +
         "       registration_pages.list_user_user_id as user_id,\n" +
         "       registration_pages.list_user_status,\n" +
-        "       realm_user.user_email as user_email\n" +
+        "       realm_user.user_email_address as user_email\n" +
         "FROM (select *\n" +
         "      from (SELECT ROW_NUMBER() OVER (ORDER BY list_user_creation_time DESC) AS rn,\n" +
         "                   *\n" +

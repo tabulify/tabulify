@@ -1,7 +1,9 @@
-package net.bytle.tower.eraldy.model.openapi;
+package net.bytle.tower.eraldy.model.manual;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.model.openapi.App;
+import net.bytle.tower.eraldy.model.openapi.Realm;
 
 import java.util.Objects;
 
@@ -9,7 +11,7 @@ import java.util.Objects;
  * A drive for a file is a container
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Drive   {
+public class FileDrive {
 
 
   protected Long localId;
@@ -28,7 +30,7 @@ public class Drive   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public Drive () {
+  public FileDrive() {
   }
 
   /**
@@ -120,10 +122,10 @@ public class Drive   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    Drive drive = (Drive) o;
+    FileDrive fileDrive = (FileDrive) o;
     return
 
-            Objects.equals(localId, drive.localId) && Objects.equals(guid, drive.guid) && Objects.equals(name, drive.name) && Objects.equals(app, drive.app) && Objects.equals(realm, drive.realm);
+            Objects.equals(localId, fileDrive.localId) && Objects.equals(guid, fileDrive.guid) && Objects.equals(name, fileDrive.name) && Objects.equals(app, fileDrive.app) && Objects.equals(realm, fileDrive.realm);
   }
 
   @Override

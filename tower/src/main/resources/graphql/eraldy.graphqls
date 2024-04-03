@@ -38,19 +38,11 @@ type OrganizationUser implements UserI {
   realm: Realm!
 }
 
-"""
-The email document (ie content)
-"""
-type EmailDoc {
-  subject: String
-  preview: String
-  body: String
-}
 
 """
-The mailing status
+A status
 """
-type MailingStatus {
+type Status {
   """The id"""
   code: Int
   """A short descriptive name"""
@@ -66,34 +58,23 @@ type Mailing {
   """A short descriptive name"""
   name: String
   """The email document"""
-  emailDoc: EmailDoc
+  emailSubject: String
+  """The email preview"""
+  emailPreview: String
+  """The email body"""
+  emailBody: String
   """The recipient list"""
-  recipientList: List
+  emailRecipientList: List
   """The email author"""
   emailAuthor: OrganizationUser
   """The mailing status"""
-  status: MailingStatus
+  status: Status
   """The creation time"""
   creationTime: String @dateFormat
   """The modification time"""
   modificationTime: String @dateFormat
 }
 
-
-"""Information about pagination in a connection."""
-type PageInfo {
-  """When paginating forwards, the cursor to continue."""
-  endCursor: String
-
-  """When paginating forwards, are there more items?"""
-  hasNextPage: Boolean!
-
-  """When paginating backwards, are there more items?"""
-  hasPreviousPage: Boolean!
-
-  """When paginating backwards, the cursor to continue."""
-  startCursor: String
-}
 
 """
 The Organization is the Eraldy client

@@ -10,7 +10,6 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputProps;
-import net.bytle.tower.eraldy.model.manual.EmailDoc;
 import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
@@ -47,7 +46,7 @@ public class MailingGraphQLImpl {
       )
       .type(
         newTypeWiring("Mutation")
-          .dataFetcher("mailingUpdate", this::patchMailing)
+          .dataFetcher("mailingUpdate", this::updateMailing)
           .build()
       )
       .type(
@@ -62,24 +61,11 @@ public class MailingGraphQLImpl {
       )
       .type(
         newTypeWiring("Mailing")
-          .dataFetcher("recipientList", this::getMailingRecipientList)
+          .dataFetcher("emailRecipientList", this::getMailingRecipientList)
           .build()
-      )
-    .type(
-      newTypeWiring("Mailing")
-        .dataFetcher("emailDoc", this::getMailingEmailDoc)
-        .build()
-    );
+      );
   }
 
-  private Future<EmailDoc> getMailingEmailDoc(DataFetchingEnvironment dataFetchingEnvironment) {
-    Mailing mailing = dataFetchingEnvironment.getSource();
-    Long emailFileId = mailing.getEmailFileId();
-    if(emailFileId == null) {
-      return Future.succeededFuture(new EmailDoc());
-    }
-    return Future.succeededFuture(new EmailDoc());
-  }
 
   public Future<Mailing> getMailing(DataFetchingEnvironment dataFetchingEnvironment) {
     String guid = dataFetchingEnvironment.getArgument("guid");
@@ -87,7 +73,7 @@ public class MailingGraphQLImpl {
     return mailingProvider.getByGuidRequestHandler(guid, routingContext, AuthUserScope.MAILING_GET);
   }
 
-  public Future<Mailing> patchMailing(DataFetchingEnvironment dataFetchingEnvironment) {
+  public Future<Mailing> updateMailing(DataFetchingEnvironment dataFetchingEnvironment) {
     String guid = dataFetchingEnvironment.getArgument("guid");
     Map<String, Object> mappingPropsMap = dataFetchingEnvironment.getArgument("props");
     // Type safe (if null, the value was not passed)
@@ -117,7 +103,7 @@ public class MailingGraphQLImpl {
    * List Late Fetch
    */
   public Future<ListObject> getMailingRecipientList(DataFetchingEnvironment dataFetchingEnvironment) {
-    ListObject listObject = ((Mailing) dataFetchingEnvironment.getSource()).getRecipientList();
+    ListObject listObject = ((Mailing) dataFetchingEnvironment.getSource()).getEmailRecipientList();
     String guid = listObject.getGuid();
     if (guid != null) {
       return Future.succeededFuture(listObject);
