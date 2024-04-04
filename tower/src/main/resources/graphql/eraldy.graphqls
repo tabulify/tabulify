@@ -63,6 +63,8 @@ type Mailing {
   emailPreview: String
   """The email body"""
   emailBody: String
+  """The email language"""
+  emailLanguage: String
   """The recipient list"""
   emailRecipientList: List
   """The email author"""

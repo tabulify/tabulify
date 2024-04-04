@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import graphql.schema.DataFetchingEnvironment;
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
@@ -63,7 +64,6 @@ public class MailingProvider {
   private static final String MAILING_CREATION_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private final Pool jdbcPool;
   private final JsonMapper apiMapper;
-
 
 
   public MailingProvider(EraldyApiApp apiApp) {
@@ -229,6 +229,7 @@ public class MailingProvider {
         mailing.setEmailSubject(row.getString(MAILING_EMAIL_SUBJECT));
         mailing.setEmailPreview(row.getString(MAILING_EMAIL_PREVIEW));
         mailing.setEmailBody(row.getString(MAILING_EMAIL_BODY));
+        mailing.setEmailLanguage(row.getString(MAILING_EMAIL_LANGUAGE));
 
         /**
          * Orga User
@@ -338,7 +339,19 @@ public class MailingProvider {
 
         String body = mailingInputProps.getEmailBody();
         if (body != null) {
-          mailing.setEmailBody(body);
+          // It should be a json array because we take Rich Slate AST for now
+          // later it may be HTML, so we check late
+          JsonArray jsonArray;
+          try {
+            jsonArray = new JsonArray(body);
+          } catch (Exception e) {
+            return Future.failedFuture(TowerFailureException.builder()
+              .setMessage("The body is not a valid json")
+              .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+              .build()
+            );
+          }
+          mailing.setEmailBody(jsonArray.toString());
         }
 
         String newAuthorGuid = mailingInputProps.getEmailAuthorGuid();
