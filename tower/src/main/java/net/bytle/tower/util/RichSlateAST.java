@@ -2,6 +2,7 @@ package net.bytle.tower.util;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import net.bytle.java.JavaEnvs;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -68,15 +69,8 @@ public class RichSlateAST {
         return;
       }
       HashMap<String, String> attributes = new HashMap<>();
-      StringBuilder stylesStringBuilder = new StringBuilder();
-      for (Map.Entry<String, String> style : styles.entrySet()) {
-        stylesStringBuilder
-          .append(style.getKey())
-          .append(": ")
-          .append(style.getValue())
-          .append(";");
-      }
-      attributes.put("style", stylesStringBuilder.toString());
+      String style = toHTMLStyleAttribute(styles);
+      attributes.put("style", style);
       addHTMLEnterTag("span", attributes, htmlStringBuilder);
       htmlStringBuilder
         .append(text)
@@ -90,16 +84,16 @@ public class RichSlateAST {
     String htmlTag = tag;
     switch (tag) {
       case "a":
-        Map<String, String> attributes = new HashMap<>();
+        Map<String, String> anchorAttributes = new HashMap<>();
         String url = jsonObject.getString("url");
         if (url != null) {
-          attributes.put("href", url);
+          anchorAttributes.put("href", url);
         }
         String title = jsonObject.getString("title");
         if (title != null) {
-          attributes.put("title", title);
+          anchorAttributes.put("title", title);
         }
-        addHTMLEnterTag(htmlTag, attributes, htmlStringBuilder);
+        addHTMLEnterTag(htmlTag, anchorAttributes, htmlStringBuilder);
         break;
       case "body":
       case "p":
@@ -107,10 +101,22 @@ public class RichSlateAST {
       case "h2":
       case "h3":
       case "h4":
+      case "li":
+      case "ul":
+      case "ol":
         addHTMLEnterTag(tag, new HashMap<>(), htmlStringBuilder);
         break;
       default:
         htmlTag = null;
+        if (JavaEnvs.IS_DEV) {
+          htmlTag = "span";
+          Map<String, String> styles = new HashMap<>();
+          styles.put("color", "red");
+          Map<String, String> unknownTagAttributes = new HashMap<>();
+          unknownTagAttributes.put("style", toHTMLStyleAttribute(styles));
+          addHTMLEnterTag(htmlTag, unknownTagAttributes, htmlStringBuilder);
+          htmlStringBuilder.append("Internal Error: Tag (").append(tag).append(") is unknown. ");
+        }
         break;
     }
 
@@ -129,9 +135,23 @@ public class RichSlateAST {
     /**
      * Close
      */
-    htmlStringBuilder.append("</").append(htmlTag).append(">");
+    if (htmlTag != null) {
+      htmlStringBuilder.append("</").append(htmlTag).append(">");
+    }
 
 
+  }
+
+  private String toHTMLStyleAttribute(Map<String, String> stylesProperties) {
+    StringBuilder stylesStringBuilder = new StringBuilder();
+    for (Map.Entry<String, String> style : stylesProperties.entrySet()) {
+      stylesStringBuilder
+        .append(style.getKey())
+        .append(": ")
+        .append(style.getValue())
+        .append(";");
+    }
+    return stylesStringBuilder.toString();
   }
 
   private void addHTMLEnterTag(String tag, Map<String, String> attributes, StringBuilder stringBuilder) {
