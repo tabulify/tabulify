@@ -38,32 +38,71 @@ public class RichSlateAST {
 
   /**
    * A recursive function that will build an HTML string in the string builder
-   * @param jsonObject - the AST
-   * @param stringBuilder - the HTML string builder
+   *
+   * @param jsonObject        - the AST
+   * @param htmlStringBuilder - the HTML string builder
    */
-  private void toHTMLAst(JsonObject jsonObject, StringBuilder stringBuilder) {
+  private void toHTMLAst(JsonObject jsonObject, StringBuilder htmlStringBuilder) {
 
     String tag = jsonObject.getString("tag");
     if (tag == null) {
       String text = jsonObject.getString("text");
-      if (text != null) {
-        stringBuilder.append(text);
+      if (text == null) {
+        return;
       }
+      Map<String, String> styles = new HashMap<>();
+      boolean isBold = jsonObject.containsKey("bold");
+      if (isBold) {
+        styles.put("font-weight", "bold");
+      }
+      boolean isItalic = jsonObject.containsKey("italic");
+      if (isItalic) {
+        styles.put("font-style", "italic");
+      }
+      boolean isUnderline = jsonObject.containsKey("underline");
+      if (isUnderline) {
+        styles.put("text-decoration", "underline");
+      }
+      if (styles.isEmpty()) {
+        htmlStringBuilder.append(text);
+        return;
+      }
+      HashMap<String, String> attributes = new HashMap<>();
+      StringBuilder stylesStringBuilder = new StringBuilder();
+      for (Map.Entry<String, String> style : styles.entrySet()) {
+        stylesStringBuilder
+          .append(style.getKey())
+          .append(": ")
+          .append(style.getValue())
+          .append(";");
+      }
+      attributes.put("style", stylesStringBuilder.toString());
+      addHTMLEnterTag("span", attributes, htmlStringBuilder);
+      htmlStringBuilder
+        .append(text)
+        .append("</span>");
       return;
     }
 
-      switch (tag) {
+    /**
+     * Open Tag
+     */
+    switch (tag) {
       case "body":
       case "p":
-        addHTMLEnterTag(tag, new HashMap<>(), stringBuilder);
+        addHTMLEnterTag(tag, new HashMap<>(), htmlStringBuilder);
         break;
       case "a":
-        String url = jsonObject.getString("url");
-        String title = jsonObject.getString("title");
         Map<String, String> attributes = new HashMap<>();
-        attributes.put("href", url);
-        attributes.put("title", title);
-        addHTMLEnterTag(tag, attributes, stringBuilder);
+        String url = jsonObject.getString("url");
+        if (url != null) {
+          attributes.put("href", url);
+        }
+        String title = jsonObject.getString("title");
+        if (title != null) {
+          attributes.put("title", title);
+        }
+        addHTMLEnterTag(tag, attributes, htmlStringBuilder);
         break;
     }
 
@@ -72,9 +111,9 @@ public class RichSlateAST {
       for (int i = 0; i < children.size(); i++) {
         Object arrayElement = children.getValue(i);
         if (arrayElement instanceof JsonObject) {
-          toHTMLAst((JsonObject) arrayElement, stringBuilder);
+          toHTMLAst((JsonObject) arrayElement, htmlStringBuilder);
         } else {
-          stringBuilder.append("This children is not a object");
+          htmlStringBuilder.append("This children is not a object");
         }
       }
     }
@@ -82,7 +121,7 @@ public class RichSlateAST {
     /**
      * Close
      */
-    stringBuilder.append("</").append(tag).append(">");
+    htmlStringBuilder.append("</").append(tag).append(">");
 
 
   }
