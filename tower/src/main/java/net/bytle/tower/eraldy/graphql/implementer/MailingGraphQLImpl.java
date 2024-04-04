@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.graphql.implementer;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.idl.RuntimeWiring;
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
@@ -127,7 +128,54 @@ public class MailingGraphQLImpl {
           String mailBody = mailing.getEmailBody();
 
           if (mailBody != null) {
-            RichSlateAST richSlateAST = RichSlateAST.ofJsonString(mailBody);
+
+            /**
+             * HTML Body Building
+             */
+            JsonArray body = new JsonArray();
+            String tag = RichSlateAST.TAG_ATTRIBUTE;
+            if (mailing.getEmailPreview() != null) {
+              body.add(new JsonObject()
+                .put(tag, RichSlateAST.PREVIEW_TAG)
+                .put("content", mailing.getEmailPreview())
+              );
+            }
+            body.addAll(new JsonArray(mailBody));
+
+            /**
+             * HTML document building
+             */
+            JsonObject htmlTag = new JsonObject()
+              .put(tag, "html")
+              .put("xmlns", "http://www.w3.org/1999/xhtml")
+              .put("lang", mailing.getEmailLanguage())
+              .put("children", new JsonArray()
+                .add(new JsonObject()
+                  .put(tag, "head")
+                  .put("children", new JsonArray()
+                    .add(new JsonObject()
+                      .put(tag, "meta")
+                      .put("name", "viewport")
+                      .put("content", "width=device-width")
+                    )
+                    .add(new JsonObject()
+                      .put(tag, "meta")
+                      .put("http-equiv", "Content-Type")
+                      .put("content", "text/html; charset=UTF-8")
+                    )
+                    .add(new JsonObject()
+                      .put(tag, "title")
+                      .put("children", new JsonArray()
+                        .add(new JsonObject()
+                          .put("text", mailing.getEmailSubject())
+                        ))
+                    )
+                  ))
+                .add(new JsonObject()
+                  .put(tag, "body")
+                  .put("children", new JsonArray(mailBody)))
+              );
+            RichSlateAST richSlateAST = new RichSlateAST(htmlTag);
             String html = richSlateAST.toEmailHTML();
             email.setHtml(html);
             email.setText(mailBody);

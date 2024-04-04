@@ -54,6 +54,8 @@ public class MailingProvider {
   private static final String MAILING_EMAIL_SUBJECT = MAILING_PREFIX + COLUMN_PART_SEP + "email_subject";
   private static final String MAILING_EMAIL_PREVIEW = MAILING_PREFIX + COLUMN_PART_SEP + "email_preview";
   private static final String MAILING_EMAIL_BODY = MAILING_PREFIX + COLUMN_PART_SEP + "email_body";
+
+  private static final String MAILING_EMAIL_LANGUAGE = MAILING_PREFIX + COLUMN_PART_SEP + "email_language";
   static final String MAILING_GUID_PREFIX = "mai";
   private final EraldyApiApp apiApp;
 
@@ -61,6 +63,7 @@ public class MailingProvider {
   private static final String MAILING_CREATION_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private final Pool jdbcPool;
   private final JsonMapper apiMapper;
+
 
 
   public MailingProvider(EraldyApiApp apiApp) {
@@ -323,6 +326,11 @@ public class MailingProvider {
           mailing.setEmailSubject(subject);
         }
 
+        String emailLanguage = mailingInputProps.getEmailLanguage();
+        if (emailLanguage != null) {
+          mailing.setEmailLanguage(emailLanguage);
+        }
+
         String preview = mailingInputProps.getEmailPreview();
         if (preview != null) {
           mailing.setEmailPreview(preview);
@@ -350,10 +358,11 @@ public class MailingProvider {
             + MAILING_EMAIL_SUBJECT + " = $4,\n"
             + MAILING_EMAIL_PREVIEW + " = $5,\n"
             + MAILING_EMAIL_BODY + " = $6,\n"
-            + MAILING_MODIFICATION_COLUMN + " = $7\n"
+            + MAILING_EMAIL_LANGUAGE + " = $7,\n"
+            + MAILING_MODIFICATION_COLUMN + " = $8\n"
             + "where\n"
-            + MAILING_ID_COLUMN + " = $8\n" +
-            " and " + MAILING_REALM_COLUMN + " = $9\n"
+            + MAILING_ID_COLUMN + " = $9\n" +
+            " and " + MAILING_REALM_COLUMN + " = $10\n"
             + "RETURNING " + MAILING_ID_COLUMN; // to check if the update has touched a row
           Tuple tuple = Tuple.of(
             mailing.getName(),
@@ -362,6 +371,7 @@ public class MailingProvider {
             mailing.getEmailSubject(),
             mailing.getEmailPreview(),
             mailing.getEmailBody(),
+            mailing.getEmailLanguage(),
             DateTimeUtil.getNowInUtc(),
             mailing.getLocalId(),
             mailing.getRealm().getLocalId()

@@ -20,6 +20,7 @@ public class MailingInputProps {
   private String emailPreview;
   private String emailBody;
   private String emailAuthorGuid;
+  private String emailLanguage;
 
 
   /**
@@ -73,6 +74,16 @@ public class MailingInputProps {
   @SuppressWarnings("unused")
   public void setEmailSubject(String emailSubject) {
     this.emailSubject = emailSubject;
+  }
+
+  @JsonProperty("emailLanguage")
+  public String getEmailLanguage() {
+    return emailLanguage;
+  }
+
+  @SuppressWarnings("unused")
+  public void setEmailLanguage(String emailLanguage) {
+    this.emailLanguage = emailLanguage;
   }
 
   @JsonProperty("emailPreview")

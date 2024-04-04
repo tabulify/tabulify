@@ -37,6 +37,7 @@ public class Mailing   {
   protected LocalDateTime modificationTime;
 
   protected Realm realm;
+  private String emailLanguage;
 
   /**
   * The empty constructor is
@@ -239,6 +240,15 @@ public class Mailing   {
     this.realm = realm;
   }
 
+  @JsonProperty("emailLanguage")
+  public String getEmailLanguage() {
+    return emailLanguage;
+  }
+
+  @SuppressWarnings("unused")
+  public void setEmailLanguage(String emailLanguage) {
+    this.emailLanguage = emailLanguage;
+  }
 
   @Override
   public boolean equals(Object o) {

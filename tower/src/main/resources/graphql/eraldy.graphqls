@@ -162,6 +162,8 @@ input MailingInput {
   emailBody: String
   """The email author guid"""
   emailAuthorGuid: ID
+  """The email language"""
+  emailLanguage: String
   """The status"""
   status: Int
 }

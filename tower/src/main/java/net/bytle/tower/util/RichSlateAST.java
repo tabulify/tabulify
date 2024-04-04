@@ -2,9 +2,9 @@ package net.bytle.tower.util;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import net.bytle.exception.InternalException;
 import net.bytle.java.JavaEnvs;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -14,26 +14,20 @@ import java.util.Map;
 public class RichSlateAST {
 
 
-  private final JsonArray richSlateAst;
+  public static final String TAG_ATTRIBUTE = "tag";
 
-  public RichSlateAST(JsonArray richSlateAst) {
+  public static final String PREVIEW_TAG = "preview";
+  private final JsonObject richSlateAst;
+
+  public RichSlateAST(JsonObject richSlateAst) {
     this.richSlateAst = richSlateAst;
   }
 
-  public static RichSlateAST ofJsonString(String jsonString) {
-
-    return new RichSlateAST(new JsonArray(jsonString));
-
-  }
 
   public String toEmailHTML() {
 
-
     StringBuilder stringBuilder = new StringBuilder();
-    JsonObject bodyTag = new JsonObject();
-    bodyTag.put("tag", "body");
-    bodyTag.put("children", this.richSlateAst);
-    this.toHTMLAst(bodyTag, stringBuilder);
+    this.toHTMLAst(richSlateAst, stringBuilder);
     return stringBuilder.toString();
   }
 
@@ -51,7 +45,7 @@ public class RichSlateAST {
       if (text == null) {
         return;
       }
-      Map<String, String> styles = new HashMap<>();
+      JsonObject styles = new JsonObject();
       boolean isBold = jsonObject.containsKey("bold");
       if (isBold) {
         styles.put("font-weight", "bold");
@@ -68,9 +62,8 @@ public class RichSlateAST {
         htmlStringBuilder.append(text);
         return;
       }
-      HashMap<String, String> attributes = new HashMap<>();
-      String style = toHTMLStyleAttribute(styles);
-      attributes.put("style", style);
+      JsonObject attributes = new JsonObject()
+        .put("style", toHTMLStyleAttribute(styles));
       addHTMLEnterTag("span", attributes, htmlStringBuilder);
       htmlStringBuilder
         .append(text)
@@ -83,8 +76,37 @@ public class RichSlateAST {
      */
     String htmlTag = tag;
     switch (tag) {
+      case PREVIEW_TAG:
+        String content = jsonObject.getString("content");
+        if (content == null) {
+          if (JavaEnvs.IS_DEV) {
+            throw new InternalException("A preview tag should have a content attribute");
+          }
+          return;
+        }
+        // preheader is the selector class name for client email for preview
+        JsonObject attributes = new JsonObject()
+          .put("class", "preheader")
+          .put("style", toHTMLStyleAttribute(new JsonObject()
+            .put("color", "transparent")
+            .put("display", "none")
+            .put("height", "0")
+            .put("max-height", "0")
+            .put("max-width", "0")
+            .put("opacity", "0")
+            .put("overflow", "hidden")
+            .put("mso-hide", "all")
+            .put("visibility", "hidden")
+            .put("width", "0")
+          ));
+        addHTMLEnterTag("span", attributes, htmlStringBuilder);
+
+        htmlStringBuilder
+          .append(content)
+          .append("</span>");
+        return;
       case "a":
-        Map<String, String> anchorAttributes = new HashMap<>();
+        JsonObject anchorAttributes = new JsonObject();
         String url = jsonObject.getString("url");
         if (url != null) {
           anchorAttributes.put("href", url);
@@ -104,16 +126,14 @@ public class RichSlateAST {
       case "li":
       case "ul":
       case "ol":
-        addHTMLEnterTag(tag, new HashMap<>(), htmlStringBuilder);
+        addHTMLEnterTag(tag, new JsonObject(), htmlStringBuilder);
         break;
       default:
         htmlTag = null;
         if (JavaEnvs.IS_DEV) {
           htmlTag = "span";
-          Map<String, String> styles = new HashMap<>();
-          styles.put("color", "red");
-          Map<String, String> unknownTagAttributes = new HashMap<>();
-          unknownTagAttributes.put("style", toHTMLStyleAttribute(styles));
+          JsonObject unknownTagAttributes = new JsonObject()
+            .put("style", toHTMLStyleAttribute(new JsonObject().put("color", "red")));
           addHTMLEnterTag(htmlTag, unknownTagAttributes, htmlStringBuilder);
           htmlStringBuilder.append("Internal Error: Tag (").append(tag).append(") is unknown. ");
         }
@@ -142,9 +162,9 @@ public class RichSlateAST {
 
   }
 
-  private String toHTMLStyleAttribute(Map<String, String> stylesProperties) {
+  private String toHTMLStyleAttribute(JsonObject stylesProperties) {
     StringBuilder stylesStringBuilder = new StringBuilder();
-    for (Map.Entry<String, String> style : stylesProperties.entrySet()) {
+    for (Map.Entry<String, Object> style : stylesProperties.getMap().entrySet()) {
       stylesStringBuilder
         .append(style.getKey())
         .append(": ")
@@ -154,11 +174,11 @@ public class RichSlateAST {
     return stylesStringBuilder.toString();
   }
 
-  private void addHTMLEnterTag(String tag, Map<String, String> attributes, StringBuilder stringBuilder) {
+  private void addHTMLEnterTag(String tag, JsonObject attributes, StringBuilder stringBuilder) {
     stringBuilder
       .append("<")
       .append(tag);
-    for (Map.Entry<String, String> attribute : attributes.entrySet()) {
+    for (Map.Entry<String, Object> attribute : attributes.getMap().entrySet()) {
       stringBuilder
         .append(" ")
         .append(attribute.getKey())
