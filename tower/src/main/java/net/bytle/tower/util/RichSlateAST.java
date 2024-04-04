@@ -3,6 +3,9 @@ package net.bytle.tower.util;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * A class to print a Rich Slate AST
  * created by our Rich Slate Editor to another format
@@ -33,6 +36,11 @@ public class RichSlateAST {
     return stringBuilder.toString();
   }
 
+  /**
+   * A recursive function that will build an HTML string in the string builder
+   * @param jsonObject - the AST
+   * @param stringBuilder - the HTML string builder
+   */
   private void toHTMLAst(JsonObject jsonObject, StringBuilder stringBuilder) {
 
     String tag = jsonObject.getString("tag");
@@ -44,12 +52,18 @@ public class RichSlateAST {
       return;
     }
 
-    switch (tag) {
+      switch (tag) {
       case "body":
-        stringBuilder.append("<body>");
-        break;
       case "p":
-        stringBuilder.append("<p>");
+        addHTMLEnterTag(tag, new HashMap<>(), stringBuilder);
+        break;
+      case "a":
+        String url = jsonObject.getString("url");
+        String title = jsonObject.getString("title");
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("href", url);
+        attributes.put("title", title);
+        addHTMLEnterTag(tag, attributes, stringBuilder);
         break;
     }
 
@@ -71,5 +85,20 @@ public class RichSlateAST {
     stringBuilder.append("</").append(tag).append(">");
 
 
+  }
+
+  private void addHTMLEnterTag(String tag, Map<String, String> attributes, StringBuilder stringBuilder) {
+    stringBuilder
+      .append("<")
+      .append(tag);
+    for (Map.Entry<String, String> attribute : attributes.entrySet()) {
+      stringBuilder
+        .append(" ")
+        .append(attribute.getKey())
+        .append("=\"")
+        .append(attribute.getValue())
+        .append("\"");
+    }
+    stringBuilder.append(">");
   }
 }
