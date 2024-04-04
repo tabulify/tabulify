@@ -87,11 +87,8 @@ public class RichSlateAST {
     /**
      * Open Tag
      */
+    String htmlTag = tag;
     switch (tag) {
-      case "body":
-      case "p":
-        addHTMLEnterTag(tag, new HashMap<>(), htmlStringBuilder);
-        break;
       case "a":
         Map<String, String> attributes = new HashMap<>();
         String url = jsonObject.getString("url");
@@ -102,7 +99,18 @@ public class RichSlateAST {
         if (title != null) {
           attributes.put("title", title);
         }
-        addHTMLEnterTag(tag, attributes, htmlStringBuilder);
+        addHTMLEnterTag(htmlTag, attributes, htmlStringBuilder);
+        break;
+      case "body":
+      case "p":
+      case "h1":
+      case "h2":
+      case "h3":
+      case "h4":
+        addHTMLEnterTag(tag, new HashMap<>(), htmlStringBuilder);
+        break;
+      default:
+        htmlTag = null;
         break;
     }
 
@@ -121,7 +129,7 @@ public class RichSlateAST {
     /**
      * Close
      */
-    htmlStringBuilder.append("</").append(tag).append(">");
+    htmlStringBuilder.append("</").append(htmlTag).append(">");
 
 
   }
