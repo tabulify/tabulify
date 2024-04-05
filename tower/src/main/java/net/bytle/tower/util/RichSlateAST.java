@@ -185,9 +185,10 @@ public class RichSlateAST {
             break;
           default:
             // text
-            htmlStringBuilder.append(url);
+            htmlStringBuilder.append("[").append(url).append("] - ");
             break;
         }
+        break;
       case "ul":
       case "ol":
         switch (format) {
@@ -279,7 +280,7 @@ public class RichSlateAST {
         switch (tag) {
           case "p":
             if (!this.builder.noNewLine) {
-              htmlStringBuilder.append("\n");
+              htmlStringBuilder.append("\n\n");
             }
             break;
         }
