@@ -115,10 +115,16 @@ public class MailingGraphQLImpl {
             return Future.failedFuture(new InternalException("The email (" + inputEmailAddress + ") of the recipient is invalid", e));
           }
 
+          JsonObject variables = new JsonObject()
+            .put("1", "Nico");
 
-          String emailSubject = mailing.getEmailSubject();
-          if (emailSubject == null) {
-            emailSubject = "Test email of the mailing " + mailing.getName();
+          String emailSubjectRsAst = mailing.getEmailSubject();
+          String emailSubject = "Test email of the mailing " + mailing.getName();
+          if (emailSubjectRsAst != null) {
+            emailSubject = RichSlateAST.createFromFormInputAst(emailSubjectRsAst)
+              .addVariables(variables)
+              .build()
+              .toEmailText();
           }
           MailMessage email = smtpClientService.createVertxMailMessage()
             .setTo(recipientEmailAddress.toNormalizedString())
@@ -134,10 +140,14 @@ public class MailingGraphQLImpl {
              */
             JsonArray body = new JsonArray();
             String tag = RichSlateAST.TAG_ATTRIBUTE;
-            if (mailing.getEmailPreview() != null) {
+            String emailPreview = mailing.getEmailPreview();
+            if (emailPreview != null) {
               body.add(new JsonObject()
                 .put(tag, RichSlateAST.PREVIEW_TAG)
-                .put("content", mailing.getEmailPreview())
+                .put("content", RichSlateAST.createFromFormInputAst(emailPreview)
+                  .addVariables(variables)
+                  .build()
+                  .toEmailText())
               );
             }
             body.addAll(new JsonArray(mailBody));
@@ -145,14 +155,15 @@ public class MailingGraphQLImpl {
             /**
              * HTML document building
              */
+            String children = RichSlateAST.CHILDREN;
             JsonObject htmlTag = new JsonObject()
               .put(tag, "html")
               .put("xmlns", "http://www.w3.org/1999/xhtml")
               .put("lang", mailing.getEmailLanguage())
-              .put("children", new JsonArray()
+              .put(children, new JsonArray()
                 .add(new JsonObject()
                   .put(tag, "head")
-                  .put("children", new JsonArray()
+                  .put(children, new JsonArray()
                     .add(new JsonObject()
                       .put(tag, "meta")
                       .put("name", "viewport")
@@ -165,7 +176,7 @@ public class MailingGraphQLImpl {
                     )
                     .add(new JsonObject()
                       .put(tag, "title")
-                      .put("children", new JsonArray()
+                      .put(children, new JsonArray()
                         .add(new JsonObject()
                           .put("text", mailing.getEmailSubject())
                         ))
@@ -173,12 +184,13 @@ public class MailingGraphQLImpl {
                   ))
                 .add(new JsonObject()
                   .put(tag, "body")
-                  .put("children", new JsonArray(mailBody)))
+                  .put(children, new JsonArray(mailBody)))
               );
-            RichSlateAST richSlateAST = new RichSlateAST(htmlTag);
-            String html = richSlateAST.toEmailHTML();
-            email.setHtml(html);
-            email.setText(mailBody);
+            RichSlateAST richSlateAST = new RichSlateAST.Builder(htmlTag)
+              .addVariables(variables)
+              .build();
+            email.setHtml(richSlateAST.toEmailHTML());
+            email.setText(richSlateAST.toEmailText());
           }
 
           return smtpClientService

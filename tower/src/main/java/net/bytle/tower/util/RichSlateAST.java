@@ -5,6 +5,8 @@ import io.vertx.core.json.JsonObject;
 import net.bytle.exception.InternalException;
 import net.bytle.java.JavaEnvs;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,57 +19,114 @@ public class RichSlateAST {
   public static final String TAG_ATTRIBUTE = "tag";
 
   public static final String PREVIEW_TAG = "preview";
-  private final JsonObject richSlateAst;
+  public static final String CHILDREN = "children";
+  private static final List<String> COMMON_ATTRIBUTES = Arrays.asList(TAG_ATTRIBUTE, CHILDREN);
+  private static final String HTML = "html";
+  private static final String TEXT = "text";
 
-  public RichSlateAST(JsonObject richSlateAst) {
-    this.richSlateAst = richSlateAst;
+  private final Builder builder;
+
+  /**
+   * The number for ordered list
+   */
+  private int listNumber = 0;
+  /**
+   * The type of list (ul, ol)
+   */
+  private String listType;
+
+  public RichSlateAST(Builder builder) {
+    this.builder = builder;
+  }
+
+  /**
+   * FormInput are for one line content with possible variable
+   *
+   * @param emailSubjectRsAst - the AST
+   * @return a text without any carriage return
+   */
+  public static Builder createFromFormInputAst(String emailSubjectRsAst) {
+    JsonArray jsonArray = new JsonArray(emailSubjectRsAst);
+    JsonObject ParagraphJsonObject = jsonArray.getJsonObject(0);
+    return new Builder(ParagraphJsonObject)
+      .setNoNewLine(true);
   }
 
 
   public String toEmailHTML() {
 
     StringBuilder stringBuilder = new StringBuilder();
-    this.toHTMLAst(richSlateAst, stringBuilder);
+    this.toFormat(this.builder.document, stringBuilder, HTML);
     return stringBuilder.toString();
+
   }
 
   /**
-   * A recursive function that will build an HTML string in the string builder
+   * A recursive function that will build an format string in the string builder
    *
    * @param jsonObject        - the AST
    * @param htmlStringBuilder - the HTML string builder
+   * @param format            - the format
    */
-  private void toHTMLAst(JsonObject jsonObject, StringBuilder htmlStringBuilder) {
+  private void toFormat(JsonObject jsonObject, StringBuilder htmlStringBuilder, String format) {
 
     String tag = jsonObject.getString("tag");
     if (tag == null) {
-      String text = jsonObject.getString("text");
+      String text = jsonObject.getString(TEXT);
       if (text == null) {
         return;
       }
-      JsonObject styles = new JsonObject();
       boolean isBold = jsonObject.containsKey("bold");
-      if (isBold) {
-        styles.put("font-weight", "bold");
-      }
       boolean isItalic = jsonObject.containsKey("italic");
-      if (isItalic) {
-        styles.put("font-style", "italic");
-      }
       boolean isUnderline = jsonObject.containsKey("underline");
-      if (isUnderline) {
-        styles.put("text-decoration", "underline");
+      switch (format) {
+        case HTML:
+          JsonObject styles = new JsonObject();
+          if (isBold) {
+            styles.put("font-weight", "bold");
+          }
+          if (isItalic) {
+            styles.put("font-style", "italic");
+          }
+          if (isUnderline) {
+            styles.put("text-decoration", "underline");
+          }
+          if (styles.isEmpty()) {
+            htmlStringBuilder.append(text);
+            return;
+          }
+          JsonObject attributes = new JsonObject()
+            .put("style", toHTMLStyleAttribute(styles));
+          addHTMLEnterTag("span", attributes, htmlStringBuilder);
+          htmlStringBuilder
+            .append(text)
+            .append("</span>");
+          return;
+        default:
+          // text
+          if (isBold) {
+            htmlStringBuilder.append("**");
+          }
+          if (isItalic) {
+            htmlStringBuilder.append("__");
+          }
+          htmlStringBuilder.append(text);
+          if (isItalic) {
+            htmlStringBuilder.append("__");
+          }
+          if (isBold) {
+            htmlStringBuilder.append("**");
+          }
+          return;
       }
-      if (styles.isEmpty()) {
-        htmlStringBuilder.append(text);
-        return;
+    }
+
+    if (tag.equals("variable")) {
+      String variableId = jsonObject.getString("variableId");
+      String value = this.builder.variables.getString(variableId);
+      if (value != null) {
+        htmlStringBuilder.append(value);
       }
-      JsonObject attributes = new JsonObject()
-        .put("style", toHTMLStyleAttribute(styles));
-      addHTMLEnterTag("span", attributes, htmlStringBuilder);
-      htmlStringBuilder
-        .append(text)
-        .append("</span>");
       return;
     }
 
@@ -77,6 +136,12 @@ public class RichSlateAST {
     String htmlTag = tag;
     switch (tag) {
       case PREVIEW_TAG:
+        /**
+         * Only for HTML
+         */
+        if (!format.equals(HTML)) {
+          return;
+        }
         String content = jsonObject.getString("content");
         if (content == null) {
           if (JavaEnvs.IS_DEV) {
@@ -100,7 +165,6 @@ public class RichSlateAST {
             .put("width", "0")
           ));
         addHTMLEnterTag("span", attributes, htmlStringBuilder);
-
         htmlStringBuilder
           .append(content)
           .append("</span>");
@@ -108,46 +172,94 @@ public class RichSlateAST {
       case "a":
         JsonObject anchorAttributes = new JsonObject();
         String url = jsonObject.getString("url");
-        if (url != null) {
-          anchorAttributes.put("href", url);
-        }
         String title = jsonObject.getString("title");
-        if (title != null) {
-          anchorAttributes.put("title", title);
+        switch (format) {
+          case HTML:
+            if (url != null) {
+              anchorAttributes.put("href", url);
+            }
+            if (title != null) {
+              anchorAttributes.put("title", title);
+            }
+            addHTMLEnterTag(htmlTag, anchorAttributes, htmlStringBuilder);
+            break;
+          default:
+            // text
+            htmlStringBuilder.append(url);
+            break;
         }
-        addHTMLEnterTag(htmlTag, anchorAttributes, htmlStringBuilder);
+      case "ul":
+      case "ol":
+        switch (format) {
+          case HTML:
+            addHTMLEnterTag(tag, new JsonObject(), htmlStringBuilder);
+            break;
+          default:
+            // text
+            this.listNumber = 0;
+            this.listType = tag;
+            break;
+        }
         break;
-      case "body":
       case "p":
+      case "body":
       case "h1":
       case "h2":
       case "h3":
       case "h4":
+      case "html":
+      case "title":
+      case "head":
+      case "meta":
+        if (format.equals(HTML)) {
+          addHTMLEnterTag(htmlTag, this.getProps(jsonObject), htmlStringBuilder);
+        }
+        break;
       case "li":
-      case "ul":
-      case "ol":
-        addHTMLEnterTag(tag, new JsonObject(), htmlStringBuilder);
+        switch (format) {
+          case HTML:
+            addHTMLEnterTag(htmlTag, this.getProps(jsonObject), htmlStringBuilder);
+            break;
+          default:
+            // text
+            switch (listType) {
+              case "ul":
+                htmlStringBuilder.append("  * ");
+                break;
+              case "ol":
+                this.listNumber++;
+                htmlStringBuilder.append("  ").append(listNumber).append(" ");
+                break;
+            }
+            break;
+        }
         break;
       default:
-        htmlTag = null;
-        if (JavaEnvs.IS_DEV) {
-          htmlTag = "span";
-          JsonObject unknownTagAttributes = new JsonObject()
-            .put("style", toHTMLStyleAttribute(new JsonObject().put("color", "red")));
-          addHTMLEnterTag(htmlTag, unknownTagAttributes, htmlStringBuilder);
-          htmlStringBuilder.append("Internal Error: Tag (").append(tag).append(") is unknown. ");
+        htmlTag = tag;
+        switch (format) {
+          case HTML:
+            if (JavaEnvs.IS_DEV) {
+              htmlTag = "span";
+              JsonObject unknownTagAttributes = new JsonObject()
+                .put("style", toHTMLStyleAttribute(new JsonObject().put("color", "red")));
+              addHTMLEnterTag(htmlTag, unknownTagAttributes, htmlStringBuilder);
+            } else {
+              addHTMLEnterTag(htmlTag, this.getProps(jsonObject), htmlStringBuilder);
+            }
+            break;
         }
+        htmlStringBuilder.append("Internal Error: Tag (").append(tag).append(") is unknown. ");
         break;
     }
 
-    JsonArray children = jsonObject.getJsonArray("children");
+    JsonArray children = jsonObject.getJsonArray(CHILDREN);
     if (children != null) {
       for (int i = 0; i < children.size(); i++) {
         Object arrayElement = children.getValue(i);
         if (arrayElement instanceof JsonObject) {
-          toHTMLAst((JsonObject) arrayElement, htmlStringBuilder);
+          toFormat((JsonObject) arrayElement, htmlStringBuilder, format);
         } else {
-          htmlStringBuilder.append("This children is not a object");
+          htmlStringBuilder.append("This child is not a object");
         }
       }
     }
@@ -155,11 +267,32 @@ public class RichSlateAST {
     /**
      * Close
      */
-    if (htmlTag != null) {
-      htmlStringBuilder.append("</").append(htmlTag).append(">");
+    switch (format) {
+      case HTML:
+        htmlStringBuilder.append("</").append(htmlTag).append(">");
+        break;
+      default:
+        switch (tag) {
+          case "p":
+            if (!this.builder.noNewLine) {
+              htmlStringBuilder.append("\n");
+            }
+            break;
+        }
     }
 
 
+  }
+
+  private JsonObject getProps(JsonObject jsonObject) {
+    JsonObject propertiesJson = new JsonObject();
+    for (Map.Entry<String, Object> entry : jsonObject.getMap().entrySet()) {
+      if (COMMON_ATTRIBUTES.contains(entry.getKey())) {
+        continue;
+      }
+      propertiesJson.put(entry.getKey(), entry.getValue());
+    }
+    return propertiesJson;
   }
 
   private String toHTMLStyleAttribute(JsonObject stylesProperties) {
@@ -187,5 +320,35 @@ public class RichSlateAST {
         .append("\"");
     }
     stringBuilder.append(">");
+  }
+
+  public String toEmailText() {
+    StringBuilder stringBuilder = new StringBuilder();
+    this.toFormat(this.builder.document, stringBuilder, TEXT);
+    return stringBuilder.toString();
+  }
+
+  public static class Builder {
+    private final JsonObject document;
+    private boolean noNewLine = false;
+    private JsonObject variables = new JsonObject();
+
+    public Builder(JsonObject document) {
+      this.document = document;
+    }
+
+    public Builder setNoNewLine(boolean b) {
+      this.noNewLine = b;
+      return this;
+    }
+
+    public RichSlateAST build() {
+      return new RichSlateAST(this);
+    }
+
+    public Builder addVariables(JsonObject variables) {
+      this.variables = variables;
+      return this;
+    }
   }
 }
