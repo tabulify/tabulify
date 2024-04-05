@@ -254,12 +254,16 @@ public class RichSlateAST {
 
     JsonArray children = jsonObject.getJsonArray(CHILDREN);
     if (children != null) {
-      for (int i = 0; i < children.size(); i++) {
-        Object arrayElement = children.getValue(i);
-        if (arrayElement instanceof JsonObject) {
-          toFormat((JsonObject) arrayElement, htmlStringBuilder, format);
-        } else {
-          htmlStringBuilder.append("This child is not a object");
+      // The meta tag can happen when we transform an HTML AST to text
+      boolean isMetaTag = Arrays.asList("title", "meta", "link", "script").contains(tag);
+      if (!(format.equals(TEXT) & isMetaTag)) {
+        for (int i = 0; i < children.size(); i++) {
+          Object arrayElement = children.getValue(i);
+          if (arrayElement instanceof JsonObject) {
+            toFormat((JsonObject) arrayElement, htmlStringBuilder, format);
+          } else {
+            htmlStringBuilder.append("This child is not a object");
+          }
         }
       }
     }

@@ -116,7 +116,7 @@ public class MailingGraphQLImpl {
           }
 
           JsonObject variables = new JsonObject()
-            .put("1", "Nico");
+            .put("0", "Nico");
 
           String emailSubjectRsAst = mailing.getEmailSubject();
           String emailSubject = "Test email of the mailing " + mailing.getName();
@@ -178,7 +178,7 @@ public class MailingGraphQLImpl {
                       .put(tag, "title")
                       .put(children, new JsonArray()
                         .add(new JsonObject()
-                          .put("text", mailing.getEmailSubject())
+                          .put("text", emailSubject)
                         ))
                     )
                   ))
