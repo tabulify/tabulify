@@ -35,6 +35,12 @@ public class RichSlateAST {
    */
   private String listType;
 
+  /**
+   * To keep the URL in a text anchor to create at the
+   * end the markdown [label](url)
+   */
+  private String url;
+
   public RichSlateAST(Builder builder) {
     this.builder = builder;
   }
@@ -55,83 +61,57 @@ public class RichSlateAST {
 
   public String toEmailHTML() {
 
-    StringBuilder stringBuilder = new StringBuilder();
-    this.toFormat(this.builder.document, stringBuilder, HTML);
-    return stringBuilder.toString();
+    return toFormat(HTML);
 
   }
 
+
   /**
-   * A recursive function that will build an format string in the string builder
+   * A recursive function that will build a format string in the string builder
    *
    * @param jsonObject        - the AST
-   * @param htmlStringBuilder - the HTML string builder
    * @param format            - the format
    */
-  private void toFormat(JsonObject jsonObject, StringBuilder htmlStringBuilder, String format) {
+  private void traverse(JsonObject jsonObject, String format, StringBuilder stringBuilder) {
+
 
     String tag = jsonObject.getString("tag");
+
+    /**
+     * Leaf
+     */
     if (tag == null) {
-      String text = jsonObject.getString(TEXT);
-      if (text == null) {
-        return;
-      }
-      boolean isBold = jsonObject.containsKey("bold");
-      boolean isItalic = jsonObject.containsKey("italic");
-      boolean isUnderline = jsonObject.containsKey("underline");
-      switch (format) {
-        case HTML:
-          JsonObject styles = new JsonObject();
-          if (isBold) {
-            styles.put("font-weight", "bold");
-          }
-          if (isItalic) {
-            styles.put("font-style", "italic");
-          }
-          if (isUnderline) {
-            styles.put("text-decoration", "underline");
-          }
-          if (styles.isEmpty()) {
-            htmlStringBuilder.append(text);
-            return;
-          }
-          JsonObject attributes = new JsonObject()
-            .put("style", toHTMLStyleAttribute(styles));
-          addHTMLEnterTag("span", attributes, htmlStringBuilder);
-          htmlStringBuilder
-            .append(text)
-            .append("</span>");
-          return;
-        default:
-          // text
-          if (isBold) {
-            htmlStringBuilder.append("**");
-          }
-          if (isItalic) {
-            htmlStringBuilder.append("__");
-          }
-          htmlStringBuilder.append(text);
-          if (isItalic) {
-            htmlStringBuilder.append("__");
-          }
-          if (isBold) {
-            htmlStringBuilder.append("**");
-          }
-          return;
-      }
+      this.renderLeaf(jsonObject, format, stringBuilder);
+      return;
     }
 
+
+    /**
+     * Element
+     */
+    this.renderElement(jsonObject, format, stringBuilder);
+
+
+  }
+
+  private void renderElement(JsonObject jsonObject, String format, StringBuilder stringBuilder) {
+
+    String tag = jsonObject.getString("tag");
+
+    /**
+     * Self-Closing/Empty element
+     */
     if (tag.equals("variable")) {
       String variableId = jsonObject.getString("variableId");
       String value = this.builder.variables.getString(variableId);
       if (value != null) {
-        htmlStringBuilder.append(value);
+        stringBuilder.append(value);
       }
       return;
     }
 
     /**
-     * Open Tag
+     * Open/Close Element
      */
     String htmlTag = tag;
     switch (tag) {
@@ -164,8 +144,8 @@ public class RichSlateAST {
             .put("visibility", "hidden")
             .put("width", "0")
           ));
-        addHTMLEnterTag("span", attributes, htmlStringBuilder);
-        htmlStringBuilder
+        addHTMLEnterTag("span", attributes, stringBuilder);
+        stringBuilder
           .append(content)
           .append("</span>");
         return;
@@ -181,11 +161,13 @@ public class RichSlateAST {
             if (title != null) {
               anchorAttributes.put("title", title);
             }
-            addHTMLEnterTag(htmlTag, anchorAttributes, htmlStringBuilder);
+            addHTMLEnterTag(htmlTag, anchorAttributes, stringBuilder);
             break;
           default:
             // text
-            htmlStringBuilder.append("[").append(url).append("] - ");
+            // keep the url to create the markdown link at the end
+            this.url = url;
+            stringBuilder.append("[");
             break;
         }
         break;
@@ -193,7 +175,7 @@ public class RichSlateAST {
       case "ol":
         switch (format) {
           case HTML:
-            addHTMLEnterTag(tag, new JsonObject(), htmlStringBuilder);
+            addHTMLEnterTag(tag, new JsonObject(), stringBuilder);
             break;
           default:
             // text
@@ -213,23 +195,23 @@ public class RichSlateAST {
       case "head":
       case "meta":
         if (format.equals(HTML)) {
-          addHTMLEnterTag(htmlTag, this.getProps(jsonObject), htmlStringBuilder);
+          addHTMLEnterTag(htmlTag, this.getProps(jsonObject), stringBuilder);
         }
         break;
       case "li":
         switch (format) {
           case HTML:
-            addHTMLEnterTag(htmlTag, this.getProps(jsonObject), htmlStringBuilder);
+            addHTMLEnterTag(htmlTag, this.getProps(jsonObject), stringBuilder);
             break;
           default:
             // text
             switch (listType) {
               case "ul":
-                htmlStringBuilder.append("  * ");
+                stringBuilder.append("  * ");
                 break;
               case "ol":
                 this.listNumber++;
-                htmlStringBuilder.append("  ").append(listNumber).append(" ");
+                stringBuilder.append("  ").append(listNumber).append(". ");
                 break;
             }
             break;
@@ -243,27 +225,27 @@ public class RichSlateAST {
               htmlTag = "span";
               JsonObject unknownTagAttributes = new JsonObject()
                 .put("style", toHTMLStyleAttribute(new JsonObject().put("color", "red")));
-              addHTMLEnterTag(htmlTag, unknownTagAttributes, htmlStringBuilder);
+              addHTMLEnterTag(htmlTag, unknownTagAttributes, stringBuilder);
             } else {
-              addHTMLEnterTag(htmlTag, this.getProps(jsonObject), htmlStringBuilder);
+              addHTMLEnterTag(htmlTag, this.getProps(jsonObject), stringBuilder);
             }
             break;
         }
-        htmlStringBuilder.append("Internal Error: Tag (").append(tag).append(") is unknown. ");
+        stringBuilder.append("Internal Error: Tag (").append(tag).append(") is unknown. ");
         break;
     }
 
     JsonArray children = jsonObject.getJsonArray(CHILDREN);
     if (children != null) {
-      // The meta tag can happen when we transform an HTML AST to text
+      // The meta tag can happen when we transform a full AST with HTML meta to text
       boolean isMetaTag = Arrays.asList("title", "meta", "link", "script").contains(tag);
       if (!(format.equals(TEXT) & isMetaTag)) {
         for (int i = 0; i < children.size(); i++) {
           Object arrayElement = children.getValue(i);
           if (arrayElement instanceof JsonObject) {
-            toFormat((JsonObject) arrayElement, htmlStringBuilder, format);
+            traverse((JsonObject) arrayElement, format, stringBuilder);
           } else {
-            htmlStringBuilder.append("This child is not a object");
+            stringBuilder.append("This child is not a object");
           }
         }
       }
@@ -274,19 +256,77 @@ public class RichSlateAST {
      */
     switch (format) {
       case HTML:
-        htmlStringBuilder.append("</").append(htmlTag).append(">");
+        stringBuilder.append("</").append(htmlTag).append(">");
         break;
       default:
+        // text
         switch (tag) {
+          case "ol":
+          case "ul":
           case "p":
             if (!this.builder.noNewLine) {
-              htmlStringBuilder.append("\n\n");
+              stringBuilder.append("\n\n");
             }
+            break;
+          case "li":
+            if (!this.builder.noNewLine) {
+              stringBuilder.append("\n");
+            }
+            break;
+          case "a":
+            stringBuilder.append("](").append(this.url).append(")");
             break;
         }
     }
+  }
 
-
+  private void renderLeaf(JsonObject jsonObject, String format, StringBuilder stringBuilder) {
+    String text = jsonObject.getString(TEXT);
+    if (text == null) {
+      return;
+    }
+    boolean isBold = jsonObject.containsKey("bold");
+    boolean isItalic = jsonObject.containsKey("italic");
+    boolean isUnderline = jsonObject.containsKey("underline");
+    switch (format) {
+      case HTML:
+        JsonObject styles = new JsonObject();
+        if (isBold) {
+          styles.put("font-weight", "bold");
+        }
+        if (isItalic) {
+          styles.put("font-style", "italic");
+        }
+        if (isUnderline) {
+          styles.put("text-decoration", "underline");
+        }
+        if (styles.isEmpty()) {
+          stringBuilder.append(text);
+          return;
+        }
+        JsonObject attributes = new JsonObject()
+          .put("style", toHTMLStyleAttribute(styles));
+        addHTMLEnterTag("span", attributes, stringBuilder);
+        stringBuilder
+          .append(text)
+          .append("</span>");
+        return;
+      default:
+        // text
+        if (isBold) {
+          stringBuilder.append("**");
+        }
+        if (isItalic) {
+          stringBuilder.append("__");
+        }
+        stringBuilder.append(text);
+        if (isItalic) {
+          stringBuilder.append("__");
+        }
+        if (isBold) {
+          stringBuilder.append("**");
+        }
+    }
   }
 
   private JsonObject getProps(JsonObject jsonObject) {
@@ -328,8 +368,15 @@ public class RichSlateAST {
   }
 
   public String toEmailText() {
+
+
+    return toFormat(TEXT);
+
+  }
+
+  private String toFormat(String format) {
     StringBuilder stringBuilder = new StringBuilder();
-    this.toFormat(this.builder.document, stringBuilder, TEXT);
+    this.traverse(this.builder.document, format, stringBuilder);
     return stringBuilder.toString();
   }
 
