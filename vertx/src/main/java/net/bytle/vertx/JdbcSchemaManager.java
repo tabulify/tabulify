@@ -127,5 +127,4 @@ public class JdbcSchemaManager {
     return SCHEMA_PREFIX + handle;
   }
 
-
 }

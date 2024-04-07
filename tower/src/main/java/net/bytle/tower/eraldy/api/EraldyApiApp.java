@@ -37,7 +37,7 @@ import static net.bytle.tower.util.Guid.*;
 /**
  * The api application
  */
-public class EraldyApiApp extends TowerApp  {
+public class EraldyApiApp extends TowerApp {
 
   private static final String RUNTIME_DATA_DIR_CONF = "data.runtime.dir.path";
 
@@ -202,12 +202,10 @@ public class EraldyApiApp extends TowerApp  {
   }
 
 
-
   @Override
   public String getAppName() {
     return "Api";
   }
-
 
 
   @Override
@@ -413,17 +411,21 @@ public class EraldyApiApp extends TowerApp  {
     // Allow Browser cross-origin request in the domain
     BrowserCorsUtil.allowCorsForApexDomain(router, this);
 
-    LOGGER.info("EraldyApp Db Migration");
+    LOGGER.info("EraldyApp Cs Realms Migration");
     JdbcSchemaManager jdbcSchemaManager = this.getHttpServer().getServer().getPostgresClient().getSchemaManager();
-    String schema = JdbcSchemaManager.getSchemaFromHandle("realms");
-    JdbcSchema realmSchema = JdbcSchema.builder()
-      .setLocation("classpath:db/cs-realms")
-      .setSchema(schema)
-      .build();
+    JdbcSchema realmSchema = JdbcSchema.createFromHandle("realms");
     try {
       jdbcSchemaManager.migrate(realmSchema);
     } catch (DbMigrationException e) {
-      return Future.failedFuture(new InternalException("The database migration failed", e));
+      return Future.failedFuture(new InternalException("The database migration failed for the schema (" + realmSchema + ")", e));
+    }
+
+    LOGGER.info("EraldyApp Job Schema Migration");
+    JdbcSchema jobsSchema = JdbcSchema.createFromHandle("jobs");
+    try {
+      jdbcSchemaManager.migrate(jobsSchema);
+    } catch (DbMigrationException e) {
+      return Future.failedFuture(new InternalException("The database migration failed for the schema (" + jobsSchema + ")", e));
     }
 
     /**
@@ -443,7 +445,7 @@ public class EraldyApiApp extends TowerApp  {
         return datacadamiaModel;
       })
       .recover(err -> Future.failedFuture(new InternalException("Datacadamia model mount has failed", err)))
-      .compose(v-> super.mount());
+      .compose(v -> super.mount());
   }
 
   public AuthClientProvider getAuthClientProvider() {
@@ -476,6 +478,7 @@ public class EraldyApiApp extends TowerApp  {
     return this.mailingProvider;
   }
 
+  @SuppressWarnings("unused")
   public FileProvider getFileProvider() {
     return this.fileProvider;
   }

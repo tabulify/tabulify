@@ -12,20 +12,18 @@ import org.apache.logging.log4j.Logger;
 public class WriteThroughCollection {
 
   static Logger LOGGER = LogManager.getLogger(WriteThroughCollection.class);
-  private final String schema;
+  private final JdbcSchema schema;
   private final JdbcClient postgresServer;
 
   public WriteThroughCollection(Server server) {
     LOGGER.info("Write Through Collection Db Migration");
     postgresServer = server.getPostgresClient();
     JdbcSchemaManager jdbcSchemaManager = postgresServer.getSchemaManager();
-    schema = JdbcSchemaManager.getSchemaFromHandle("collection");
-    JdbcSchema realmSchema = JdbcSchema.builder()
-      .setLocation("classpath:db/cs-collection")
-      .setSchema(schema)
-      .build();
+
+    schema =   JdbcSchema.createFromHandle("collection");
+
     try {
-      jdbcSchemaManager.migrate(realmSchema);
+      jdbcSchemaManager.migrate(schema);
     } catch (DbMigrationException e) {
       throw new InternalException("The Write Through Collection database migration failed", e);
     }
@@ -44,7 +42,7 @@ public class WriteThroughCollection {
     return this.postgresServer;
   }
 
-  public String getTableSchema() {
+  public JdbcSchema getJdbcSchema() {
       return schema;
   }
 

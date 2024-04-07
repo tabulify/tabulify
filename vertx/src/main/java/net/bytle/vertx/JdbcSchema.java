@@ -12,6 +12,13 @@ public class JdbcSchema {
     return new Builder();
   }
 
+  public static JdbcSchema createFromHandle(String schemaHandle) {
+    return builder()
+      .setLocation("classpath:db/cs-" + schemaHandle)
+      .setSchema(JdbcSchemaManager.getSchemaFromHandle(schemaHandle))
+      .build();
+  }
+
   public String getLocation() {
     return this.Builder.location;
   }
@@ -38,5 +45,10 @@ public class JdbcSchema {
       return this;
     }
 
+  }
+
+  @Override
+  public String toString() {
+    return this.Builder.schema;
   }
 }
