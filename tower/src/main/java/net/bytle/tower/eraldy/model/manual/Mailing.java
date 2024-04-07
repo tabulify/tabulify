@@ -13,7 +13,7 @@ import java.util.Objects;
  * A mailing represents the sending of an email to one or more users
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Mailing   {
+public class Mailing {
 
 
   protected Long localId;
@@ -38,75 +38,79 @@ public class Mailing   {
 
   protected Realm realm;
   private String emailLanguage;
+  private int countEmailAddressTotal;
+  private int countSmtpSuccess;
+  private int countSmtpExecution;
+  private LocalDateTime lastJobExecutionTime;
 
   /**
-  * The empty constructor is
-  * needed for the construction of the pojo
-  * with the Jackson library
-  */
+   * The empty constructor is
+   * needed for the construction of the pojo
+   * with the Jackson library
+   */
   @SuppressWarnings("unused")
-  public Mailing () {
+  public Mailing() {
   }
 
   /**
-  * @return localId The mailing id in the database
-  */
+   * @return localId The mailing id in the database
+   */
   @JsonProperty("localId")
   public Long getLocalId() {
     return localId;
   }
 
   /**
-  * @param localId The mailing id in the database
-  */
+   * @param localId The mailing id in the database
+   */
   @SuppressWarnings("unused")
   public void setLocalId(Long localId) {
     this.localId = localId;
   }
 
   /**
-  * @return guid The public id (derived from the database/local id)
-  */
+   * @return guid The public id (derived from the database/local id)
+   */
   @JsonProperty("guid")
   public String getGuid() {
     return guid;
   }
 
   /**
-  * @param guid The public id (derived from the database/local id)
-  */
+   * @param guid The public id (derived from the database/local id)
+   */
   @SuppressWarnings("unused")
   public void setGuid(String guid) {
     this.guid = guid;
   }
 
   /**
-  * @return name A short description of the mailing
-  */
+   * @return name A short description of the mailing
+   */
   @JsonProperty("name")
   public String getName() {
     return name;
   }
 
   /**
-  * @param name A short description of the mailing
-  */
+   * @param name A short description of the mailing
+   */
   @SuppressWarnings("unused")
   public void setName(String name) {
     this.name = name;
   }
 
   /**
-  * @return emailSubject The email subject
-  */
+   * @return emailSubject The email subject
+   */
   @JsonProperty("emailSubject")
   public String getEmailSubject() {
     return emailSubject;
   }
 
   /**
-  * @param emailSubject The email subject
-  */
+   * @param emailSubject The email subject
+   */
   @SuppressWarnings("unused")
   public void setEmailSubject(String emailSubject) {
     this.emailSubject = emailSubject;
@@ -145,96 +149,96 @@ public class Mailing   {
   }
 
   /**
-  * @return emailAuthor
-  */
+   * @return emailAuthor
+   */
   @JsonProperty("emailAuthor")
   public OrganizationUser getEmailAuthor() {
     return emailAuthor;
   }
 
   /**
-  * @param emailAuthor Set emailAuthor
-  */
+   * @param emailAuthor Set emailAuthor
+   */
   @SuppressWarnings("unused")
   public void setEmailAuthor(OrganizationUser emailAuthor) {
     this.emailAuthor = emailAuthor;
   }
 
   /**
-  * @return recipientList
-  */
+   * @return recipientList
+   */
   @JsonProperty("recipientList")
   public ListObject getEmailRecipientList() {
     return emailRecipientList;
   }
 
   /**
-  * @param emailRecipientList Set recipientList
-  */
+   * @param emailRecipientList Set recipientList
+   */
   @SuppressWarnings("unused")
   public void setEmailRecipientList(ListObject emailRecipientList) {
     this.emailRecipientList = emailRecipientList;
   }
 
   /**
-  * @return status The status of the mailing
-  */
+   * @return status The status of the mailing
+   */
   @JsonProperty("status")
   public Status getStatus() {
     return status;
   }
 
   /**
-  * @param status The status of the mailing
-  */
+   * @param status The status of the mailing
+   */
   @SuppressWarnings("unused")
   public void setStatus(Status status) {
     this.status = status;
   }
 
   /**
-  * @return creationTime The creation time of the mailing in UTC
-  */
+   * @return creationTime The creation time of the mailing in UTC
+   */
   @JsonProperty("creationTime")
   public LocalDateTime getCreationTime() {
     return creationTime;
   }
 
   /**
-  * @param creationTime The creation time of the mailing in UTC
-  */
+   * @param creationTime The creation time of the mailing in UTC
+   */
   @SuppressWarnings("unused")
   public void setCreationTime(LocalDateTime creationTime) {
     this.creationTime = creationTime;
   }
 
   /**
-  * @return modificationTime The last modification time of the mailing in UTC
-  */
+   * @return modificationTime The last modification time of the mailing in UTC
+   */
   @JsonProperty("modificationTime")
   public LocalDateTime getModificationTime() {
     return modificationTime;
   }
 
   /**
-  * @param modificationTime The last modification time of the mailing in UTC
-  */
+   * @param modificationTime The last modification time of the mailing in UTC
+   */
   @SuppressWarnings("unused")
   public void setModificationTime(LocalDateTime modificationTime) {
     this.modificationTime = modificationTime;
   }
 
   /**
-  * @return realm
-  */
+   * @return realm
+   */
   @JsonProperty("realm")
   public Realm getRealm() {
     return realm;
   }
 
   /**
-  * @param realm Set realm
-  */
+   * @param realm Set realm
+   */
   @SuppressWarnings("unused")
   public void setRealm(Realm realm) {
     this.realm = realm;
@@ -270,6 +274,64 @@ public class Mailing   {
   @Override
   public String toString() {
     return guid + ", " + name;
+  }
+
+  /**
+   * @param countEmailTotal - The total number of email address s to send
+   */
+  public void setCountEmailAddressTotal(int countEmailTotal) {
+    this.countEmailAddressTotal = countEmailTotal;
+  }
+
+  /**
+   * @return The total number of user to whom we need to send an email
+   */
+  public int getCountEmailAddressTotal() {
+    return countEmailAddressTotal;
+  }
+
+  /**
+   * @param countEmailSuccess - the number of email send successfully
+   */
+  public void setCountSmtpSuccess(int countEmailSuccess) {
+    this.countSmtpSuccess = countEmailSuccess;
+  }
+
+  /**
+   * @param countExecution - the number of time we executed an SMTP transaction (independently of the status such as success and failure)
+   */
+  public void setCountSmtpExecution(int countExecution) {
+    this.countSmtpExecution = countExecution;
+  }
+
+  /**
+   * @return the number of email send successfully to the user
+   */
+  public int getCountSmtpSuccess() {
+    return countSmtpSuccess;
+  }
+
+  /**
+   *
+   * @return the number of smtp transactions
+   */
+  public int getCountSmtpExecution() {
+    return countSmtpExecution;
+  }
+
+  /**
+   * @param dateTime The last time that the mailing job was executed
+   */
+  public void setLastJobExecutionTime(LocalDateTime dateTime) {
+    this.lastJobExecutionTime = dateTime;
+  }
+
+  /**
+   *
+   * @return The last time that a mailing job  was executed
+   */
+  public LocalDateTime getLastJobExecutionTime() {
+    return lastJobExecutionTime;
   }
 
 }
