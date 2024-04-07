@@ -38,10 +38,11 @@ public class Mailing {
 
   protected Realm realm;
   private String emailLanguage;
-  private int countEmailAddressTotal;
-  private int countSmtpSuccess;
-  private int countSmtpExecution;
-  private LocalDateTime lastJobExecutionTime;
+  private int countRow;
+  private int countRowSuccess;
+  private int countRowExecution;
+  private LocalDateTime jobLastExecutionTime;
+  private LocalDateTime jobNextExecutionTime;
 
   /**
    * The empty constructor is
@@ -277,61 +278,76 @@ public class Mailing {
   }
 
   /**
-   * @param countEmailTotal - The total number of email address s to send
+   * @param countRow - The total number of email address s to send
    */
-  public void setCountEmailAddressTotal(int countEmailTotal) {
-    this.countEmailAddressTotal = countEmailTotal;
+  public void setCountRow(int countRow) {
+    this.countRow = countRow;
   }
 
   /**
    * @return The total number of user to whom we need to send an email
    */
-  public int getCountEmailAddressTotal() {
-    return countEmailAddressTotal;
+  public int getCountRow() {
+    return countRow;
   }
 
   /**
    * @param countEmailSuccess - the number of email send successfully
    */
-  public void setCountSmtpSuccess(int countEmailSuccess) {
-    this.countSmtpSuccess = countEmailSuccess;
+  public void setCountRowSuccess(int countEmailSuccess) {
+    this.countRowSuccess = countEmailSuccess;
   }
 
   /**
    * @param countExecution - the number of time we executed an SMTP transaction (independently of the status such as success and failure)
    */
-  public void setCountSmtpExecution(int countExecution) {
-    this.countSmtpExecution = countExecution;
+  public void setCountRowExecution(int countExecution) {
+    this.countRowExecution = countExecution;
   }
 
   /**
    * @return the number of email send successfully to the user
    */
-  public int getCountSmtpSuccess() {
-    return countSmtpSuccess;
+  public int getCountRowSuccess() {
+    return countRowSuccess;
   }
 
   /**
    *
    * @return the number of smtp transactions
    */
-  public int getCountSmtpExecution() {
-    return countSmtpExecution;
+  public int getCountRowExecution() {
+    return countRowExecution;
   }
 
   /**
    * @param dateTime The last time that the mailing job was executed
    */
-  public void setLastJobExecutionTime(LocalDateTime dateTime) {
-    this.lastJobExecutionTime = dateTime;
+  public void setJobLastExecutionTime(LocalDateTime dateTime) {
+    this.jobLastExecutionTime = dateTime;
   }
 
   /**
    *
    * @return The last time that a mailing job  was executed
    */
-  public LocalDateTime getLastJobExecutionTime() {
-    return lastJobExecutionTime;
+  public LocalDateTime getJobLastExecutionTime() {
+    return jobLastExecutionTime;
+  }
+
+  /**
+   * @param dateTime The next time that a mailing job should be executed
+   */
+  public void setJobNextExecutionTime(LocalDateTime dateTime) {
+    this.jobNextExecutionTime = dateTime;
+  }
+
+  /**
+   *
+   * @return The next time that a mailing job should be executed
+   */
+  public LocalDateTime getJobNextExecutionTime() {
+    return jobNextExecutionTime;
   }
 
 }

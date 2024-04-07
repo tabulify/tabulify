@@ -29,10 +29,10 @@ public class MailingJob {
 
     this.mailing = mailing;
 
-    this.mailing.setCountEmailAddressTotal(0);
-    this.mailing.setCountSmtpSuccess(0);
-    this.mailing.setCountSmtpExecution(0);
-    this.mailing.setLastJobExecutionTime(DateTimeUtil.getNowInUtc());
+    this.mailing.setCountRow(0);
+    this.mailing.setCountRowSuccess(0);
+    this.mailing.setCountRowExecution(0);
+    this.mailing.setJobLastExecutionTime(DateTimeUtil.getNowInUtc());
 
 
   }
