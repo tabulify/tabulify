@@ -38,9 +38,9 @@ public class Mailing {
 
   protected Realm realm;
   private String emailLanguage;
-  private int countRow;
-  private int countRowSuccess;
-  private int countRowExecution;
+  private Integer countRow;
+  private Integer countRowSuccess;
+  private Integer countRowExecution;
   private LocalDateTime jobLastExecutionTime;
   private LocalDateTime jobNextExecutionTime;
 
@@ -280,35 +280,37 @@ public class Mailing {
   /**
    * @param countRow - The total number of email address s to send
    */
-  public void setCountRow(int countRow) {
+  public void setCountRow(Integer countRow) {
     this.countRow = countRow;
   }
 
   /**
    * @return The total number of user to whom we need to send an email
    */
-  public int getCountRow() {
+  @JsonProperty("countRow")
+  public Integer getCountRow() {
     return countRow;
   }
 
   /**
    * @param countEmailSuccess - the number of email send successfully
    */
-  public void setCountRowSuccess(int countEmailSuccess) {
+  public void setCountRowSuccess(Integer countEmailSuccess) {
     this.countRowSuccess = countEmailSuccess;
   }
 
   /**
    * @param countExecution - the number of time we executed an SMTP transaction (independently of the status such as success and failure)
    */
-  public void setCountRowExecution(int countExecution) {
+  public void setCountRowExecution(Integer countExecution) {
     this.countRowExecution = countExecution;
   }
 
   /**
    * @return the number of email send successfully to the user
    */
-  public int getCountRowSuccess() {
+  @JsonProperty("countRowSuccess")
+  public Integer getCountRowSuccess() {
     return countRowSuccess;
   }
 
@@ -316,7 +318,8 @@ public class Mailing {
    *
    * @return the number of smtp transactions
    */
-  public int getCountRowExecution() {
+  @JsonProperty("countRowExecution")
+  public Integer getCountRowExecution() {
     return countRowExecution;
   }
 
@@ -331,6 +334,7 @@ public class Mailing {
    *
    * @return The last time that a mailing job  was executed
    */
+  @JsonProperty("jobLastExecutionTime")
   public LocalDateTime getJobLastExecutionTime() {
     return jobLastExecutionTime;
   }
@@ -346,6 +350,7 @@ public class Mailing {
    *
    * @return The next time that a mailing job should be executed
    */
+  @JsonProperty("jobNextExecutionTime")
   public LocalDateTime getJobNextExecutionTime() {
     return jobNextExecutionTime;
   }

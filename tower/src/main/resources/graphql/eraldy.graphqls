@@ -47,6 +47,8 @@ type Status {
   code: Int
   """A short descriptive name"""
   name: String
+  """A long description"""
+  description: String
 }
 
 """
@@ -71,6 +73,16 @@ type Mailing {
   emailAuthor: OrganizationUser
   """The mailing status"""
   status: Status
+  """The next execution time"""
+  jobNextExecutionTime: String @dateFormat
+  """The last execution time"""
+  jobLastExecutionTime: String @dateFormat
+  """The number of email in the mailing to send"""
+  countRow: Int
+  """The number of email successfully send (ie Successful transaction)"""
+  countRowSuccess: Int
+  """The number of execution by row (ie SMTP transaction)"""
+  countRowExecution: Int
   """The creation time"""
   creationTime: String @dateFormat
   """The modification time"""

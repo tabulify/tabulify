@@ -13,11 +13,11 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.api.implementer.flow.mailing.MailingStatus;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputProps;
 import net.bytle.tower.eraldy.mixin.*;
 import net.bytle.tower.eraldy.model.manual.Mailing;
-import net.bytle.tower.eraldy.model.manual.Status;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.*;
@@ -62,6 +62,11 @@ public class MailingProvider {
 
   private static final String MAILING_MODIFICATION_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private static final String MAILING_CREATION_COLUMN = MAILING_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
+  private static final String MAILING_JOB_LAST_EXECUTION_TIME = MAILING_PREFIX + COLUMN_PART_SEP + "job_last_execution_time";
+  private static final String MAILING_JOB_NEXT_EXECUTION_TIME = MAILING_PREFIX + COLUMN_PART_SEP + "job_next_execution_time";
+  private static final String MAILING_COUNT_ROW = MAILING_PREFIX + COLUMN_PART_SEP + "count_row";
+  private static final String MAILING_COUNT_ROW_SUCCESS = MAILING_PREFIX + COLUMN_PART_SEP + "count_row_success";
+  private static final String MAILING_COUNT_ROW_EXECUTION = MAILING_PREFIX + COLUMN_PART_SEP + "count_row_execution";
   private final Pool jdbcPool;
   private final JsonMapper apiMapper;
 
@@ -105,7 +110,6 @@ public class MailingProvider {
     } catch (CastException e) {
       return Future.failedFuture(new IllegalArgumentException("The list guid (" + listGuid + ") is not valid", e));
     }
-
 
     return this.apiApp.getRealmProvider()
       .getRealmByLocalIdWithAuthorizationCheck(listGuidObject.getRealmOrOrganizationId(), AuthUserScope.MAILING_CREATE, routingContext)
@@ -171,7 +175,7 @@ public class MailingProvider {
                     mailing.getEmailAuthor().getOrganization().getLocalId(),
                     mailing.getEmailAuthor().getLocalId(),
                     DateTimeUtil.getNowInUtc(),
-                    0
+                    MailingStatus.OPEN.getCode()
                   ));
               })
               .recover(e -> Future.failedFuture(new InternalException("Mailing creation Error: Sql Error " + e.getMessage(), e)))
@@ -211,64 +215,85 @@ public class MailingProvider {
         }
 
         Row row = rows.iterator().next();
-        Mailing mailing = new Mailing();
-        mailing.setLocalId(localId);
-        mailing.setRealm(realm);
-        // realm and id should be first set for guid update
-        this.updateGuid(mailing);
-        mailing.setName(row.getString(MAILING_NAME_COLUMN));
-        Integer statusCode = row.getInteger(MAILING_STATUS_COLUMN);
-        Status status = new Status();
-        status.setCode(statusCode);
-        status.setName(String.valueOf(statusCode));
-        mailing.setStatus(status);
-        mailing.setCreationTime(row.getLocalDateTime(MAILING_CREATION_COLUMN));
-        mailing.setModificationTime(row.getLocalDateTime(MAILING_MODIFICATION_COLUMN));
-
-
-        mailing.setEmailSubject(row.getString(MAILING_EMAIL_SUBJECT));
-        mailing.setEmailPreview(row.getString(MAILING_EMAIL_PREVIEW));
-        mailing.setEmailBody(row.getString(MAILING_EMAIL_BODY));
-        mailing.setEmailLanguage(row.getString(MAILING_EMAIL_LANGUAGE));
-
-        /**
-         * Orga User
-         * The full user is retrieved if requested
-         * (In graphQl, by the function that is mapped to the type)
-         * ie {@link #getEmailAuthorAtRequestTime(Mailing)}
-         */
-        Long orgaId = row.getLong(MAILING_ORGA_COLUMN);
-        assert Objects.equals(realm.getOrganization().getLocalId(), orgaId);
-        Long userId = row.getLong(MAILING_EMAIL_AUTHOR_USER_COLUMN);
-        OrganizationUser authorUser = new OrganizationUser();
-        authorUser.setLocalId(userId);
-        authorUser.setRealm(realm);
-        mailing.setEmailAuthor(authorUser);
-
-        /**
-         * List
-         * The full list object is retrieved by the API
-         * (In graphQl, by the function that is mapped to the type)
-         * {@link net.bytle.tower.eraldy.graphql.implementer.MailingGraphQLImpl#getMailingRecipientList(DataFetchingEnvironment)}
-         */
-        Long listId = row.getLong(EMAIL_RCPT_LIST_COLUMN);
-        ListObject recipientList = new ListObject();
-        recipientList.setLocalId(listId);
-        recipientList.setRealm(realm);
-        mailing.setEmailRecipientList(recipientList);
+        Mailing mailing = this.buildFromRow(row, realm);
 
         return Future.succeededFuture(mailing);
 
       });
   }
 
+  private Mailing buildFromRow(Row row, Realm realm) {
+    Mailing mailing = new Mailing();
+    mailing.setLocalId(row.getLong(MAILING_ID_COLUMN));
+    mailing.setRealm(realm);
+    // realm and id should be first set for guid update
+    this.updateGuid(mailing);
+    mailing.setName(row.getString(MAILING_NAME_COLUMN));
+    mailing.setCreationTime(row.getLocalDateTime(MAILING_CREATION_COLUMN));
+    mailing.setModificationTime(row.getLocalDateTime(MAILING_MODIFICATION_COLUMN));
+
+    /**
+     * Email
+     */
+    mailing.setEmailSubject(row.getString(MAILING_EMAIL_SUBJECT));
+    mailing.setEmailPreview(row.getString(MAILING_EMAIL_PREVIEW));
+    mailing.setEmailBody(row.getString(MAILING_EMAIL_BODY));
+    mailing.setEmailLanguage(row.getString(MAILING_EMAIL_LANGUAGE));
+
+    /**
+     * Orga User
+     * The full user is retrieved if requested
+     * (In graphQl, by the function that is mapped to the type)
+     * ie {@link #getEmailAuthorAtRequestTime(Mailing)}
+     */
+    Long orgaId = row.getLong(MAILING_ORGA_COLUMN);
+    assert Objects.equals(realm.getOrganization().getLocalId(), orgaId);
+    Long userId = row.getLong(MAILING_EMAIL_AUTHOR_USER_COLUMN);
+    OrganizationUser authorUser = new OrganizationUser();
+    authorUser.setLocalId(userId);
+    authorUser.setRealm(realm);
+    mailing.setEmailAuthor(authorUser);
+
+    /**
+     * List
+     * The full list object is retrieved by the API
+     * (In graphQl, by the function that is mapped to the type)
+     * {@link net.bytle.tower.eraldy.graphql.implementer.MailingGraphQLImpl#getMailingRecipientList(DataFetchingEnvironment)}
+     */
+    Long listId = row.getLong(EMAIL_RCPT_LIST_COLUMN);
+    ListObject recipientList = new ListObject();
+    recipientList.setLocalId(listId);
+    recipientList.setRealm(realm);
+    mailing.setEmailRecipientList(recipientList);
+
+    /**
+     * Job
+     */
+    Integer statusCode = row.getInteger(MAILING_STATUS_COLUMN);
+    MailingStatus status;
+    if (statusCode != null) {
+      status = MailingStatus.fromStatusCodeFailSafe(statusCode);
+    } else {
+      status = MailingStatus.OPEN;
+    }
+    mailing.setStatus(status);
+    mailing.setJobLastExecutionTime(row.getLocalDateTime(MAILING_JOB_LAST_EXECUTION_TIME));
+    mailing.setJobNextExecutionTime(row.getLocalDateTime(MAILING_JOB_NEXT_EXECUTION_TIME));
+    mailing.setCountRow(row.getInteger(MAILING_COUNT_ROW));
+    mailing.setCountRowSuccess(row.getInteger(MAILING_COUNT_ROW_SUCCESS));
+    mailing.setCountRowExecution(row.getInteger(MAILING_COUNT_ROW_EXECUTION));
+
+    return mailing;
+
+  }
+
   public Guid getGuid(String mailingIdentifier) throws CastException {
     return this.apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(MAILING_GUID_PREFIX, mailingIdentifier);
   }
 
-  public Future<List<Mailing>> getMailingsByListWithLocalId(long listId, Long realmId) {
+  public Future<List<Mailing>> getMailingsByListWithLocalId(long listId, Realm realm) {
     final String sql = "select * from " + FULL_QUALIFIED_TABLE_NAME + " where " + EMAIL_RCPT_LIST_COLUMN + " = $1 and " + MAILING_REALM_COLUMN + " = $2";
-    Tuple tuple = Tuple.of(listId, realmId);
+    Tuple tuple = Tuple.of(listId, realm.getLocalId());
     return this.jdbcPool
       .preparedQuery(sql)
       .execute(tuple)
@@ -276,15 +301,8 @@ public class MailingProvider {
       .compose(rows -> {
         List<Mailing> mailingList = new ArrayList<>();
         for (Row row : rows) {
-          Mailing mailings = new Mailing();
-          mailings.setGuid(this.getGuidHash(row.getLong(MAILING_REALM_COLUMN), row.getLong(MAILING_ID_COLUMN)));
-          mailings.setName(row.getString(MAILING_NAME_COLUMN));
-          mailings.setCreationTime(row.getLocalDateTime(MAILING_CREATION_COLUMN));
-          Integer statusCode = row.getInteger(MAILING_STATUS_COLUMN);
-          Status status = new Status();
-          status.setCode(statusCode);
-          mailings.setStatus(status);
-          mailingList.add(mailings);
+          Mailing mailing = this.buildFromRow(row, realm);
+          mailingList.add(mailing);
         }
         return Future.succeededFuture(mailingList);
       });
