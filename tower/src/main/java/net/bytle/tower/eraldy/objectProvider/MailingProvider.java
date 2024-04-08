@@ -372,6 +372,11 @@ public class MailingProvider {
           mailing.setEmailBody(jsonArray.toString());
         }
 
+        LocalDateTime jobNextExecutionTime = mailingInputProps.getJobNextExecutionTime();
+        if(jobNextExecutionTime!=null){
+          mailing.setJobNextExecutionTime(jobNextExecutionTime);
+        }
+
         String newAuthorGuid = mailingInputProps.getEmailAuthorGuid();
         Future<OrganizationUser> newAuthorFuture;
         if (newAuthorGuid != null) {
@@ -390,10 +395,11 @@ public class MailingProvider {
             + MAILING_EMAIL_PREVIEW + " = $5,\n"
             + MAILING_EMAIL_BODY + " = $6,\n"
             + MAILING_EMAIL_LANGUAGE + " = $7,\n"
-            + MAILING_MODIFICATION_COLUMN + " = $8\n"
+            + MAILING_JOB_NEXT_EXECUTION_TIME + " = $8,\n"
+            + MAILING_MODIFICATION_COLUMN + " = $9\n"
             + "where\n"
-            + MAILING_ID_COLUMN + " = $9\n" +
-            " and " + MAILING_REALM_COLUMN + " = $10\n"
+            + MAILING_ID_COLUMN + " = $10\n" +
+            " and " + MAILING_REALM_COLUMN + " = $11\n"
             + "RETURNING " + MAILING_ID_COLUMN; // to check if the update has touched a row
           Tuple tuple = Tuple.of(
             mailing.getName(),
@@ -403,6 +409,7 @@ public class MailingProvider {
             mailing.getEmailPreview(),
             mailing.getEmailBody(),
             mailing.getEmailLanguage(),
+            mailing.getJobNextExecutionTime(),
             DateTimeUtil.getNowInUtc(),
             mailing.getLocalId(),
             mailing.getRealm().getLocalId()

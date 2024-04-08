@@ -4,6 +4,8 @@ package net.bytle.tower.eraldy.graphql.pojo.input;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.time.LocalDateTime;
+
 /**
  * Mailing Input Props
  * for the creation and or modification of a mailing
@@ -21,6 +23,7 @@ public class MailingInputProps {
   private String emailBody;
   private String emailAuthorGuid;
   private String emailLanguage;
+  private LocalDateTime jobNextExecutionTime;
 
 
   /**
@@ -124,6 +127,16 @@ public class MailingInputProps {
   @SuppressWarnings("unused")
   public void setStatusCode(Integer statusCode) {
     this.statusCode = statusCode;
+  }
+
+  @JsonProperty("jobNextExecutionTime")
+  public LocalDateTime getJobNextExecutionTime() {
+    return this.jobNextExecutionTime;
+  }
+
+  @SuppressWarnings("unused")
+  public void setJobNextExecutionTime(LocalDateTime jobNextExecutionTime) {
+    this.jobNextExecutionTime = jobNextExecutionTime;
   }
 
 

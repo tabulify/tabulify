@@ -180,6 +180,8 @@ input MailingInput {
   emailLanguage: String
   """The status"""
   status: Int
+  """The next execution time"""
+  jobNextExecutionTime: String
 }
 
 """Input to send a test email address"""
