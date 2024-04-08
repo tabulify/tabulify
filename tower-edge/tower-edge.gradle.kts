@@ -19,7 +19,6 @@ plugins {
 
 dependencies {
 
-  implementation(project(":bytle-base"))
   implementation(project(":bytle-type"))
   implementation(project(":bytle-vertx"))
   implementation("io.vertx:vertx-web:$projectVertxVersion")

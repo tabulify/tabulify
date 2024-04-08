@@ -25,7 +25,6 @@ public class Timestamp {
    * use {@link ZoneId#systemDefault()}
    */
   public static final ZoneId DEFAULT_ZONE_ID = ZoneOffset.UTC;
-  private static final int DATE_TIME_STRING_LENGTH = 19;
 
 
   LocalDateTime localDateTime;
@@ -104,6 +103,20 @@ public class Timestamp {
     } else {
       throw new CastException("The value (" + sourceObject + ") with the class (" + sourceObject.getClass().getSimpleName() + ") cannot be transformed to a timestamp");
     }
+  }
+
+  /**
+   * Throw only at runtime
+   * Used when we don't know what to do and that we are responsible for the data
+   * therefore we know with great certainty that we will not have any problem
+   * @param sourceObject - the source
+   */
+  public static Timestamp createFromObjectSafeCast(Object sourceObject)  {
+      try {
+          return createFromObject(sourceObject);
+      } catch (CastException e) {
+          throw new RuntimeException(e);
+      }
   }
 
 

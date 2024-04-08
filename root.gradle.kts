@@ -9,6 +9,7 @@ val vertxVersion = "4.5.3"
 // Check the vertx web artifact dependencies
 // https://mvnrepository.com/artifact/io.vertx/vertx-web
 val jacksonVersion = "2.16.1"
+
 // Guava same as vertx
 val guavaVersion = "31.1.2"
 val junit4Version = "4.13.2"
@@ -21,6 +22,9 @@ val slf4jVersion = "2.0.6"
 val subethaVersion = "6.0.7"
 // should be the same as in SimpleEmail (don't know how to do that)
 val jakartaEmailVersion = "2.0.1"
+// should be the same as in SimpleEmail (don't know how to do that)
+// https://eclipse-ee4j.github.io/angus-mail/
+val angusEmailVersion = "2.0.1"
 val simpleEmailVersion = "8.1.3"
 // DnsJava
 val dnsJavaVersion = "3.5.2"
@@ -53,6 +57,7 @@ ext {
   set("subethaVersion", subethaVersion)
   set("simpleEmailVersion", simpleEmailVersion)
   set("jakartaEmailVersion", jakartaEmailVersion)
+  set("angusEmailVersion", angusEmailVersion)
   set("dnsJavaVersion", dnsJavaVersion)
   set("antJschVersion", antJschVersion)
   set("scramClientVersion", scramClientVersion)

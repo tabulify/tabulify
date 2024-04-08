@@ -14,6 +14,8 @@ import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputProps;
 import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputTestEmail;
+import net.bytle.tower.eraldy.model.manual.EmailAstDocumentBuilder;
+import net.bytle.tower.eraldy.model.manual.EmailTemplateVariables;
 import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
@@ -115,8 +117,12 @@ public class MailingGraphQLImpl {
             return Future.failedFuture(new InternalException("The email (" + inputEmailAddress + ") of the recipient is invalid", e));
           }
 
-          JsonObject variables = new JsonObject()
-            .put("0", "Nico");
+          /**
+           * Variables
+           */
+          JsonObject variables = EmailTemplateVariables.create()
+            .setRecipientGivenName(recipientEmailAddress.getLocalPart())
+            .getVariables();
 
           String emailSubjectRsAst = mailing.getEmailSubject();
           String emailSubject = "Test email of the mailing " + mailing.getName();
@@ -135,62 +141,32 @@ public class MailingGraphQLImpl {
 
           if (mailBody != null) {
 
+            String emailPreview = mailing.getEmailPreview();
+            if (emailPreview != null) {
+              emailPreview = RichSlateAST.createFromFormInputAst(emailPreview)
+                .addVariables(variables)
+                .build()
+                .toEmailText();
+            }
+
             /**
              * HTML Body Building
              */
-            JsonArray body = new JsonArray();
-            String tag = RichSlateAST.TAG_ATTRIBUTE;
-            String emailPreview = mailing.getEmailPreview();
-            if (emailPreview != null) {
-              body.add(new JsonObject()
-                .put(tag, RichSlateAST.PREVIEW_TAG)
-                .put("content", RichSlateAST.createFromFormInputAst(emailPreview)
-                  .addVariables(variables)
-                  .build()
-                  .toEmailText())
-              );
-            }
-            body.addAll(new JsonArray(mailBody));
-
-            /**
-             * HTML document building
-             */
-            String children = RichSlateAST.CHILDREN;
-            JsonObject htmlTag = new JsonObject()
-              .put(tag, "html")
-              .put("xmlns", "http://www.w3.org/1999/xhtml")
-              .put("lang", mailing.getEmailLanguage())
-              .put(children, new JsonArray()
-                .add(new JsonObject()
-                  .put(tag, "head")
-                  .put(children, new JsonArray()
-                    .add(new JsonObject()
-                      .put(tag, "meta")
-                      .put("name", "viewport")
-                      .put("content", "width=device-width")
-                    )
-                    .add(new JsonObject()
-                      .put(tag, "meta")
-                      .put("http-equiv", "Content-Type")
-                      .put("content", "text/html; charset=UTF-8")
-                    )
-                    .add(new JsonObject()
-                      .put(tag, "title")
-                      .put(children, new JsonArray()
-                        .add(new JsonObject()
-                          .put("text", emailSubject)
-                        ))
-                    )
-                  ))
-                .add(new JsonObject()
-                  .put(tag, "body")
-                  .put(children, new JsonArray(mailBody)))
-              );
-            RichSlateAST richSlateAST = new RichSlateAST.Builder(htmlTag)
+            RichSlateAST richSlateAST = new RichSlateAST
+              .Builder()
               .addVariables(variables)
+              .setDocument(
+                EmailAstDocumentBuilder.create()
+                  .setTitle(emailSubject)
+                  .setLanguage(mailing.getEmailLanguage())
+                  .setPreview(emailPreview)
+                  .setBody(new JsonArray(mailing.getEmailBody()))
+                  .build()
+              )
               .build();
             email.setHtml(richSlateAST.toEmailHTML());
             email.setText(richSlateAST.toEmailText());
+
           }
 
           return smtpClientService

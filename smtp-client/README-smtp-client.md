@@ -9,6 +9,12 @@ A library to send an email and create template that wraps:
 Jakarta Mail is only a test runtime dependency (ie gradle api) and is not added in the path
 because every web framework has its own email module (ie vertx has a non-blocking email module for instance)
 
+## Jakarta
+
+Dependencies: Jakarta the new mail api needs Angus SMTPTransport
+ie `com.sun.mail.smtp.SMTPTransport` is now `org.eclipse.angus.mail.smtp.SMTPTransport`
+See https://eclipse-ee4j.github.io/angus-mail/
+
 ## Template
 
 There is a collection of template in the resources directory.

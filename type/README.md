@@ -1,9 +1,12 @@
-# Type
+# Type (core)
 
 
 ## About
 
-All bases classes, library to manipulate type and files.
+All bases classes (ie core)
 
-
-We don't have any error of transitive dependency.
+* library to manipulate:
+  * type and files
+  * java utility
+* No third services connection (all locale)
+* We don't have any error of transitive dependency.

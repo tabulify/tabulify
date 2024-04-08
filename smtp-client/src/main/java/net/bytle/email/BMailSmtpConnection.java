@@ -1,6 +1,5 @@
 package net.bytle.email;
 
-import com.sun.mail.smtp.SMTPTransport;
 import jakarta.mail.Address;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Session;
@@ -8,6 +7,7 @@ import jakarta.mail.Transport;
 import jakarta.mail.event.TransportEvent;
 import jakarta.mail.event.TransportListener;
 import jakarta.mail.internet.MimeMessage;
+import org.eclipse.angus.mail.smtp.SMTPTransport;
 
 import java.util.Date;
 
@@ -17,7 +17,10 @@ import java.util.Date;
 public class BMailSmtpConnection implements AutoCloseable {
 
 
-
+  /**
+   * It was com.sun.mail.smtp.SMTPTransport
+   * Is now org.eclipse.angus.mail.smtp.SMTPTransport
+   */
   private final SMTPTransport transport;
 
 

@@ -26,7 +26,7 @@ public class RichSlateAST {
 
   private final Builder builder;
 
-  /**
+    /**
    * The number for ordered list
    */
   private int listNumber = 0;
@@ -42,20 +42,21 @@ public class RichSlateAST {
   private String url;
 
   public RichSlateAST(Builder builder) {
-    this.builder = builder;
+      this.builder = builder;
   }
 
   /**
    * FormInput are for one line content with possible variable
    *
-   * @param emailSubjectRsAst - the AST
+   * @param emailRsAst - the AST
    * @return a text without any carriage return
    */
-  public static Builder createFromFormInputAst(String emailSubjectRsAst) {
-    JsonArray jsonArray = new JsonArray(emailSubjectRsAst);
-    JsonObject ParagraphJsonObject = jsonArray.getJsonObject(0);
-    return new Builder(ParagraphJsonObject)
-      .setNoNewLine(true);
+  public static Builder createFromFormInputAst(String emailRsAst) {
+    JsonArray jsonArray = new JsonArray(emailRsAst);
+    JsonObject paragraphJsonObject = jsonArray.getJsonObject(0);
+    return new Builder()
+      .setNoNewLine(true)
+      .setDocument(paragraphJsonObject);
   }
 
 
@@ -381,12 +382,20 @@ public class RichSlateAST {
   }
 
   public static class Builder {
-    private final JsonObject document;
+    private JsonObject document;
     private boolean noNewLine = false;
     private JsonObject variables = new JsonObject();
 
-    public Builder(JsonObject document) {
+    public Builder() {
+
+    }
+
+    /**
+     * @param document - the document
+     */
+    public Builder setDocument(JsonObject document) {
       this.document = document;
+      return this;
     }
 
     public Builder setNoNewLine(boolean b) {
@@ -394,13 +403,17 @@ public class RichSlateAST {
       return this;
     }
 
-    public RichSlateAST build() {
-      return new RichSlateAST(this);
-    }
 
     public Builder addVariables(JsonObject variables) {
       this.variables = variables;
       return this;
+    }
+
+
+
+
+    public RichSlateAST build() {
+      return new RichSlateAST(this);
     }
   }
 }

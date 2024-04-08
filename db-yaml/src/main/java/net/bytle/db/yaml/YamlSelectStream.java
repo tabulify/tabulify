@@ -5,6 +5,7 @@ import net.bytle.db.model.RelationDef;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.SelectStreamAbs;
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.representer.Representer;
@@ -22,7 +23,6 @@ public class YamlSelectStream extends SelectStreamAbs {
 
   private final YamlDataPath yamlDataPath;
   private final Yaml yaml;
-  private BufferedReader reader;
   private int lineNumber = 0;
 
   // A map to hold
@@ -53,8 +53,8 @@ public class YamlSelectStream extends SelectStreamAbs {
       // delete the type tag such as !!timestamp
       YamlNoImplicitTagResolver noImplicitTagResolver = new YamlNoImplicitTagResolver();
       this.yaml = new Yaml(
-        new Constructor(),
-        new Representer(),
+        new Constructor(new LoaderOptions()),
+        new Representer(dumperOptions),
         dumperOptions,
         noImplicitTagResolver
       );

@@ -7,7 +7,6 @@ val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
 dependencies {
 
   api(project(":bytle-log"))
-  api(project(":bytle-base"))
 
   api("com.google.code.gson:gson:2.8.9")
   api("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")

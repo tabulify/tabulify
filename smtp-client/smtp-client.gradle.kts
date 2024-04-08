@@ -4,6 +4,7 @@ description = "Email Client"
 val subethaVersion = rootProject.ext.get("subethaVersion").toString()
 val simpleEmailVersion = rootProject.ext.get("simpleEmailVersion").toString()
 val jakartaEmailVersion = rootProject.ext.get("jakartaEmailVersion").toString()
+val angusEmailVersion = rootProject.ext.get("angusEmailVersion").toString()
 
 // Gmail
 // See the set of version here https://developers.google.com/gmail/api/quickstart/java
@@ -34,6 +35,9 @@ dependencies {
     }
     because("Without version, the mail api is not passed on to project dependent")
   }
+
+  // https://eclipse-ee4j.github.io/angus-mail/
+  implementation("org.eclipse.angus:angus-mail:$angusEmailVersion")
 
   // To parse Mime String Message (core and dom)
   // https://mvnrepository.com/artifact/org.apache.james/apache-mime4j

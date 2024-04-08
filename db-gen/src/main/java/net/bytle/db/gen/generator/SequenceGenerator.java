@@ -296,7 +296,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
    * @param values the values
    */
   @SafeVarargs
-  private final SequenceGenerator<T> setValues(T value, T... values) {
+  private SequenceGenerator<T> setValues(T value, T... values) {
 
     if (value instanceof Collection || value.getClass().isArray()) {
       if (values.length == 0) {
@@ -342,7 +342,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
       } else if (getColumnDef().getClazz() == java.sql.Date.class) {
         localValue = Date.createFromObject(start).plusDays(Casts.castSafe(offset, Integer.class) + (long) tickCounter * Casts.castSafe(stepSize, Integer.class)).toSqlDate();
       } else if (getColumnDef().getClazz() == java.sql.Timestamp.class) {
-        localValue = Timestamp.createFromObject(start).afterMillis(Casts.castSafe(offset, Integer.class) + (long) tickCounter * Casts.castSafe(stepSize, Integer.class)).toSqlTimestamp();
+        localValue = Timestamp.createFromObjectSafeCast(start).afterMillis(Casts.castSafe(offset, Integer.class) + (long) tickCounter * Casts.castSafe(stepSize, Integer.class)).toSqlTimestamp();
       } else if (getColumnDef().getClazz() == BigDecimal.class) {
         localValue = ((BigDecimal) (start)).add(BigDecimal.valueOf(Casts.castSafe(offset, Double.class))).add(BigDecimal.valueOf(Casts.castSafe(stepSize, Double.class)).multiply(new BigDecimal(tickCounter)));
         Integer scale = this.getColumnDef().getScale();
@@ -597,7 +597,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
         return clazz.cast(start);
       } else {
         if (maxSteps != Long.MAX_VALUE) {
-          java.sql.Timestamp max = Timestamp.createFromObject(start).afterMillis((long) Casts.castSafe(stepSize, Integer.class) * (int) maxSteps + Casts.castSafe(offset, Integer.class)).toSqlTimestamp();
+          java.sql.Timestamp max = Timestamp.createFromObjectSafeCast(start).afterMillis((long) Casts.castSafe(stepSize, Integer.class) * (int) maxSteps + Casts.castSafe(offset, Integer.class)).toSqlTimestamp();
           return clazz.cast(max);
         } else {
           return clazz.cast(new java.sql.Timestamp(Long.MAX_VALUE));
@@ -653,7 +653,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
              */
             return clazz.cast(new java.sql.Timestamp(0));
           } else {
-            return clazz.cast(Timestamp.createFromObject(start).beforeMillis((Math.abs(Casts.castSafe(stepSize, Integer.class))) * (size - 1) + Casts.castSafe(offset, Integer.class)).toSqlTimestamp());
+            return clazz.cast(Timestamp.createFromObjectSafeCast(start).beforeMillis((Math.abs(Casts.castSafe(stepSize, Integer.class))) * (size - 1) + Casts.castSafe(offset, Integer.class)).toSqlTimestamp());
           }
         }
       } else {

@@ -7,8 +7,6 @@ import net.bytle.type.BigDecimals;
 import net.bytle.type.Casts;
 import net.bytle.type.Doubles;
 import net.bytle.type.Integers;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -22,7 +20,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static java.time.temporal.ChronoUnit.DAYS;
-import static java.time.temporal.ChronoUnit.SECONDS;
 
 
 /**
@@ -31,9 +28,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  * (ie build an uniform distribution)
  */
 public class RandomGenerator<T> extends CollectionGeneratorAbs<T> implements CollectionGeneratorScale<T>, CollectionGenerator<T>, java.util.function.Supplier<T> {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(RandomGenerator.class);
-
 
   /**
    * Range = max - min
@@ -95,17 +89,17 @@ public class RandomGenerator<T> extends CollectionGeneratorAbs<T> implements Col
     } else if (Timestamp.class.equals(aClass)) {
       Timestamp minTimestampDefault = Timestamp.valueOf(LocalDateTime.now().minusDays(10));
       Timestamp maxTimeStampDefault = Timestamp.valueOf(LocalDateTime.now());
-      this.min = (min != null ? net.bytle.type.time.Timestamp.createFromObject(min).toSqlTimestamp() : clazz.cast(minTimestampDefault));
-      this.max = (max != null ? net.bytle.type.time.Timestamp.createFromObject(max).toSqlTimestamp() : clazz.cast(maxTimeStampDefault));
+      this.min = (min != null ? net.bytle.type.time.Timestamp.createFromObjectSafeCast(min).toSqlTimestamp() : clazz.cast(minTimestampDefault));
+      this.max = (max != null ? net.bytle.type.time.Timestamp.createFromObjectSafeCast(max).toSqlTimestamp() : clazz.cast(maxTimeStampDefault));
       range = (((Timestamp) this.max).getTime() - ((Timestamp) this.min).getTime()) / 1000;
-      this.actualValue = Timestamp.valueOf(((Timestamp) this.min).toLocalDateTime().plus(((long) range) / 2, SECONDS));
+      this.actualValue = Timestamp.valueOf(((Timestamp) this.min).toLocalDateTime().plusSeconds(((long) range) / 2));
     } else if (Time.class.equals(aClass)) {
       Time minTimeDefault = Time.valueOf("00:00:00");
       Time maxTimeDefault = Time.valueOf("23:59:59");
       this.min = (min != null ? net.bytle.type.time.Time.createFromObject(min).toSqlTime() : clazz.cast(minTimeDefault));
       this.max = (max != null ? net.bytle.type.time.Time.createFromObject(max).toSqlTime() : clazz.cast(maxTimeDefault));
       range = (((Time) this.max).getTime() - ((Time) this.min).getTime()) / 1000;
-      this.actualValue = Time.valueOf(((Time) this.min).toLocalTime().plus(((long) range) / 2, SECONDS));
+      this.actualValue = Time.valueOf(((Time) this.min).toLocalTime().plusSeconds(((long) range) / 2));
     } else if (String.class.equals(aClass) || Character.class.equals(aClass)) {
       int minCharDefault = SequenceStringGeneratorHelper.toInt("a");
       int maxCharDefault = SequenceStringGeneratorHelper.toInt("z");
@@ -208,11 +202,11 @@ public class RandomGenerator<T> extends CollectionGeneratorAbs<T> implements Col
           LocalDate localValue = ((Date) min).toLocalDate();
           actualValue = Date.valueOf(localValue.plusDays(i));
         } else if (Timestamp.class.equals(this.clazz)) {
-          long iTimestamp = new Double(Math.random() * (long) range * step).longValue();
+          long iTimestamp = Double.valueOf(Math.random() * (long) range * step).longValue();
           LocalDateTime localValueTimestamp = ((Timestamp) min).toLocalDateTime();
           actualValue = Timestamp.valueOf(localValueTimestamp.plusSeconds(iTimestamp));
         } else if (Time.class.equals(this.clazz)) {
-          long randomSecForTime = new Double(Math.random() * (long) range * step).longValue();
+          long randomSecForTime = Double.valueOf(Math.random() * (long) range * step).longValue();
           LocalTime minLocalTime = ((Time) min).toLocalTime();
           actualValue = Time.valueOf(minLocalTime.plusSeconds(randomSecForTime));
         } else if (String.class.equals(this.clazz) || Character.class.equals(this.clazz)) {
@@ -285,6 +279,7 @@ public class RandomGenerator<T> extends CollectionGeneratorAbs<T> implements Col
    * Example of usage when you have a {@link SequenceGenerator sequence} that have a step that is not one
    * and that you want to foreign data with this generator
    */
+  @Deprecated
   @Override
   public RandomGenerator<T> setStep(Number step) {
     assert step != null : "A step cannot be null";

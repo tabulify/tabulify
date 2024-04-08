@@ -14,7 +14,6 @@ val infinispanVersion: String by project
 dependencies {
 
   implementation(project(":bytle-fs"))
-  implementation(project(":bytle-base"))
   implementation(project(":bytle-type"))
   implementation(project(":bytle-template"))
   implementation(project(":bytle-dns"))
@@ -114,7 +113,7 @@ dependencies {
   testImplementation("io.vertx:vertx-junit5:$vertxVersion")
   testFixturesApi("io.vertx:vertx-unit:$vertxVersion") // junit 4
   testFixturesApi("io.vertx:vertx-junit5:$vertxVersion")
-  testFixturesApi(project(":bytle-base"))
+  testFixturesApi(project(":bytle-type"))
 
 }
 
