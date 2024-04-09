@@ -65,7 +65,12 @@ public enum TowerFailureTypeEnum implements TowerFailureType {
    * When a resource was already found
    * (2 submission for a job or another creation for instance)
    */
-  ALREADY_EXIST_409(409, "Resource already exists", "alreadyExist");
+  ALREADY_EXIST_409(409, "Resource already exists", "alreadyExist"),
+  /**
+   * When an order is closed
+   * And that no changes can be performed
+   */
+  CLOSED_400(400, "The order is closed", "closed");
 
   private final int httpStatusCode;
   private final String message;

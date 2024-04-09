@@ -1,5 +1,6 @@
 package net.bytle.tower.eraldy.api.implementer.flow.mailing;
 
+import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.model.manual.Status;
 
 /**
@@ -11,33 +12,48 @@ public enum MailingStatus implements Status {
   /**
    * Open
    */
-  OPEN(-2, "Open", "The mailing is being defined, no email has been sent"),
+  OPEN(0, 1, "Open", "The mailing is being defined, no email has been sent"),
 
   /**
    * Scheduled
    */
-  SCHEDULED(-1, "Scheduled", "The mailing is scheduled. Email may have been sent."),
+  SCHEDULED(1, 2, "Scheduled", "The mailing is scheduled. Email may have been sent."),
+  /**
+   * Running
+   */
+  RUNNING(3, 2, "Running", "A job is executing the mailing"),
 
   /**
    * No email to be sent anymore
    */
-  COMPLETED(0, "Completed", "No email to sent anymore"),
+  COMPLETED(4, 3, "Completed", "No email to sent anymore"),
 
+  /**
+   * Cancel
+   */
+  CANCELED(5, 4, "Canceled", "No action anymore"),
+  /**
+   * Pause
+   */
+  PAUSED(6, 5, "Paused", "Paused: no job will send emails"),
   /**
    * Fatal Error
    */
-  ERROR(1, "Fatal error", "Fatal error");
+  ERROR(10, 6, "Fatal error", "Fatal error");
 
 
-  private final int statusCode;
-  private final String statusName;
-  private final String statusDescription;
+  private final int code;
+  private final String name;
+  private final String description;
+  private final int order;
 
-  MailingStatus(int statusCode, String statusName, String description) {
-    this.statusCode = statusCode;
-    this.statusName = statusName;
-    this.statusDescription = description;
+  MailingStatus(int code, int order, String name, String description) {
+    this.order = order;
+    this.code = code;
+    this.name = name;
+    this.description = description;
   }
+
 
   /**
    *
@@ -46,31 +62,45 @@ public enum MailingStatus implements Status {
    *                   Be sure to master the value
    */
   public static MailingStatus fromStatusCodeFailSafe(int statusCode) {
+    try {
+      return fromStatusCode(statusCode);
+    } catch (NotFoundException e) {
+      throw new RuntimeException("No Mailing status with the code (" + statusCode + ")");
+    }
+
+  }
+
+  public static MailingStatus fromStatusCode(int statusCode) throws NotFoundException {
     for (MailingStatus value : values()) {
-      if (value.statusCode == statusCode) {
+      if (value.code == statusCode) {
         return value;
       }
     }
-    throw new RuntimeException("No Mailing status with the code (" + statusCode + ")");
+    throw new NotFoundException("The code (" + statusCode + ") is not a valid mailing status");
   }
 
   @Override
   public String toString() {
-    return statusCode + " (" + statusName + ")";
+    return code + " (" + name + ")";
   }
 
   public Integer getCode() {
-    return this.statusCode;
+    return this.code;
+  }
+
+  @Override
+  public Integer getOrder() {
+    return this.order;
   }
 
   @Override
   public String getName() {
-    return this.statusName;
+    return this.name;
   }
 
   @Override
   public String getDescription() {
-    return this.statusDescription;
+    return this.description;
   }
 
 

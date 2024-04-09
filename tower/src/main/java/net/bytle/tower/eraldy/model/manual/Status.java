@@ -15,6 +15,12 @@ public interface Status {
   Integer getCode();
 
   /**
+   * @return status The order
+   */
+  @JsonProperty("order")
+  Integer getOrder();
+
+  /**
    * @return The status name
    */
   @JsonProperty("name")

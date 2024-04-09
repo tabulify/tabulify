@@ -47,6 +47,8 @@ type Status {
   code: Int
   """A short descriptive name"""
   name: String
+  """The sequential order of execution"""
+  order: Int
   """A long description"""
   description: String
 }
@@ -179,8 +181,8 @@ input MailingInput {
   """The email language"""
   emailLanguage: String
   """The status"""
-  status: Int
-  """The next execution time"""
+  statusCode: Int
+  """The next execution time (Iso string date in the UTC zone)"""
   jobNextExecutionTime: String
 }
 

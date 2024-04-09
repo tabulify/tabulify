@@ -12,12 +12,14 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
+import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.mailing.MailingStatus;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputProps;
 import net.bytle.tower.eraldy.mixin.*;
 import net.bytle.tower.eraldy.model.manual.Mailing;
+import net.bytle.tower.eraldy.model.manual.Status;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.*;
@@ -333,6 +335,18 @@ public class MailingProvider {
         }
 
         /**
+         * Closed?
+         */
+        Status actualStatus = mailing.getStatus();
+        if (actualStatus == MailingStatus.COMPLETED) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setType(TowerFailureTypeEnum.CLOSED_400)
+            .setMessage("The mailing (" + mailing + ") is closed, no modifications can be performed anymore")
+            .build()
+          );
+        }
+
+        /**
          * Patch implementation
          */
         String newName = mailingInputProps.getName();
@@ -373,8 +387,38 @@ public class MailingProvider {
         }
 
         LocalDateTime jobNextExecutionTime = mailingInputProps.getJobNextExecutionTime();
-        if(jobNextExecutionTime!=null){
+        if (jobNextExecutionTime != null) {
           mailing.setJobNextExecutionTime(jobNextExecutionTime);
+          // the status is not completed as tested at the begining
+          mailing.setStatus(MailingStatus.SCHEDULED);
+        }
+
+        // Status at the end (it may be changed by the setting of a schedule time
+        Integer statusCode = mailingInputProps.getStatusCode();
+        if (statusCode != null) {
+          MailingStatus newStatus;
+          try {
+            newStatus = MailingStatus.fromStatusCode(statusCode);
+          } catch (NotFoundException e) {
+            return Future.failedFuture(TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+              .setMessage(e.getMessage())
+              .setCauseException(e)
+              .build()
+            );
+          }
+          /**
+           * Validation
+           */
+          if (newStatus == MailingStatus.OPEN & actualStatus != MailingStatus.OPEN) {
+            return Future.failedFuture(TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+              .setMessage("You can't set back the status to open when the status is " + actualStatus)
+              .build()
+            );
+          }
+          mailing.setStatus(newStatus);
+
         }
 
         String newAuthorGuid = mailingInputProps.getEmailAuthorGuid();
@@ -396,10 +440,11 @@ public class MailingProvider {
             + MAILING_EMAIL_BODY + " = $6,\n"
             + MAILING_EMAIL_LANGUAGE + " = $7,\n"
             + MAILING_JOB_NEXT_EXECUTION_TIME + " = $8,\n"
-            + MAILING_MODIFICATION_COLUMN + " = $9\n"
+            + MAILING_STATUS_COLUMN + " = $9,\n"
+            + MAILING_MODIFICATION_COLUMN + " = $10\n"
             + "where\n"
-            + MAILING_ID_COLUMN + " = $10\n" +
-            " and " + MAILING_REALM_COLUMN + " = $11\n"
+            + MAILING_ID_COLUMN + " = $11\n" +
+            " and " + MAILING_REALM_COLUMN + " = $12\n"
             + "RETURNING " + MAILING_ID_COLUMN; // to check if the update has touched a row
           Tuple tuple = Tuple.of(
             mailing.getName(),
@@ -410,6 +455,7 @@ public class MailingProvider {
             mailing.getEmailBody(),
             mailing.getEmailLanguage(),
             mailing.getJobNextExecutionTime(),
+            mailing.getStatus().getCode(),
             DateTimeUtil.getNowInUtc(),
             mailing.getLocalId(),
             mailing.getRealm().getLocalId()
