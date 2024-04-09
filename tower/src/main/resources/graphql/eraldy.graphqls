@@ -91,6 +91,26 @@ type Mailing {
   modificationTime: String @dateFormat
 }
 
+"""
+A mailing
+"""
+type MailingJob {
+  """The Guid of the mailing"""
+  guid: ID!
+  """The Mailing"""
+  mailing: Mailing!
+  """The Status"""
+  status: Status!
+  """The Status message"""
+  statusMessage: String
+  """The Creation time"""
+  creationTime: String @dateFormat
+  """The Start time"""
+  startTime: String @dateFormat
+  """The End time"""
+  endTime: String @dateFormat
+}
+
 
 """
 The Organization is the Eraldy client
@@ -209,6 +229,6 @@ type Mutation {
   mailingCreate(listGuid: ID!, props:MailingInput): Mailing
   """Send a test email for the mailing"""
   mailingSendTestEmail(guid: ID!, props: MailingInputTestEmail!): Boolean
-  """Schedule the mailing"""
-  mailingSchedule(guid: ID!): Boolean
+  """Execute the mailing"""
+  mailingExecute(guid: ID!): MailingJob
 }
