@@ -70,7 +70,7 @@ public enum TowerFailureTypeEnum implements TowerFailureType {
    * When an order is closed
    * And that no changes can be performed
    */
-  CLOSED_400(400, "The order is closed", "closed");
+  BAD_STATUS_400(400, "The order is closed", "closed");
 
   private final int httpStatusCode;
   private final String message;

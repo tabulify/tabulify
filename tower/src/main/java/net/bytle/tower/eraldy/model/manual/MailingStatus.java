@@ -1,7 +1,6 @@
-package net.bytle.tower.eraldy.api.implementer.flow.mailing;
+package net.bytle.tower.eraldy.model.manual;
 
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.eraldy.model.manual.Status;
 
 /**
  * The status of the mailing
@@ -22,7 +21,6 @@ public enum MailingStatus implements Status {
    * Running
    */
   RUNNING(3, 2, "Running", "A job is executing the mailing"),
-
   /**
    * No email to be sent anymore
    */

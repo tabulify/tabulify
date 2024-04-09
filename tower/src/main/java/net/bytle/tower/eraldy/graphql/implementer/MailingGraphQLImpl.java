@@ -17,6 +17,7 @@ import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputTestEmail;
 import net.bytle.tower.eraldy.model.manual.EmailAstDocumentBuilder;
 import net.bytle.tower.eraldy.model.manual.EmailTemplateVariables;
 import net.bytle.tower.eraldy.model.manual.Mailing;
+import net.bytle.tower.eraldy.model.manual.MailingJob;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.objectProvider.MailingProvider;
@@ -66,6 +67,11 @@ public class MailingGraphQLImpl {
           .build()
       )
       .type(
+        newTypeWiring("Mutation")
+          .dataFetcher("mailingExecute", this::executeMailing)
+          .build()
+      )
+      .type(
         newTypeWiring("Mailing")
           .dataFetcher("emailAuthor", this::getMailingEmailAuthor)
           .build()
@@ -80,6 +86,14 @@ public class MailingGraphQLImpl {
           .dataFetcher("mailingSendTestEmail", this::sendTestEmail)
           .build()
       );
+  }
+
+  private Future<MailingJob> executeMailing(DataFetchingEnvironment dataFetchingEnvironment) {
+    String guid = dataFetchingEnvironment.getArgument("guid");
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return mailingProvider.getByGuidRequestHandler(guid, routingContext, AuthUserScope.MAILING_EXECUTE)
+      .compose(mailing-> this.app.getMailingFlow()
+        .execute(mailing));
   }
 
   private Future<Boolean> sendTestEmail(DataFetchingEnvironment dataFetchingEnvironment) {

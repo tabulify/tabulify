@@ -14,11 +14,11 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.api.implementer.flow.mailing.MailingStatus;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputProps;
 import net.bytle.tower.eraldy.mixin.*;
 import net.bytle.tower.eraldy.model.manual.Mailing;
+import net.bytle.tower.eraldy.model.manual.MailingStatus;
 import net.bytle.tower.eraldy.model.manual.Status;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
@@ -340,7 +340,7 @@ public class MailingProvider {
         Status actualStatus = mailing.getStatus();
         if (actualStatus == MailingStatus.COMPLETED) {
           return Future.failedFuture(TowerFailureException.builder()
-            .setType(TowerFailureTypeEnum.CLOSED_400)
+            .setType(TowerFailureTypeEnum.BAD_STATUS_400)
             .setMessage("The mailing (" + mailing + ") is closed, no modifications can be performed anymore")
             .build()
           );

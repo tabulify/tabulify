@@ -59,6 +59,8 @@ public class EraldyApiApp extends TowerApp {
   private final AuthProvider authProvider;
   private final EmailAddressValidator emailAddressValidator;
   private final ListImportFlow listImportFlow;
+  private final MailingFlow mailingFlow;
+
   /**
    * Data that are used during runtime
    * (example: list import result)
@@ -79,6 +81,7 @@ public class EraldyApiApp extends TowerApp {
   private final RealmSequenceProvider realmSequenceProvider;
   private final MailingProvider mailingProvider;
   private final FileProvider fileProvider;
+
 
 
   public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
@@ -127,6 +130,7 @@ public class EraldyApiApp extends TowerApp {
     this.userListRegistrationFlow = new ListRegistrationFlow(this);
     this.emailLoginFlow = new EmailLoginFlow(this);
     this.passwordLoginFlow = new PasswordLoginFlow(this);
+    this.mailingFlow = new MailingFlow(this);
 
     /**
      * OAuth Service
@@ -485,5 +489,9 @@ public class EraldyApiApp extends TowerApp {
 
   public TowerSmtpClientService getEmailSmtpClientService() {
     return this.getHttpServer().getServer().getSmtpClient();
+  }
+
+  public MailingFlow getMailingFlow() {
+    return this.mailingFlow;
   }
 }

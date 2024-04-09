@@ -1,9 +1,9 @@
-package net.bytle.tower.eraldy.api.implementer.flow.mailing;
+package net.bytle.tower.eraldy.model.manual;
 
 /**
  * The status of the mailing job
  */
-public enum MailingJobStatus {
+public enum MailingJobStatus implements Status{
 
 
   /**
@@ -39,9 +39,24 @@ public enum MailingJobStatus {
   }
 
 
-  public int getStatusCode() {
+  @Override
+  public Integer getCode() {
     return this.statusCode;
   }
 
+  @Override
+  public Integer getOrder() {
+    return this.statusCode;
+  }
+
+  @Override
+  public String getName() {
+    return this.statusName;
+  }
+
+  @Override
+  public String getDescription() {
+    return this.statusName;
+  }
 
 }

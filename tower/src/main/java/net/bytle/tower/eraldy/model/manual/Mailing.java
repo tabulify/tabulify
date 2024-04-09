@@ -30,7 +30,7 @@ public class Mailing {
 
   protected ListObject emailRecipientList;
 
-  protected Status status;
+  protected MailingStatus status;
 
   protected LocalDateTime creationTime;
 
@@ -185,7 +185,7 @@ public class Mailing {
    * @return status The status of the mailing
    */
   @JsonProperty("status")
-  public Status getStatus() {
+  public MailingStatus getStatus() {
     return status;
   }
 
@@ -193,7 +193,7 @@ public class Mailing {
    * @param status The status of the mailing
    */
   @SuppressWarnings("unused")
-  public void setStatus(Status status) {
+  public void setStatus(MailingStatus status) {
     this.status = status;
   }
 

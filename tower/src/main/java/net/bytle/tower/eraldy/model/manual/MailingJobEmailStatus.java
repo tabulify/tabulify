@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.api.implementer.flow.mailing;
+package net.bytle.tower.eraldy.model.manual;
 
 /**
  * SMTP status

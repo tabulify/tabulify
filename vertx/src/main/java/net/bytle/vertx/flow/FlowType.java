@@ -44,7 +44,11 @@ public enum FlowType {
   /**
    * Login via Password
    */
-  PASSWORD_LOGIN(7);
+  PASSWORD_LOGIN(7),
+  /**
+   * Sending a mailing
+   */
+  MAILING(8);
 
 
   private final Integer id;
