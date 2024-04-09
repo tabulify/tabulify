@@ -16,6 +16,7 @@ import net.bytle.vertx.*;
 import net.bytle.vertx.collections.WriteThroughQueue;
 import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.WebFlowAbs;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 import net.bytle.vertx.resilience.EmailAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

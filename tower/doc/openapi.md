@@ -133,7 +133,7 @@ Steps:
 schema:
   TimeZone:
   type: TimeZone
-  x-field-extra-annotation: '@com.fasterxml.jackson.databind.annotation.JsonSerialize(using = net.bytle.vertx.jackson.TimeZoneSerializer.class) @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = net.bytle.vertx.jackson.TimeZoneDeserializer.class)'
+  x-field-extra-annotation: '@com.fasterxml.jackson.databind.annotation.JsonSerialize(using = net.bytle.vertx.jackson.JacksonTimeZoneSerializer.class) @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = net.bytle.vertx.jackson.JacksonTimeZoneDeserializer.class)'
   description: The timezone full name id
   example: 'Europe/Amsterdam'
 user:

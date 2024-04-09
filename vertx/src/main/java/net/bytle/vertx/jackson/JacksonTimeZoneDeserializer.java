@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.deser.std.StdScalarDeserializer;
 import java.io.IOException;
 import java.util.TimeZone;
 
-public class TimeZoneDeserializer extends StdScalarDeserializer<TimeZone> {
-  protected TimeZoneDeserializer(Class<?> vc) {
+public class JacksonTimeZoneDeserializer extends StdScalarDeserializer<TimeZone> {
+  protected JacksonTimeZoneDeserializer(Class<?> vc) {
     super(vc);
   }
 

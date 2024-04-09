@@ -14,8 +14,8 @@ import net.bytle.java.Javas;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.DateTimeUtil;
-import net.bytle.vertx.JacksonMapperManager;
 import net.bytle.vertx.Server;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

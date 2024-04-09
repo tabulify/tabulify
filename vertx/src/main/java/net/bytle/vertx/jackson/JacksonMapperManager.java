@@ -1,4 +1,4 @@
-package net.bytle.vertx;
+package net.bytle.vertx.jackson;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,8 +32,8 @@ public class JacksonMapperManager {
 
   public JacksonMapperManager() {
     javaTimeModule = new JavaTimeModule();
-    javaTimeModule.addSerializer(LocalDateTime.class, new DateTimeUtil.LocalDateTimeSerializer());
-    javaTimeModule.addDeserializer(LocalDateTime.class, new DateTimeUtil.LocalDateTimeDeserializer());
+    javaTimeModule.addSerializer(LocalDateTime.class, new JacksonLocalDateTimeSerializer());
+    javaTimeModule.addDeserializer(LocalDateTime.class, new JacksonLocalDateTimeDeserializer());
   }
 
   /**

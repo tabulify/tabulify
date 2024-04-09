@@ -23,7 +23,10 @@ public class GraphQLLocalDate implements SchemaDirectiveWiring {
 
   public GraphQLLocalDate() {
     this.argumentName = "format";
-    this.defaultArgumentValue = "yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnn"; // ISO
+    // The default is the Javascript format (without the nnnnn)
+    // because this is the client
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#date_time_string_format
+    this.defaultArgumentValue = "yyyy-MM-dd'T'HH:mm:sss'Z'"; // ISO
     this.defaultDateTimeFormatter = DateTimeFormatter.ofPattern(this.defaultArgumentValue);
   }
 

@@ -13,6 +13,7 @@ import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
 import net.bytle.vertx.collections.MapDb;
 import net.bytle.vertx.collections.WriteThroughCollection;
 import net.bytle.vertx.future.TowerFutures;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

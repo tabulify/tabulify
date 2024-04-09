@@ -19,7 +19,11 @@ import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.vertx.*;
+import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.JdbcSchemaManager;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -657,9 +661,6 @@ public class RealmProvider {
 
   /**
    *
-   * @param realmId
-   * @param routingContext
-   * @return
    * @deprecated should use/implement a map cache instead
    */
   @Deprecated
