@@ -16,7 +16,7 @@ import net.bytle.type.KeyCase;
 import net.bytle.type.KeyNormalizer;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.ConfigIllegalException;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.analytics.AnalyticsDelivery;
 import net.bytle.vertx.analytics.AnalyticsDeliveryExecution;
@@ -507,7 +507,7 @@ public class AnalyticsMixPanelSink extends AnalyticsSinkAbs {
 
         AnalyticsEvent event = eventDelivery.getDeliveryObject();
 
-        event.getState().setEventSendingTime(DateTimeUtil.getNowInUtc());
+        event.getState().setEventSendingTime(DateTimeService.getNowInUtc());
 
         // Create an event
         // https://docs.mixpanel.com/docs/tracking/how-tos/identifying-users#what-is-distinct-id

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import net.bytle.exception.CastException;
 import net.bytle.type.time.Timestamp;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -19,7 +19,7 @@ public class JacksonLocalDateTimeDeserializer extends JsonDeserializer<LocalDate
     }
     value = value.substring(0, value.length() - 1);
     try {
-      return LocalDateTime.parse(value, DateTimeUtil.defaultFormat());
+      return LocalDateTime.parse(value, DateTimeService.defaultFormatter());
     } catch (Exception e) {
       // Old time data may be stored as 2023-08-24
       try {

@@ -13,7 +13,7 @@ import net.bytle.java.JavaEnvs;
 import net.bytle.java.Javas;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.vertx.ConfigIllegalException;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.apache.logging.log4j.LogManager;
@@ -100,7 +100,7 @@ public class SqlAnalytics implements Handler<Long> {
          * {@link JacksonMapperManager}
          * We do it manually then
          */
-        String executionsLastTimeString = DateTimeUtil.LocalDateTimetoString(this.executionLastTime);
+        String executionsLastTimeString = DateTimeService.LocalDateTimetoString(this.executionLastTime);
         JsonObject data = new JsonObject();
         data.put("execution-last-time", executionsLastTimeString);
         data.put("execution-last-ago-sec", agoLastExecution.toSeconds());

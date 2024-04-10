@@ -368,7 +368,7 @@ public class AnalyticsTracker {
        */
       LocalDateTime creationTime = analyticsEventState.getEventCreationTime();
       if (creationTime == null) {
-        creationTime = DateTimeUtil.getNowInUtc();
+        creationTime = DateTimeService.getNowInUtc();
         analyticsEventState.setEventCreationTime(creationTime);
       }
       if (analyticsEvent.getGuid() == null) {

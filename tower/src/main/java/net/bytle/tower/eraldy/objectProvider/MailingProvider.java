@@ -176,7 +176,7 @@ public class MailingProvider {
                     mailing.getEmailRecipientList().getLocalId(),
                     mailing.getEmailAuthor().getOrganization().getLocalId(),
                     mailing.getEmailAuthor().getLocalId(),
-                    DateTimeUtil.getNowInUtc(),
+                    DateTimeService.getNowInUtc(),
                     MailingStatus.OPEN.getCode()
                   ));
               })
@@ -437,7 +437,7 @@ public class MailingProvider {
         mailing.getEmailLanguage(),
         mailing.getJobNextExecutionTime(),
         mailing.getStatus().getCode(),
-        DateTimeUtil.getNowInUtc(),
+        DateTimeService.getNowInUtc(),
         mailing.getLocalId(),
         mailing.getRealm().getLocalId()
       );

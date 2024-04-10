@@ -189,7 +189,7 @@ public class ListProvider {
                 listObject.getName(),
                 listObject.getApp().getLocalId(),
                 listObject.getOwnerUser() != null ? listObject.getOwnerUser().getLocalId() : null,
-                DateTimeUtil.getNowInUtc()
+                DateTimeService.getNowInUtc()
               ))
               .onFailure(e -> LOGGER.error("Insert List: Sql Error " + e.getMessage() + ". With Sql" + insertSql, e));
           })
@@ -242,7 +242,7 @@ public class ListProvider {
           listObject.getName(),
           listObject.getApp().getLocalId(),
           listObject.getOwnerUser() != null ? listObject.getOwnerUser().getLocalId() : null,
-          DateTimeUtil.getNowInUtc(),
+          DateTimeService.getNowInUtc(),
           listObject.getLocalId(),
           listObject.getRealm().getLocalId()
         ))
@@ -287,7 +287,7 @@ public class ListProvider {
         listObject.getName(),
         listObject.getApp().getLocalId(),
         listObject.getOwnerUser() != null ? listObject.getOwnerUser().getLocalId() : null,
-        DateTimeUtil.getNowInUtc(),
+        DateTimeService.getNowInUtc(),
         listObject.getHandle(),
         listObject.getRealm().getLocalId()
       ))

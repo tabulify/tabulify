@@ -8,7 +8,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.manual.MailingJob;
 import net.bytle.tower.eraldy.model.manual.MailingJobStatus;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 
 public class MailingJobProvider {
 
@@ -54,7 +54,7 @@ public class MailingJobProvider {
     MailingJob mailingJob = new MailingJob();
     mailingJob.setMailing(mailing);
     mailingJob.setStatus(MailingJobStatus.OPEN);
-    mailingJob.setStartTime(DateTimeUtil.getNowInUtc());
+    mailingJob.setStartTime(DateTimeService.getNowInUtc());
 
     return this.jdbcPool
       .withTransaction(sqlConnection ->

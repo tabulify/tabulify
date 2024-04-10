@@ -19,7 +19,7 @@ import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.JdbcSchemaManager;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
@@ -224,7 +224,7 @@ public class RealmProvider {
       realm.getOrganization().getLocalId(),
       realm.getName(),
       ownerUser.getLocalId(),
-      DateTimeUtil.getNowInUtc()
+      DateTimeService.getNowInUtc()
     );
 
     return sqlConnection
@@ -280,7 +280,7 @@ public class RealmProvider {
             realm.getHandle(),
             realm.getOrganization().getLocalId(),
             realm.getName(),
-            DateTimeUtil.getNowInUtc(),
+            DateTimeService.getNowInUtc(),
             realm.getLocalId()
           )
         )
@@ -334,7 +334,7 @@ public class RealmProvider {
       .execute(Tuple.of(
         organization.getLocalId(),
         realm.getName(),
-        DateTimeUtil.getNowInUtc(),
+        DateTimeService.getNowInUtc(),
         realm.getHandle()
       ))
       .onFailure(e -> LOGGER.error("Error while updating the realm by handle. Sql: \n" + sql, e));

@@ -12,6 +12,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.graphql.pojo.input.ListUserProps;
 import net.bytle.tower.eraldy.jackson.JacksonListUserSourceDeserializer;
+import net.bytle.tower.eraldy.jackson.JacksonListUserSourceSerializer;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.ListItemMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
@@ -20,7 +21,7 @@ import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Strings;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.JdbcSchemaManager;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.jackson.JacksonMapperManager;
@@ -87,6 +88,7 @@ public class ListUserProvider {
      * Register the deserializer
      */
     jacksonMapperManager.addDeserializer(ListUserSource.class, new JacksonListUserSourceDeserializer());
+    jacksonMapperManager.addSerializer(ListUserSource.class, new JacksonListUserSourceSerializer());
 
     // the sql is too big to be inlined in Java
     String registrationPath = "/db/parameterized-statement/list-registration-users-by-search-term.sql";
@@ -144,7 +146,7 @@ public class ListUserProvider {
       .preparedQuery(sql)
       .execute(Tuple.of(
         listUser.getStatus().getValue(),
-        DateTimeUtil.getNowInUtc(),
+        DateTimeService.getNowInUtc(),
         listUser.getList().getRealm().getLocalId(),
         listUser.getList().getLocalId(),
         listUser.getUser().getLocalId()
@@ -191,7 +193,7 @@ public class ListUserProvider {
         listUser.getInOptInConfirmationIp(),
         listUser.getInOptInConfirmationTime(),
         listUser.getStatus(),
-        DateTimeUtil.getNowInUtc()
+        DateTimeService.getNowInUtc()
       ))
       .onFailure(e -> LOGGER.error("List User Insert Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e))
       .compose(rows -> Future.succeededFuture(listUser));
@@ -243,11 +245,16 @@ public class ListUserProvider {
 
             listUser.setList(listObjectResult);
             listUser.setUser(userResult);
-
             listUser.setStatus(ListUserStatus.fromValue(row.getInteger(STATUS_COLUMN)));
-
             listUser.setCreationTime(row.getLocalDateTime(CREATION_TIME_COLUMN));
             listUser.setModificationTime(row.getLocalDateTime(MODIFICATION_TIME_COLUMN));
+
+            listUser.setInSourceId(ListUserSource.fromValue(row.getInteger(IN_SOURCE_ID_COLUMN)));
+            listUser.setInOptInOrigin(row.getString(IN_OPT_IN_ORIGIN_COLUMN));
+            listUser.setInOptInIp(row.getString(IN_OPT_IN_IP_COLUMN));
+            listUser.setInOptInTime(row.getLocalDateTime(IN_OPT_IN_TIME_COLUMN));
+            listUser.setInOptInConfirmationIp(row.getString(IN_OPT_IN_CONFIRMATION_IP_COLUMN));
+            listUser.setInOptInConfirmationTime(row.getLocalDateTime(IN_OPT_IN_CONFIRMATION_TIME_COLUMN));
 
             this.computeGuidForListUserObject(listUser);
 

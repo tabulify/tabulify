@@ -15,7 +15,7 @@ import net.bytle.fs.Fs;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -139,7 +139,7 @@ public class ListImportJob {
       }
       executionStatusCode = RUNNING_STATUS_CODE;
     }
-    listImportJobStatus.setStartTime(DateTimeUtil.getNowInUtc());
+    listImportJobStatus.setStartTime(DateTimeService.getNowInUtc());
     listImportJobStatus.setStatusCode(executionStatusCode);
 
     List<ListImportJobRow> listImportJobRows;
@@ -417,7 +417,7 @@ public class ListImportJob {
     /**
      * Write the job report
      */
-    listImportJobStatus.setEndTime(DateTimeUtil.getNowInUtc());
+    listImportJobStatus.setEndTime(DateTimeService.getNowInUtc());
 
     /**
      * If the job is in a running state (<0), the status is success

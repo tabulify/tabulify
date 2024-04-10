@@ -221,7 +221,7 @@ public class AppProvider {
           app.getOwnerUser().getLocalId(),
           app.getName(),
           app.getHome(),
-          DateTimeUtil.getNowInUtc(),
+          DateTimeService.getNowInUtc(),
           app.getRealm().getLocalId(),
           app.getLocalId())
         )
@@ -260,7 +260,7 @@ public class AppProvider {
           app.getOwnerUser().getLocalId(),
           app.getName(),
           app.getHome(),
-          DateTimeUtil.getNowInUtc(),
+          DateTimeService.getNowInUtc(),
           app.getRealm().getLocalId(),
           app.getHandle()
         )
@@ -612,7 +612,7 @@ public class AppProvider {
               app.getHome().toString(),
               app.getOwnerUser().getOrganization().getLocalId(),
               app.getOwnerUser().getLocalId(),
-              DateTimeUtil.getNowInUtc()
+              DateTimeService.getNowInUtc()
             )
           );
       })

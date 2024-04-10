@@ -9,7 +9,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AnalyticsApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import net.bytle.vertx.analytics.model.AnalyticsEventClient;
@@ -72,7 +72,7 @@ public class AnalyticsApiImpl implements AnalyticsApi {
       state = new AnalyticsEventState();
       analyticsEvent.setState(state);
     }
-    state.setEventReceptionTime(DateTimeUtil.getNowInUtc());
+    state.setEventReceptionTime(DateTimeService.getNowInUtc());
 
     /**
      * Client/App data

@@ -20,7 +20,7 @@ import net.bytle.tower.eraldy.model.openapi.ServiceSmtp;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
@@ -210,7 +210,7 @@ public class ServiceProvider {
       service.getType(),
       this.getDatabaseObject(service),
       service.getImpersonatedUser() != null ? service.getImpersonatedUser().getLocalId() : null,
-      DateTimeUtil.getNowInUtc(),
+      DateTimeService.getNowInUtc(),
       service.getRealm().getLocalId(),
       service.getUri()
     );
@@ -250,7 +250,7 @@ public class ServiceProvider {
             service.getType(),
             this.getDatabaseObject(service),
             service.getImpersonatedUser() != null ? service.getImpersonatedUser().getLocalId() : null,
-            DateTimeUtil.getNowInUtc()
+            DateTimeService.getNowInUtc()
           );
           return sqlConnection
             .preparedQuery(insertSql)

@@ -4,7 +4,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.*;
 import net.bytle.type.time.Timestamp;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.RoutingContextWrapper;
 
 import java.net.URI;
@@ -152,7 +152,7 @@ public class AuthJwtClaims {
      * because they use local system time
      * ie long now = System.currentTimeMillis() / 1000;
      */
-    long now = DateTimeUtil.getNowInUtc().toEpochSecond(ZoneOffset.UTC);
+    long now = DateTimeService.getNowInUtc().toEpochSecond(ZoneOffset.UTC);
     claims.put(AuthUserJwtClaims.ISSUED_AT.toString(), now);
     claims.put(AuthUserJwtClaims.EXPIRATION.toString(), now + expirationInMinutes * 60);
 

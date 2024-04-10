@@ -1,6 +1,5 @@
 package net.bytle.tower.eraldy.objectProvider;
 
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
@@ -9,10 +8,9 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.mixin.OrganizationDatabaseMixin;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.util.Guid;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,15 +39,11 @@ public class OrganizationProvider {
   private static final String ORGA_MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private static final String ORGA_CREATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private final Pool jdbcPool;
-  private final JsonMapper databaseMapper;
+
 
   public OrganizationProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
     this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
-    this.databaseMapper = apiApp.getHttpServer().getServer().getJacksonMapperManager()
-      .jsonMapperBuilder()
-      .addMixIn(Organization.class, OrganizationDatabaseMixin.class)
-      .build();
   }
 
 
@@ -138,7 +132,7 @@ public class OrganizationProvider {
       .execute(Tuple.of(
         organization.getLocalId(),
         organization.getHandle(),
-        DateTimeUtil.getNowInUtc()
+        DateTimeService.getNowInUtc()
       ))
       .recover(e -> Future.failedFuture(new InternalException("Error: " + e.getMessage() + ", while inserting the orga user with the sql\n" + sql, e)))
       .compose(orgRows -> {

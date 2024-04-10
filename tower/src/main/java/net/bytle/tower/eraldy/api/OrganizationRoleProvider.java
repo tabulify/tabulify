@@ -3,7 +3,7 @@ package net.bytle.tower.eraldy.api;
 import io.vertx.core.Future;
 import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 
 public class OrganizationRoleProvider {
   public static final int OWNER_ROLE_ID = 1;
@@ -28,7 +28,7 @@ public class OrganizationRoleProvider {
           return Future.succeededFuture();
         }
         String insertSql = "insert into cs_realms.organization_role(orga_role_id, orga_role_name, orga_role_creation_time) values ($1, $2, $3)";
-        Tuple insertTuple = Tuple.of(OWNER_ROLE_ID, "Owner", DateTimeUtil.getNowInUtc());
+        Tuple insertTuple = Tuple.of(OWNER_ROLE_ID, "Owner", DateTimeService.getNowInUtc());
         return sqlConnection
           .preparedQuery(insertSql)
           .execute(insertTuple)

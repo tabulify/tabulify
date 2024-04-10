@@ -228,8 +228,8 @@ public class ListImportFlow extends WebFlowAbs {
          * {@link JacksonMapperManager}
          * We do it manually then
          */
-        String purgeLastTimeString = DateTimeUtil.LocalDateTimetoString(this.purgeLastTime);
-        String executionsLastTimeString = DateTimeUtil.LocalDateTimetoString(this.executionLastTime);
+        String purgeLastTimeString = DateTimeService.LocalDateTimetoString(this.purgeLastTime);
+        String executionsLastTimeString = DateTimeService.LocalDateTimetoString(this.executionLastTime);
         JsonObject data = new JsonObject();
         data.put("purge-last-time", purgeLastTimeString);
         data.put("purge-last-ago-sec", agoLastPurge.toSeconds());

@@ -258,7 +258,7 @@ public class UserProvider {
         .execute(Tuple.of(
           user.getEmailAddress().toLowerCase(),
           pgJsonString,
-          DateTimeUtil.getNowInUtc(),
+          DateTimeService.getNowInUtc(),
           user.getLocalId(),
           user.getRealm().getLocalId()
         ))
@@ -302,7 +302,7 @@ public class UserProvider {
       .preparedQuery(updateSql)
       .execute(Tuple.of(
         dataJsonString,
-        DateTimeUtil.getNowInUtc(),
+        DateTimeService.getNowInUtc(),
         user.getEmailAddress().toLowerCase(),
         user.getRealm().getLocalId()
       ))
@@ -666,7 +666,7 @@ public class UserProvider {
       .preparedQuery(sql)
       .execute(Tuple.of(
         passwordHashed,
-        DateTimeUtil.getNowInUtc(),
+        DateTimeService.getNowInUtc(),
         userLocalId,
         realmLocalId
       ))
@@ -921,7 +921,7 @@ public class UserProvider {
               user.getLocalId(),
               emailAddressNormalized,
               databaseJsonString,
-              DateTimeUtil.getNowInUtc()
+              DateTimeService.getNowInUtc()
             )
           );
       })

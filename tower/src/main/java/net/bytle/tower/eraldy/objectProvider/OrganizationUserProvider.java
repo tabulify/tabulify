@@ -13,7 +13,7 @@ import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -290,7 +290,7 @@ public class OrganizationUserProvider {
       userLocalId,
       organizationLocalId,
       OrganizationRoleProvider.OWNER_ROLE_ID,
-      DateTimeUtil.getNowInUtc()
+      DateTimeService.getNowInUtc()
     );
     return sqlConnection
       .preparedQuery(sql)

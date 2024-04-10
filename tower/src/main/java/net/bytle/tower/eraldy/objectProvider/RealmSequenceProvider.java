@@ -5,7 +5,7 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.JdbcSchemaManager;
 import net.bytle.vertx.TowerFailureException;
 
@@ -51,7 +51,7 @@ public class RealmSequenceProvider {
     return sqlConnection
       .preparedQuery(updateSql)
       .execute(Tuple.of(
-        DateTimeUtil.getNowInUtc(),
+        DateTimeService.getNowInUtc(),
         tableName,
         realmId
       ))
@@ -75,7 +75,7 @@ public class RealmSequenceProvider {
             realmId,
             tableName,
             startId,
-            DateTimeUtil.getNowInUtc()
+            DateTimeService.getNowInUtc()
           );
           return sqlConnection.preparedQuery(insertSql)
             .execute(tuple)

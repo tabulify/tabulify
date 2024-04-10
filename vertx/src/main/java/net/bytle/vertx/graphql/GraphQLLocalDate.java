@@ -5,6 +5,7 @@ import graphql.Scalars;
 import graphql.schema.*;
 import graphql.schema.idl.SchemaDirectiveWiring;
 import graphql.schema.idl.SchemaDirectiveWiringEnvironment;
+import net.bytle.vertx.DateTimeService;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -23,10 +24,8 @@ public class GraphQLLocalDate implements SchemaDirectiveWiring {
 
   public GraphQLLocalDate() {
     this.argumentName = "format";
-    // The default is the Javascript format (without the nnnnn)
-    // because this is the client
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#date_time_string_format
-    this.defaultArgumentValue = "yyyy-MM-dd'T'HH:mm:ss'Z'"; // ISO
+
+    this.defaultArgumentValue = DateTimeService.defaultFormat();
     this.defaultDateTimeFormatter = DateTimeFormatter.ofPattern(this.defaultArgumentValue);
   }
 

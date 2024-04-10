@@ -4,7 +4,7 @@ import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
-import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.DateTimeService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -102,7 +102,7 @@ public class WriteThroughQueueDatabaseSink<E> {
     Tuple tuple = Tuple.of(
       this.queueName,
       objectId,
-      DateTimeUtil.getNowInUtc(),
+      DateTimeService.getNowInUtc(),
       data
     );
     this.pool.preparedQuery(addSql)
