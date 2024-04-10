@@ -1,28 +1,21 @@
-package net.bytle.tower.eraldy.model.openapi;
+package net.bytle.tower.eraldy.graphql.pojo.input;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.jackson.JacksonListUserSourceDeserializer;
+import net.bytle.tower.eraldy.model.openapi.ListUserSource;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
- * A user in a list (ie a subscription or a registration)
+ * The props to create or update a list user
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListUser   {
+public class ListUserInputProps {
 
 
-  protected String guid;
+  protected Integer status;
 
-  protected ListUserStatus status;
-
-  protected ListObject list;
-
-  protected User user;
-
-  protected ListUserSource inSourceId;
+  protected ListUserSource inListUserSource;
 
   protected String inOptInOrigin;
 
@@ -36,9 +29,6 @@ public class ListUser   {
 
   protected LocalDateTime outOptOutTime;
 
-  protected LocalDateTime creationTime;
-
-  protected LocalDateTime modificationTime;
 
   /**
   * The empty constructor is
@@ -46,30 +36,16 @@ public class ListUser   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public ListUser () {
+  public ListUserInputProps() {
   }
 
-  /**
-  * @return guid The listing guid
-  */
-  @JsonProperty("guid")
-  public String getGuid() {
-    return guid;
-  }
 
-  /**
-  * @param guid The listing guid
-  */
-  @SuppressWarnings("unused")
-  public void setGuid(String guid) {
-    this.guid = guid;
-  }
 
   /**
   * @return status
   */
   @JsonProperty("status")
-  public ListUserStatus getStatus() {
+  public Integer getStatus() {
     return status;
   }
 
@@ -77,57 +53,28 @@ public class ListUser   {
   * @param status Set status
   */
   @SuppressWarnings("unused")
-  public void setStatus(ListUserStatus status) {
+  public void setStatus(Integer status) {
     this.status = status;
   }
 
-  /**
-  * @return list
-  */
-  @JsonProperty("list")
-  public ListObject getList() {
-    return list;
-  }
 
-  /**
-  * @param list Set list
-  */
-  @SuppressWarnings("unused")
-  public void setList(ListObject list) {
-    this.list = list;
-  }
 
-  /**
-  * @return user
-  */
-  @JsonProperty("user")
-  public User getUser() {
-    return user;
-  }
-
-  /**
-  * @param user Set user
-  */
-  @SuppressWarnings("unused")
-  public void setUser(User user) {
-    this.user = user;
-  }
 
   /**
   * @return inSourceId
   */
-  @com.fasterxml.jackson.annotation.JsonAlias({"flow","sourceId"}) @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = JacksonListUserSourceDeserializer.class)
+  @com.fasterxml.jackson.annotation.JsonAlias({"flow","sourceId"})
   @JsonProperty("inSourceId")
-  public ListUserSource getInSourceId() {
-    return inSourceId;
+  public ListUserSource getInListUserSource() {
+    return inListUserSource;
   }
 
   /**
-  * @param inSourceId Set inSourceId
+  * @param inListUserSource Set inSourceId
   */
   @SuppressWarnings("unused")
-  public void setInSourceId(ListUserSource inSourceId) {
-    this.inSourceId = inSourceId;
+  public void setInListUserSource(ListUserSource inListUserSource) {
+    this.inListUserSource = inListUserSource;
   }
 
   /**
@@ -231,61 +178,5 @@ public class ListUser   {
     this.outOptOutTime = outOptOutTime;
   }
 
-  /**
-  * @return creationTime The creation time of the listing
-  */
-  @JsonProperty("creationTime")
-  public LocalDateTime getCreationTime() {
-    return creationTime;
-  }
-
-  /**
-  * @param creationTime The creation time of the listing
-  */
-  @SuppressWarnings("unused")
-  public void setCreationTime(LocalDateTime creationTime) {
-    this.creationTime = creationTime;
-  }
-
-  /**
-  * @return modificationTime The last modification time of the listing
-  */
-  @JsonProperty("modificationTime")
-  public LocalDateTime getModificationTime() {
-    return modificationTime;
-  }
-
-  /**
-  * @param modificationTime The last modification time of the listing
-  */
-  @SuppressWarnings("unused")
-  public void setModificationTime(LocalDateTime modificationTime) {
-    this.modificationTime = modificationTime;
-  }
-
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    ListUser listUser = (ListUser) o;
-    return
-            Objects.equals(guid, listUser.guid);
-
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(guid);
-  }
-
-  @Override
-  public String toString() {
-    return guid;
-  }
 
 }

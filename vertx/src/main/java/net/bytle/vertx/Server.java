@@ -336,7 +336,7 @@ public class Server {
        * Data Type, used overal and also in the below handler
        * Should be first
        */
-      server.jacksonMapperManager = JacksonMapperManager.create();
+      server.jacksonMapperManager = JacksonMapperManager.create(server);
       if (this.enableJacksonTime) {
         server.jacksonMapperManager.enableTimeModuleForVertx();
       } else {

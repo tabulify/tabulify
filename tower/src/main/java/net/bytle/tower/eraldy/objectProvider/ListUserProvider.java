@@ -11,6 +11,7 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.jackson.JacksonListUserSourceDeserializer;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.ListItemMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
@@ -22,6 +23,7 @@ import net.bytle.type.Strings;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.JdbcSchemaManager;
 import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,13 +71,19 @@ public class ListUserProvider {
 
     this.apiApp = apiApp;
     this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
-    this.apiMapper = apiApp.getHttpServer().getServer().getJacksonMapperManager()
+    JacksonMapperManager jacksonMapperManager = apiApp.getHttpServer().getServer().getJacksonMapperManager();
+    this.apiMapper = jacksonMapperManager
       .jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .addMixIn(ListObject.class, ListItemMixinWithoutRealm.class)
       .build();
+
+    /**
+     * Register the deserializer
+     */
+    jacksonMapperManager.addDeserializer(ListUserSource.class, new JacksonListUserSourceDeserializer());
 
     // the sql is too big to be inlined in Java
     String registrationPath = "/db/parameterized-statement/list-registration-users-by-search-term.sql";
