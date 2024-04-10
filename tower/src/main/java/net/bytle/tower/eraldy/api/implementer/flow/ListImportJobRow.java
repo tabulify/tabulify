@@ -152,9 +152,9 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
             .compose(
               user -> {
                 this.userGuid = user.getGuid();
-                ListUserProvider listUserProvider = this.listImportJob.getListImportFlow().getApp().getListRegistrationProvider();
+                ListUserProvider listUserProvider = this.listImportJob.getListImportFlow().getApp().getListUserProvider();
                 return listUserProvider.
-                  getListUsersByListAndUser(list, user)
+                  getListUserByListAndUser(list, user)
                   .compose(listUser -> {
                     if (listUser != null) {
                       this.listUserStatus = ListImportListUserStatus.NOTHING;
@@ -213,7 +213,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                       }
                       listUserToInsert.setInOptInConfirmationTime(confirmTimeAsObject);
                     }
-                    return listUserProvider.insertRegistration(listUserToInsert)
+                    return listUserProvider.insertListUser(listUserToInsert)
                       .compose(listRegistrationInserted -> {
                         this.listUserStatus = ListImportListUserStatus.ADDED;
                         this.listUserGuid = listRegistrationInserted.getGuid();

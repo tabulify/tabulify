@@ -98,7 +98,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         listUser.setInSourceId(registrationFlow);
         return this
           .getApp()
-          .getListRegistrationProvider()
+          .getListUserProvider()
           .upsertListUser(listUser)
           .recover(err -> Future.failedFuture(new InternalException(err)))
           .compose(Future::succeededFuture);

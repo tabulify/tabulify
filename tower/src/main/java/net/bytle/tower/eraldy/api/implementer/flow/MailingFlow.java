@@ -82,7 +82,7 @@ public class MailingFlow extends WebFlowAbs {
       .getMailingProvider()
       .updateMailing(mailingJob.getMailing(), mailingInputProps)
       .compose(v->{
-
+        this.getApp().getListUserProvider().getActiveListUsers(mailingJob.getMailing());
         return Future.succeededFuture();
       });
 

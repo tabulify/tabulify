@@ -3,8 +3,6 @@ package net.bytle.tower.eraldy.objectProvider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
-import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonObject;
 import io.vertx.json.schema.ValidationException;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
@@ -17,9 +15,9 @@ import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.ListItemMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
+import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.Postgres;
 import net.bytle.type.Strings;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.JdbcSchemaManager;
@@ -49,10 +47,16 @@ public class ListUserProvider {
   public static final String ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN;
   public static final String LIST_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN;
   public static final String USER_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
+  public static final String IN_SOURCE_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_source_id";
+  public static final String IN_OPT_IN_ORIGIN_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_origin";
+  public static final String IN_OPT_IN_IP_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_ip";
+  public static final String IN_OPT_IN_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_time";
+
+  public static final String IN_OPT_IN_CONFIRMATION_IP_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_confirmation_ip";
+  public static final String IN_OPT_IN_CONFIRMATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_confirmation_time";
   private static final String GUID_PREFIX = "liu";
   static final String REALM_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
-  public static final Integer OK_STATUS = 0;
-  private static final String DATA_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "data";
+
   private final EraldyApiApp apiApp;
   private static final String CREATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private static final String MODIFICATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
@@ -120,10 +124,10 @@ public class ListUserProvider {
      * (Even if this case it had been possible
      * because there is no object id)
      */
-    return updateRegistrationAndGetRowSet(listUser)
+    return updateListUserAndGetRowSet(listUser)
       .compose(rowSet -> {
         if (rowSet.rowCount() == 0) {
-          return insertRegistration(listUser);
+          return insertListUser(listUser);
         }
         this.computeGuidForListUserObject(listUser);
         return Future.succeededFuture(listUser);
@@ -144,13 +148,19 @@ public class ListUserProvider {
     listUser.setGuid(guid);
   }
 
-  private Future<RowSet<Row>> updateRegistrationAndGetRowSet(ListUser listUser) {
+  private Future<RowSet<Row>> updateListUserAndGetRowSet(ListUser listUser) {
+
 
     String sql = "UPDATE \n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
       " SET\n" +
       "  " + STATUS_COLUMN + " = $1,\n" +
-      "  " + DATA_COLUMN + " = $2,\n" +
+      "  " + IN_SOURCE_ID_COLUMN + " = $2,\n" +
+      "  " + IN_OPT_IN_ORIGIN_COLUMN + " = $2,\n" +
+      "  " + IN_OPT_IN_IP_COLUMN + " = $2,\n" +
+      "  " + IN_OPT_IN_TIME_COLUMN + " = $2,\n" +
+      "  " + IN_OPT_IN_CONFIRMATION_IP_COLUMN + " = $2,\n" +
+      "  " + IN_OPT_IN_CONFIRMATION_TIME_COLUMN + " = $2,\n" +
       "  " + MODIFICATION_TIME_COLUMN + " = $3\n" +
       "where\n" +
       "  " + REALM_COLUMN + " = $4\n" +
@@ -160,28 +170,33 @@ public class ListUserProvider {
     return jdbcPool
       .preparedQuery(sql)
       .execute(Tuple.of(
-        listUser.getStatus(),
-        this.getDatabaseObject(listUser),
+        listUser.getStatus().getValue(),
+
         DateTimeUtil.getNowInUtc(),
         listUser.getList().getRealm().getLocalId(),
         listUser.getList().getLocalId(),
         listUser.getUser().getLocalId()
       ))
-      .onFailure(e -> LOGGER.error("Registration Update Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e));
+      .onFailure(e -> LOGGER.error("List User Update Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e));
   }
 
-  public Future<ListUser> insertRegistration(ListUser listUser) {
+  public Future<ListUser> insertListUser(ListUser listUser) {
 
     String sql = "INSERT INTO\n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
       "  " + REALM_COLUMN + ",\n" +
       "  " + ID_COLUMN + ",\n" +
       "  " + USER_ID_COLUMN + ",\n" +
-      "  " + DATA_COLUMN + ",\n" +
+      "  " + IN_SOURCE_ID_COLUMN + ",\n" +
+      "  " + IN_OPT_IN_ORIGIN_COLUMN + ",\n" +
+      "  " + IN_OPT_IN_IP_COLUMN + ",\n" +
+      "  " + IN_OPT_IN_TIME_COLUMN + ",\n" +
+      "  " + IN_OPT_IN_CONFIRMATION_IP_COLUMN + ",\n" +
+      "  " + IN_OPT_IN_CONFIRMATION_TIME_COLUMN + ",\n" +
       "  " + STATUS_COLUMN + ",\n" +
       "  " + CREATION_TIME_COLUMN + "\n" +
       "  )\n" +
-      " values ($1, $2, $3, $4, $5, $6)";
+      " values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)";
 
 
     return jdbcPool
@@ -190,24 +205,21 @@ public class ListUserProvider {
         listUser.getList().getRealm().getLocalId(),
         listUser.getList().getLocalId(),
         listUser.getUser().getLocalId(),
-        this.getDatabaseObject(listUser),
-        OK_STATUS,
+        listUser.getInSourceId(),
+        listUser.getInOptInOrigin(),
+        listUser.getInOptInIp(),
+        listUser.getInOptInTime(),
+        listUser.getInOptInConfirmationIp(),
+        listUser.getInOptInConfirmationTime(),
+        ListUserStatus.OK.getValue(),
         DateTimeUtil.getNowInUtc()
       ))
-      .onFailure(e -> LOGGER.error("Registration Insert Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e))
+      .onFailure(e -> LOGGER.error("List User Insert Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e))
       .compose(rows -> {
         this.computeGuidForListUserObject(listUser);
         return Future.succeededFuture(listUser);
       });
 
-  }
-
-  private JsonObject getDatabaseObject(ListUser listUser) {
-    JsonObject data = JsonObject.mapFrom(listUser);
-    data.remove("list");
-    data.remove("subscriber");
-    data.remove("user");
-    return data;
   }
 
 
@@ -231,8 +243,8 @@ public class ListUserProvider {
           .recover(e -> Future.failedFuture(new InternalException("A future error happened while building a list user from row", e)))
           .compose(compositeFuture -> {
 
-            JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
-            ListUser listUser = Json.decodeValue(jsonAppData.toBuffer(), ListUser.class);
+
+            ListUser listUser = new ListUser();
 
             ListObject listObjectResult = compositeFuture.resultAt(0);
             User userResult = compositeFuture.resultAt(1);
@@ -254,7 +266,7 @@ public class ListUserProvider {
 
   }
 
-  public Future<ListUser> getListUsersByListAndUser(ListObject listObject, User user) {
+  public Future<ListUser> getListUserByListAndUser(ListObject listObject, User user) {
     if (!Objects.equals(listObject.getRealm().getLocalId(), user.getRealm().getLocalId())) {
       throw new InternalException("The realm should be the same between a list and a user for a registration");
     }
@@ -432,4 +444,32 @@ public class ListUserProvider {
     return this.apiMapper;
   }
 
+  public void getActiveListUsers(Mailing mailing) {
+    /**
+     * The query on the whole set
+     * (without search term)
+     */
+//    sql = "SELECT *\n" +
+//      "FROM (select *\n" +
+//      "      from (SELECT ROW_NUMBER() OVER (ORDER BY list_user_creation_time DESC) AS rn,\n" +
+//      "                   *\n" +
+//      "            FROM cs_realms.realm_list_user registration\n" +
+//      "            where registration.list_user_realm_id = $1\n" +
+//      "              AND registration.list_user_list_id = $2) registration\n" +
+//      "      where rn >= 1 + $3::BIGINT * $4::BIGINT\n" +
+//      "        and rn < $5::BIGINT * $6::BIGINT + 1" +
+//      "       ) registration_pages\n" +
+//      "         JOIN cs_realms.realm_user realm_user\n" +
+//      "              on registration_pages.list_user_user_id = realm_user.user_id\n" +
+//      "                  and registration_pages.list_user_realm_id = realm_user.user_realm_id\n" +
+//      "        order by registration_pages.list_user_creation_time desc";
+//    Tuple sqlParameters = Tuple.of(
+//      realmId,
+//      listId,
+//      pageSize,
+//      pageId,
+//      pageSize,
+//      pageId + 1
+//    );
+  }
 }

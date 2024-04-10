@@ -290,7 +290,7 @@ public class ListApiImpl implements ListApi {
   public Future<ApiResponse<ListUser>> listUserIdentifierGet(RoutingContext routingContext, String guid) {
 
 
-    ListUserProvider listUserProvider = apiApp.getListRegistrationProvider();
+    ListUserProvider listUserProvider = apiApp.getListUserProvider();
 
     return listUserProvider
       .getListUserByGuidHash(guid)
@@ -331,7 +331,7 @@ public class ListApiImpl implements ListApi {
     return this.apiApp
       .getAuthProvider()
       .checkRealmAuthorization(routingContext, realmId, AuthUserScope.LIST_GET_USERS)
-      .compose(realmIdRes -> apiApp.getListRegistrationProvider()
+      .compose(realmIdRes -> apiApp.getListUserProvider()
         .getListUsers(finalListIdentifier, finalPageId, finalPageSize, finalSearchTerm)
         .compose(subscriptionShorts -> Future.succeededFuture(new ApiResponse<>(subscriptionShorts))));
 

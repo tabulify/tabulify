@@ -124,6 +124,42 @@ We:
 
 Why not in a relation model?
 
+
+#### Strict vs Dynamic Datatype
+
+Because JSON is a dynamic data type while a relational data type is static.
+
+Json is a string, you need to cast all other type with error tht may ensue.
+
+Can you update an integer with a string?
+ie
+```sql
+update userTable set user = userDdata::jsonb->'id' ;
+```
+
+#### Name migration
+
+What if you want to migrate the column name?
+in SQL:
+```sql
+alter table rename
+```
+In Json, you need to update the deserializer.
+Migration:
+* out of sync: the migration happens on read and write of object
+* sync: you need to create a migration script (with sql or with your language)
+
+And, your external sql will not fail even if the name is not good.
+Example: This select will not fail, it will return null.
+```sql
+select '{}'::jsonb->'id'
+```
+
+#### Decoder/Encoder problem
+
+JSON needs to be decoded in your database:
+* Want a time? You need a time decoder and encoder
+
 #### Polluted Json data, possible data loss
 
 Because if you transform an existing object into json, say a list, you have to :
