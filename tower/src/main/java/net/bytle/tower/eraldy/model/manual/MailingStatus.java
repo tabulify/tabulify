@@ -14,13 +14,11 @@ public enum MailingStatus implements Status {
   OPEN(0, 1, "Open", "The mailing is being defined, no email has been sent"),
 
   /**
-   * Scheduled
+   * Processing the request
    */
-  SCHEDULED(1, 2, "Scheduled", "The mailing is scheduled. Email may have been sent."),
-  /**
-   * Running
-   */
-  RUNNING(3, 2, "Running", "A job is executing the mailing"),
+  PROCESSING(1, 2, "Processing", "The mailing request has been created. At least, one job has been executed or is executing."),
+
+
   /**
    * No email to be sent anymore
    */

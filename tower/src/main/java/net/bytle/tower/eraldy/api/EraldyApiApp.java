@@ -81,7 +81,7 @@ public class EraldyApiApp extends TowerApp {
   private final RealmSequenceProvider realmSequenceProvider;
   private final MailingProvider mailingProvider;
   private final FileProvider fileProvider;
-
+  private final MailingJobProvider mailingJobProvider;
 
 
   public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
@@ -115,6 +115,7 @@ public class EraldyApiApp extends TowerApp {
     this.authClientProvider = new AuthClientProvider(this);
     this.realmSequenceProvider = new RealmSequenceProvider();
     this.mailingProvider = new MailingProvider(this);
+    this.mailingJobProvider = new MailingJobProvider(this);
     this.fileProvider = new FileProvider(this);
 
     /**
@@ -493,5 +494,9 @@ public class EraldyApiApp extends TowerApp {
 
   public MailingFlow getMailingFlow() {
     return this.mailingFlow;
+  }
+
+  public MailingJobProvider getMailingJobProvider() {
+    return this.mailingJobProvider;
   }
 }

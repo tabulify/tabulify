@@ -27,9 +27,10 @@ create table IF NOT EXISTS cs_jobs.realm_mailing_row
 (
   MAILING_ROW_REALM_ID              BIGINT                      NOT NULL references "cs_realms"."realm" (REALM_ID),
   MAILING_ROW_MAILING_ID            BIGINT                      NOT NULL,
-  MAILING_ROW_MAILING_JOB_ID        BIGINT                      NULL,
+  MAILING_ROW_MAILING_JOB_ID        BIGINT                      NOT NULL,
   MAILING_ROW_USER_ID               BIGINT                      NOT NULL,
-  MAILING_ROW_STATUS_CODE           INT                         NULL,
+  MAILING_ROW_PLANNED_DELIVERY_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  MAILING_ROW_STATUS_CODE           INT                         NOT NULL,
   MAILING_ROW_STATUS_MESSAGE        TEXT                        NULL,
   MAILING_ROW_COUNT_FAILURE         INT                         NULL,
   MAILING_ROW_EMAIL_SERVER_RECEIVER VARCHAR(255)                NULL,
@@ -55,4 +56,5 @@ comment on column cs_jobs.realm_mailing_row.MAILING_ROW_COUNT_FAILURE is 'The nu
 comment on column cs_jobs.realm_mailing_row.MAILING_ROW_EMAIL_SERVER_RECEIVER is 'The server (mx) where the email was send (ie the receiver)';
 comment on column cs_jobs.realm_mailing_row.MAILING_ROW_EMAIL_SERVER_SENDER is 'The server that has send this message';
 comment on column cs_jobs.realm_mailing_row.MAILING_ROW_EMAIL_MESSAGE_ID is 'The email message id';
-comment on column cs_jobs.realm_mailing_row.MAILING_ROW_EMAIL_DATE is 'The send date';
+comment on column cs_jobs.realm_mailing_row.MAILING_ROW_EMAIL_DATE is 'The email send date';
+comment on column cs_jobs.realm_mailing_row.MAILING_ROW_PLANNED_DELIVERY_TIME is 'The planned delivery date (UTC local)';

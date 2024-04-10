@@ -15,8 +15,6 @@ public class MailingJob {
   private LocalDateTime startTime;
 
   public MailingJob() {
-
-
   }
 
 

@@ -315,6 +315,151 @@ public class MailingProvider {
     return apiApp.createGuidFromRealmAndObjectId(MAILING_GUID_PREFIX, realmId, mailingId).toString();
   }
 
+  public Future<Mailing> updateMailing(Mailing mailing, MailingInputProps mailingInputProps) {
+
+    /**
+     * Closed?
+     */
+    Status actualStatus = mailing.getStatus();
+    if (actualStatus == MailingStatus.COMPLETED) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setType(TowerFailureTypeEnum.BAD_STATUS_400)
+        .setMessage("The mailing (" + mailing + ") is closed, no modifications can be performed anymore")
+        .build()
+      );
+    }
+
+    /**
+     * Patch implementation
+     */
+    String newName = mailingInputProps.getName();
+    if (newName != null) {
+      mailing.setName(newName);
+    }
+
+    String subject = mailingInputProps.getEmailSubject();
+    if (subject != null) {
+      mailing.setEmailSubject(subject);
+    }
+
+    String emailLanguage = mailingInputProps.getEmailLanguage();
+    if (emailLanguage != null) {
+      mailing.setEmailLanguage(emailLanguage);
+    }
+
+    String preview = mailingInputProps.getEmailPreview();
+    if (preview != null) {
+      mailing.setEmailPreview(preview);
+    }
+
+    String body = mailingInputProps.getEmailBody();
+    if (body != null) {
+      // It should be a json array because we take Rich Slate AST for now
+      // later it may be HTML, so we check late
+      JsonArray jsonArray;
+      try {
+        jsonArray = new JsonArray(body);
+      } catch (Exception e) {
+        return Future.failedFuture(TowerFailureException.builder()
+          .setMessage("The body is not a valid json")
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .build()
+        );
+      }
+      mailing.setEmailBody(jsonArray.toString());
+    }
+
+    LocalDateTime jobNextExecutionTime = mailingInputProps.getJobNextExecutionTime();
+    if (jobNextExecutionTime != null) {
+      mailing.setJobNextExecutionTime(jobNextExecutionTime);
+    }
+
+    // Status at the end (it may be changed by the setting of a schedule time
+    Integer statusCode = mailingInputProps.getStatusCode();
+    if (statusCode != null) {
+      MailingStatus newStatus;
+      try {
+        newStatus = MailingStatus.fromStatusCode(statusCode);
+      } catch (NotFoundException e) {
+        return Future.failedFuture(TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage(e.getMessage())
+          .setCauseException(e)
+          .build()
+        );
+      }
+      /**
+       * Validation
+       */
+      if (newStatus == MailingStatus.OPEN & actualStatus != MailingStatus.OPEN) {
+        return Future.failedFuture(TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("You can't set back the status to open when the status is " + actualStatus)
+          .build()
+        );
+      }
+      mailing.setStatus(newStatus);
+
+    }
+
+    String newAuthorGuid = mailingInputProps.getEmailAuthorGuid();
+    Future<OrganizationUser> newAuthorFuture;
+    if (newAuthorGuid != null) {
+      newAuthorFuture = this.apiApp.getOrganizationUserProvider().getOrganizationUserByIdentifier(newAuthorGuid);
+    } else {
+      newAuthorFuture = this.getEmailAuthorAtRequestTime(mailing);
+    }
+    return newAuthorFuture.compose(newAuthor -> {
+
+      mailing.setEmailAuthor(newAuthor);
+      final String sql = "update " + FULL_QUALIFIED_TABLE_NAME + " set \n"
+        + MAILING_NAME_COLUMN + " = $1,\n"
+        + MAILING_EMAIL_AUTHOR_USER_COLUMN + " = $2,\n"
+        + MAILING_ORGA_COLUMN + " = $3,\n"
+        + MAILING_EMAIL_SUBJECT + " = $4,\n"
+        + MAILING_EMAIL_PREVIEW + " = $5,\n"
+        + MAILING_EMAIL_BODY + " = $6,\n"
+        + MAILING_EMAIL_LANGUAGE + " = $7,\n"
+        + MAILING_JOB_NEXT_EXECUTION_TIME + " = $8,\n"
+        + MAILING_STATUS_COLUMN + " = $9,\n"
+        + MAILING_MODIFICATION_COLUMN + " = $10\n"
+        + "where\n"
+        + MAILING_ID_COLUMN + " = $11\n" +
+        " and " + MAILING_REALM_COLUMN + " = $12\n"
+        + "RETURNING " + MAILING_ID_COLUMN; // to check if the update has touched a row
+      Tuple tuple = Tuple.of(
+        mailing.getName(),
+        mailing.getEmailAuthor().getLocalId(),
+        mailing.getEmailAuthor().getOrganization().getLocalId(),
+        mailing.getEmailSubject(),
+        mailing.getEmailPreview(),
+        mailing.getEmailBody(),
+        mailing.getEmailLanguage(),
+        mailing.getJobNextExecutionTime(),
+        mailing.getStatus().getCode(),
+        DateTimeUtil.getNowInUtc(),
+        mailing.getLocalId(),
+        mailing.getRealm().getLocalId()
+      );
+
+      return this.jdbcPool
+        .preparedQuery(sql)
+        .execute(tuple)
+        .recover(err -> Future.failedFuture(new InternalException("Updating mailing (" + tuple.deepToString() + ") failed. Error: " + err.getMessage() + ". Sql:\n" + sql, err)))
+        .compose(rowSet -> {
+          if (rowSet.size() != 1) {
+            // 1 because we use the RETURNING SQL clause
+            // 0 should not happen as we select it beforehand to build the mailing
+            return Future.failedFuture(TowerFailureException.builder()
+              .setMessage("Update Mailing: No mailing was updated for the tuple (" + Tuple.of(mailing.getLocalId(),
+                mailing.getRealm().getLocalId()).deepToString() + ")")
+              .build());
+          }
+          return Future.succeededFuture(mailing);
+        });
+    });
+  }
+
   /**
    * Update
    *
@@ -334,149 +479,7 @@ public class MailingProvider {
           );
         }
 
-        /**
-         * Closed?
-         */
-        Status actualStatus = mailing.getStatus();
-        if (actualStatus == MailingStatus.COMPLETED) {
-          return Future.failedFuture(TowerFailureException.builder()
-            .setType(TowerFailureTypeEnum.BAD_STATUS_400)
-            .setMessage("The mailing (" + mailing + ") is closed, no modifications can be performed anymore")
-            .build()
-          );
-        }
-
-        /**
-         * Patch implementation
-         */
-        String newName = mailingInputProps.getName();
-        if (newName != null) {
-          mailing.setName(newName);
-        }
-
-        String subject = mailingInputProps.getEmailSubject();
-        if (subject != null) {
-          mailing.setEmailSubject(subject);
-        }
-
-        String emailLanguage = mailingInputProps.getEmailLanguage();
-        if (emailLanguage != null) {
-          mailing.setEmailLanguage(emailLanguage);
-        }
-
-        String preview = mailingInputProps.getEmailPreview();
-        if (preview != null) {
-          mailing.setEmailPreview(preview);
-        }
-
-        String body = mailingInputProps.getEmailBody();
-        if (body != null) {
-          // It should be a json array because we take Rich Slate AST for now
-          // later it may be HTML, so we check late
-          JsonArray jsonArray;
-          try {
-            jsonArray = new JsonArray(body);
-          } catch (Exception e) {
-            return Future.failedFuture(TowerFailureException.builder()
-              .setMessage("The body is not a valid json")
-              .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-              .build()
-            );
-          }
-          mailing.setEmailBody(jsonArray.toString());
-        }
-
-        LocalDateTime jobNextExecutionTime = mailingInputProps.getJobNextExecutionTime();
-        if (jobNextExecutionTime != null) {
-          mailing.setJobNextExecutionTime(jobNextExecutionTime);
-          // the status is not completed as tested at the begining
-          mailing.setStatus(MailingStatus.SCHEDULED);
-        }
-
-        // Status at the end (it may be changed by the setting of a schedule time
-        Integer statusCode = mailingInputProps.getStatusCode();
-        if (statusCode != null) {
-          MailingStatus newStatus;
-          try {
-            newStatus = MailingStatus.fromStatusCode(statusCode);
-          } catch (NotFoundException e) {
-            return Future.failedFuture(TowerFailureException.builder()
-              .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-              .setMessage(e.getMessage())
-              .setCauseException(e)
-              .build()
-            );
-          }
-          /**
-           * Validation
-           */
-          if (newStatus == MailingStatus.OPEN & actualStatus != MailingStatus.OPEN) {
-            return Future.failedFuture(TowerFailureException.builder()
-              .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-              .setMessage("You can't set back the status to open when the status is " + actualStatus)
-              .build()
-            );
-          }
-          mailing.setStatus(newStatus);
-
-        }
-
-        String newAuthorGuid = mailingInputProps.getEmailAuthorGuid();
-        Future<OrganizationUser> newAuthorFuture;
-        if (newAuthorGuid != null) {
-          newAuthorFuture = this.apiApp.getOrganizationUserProvider().getOrganizationUserByIdentifier(newAuthorGuid);
-        } else {
-          newAuthorFuture = this.getEmailAuthorAtRequestTime(mailing);
-        }
-        return newAuthorFuture.compose(newAuthor -> {
-
-          mailing.setEmailAuthor(newAuthor);
-          final String sql = "update " + FULL_QUALIFIED_TABLE_NAME + " set \n"
-            + MAILING_NAME_COLUMN + " = $1,\n"
-            + MAILING_EMAIL_AUTHOR_USER_COLUMN + " = $2,\n"
-            + MAILING_ORGA_COLUMN + " = $3,\n"
-            + MAILING_EMAIL_SUBJECT + " = $4,\n"
-            + MAILING_EMAIL_PREVIEW + " = $5,\n"
-            + MAILING_EMAIL_BODY + " = $6,\n"
-            + MAILING_EMAIL_LANGUAGE + " = $7,\n"
-            + MAILING_JOB_NEXT_EXECUTION_TIME + " = $8,\n"
-            + MAILING_STATUS_COLUMN + " = $9,\n"
-            + MAILING_MODIFICATION_COLUMN + " = $10\n"
-            + "where\n"
-            + MAILING_ID_COLUMN + " = $11\n" +
-            " and " + MAILING_REALM_COLUMN + " = $12\n"
-            + "RETURNING " + MAILING_ID_COLUMN; // to check if the update has touched a row
-          Tuple tuple = Tuple.of(
-            mailing.getName(),
-            mailing.getEmailAuthor().getLocalId(),
-            mailing.getEmailAuthor().getOrganization().getLocalId(),
-            mailing.getEmailSubject(),
-            mailing.getEmailPreview(),
-            mailing.getEmailBody(),
-            mailing.getEmailLanguage(),
-            mailing.getJobNextExecutionTime(),
-            mailing.getStatus().getCode(),
-            DateTimeUtil.getNowInUtc(),
-            mailing.getLocalId(),
-            mailing.getRealm().getLocalId()
-          );
-
-          return this.jdbcPool
-            .preparedQuery(sql)
-            .execute(tuple)
-            .recover(err -> Future.failedFuture(new InternalException("Updating mailing (" + tuple.deepToString() + ") failed. Error: " + err.getMessage() + ". Sql:\n" + sql, err)))
-            .compose(rowSet -> {
-              if (rowSet.size() != 1) {
-                // 1 because we use the RETURNING SQL clause
-                // 0 should not happen as we select it beforehand to build the mailing
-                return Future.failedFuture(TowerFailureException.builder()
-                  .setMessage("Update Mailing: No mailing was updated for the tuple (" + Tuple.of(mailing.getLocalId(),
-                    mailing.getRealm().getLocalId()).deepToString() + ")")
-                  .build());
-              }
-              return Future.succeededFuture(mailing);
-            });
-        });
+        return this.updateMailing(mailing, mailingInputProps);
       });
 
   }
