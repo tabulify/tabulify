@@ -60,18 +60,18 @@ alter table realm_list_user add column list_user_out_opt_out_time TIMESTAMP WITH
 -- row in db
 -- prod: {"optInIp": "194.254.109.163", "optInTime": "2023-05-15T12:59:07.140", "confirmationIp": "162.221.128.164", "confirmationTime": "2023-05-15T13:30:02.151"}
 -- dev: {"inOptInIp": "190.94.253.166", "inSourceId": 2, "inOptInTime": "2022-10-04T19:26:53", "inOptInOrigin": "2", "inOptInConfirmationIp": "190.94.253.166", "inOptInConfirmationTime": "2022-10-04T19:27:55"}
-update realm_list_user set list_user_in_source_id = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->'inSourceId' ;
+update realm_list_user set list_user_in_source_id = cast((trim( replace(list_user_data::text,'\',''),'"'))::jsonb->>'inSourceId' as int);
 update realm_list_user set list_user_in_source_id = 0 where list_user_in_source_id is null ;
-update realm_list_user set list_user_in_opt_in_origin = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->'inOptInOrigin';
-update realm_list_user set list_user_in_opt_in_origin = 'combostrap' where list_user_in_opt_in_origin is null || trim(list_user_in_opt_in_origin)=='';
-update realm_list_user set list_user_in_opt_in_ip = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->'optInIp';
-update realm_list_user set list_user_in_opt_in_ip = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->'inOptInIp' where list_user_in_opt_in_ip is null || trim(list_user_in_opt_in_ip)=='';
-update realm_list_user set list_user_in_opt_in_time = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->'optInTime';
-update realm_list_user set list_user_in_opt_in_time = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->'inOptInTime' where list_user_in_opt_in_time is null ;
-update realm_list_user set list_user_in_opt_in_confirmation_ip = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->'inOptInConfirmationIp';
-update realm_list_user set list_user_in_opt_in_confirmation_ip = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->'confirmationIp' where list_user_in_opt_in_ip is null || trim(list_user_in_opt_in_ip)=='';
-update realm_list_user set list_user_in_opt_in_confirmation_time = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->'confirmationTime';
-update realm_list_user set list_user_in_opt_in_confirmation_time = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->'inOptInConfirmationTime' where list_user_in_opt_in_confirmation_time is null ;
+update realm_list_user set list_user_in_opt_in_origin = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->>'inOptInOrigin';
+update realm_list_user set list_user_in_opt_in_origin = 'combostrap' where list_user_in_opt_in_origin is null || trim(list_user_in_opt_in_origin) = '';
+update realm_list_user set list_user_in_opt_in_ip = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->>'optInIp';
+update realm_list_user set list_user_in_opt_in_ip = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->>'inOptInIp' where list_user_in_opt_in_ip is null || trim(list_user_in_opt_in_ip) = '';
+update realm_list_user set list_user_in_opt_in_time = ((trim( replace(list_user_data::text,'\',''),'"'))::jsonb->>'optInTime')::timestamp ;
+update realm_list_user set list_user_in_opt_in_time = cast((trim( replace(list_user_data::text,'\',''),'"'))::jsonb->>'inOptInTime' as timestamp)  where list_user_in_opt_in_time is null ;
+update realm_list_user set list_user_in_opt_in_confirmation_ip = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->>'inOptInConfirmationIp';
+update realm_list_user set list_user_in_opt_in_confirmation_ip = (trim( replace(list_user_data::text,'\',''),'"'))::jsonb->>'confirmationIp' where list_user_in_opt_in_ip is null || trim(list_user_in_opt_in_ip) = '';
+update realm_list_user set list_user_in_opt_in_confirmation_time = cast((trim( replace(list_user_data::text,'\',''),'"'))::jsonb->>'confirmationTime' as timestamp);
+update realm_list_user set list_user_in_opt_in_confirmation_time = cast((trim( replace(list_user_data::text,'\',''),'"'))::jsonb->>'inOptInConfirmationTime' as timestamp) where list_user_in_opt_in_confirmation_time is null;
 
 alter table realm_list_user alter column list_user_in_source_id set not null;
 -- drop

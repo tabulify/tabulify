@@ -8,7 +8,7 @@ import net.bytle.dns.DnsIp;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
-import net.bytle.tower.eraldy.model.openapi.ListUser;
+import net.bytle.tower.eraldy.graphql.pojo.input.ListUserProps;
 import net.bytle.tower.eraldy.model.openapi.ListUserSource;
 import net.bytle.tower.eraldy.model.openapi.ListUserStatus;
 import net.bytle.tower.eraldy.model.openapi.User;
@@ -167,15 +167,16 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                     if (this.listImportJob.getListUserAction() != ListImportListUserAction.IN) {
                       return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
                     }
-                    ListUser listUserToInsert = new ListUser();
-                    listUserToInsert.setUser(user);
-                    listUserToInsert.setList(list);
-                    listUserToInsert.setInSourceId(ListUserSource.IMPORT);
-                    listUserToInsert.setStatus(ListUserStatus.OK);
+                    /**
+                     * Insert
+                     */
+                    ListUserProps listUserInsertionProps = new ListUserProps();
+                    listUserInsertionProps.setInListUserSource(ListUserSource.IMPORT);
+                    listUserInsertionProps.setStatus(ListUserStatus.OK);
                     if (this.optInOrigin == null) {
-                      listUserToInsert.setInOptInOrigin(ListUserSource.IMPORT.toString());
+                      listUserInsertionProps.setInOptInOrigin(ListUserSource.IMPORT.toString());
                     } else {
-                      listUserToInsert.setInOptInOrigin(this.optInOrigin);
+                      listUserInsertionProps.setInOptInOrigin(this.optInOrigin);
                     }
                     if (optInIp != null) {
                       DnsIp optInIpAsDnsIp;
@@ -184,7 +185,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                       } catch (DnsException e) {
                         return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInIp (" + optInIp + ") is not a valid ipv4 or ipv6.");
                       }
-                      listUserToInsert.setInOptInIp(optInIpAsDnsIp.getAddress());
+                      listUserInsertionProps.setInOptInIp(optInIpAsDnsIp.getAddress());
                     }
                     if (optInTime != null) {
                       LocalDateTime optInTimeAsObject;
@@ -193,7 +194,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                       } catch (CastException e) {
                         return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInTime (" + optInTime + ") is not a known time string.");
                       }
-                      listUserToInsert.setInOptInTime(optInTimeAsObject);
+                      listUserInsertionProps.setInOptInTime(optInTimeAsObject);
                     }
                     if (confirmIp != null) {
                       DnsIp confirmIpAsDnsIp;
@@ -202,7 +203,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                       } catch (DnsException e) {
                         return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmIp (" + confirmIp + ") is not a valid ipv4 or ipv6.");
                       }
-                      listUserToInsert.setInOptInConfirmationIp(confirmIpAsDnsIp.getAddress());
+                      listUserInsertionProps.setInOptInConfirmationIp(confirmIpAsDnsIp.getAddress());
                     }
                     if (confirmTime != null) {
                       LocalDateTime confirmTimeAsObject;
@@ -211,9 +212,9 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                       } catch (CastException e) {
                         return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmTime (" + confirmTime + ") is not a known time string.");
                       }
-                      listUserToInsert.setInOptInConfirmationTime(confirmTimeAsObject);
+                      listUserInsertionProps.setInOptInConfirmationTime(confirmTimeAsObject);
                     }
-                    return listUserProvider.insertListUser(listUserToInsert)
+                    return listUserProvider.insertListUser(user, list, listUserInsertionProps)
                       .compose(listRegistrationInserted -> {
                         this.listUserStatus = ListImportListUserStatus.ADDED;
                         this.listUserGuid = listRegistrationInserted.getGuid();

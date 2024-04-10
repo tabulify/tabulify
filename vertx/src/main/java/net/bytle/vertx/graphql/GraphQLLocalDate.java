@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter;
 
 
 /**
- * LocalDate Formatting
+ * LocalDate Formatting when sending a response
  * <a href="https://www.graphql-java.com/documentation/sdl-directives#another-example---date-formatting">...</a>
  */
 public class GraphQLLocalDate implements SchemaDirectiveWiring {
@@ -26,7 +26,7 @@ public class GraphQLLocalDate implements SchemaDirectiveWiring {
     // The default is the Javascript format (without the nnnnn)
     // because this is the client
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#date_time_string_format
-    this.defaultArgumentValue = "yyyy-MM-dd'T'HH:mm:sss'Z'"; // ISO
+    this.defaultArgumentValue = "yyyy-MM-dd'T'HH:mm:ss'Z'"; // ISO
     this.defaultDateTimeFormatter = DateTimeFormatter.ofPattern(this.defaultArgumentValue);
   }
 

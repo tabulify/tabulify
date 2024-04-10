@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.graphql.pojo.input;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.model.openapi.ListUserSource;
+import net.bytle.tower.eraldy.model.openapi.ListUserStatus;
 
 import java.time.LocalDateTime;
 
@@ -10,10 +11,10 @@ import java.time.LocalDateTime;
  * The props to create or update a list user
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListUserInputProps {
+public class ListUserProps {
 
 
-  protected Integer status;
+  protected ListUserStatus status;
 
   protected ListUserSource inListUserSource;
 
@@ -27,7 +28,6 @@ public class ListUserInputProps {
 
   protected String inOptInIp;
 
-  protected LocalDateTime outOptOutTime;
 
 
   /**
@@ -36,7 +36,7 @@ public class ListUserInputProps {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public ListUserInputProps() {
+  public ListUserProps() {
   }
 
 
@@ -45,7 +45,7 @@ public class ListUserInputProps {
   * @return status
   */
   @JsonProperty("status")
-  public Integer getStatus() {
+  public ListUserStatus getStatus() {
     return status;
   }
 
@@ -53,10 +53,9 @@ public class ListUserInputProps {
   * @param status Set status
   */
   @SuppressWarnings("unused")
-  public void setStatus(Integer status) {
+  public void setStatus(ListUserStatus status) {
     this.status = status;
   }
-
 
 
 
@@ -162,21 +161,6 @@ public class ListUserInputProps {
     this.inOptInIp = inOptInIp;
   }
 
-  /**
-  * @return outOptOutTime The opt-out time
-  */
-  @JsonProperty("outOptOutTime")
-  public LocalDateTime getOutOptOutTime() {
-    return outOptOutTime;
-  }
-
-  /**
-  * @param outOptOutTime The opt-out time
-  */
-  @SuppressWarnings("unused")
-  public void setOutOptOutTime(LocalDateTime outOptOutTime) {
-    this.outOptOutTime = outOptOutTime;
-  }
 
 
 }

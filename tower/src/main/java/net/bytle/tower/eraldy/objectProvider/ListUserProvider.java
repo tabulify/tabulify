@@ -6,11 +6,11 @@ import io.vertx.core.Future;
 import io.vertx.json.schema.ValidationException;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
-import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.graphql.pojo.input.ListUserProps;
 import net.bytle.tower.eraldy.jackson.JacksonListUserSourceDeserializer;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.ListItemMixinWithoutRealm;
@@ -24,6 +24,7 @@ import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.JdbcSchemaManager;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.jackson.JacksonMapperManager;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +54,7 @@ public class ListUserProvider {
   public static final String IN_OPT_IN_ORIGIN_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_origin";
   public static final String IN_OPT_IN_IP_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_ip";
   public static final String IN_OPT_IN_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_time";
+  public static final String OUT_OPT_OUT_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "out_opt_out_time";
 
   public static final String IN_OPT_IN_CONFIRMATION_IP_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_confirmation_ip";
   public static final String IN_OPT_IN_CONFIRMATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_confirmation_time";
@@ -62,6 +64,7 @@ public class ListUserProvider {
   private final EraldyApiApp apiApp;
   private static final String CREATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private static final String MODIFICATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
+
   private final Pool jdbcPool;
   private final String registrationsBySearchTermSql;
   private final ObjectMapper apiMapper;
@@ -94,55 +97,6 @@ public class ListUserProvider {
 
   }
 
-
-  /**
-   * @param listUser the registration to upsert
-   * @return the realm with the id
-   */
-  public Future<ListUser> upsertListUser(ListUser listUser) {
-
-
-    User user = listUser.getUser();
-    if (user == null) {
-      return Future.failedFuture(new InternalError("The subscriber user is mandatory when inserting a publication subscription"));
-    }
-    Long userId = user.getLocalId();
-    if (userId == null) {
-      throw new InternalException("The user local id of a user object should not be null");
-    }
-    ListObject listObject = listUser.getList();
-    if (listObject == null) {
-      return Future.failedFuture(new InternalError("The list is mandatory when upserting a user in a list"));
-    }
-
-    /**
-     * Realm check
-     */
-    if (!(user.getRealm().getLocalId().equals(listObject.getRealm().getLocalId()))) {
-      return Future.failedFuture(new InternalError("Inconsistency: The realm is not the same for the list (" + listObject.getRealm().getHandle() + " and the user (" + user.getRealm().getHandle() + ")"));
-    }
-
-    Long listId = listObject.getLocalId();
-    if (listId == null) {
-      return Future.failedFuture(new InternalError("The list id is mandatory when inserting a registration"));
-    }
-
-    /**
-     * No upsert sql statement (see identifier.md)
-     * (Even if this case it had been possible
-     * because there is no object id)
-     */
-    return updateListUserAndGetRowSet(listUser)
-      .compose(rowSet -> {
-        if (rowSet.rowCount() == 0) {
-          return insertListUser(listUser);
-        }
-        this.computeGuidForListUserObject(listUser);
-        return Future.succeededFuture(listUser);
-      });
-
-  }
-
   private void computeGuidForListUserObject(ListUser listUser) {
     if (listUser.getGuid() != null) {
       return;
@@ -156,19 +110,30 @@ public class ListUserProvider {
     listUser.setGuid(guid);
   }
 
-  private Future<RowSet<Row>> updateListUserAndGetRowSet(ListUser listUser) {
+  @SuppressWarnings("unused")
+  private Future<ListUser> updateListUser(ListUser listUser, ListUserProps listUserProps) {
 
+    ListUserStatus status = listUserProps.getStatus();
+    if(status==null){
+      return Future.succeededFuture(listUser);
+    }
+
+    if(status == listUser.getStatus()){
+      return Future.succeededFuture(listUser);
+    }
+
+    /**
+     * Only unsubscription for now
+     */
+    if(status!=ListUserStatus.UNSUBSCRIBED){
+      return Future.succeededFuture(listUser);
+    }
 
     String sql = "UPDATE \n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
       " SET\n" +
       "  " + STATUS_COLUMN + " = $1,\n" +
-      "  " + IN_SOURCE_ID_COLUMN + " = $2,\n" +
-      "  " + IN_OPT_IN_ORIGIN_COLUMN + " = $2,\n" +
-      "  " + IN_OPT_IN_IP_COLUMN + " = $2,\n" +
-      "  " + IN_OPT_IN_TIME_COLUMN + " = $2,\n" +
-      "  " + IN_OPT_IN_CONFIRMATION_IP_COLUMN + " = $2,\n" +
-      "  " + IN_OPT_IN_CONFIRMATION_TIME_COLUMN + " = $2,\n" +
+      "  " + OUT_OPT_OUT_TIME_COLUMN + " = $2,\n" +
       "  " + MODIFICATION_TIME_COLUMN + " = $3\n" +
       "where\n" +
       "  " + REALM_COLUMN + " = $4\n" +
@@ -179,16 +144,19 @@ public class ListUserProvider {
       .preparedQuery(sql)
       .execute(Tuple.of(
         listUser.getStatus().getValue(),
-
         DateTimeUtil.getNowInUtc(),
         listUser.getList().getRealm().getLocalId(),
         listUser.getList().getLocalId(),
         listUser.getUser().getLocalId()
       ))
-      .onFailure(e -> LOGGER.error("List User Update Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e));
+      .onFailure(e -> LOGGER.error("List User Update Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e))
+      .compose(e->Future.succeededFuture(listUser));
   }
 
-  public Future<ListUser> insertListUser(ListUser listUser) {
+  public Future<ListUser> insertListUser(User user, ListObject list, ListUserProps listUserProps) {
+
+    // on conflict do nothing because the insert can happen twice if the user
+    // click on the url twice
 
     String sql = "INSERT INTO\n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
@@ -204,8 +172,11 @@ public class ListUserProvider {
       "  " + STATUS_COLUMN + ",\n" +
       "  " + CREATION_TIME_COLUMN + "\n" +
       "  )\n" +
-      " values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)";
+      " values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n" +
+      "ON CONFLICT(" + REALM_COLUMN + "," + ID_COLUMN + "," + USER_ID_COLUMN + ") DO NOTHING";
 
+
+    ListUser listUser = getListUser(user, list, listUserProps);
 
     return jdbcPool
       .preparedQuery(sql)
@@ -213,21 +184,34 @@ public class ListUserProvider {
         listUser.getList().getRealm().getLocalId(),
         listUser.getList().getLocalId(),
         listUser.getUser().getLocalId(),
-        listUser.getInSourceId(),
+        listUser.getInSourceId().getValue(),
         listUser.getInOptInOrigin(),
         listUser.getInOptInIp(),
         listUser.getInOptInTime(),
         listUser.getInOptInConfirmationIp(),
         listUser.getInOptInConfirmationTime(),
-        ListUserStatus.OK.getValue(),
+        listUser.getStatus(),
         DateTimeUtil.getNowInUtc()
       ))
       .onFailure(e -> LOGGER.error("List User Insert Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e))
-      .compose(rows -> {
-        this.computeGuidForListUserObject(listUser);
-        return Future.succeededFuture(listUser);
-      });
+      .compose(rows -> Future.succeededFuture(listUser));
 
+  }
+
+  @NotNull
+  private ListUser getListUser(User user, ListObject list, ListUserProps listUserProps) {
+    ListUser listUser = new ListUser();
+    listUser.setUser(user);
+    listUser.setList(list);
+    listUser.setInSourceId(listUserProps.getInListUserSource());
+    listUser.setInOptInOrigin(listUserProps.getInOptInOrigin());
+    listUser.setInOptInIp(listUserProps.getInOptInIp());
+    listUser.setInOptInTime(listUserProps.getInOptInTime());
+    listUser.setInOptInConfirmationIp(listUserProps.getInOptInConfirmationIp());
+    listUser.setInOptInConfirmationTime(listUserProps.getInOptInConfirmationTime());
+    listUser.setStatus(ListUserStatus.OK);
+    this.computeGuidForListUserObject(listUser);
+    return listUser;
   }
 
 

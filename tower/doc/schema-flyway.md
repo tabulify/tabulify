@@ -137,6 +137,27 @@ ie
 update userTable set user = userDdata::jsonb->'id' ;
 ```
 
+Nope:
+```
+SQL State  : 42804
+Error Code : 0
+ERROR: column "list_user_in_source_id" is of type integer but expression is of type jsonb
+Hint: You will need to rewrite or cast the expression.
+```
+or
+```
+SQL State  : 22P02
+Error Code : 0
+Message    : ERROR: invalid input syntax for type integer: "inSourceId"
+```
+or
+```
+SQL State  : 42846
+Error Code : 0
+Message    : ERROR: cannot cast type jsonb to timestamp without time zone
+```
+
+
 #### Name migration
 
 What if you want to migrate the column name?
@@ -159,6 +180,11 @@ select '{}'::jsonb->'id'
 
 JSON needs to be decoded in your database:
 * Want a time? You need a time decoder and encoder
+
+#### JSON in a string text
+
+You may store a JSON in a string, but it may be then escaped.
+
 
 #### Polluted Json data, possible data loss
 

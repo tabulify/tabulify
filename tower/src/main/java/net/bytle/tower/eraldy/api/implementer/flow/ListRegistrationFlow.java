@@ -16,6 +16,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.ListRegistrationEmailCallback;
 import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.tower.eraldy.graphql.pojo.input.ListUserProps;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
@@ -73,33 +74,30 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param user             - the user to register
    * @param optInTime        - the opt-in-Time
    * @param optInIp          - the opt-in-ip
-   * @param registrationFlow - the flow used to register the user to the list
+   * @param listUserSource - the flow used to register the user to the list
    */
-  public Future<ListUser> createListUserEntry(RoutingContext ctx, Guid listGuid, User user, LocalDateTime optInTime, String optInIp, ListUserSource registrationFlow) {
+  public Future<ListUser> createListUserEntry(RoutingContext ctx, Guid listGuid, User user, LocalDateTime optInTime, String optInIp, ListUserSource listUserSource) {
 
     return this.getApp()
       .getListProvider()
       .getListByGuidObject(listGuid)
       .recover(err -> Future.failedFuture(new InternalException(err)))
       .compose(list -> {
-        ListUser listUser = new ListUser();
-        listUser.setList(list);
-        listUser.setUser(user);
-        listUser.setStatus(ListUserStatus.OK);
-        listUser.setInOptInTime(optInTime);
-        listUser.setInOptInConfirmationTime(DateTimeUtil.getNowInUtc());
-        listUser.setInOptInIp(optInIp);
+        ListUserProps listUserProps = new ListUserProps();
+        listUserProps.setInOptInTime(optInTime);
+        listUserProps.setInOptInConfirmationTime(DateTimeUtil.getNowInUtc());
+        listUserProps.setInOptInIp(optInIp);
         try {
           String realRemoteClient = HttpRequestUtil.getRealRemoteClientIp(ctx.request());
-          listUser.setInOptInConfirmationIp(realRemoteClient);
+          listUserProps.setInOptInConfirmationIp(realRemoteClient);
         } catch (NotFoundException e) {
           LOGGER.warn("List registration validation: The remote ip client could not be found. Error: " + e.getMessage());
         }
-        listUser.setInSourceId(registrationFlow);
+        listUserProps.setInListUserSource(listUserSource);
         return this
           .getApp()
           .getListUserProvider()
-          .upsertListUser(listUser)
+          .insertListUser(user, list,listUserProps)
           .recover(err -> Future.failedFuture(new InternalException(err)))
           .compose(Future::succeededFuture);
       });
