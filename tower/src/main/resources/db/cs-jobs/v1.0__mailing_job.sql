@@ -4,11 +4,11 @@ create table IF NOT EXISTS cs_jobs.realm_mailing_job
   MAILING_JOB_REALM_ID             BIGINT                      NOT NULL references "cs_realms"."realm" (REALM_ID),
   MAILING_JOB_ID                   BIGINT                      NOT NULL,
   MAILING_JOB_MAILING_ID           BIGINT                      NOT NULL,
-  MAILING_JOB_STATUS_CODE          INT                         NULL,
+  MAILING_JOB_STATUS_CODE          INT                         NOT NULL,
   MAILING_JOB_STATUS_MESSAGE       TEXT                        NULL,
   MAILING_JOB_START_TIME           TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   MAILING_JOB_END_TIME             TIMESTAMP WITHOUT TIME ZONE NULL,
-  MAILING_JOB_COUNT_ROW_TO_EXECUTE BIGINT                      NULL,
+  MAILING_JOB_COUNT_ROW_TO_EXECUTE BIGINT                      NOT NULL,
   MAILING_JOB_COUNT_ROW_SUCCESS    BIGINT                      NULL,
   MAILING_JOB_COUNT_ROW_EXECUTION  BIGINT                      NULL
 );

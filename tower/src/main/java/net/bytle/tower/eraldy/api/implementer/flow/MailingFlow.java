@@ -38,7 +38,7 @@ public class MailingFlow extends WebFlowAbs {
     if (Arrays.asList(MailingStatus.COMPLETED, MailingStatus.PAUSED, MailingStatus.CANCELED).contains(status)) {
       return Future.failedFuture(TowerFailureException
         .builder()
-        .setType(TowerFailureTypeEnum.BAD_STATUS_400)
+        .setType(TowerFailureTypeEnum.BAD_STATE_400)
         .setMessage("The mailing (" + mailing + ") can not be executed because the status is " + status)
         .build()
       );

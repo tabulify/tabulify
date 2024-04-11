@@ -1,14 +1,24 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.Future;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.sqlclient.Pool;
+import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.manual.MailingJob;
 import net.bytle.tower.eraldy.model.manual.MailingJobStatus;
+import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureTypeEnum;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MailingJobProvider {
 
@@ -44,7 +54,7 @@ public class MailingJobProvider {
       "  " + MAILING_JOB_START_TIME_COLUMN + ",\n" +
       "  " + MAILING_JOB_COUNT_ROW_TO_EXECUTE_COLUMN +
       "  )\n" +
-      " values ($1, $2, $3, $4, $5)";
+      " values ($1, $2, $3, $4, $5, $6)";
 
 
   }
@@ -56,27 +66,46 @@ public class MailingJobProvider {
     mailingJob.setStatus(MailingJobStatus.OPEN);
     mailingJob.setStartTime(DateTimeService.getNowInUtc());
 
-    return this.jdbcPool
-      .withTransaction(sqlConnection ->
-        this.apiApp.getRealmSequenceProvider()
-          .getNextIdForTableAndRealm(sqlConnection, mailing.getRealm(), MAILING_JOB_FULL_QUALIFIED_TABLE_NAME)
-          .compose(nextId -> {
+    return this.apiApp.getMailingProvider().getListAtRequestTime(mailing)
+      .compose(emailRecipientList -> {
 
-            mailingJob.setLocalId(nextId);
-            this.updateGuid(mailingJob);
-            return sqlConnection
-              .preparedQuery(insertSql)
-              .execute(Tuple.of(
-                mailingJob.getMailing().getRealm().getLocalId(),
-                mailingJob.getLocalId(),
-                mailingJob.getMailing().getLocalId(),
-                mailingJob.getStatus().getCode(),
-                mailingJob.getStartTime(),
-                mailingJob.getRowCountToExecute()
-              ));
-          })
-          .recover(e -> Future.failedFuture(new InternalException("Mailing Job creation Error: Sql Error " + e.getMessage(), e)))
-          .compose(rows -> Future.succeededFuture(mailingJob)));
+        /**
+         * Number of rows to execute
+         */
+        Long userInCount = emailRecipientList.getUserInCount();
+        if (userInCount == null || userInCount == 0) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.BAD_STATE_400)
+              .setMessage("The list ( " + emailRecipientList + ") has no subscribers, we can't execute the mailing (" + mailing + ").")
+              .build()
+          );
+        }
+        mailingJob.setCountRowToExecute(userInCount);
+
+        return this.jdbcPool
+          .withTransaction(sqlConnection ->
+            this.apiApp.getRealmSequenceProvider()
+              .getNextIdForTableAndRealm(sqlConnection, mailing.getRealm(), MAILING_JOB_FULL_QUALIFIED_TABLE_NAME)
+              .compose(nextId -> {
+
+                mailingJob.setLocalId(nextId);
+                this.updateGuid(mailingJob);
+                return sqlConnection
+                  .preparedQuery(insertSql)
+                  .execute(Tuple.of(
+                    mailingJob.getMailing().getRealm().getLocalId(),
+                    mailingJob.getLocalId(),
+                    mailingJob.getMailing().getLocalId(),
+                    mailingJob.getStatus().getCode(),
+                    mailingJob.getStartTime(),
+                    mailingJob.getCountRowToExecute()
+                  ));
+              })
+              .recover(e -> Future.failedFuture(new InternalException("Mailing Job creation Error: Sql Error " + e.getMessage(), e)))
+              .compose(rows -> Future.succeededFuture(mailingJob)));
+      });
+
   }
 
   private void updateGuid(MailingJob mailingJob) {
@@ -89,5 +118,67 @@ public class MailingJobProvider {
         )
         .toString()
     );
+  }
+
+  public Future<List<MailingJob>> getMailingJobsRequestHandler(String mailingGuid, RoutingContext routingContext) {
+    Guid guid;
+    try {
+      guid = this.apiApp.getMailingProvider().getGuidObject(mailingGuid);
+    } catch (CastException e) {
+      return Future.failedFuture(new IllegalArgumentException("The mailing guid (" + mailingGuid + ") is not valid", e));
+    }
+
+    return this.apiApp.getAuthProvider()
+      .getRealmByLocalIdWithAuthorizationCheck( guid.getRealmOrOrganizationId(), AuthUserScope.MAILING_JOBS_GET,routingContext)
+      .compose(realm -> {
+
+        Long mailingJobLocalId = guid.validateRealmAndGetFirstObjectId(realm.getLocalId());
+        Mailing mailing = new Mailing();
+        mailing.setRealm(realm);
+        mailing.setLocalId(mailingJobLocalId);
+        mailing.setGuid(mailingGuid);
+
+        final String sql = "select * from " + MAILING_JOB_FULL_QUALIFIED_TABLE_NAME + " where " + MAILING_JOB_MAILING_ID_COLUMN + " = $1 and " + MAILING_JOB_REALM_ID_COLUMN  + " = $2";
+        Tuple tuple = Tuple.of(mailingJobLocalId, realm.getLocalId());
+        return this.jdbcPool
+          .preparedQuery(sql)
+          .execute(tuple)
+          .recover(err -> Future.failedFuture(new InternalException("Getting mailing job for the list (" + tuple + ") failed. Error: " + err.getMessage() + ". Sql:\n" + sql, err)))
+          .compose(rows -> {
+            List<MailingJob> mailingList = new ArrayList<>();
+            for (Row row : rows) {
+              MailingJob mailingJob = this.buildFromRow(row, mailing);
+              mailingList.add(mailingJob);
+            }
+            return Future.succeededFuture(mailingList);
+          });
+      });
+  }
+
+
+
+  private MailingJob buildFromRow(Row row, Mailing mailing) {
+
+    MailingJob mailingJob = new MailingJob();
+
+    /**
+     * Ids
+     */
+    mailingJob.setLocalId(row.getLong(MAILING_JOB_ID_COLUMN));
+    mailingJob.setMailing(mailing);
+    this.updateGuid(mailingJob);
+
+    /**
+     * Props
+     */
+    mailingJob.setStatus(MailingJobStatus.fromStatusCodeFailSafe(row.getInteger(MAILING_JOB_STATUS_CODE_COLUMN)));
+    mailingJob.setStatusMessage(row.getString(MAILING_JOB_STATUS_MESSAGE_COLUMN));
+    mailingJob.setStartTime(row.getLocalDateTime(MAILING_JOB_START_TIME_COLUMN));
+    mailingJob.setEndTime(row.getLocalDateTime(MAILING_JOB_END_TIME_MESSAGE_COLUMN));
+    mailingJob.setCountRowToExecute(row.getLong(MAILING_JOB_COUNT_ROW_TO_EXECUTE_COLUMN));
+    mailingJob.setCountRowSuccess(row.getLong(MAILING_JOB_COUNT_ROW_SUCCESS_COLUMN));
+    mailingJob.setCountRowExecution(row.getLong(MAILING_JOB_COUNT_ROW_EXECUTION_COLUMN));
+
+    return mailingJob;
   }
 }

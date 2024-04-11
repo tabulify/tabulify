@@ -67,10 +67,13 @@ public enum TowerFailureTypeEnum implements TowerFailureType {
    */
   ALREADY_EXIST_409(409, "Resource already exists", "alreadyExist"),
   /**
-   * When an order is closed
-   * And that no changes can be performed
+   * State error
+   * Example:
+   * You can execute a mailing:
+   *   * if the list has no subscriber
+   *   * if the mailing has a bad state (ie closed or paused)
    */
-  BAD_STATUS_400(400, "The order is closed", "closed");
+  BAD_STATE_400(400, "The state of the entity is not good for the request", "badState");
 
   private final int httpStatusCode;
   private final String message;

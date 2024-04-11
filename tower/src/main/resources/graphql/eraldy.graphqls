@@ -218,10 +218,12 @@ input MailingInputTestEmail {
 
 
 type Query {
-#  We follow the requested data. If you want a mailing, search for a mailing function
+  """A mailing"""
   mailing(guid: ID!): Mailing
   """The mailings of a list"""
   mailingsOfList(listGuid:ID!):[Mailing]
+  """The jobs of a mailing"""
+  mailingJobs(mailingGuid:ID!):[MailingJob]
   me: UserI
   realmsOfOrganization(orgaGuid: ID!): [Realm]
 }

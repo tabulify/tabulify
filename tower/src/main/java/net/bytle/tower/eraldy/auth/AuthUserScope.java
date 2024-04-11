@@ -25,7 +25,8 @@ public enum AuthUserScope {
   MAILING_UPDATE("update of mailing", false),
   MAILING_CREATE("create a mailing", false),
   MAILING_SEND_TEST_EMAIL("send a test email", false),
-  MAILING_EXECUTE("execute a mailing", false);
+  MAILING_EXECUTE("execute a mailing", false),
+  MAILING_JOBS_GET("get mailing jobs", false);
 
 
   private final String humanActionName;
@@ -49,4 +50,8 @@ public enum AuthUserScope {
     return this.isPublic;
   }
 
+  @SuppressWarnings("unused")
+  public String getHumanActionName() {
+    return humanActionName;
+  }
 }

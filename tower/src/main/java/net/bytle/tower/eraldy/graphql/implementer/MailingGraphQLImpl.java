@@ -20,6 +20,7 @@ import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.manual.MailingJob;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
+import net.bytle.tower.eraldy.objectProvider.MailingJobProvider;
 import net.bytle.tower.eraldy.objectProvider.MailingProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.RichSlateAST;
@@ -38,10 +39,12 @@ public class MailingGraphQLImpl {
 
   private final EraldyApiApp app;
   private final MailingProvider mailingProvider;
+  private final MailingJobProvider mailingJobProvider;
 
   public MailingGraphQLImpl(EraldyGraphQL eraldyGraphQL, RuntimeWiring.Builder typeWiringBuilder) {
     this.app = eraldyGraphQL.getApp();
     this.mailingProvider = this.app.getMailingProvider();
+    this.mailingJobProvider = this.app.getMailingJobProvider();
 
     /**
      * Map type to function
@@ -54,6 +57,11 @@ public class MailingGraphQLImpl {
       .type(
         newTypeWiring("Query")
           .dataFetcher("mailingsOfList", this::getMailingsOfList)
+          .build()
+      )
+      .type(
+        newTypeWiring("Query")
+          .dataFetcher("mailingJobs", this::getMailingJobs)
           .build()
       )
       .type(
@@ -86,6 +94,12 @@ public class MailingGraphQLImpl {
           .dataFetcher("mailingSendTestEmail", this::sendTestEmail)
           .build()
       );
+  }
+
+  private Future<List<MailingJob>> getMailingJobs(DataFetchingEnvironment dataFetchingEnvironment) {
+    String mailingGuid = dataFetchingEnvironment.getArgument("mailingGuid");
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return mailingJobProvider.getMailingJobsRequestHandler(mailingGuid, routingContext);
   }
 
   private Future<MailingJob> executeMailing(DataFetchingEnvironment dataFetchingEnvironment) {
@@ -234,13 +248,8 @@ public class MailingGraphQLImpl {
    * List Late Fetch
    */
   public Future<ListObject> getMailingRecipientList(DataFetchingEnvironment dataFetchingEnvironment) {
-    ListObject listObject = ((Mailing) dataFetchingEnvironment.getSource()).getEmailRecipientList();
-    String guid = listObject.getGuid();
-    if (guid != null) {
-      return Future.succeededFuture(listObject);
-    }
-    return this.app.getListProvider()
-      .getListById(listObject.getLocalId(), listObject.getRealm());
+    Mailing mailing =  dataFetchingEnvironment.getSource();
+    return this.mailingProvider.getListAtRequestTime(mailing);
   }
 
   public Future<List<Mailing>> getMailingsOfList(DataFetchingEnvironment dataFetchingEnvironment) {

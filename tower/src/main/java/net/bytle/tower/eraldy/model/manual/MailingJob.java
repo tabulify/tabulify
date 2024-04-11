@@ -1,5 +1,7 @@
 package net.bytle.tower.eraldy.model.manual;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDateTime;
 
 /**
@@ -13,6 +15,11 @@ public class MailingJob {
   private Mailing mailing;
   private String guid;
   private LocalDateTime startTime;
+  private Long countRowToExecute;
+  private LocalDateTime endTime;
+  private Long countRowSuccess;
+  private Long countRowExecution;
+  private String statusMessage;
 
   public MailingJob() {
   }
@@ -38,6 +45,7 @@ public class MailingJob {
     this.startTime = startTime;
   }
 
+  @JsonProperty("mailing")
   public Mailing getMailing() {
     return this.mailing;
   }
@@ -46,20 +54,63 @@ public class MailingJob {
     return this.localId;
   }
 
+  @JsonProperty("guid")
   public String getGuid() {
     return guid;
   }
 
+  @JsonProperty("status")
   public MailingJobStatus getStatus() {
     return this.status;
   }
 
+  @JsonProperty("startTime")
   public LocalDateTime getStartTime() {
     return this.startTime;
   }
 
-  public Integer getRowCountToExecute() {
-    return null;
+  @JsonProperty("countRowToExecute")
+  public Long getCountRowToExecute() {
+    return countRowToExecute;
   }
 
+  public void setCountRowToExecute(Long rowCountToExecute) {
+    this.countRowToExecute = rowCountToExecute;
+  }
+
+  public void setEndTime(LocalDateTime endTime) {
+    this.endTime = endTime;
+  }
+
+  public void setCountRowSuccess(Long rowCountSuccess) {
+    this.countRowSuccess = rowCountSuccess;
+  }
+
+  public void setCountRowExecution(Long rowCountExecution) {
+    this.countRowExecution = rowCountExecution;
+  }
+
+  @JsonProperty("endTime")
+  public LocalDateTime getEndTime() {
+    return endTime;
+  }
+
+  @JsonProperty("countRowSuccess")
+  public Long getCountRowSuccess() {
+    return countRowSuccess;
+  }
+
+  @JsonProperty("countRowExecution")
+  public Long getCountRowExecution() {
+    return countRowExecution;
+  }
+
+  public void setStatusMessage(String statusMessage) {
+    this.statusMessage = statusMessage;
+  }
+
+  @JsonProperty("statusMessage")
+  public String getStatusMessage() {
+    return statusMessage;
+  }
 }

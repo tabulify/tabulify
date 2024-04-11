@@ -289,7 +289,7 @@ public class MailingProvider {
 
   }
 
-  public Guid getGuid(String mailingIdentifier) throws CastException {
+  public Guid getGuidObject(String mailingIdentifier) throws CastException {
     return this.apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(MAILING_GUID_PREFIX, mailingIdentifier);
   }
 
@@ -323,7 +323,7 @@ public class MailingProvider {
     Status actualStatus = mailing.getStatus();
     if (actualStatus == MailingStatus.COMPLETED) {
       return Future.failedFuture(TowerFailureException.builder()
-        .setType(TowerFailureTypeEnum.BAD_STATUS_400)
+        .setType(TowerFailureTypeEnum.BAD_STATE_400)
         .setMessage("The mailing (" + mailing + ") is closed, no modifications can be performed anymore")
         .build()
       );
@@ -493,7 +493,7 @@ public class MailingProvider {
 
     Guid guid;
     try {
-      guid = this.getGuid(mailingGuidIdentifier);
+      guid = this.getGuidObject(mailingGuidIdentifier);
     } catch (CastException e) {
       return Future.failedFuture(new IllegalArgumentException("The mailing guid (" + mailingGuidIdentifier + ") is not valid", e));
     }
@@ -529,4 +529,13 @@ public class MailingProvider {
       .getOrganizationUserByLocalId(emailAuthor.getLocalId(), emailAuthor.getRealm().getLocalId(), emailAuthor.getRealm());
   }
 
+  public Future<ListObject> getListAtRequestTime(Mailing mailing) {
+    ListObject listObject = mailing.getEmailRecipientList();
+    String guid = listObject.getGuid();
+    if (guid != null) {
+      return Future.succeededFuture(listObject);
+    }
+    return this.apiApp.getListProvider()
+      .getListById(listObject.getLocalId(), listObject.getRealm());
+  }
 }

@@ -1,5 +1,7 @@
 package net.bytle.tower.eraldy.model.manual;
 
+import net.bytle.exception.NotFoundException;
+
 /**
  * The status of the mailing job
  */
@@ -31,6 +33,28 @@ public enum MailingJobStatus implements Status{
   MailingJobStatus(int statusCode, String statusName) {
     this.statusCode = statusCode;
     this.statusName = statusName;
+  }
+
+  /**
+   * When the data comes from the database,
+   * we sya that the data is good. If not, there is no default option that failing.
+   */
+  public static MailingJobStatus fromStatusCodeFailSafe(int statusCode) {
+    try {
+      return fromStatusCode(statusCode);
+    } catch (NotFoundException e) {
+      throw new RuntimeException("No Mailing status with the code (" + statusCode + ")");
+    }
+
+  }
+
+  public static MailingJobStatus fromStatusCode(int statusCode) throws NotFoundException {
+    for (MailingJobStatus value : values()) {
+      if (value.statusCode == statusCode) {
+        return value;
+      }
+    }
+    throw new NotFoundException("The code (" + statusCode + ") is not a valid mailing job status");
   }
 
   @Override
