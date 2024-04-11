@@ -72,7 +72,7 @@ public class OrganizationProvider {
         }
 
         if (orgRows.size() != 1) {
-          return Future.failedFuture(new InternalException("the orga id (" + orgaId + ") returns  more than one row"));
+          return Future.failedFuture(new InternalException("the orga id (" + orgaId + ") returns more than one row"));
         }
         Row row = orgRows.iterator().next();
         return this.getOrganizationFromDatabaseRow(row, clazz);

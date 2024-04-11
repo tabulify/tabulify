@@ -103,12 +103,16 @@ type MailingJob {
   status: Status!
   """The Status message"""
   statusMessage: String
-  """The Creation time"""
-  creationTime: String @dateFormat
   """The Start time"""
-  startTime: String @dateFormat
+  startTime: String! @dateFormat
   """The End time"""
   endTime: String @dateFormat
+  """The number of row to execute"""
+  countRowToExecute: Int!
+  """The number of email successfully send (ie Successful SMTP transaction)"""
+  countRowSuccess: Int
+  """The number of executed row (ie SMTP transaction)"""
+  countRowExecution: Int
 }
 
 
