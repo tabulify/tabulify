@@ -284,9 +284,9 @@ public class MailingProvider {
     mailing.setStatus(status);
     mailing.setJobLastExecutionTime(row.getLocalDateTime(MAILING_JOB_LAST_EXECUTION_TIME));
     mailing.setJobNextExecutionTime(row.getLocalDateTime(MAILING_JOB_NEXT_EXECUTION_TIME));
-    mailing.setCountRow(row.getInteger(MAILING_COUNT_ROW));
-    mailing.setCountRowSuccess(row.getInteger(MAILING_COUNT_ROW_SUCCESS));
-    mailing.setCountRowExecution(row.getInteger(MAILING_COUNT_ROW_EXECUTION));
+    mailing.setCountRow(row.getLong(MAILING_COUNT_ROW));
+    mailing.setCountRowSuccess(row.getLong(MAILING_COUNT_ROW_SUCCESS));
+    mailing.setCountRowExecution(row.getLong(MAILING_COUNT_ROW_EXECUTION));
 
     return mailing;
 
@@ -542,7 +542,7 @@ public class MailingProvider {
       .getListById(listObject.getLocalId(), listObject.getRealm());
   }
 
-  public Future<Void> updateRowCount(Mailing mailing) {
+  public Future<Mailing> updateRowCount(Mailing mailing) {
 
     return this.jdbcPool
       .preparedQuery(this.updateRowCountSqlStatement)
@@ -551,9 +551,13 @@ public class MailingProvider {
         mailing.getLocalId()
       ))
       .compose(
-        v -> Future.succeededFuture(),
+        rowSet -> {
+          Long countRow = rowSet.iterator().next().getLong(MAILING_COUNT_ROW);
+          mailing.setCountRow(countRow);
+          return Future.succeededFuture(mailing);
+          },
         err -> Future.failedFuture(TowerFailureException.builder()
-          .setMessage("Error on mailing update row count. " + err.getMessage())
+          .setMessage("Error on mailing update row count on mailing ( "+mailing+"). Error: " + err.getMessage())
           .setCauseException(err)
           .build()
         )

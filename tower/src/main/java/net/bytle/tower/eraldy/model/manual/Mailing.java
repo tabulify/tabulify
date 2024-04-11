@@ -38,9 +38,9 @@ public class Mailing {
 
   protected Realm realm;
   private String emailLanguage;
-  private Integer countRow;
-  private Integer countRowSuccess;
-  private Integer countRowExecution;
+  private Long countRow;
+  private Long countRowSuccess;
+  private Long countRowExecution;
   private LocalDateTime jobLastExecutionTime;
   private LocalDateTime jobNextExecutionTime;
 
@@ -280,7 +280,7 @@ public class Mailing {
   /**
    * @param countRow - The total number of email address s to send
    */
-  public void setCountRow(Integer countRow) {
+  public void setCountRow(Long countRow) {
     this.countRow = countRow;
   }
 
@@ -288,21 +288,21 @@ public class Mailing {
    * @return The total number of user to whom we need to send an email
    */
   @JsonProperty("countRow")
-  public Integer getCountRow() {
+  public Long getCountRow() {
     return countRow;
   }
 
   /**
    * @param countEmailSuccess - the number of email send successfully
    */
-  public void setCountRowSuccess(Integer countEmailSuccess) {
+  public void setCountRowSuccess(Long countEmailSuccess) {
     this.countRowSuccess = countEmailSuccess;
   }
 
   /**
    * @param countExecution - the number of time we executed an SMTP transaction (independently of the status such as success and failure)
    */
-  public void setCountRowExecution(Integer countExecution) {
+  public void setCountRowExecution(Long countExecution) {
     this.countRowExecution = countExecution;
   }
 
@@ -310,7 +310,7 @@ public class Mailing {
    * @return the number of email send successfully to the user
    */
   @JsonProperty("countRowSuccess")
-  public Integer getCountRowSuccess() {
+  public Long getCountRowSuccess() {
     return countRowSuccess;
   }
 
@@ -319,7 +319,7 @@ public class Mailing {
    * @return the number of smtp transactions
    */
   @JsonProperty("countRowExecution")
-  public Integer getCountRowExecution() {
+  public Long getCountRowExecution() {
     return countRowExecution;
   }
 

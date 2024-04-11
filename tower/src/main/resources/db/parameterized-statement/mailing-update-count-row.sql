@@ -10,3 +10,4 @@ where mailing.mailing_realm_id = analytics.realm_id
   and mailing.mailing_id = analytics.mailing_id
   and mailing.mailing_realm_id = $1
   and mailing.mailing_id = $2
+RETURNING mailing_count_row
