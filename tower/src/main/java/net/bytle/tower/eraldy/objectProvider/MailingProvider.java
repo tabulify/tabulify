@@ -71,12 +71,14 @@ public class MailingProvider {
   private static final String MAILING_COUNT_ROW_EXECUTION = MAILING_PREFIX + COLUMN_PART_SEP + "count_row_execution";
   private final Pool jdbcPool;
   private final JsonMapper apiMapper;
+  private final String updateRowCountSqlStatement;
 
 
   public MailingProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
     Server server = apiApp.getHttpServer().getServer();
-    this.jdbcPool = server.getPostgresClient().getPool();
+    JdbcClient postgresClient = server.getPostgresClient();
+    this.jdbcPool = postgresClient.getPool();
     this.apiMapper = server.getJacksonMapperManager()
       .jsonMapperBuilder()
       .addMixIn(Mailing.class, MailingPublicMixin.class)
@@ -86,6 +88,7 @@ public class MailingProvider {
       .addMixIn(ListObject.class, ListItemMixinWithoutRealm.class)
       .build();
 
+    this.updateRowCountSqlStatement = postgresClient.getSqlStatement("mailing-update-count-row");
   }
 
 
@@ -537,5 +540,23 @@ public class MailingProvider {
     }
     return this.apiApp.getListProvider()
       .getListById(listObject.getLocalId(), listObject.getRealm());
+  }
+
+  public Future<Void> updateRowCount(Mailing mailing) {
+
+    return this.jdbcPool
+      .preparedQuery(this.updateRowCountSqlStatement)
+      .execute(Tuple.of(
+        mailing.getRealm().getLocalId(),
+        mailing.getLocalId()
+      ))
+      .compose(
+        v -> Future.succeededFuture(),
+        err -> Future.failedFuture(TowerFailureException.builder()
+          .setMessage("Error on mailing update row count. " + err.getMessage())
+          .setCauseException(err)
+          .build()
+        )
+      );
   }
 }

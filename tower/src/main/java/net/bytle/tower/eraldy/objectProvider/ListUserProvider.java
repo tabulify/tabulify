@@ -17,11 +17,10 @@ import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.ListItemMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
-import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.type.Strings;
 import net.bytle.vertx.DateTimeService;
+import net.bytle.vertx.JdbcClient;
 import net.bytle.vertx.JdbcSchemaManager;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.jackson.JacksonMapperManager;
@@ -74,7 +73,8 @@ public class ListUserProvider {
   public ListUserProvider(EraldyApiApp apiApp) {
 
     this.apiApp = apiApp;
-    this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
+    JdbcClient postgresClient = apiApp.getHttpServer().getServer().getPostgresClient();
+    this.jdbcPool = postgresClient.getPool();
     JacksonMapperManager jacksonMapperManager = apiApp.getHttpServer().getServer().getJacksonMapperManager();
     this.apiMapper = jacksonMapperManager
       .jsonMapperBuilder()
@@ -90,12 +90,9 @@ public class ListUserProvider {
     jacksonMapperManager.addDeserializer(ListUserSource.class, new JacksonListUserSourceDeserializer());
     jacksonMapperManager.addSerializer(ListUserSource.class, new JacksonListUserSourceSerializer());
 
-    // the sql is too big to be inlined in Java
-    String registrationPath = "/db/parameterized-statement/list-registration-users-by-search-term.sql";
-    this.registrationsBySearchTermSql = Strings.createFromResource(ListUserProvider.class, registrationPath).toString();
-    if (this.registrationsBySearchTermSql == null) {
-      throw new InternalException("The registration by search sql was not found in the resource path (" + registrationPath + ")");
-    }
+
+    this.registrationsBySearchTermSql = postgresClient.getSqlStatement("list-registration-users-by-search-term.sql");
+
 
   }
 
@@ -443,32 +440,4 @@ public class ListUserProvider {
     return this.apiMapper;
   }
 
-  public void getActiveListUsers(Mailing mailing) {
-    /**
-     * The query on the whole set
-     * (without search term)
-     */
-//    sql = "SELECT *\n" +
-//      "FROM (select *\n" +
-//      "      from (SELECT ROW_NUMBER() OVER (ORDER BY list_user_creation_time DESC) AS rn,\n" +
-//      "                   *\n" +
-//      "            FROM cs_realms.realm_list_user registration\n" +
-//      "            where registration.list_user_realm_id = $1\n" +
-//      "              AND registration.list_user_list_id = $2) registration\n" +
-//      "      where rn >= 1 + $3::BIGINT * $4::BIGINT\n" +
-//      "        and rn < $5::BIGINT * $6::BIGINT + 1" +
-//      "       ) registration_pages\n" +
-//      "         JOIN cs_realms.realm_user realm_user\n" +
-//      "              on registration_pages.list_user_user_id = realm_user.user_id\n" +
-//      "                  and registration_pages.list_user_realm_id = realm_user.user_realm_id\n" +
-//      "        order by registration_pages.list_user_creation_time desc";
-//    Tuple sqlParameters = Tuple.of(
-//      realmId,
-//      listId,
-//      pageSize,
-//      pageId,
-//      pageSize,
-//      pageId + 1
-//    );
-  }
 }

@@ -15,6 +15,7 @@ import net.bytle.tower.eraldy.model.manual.MailingJobStatus;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
+import net.bytle.vertx.JdbcClient;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 
@@ -40,11 +41,17 @@ public class MailingJobProvider {
   private final String insertSql;
 
   private final Pool jdbcPool;
+  /**
+   * Sql to insert the mailing job rows
+   * from a mailing job
+   */
+  private final String mailingJobRowsSqlInsertion;
 
   public MailingJobProvider(EraldyApiApp eraldyApiApp) {
     this.apiApp = eraldyApiApp;
 
-    this.jdbcPool = eraldyApiApp.getHttpServer().getServer().getPostgresClient().getPool();
+    JdbcClient postgresClient = eraldyApiApp.getHttpServer().getServer().getPostgresClient();
+    this.jdbcPool = postgresClient.getPool();
 
     this.insertSql = "INSERT INTO\n" +
       MAILING_JOB_FULL_QUALIFIED_TABLE_NAME + " (\n" +
@@ -56,6 +63,9 @@ public class MailingJobProvider {
       "  " + MAILING_JOB_COUNT_ROW_TO_EXECUTE_COLUMN +
       "  )\n" +
       " values ($1, $2, $3, $4, $5, $6)";
+
+
+    this.mailingJobRowsSqlInsertion = postgresClient.getSqlStatement("mailing-job-row-insertion");
 
 
   }
@@ -170,11 +180,11 @@ public class MailingJobProvider {
     Long mailingLocalId = row.getLong(MAILING_JOB_MAILING_ID_COLUMN);
     Long realmLocalId = row.getLong(MAILING_JOB_REALM_ID_COLUMN);
     if (mailing != null) {
-      if(!mailingLocalId.equals(mailing.getLocalId())){
-        throw new InternalException("Inconsistency: The mailing local id ("+mailing.getLocalId()+ ") is not the same as in the database ("+mailingLocalId+") for the mailing job ("+mailingJobId+")");
+      if (!mailingLocalId.equals(mailing.getLocalId())) {
+        throw new InternalException("Inconsistency: The mailing local id (" + mailing.getLocalId() + ") is not the same as in the database (" + mailingLocalId + ") for the mailing job (" + mailingJobId + ")");
       }
-      if(!realmLocalId.equals(mailing.getRealm().getLocalId())){
-        throw new InternalException("Inconsistency: The realm local id ("+mailing.getRealm().getLocalId()+") is the same as in the database ("+realmLocalId+") for the mailing job ("+mailingJobId+")");
+      if (!realmLocalId.equals(mailing.getRealm().getLocalId())) {
+        throw new InternalException("Inconsistency: The realm local id (" + mailing.getRealm().getLocalId() + ") is the same as in the database (" + realmLocalId + ") for the mailing job (" + mailingJobId + ")");
       }
     } else {
       // Build it
@@ -250,5 +260,16 @@ public class MailingJobProvider {
         MAILING_JOB_GUID_PREFIX,
         mailingJobGuid
       );
+  }
+
+  public Future<Void> insertMailingJobRows(MailingJob mailingJob) {
+    return this.jdbcPool
+      .preparedQuery(this.mailingJobRowsSqlInsertion)
+      .execute(Tuple.of(
+        mailingJob.getMailing().getRealm().getLocalId(),
+        mailingJob.getLocalId()
+      ))
+      .recover(e -> Future.failedFuture(new InternalException("Mailing Job Rows insertion err error: Sql Error " + e.getMessage(), e)))
+      .compose(rows -> Future.succeededFuture());
   }
 }
