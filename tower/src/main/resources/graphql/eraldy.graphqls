@@ -220,6 +220,8 @@ input MailingInputTestEmail {
 type Query {
   """A mailing"""
   mailing(guid: ID!): Mailing
+  """A mailing job"""
+  mailingJob(guid: ID!): MailingJob
   """The mailings of a list"""
   mailingsOfList(listGuid:ID!):[Mailing]
   """The jobs of a mailing"""

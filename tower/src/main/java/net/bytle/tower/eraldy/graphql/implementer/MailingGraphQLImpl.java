@@ -65,6 +65,11 @@ public class MailingGraphQLImpl {
           .build()
       )
       .type(
+        newTypeWiring("Query")
+          .dataFetcher("mailingJob", this::getMailingJob)
+          .build()
+      )
+      .type(
         newTypeWiring("Mutation")
           .dataFetcher("mailingUpdate", this::updateMailing)
           .build()
@@ -94,6 +99,12 @@ public class MailingGraphQLImpl {
           .dataFetcher("mailingSendTestEmail", this::sendTestEmail)
           .build()
       );
+  }
+
+  private Future<MailingJob> getMailingJob(DataFetchingEnvironment dataFetchingEnvironment) {
+    String mailingGuid = dataFetchingEnvironment.getArgument("guid");
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return mailingJobProvider.getMailingJobRequestHandler(mailingGuid, routingContext);
   }
 
   private Future<List<MailingJob>> getMailingJobs(DataFetchingEnvironment dataFetchingEnvironment) {

@@ -12,6 +12,7 @@ import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.manual.MailingJob;
 import net.bytle.tower.eraldy.model.manual.MailingJobStatus;
+import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerFailureException;
@@ -120,6 +121,7 @@ public class MailingJobProvider {
     );
   }
 
+
   public Future<List<MailingJob>> getMailingJobsRequestHandler(String mailingGuid, RoutingContext routingContext) {
     Guid guid;
     try {
@@ -129,7 +131,7 @@ public class MailingJobProvider {
     }
 
     return this.apiApp.getAuthProvider()
-      .getRealmByLocalIdWithAuthorizationCheck( guid.getRealmOrOrganizationId(), AuthUserScope.MAILING_JOBS_GET,routingContext)
+      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmOrOrganizationId(), AuthUserScope.MAILING_JOBS_GET, routingContext)
       .compose(realm -> {
 
         Long mailingJobLocalId = guid.validateRealmAndGetFirstObjectId(realm.getLocalId());
@@ -138,7 +140,7 @@ public class MailingJobProvider {
         mailing.setLocalId(mailingJobLocalId);
         mailing.setGuid(mailingGuid);
 
-        final String sql = "select * from " + MAILING_JOB_FULL_QUALIFIED_TABLE_NAME + " where " + MAILING_JOB_MAILING_ID_COLUMN + " = $1 and " + MAILING_JOB_REALM_ID_COLUMN  + " = $2";
+        final String sql = "select * from " + MAILING_JOB_FULL_QUALIFIED_TABLE_NAME + " where " + MAILING_JOB_MAILING_ID_COLUMN + " = $1 and " + MAILING_JOB_REALM_ID_COLUMN + " = $2";
         Tuple tuple = Tuple.of(mailingJobLocalId, realm.getLocalId());
         return this.jdbcPool
           .preparedQuery(sql)
@@ -156,7 +158,6 @@ public class MailingJobProvider {
   }
 
 
-
   private MailingJob buildFromRow(Row row, Mailing mailing) {
 
     MailingJob mailingJob = new MailingJob();
@@ -164,7 +165,25 @@ public class MailingJobProvider {
     /**
      * Ids
      */
-    mailingJob.setLocalId(row.getLong(MAILING_JOB_ID_COLUMN));
+    Long mailingJobId = row.getLong(MAILING_JOB_ID_COLUMN);
+    mailingJob.setLocalId(mailingJobId);
+    Long mailingLocalId = row.getLong(MAILING_JOB_MAILING_ID_COLUMN);
+    Long realmLocalId = row.getLong(MAILING_JOB_REALM_ID_COLUMN);
+    if (mailing != null) {
+      if(!mailingLocalId.equals(mailing.getLocalId())){
+        throw new InternalException("Inconsistency: The mailing local id ("+mailing.getLocalId()+ ") is not the same as in the database ("+mailingLocalId+") for the mailing job ("+mailingJobId+")");
+      }
+      if(!realmLocalId.equals(mailing.getRealm().getLocalId())){
+        throw new InternalException("Inconsistency: The realm local id ("+mailing.getRealm().getLocalId()+") is the same as in the database ("+realmLocalId+") for the mailing job ("+mailingJobId+")");
+      }
+    } else {
+      // Build it
+      Realm realm = new Realm();
+      realm.setLocalId(realmLocalId);
+      mailing = new Mailing();
+      mailing.setLocalId(mailingLocalId);
+      mailing.setRealm(realm);
+    }
     mailingJob.setMailing(mailing);
     this.updateGuid(mailingJob);
 
@@ -180,5 +199,56 @@ public class MailingJobProvider {
     mailingJob.setCountRowExecution(row.getLong(MAILING_JOB_COUNT_ROW_EXECUTION_COLUMN));
 
     return mailingJob;
+  }
+
+  public Future<MailingJob> getMailingJobRequestHandler(String mailingJobGuid, RoutingContext routingContext) {
+    Guid guid;
+    try {
+      guid = this.getGuidObject(mailingJobGuid);
+    } catch (CastException e) {
+      return Future.failedFuture(new IllegalArgumentException("The mailing job guid (" + mailingJobGuid + ") is not valid", e));
+    }
+
+    return this.apiApp.getAuthProvider()
+      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmOrOrganizationId(), AuthUserScope.MAILING_JOBS_GET, routingContext)
+      .compose(realm -> {
+
+
+        final String sql = "select * from " + MAILING_JOB_FULL_QUALIFIED_TABLE_NAME + " where " + MAILING_JOB_ID_COLUMN + " = $1 and " + MAILING_JOB_REALM_ID_COLUMN + " = $2";
+        Tuple tuple = Tuple.of(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm.getLocalId());
+        return this.jdbcPool
+          .preparedQuery(sql)
+          .execute(tuple)
+          .recover(err -> Future.failedFuture(new InternalException("Getting the mailing job (" + tuple + ") failed. Error: " + err.getMessage() + ". Sql:\n" + sql, err)))
+          .compose(rows -> {
+
+            if (rows.rowCount() == 0) {
+              return Future.failedFuture(TowerFailureException.builder()
+                .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+                .setMessage("The mailing job (" + mailingJobGuid + ") does not exist")
+                .build()
+              );
+            }
+
+            if (rows.rowCount() != 1) {
+              return Future.failedFuture(TowerFailureException.builder()
+                .setMessage("The mailing job (" + mailingJobGuid + ") has too much rows (" + rows.rowCount() + ")")
+                .build()
+              );
+            }
+
+            MailingJob mailingJob = this.buildFromRow(rows.iterator().next(), null);
+
+            return Future.succeededFuture(mailingJob);
+          });
+      });
+  }
+
+  private Guid getGuidObject(String mailingJobGuid) throws CastException {
+    return this.apiApp
+      .createGuidFromHashWithOneRealmIdAndOneObjectId(
+        MAILING_JOB_GUID_PREFIX,
+        mailingJobGuid
+      );
   }
 }
