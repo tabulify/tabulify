@@ -1,9 +1,12 @@
 package net.bytle.tower.eraldy.api.implementer.flow;
 
 import io.vertx.core.Future;
+import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.graphql.pojo.input.MailingJobInputProps;
 import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.manual.MailingJob;
+import net.bytle.tower.eraldy.model.manual.MailingJobStatus;
 import net.bytle.tower.eraldy.model.manual.MailingStatus;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
@@ -49,7 +52,7 @@ public class MailingFlow extends WebFlowAbs {
     }
 
     return createRequest
-      .compose(v-> this.createJob(mailing))
+      .compose(v -> this.createJob(mailing))
       .compose(this::executeRows)
       .compose(Future::succeededFuture);
 
@@ -58,7 +61,46 @@ public class MailingFlow extends WebFlowAbs {
 
   private Future<MailingJob> executeRows(MailingJob mailingJob) {
 
-    return Future.succeededFuture(mailingJob);
+    return this.getApp().getMailingRowProvider().getRows(mailingJob)
+      .compose(rowSet -> {
+        if (rowSet.rowCount() == 0) {
+          return this.closeJobAndMailing(mailingJob, "No rows to process anymore");
+        }
+        return Future.succeededFuture(mailingJob);
+      });
+
+  }
+
+  private Future<MailingJob> closeJobAndMailing(MailingJob mailingJob, String statusMessage) {
+    return this.closeJob(mailingJob, statusMessage, true);
+  }
+
+  private Future<MailingJob> closeJob(MailingJob mailingJob, String statusMessage, boolean closeMailing) {
+
+
+    return this.getApp()
+      .getHttpServer()
+      .getServer()
+      .getPostgresClient()
+      .getPool()
+      .withTransaction(connection -> {
+        /**
+         * Update Mailing Job
+         */
+        MailingJobInputProps mailingJobInputProps = new MailingJobInputProps();
+        mailingJobInputProps.setStatusMessage(statusMessage);
+        mailingJobInputProps.setStatus(MailingJobStatus.COMPLETED);
+        return this.getApp()
+          .getMailingJobProvider()
+          .updateMailingJob(connection, mailingJob, mailingJobInputProps)
+          .compose(v -> {
+            if (!closeMailing) {
+              return Future.succeededFuture(mailingJob);
+            }
+            return Future.failedFuture(new InternalException("Close Mailing not yet implemented"));
+          });
+      });
+
   }
 
   private Future<MailingJob> createJob(Mailing mailing) {
@@ -72,5 +114,11 @@ public class MailingFlow extends WebFlowAbs {
   }
 
 
+  /**
+   * @return the maximum number of failure on a row
+   */
+  public int getMaxCountFailureOnRow() {
+    return 2;
+  }
 
 }

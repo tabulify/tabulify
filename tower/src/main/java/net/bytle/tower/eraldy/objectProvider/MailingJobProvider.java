@@ -4,11 +4,13 @@ import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
+import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
+import net.bytle.tower.eraldy.graphql.pojo.input.MailingJobInputProps;
 import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.manual.MailingJob;
 import net.bytle.tower.eraldy.model.manual.MailingJobStatus;
@@ -20,7 +22,9 @@ import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MailingJobProvider {
 
@@ -59,9 +63,6 @@ public class MailingJobProvider {
       "  " + MAILING_JOB_COUNT_ROW_TO_EXECUTE_COLUMN +
       "  )\n" +
       " values ($1, $2, $3, $4, $5, $6)";
-
-
-
 
 
   }
@@ -258,4 +259,55 @@ public class MailingJobProvider {
       );
   }
 
+  /**
+   * @param connection - because mailing job and mailing may need to update together
+   */
+  public Future<MailingJob> updateMailingJob(SqlConnection connection, MailingJob mailingJob, MailingJobInputProps mailingJobInputProps) {
+
+    Map<String, Object> updates = new HashMap<>();
+
+    /**
+     * Status code
+     */
+    MailingJobStatus newStatus = mailingJobInputProps.getStatus();
+    if (newStatus != null && newStatus != mailingJob.getStatus()) {
+      updates.put(MAILING_JOB_STATUS_CODE_COLUMN, newStatus.getCode());
+      mailingJob.setStatus(newStatus);
+    }
+
+    /**
+     * Status Message
+     */
+    String newStatusMessage = mailingJobInputProps.getStatusMessage();
+    if (newStatusMessage != null) {
+      updates.put(MAILING_JOB_STATUS_MESSAGE_COLUMN, newStatusMessage);
+      mailingJob.setStatusMessage(newStatusMessage);
+    }
+
+    if(updates.isEmpty()){
+      return Future.succeededFuture(mailingJob);
+    }
+    StringBuilder updateSql = new StringBuilder();
+    List<Object> values = new ArrayList<>();
+    updateSql.append("update ")
+      .append(MAILING_JOB_FULL_QUALIFIED_TABLE_NAME)
+      .append("set ")
+    ;
+
+    List<String> equalityStatements = new ArrayList<>();
+    for(Map.Entry<String,Object> entry: updates.entrySet()){
+
+      values.add(entry.getValue());
+      equalityStatements.add(entry.getKey()+" = $"+values.size());
+
+    }
+    updateSql.append(String.join(",",equalityStatements));
+    String preparedQuery = updateSql.toString();
+    return connection
+      .preparedQuery(preparedQuery)
+      .execute(Tuple.from(values))
+      .recover(e->Future.failedFuture(new InternalException("Mailing Job Update error. Error: "+e.getMessage()+"\nSQL:\n"+preparedQuery,e)))
+      .compose(rowSet->Future.succeededFuture(mailingJob));
+
+  }
 }
