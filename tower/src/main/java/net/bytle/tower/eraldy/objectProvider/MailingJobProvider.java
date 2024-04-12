@@ -41,11 +41,7 @@ public class MailingJobProvider {
   private final String insertSql;
 
   private final Pool jdbcPool;
-  /**
-   * Sql to insert the mailing job rows
-   * from a mailing job
-   */
-  private final String mailingJobRowsSqlInsertion;
+
 
   public MailingJobProvider(EraldyApiApp eraldyApiApp) {
     this.apiApp = eraldyApiApp;
@@ -65,7 +61,7 @@ public class MailingJobProvider {
       " values ($1, $2, $3, $4, $5, $6)";
 
 
-    this.mailingJobRowsSqlInsertion = postgresClient.getSqlStatement("mailing-job-row-insertion");
+
 
 
   }
@@ -262,14 +258,4 @@ public class MailingJobProvider {
       );
   }
 
-  public Future<Void> insertMailingJobRows(MailingJob mailingJob) {
-    return this.jdbcPool
-      .preparedQuery(this.mailingJobRowsSqlInsertion)
-      .execute(Tuple.of(
-        mailingJob.getMailing().getRealm().getLocalId(),
-        mailingJob.getLocalId()
-      ))
-      .recover(e -> Future.failedFuture(new InternalException("Mailing Job Rows insertion err error: Sql Error " + e.getMessage(), e)))
-      .compose(rows -> Future.succeededFuture());
-  }
 }

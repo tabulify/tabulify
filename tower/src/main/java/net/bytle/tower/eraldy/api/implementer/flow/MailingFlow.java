@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.api.implementer.flow;
 
 import io.vertx.core.Future;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputProps;
 import net.bytle.tower.eraldy.model.manual.Mailing;
 import net.bytle.tower.eraldy.model.manual.MailingJob;
 import net.bytle.tower.eraldy.model.manual.MailingStatus;
@@ -44,21 +43,21 @@ public class MailingFlow extends WebFlowAbs {
       );
     }
 
-    return this.createJob(mailing)
-      .compose(mailingJob -> {
+    Future<Void> createRequest = Future.succeededFuture();
+    if (status == MailingStatus.OPEN) {
+      createRequest = this.getApp().getMailingProvider().createRequest(mailing);
+    }
 
-        Future<Void> createRequest = Future.succeededFuture();
-        if (status == MailingStatus.OPEN) {
-          createRequest = this.createRequest(mailingJob);
-        }
-        return createRequest.compose(v -> this.executeRows(mailingJob));
-      })
+    return createRequest
+      .compose(v-> this.createJob(mailing))
+      .compose(this::executeRows)
       .compose(Future::succeededFuture);
 
 
   }
 
   private Future<MailingJob> executeRows(MailingJob mailingJob) {
+
     return Future.succeededFuture(mailingJob);
   }
 
@@ -72,17 +71,6 @@ public class MailingFlow extends WebFlowAbs {
 
   }
 
-  /**
-   * Create the request: create the lines and change the status of the mailing
-   */
-  private Future<Void> createRequest(MailingJob mailingJob) {
-    MailingInputProps mailingInputProps = new MailingInputProps();
-    mailingInputProps.setStatusCode(MailingStatus.PROCESSING.getCode());
-    return this.getApp()
-      .getMailingProvider()
-      .updateMailing(mailingJob.getMailing(), mailingInputProps)
-      .compose(v -> this.getApp().getMailingJobProvider().insertMailingJobRows(mailingJob))
-      .compose(v->this.getApp().getMailingProvider().updateRowCount(mailingJob.getMailing()));
 
-}
+
 }

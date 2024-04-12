@@ -71,8 +71,13 @@ public class MailingProvider {
   private static final String MAILING_COUNT_ROW_EXECUTION = MAILING_PREFIX + COLUMN_PART_SEP + "count_row_execution";
   private final Pool jdbcPool;
   private final JsonMapper apiMapper;
-  private final String updateRowCountSqlStatement;
+  private final String updateRowCountAndStatusToRunningSqlStatement;
 
+  /**
+   * Sql to insert the mailing job rows
+   * from a mailing job
+   */
+  private final String mailingRowsSqlInsertion;
 
   public MailingProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
@@ -88,7 +93,9 @@ public class MailingProvider {
       .addMixIn(ListObject.class, ListItemMixinWithoutRealm.class)
       .build();
 
-    this.updateRowCountSqlStatement = postgresClient.getSqlStatement("mailing-update-count-row");
+    this.updateRowCountAndStatusToRunningSqlStatement = postgresClient.getSqlStatement("mailing-update-count-row-and-state.sql");
+    this.mailingRowsSqlInsertion = postgresClient.getSqlStatement("mailing-row-insertion.sql");
+
   }
 
 
@@ -542,25 +549,55 @@ public class MailingProvider {
       .getListById(listObject.getLocalId(), listObject.getRealm());
   }
 
-  public Future<Mailing> updateRowCount(Mailing mailing) {
 
+  /**
+   * Create the request: create the lines and change the status of the mailing
+   */
+  public Future<Void> createRequest(Mailing mailing) {
+
+    /**
+     * Transaction because it happens in 2 steps
+     */
     return this.jdbcPool
-      .preparedQuery(this.updateRowCountSqlStatement)
-      .execute(Tuple.of(
-        mailing.getRealm().getLocalId(),
-        mailing.getLocalId()
-      ))
-      .compose(
-        rowSet -> {
-          Long countRow = rowSet.iterator().next().getLong(MAILING_COUNT_ROW);
-          mailing.setCountRow(countRow);
-          return Future.succeededFuture(mailing);
-          },
-        err -> Future.failedFuture(TowerFailureException.builder()
-          .setMessage("Error on mailing update row count on mailing ( "+mailing+"). Error: " + err.getMessage())
-          .setCauseException(err)
-          .build()
-        )
-      );
+      .withTransaction(connection -> {
+        /**
+         * Create the rows
+         */
+        return connection
+          .preparedQuery(this.mailingRowsSqlInsertion)
+          .execute(Tuple.of(
+            ListUserStatus.OK.getValue(),
+            mailing.getEmailRecipientList().getRealm().getLocalId(),
+            mailing.getLocalId()
+          ))
+          .recover(e -> Future.failedFuture(new InternalException("Mailing Job Rows insertion err error: Sql Error " + e.getMessage(), e)))
+          .compose(v -> {
+            /**
+             * Update mailing with the rows and state
+             */
+            MailingStatus processingState = MailingStatus.PROCESSING;
+            return connection
+              .preparedQuery(this.updateRowCountAndStatusToRunningSqlStatement)
+              .execute(Tuple.of(
+                processingState.getCode(),
+                mailing.getRealm().getLocalId(),
+                mailing.getLocalId()
+              ))
+              .recover(err -> Future.failedFuture(TowerFailureException.builder()
+                .setMessage("Error on mailing update row count on mailing ( " + mailing + "). Error: " + err.getMessage())
+                .setCauseException(err)
+                .build()
+              ))
+              .compose(
+                rowSet -> {
+                  Long countRow = rowSet.iterator().next().getLong(MAILING_COUNT_ROW);
+                  mailing.setCountRow(countRow);
+                  mailing.setStatus(processingState);
+                  return Future.succeededFuture();
+                }
+              );
+          });
+      });
+
   }
 }
