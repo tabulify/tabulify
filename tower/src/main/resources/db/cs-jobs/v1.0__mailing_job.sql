@@ -28,7 +28,7 @@ create table IF NOT EXISTS cs_jobs.realm_mailing_row
   MAILING_ROW_REALM_ID              BIGINT                      NOT NULL references "cs_realms"."realm" (REALM_ID),
   MAILING_ROW_MAILING_ID            BIGINT                      NOT NULL,
   MAILING_ROW_USER_ID               BIGINT                      NOT NULL,
-  MAILING_ROW_STATUS_CODE           INT                         NOT NULL,
+  MAILING_ROW_STATUS_CODE           INT                         NULL,
   MAILING_ROW_MAILING_JOB_ID        BIGINT                      NULL,
   MAILING_ROW_PLANNED_DELIVERY_TIME TIMESTAMP WITHOUT TIME ZONE NULL,
   MAILING_ROW_STATUS_MESSAGE        TEXT                        NULL,

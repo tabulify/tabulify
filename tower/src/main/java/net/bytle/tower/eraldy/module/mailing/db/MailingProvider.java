@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.module.mailing.objectProvider;
+package net.bytle.tower.eraldy.module.mailing.db;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -98,8 +98,8 @@ public class MailingProvider {
       .addMixIn(ListObject.class, ListItemMixinWithoutRealm.class)
       .build();
 
-    this.updateRowCountAndStatusToRunningSqlStatement = postgresClient.getSqlStatement("mailing-update-count-row-and-state.sql");
-    this.mailingRowsSqlInsertion = postgresClient.getSqlStatement("mailing-row-insertion.sql");
+    this.updateRowCountAndStatusToRunningSqlStatement = postgresClient.getSqlStatement("mailing/mailing-update-count-row-and-state.sql");
+    this.mailingRowsSqlInsertion = postgresClient.getSqlStatement("mailing/mailing-row-insertion.sql");
 
 
     this.apiApp.getHttpServer().getServer().getJacksonMapperManager()

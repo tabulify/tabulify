@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.module.mailing.objectProvider;
+package net.bytle.tower.eraldy.module.mailing.db;
 
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
@@ -291,7 +291,7 @@ public class MailingJobProvider {
     List<Object> values = new ArrayList<>();
     updateSql.append("update ")
       .append(MAILING_JOB_FULL_QUALIFIED_TABLE_NAME)
-      .append("set ")
+      .append(" set ")
     ;
 
     List<String> equalityStatements = new ArrayList<>();
@@ -301,7 +301,7 @@ public class MailingJobProvider {
       equalityStatements.add(entry.getKey()+" = $"+values.size());
 
     }
-    updateSql.append(String.join(",",equalityStatements));
+    updateSql.append(String.join(", ",equalityStatements));
     String preparedQuery = updateSql.toString();
     return connection
       .preparedQuery(preparedQuery)

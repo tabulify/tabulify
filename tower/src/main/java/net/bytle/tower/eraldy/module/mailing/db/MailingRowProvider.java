@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.module.mailing.objectProvider;
+package net.bytle.tower.eraldy.module.mailing.db;
 
 import io.vertx.core.Future;
 import io.vertx.sqlclient.Row;
@@ -39,9 +39,9 @@ public class MailingRowProvider {
 
     Mailing mailing = mailingJob.getMailing();
     final String sql = "select * from " + FULL_TABLE
-      + " where "
-      + MAILING_ROW_COUNT_FAILURE_COLUMN + " < $1\n"
-      + "and " + MAILING_ROW_STATUS_CODE_COLUMN + " != $2\n"
+      + " where \n"
+      + "("+MAILING_ROW_COUNT_FAILURE_COLUMN + " < $1 or " + MAILING_ROW_COUNT_FAILURE_COLUMN +" is null)\n"
+      + "and (" + MAILING_ROW_STATUS_CODE_COLUMN + " != $2 or "+MAILING_ROW_STATUS_CODE_COLUMN + " is null)\n"
       + "and " + MAILING_ROW_REALM_COLUMN + " = $3\n"
       + "and " + MAILING_ROW_MAILING_COLUMN + " = $4\n"
       + "LIMIT $5";

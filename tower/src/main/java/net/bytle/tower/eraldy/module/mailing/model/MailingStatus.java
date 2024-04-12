@@ -11,6 +11,7 @@ public enum MailingStatus implements Status {
 
   /**
    * Open
+   * (0 because this is the first number, easy to remember to reset the mailing flow)
    */
   OPEN(0, 1, "Open", "The mailing is being defined, no email has been sent"),
 
