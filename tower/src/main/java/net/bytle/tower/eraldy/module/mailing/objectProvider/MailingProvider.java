@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.objectProvider;
+package net.bytle.tower.eraldy.module.mailing.objectProvider;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,15 +12,20 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
-import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputProps;
 import net.bytle.tower.eraldy.mixin.*;
-import net.bytle.tower.eraldy.model.manual.Mailing;
-import net.bytle.tower.eraldy.model.manual.MailingStatus;
 import net.bytle.tower.eraldy.model.manual.Status;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
+import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputProps;
+import net.bytle.tower.eraldy.module.mailing.jackson.JacksonMailingStatusDeserializer;
+import net.bytle.tower.eraldy.module.mailing.model.Mailing;
+import net.bytle.tower.eraldy.module.mailing.model.MailingStatus;
+import net.bytle.tower.eraldy.objectProvider.ListProvider;
+import net.bytle.tower.eraldy.objectProvider.OrganizationProvider;
+import net.bytle.tower.eraldy.objectProvider.RealmProvider;
+import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.*;
 import org.slf4j.Logger;
@@ -95,6 +100,10 @@ public class MailingProvider {
 
     this.updateRowCountAndStatusToRunningSqlStatement = postgresClient.getSqlStatement("mailing-update-count-row-and-state.sql");
     this.mailingRowsSqlInsertion = postgresClient.getSqlStatement("mailing-row-insertion.sql");
+
+
+    this.apiApp.getHttpServer().getServer().getJacksonMapperManager()
+      .addDeserializer(MailingStatus.class, new JacksonMailingStatusDeserializer());
 
   }
 
@@ -270,7 +279,7 @@ public class MailingProvider {
      * List
      * The full list object is retrieved by the API
      * (In graphQl, by the function that is mapped to the type)
-     * {@link net.bytle.tower.eraldy.graphql.implementer.MailingGraphQLImpl#getMailingRecipientList(DataFetchingEnvironment)}
+     * {@link MailingGraphQLImpl#getMailingRecipientList(DataFetchingEnvironment)}
      */
     Long listId = row.getLong(EMAIL_RCPT_LIST_COLUMN);
     ListObject recipientList = new ListObject();
@@ -385,19 +394,9 @@ public class MailingProvider {
     }
 
     // Status at the end (it may be changed by the setting of a schedule time
-    Integer statusCode = mailingInputProps.getStatusCode();
-    if (statusCode != null) {
-      MailingStatus newStatus;
-      try {
-        newStatus = MailingStatus.fromStatusCode(statusCode);
-      } catch (NotFoundException e) {
-        return Future.failedFuture(TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-          .setMessage(e.getMessage())
-          .setCauseException(e)
-          .build()
-        );
-      }
+    MailingStatus newStatus = mailingInputProps.getStatus();
+    if (newStatus != null) {
+
       /**
        * Validation
        */

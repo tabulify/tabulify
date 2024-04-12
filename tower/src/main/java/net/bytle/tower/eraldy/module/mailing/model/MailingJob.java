@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.model.manual;
+package net.bytle.tower.eraldy.module.mailing.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.objectProvider;
+package net.bytle.tower.eraldy.module.mailing.objectProvider;
 
 import io.vertx.core.Future;
 import io.vertx.sqlclient.Row;
@@ -6,9 +6,10 @@ import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.model.manual.Mailing;
-import net.bytle.tower.eraldy.model.manual.MailingJob;
-import net.bytle.tower.eraldy.model.manual.MailingRowStatus;
+import net.bytle.tower.eraldy.module.mailing.model.Mailing;
+import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
+import net.bytle.tower.eraldy.module.mailing.model.MailingRowStatus;
+import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.vertx.JdbcClient;
 
 import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
@@ -49,7 +50,7 @@ public class MailingRowProvider {
       .preparedQuery(sql)
       .execute(Tuple.of(
         this.apiApp.getMailingFlow().getMaxCountFailureOnRow(),
-        MailingRowStatus.SEND.getCode(),
+        MailingRowStatus.OK.getCode(),
         mailing.getEmailRecipientList().getRealm().getLocalId(),
         mailing.getLocalId(),
         mailingJob.getCountRowToExecute()

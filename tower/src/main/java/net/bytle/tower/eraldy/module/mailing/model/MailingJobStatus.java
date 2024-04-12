@@ -1,11 +1,12 @@
-package net.bytle.tower.eraldy.model.manual;
+package net.bytle.tower.eraldy.module.mailing.model;
 
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.eraldy.model.manual.Status;
 
 /**
  * The status of the mailing job
  */
-public enum MailingJobStatus implements Status{
+public enum MailingJobStatus implements Status {
 
 
   /**

@@ -1,9 +1,9 @@
-package net.bytle.tower.eraldy.graphql.pojo.input;
+package net.bytle.tower.eraldy.module.mailing.inputs;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.model.manual.MailingJobStatus;
+import net.bytle.tower.eraldy.module.mailing.model.MailingJobStatus;
 
 import java.time.LocalDateTime;
 

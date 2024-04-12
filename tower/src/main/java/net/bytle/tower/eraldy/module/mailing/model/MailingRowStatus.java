@@ -1,24 +1,22 @@
-package net.bytle.tower.eraldy.model.manual;
+package net.bytle.tower.eraldy.module.mailing.model;
 
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.eraldy.model.manual.Status;
 
 /**
  * The status of the mailing
+ * (ie SMTP status)
  */
 public enum MailingRowStatus implements Status {
 
 
 
-
-
   /**
-   * No email to be sent anymore
+   * Email send
    */
-  SEND(0, 3, "Send", "Email send"),
+  OK(0, 1, "Send", "Email send"),
 
-  ERROR(1, 6, "Fatal error", "Fatal error");
-
-
+  ERROR(1, 2, "Fatal error", "Fatal error");
 
 
 
@@ -34,21 +32,6 @@ public enum MailingRowStatus implements Status {
     this.description = description;
   }
 
-
-  /**
-   *
-   * @param statusCode - the status code
-   * @throws RuntimeException will fail at runtime if the status code is unknown
-   *                   Be sure to master the value
-   */
-  public static MailingRowStatus fromStatusCodeFailSafe(int statusCode) {
-    try {
-      return fromStatusCode(statusCode);
-    } catch (NotFoundException e) {
-      throw new RuntimeException("No Mailing status with the code (" + statusCode + ")");
-    }
-
-  }
 
   public static MailingRowStatus fromStatusCode(int statusCode) throws NotFoundException {
     for (MailingRowStatus value : values()) {

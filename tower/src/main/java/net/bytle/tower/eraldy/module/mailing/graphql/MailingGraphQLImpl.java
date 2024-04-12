@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.graphql.implementer;
+package net.bytle.tower.eraldy.module.mailing.graphql;
 
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.idl.RuntimeWiring;
@@ -12,16 +12,16 @@ import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
-import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputProps;
-import net.bytle.tower.eraldy.graphql.pojo.input.MailingInputTestEmail;
 import net.bytle.tower.eraldy.model.manual.EmailAstDocumentBuilder;
 import net.bytle.tower.eraldy.model.manual.EmailTemplateVariables;
-import net.bytle.tower.eraldy.model.manual.Mailing;
-import net.bytle.tower.eraldy.model.manual.MailingJob;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
-import net.bytle.tower.eraldy.objectProvider.MailingJobProvider;
-import net.bytle.tower.eraldy.objectProvider.MailingProvider;
+import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputProps;
+import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputTestEmail;
+import net.bytle.tower.eraldy.module.mailing.model.Mailing;
+import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
+import net.bytle.tower.eraldy.module.mailing.objectProvider.MailingJobProvider;
+import net.bytle.tower.eraldy.module.mailing.objectProvider.MailingProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.RichSlateAST;
 import net.bytle.type.EmailAddress;

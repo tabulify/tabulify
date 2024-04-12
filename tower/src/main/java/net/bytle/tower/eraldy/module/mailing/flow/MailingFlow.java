@@ -1,13 +1,14 @@
-package net.bytle.tower.eraldy.api.implementer.flow;
+package net.bytle.tower.eraldy.module.mailing.flow;
 
 import io.vertx.core.Future;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.graphql.pojo.input.MailingJobInputProps;
-import net.bytle.tower.eraldy.model.manual.Mailing;
-import net.bytle.tower.eraldy.model.manual.MailingJob;
-import net.bytle.tower.eraldy.model.manual.MailingJobStatus;
-import net.bytle.tower.eraldy.model.manual.MailingStatus;
+import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputProps;
+import net.bytle.tower.eraldy.module.mailing.inputs.MailingJobInputProps;
+import net.bytle.tower.eraldy.module.mailing.model.Mailing;
+import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
+import net.bytle.tower.eraldy.module.mailing.model.MailingJobStatus;
+import net.bytle.tower.eraldy.module.mailing.model.MailingStatus;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.flow.FlowType;
@@ -97,6 +98,8 @@ public class MailingFlow extends WebFlowAbs {
             if (!closeMailing) {
               return Future.succeededFuture(mailingJob);
             }
+            MailingInputProps mailingInputProps = new MailingInputProps();
+            mailingInputProps.setStatus(MailingStatus.COMPLETED);
             return Future.failedFuture(new InternalException("Close Mailing not yet implemented"));
           });
       });

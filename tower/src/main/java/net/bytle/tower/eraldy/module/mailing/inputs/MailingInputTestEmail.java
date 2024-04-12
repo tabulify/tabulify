@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.graphql.pojo.input;
+package net.bytle.tower.eraldy.module.mailing.inputs;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class MailingInputTestEmail {
+
 
 
   private String recipientEmailAddress;

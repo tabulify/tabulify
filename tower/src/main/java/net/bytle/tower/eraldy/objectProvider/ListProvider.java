@@ -46,7 +46,7 @@ public class ListProvider {
   private static final String LIST_PREFIX = "list";
   public static final String LIST_APP_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + AppProvider.APP_ID_COLUMN;
   public static final String LIST_USER_OWNER_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + OWNER_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
-  static final String LIST_ID_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "id";
+  public static final String LIST_ID_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "id";
   private static final String LIST_REALM_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
   static final String LIST_GUID_PREFIX = "lis";
   private final EraldyApiApp apiApp;

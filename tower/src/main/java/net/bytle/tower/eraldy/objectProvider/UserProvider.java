@@ -62,7 +62,7 @@ public class UserProvider {
 
   public static final String DATA_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + DATA;
   private static final String REALM_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
-  protected static final String ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "id";
+  public static final String ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "id";
 
   public static final String USR_GUID_PREFIX = "usr";
   private static final String MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;

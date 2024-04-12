@@ -1,8 +1,9 @@
-package net.bytle.tower.eraldy.graphql.pojo.input;
+package net.bytle.tower.eraldy.module.mailing.inputs;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.module.mailing.model.MailingStatus;
 
 import java.time.LocalDateTime;
 
@@ -17,7 +18,7 @@ public class MailingInputProps {
 
   protected String name;
 
-  protected Integer statusCode;
+  protected MailingStatus status;
   private String emailSubject;
   private String emailPreview;
   private String emailBody;
@@ -119,14 +120,14 @@ public class MailingInputProps {
     this.emailAuthorGuid = emailAuthorGuid;
   }
 
-  @JsonProperty("statusCode")
-  public Integer getStatusCode() {
-    return this.statusCode;
+  @JsonProperty("status")
+  public MailingStatus getStatus() {
+    return this.status;
   }
 
   @SuppressWarnings("unused")
-  public void setStatusCode(Integer statusCode) {
-    this.statusCode = statusCode;
+  public void setStatus(MailingStatus status) {
+    this.status = status;
   }
 
   @JsonProperty("jobNextExecutionTime")
