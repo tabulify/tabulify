@@ -19,10 +19,7 @@ import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.vertx.DateTimeService;
-import net.bytle.vertx.JdbcSchemaManager;
-import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.*;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +42,7 @@ public class RealmProvider {
   public static final String TABLE_PREFIX = "realm";
   public static final String TABLE_NAME = "realm";
   public static final String ID = "id";
-  public static final String QUALIFIED_TABLE_NAME = JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME;
+  public final String FULL_QUALIFIED_TABLE_NAME;
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(RealmProvider.class);
 
@@ -69,9 +66,10 @@ public class RealmProvider {
    * double realm information
    */
   private final ObjectMapper publicRealmJsonMapper;
+  private final JdbcSchema schema;
 
 
-  public RealmProvider(EraldyApiApp apiApp) {
+  public RealmProvider(EraldyApiApp apiApp, JdbcSchema schema) {
     this.pgPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
     this.apiApp = apiApp;
     JacksonMapperManager jacksonMapperManager = this.apiApp.getHttpServer().getServer().getJacksonMapperManager();
@@ -83,6 +81,9 @@ public class RealmProvider {
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .build();
+
+    this.schema = schema;
+    this.FULL_QUALIFIED_TABLE_NAME = schema.getSchemaName() + "." + TABLE_NAME;
 
   }
 
@@ -163,7 +164,7 @@ public class RealmProvider {
         }
       }
       sql = "select " + REALM_ID_COLUMN +
-        " from " + QUALIFIED_TABLE_NAME +
+        " from " + FULL_QUALIFIED_TABLE_NAME +
         " where " + REALM_ID_COLUMN + " = ?";
       futureResponse = this.pgPool
         .preparedQuery(sql)
@@ -176,7 +177,7 @@ public class RealmProvider {
         return Future.failedFuture(internalException);
       }
       sql = "select " + REALM_ID_COLUMN +
-        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+        " from " + this.FULL_QUALIFIED_TABLE_NAME +
         " where " + REALM_HANDLE_COLUMN + " = $1";
       futureResponse = this.pgPool
         .preparedQuery(sql)
@@ -195,13 +196,13 @@ public class RealmProvider {
 
   private Future<Realm> insertRealm(Realm realm, SqlConnection sqlConnection) {
 
-        /**
+    /**
      * Create the insert
      * (the id may be known as it's the case
      * when inserting the fist Eraldy realm with the id 1)
      */
     String sql = "INSERT INTO\n" +
-      QUALIFIED_TABLE_NAME + " (\n" +
+      FULL_QUALIFIED_TABLE_NAME + " (\n" +
       "  " + REALM_HANDLE_COLUMN + ",\n" +
       "  " + REALM_ORGA_ID + ",\n" +
       "  " + REALM_NAME_COLUMN + ",\n" +
@@ -240,7 +241,7 @@ public class RealmProvider {
            * The Eraldy realm should be 1 is the main case
            */
           String error = "The asked realm id (" + askedRealmLocalIdOnInsert + ") did not get the same id but the id (" + realmId + ")";
-          if(JavaEnvs.IS_DEV){
+          if (JavaEnvs.IS_DEV) {
             error += "In Dev, delete the SQL schema and restart. An error like that is due to an error on start between the 2 inserts";
           }
           return Future.failedFuture(new InternalException(error));
@@ -262,7 +263,7 @@ public class RealmProvider {
 
     if (realm.getLocalId() != null) {
       String sql = "update\n" +
-        QUALIFIED_TABLE_NAME + "\n" +
+        FULL_QUALIFIED_TABLE_NAME + "\n" +
         "set \n" +
         "  " + REALM_HANDLE_COLUMN + " = $1,\n" +
         "  " + REALM_ORGA_ID + " = $2,\n" +
@@ -270,7 +271,6 @@ public class RealmProvider {
         "  " + MODIFICATION_TIME_COLUMN + " = $4\n" +
         "where \n" +
         "  " + REALM_ID_COLUMN + " = $5\n";
-
 
 
       return this.pgPool
@@ -319,7 +319,7 @@ public class RealmProvider {
     }
 
     String sql = "update\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
+      this.FULL_QUALIFIED_TABLE_NAME + "\n" +
       "set \n" +
       "  " + REALM_ORGA_ID + " = $1,\n" +
       "  " + REALM_NAME_COLUMN + " = $2,\n" +
@@ -362,7 +362,7 @@ public class RealmProvider {
 
   private Future<Realm> getRealmFromLocalId(SqlConnection sqlConnection, Long realmId) {
     String sql = "SELECT * FROM " +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+      this.FULL_QUALIFIED_TABLE_NAME +
       " WHERE " + REALM_ID_COLUMN + " = $1";
     return sqlConnection
       .preparedQuery(sql)
@@ -403,7 +403,7 @@ public class RealmProvider {
    * @return the realm or null if not found
    */
   private Future<Realm> getRealmFromHandle(String realmHandle, SqlConnection sqlConnection) {
-    String sql = "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " WHERE realm_handle = $1";
+    String sql = "SELECT * FROM " + this.FULL_QUALIFIED_TABLE_NAME + "." + TABLE_NAME + " WHERE realm_handle = $1";
     return sqlConnection
       .preparedQuery(sql)
       .execute(Tuple.of(realmHandle))
@@ -429,9 +429,9 @@ public class RealmProvider {
   }
 
 
-  public  Future<List<Realm>> getRealmsForOwner(OrganizationUser user) {
+  public Future<List<Realm>> getRealmsForOwner(OrganizationUser user) {
 
-    return pgPool.preparedQuery("SELECT * FROM " + QUALIFIED_TABLE_NAME + "\n" +
+    return pgPool.preparedQuery("SELECT * FROM " + FULL_QUALIFIED_TABLE_NAME + "\n" +
         "where\n" +
         " " + REALM_ORGA_ID + " = $1")
       .execute(Tuple.of(user.getLocalId()))
@@ -543,8 +543,8 @@ public class RealmProvider {
       REALM_HANDLE_COLUMN + ",\n" +
       "STRING_AGG(app_uri,', ') as " + aliasAppUris + "\n" +
       "  from \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + AppProvider.APP_TABLE_NAME + " app\n" +
-      "right join " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " realm\n" +
+       schema.getSchemaName() + "." + AppProvider.APP_TABLE_NAME + " app\n" +
+      "right join " + this.FULL_QUALIFIED_TABLE_NAME + " realm\n" +
       "on app.app_realm_id = realm.realm_id\n" +
       "group by " + REALM_ID_COLUMN + ", " + REALM_HANDLE_COLUMN + "\n" +
       "order by " + REALM_HANDLE_COLUMN;
@@ -672,7 +672,7 @@ public class RealmProvider {
     return this.getRealmFromLocalId(realmId);
   }
 
-  public Future<Realm> getRealmByLocalIdWithAuthorizationCheck(long realmId, AuthUserScope scope, RoutingContext routingContext){
+  public Future<Realm> getRealmByLocalIdWithAuthorizationCheck(long realmId, AuthUserScope scope, RoutingContext routingContext) {
     return this.apiApp.getAuthProvider().getRealmByLocalIdWithAuthorizationCheck(realmId, scope, routingContext);
   }
 

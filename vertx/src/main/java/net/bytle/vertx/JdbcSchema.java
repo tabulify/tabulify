@@ -12,16 +12,13 @@ public class JdbcSchema {
     return new Builder(schemaHandle);
   }
 
-  public static JdbcSchema createFromHandle(String schemaHandle) {
-    return builder(schemaHandle).build();
-  }
 
   public String getLocation() {
     return this.Builder.location;
   }
 
-  public String getSchema() {
-    return this.Builder.schema;
+  public String getSchemaName() {
+    return this.Builder.schemaName;
   }
 
   public String getTargetJavaPackageName() {
@@ -29,16 +26,19 @@ public class JdbcSchema {
   }
 
   public static class Builder {
-    public String schema;
+
+    private final String schemaHandle;
     private String location;
     private String targetPackage;
+    private String schemaPrefixName = "cs";
+    private String schemaName;
 
     /**
      * @param schemaHandle - the handle without any prefix
      */
     public Builder(String schemaHandle) {
-      setMigrationFileLocation("classpath:db/cs-" + schemaHandle);
-      setSchema(JdbcSchemaManager.getSchemaFromHandle(schemaHandle));
+      this.schemaHandle = schemaHandle;
+
     }
 
     /**
@@ -50,22 +50,37 @@ public class JdbcSchema {
       return this;
     }
 
+    /**
+     * The prefix is here to be able to make the difference between
+     * system schema (such as pg_catalog, public, ...) and combo schema
+     */
+    public Builder setSchemaPrefix(String prefix) {
+      this.schemaPrefixName = prefix;
+      return this;
+    }
+
     public JdbcSchema build() {
+      if (this.location == null) {
+        setMigrationFileLocation("classpath:db/" + schemaPrefixName + "-" + schemaHandle);
+      }
+      if (schemaName == null) {
+        setSchemaName(schemaPrefixName + "_" + schemaHandle);
+      }
       return new JdbcSchema(this);
     }
 
     /**
-     * @param schema - the database schema name
+     * @param schemaName - the database schema name
      */
-    public Builder setSchema(String schema) {
-      this.schema = schema;
+    public Builder setSchemaName(String schemaName) {
+      this.schemaName = schemaName;
       return this;
     }
 
     /**
      * @param targetPackage - the target package for the generated schema class
      */
-    public Builder setTargetPackage(String targetPackage) {
+    public Builder setJavaPackageForClassGeneration(String targetPackage) {
       this.targetPackage = targetPackage;
       return this;
     }
@@ -74,6 +89,6 @@ public class JdbcSchema {
 
   @Override
   public String toString() {
-    return this.Builder.schema;
+    return this.Builder.schemaName;
   }
 }

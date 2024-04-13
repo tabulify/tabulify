@@ -60,7 +60,7 @@ public class IpGeolocation extends TowerService {
         .createRuntimeConnection(dataStoreName, jdbcConnectionInfo.getUrl())
         .setUser(jdbcConnectionInfo.getUser())
         .setPassword(jdbcConnectionInfo.getPassword())
-        .getDataPath(this.ipSchema.getSchema() + ".ip");
+        .getDataPath(this.ipSchema.getSchemaName() + ".ip");
       Long count = ipTable.getCount();
       LOGGER.info("Total Ip Table count " + count);
       if (count == 0) {
@@ -126,7 +126,7 @@ public class IpGeolocation extends TowerService {
     LOGGER.info("numericIp is {}", numericIp);
     // One shot, no need to close anything and return only one row
     // https://vertx.io/docs/apidocs/io/vertx/ext/sql/SQLOperations.html#querySingleWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-
-    String sql = "SELECT * FROM " + this.ipSchema.getSchema() + ".ip " +
+    String sql = "SELECT * FROM " + this.ipSchema.getSchemaName() + ".ip " +
       "WHERE " +
       "ip_from <= $1 " +
       "and ip_to >= $2";

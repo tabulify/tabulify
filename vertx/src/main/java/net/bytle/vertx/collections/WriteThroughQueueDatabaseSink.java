@@ -39,7 +39,7 @@ public class WriteThroughQueueDatabaseSink<E> {
     this.queueName = queueBuilder.queueName;
     serializer = queueBuilder.serializer;
     this.pool = queueBuilder.writeThroughCollection.getJdbcServer().getPool();
-    this.queueTable = queueBuilder.writeThroughCollection.getJdbcSchema().getSchema()+".queues";
+    this.queueTable = queueBuilder.writeThroughCollection.getJdbcSchema().getSchemaName()+".queues";
     deleteSql = "delete from " + queueTable + " where queue_name = $1 and object_id = $2";
     clearSql = "delete from " + queueTable + " where queue_name = $1";
     addSql = "insert into " + queueTable + " (queue_name, " + OBJECT_ID_COLUMN + ", creation_time, " + DATA_COLUMN + ") values($1, $2, $3, $4)";

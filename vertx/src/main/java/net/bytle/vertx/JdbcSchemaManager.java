@@ -10,9 +10,7 @@ import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.flywaydb.core.api.output.MigrateResult;
 import org.jooq.codegen.GenerationTool;
-import org.jooq.meta.jaxb.Configuration;
-import org.jooq.meta.jaxb.Database;
-import org.jooq.meta.jaxb.Target;
+import org.jooq.meta.jaxb.*;
 
 /**
  * Manage, create and migrate schema
@@ -25,12 +23,7 @@ public class JdbcSchemaManager {
    * (not - because this is seen as the minus sign even without space)
    */
   public static final String COLUMN_PART_SEP = "_";
-  /**
-   * The schema for the realm tables
-   * We don't use a method to get the qualified database object name
-   * to allow code analysis.
-   */
-  public static final String CS_REALM_SCHEMA = "cs_realms";
+
   /**
    * The sysdate column that stores the creation time
    * (Even if the creation time is set via a database trigger,
@@ -42,11 +35,7 @@ public class JdbcSchemaManager {
   private static final Logger LOGGER = LogManager.getLogger(JdbcSchemaManager.class);
   public static final String VERSION_LOG_TABLE = "version_log";
 
-  /**
-   * The prefix is here to be able to make the difference between
-   * system schema (such as pg_catalog, public, ...) and combo schema
-   */
-  private static final String SCHEMA_PREFIX = "cs_";
+
   private static JdbcSchemaManager jdbcSchemaManager;
 
   /**
@@ -96,7 +85,7 @@ public class JdbcSchemaManager {
 
     Flyway flyway = this.getFlyWayCommonConf()
       .locations(jdbcSchema.getLocation())
-      .schemas(jdbcSchema.getSchema())
+      .schemas(jdbcSchema.getSchemaName())
       .load();
 
     /**
@@ -119,39 +108,66 @@ public class JdbcSchemaManager {
     if (!initialSchemaVersion.equals(targetSchemaVersion)) {
       LOGGER.info("Schema migrated from " + initialSchemaVersion + "+to " + targetSchemaVersion);
       if (JavaEnvs.IS_DEV) {
+
         String targetJavaPackageName = jdbcSchema.getTargetJavaPackageName();
         if (targetJavaPackageName == null) {
-          LOGGER.info("No Schema Class generation for the schema ("+jdbcSchema.getSchema()+")");
+          LOGGER.info("No Schema Class generation for the schema (" + jdbcSchema.getSchemaName() + ")");
           return this;
         }
         LOGGER.info("Applying JOOQ generation");
         JdbcConnectionInfo connectionInfo = this.jdbcClient.getConnectionInfo();
-        String database = connectionInfo.getDatabaseName();
-        String jooqDatabaseName;
-        if (database.equals("postgres")) {
-          jooqDatabaseName = "org.jooq.meta.postgres.PostgresDatabase";
-        } else {
-          throw new DbMigrationException("The Jooq Database Name for the database (" + database + ") is not configured");
+
+        /**
+         * Only Postgres for now
+         */
+        String databaseName = connectionInfo.getDatabaseName();
+        if (!databaseName.equals("postgres")) {
+          throw new DbMigrationException("Jooq for the database (" + databaseName + ") is not configured");
         }
 
+        /**
+         * Database definition
+         */
+        Database database = new Database()
+          .withInputSchema(jdbcSchema.getSchemaName())
+          .withExcludes(VERSION_LOG_TABLE);
+
+        // name
+        database = database.withName("org.jooq.meta.postgres.PostgresDatabase");
+        // inet postgres datatype
+        ForcedType postgresInet = new ForcedType()
+          .withUserType("org.jooq.postgres.extensions.types.Inet")
+          .withBinding("org.jooq.postgres.extensions.bindings.InetBinding")
+          .withIncludeTypes("inet");
+          //.withPriority(-2147483648);
+        database = database.withForcedTypes(postgresInet);
+
+
+        /**
+         * JDBC connection
+         */
+        Jdbc jdbc = new Jdbc()
+          .withUrl(connectionInfo.getUrl())
+          .withUser(connectionInfo.getUser())
+          .withPassword(connectionInfo.getPassword());
+
         Configuration configuration = new org.jooq.meta.jaxb.Configuration()
-          .withJdbc(
-            new org.jooq.meta.jaxb.Jdbc()
-              .withUrl(connectionInfo.getUrl())
-              .withUser(connectionInfo.getUser())
-              .withPassword(connectionInfo.getPassword())
-          )
-          .withGenerator(new org.jooq.meta.jaxb.Generator()
-            .withDatabase(new Database()
-              .withName(jooqDatabaseName)
-              .withInputSchema(jdbcSchema.getSchema())) // Specify the input schema
-            .withTarget(new Target()
-              .withPackageName(targetJavaPackageName))); // Specify the package name for generated classes
+          .withJdbc(jdbc)
+          .withGenerator(
+            new org.jooq.meta.jaxb.Generator()
+              .withDatabase(database)
+              .withTarget(
+                new Target()
+                  // current directory is module directory
+                  .withDirectory("src/main/java")
+                  .withPackageName(targetJavaPackageName)
+              )
+          );
 
         try {
           GenerationTool.generate(configuration);
         } catch (Exception e) {
-          throw new DbMigrationException("Jooq Generation Failed for the schema" + jdbcSchema.getSchema(), e);
+          throw new DbMigrationException("Jooq Generation Failed for the schema" + jdbcSchema.getSchemaName(), e);
         }
       }
     }
@@ -160,9 +176,5 @@ public class JdbcSchemaManager {
     return this;
   }
 
-
-  public static String getSchemaFromHandle(String handle) {
-    return SCHEMA_PREFIX + handle;
-  }
 
 }

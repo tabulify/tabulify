@@ -20,7 +20,7 @@ public class WriteThroughCollection {
     postgresServer = server.getPostgresClient();
     JdbcSchemaManager jdbcSchemaManager = postgresServer.getSchemaManager();
 
-    schema =   JdbcSchema.createFromHandle("collection");
+    schema = JdbcSchema.builder("collection").build();
 
     try {
       jdbcSchemaManager.migrate(schema);
@@ -43,7 +43,7 @@ public class WriteThroughCollection {
   }
 
   public JdbcSchema getJdbcSchema() {
-      return schema;
+    return schema;
   }
 
 }

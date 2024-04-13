@@ -87,6 +87,8 @@ public class EraldyApiApp extends TowerApp {
   private final FileProvider fileProvider;
   private final MailingJobProvider mailingJobProvider;
   private final MailingRowProvider mailingRowProvider;
+  private JdbcSchema realmSchema;
+  private JdbcSchema jobsSchema;
 
 
   public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
@@ -104,9 +106,17 @@ public class EraldyApiApp extends TowerApp {
     Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
 
     /**
+     * Schema
+     */
+    realmSchema = JdbcSchema.builder("realms").build();
+    jobsSchema = JdbcSchema.builder("jobs")
+      .setJavaPackageForClassGeneration("net.bytle.jobs")
+      .build();
+
+    /**
      * DataBase Provider/Manager
      */
-    this.realmProvider = new RealmProvider(this);
+    this.realmProvider = new RealmProvider(this, realmSchema);
     this.userProvider = new UserProvider(this);
     this.listProvider = new ListProvider(this);
     this.listImportFlow = new ListImportFlow(this);
@@ -424,17 +434,15 @@ public class EraldyApiApp extends TowerApp {
 
     LOGGER.info("EraldyApp Cs Realms Migration");
     JdbcSchemaManager jdbcSchemaManager = this.getHttpServer().getServer().getPostgresClient().getSchemaManager();
-    JdbcSchema realmSchema = JdbcSchema.createFromHandle("realms");
     try {
-      jdbcSchemaManager.migrate(realmSchema);
+      jdbcSchemaManager.migrate(this.realmSchema);
     } catch (DbMigrationException e) {
       return Future.failedFuture(new InternalException("The database migration failed for the schema (" + realmSchema + ")", e));
     }
 
     LOGGER.info("EraldyApp Job Schema Migration");
-    JdbcSchema jobsSchema = JdbcSchema.createFromHandle("jobs");
     try {
-      jdbcSchemaManager.migrate(jobsSchema);
+      jdbcSchemaManager.migrate(this.jobsSchema);
     } catch (DbMigrationException e) {
       return Future.failedFuture(new InternalException("The database migration failed for the schema (" + jobsSchema + ")", e));
     }
