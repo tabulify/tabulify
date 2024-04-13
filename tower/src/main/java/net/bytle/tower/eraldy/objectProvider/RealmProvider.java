@@ -70,7 +70,7 @@ public class RealmProvider {
 
 
   public RealmProvider(EraldyApiApp apiApp, JdbcSchema schema) {
-    this.pgPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
+    this.pgPool = schema.getJdbcClient().getPool();
     this.apiApp = apiApp;
     JacksonMapperManager jacksonMapperManager = this.apiApp.getHttpServer().getServer().getJacksonMapperManager();
     this.publicRealmJsonMapper = jacksonMapperManager
@@ -403,7 +403,7 @@ public class RealmProvider {
    * @return the realm or null if not found
    */
   private Future<Realm> getRealmFromHandle(String realmHandle, SqlConnection sqlConnection) {
-    String sql = "SELECT * FROM " + this.FULL_QUALIFIED_TABLE_NAME + "." + TABLE_NAME + " WHERE realm_handle = $1";
+    String sql = "SELECT * FROM " + this.FULL_QUALIFIED_TABLE_NAME + " WHERE realm_handle = $1";
     return sqlConnection
       .preparedQuery(sql)
       .execute(Tuple.of(realmHandle))

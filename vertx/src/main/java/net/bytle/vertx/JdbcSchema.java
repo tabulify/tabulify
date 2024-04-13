@@ -1,42 +1,85 @@
 package net.bytle.vertx;
 
-public class JdbcSchema {
-  private final Builder Builder;
+import io.vertx.core.Future;
+import net.bytle.exception.DbMigrationException;
+import net.bytle.exception.InternalException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+/**
+ * Jdbc Schema
+ * The JDBC schema handle the schema name,
+ * and the migration (on mount)
+ * It's why it's a service.
+ */
+public class JdbcSchema extends TowerService {
+
+  private static final Logger LOGGER = LogManager.getLogger(JdbcSchema.class);
+
+  private final Builder builder;
 
 
-  public JdbcSchema(Builder Builder) {
-    this.Builder = Builder;
+  public JdbcSchema(Builder builder) {
+      super(builder.jdbcClient.getServer());
+      this.builder = builder;
   }
 
-  public static Builder builder(String schemaHandle) {
-    return new Builder(schemaHandle);
+  public static Builder builder(JdbcClient jdbcClient, String schemaHandle) {
+    return new Builder(jdbcClient,schemaHandle);
   }
 
+  public JdbcClient getJdbcClient() {
+    return builder.jdbcClient;
+  }
 
   public String getLocation() {
-    return this.Builder.location;
+    return this.builder.location;
   }
 
   public String getSchemaName() {
-    return this.Builder.schemaName;
+    return this.builder.schemaName;
   }
 
+  /**
+   * When we will generate our own Table Class
+   * (Was used with Jooq)
+   */
+  @SuppressWarnings("unused")
   public String getTargetJavaPackageName() {
-    return this.Builder.targetPackage;
+    return this.builder.targetPackage;
   }
+
+  @Override
+  public Future<Void> mount() {
+
+    LOGGER.info(this.builder.schemaName+ " schema Migration");
+    JdbcSchemaManager jdbcSchemaManager = this.builder.jdbcClient.getSchemaManager();
+    try {
+      jdbcSchemaManager.migrate(this);
+    } catch (DbMigrationException e) {
+      return Future.failedFuture(new InternalException("The database migration failed for the schema (" + this + ")", e));
+    }
+    return super.mount();
+
+  }
+
 
   public static class Builder {
 
     private final String schemaHandle;
+    private final JdbcClient jdbcClient;
     private String location;
     private String targetPackage;
     private String schemaPrefixName = "cs";
     private String schemaName;
 
     /**
+     * @param jdbcClient - the client (ie database and migration)
      * @param schemaHandle - the handle without any prefix
      */
-    public Builder(String schemaHandle) {
+    public Builder(JdbcClient jdbcClient, String schemaHandle) {
+
+      this.jdbcClient = jdbcClient;
       this.schemaHandle = schemaHandle;
 
     }
@@ -54,6 +97,7 @@ public class JdbcSchema {
      * The prefix is here to be able to make the difference between
      * system schema (such as pg_catalog, public, ...) and combo schema
      */
+    @SuppressWarnings("unused")
     public Builder setSchemaPrefix(String prefix) {
       this.schemaPrefixName = prefix;
       return this;
@@ -89,6 +133,6 @@ public class JdbcSchema {
 
   @Override
   public String toString() {
-    return this.Builder.schemaName;
+    return this.builder.schemaName;
   }
 }

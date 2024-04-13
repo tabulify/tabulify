@@ -97,9 +97,10 @@ dependencies {
   // Mail
   implementation("io.vertx:vertx-mail-client:$vertxVersion")
   implementation(project(":bytle-smtp-client"))
-  // Sql
-  // implementation "org.xerial:sqlite-jdbc:3.28.0"
+
+  // Schema management
   implementation("org.flywaydb:flyway-core:$flywayVersion")
+
   implementation("io.vertx:vertx-pg-client:$vertxVersion")
   implementation("com.ongres.scram:client:2.1") // Postgres Optional dependency that is not so optional
 

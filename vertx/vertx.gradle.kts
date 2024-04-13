@@ -1,5 +1,4 @@
-
-description="Vertx core and utility"
+description = "Vertx core and utility"
 // https://mvnrepository.com/artifact/io.vertx/vertx-core
 val vertxVersion = rootProject.ext.get("vertxVersion").toString()
 val scramClientVersion = rootProject.ext.get("scramClientVersion").toString()
@@ -9,7 +8,6 @@ val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
 val caffeineVersion = rootProject.ext.get("caffeineVersion").toString()
 val mapdbVersion = rootProject.ext.get("mapdbVersion").toString()
 val uuidVersion: String by project
-val jooqVersion: String by project
 val env: String by project
 
 
@@ -66,18 +64,6 @@ dependencies {
    * Schema Management and table code generation
    */
   implementation("org.flywaydb:flyway-core:$flywayVersion")
-  implementation("org.jooq:jooq:$jooqVersion")
-
-  // Development-only dependency
-  // We generate only in dev
-  compileOnly("org.jooq:jooq-meta:$jooqVersion")
-  compileOnly("org.jooq:jooq-codegen:$jooqVersion")
-
-  // Add runtime dependency conditionally
-  if (env==="dev") {
-    implementation("org.jooq:jooq-meta:$jooqVersion")
-    implementation("org.jooq:jooq-codegen:$jooqVersion")
-  }
 
   /**
    * Driver and Vertx

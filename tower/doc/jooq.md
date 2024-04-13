@@ -1,7 +1,23 @@
 # Jooq
 
+## About
+We tried to used it to generate table class and SQL
+but the Vertx Postgres SQL uses `$1` for binding and it's a little bit complicated.
 
-https://www.jooq.org/doc/latest/manual/code-generation/codegen-version-control/#derived-artefacts
+
+Furthermore, you need to add it in the build process:
+* Flyway run
+* then read the schema and generate each time
+We added on it then on schema change via Java code.
+
+The generation time is not short.
+
+We just create our own table and sql generation.
+
+## Archive
+
+
+### Plugin configuration
 
 https://www.jooq.org/doc/latest/manual/code-generation/codegen-gradle/
 ```kts
@@ -131,5 +147,88 @@ jooq {
       }
     }
   }
+}
+```
+
+
+### Java Generation code
+
+We have generated the Java class with this code
+```java
+String targetJavaPackageName = jdbcSchema.getTargetJavaPackageName();
+if (targetJavaPackageName == null) {
+  LOGGER.info("No Schema Class generation for the schema (" + jdbcSchema.getSchemaName() + ")");
+  return this;
+}
+LOGGER.info("Applying JOOQ generation");
+JdbcConnectionInfo connectionInfo = this.jdbcClient.getConnectionInfo();
+
+/**
+ * Only Postgres for now
+ */
+String databaseName = connectionInfo.getDatabaseName();
+if (!databaseName.equals("postgresql")) {
+  throw new DbMigrationException("Jooq for the database (" + databaseName + ") is not configured");
+}
+
+/**
+ * Database definition
+ */
+Database database = new Database()
+  .withInputSchema(jdbcSchema.getSchemaName())
+  .withExcludes(VERSION_LOG_TABLE);
+
+// name
+database = database.withName("org.jooq.meta.postgres.PostgresDatabase");
+// inet postgres datatype
+ForcedType postgresInet = new ForcedType()
+  .withUserType("org.jooq.postgres.extensions.types.Inet")
+  .withBinding("org.jooq.postgres.extensions.bindings.InetBinding")
+  .withIncludeTypes("inet");
+  //.withPriority(-2147483648);
+database = database.withForcedTypes(postgresInet);
+
+
+/**
+ * JDBC connection
+ */
+Jdbc jdbc = new Jdbc()
+  .withUrl(connectionInfo.getUrl())
+  .withUser(connectionInfo.getUser())
+  .withPassword(connectionInfo.getPassword());
+
+Configuration configuration = new org.jooq.meta.jaxb.Configuration()
+  .withJdbc(jdbc)
+  .withGenerator(
+    new org.jooq.meta.jaxb.Generator()
+      .withDatabase(database)
+      .withTarget(
+        new Target()
+          // current directory is module directory
+          .withDirectory("src/main/java")
+          .withPackageName(targetJavaPackageName)
+      )
+  );
+
+try {
+  GenerationTool.generate(configuration);
+} catch (Exception e) {
+  throw new DbMigrationException("Jooq Generation Failed for the schema" + jdbcSchema.getSchemaName(), e);
+}
+```
+
+
+### Gradle Dep
+
+```kts
+implementation("org.jooq:jooq:$jooqVersion")
+// Compile in prod, classpath in dev
+// Why? Jooq code generator runs only in dev
+if (env === "prod") {
+  compileOnly("org.jooq:jooq-meta:$jooqVersion")
+  compileOnly("org.jooq:jooq-codegen:$jooqVersion")
+} else {
+  implementation("org.jooq:jooq-meta:$jooqVersion")
+  implementation("org.jooq:jooq-codegen:$jooqVersion")
 }
 ```

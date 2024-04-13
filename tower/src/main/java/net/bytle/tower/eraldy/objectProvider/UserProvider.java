@@ -48,7 +48,7 @@ public class UserProvider {
   protected static final Logger LOGGER = LoggerFactory.getLogger(UserProvider.class);
 
   public static final String REALM_USER_TABLE_NAME = "realm_user";
-  protected static final String QUALIFIED_TABLE_NAME = JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME;
+  private final String FULL_QUALIFIED_USER_TABLE_NAME;
 
 
   private static final String TABLE_PREFIX = "user";
@@ -80,7 +80,7 @@ public class UserProvider {
   private final String insertPreparedQuery;
 
 
-  public UserProvider(EraldyApiApp apiApp) {
+  public UserProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
 
     this.apiApp = apiApp;
     Server server = this.apiApp.getHttpServer().getServer();
@@ -94,8 +94,10 @@ public class UserProvider {
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .build();
 
+    this.FULL_QUALIFIED_USER_TABLE_NAME = jdbcSchema.getSchemaName()+"."+REALM_USER_TABLE_NAME;
+
     this.insertPreparedQuery = "INSERT INTO\n" +
-      QUALIFIED_TABLE_NAME + " (\n" +
+      FULL_QUALIFIED_USER_TABLE_NAME + " (\n" +
       "  " + REALM_COLUMN + ",\n" +
       "  " + ID_COLUMN + ",\n" +
       "  " + EMAIL_ADDRESS_COLUMN + ",\n" +
@@ -191,7 +193,7 @@ public class UserProvider {
     if (user.getLocalId() != null) {
 
       sql = "select " + ID_COLUMN +
-        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
+        " from " + FULL_QUALIFIED_USER_TABLE_NAME +
         " where " +
         ID_COLUMN + " = $1 " +
         "AND " + REALM_COLUMN + " = $2 ";
@@ -209,7 +211,7 @@ public class UserProvider {
         return Future.failedFuture(internalException);
       }
       sql = "select " + ID_COLUMN +
-        " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
+        " from " + FULL_QUALIFIED_USER_TABLE_NAME +
         " where " +
         EMAIL_ADDRESS_COLUMN + " = $1 " +
         "AND " + REALM_COLUMN + " = $2 ";
@@ -243,7 +245,7 @@ public class UserProvider {
 
     if (user.getLocalId() != null) {
       sql = "UPDATE \n" +
-        JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME + " \n" +
+        FULL_QUALIFIED_USER_TABLE_NAME + " \n" +
         "set \n" +
         "  " + EMAIL_ADDRESS_COLUMN + " = $1,\n" +
         "  " + DATA_COLUMN + " = $2,\n" +
@@ -289,7 +291,7 @@ public class UserProvider {
       return Future.failedFuture(internalException);
     }
     final String updateSql = "UPDATE \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME + " \n" +
+      FULL_QUALIFIED_USER_TABLE_NAME + " \n" +
       "set \n" +
       "  " + DATA_COLUMN + " = $1,\n" +
       "  " + MODIFICATION_TIME_COLUMN + " = $2\n" +
@@ -336,7 +338,7 @@ public class UserProvider {
       "   SELECT " +
       "      ROW_NUMBER() OVER (ORDER BY user_creation_time DESC) AS rn," +
       "      *" +
-      "   FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
+      "   FROM " + FULL_QUALIFIED_USER_TABLE_NAME +
       "   where " + REALM_COLUMN + " = $1" +
       searchTermFiltering +
       "  ) as userNumbered" +
@@ -487,7 +489,7 @@ public class UserProvider {
     assert userEmail != null;
     assert realmLocalId != null;
 
-    String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
+    String sql = "SELECT * FROM  " + FULL_QUALIFIED_USER_TABLE_NAME +
       " WHERE " +
       EMAIL_ADDRESS_COLUMN + " = $1\n" +
       " AND " + REALM_COLUMN + " = $2";
@@ -654,7 +656,7 @@ public class UserProvider {
       .hash(password);
 
     sql = "UPDATE \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME + " \n" +
+      FULL_QUALIFIED_USER_TABLE_NAME + " \n" +
       "set \n" +
       "  " + PASSWORD_COLUMN + " = $1,\n" +
       "  " + MODIFICATION_TIME_COLUMN + " = $2\n" +
@@ -685,7 +687,7 @@ public class UserProvider {
 
     String hashedPassword = PasswordHashManager.get().hash(userPassword);
 
-    String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
+    String sql = "SELECT * FROM  " + FULL_QUALIFIED_USER_TABLE_NAME +
       " WHERE " +
       EMAIL_ADDRESS_COLUMN + " = $1\n" +
       " AND " + REALM_COLUMN + " = $2" +
@@ -845,7 +847,7 @@ public class UserProvider {
     assert userId != null;
     assert realmId != null;
 
-    String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + REALM_USER_TABLE_NAME +
+    String sql = "SELECT * FROM  " + FULL_QUALIFIED_USER_TABLE_NAME +
       " WHERE \n" +
       " " + ID_COLUMN + " = $1\n" +
       " AND " + REALM_COLUMN + " = $2";

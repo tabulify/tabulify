@@ -3,7 +3,6 @@ package net.bytle.tower.eraldy.api;
 import io.vertx.core.Future;
 import io.vertx.ext.web.Router;
 import net.bytle.exception.CastException;
-import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
@@ -87,8 +86,6 @@ public class EraldyApiApp extends TowerApp {
   private final FileProvider fileProvider;
   private final MailingJobProvider mailingJobProvider;
   private final MailingRowProvider mailingRowProvider;
-  private JdbcSchema realmSchema;
-  private JdbcSchema jobsSchema;
 
 
   public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
@@ -108,8 +105,9 @@ public class EraldyApiApp extends TowerApp {
     /**
      * Schema
      */
-    realmSchema = JdbcSchema.builder("realms").build();
-    jobsSchema = JdbcSchema.builder("jobs")
+    JdbcClient postgresClient = httpServer.getServer().getPostgresClient();
+    JdbcSchema realmSchema = JdbcSchema.builder(postgresClient, "realms").build();
+    JdbcSchema jobsSchema = JdbcSchema.builder(postgresClient, "jobs")
       .setJavaPackageForClassGeneration("net.bytle.jobs")
       .build();
 
@@ -117,7 +115,7 @@ public class EraldyApiApp extends TowerApp {
      * DataBase Provider/Manager
      */
     this.realmProvider = new RealmProvider(this, realmSchema);
-    this.userProvider = new UserProvider(this);
+    this.userProvider = new UserProvider(this, realmSchema);
     this.listProvider = new ListProvider(this);
     this.listImportFlow = new ListImportFlow(this);
     this.organizationProvider = new OrganizationProvider(this);
@@ -130,7 +128,7 @@ public class EraldyApiApp extends TowerApp {
     this.authClientProvider = new AuthClientProvider(this);
     this.realmSequenceProvider = new RealmSequenceProvider();
     this.mailingProvider = new MailingProvider(this);
-    this.mailingJobProvider = new MailingJobProvider(this);
+    this.mailingJobProvider = new MailingJobProvider(this, jobsSchema);
     this.mailingRowProvider = new MailingRowProvider(this);
     this.fileProvider = new FileProvider(this);
 
@@ -432,20 +430,6 @@ public class EraldyApiApp extends TowerApp {
     // Allow Browser cross-origin request in the domain
     BrowserCorsUtil.allowCorsForApexDomain(router, this);
 
-    LOGGER.info("EraldyApp Cs Realms Migration");
-    JdbcSchemaManager jdbcSchemaManager = this.getHttpServer().getServer().getPostgresClient().getSchemaManager();
-    try {
-      jdbcSchemaManager.migrate(this.realmSchema);
-    } catch (DbMigrationException e) {
-      return Future.failedFuture(new InternalException("The database migration failed for the schema (" + realmSchema + ")", e));
-    }
-
-    LOGGER.info("EraldyApp Job Schema Migration");
-    try {
-      jdbcSchemaManager.migrate(this.jobsSchema);
-    } catch (DbMigrationException e) {
-      return Future.failedFuture(new InternalException("The database migration failed for the schema (" + jobsSchema + ")", e));
-    }
 
     /**
      * The Eraldy base realm and base apps

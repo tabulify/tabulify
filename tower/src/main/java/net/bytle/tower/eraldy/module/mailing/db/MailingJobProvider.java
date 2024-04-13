@@ -17,7 +17,7 @@ import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJobStatus;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
-import net.bytle.vertx.JdbcClient;
+import net.bytle.vertx.JdbcSchema;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 
@@ -47,11 +47,10 @@ public class MailingJobProvider {
   private final Pool jdbcPool;
 
 
-  public MailingJobProvider(EraldyApiApp eraldyApiApp) {
+  public MailingJobProvider(EraldyApiApp eraldyApiApp, JdbcSchema jobsSchema) {
     this.apiApp = eraldyApiApp;
 
-    JdbcClient postgresClient = eraldyApiApp.getHttpServer().getServer().getPostgresClient();
-    this.jdbcPool = postgresClient.getPool();
+    this.jdbcPool = jobsSchema.getJdbcClient().getPool();
 
     this.insertSql = "INSERT INTO\n" +
       MAILING_JOB_FULL_QUALIFIED_TABLE_NAME + " (\n" +
@@ -302,12 +301,13 @@ public class MailingJobProvider {
 
     }
     updateSql.append(String.join(", ",equalityStatements));
-    String preparedQuery = updateSql.toString();
-    return connection
-      .preparedQuery(preparedQuery)
-      .execute(Tuple.from(values))
-      .recover(e->Future.failedFuture(new InternalException("Mailing Job Update error. Error: "+e.getMessage()+"\nSQL:\n"+preparedQuery,e)))
-      .compose(rowSet->Future.succeededFuture(mailingJob));
+    throw new RuntimeException("Where is the where clause");
+//    String preparedQuery = updateSql.toString();
+//    return connection
+//      .preparedQuery(preparedQuery)
+//      .execute(Tuple.from(values))
+//      .recover(e->Future.failedFuture(new InternalException("Mailing Job Update error. Error: "+e.getMessage()+"\nSQL:\n"+preparedQuery,e)))
+//      .compose(rowSet->Future.succeededFuture(mailingJob));
 
   }
 }

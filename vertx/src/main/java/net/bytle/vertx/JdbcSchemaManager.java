@@ -2,15 +2,12 @@ package net.bytle.vertx;
 
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
-import net.bytle.java.JavaEnvs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.flywaydb.core.api.output.MigrateResult;
-import org.jooq.codegen.GenerationTool;
-import org.jooq.meta.jaxb.*;
 
 /**
  * Manage, create and migrate schema
@@ -32,6 +29,9 @@ public class JdbcSchemaManager {
    */
   public static final String CREATION_TIME_COLUMN_SUFFIX = "creation_time";
   public static final String MODIFICATION_TIME_COLUMN_SUFFIX = "modification_time";
+
+  @Deprecated
+  public static final String CS_REALM_SCHEMA = "cs_realms";
   private static final Logger LOGGER = LogManager.getLogger(JdbcSchemaManager.class);
   public static final String VERSION_LOG_TABLE = "version_log";
 
@@ -105,75 +105,16 @@ public class JdbcSchemaManager {
      */
     String targetSchemaVersion = migrateResult.targetSchemaVersion;
     String initialSchemaVersion = migrateResult.initialSchemaVersion;
-    if (!initialSchemaVersion.equals(targetSchemaVersion)) {
-      LOGGER.info("Schema migrated from " + initialSchemaVersion + "+to " + targetSchemaVersion);
-      if (JavaEnvs.IS_DEV) {
-
-        String targetJavaPackageName = jdbcSchema.getTargetJavaPackageName();
-        if (targetJavaPackageName == null) {
-          LOGGER.info("No Schema Class generation for the schema (" + jdbcSchema.getSchemaName() + ")");
-          return this;
-        }
-        LOGGER.info("Applying JOOQ generation");
-        JdbcConnectionInfo connectionInfo = this.jdbcClient.getConnectionInfo();
-
-        /**
-         * Only Postgres for now
-         */
-        String databaseName = connectionInfo.getDatabaseName();
-        if (!databaseName.equals("postgres")) {
-          throw new DbMigrationException("Jooq for the database (" + databaseName + ") is not configured");
-        }
-
-        /**
-         * Database definition
-         */
-        Database database = new Database()
-          .withInputSchema(jdbcSchema.getSchemaName())
-          .withExcludes(VERSION_LOG_TABLE);
-
-        // name
-        database = database.withName("org.jooq.meta.postgres.PostgresDatabase");
-        // inet postgres datatype
-        ForcedType postgresInet = new ForcedType()
-          .withUserType("org.jooq.postgres.extensions.types.Inet")
-          .withBinding("org.jooq.postgres.extensions.bindings.InetBinding")
-          .withIncludeTypes("inet");
-          //.withPriority(-2147483648);
-        database = database.withForcedTypes(postgresInet);
-
-
-        /**
-         * JDBC connection
-         */
-        Jdbc jdbc = new Jdbc()
-          .withUrl(connectionInfo.getUrl())
-          .withUser(connectionInfo.getUser())
-          .withPassword(connectionInfo.getPassword());
-
-        Configuration configuration = new org.jooq.meta.jaxb.Configuration()
-          .withJdbc(jdbc)
-          .withGenerator(
-            new org.jooq.meta.jaxb.Generator()
-              .withDatabase(database)
-              .withTarget(
-                new Target()
-                  // current directory is module directory
-                  .withDirectory("src/main/java")
-                  .withPackageName(targetJavaPackageName)
-              )
-          );
-
-        try {
-          GenerationTool.generate(configuration);
-        } catch (Exception e) {
-          throw new DbMigrationException("Jooq Generation Failed for the schema" + jdbcSchema.getSchemaName(), e);
-        }
+    if (initialSchemaVersion == null || !initialSchemaVersion.equals(targetSchemaVersion)) {
+      if (initialSchemaVersion == null) {
+        LOGGER.info("Schema installed to " + targetSchemaVersion);
+      } else {
+        LOGGER.info("Schema migrated from " + initialSchemaVersion + " to " + targetSchemaVersion);
       }
     }
 
-
     return this;
+
   }
 
 

@@ -81,8 +81,12 @@ public class HttpServer {
      * With Future.all if there is an error, the handlers of the future still
      * running produce an error when we close Vertx and it adds noise
      */
-    List<Future<Void>> servicesFutureMount = this.getServer().getServices().stream().map(TowerService::mount).collect(Collectors.toList());
-    return Future.join(servicesFutureMount)
+
+
+    return this.getServer().getVertx().executeBlocking(() -> {
+        List<Future<Void>> servicesFutureMount = this.getServer().getServices().stream().map(TowerService::mount).collect(Collectors.toList());
+        return Future.join(servicesFutureMount);
+      })
       .recover(err -> Future.failedFuture(new InternalException("A service mount failed while mounting the http server", err)))
       .compose(asyncResult -> {
         /**

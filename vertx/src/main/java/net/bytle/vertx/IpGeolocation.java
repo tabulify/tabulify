@@ -29,7 +29,7 @@ public class IpGeolocation extends TowerService {
   public IpGeolocation(JdbcClient jdbcClient) throws DbMigrationException {
     super(jdbcClient.getServer());
     this.jdbcClient = jdbcClient;
-    this.ipSchema = JdbcSchema.builder("ip")
+    this.ipSchema = JdbcSchema.builder(jdbcClient,"ip")
       .build();
     this.jdbcClient.getSchemaManager().migrate(ipSchema);
   }
