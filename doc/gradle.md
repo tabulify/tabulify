@@ -1,6 +1,15 @@
 # Gradle
 
 
+## Environment
+
+The environment is the `env` variable created in the [gradle.properties](../gradle.properties) file
+
+You can overwrite it at the command line when building for prod with
+```bash
+./gradlew build -Penv=prod
+```
+
 ## Version
 
 The version can be seen in the [gradle-wrapper.properties](../gradle/wrapper/gradle-wrapper.properties).

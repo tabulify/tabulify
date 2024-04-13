@@ -2,11 +2,17 @@ package net.bytle.vertx;
 
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
+import net.bytle.java.JavaEnvs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
+import org.flywaydb.core.api.output.MigrateResult;
+import org.jooq.codegen.GenerationTool;
+import org.jooq.meta.jaxb.Configuration;
+import org.jooq.meta.jaxb.Database;
+import org.jooq.meta.jaxb.Target;
 
 /**
  * Manage, create and migrate schema
@@ -88,38 +94,52 @@ public class JdbcSchemaManager {
    */
   public JdbcSchemaManager migrate(JdbcSchema jdbcSchema) throws DbMigrationException {
 
-    Flyway flywayIp = this.getFlyWayCommonConf()
+    Flyway flyway = this.getFlyWayCommonConf()
       .locations(jdbcSchema.getLocation())
       .schemas(jdbcSchema.getSchema())
       .load();
-    this.migrateAndClose(flywayIp);
-
-    return this;
-  }
-
-
-  /**
-   * With flyway, you can create a flyway object,
-   * and you run it.
-   * This function runs the object and close the connection
-   *
-   * @param flyway the flyway object to run
-   * @throws DbMigrationException if any error occurs
-   */
-  private void migrateAndClose(Flyway flyway) throws DbMigrationException {
 
     /**
      * It seems that we don't need to close the connection as Flyway do it
      * We can always get a connection via the getDataSource of the configuration {@link Flyway#getConfiguration()}
      */
+    MigrateResult migrateResult;
     try {
-      flyway.migrate();
+      migrateResult = flyway.migrate();
     } catch (FlywayException e) {
       String schemas = String.join(",", flyway.getConfiguration().getSchemas());
       throw new DbMigrationException("Flyway Database migration error for the schema " + schemas, e);
     }
 
+    String targetSchemaVersion = migrateResult.targetSchemaVersion;
+    String initialSchemaVersion = migrateResult.initialSchemaVersion;
+    if (!initialSchemaVersion.equals(targetSchemaVersion)) {
+      LOGGER.info("Schema migrated from " + initialSchemaVersion + "+to " + targetSchemaVersion);
+      if (JavaEnvs.IS_DEV) {
+        LOGGER.info("Applying JOOQ generation");
+        Configuration configuration = new org.jooq.meta.jaxb.Configuration()
+          .withJdbc(new org.jooq.meta.jaxb.Jdbc()
+            .withDriver("org.postgresql.Driver")
+            .withUrl("jdbc:postgresql://localhost:5432/your_database")
+            .withUser("your_username")
+            .withPassword("your_password"))
+          .withGenerator(new org.jooq.meta.jaxb.Generator()
+            .withDatabase(new Database()
+              .withName("org.jooq.meta.postgres.PostgresDatabase")
+              .withInputSchema("your_schema_name")) // Specify the input schema
+            .withTarget(new Target()
+              .withPackageName("your.package.name"))); // Specify the package name for generated classes
 
+        try {
+          GenerationTool.generate(configuration);
+        } catch (Exception e) {
+          throw new DbMigrationException("Jooq Generation Failed for the schema" + jdbcSchema.getSchema(), e);
+        }
+      }
+    }
+
+
+    return this;
   }
 
 

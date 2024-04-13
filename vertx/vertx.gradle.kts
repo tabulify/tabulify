@@ -9,7 +9,9 @@ val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
 val caffeineVersion = rootProject.ext.get("caffeineVersion").toString()
 val mapdbVersion = rootProject.ext.get("mapdbVersion").toString()
 val uuidVersion: String by project
-val infinispanVersion: String by project
+val jooqVersion: String by project
+val env: String by project
+
 
 dependencies {
 
@@ -61,9 +63,25 @@ dependencies {
   implementation(project(":bytle-smtp-client"))
 
   /**
-   * SQL and Schema Management
+   * Schema Management and table code generation
    */
   implementation("org.flywaydb:flyway-core:$flywayVersion")
+  implementation("org.jooq:jooq:$jooqVersion")
+
+  // Development-only dependency
+  // We generate only in dev
+  compileOnly("org.jooq:jooq-meta:$jooqVersion")
+  compileOnly("org.jooq:jooq-codegen:$jooqVersion")
+
+  // Add runtime dependency conditionally
+  if (env==="dev") {
+    implementation("org.jooq:jooq-meta:$jooqVersion")
+    implementation("org.jooq:jooq-codegen:$jooqVersion")
+  }
+
+  /**
+   * Driver and Vertx
+   */
   implementation("io.vertx:vertx-pg-client:$vertxVersion")
   implementation("com.ongres.scram:client:$scramClientVersion") // Postgres Optional dependency that is not so optional
 

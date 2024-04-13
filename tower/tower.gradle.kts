@@ -35,7 +35,7 @@ vertx {
 }
 
 /**
- * For test only
+ * For test/dev only
  */
 flyway {
   url = "jdbc:postgresql://localhost:5433/postgres"
