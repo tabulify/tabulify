@@ -22,6 +22,7 @@ public class JdbcConnectionInfo {
   private String password;
   private Integer maxPoolSize;
   private String schemaPath;
+  private String databaseName;
 
   public static JdbcConnectionInfo createFromJson(String prefix, ConfigAccessor config) {
 
@@ -33,6 +34,18 @@ public class JdbcConnectionInfo {
     } else {
       LOGGER.info("The jdbc url configuration (" + urlKey + ") was found and got the value: " + url);
     }
+
+
+    // jdbc:hyperion:sqlserver://
+    int endIndex = url.indexOf("://");
+    String scheme;
+    if(endIndex!=-1){
+     scheme = url.substring(0, endIndex).toLowerCase();
+    } else {
+      scheme = url;
+    }
+    String databaseName = scheme.replace("jdbc:","");
+    LOGGER.info("The database name got the value: " + databaseName);
 
     String userKey = prefix + "." + JdbcConnectionAttribute.USER.getKey();
     String user = config.getString(userKey);
@@ -69,39 +82,17 @@ public class JdbcConnectionInfo {
       LOGGER.info("The jdbc max pool size configuration (" + maxPoolSizeKey + ") was found and got the value:" + maxPoolSize);
     }
 
-    return new JdbcConnectionInfo()
-      .setUrl(url)
-      .setUser(user)
-      .setPassword(password)
-      .setMaxPoolSize(maxPoolSize)
-      .setSchemaPath(workingSchema);
+    JdbcConnectionInfo jdbcConnectionInfo = new JdbcConnectionInfo();
+    jdbcConnectionInfo.url = url;
+    jdbcConnectionInfo.databaseName = databaseName;
+    jdbcConnectionInfo.user = user;
+    jdbcConnectionInfo.password = password;
+    jdbcConnectionInfo.maxPoolSize = maxPoolSize;
+    jdbcConnectionInfo.schemaPath = workingSchema;
+
+    return jdbcConnectionInfo;
   }
 
-  private JdbcConnectionInfo setSchemaPath(String schemaPath) {
-    this.schemaPath = schemaPath;
-    return this;
-  }
-
-
-  private JdbcConnectionInfo setMaxPoolSize(Integer value) {
-    this.maxPoolSize = value;
-    return this;
-  }
-
-  private JdbcConnectionInfo setPassword(String value) {
-    this.password = value;
-    return this;
-  }
-
-  private JdbcConnectionInfo setUser(String value) {
-    this.user = value;
-    return this;
-  }
-
-  private JdbcConnectionInfo setUrl(String value) {
-    this.url = value;
-    return this;
-  }
 
   public String getUrl() {
     return this.url;
@@ -161,4 +152,10 @@ public class JdbcConnectionInfo {
     // the vertx default
     return 6000;
   }
+
+
+  public String getDatabaseName() {
+    return this.databaseName;
+  }
+
 }

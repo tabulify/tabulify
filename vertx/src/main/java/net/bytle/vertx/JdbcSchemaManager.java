@@ -111,24 +111,42 @@ public class JdbcSchemaManager {
       throw new DbMigrationException("Flyway Database migration error for the schema " + schemas, e);
     }
 
+    /**
+     * Schema class generation
+     */
     String targetSchemaVersion = migrateResult.targetSchemaVersion;
     String initialSchemaVersion = migrateResult.initialSchemaVersion;
     if (!initialSchemaVersion.equals(targetSchemaVersion)) {
       LOGGER.info("Schema migrated from " + initialSchemaVersion + "+to " + targetSchemaVersion);
       if (JavaEnvs.IS_DEV) {
+        String targetJavaPackageName = jdbcSchema.getTargetJavaPackageName();
+        if (targetJavaPackageName == null) {
+          LOGGER.info("No Schema Class generation for the schema ("+jdbcSchema.getSchema()+")");
+          return this;
+        }
         LOGGER.info("Applying JOOQ generation");
+        JdbcConnectionInfo connectionInfo = this.jdbcClient.getConnectionInfo();
+        String database = connectionInfo.getDatabaseName();
+        String jooqDatabaseName;
+        if (database.equals("postgres")) {
+          jooqDatabaseName = "org.jooq.meta.postgres.PostgresDatabase";
+        } else {
+          throw new DbMigrationException("The Jooq Database Name for the database (" + database + ") is not configured");
+        }
+
         Configuration configuration = new org.jooq.meta.jaxb.Configuration()
-          .withJdbc(new org.jooq.meta.jaxb.Jdbc()
-            .withDriver("org.postgresql.Driver")
-            .withUrl("jdbc:postgresql://localhost:5432/your_database")
-            .withUser("your_username")
-            .withPassword("your_password"))
+          .withJdbc(
+            new org.jooq.meta.jaxb.Jdbc()
+              .withUrl(connectionInfo.getUrl())
+              .withUser(connectionInfo.getUser())
+              .withPassword(connectionInfo.getPassword())
+          )
           .withGenerator(new org.jooq.meta.jaxb.Generator()
             .withDatabase(new Database()
-              .withName("org.jooq.meta.postgres.PostgresDatabase")
-              .withInputSchema("your_schema_name")) // Specify the input schema
+              .withName(jooqDatabaseName)
+              .withInputSchema(jdbcSchema.getSchema())) // Specify the input schema
             .withTarget(new Target()
-              .withPackageName("your.package.name"))); // Specify the package name for generated classes
+              .withPackageName(targetJavaPackageName))); // Specify the package name for generated classes
 
         try {
           GenerationTool.generate(configuration);

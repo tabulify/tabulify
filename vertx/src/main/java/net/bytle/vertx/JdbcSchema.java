@@ -8,15 +8,12 @@ public class JdbcSchema {
     this.Builder = Builder;
   }
 
-  public static Builder builder() {
-    return new Builder();
+  public static Builder builder(String schemaHandle) {
+    return new Builder(schemaHandle);
   }
 
   public static JdbcSchema createFromHandle(String schemaHandle) {
-    return builder()
-      .setLocation("classpath:db/cs-" + schemaHandle)
-      .setSchema(JdbcSchemaManager.getSchemaFromHandle(schemaHandle))
-      .build();
+    return builder(schemaHandle).build();
   }
 
   public String getLocation() {
@@ -27,11 +24,28 @@ public class JdbcSchema {
     return this.Builder.schema;
   }
 
+  public String getTargetJavaPackageName() {
+    return this.Builder.targetPackage;
+  }
+
   public static class Builder {
     public String schema;
     private String location;
+    private String targetPackage;
 
-    public Builder setLocation(String location) {
+    /**
+     * @param schemaHandle - the handle without any prefix
+     */
+    public Builder(String schemaHandle) {
+      setMigrationFileLocation("classpath:db/cs-" + schemaHandle);
+      setSchema(JdbcSchemaManager.getSchemaFromHandle(schemaHandle));
+    }
+
+    /**
+     *
+     * @param location - the location of the migration file
+     */
+    public Builder setMigrationFileLocation(String location) {
       this.location = location;
       return this;
     }
@@ -40,8 +54,19 @@ public class JdbcSchema {
       return new JdbcSchema(this);
     }
 
+    /**
+     * @param schema - the database schema name
+     */
     public Builder setSchema(String schema) {
       this.schema = schema;
+      return this;
+    }
+
+    /**
+     * @param targetPackage - the target package for the generated schema class
+     */
+    public Builder setTargetPackage(String targetPackage) {
+      this.targetPackage = targetPackage;
       return this;
     }
 

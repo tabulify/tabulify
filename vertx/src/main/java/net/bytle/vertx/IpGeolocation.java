@@ -21,16 +21,15 @@ import java.sql.Types;
 
 public class IpGeolocation extends TowerService {
 
-  public static final String CS_IP_SCHEMA = JdbcSchemaManager.getSchemaFromHandle("ip");
+
   static Logger LOGGER = LogManager.getLogger(IpGeolocation.class);
   private final JdbcClient jdbcClient;
+  private final JdbcSchema ipSchema;
 
   public IpGeolocation(JdbcClient jdbcClient) throws DbMigrationException {
     super(jdbcClient.getServer());
     this.jdbcClient = jdbcClient;
-    JdbcSchema ipSchema = JdbcSchema.builder()
-      .setLocation("classpath:db/cs-ip")
-      .setSchema(CS_IP_SCHEMA)
+    this.ipSchema = JdbcSchema.builder("ip")
       .build();
     this.jdbcClient.getSchemaManager().migrate(ipSchema);
   }
@@ -42,14 +41,14 @@ public class IpGeolocation extends TowerService {
   @Override
   public Future<Void> start() {
     try {
-      loadIpDataIfNeeded(this.jdbcClient.getConnectionInfo());
+      this.loadIpDataIfNeeded(this.jdbcClient.getConnectionInfo());
     } catch (DbMigrationException e) {
       return Future.failedFuture(new InternalException("Unable to load ip data", e));
     }
     return super.start();
   }
 
-  public static void loadIpDataIfNeeded(JdbcConnectionInfo jdbcConnectionInfo) throws DbMigrationException {
+  public void loadIpDataIfNeeded(JdbcConnectionInfo jdbcConnectionInfo) throws DbMigrationException {
     // Load meta
     LOGGER.info("Loading Ip data");
     String dataStoreName = "ip";
@@ -61,7 +60,7 @@ public class IpGeolocation extends TowerService {
         .createRuntimeConnection(dataStoreName, jdbcConnectionInfo.getUrl())
         .setUser(jdbcConnectionInfo.getUser())
         .setPassword(jdbcConnectionInfo.getPassword())
-        .getDataPath(CS_IP_SCHEMA + ".ip");
+        .getDataPath(this.ipSchema.getSchema() + ".ip");
       Long count = ipTable.getCount();
       LOGGER.info("Total Ip Table count " + count);
       if (count == 0) {
@@ -127,7 +126,7 @@ public class IpGeolocation extends TowerService {
     LOGGER.info("numericIp is {}", numericIp);
     // One shot, no need to close anything and return only one row
     // https://vertx.io/docs/apidocs/io/vertx/ext/sql/SQLOperations.html#querySingleWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-
-    String sql = "SELECT * FROM " + IpGeolocation.CS_IP_SCHEMA + ".ip " +
+    String sql = "SELECT * FROM " + this.ipSchema.getSchema() + ".ip " +
       "WHERE " +
       "ip_from <= $1 " +
       "and ip_to >= $2";
