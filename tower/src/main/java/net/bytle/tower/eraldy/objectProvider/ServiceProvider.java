@@ -22,7 +22,7 @@ import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.JdbcSchemaManager;
+import net.bytle.vertx.db.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

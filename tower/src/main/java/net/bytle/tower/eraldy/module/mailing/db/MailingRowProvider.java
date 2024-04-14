@@ -10,9 +10,9 @@ import net.bytle.tower.eraldy.module.mailing.model.Mailing;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
 import net.bytle.tower.eraldy.module.mailing.model.MailingRowStatus;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.vertx.JdbcClient;
+import net.bytle.vertx.db.JdbcClient;
 
-import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
+import static net.bytle.vertx.db.JdbcSchemaManager.COLUMN_PART_SEP;
 
 public class MailingRowProvider {
   public static final String FULL_TABLE = "cs_jobs.realm_mailing_row";

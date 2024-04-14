@@ -23,6 +23,7 @@ import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.*;
+import net.bytle.vertx.db.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

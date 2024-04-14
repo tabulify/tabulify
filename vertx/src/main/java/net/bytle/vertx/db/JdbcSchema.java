@@ -1,8 +1,9 @@
-package net.bytle.vertx;
+package net.bytle.vertx.db;
 
 import io.vertx.core.Future;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
+import net.bytle.vertx.TowerService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

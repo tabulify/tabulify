@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.module.mailing.db;
+package net.bytle.tower.eraldy.module.mailing.db.mailingjob;
 
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
@@ -17,51 +17,35 @@ import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJobStatus;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
-import net.bytle.vertx.JdbcSchema;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.db.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class MailingJobProvider {
 
-  private static final String MAILING_JOB_FULL_QUALIFIED_TABLE_NAME = "cs_jobs.realm_mailing_job";
-  private static final String MAILING_JOB_PREFIX = "mailing_job";
-  private static final String MAILING_JOB_REALM_ID_COLUMN = MAILING_JOB_PREFIX + "_realm_id";
-  private static final String MAILING_JOB_ID_COLUMN = MAILING_JOB_PREFIX + "_id";
-  private static final String MAILING_JOB_MAILING_ID_COLUMN = MAILING_JOB_PREFIX + "_mailing_id";
-  private static final String MAILING_JOB_STATUS_CODE_COLUMN = MAILING_JOB_PREFIX + "_status_code";
-  private static final String MAILING_JOB_STATUS_MESSAGE_COLUMN = MAILING_JOB_PREFIX + "_status_message";
-  private static final String MAILING_JOB_START_TIME_COLUMN = MAILING_JOB_PREFIX + "_start_time";
-  private static final String MAILING_JOB_END_TIME_MESSAGE_COLUMN = MAILING_JOB_PREFIX + "_end_time";
-  private static final String MAILING_JOB_COUNT_ROW_TO_EXECUTE_COLUMN = MAILING_JOB_PREFIX + "_count_row_to_execute";
-  private static final String MAILING_JOB_COUNT_ROW_SUCCESS_COLUMN = MAILING_JOB_PREFIX + "_count_row_success";
-  private static final String MAILING_JOB_COUNT_ROW_EXECUTION_COLUMN = MAILING_JOB_PREFIX + "_count_row_execution";
+
+
   private static final String MAILING_JOB_GUID_PREFIX = "maj";
   private final EraldyApiApp apiApp;
-  private final String insertSql;
 
   private final Pool jdbcPool;
+  private final JdbcTable mailingJobTable;
 
 
   public MailingJobProvider(EraldyApiApp eraldyApiApp, JdbcSchema jobsSchema) {
     this.apiApp = eraldyApiApp;
 
+    this.mailingJobTable =  JdbcTable.build(jobsSchema,"realm_mailing_job")
+      .addPrimaryKeyColumn(MailingJobCols.ID)
+      .addPrimaryKeyColumn(MailingJobCols.REALM_ID)
+      .build();
+
     this.jdbcPool = jobsSchema.getJdbcClient().getPool();
 
-    this.insertSql = "INSERT INTO\n" +
-      MAILING_JOB_FULL_QUALIFIED_TABLE_NAME + " (\n" +
-      "  " + MAILING_JOB_REALM_ID_COLUMN + ",\n" +
-      "  " + MAILING_JOB_ID_COLUMN + ",\n" +
-      "  " + MAILING_JOB_MAILING_ID_COLUMN + ",\n" +
-      "  " + MAILING_JOB_STATUS_CODE_COLUMN + ",\n" +
-      "  " + MAILING_JOB_START_TIME_COLUMN + ",\n" +
-      "  " + MAILING_JOB_COUNT_ROW_TO_EXECUTE_COLUMN +
-      "  )\n" +
-      " values ($1, $2, $3, $4, $5, $6)";
+
 
 
   }
@@ -93,23 +77,21 @@ public class MailingJobProvider {
         return this.jdbcPool
           .withTransaction(sqlConnection ->
             this.apiApp.getRealmSequenceProvider()
-              .getNextIdForTableAndRealm(sqlConnection, mailing.getRealm(), MAILING_JOB_FULL_QUALIFIED_TABLE_NAME)
+              .getNextIdForTableAndRealm(sqlConnection, mailing.getRealm(), this.mailingJobTable)
               .compose(nextId -> {
 
                 mailingJob.setLocalId(nextId);
                 this.updateGuid(mailingJob);
-                return sqlConnection
-                  .preparedQuery(insertSql)
-                  .execute(Tuple.of(
-                    mailingJob.getMailing().getRealm().getLocalId(),
-                    mailingJob.getLocalId(),
-                    mailingJob.getMailing().getLocalId(),
-                    mailingJob.getStatus().getCode(),
-                    mailingJob.getStartTime(),
-                    mailingJob.getCountRowToExecute()
-                  ));
+
+                return JdbcInsert.into(mailingJobTable)
+                  .addColumn(MailingJobCols.ID, mailingJob.getLocalId())
+                  .addColumn(MailingJobCols.REALM_ID, mailingJob.getMailing().getRealm().getLocalId())
+                  .addColumn(MailingJobCols.MAILING_ID, mailingJob.getMailing().getLocalId())
+                  .addColumn(MailingJobCols.STATUS_CODE, mailingJob.getStatus().getCode())
+                  .addColumn(MailingJobCols.START_TIME, mailingJob.getStartTime())
+                  .addColumn(MailingJobCols.COUNT_ROW_TO_EXECUTE, mailingJob.getCountRowToExecute())
+                  .execute(sqlConnection);
               })
-              .recover(e -> Future.failedFuture(new InternalException("Mailing Job creation Error: Sql Error " + e.getMessage(), e)))
               .compose(rows -> Future.succeededFuture(mailingJob)));
       });
 
@@ -146,7 +128,7 @@ public class MailingJobProvider {
         mailing.setLocalId(mailingJobLocalId);
         mailing.setGuid(mailingGuid);
 
-        final String sql = "select * from " + MAILING_JOB_FULL_QUALIFIED_TABLE_NAME + " where " + MAILING_JOB_MAILING_ID_COLUMN + " = $1 and " + MAILING_JOB_REALM_ID_COLUMN + " = $2";
+        final String sql = "select * from " + this.mailingJobTable.getFullName() + " where " + MailingJobCols.ID.getColumnName() + " = $1 and " + MailingJobCols.REALM_ID.getColumnName() + " = $2";
         Tuple tuple = Tuple.of(mailingJobLocalId, realm.getLocalId());
         return this.jdbcPool
           .preparedQuery(sql)
@@ -155,7 +137,8 @@ public class MailingJobProvider {
           .compose(rows -> {
             List<MailingJob> mailingList = new ArrayList<>();
             for (Row row : rows) {
-              MailingJob mailingJob = this.buildFromRow(row, mailing);
+              JdbcRow rowV = new JdbcRow(row);
+              MailingJob mailingJob = this.buildFromRow(rowV, mailing);
               mailingList.add(mailingJob);
             }
             return Future.succeededFuture(mailingList);
@@ -164,17 +147,17 @@ public class MailingJobProvider {
   }
 
 
-  private MailingJob buildFromRow(Row row, Mailing mailing) {
+  private MailingJob buildFromRow(JdbcRow row, Mailing mailing) {
 
     MailingJob mailingJob = new MailingJob();
 
     /**
      * Ids
      */
-    Long mailingJobId = row.getLong(MAILING_JOB_ID_COLUMN);
+    Long mailingJobId = row.getLong(MailingJobCols.ID);
     mailingJob.setLocalId(mailingJobId);
-    Long mailingLocalId = row.getLong(MAILING_JOB_MAILING_ID_COLUMN);
-    Long realmLocalId = row.getLong(MAILING_JOB_REALM_ID_COLUMN);
+    Long mailingLocalId = row.getLong(MailingJobCols.MAILING_ID);
+    Long realmLocalId = row.getLong(MailingJobCols.REALM_ID);
     if (mailing != null) {
       if (!mailingLocalId.equals(mailing.getLocalId())) {
         throw new InternalException("Inconsistency: The mailing local id (" + mailing.getLocalId() + ") is not the same as in the database (" + mailingLocalId + ") for the mailing job (" + mailingJobId + ")");
@@ -196,13 +179,13 @@ public class MailingJobProvider {
     /**
      * Props
      */
-    mailingJob.setStatus(MailingJobStatus.fromStatusCodeFailSafe(row.getInteger(MAILING_JOB_STATUS_CODE_COLUMN)));
-    mailingJob.setStatusMessage(row.getString(MAILING_JOB_STATUS_MESSAGE_COLUMN));
-    mailingJob.setStartTime(row.getLocalDateTime(MAILING_JOB_START_TIME_COLUMN));
-    mailingJob.setEndTime(row.getLocalDateTime(MAILING_JOB_END_TIME_MESSAGE_COLUMN));
-    mailingJob.setCountRowToExecute(row.getLong(MAILING_JOB_COUNT_ROW_TO_EXECUTE_COLUMN));
-    mailingJob.setCountRowSuccess(row.getLong(MAILING_JOB_COUNT_ROW_SUCCESS_COLUMN));
-    mailingJob.setCountRowExecution(row.getLong(MAILING_JOB_COUNT_ROW_EXECUTION_COLUMN));
+    mailingJob.setStatus(MailingJobStatus.fromStatusCodeFailSafe(row.getInteger(MailingJobCols.STATUS_CODE)));
+    mailingJob.setStatusMessage(row.getString(MailingJobCols.STATUS_MESSAGE));
+    mailingJob.setStartTime(row.getLocalDateTime(MailingJobCols.START_TIME));
+    mailingJob.setEndTime(row.getLocalDateTime(MailingJobCols.END_TIME));
+    mailingJob.setCountRowToExecute(row.getLong(MailingJobCols.COUNT_ROW_TO_EXECUTE));
+    mailingJob.setCountRowSuccess(row.getLong(MailingJobCols.COUNT_ROW_SUCCESS));
+    mailingJob.setCountRowExecution(row.getLong(MailingJobCols.COUNT_ROW_EXECUTION));
 
     return mailingJob;
   }
@@ -220,14 +203,14 @@ public class MailingJobProvider {
       .compose(realm -> {
 
 
-        final String sql = "select * from " + MAILING_JOB_FULL_QUALIFIED_TABLE_NAME + " where " + MAILING_JOB_ID_COLUMN + " = $1 and " + MAILING_JOB_REALM_ID_COLUMN + " = $2";
+        final String sql = "select * from " + this.mailingJobTable.getFullName() + " where " + MailingJobCols.ID.getColumnName() + " = $1 and " + MailingJobCols.REALM_ID.getColumnName() + " = $2";
         Tuple tuple = Tuple.of(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm.getLocalId());
         return this.jdbcPool
           .preparedQuery(sql)
           .execute(tuple)
           .recover(err -> Future.failedFuture(new InternalException("Getting the mailing job (" + tuple + ") failed. Error: " + err.getMessage() + ". Sql:\n" + sql, err)))
-          .compose(rows -> {
-
+          .compose(rowSet -> {
+            JdbcRowSet rows = new JdbcRowSet(rowSet);
             if (rows.rowCount() == 0) {
               return Future.failedFuture(TowerFailureException.builder()
                 .setType(TowerFailureTypeEnum.NOT_FOUND_404)
@@ -263,14 +246,14 @@ public class MailingJobProvider {
    */
   public Future<MailingJob> updateMailingJob(SqlConnection connection, MailingJob mailingJob, MailingJobInputProps mailingJobInputProps) {
 
-    Map<String, Object> updates = new HashMap<>();
+    JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.mailingJobTable);
 
     /**
      * Status code
      */
     MailingJobStatus newStatus = mailingJobInputProps.getStatus();
     if (newStatus != null && newStatus != mailingJob.getStatus()) {
-      updates.put(MAILING_JOB_STATUS_CODE_COLUMN, newStatus.getCode());
+      jdbcUpdate.addUpdatedColumn(MailingJobCols.STATUS_CODE, newStatus.getCode());
       mailingJob.setStatus(newStatus);
     }
 
@@ -279,35 +262,20 @@ public class MailingJobProvider {
      */
     String newStatusMessage = mailingJobInputProps.getStatusMessage();
     if (newStatusMessage != null) {
-      updates.put(MAILING_JOB_STATUS_MESSAGE_COLUMN, newStatusMessage);
+      jdbcUpdate.addUpdatedColumn(MailingJobCols.STATUS_MESSAGE, newStatusMessage);
       mailingJob.setStatusMessage(newStatusMessage);
     }
 
-    if(updates.isEmpty()){
+    if (jdbcUpdate.noColumnToUpdate()) {
       return Future.succeededFuture(mailingJob);
     }
-    StringBuilder updateSql = new StringBuilder();
-    List<Object> values = new ArrayList<>();
-    updateSql.append("update ")
-      .append(MAILING_JOB_FULL_QUALIFIED_TABLE_NAME)
-      .append(" set ")
-    ;
 
-    List<String> equalityStatements = new ArrayList<>();
-    for(Map.Entry<String,Object> entry: updates.entrySet()){
 
-      values.add(entry.getValue());
-      equalityStatements.add(entry.getKey()+" = $"+values.size());
+    jdbcUpdate.addPrimaryKeyColumn(MailingJobCols.REALM_ID,mailingJob.getMailing().getRealm().getLocalId());
+    jdbcUpdate.addPrimaryKeyColumn(MailingJobCols.ID,mailingJob.getLocalId());
 
-    }
-    updateSql.append(String.join(", ",equalityStatements));
-    throw new RuntimeException("Where is the where clause");
-//    String preparedQuery = updateSql.toString();
-//    return connection
-//      .preparedQuery(preparedQuery)
-//      .execute(Tuple.from(values))
-//      .recover(e->Future.failedFuture(new InternalException("Mailing Job Update error. Error: "+e.getMessage()+"\nSQL:\n"+preparedQuery,e)))
-//      .compose(rowSet->Future.succeededFuture(mailingJob));
+    return jdbcUpdate.execute(connection)
+      .compose(rowSet->Future.succeededFuture(mailingJob));
 
   }
 }

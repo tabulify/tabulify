@@ -1,8 +1,8 @@
 package net.bytle.vertx.collections;
 
-import net.bytle.vertx.JdbcClient;
-import net.bytle.vertx.JdbcSchema;
 import net.bytle.vertx.Server;
+import net.bytle.vertx.db.JdbcClient;
+import net.bytle.vertx.db.JdbcSchema;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

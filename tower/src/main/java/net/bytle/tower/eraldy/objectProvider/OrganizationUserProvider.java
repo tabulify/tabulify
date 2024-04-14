@@ -14,14 +14,14 @@ import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.vertx.DateTimeService;
-import net.bytle.vertx.JdbcSchemaManager;
+import net.bytle.vertx.db.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
+import static net.bytle.vertx.db.JdbcSchemaManager.COLUMN_PART_SEP;
 
 /**
  * Organization Users are the tenants.

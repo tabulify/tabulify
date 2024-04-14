@@ -12,6 +12,8 @@ import net.bytle.vertx.analytics.AnalyticsTracker;
 import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
 import net.bytle.vertx.collections.MapDb;
 import net.bytle.vertx.collections.WriteThroughCollection;
+import net.bytle.vertx.db.JdbcClient;
+import net.bytle.vertx.db.JdbcPostgres;
 import net.bytle.vertx.future.TowerFutures;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.apache.logging.log4j.LogManager;

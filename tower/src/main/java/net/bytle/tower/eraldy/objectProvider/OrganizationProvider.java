@@ -11,11 +11,11 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
-import net.bytle.vertx.JdbcSchemaManager;
+import net.bytle.vertx.db.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
+import static net.bytle.vertx.db.JdbcSchemaManager.COLUMN_PART_SEP;
 
 public class OrganizationProvider {
 

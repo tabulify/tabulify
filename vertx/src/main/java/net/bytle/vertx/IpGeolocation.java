@@ -10,6 +10,9 @@ import net.bytle.db.spi.Tabulars;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
 import net.bytle.type.Ip;
+import net.bytle.vertx.db.JdbcClient;
+import net.bytle.vertx.db.JdbcConnectionInfo;
+import net.bytle.vertx.db.JdbcSchema;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

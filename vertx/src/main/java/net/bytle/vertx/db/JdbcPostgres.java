@@ -1,4 +1,4 @@
-package net.bytle.vertx;
+package net.bytle.vertx.db;
 
 import io.vertx.core.Vertx;
 import io.vertx.pgclient.PgBuilder;
@@ -6,6 +6,7 @@ import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.PoolOptions;
 import net.bytle.exception.NullValueException;
+import net.bytle.vertx.Server;
 import org.postgresql.ds.PGSimpleDataSource;
 
 import javax.sql.DataSource;

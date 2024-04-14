@@ -1,8 +1,9 @@
-package net.bytle.vertx;
+package net.bytle.vertx.db;
 
 import io.vertx.pgclient.PgConnectOptions;
 import net.bytle.exception.NullValueException;
 import net.bytle.type.Strings;
+import net.bytle.vertx.ConfigAccessor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -154,6 +155,10 @@ public class JdbcConnectionInfo {
   }
 
 
+  /**
+   * @return the unique name for a database product (ie postgresql for postgres). The name just after jdbc in the url
+   */
+  @SuppressWarnings("unused")
   public String getDatabaseName() {
     return this.databaseName;
   }

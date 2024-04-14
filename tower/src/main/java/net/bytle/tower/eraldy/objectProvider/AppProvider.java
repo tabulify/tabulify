@@ -16,7 +16,11 @@ import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.vertx.*;
+import net.bytle.vertx.DateTimeService;
+import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.db.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,8 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static net.bytle.vertx.JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
-import static net.bytle.vertx.JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
+import static net.bytle.vertx.db.JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
+import static net.bytle.vertx.db.JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
 
 /**
  * Manage the get/upsert of a {@link App} object asynchronously

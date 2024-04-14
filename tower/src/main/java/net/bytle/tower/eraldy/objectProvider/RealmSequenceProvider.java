@@ -6,8 +6,9 @@ import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.vertx.DateTimeService;
-import net.bytle.vertx.JdbcSchemaManager;
 import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.db.JdbcSchemaManager;
+import net.bytle.vertx.db.JdbcTable;
 
 /**
  * This class creates and maintain a sequence by realm.
@@ -31,12 +32,19 @@ public class RealmSequenceProvider {
   private static final String REALM_ID_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
 
 
+  public Future<Long> getNextIdForTableAndRealm(SqlConnection sqlConnection, Realm realm, JdbcTable table) {
+    return this.getNextIdForTableAndRealm(sqlConnection, realm, table.getFullName());
+  }
+
+
   /**
    * @param sqlConnection - the sql connection
    * @param realm         - the realm
    * @param tableName -the table name
    * @return the next id
+   * @deprecated use {@link #getNextIdForTableAndRealm(SqlConnection, Realm, JdbcTable)}
    */
+  @Deprecated
   public Future<Long> getNextIdForTableAndRealm(SqlConnection sqlConnection, Realm realm, String tableName) {
 
     Long realmId = realm.getLocalId();

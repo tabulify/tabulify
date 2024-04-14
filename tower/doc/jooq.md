@@ -14,6 +14,10 @@ The generation time is not short.
 
 We just create our own table and sql generation.
 
+ie
+* update flyway script
+* update our table abstraction
+
 ## Archive
 
 

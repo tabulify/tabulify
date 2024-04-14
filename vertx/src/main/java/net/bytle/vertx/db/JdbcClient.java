@@ -1,8 +1,10 @@
-package net.bytle.vertx;
+package net.bytle.vertx.db;
 
 import io.vertx.sqlclient.Pool;
 import net.bytle.exception.InternalException;
 import net.bytle.type.Strings;
+import net.bytle.vertx.Server;
+import net.bytle.vertx.TowerService;
 
 import javax.sql.DataSource;
 

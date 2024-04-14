@@ -31,6 +31,8 @@ import net.bytle.type.EmailCastException;
 import net.bytle.vertx.*;
 import net.bytle.vertx.analytics.event.SignUpEvent;
 import net.bytle.vertx.auth.AuthUser;
+import net.bytle.vertx.db.JdbcSchema;
+import net.bytle.vertx.db.JdbcSchemaManager;
 import net.bytle.vertx.flow.FlowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

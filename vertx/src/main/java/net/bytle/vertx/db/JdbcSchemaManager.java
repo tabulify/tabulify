@@ -1,4 +1,4 @@
-package net.bytle.vertx;
+package net.bytle.vertx.db;
 
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
