@@ -22,8 +22,9 @@ import net.bytle.tower.eraldy.api.openapi.interfaces.ListApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
-import net.bytle.tower.eraldy.objectProvider.ListProvider;
-import net.bytle.tower.eraldy.objectProvider.ListUserProvider;
+import net.bytle.tower.eraldy.module.list.db.ListProvider;
+import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
+import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Casts;
 import net.bytle.type.Strings;
@@ -236,50 +237,24 @@ public class ListApiImpl implements ListApi {
     ListProvider listProvider = this.apiApp.getListProvider();
     return listProvider.getListByIdentifierFoundInPathParameterAndVerifyScope(routingContext, AuthUserScope.LIST_PATCH)
       .compose(list -> {
-        String listHandle = listBody.getListHandle();
-        if (listHandle != null) {
-          list.setHandle(listHandle);
+        if(list==null){
+          return Future.failedFuture(TowerFailureException.builder()
+            .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+            .setMessage("The list ("+listIdentifier+") was not found")
+            .build()
+          );
         }
-        String listName = listBody.getListName();
-        if (listName != null) {
-          list.setName(listName);
-        }
-        String listTitle = listBody.getListTitle();
-        if (listTitle != null) {
-          list.setTitle(listTitle);
-        }
-        String listDescription = listBody.getListDescription();
-        if (listDescription != null) {
-          list.setDescription(listDescription);
-        }
-        String ownerIdentifier = listBody.getOwnerUserIdentifier();
-        Future<OrganizationUser> futureOwner;
-        OrganizationUser actualOwnerUser = list.getOwnerUser();
-        if (ownerIdentifier != null) {
-          if (ownerIdentifier.isEmpty()) {
-            futureOwner = Future.succeededFuture(null);
-          } else {
-            Future<OrganizationUser> futureOwnerByIdentifier = this.apiApp.getUserProvider().getUserByIdentifier(ownerIdentifier, list.getRealm(), OrganizationUser.class);
-            if (actualOwnerUser == null) {
-              futureOwner = futureOwnerByIdentifier;
-            } else if (!(actualOwnerUser.getGuid().equals(ownerIdentifier) || actualOwnerUser.getEmailAddress().equals(ownerIdentifier))) {
-              futureOwner = futureOwnerByIdentifier;
-            } else {
-              futureOwner = Future.succeededFuture(actualOwnerUser);
-            }
-          }
-        } else {
-          futureOwner = Future.succeededFuture(actualOwnerUser);
-        }
-        return futureOwner
-          .compose(newOwner -> {
-            list.setOwnerUser(newOwner);
-            return listProvider
-              .updateList(list)
-              .compose(updatedList -> Future.succeededFuture(new ApiResponse<>(updatedList).setMapper(listProvider.getApiMapper())));
-          });
+        ListInputProps listInputProps = new ListInputProps();
+        listInputProps.setHandle(listBody.getListHandle());
+        listInputProps.setName(listBody.getListName());
+        listInputProps.setTitle(listBody.getListTitle());
+        listInputProps.setOwnerIdentifier(listBody.getOwnerUserIdentifier());
 
+        return listProvider
+          .updateList(list,listInputProps)
+          .compose(updatedList -> Future.succeededFuture(new ApiResponse<>(updatedList).setMapper(listProvider.getApiMapper())));
       });
+
 
   }
 

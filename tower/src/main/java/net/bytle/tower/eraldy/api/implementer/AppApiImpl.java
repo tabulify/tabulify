@@ -14,9 +14,9 @@ import net.bytle.tower.eraldy.mixin.AppPublicMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
-import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.*;
 

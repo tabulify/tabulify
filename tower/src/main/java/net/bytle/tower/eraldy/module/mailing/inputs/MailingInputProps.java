@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class MailingInputProps {
 
-  protected String guid;
 
   protected String name;
 
@@ -36,21 +35,6 @@ public class MailingInputProps {
   public MailingInputProps () {
   }
 
-  /**
-   * @return guid The public id (derived from the database/local id)
-   */
-  @JsonProperty("guid")
-  public String getGuid() {
-    return guid;
-  }
-
-  /**
-   * @param guid The public id (derived from the database/local id)
-   */
-  @SuppressWarnings("unused")
-  public void setGuid(String guid) {
-    this.guid = guid;
-  }
 
   /**
    * @return name A short description of the mailing

@@ -49,7 +49,7 @@ public class AppProvider {
   public static final String APP_ORG_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN;
 
 
-  protected static final String APP_ID_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "id";
+  public static final String APP_ID_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "id";
 
   public static final String APP_HANDLE_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "handle";
   private static final String APP_CREATION_TIME = APP_COLUMN_PREFIX + COLUMN_PART_SEP + CREATION_TIME_COLUMN_SUFFIX;
@@ -620,7 +620,7 @@ public class AppProvider {
             )
           );
       })
-      .onFailure(e -> LOGGER.error("App Insert Error:" + e.getMessage() + ". Sql: " + insertSql, e))
+      .recover(e -> Future.failedFuture(new InternalException("App Insert Error:" + e.getMessage() + ". Sql: " + insertSql, e)))
       .compose(rows -> Future.succeededFuture(app));
   }
 

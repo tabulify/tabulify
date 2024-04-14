@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.objectProvider;
+package net.bytle.tower.eraldy.module.list.db;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,7 +9,6 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
-import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
@@ -21,9 +20,14 @@ import net.bytle.tower.eraldy.mixin.ListItemMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
+import net.bytle.tower.eraldy.objectProvider.AppProvider;
+import net.bytle.tower.eraldy.objectProvider.OrganizationUserProvider;
+import net.bytle.tower.eraldy.objectProvider.RealmProvider;
+import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.*;
-import net.bytle.vertx.db.JdbcSchemaManager;
+import net.bytle.vertx.db.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,19 +58,18 @@ public class ListProvider {
 
   public static final String LIST_HANDLE_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "handle";
   public static final String LIST_NAME_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "name";
-  private static final String LIST_MODIFICATION_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
-  private static final String LIST_CREATION_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private final Pool jdbcPool;
   private final JsonMapper apiMapper;
   private static final String LIST_USER_COUNT_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "user" + COLUMN_PART_SEP + "count";
   private static final String LIST_USER_IN_COUNT_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "user" + COLUMN_PART_SEP + "in" + COLUMN_PART_SEP + "count";
   private static final String LIST_MAILING_COUNT_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "mailing" + COLUMN_PART_SEP + "count";
+  private final JdbcTable listTable;
 
 
-  public ListProvider(EraldyApiApp apiApp) {
+  public ListProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
     this.apiApp = apiApp;
     Server server = apiApp.getHttpServer().getServer();
-    this.jdbcPool = server.getPostgresClient().getPool();
+    this.jdbcPool = jdbcSchema.getJdbcClient().getPool();
     this.apiMapper = server.getJacksonMapperManager()
       .jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
@@ -74,6 +77,11 @@ public class ListProvider {
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .addMixIn(ListObject.class, ListItemMixinWithRealm.class)
       .build();
+    this.listTable = JdbcTable.build(jdbcSchema, "realm_list")
+      .addPrimaryKeyColumn(ListCols.ID)
+      .addPrimaryKeyColumn(ListCols.REALM_ID)
+      .build()
+    ;
 
   }
 
@@ -110,189 +118,157 @@ public class ListProvider {
 
 
   /**
-   * @param listObject the publication to upsert
+   * @param listHandle - the handle to lookup
+   * @param app - the app if insertion
+   * @param listInputProps  - the props
    * @return the realm with the id
    */
-  public Future<ListObject> upsertList(ListObject listObject) {
+  public Future<ListObject> upsertList(String listHandle, App app, ListInputProps listInputProps) {
 
-    Realm realm = listObject.getRealm();
-    if (realm == null) {
-      return Future.failedFuture(new InternalError("The realm is mandatory when upserting a list"));
+
+    return this.getListByHandle(listHandle, app.getRealm())
+      .compose(list -> {
+        if (list == null) {
+          return this.insertList(app, listInputProps);
+        }
+        return this.updateList(list, listInputProps);
+      });
+
+
+  }
+
+  private Future<ListObject> insertList(App app, ListInputProps listInputProps) {
+
+    /**
+     * User
+     */
+    String ownerIdentifier = listInputProps.getOwnerGuid();
+    Future<OrganizationUser> futureUser = Future.succeededFuture();
+    if (ownerIdentifier != null) {
+      OrganizationUserProvider userProvider = apiApp.getOrganizationUserProvider();
+      futureUser = userProvider.getOrganizationUserByIdentifier(ownerIdentifier);
     }
 
-    User owner = listObject.getOwnerUser();
-    Long ownerId;
-    if (owner != null) {
-      ownerId = owner.getLocalId();
-      if (ownerId == null) {
-        return Future.failedFuture(new InternalException("The owner id of a user object should not be null"));
+    return futureUser
+      .compose(user -> {
+
+        JdbcInsert jdbcInsert = JdbcInsert.into(this.listTable);
+
+        // New list
+        ListObject newList = new ListObject();
+        if (user != null) {
+          newList.setOwnerUser(user);
+          jdbcInsert.addColumn(ListCols.OWNER_USER_ID, user.getLocalId());
+        }
+
+        newList.setRealm(app.getRealm());
+        jdbcInsert.addColumn(ListCols.REALM_ID, app.getRealm().getLocalId());
+        newList.setApp(app);
+        jdbcInsert.addColumn(ListCols.APP_ID, app.getLocalId());
+        newList.setName(listInputProps.getName());
+        jdbcInsert.addColumn(ListCols.NAME, listInputProps.getName());
+        newList.setName(listInputProps.getHandle());
+        jdbcInsert.addColumn(ListCols.HANDLE, listInputProps.getHandle());
+        jdbcInsert.addColumn(ListCols.CREATION_TIME, DateTimeService.getNowInUtc());
+
+        return jdbcPool
+          .withTransaction(sqlConnection ->
+            this.apiApp.getRealmSequenceProvider()
+              .getNextIdForTableAndRealm(sqlConnection, app.getRealm(), this.listTable)
+              .compose(nextId -> {
+
+                newList.setLocalId(nextId);
+                jdbcInsert.addColumn(ListCols.ID, nextId);
+                this.updateGuid(newList);
+
+                return jdbcInsert.execute(sqlConnection);
+              })
+              .compose(rowSet -> {
+                Long realmId = newList.getRealm().getLocalId();
+                Long listId = newList.getLocalId();
+                final String createListRegistrationPartition =
+                  "CREATE TABLE IF NOT EXISTS " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "_" + realmId + "_" + listId + "\n" +
+                    "    partition of " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "\n" +
+                    "        (" + ListUserProvider.REALM_COLUMN + ", " + ListUserProvider.LIST_ID_COLUMN + ")\n" +
+                    "        FOR VALUES FROM (" + realmId + "," + listId + ") TO (" + realmId + "," + (listId + 1) + " )";
+                return sqlConnection
+                  .preparedQuery(createListRegistrationPartition)
+                  .execute()
+                  .onFailure(e -> LOGGER.error("List Registration Partition creation Error: Sql Error " + e.getMessage() + ". With Sql" + createListRegistrationPartition, e));
+              })
+              .onFailure(e -> LOGGER.error("List creation Error: Sql Error " + e.getMessage(), e))
+              .compose(rows -> Future.succeededFuture(newList)));
+
+      });
+  }
+
+
+  public Future<ListObject> updateList(ListObject listObject, ListInputProps listInputProps) {
+
+    JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.listTable)
+      .addPrimaryKeyColumn(ListCols.ID, listObject.getLocalId())
+      .addPrimaryKeyColumn(ListCols.REALM_ID, listObject.getRealm().getLocalId())
+      .addUpdatedColumn(ListCols.MODIFICATION_TIME, DateTimeService.getNowInUtc());
+
+    String newName = listInputProps.getName();
+    if (newName != null && !listObject.getName().equals(newName)) {
+      jdbcUpdate.addUpdatedColumn(ListCols.NAME, newName);
+      listObject.setName(newName);
+    }
+
+    String newHandle = listInputProps.getHandle();
+    if (newHandle != null && !listObject.getHandle().equals(newHandle)) {
+      jdbcUpdate.addUpdatedColumn(ListCols.HANDLE, newHandle);
+      listObject.setHandle(newHandle);
+    }
+
+    String ownerGuid = listInputProps.getOwnerGuid();
+    if (ownerGuid != null) {
+      Guid ownerGuidObject;
+      try {
+        ownerGuidObject = this.apiApp.getUserProvider().getGuidFromHash(ownerGuid);
+      } catch (CastException e) {
+        return Future.failedFuture(TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The value (" + ownerGuid + ") is not a valid guid")
+          .setCauseException(e)
+          .build()
+        );
       }
-    }
-
-    App app = listObject.getApp();
-    if (app == null) {
-      return Future.failedFuture(new InternalError("The app is mandatory when upserting a list"));
-    }
-    Long appId = app.getLocalId();
-    if (appId == null) {
-      return Future.failedFuture(new InternalError("The app id is mandatory when upserting a list"));
-    }
-
-    if (listObject.getLocalId() != null) {
-      return updateList(listObject);
+      long ownerRealmId = ownerGuidObject.getRealmOrOrganizationId();
+      if (!listObject.getRealm().getLocalId().equals(ownerRealmId)) {
+        return Future.failedFuture(TowerFailureException.builder()
+          .setMessage("The owner and the list does not belong to the same realm")
+          .build()
+        );
+      }
+      long userLocalId = ownerGuidObject.validateRealmAndGetFirstObjectId(listObject.getRealm().getLocalId());
+      jdbcUpdate.addUpdatedColumn(ListCols.OWNER_USER_ID, userLocalId);
+      // Lazy initialization (GraphQL feature)
+      OrganizationUser organizationUser = new OrganizationUser();
+      organizationUser.setLocalId(userLocalId);
+      organizationUser.setRealm(listObject.getRealm());
+      listObject.setOwnerUser(organizationUser);
     }
 
     /**
-     * No upsert SQL statement
-     * See identifier.md for more info
+     * May happen after an import
      */
-    return updateListByHandleAndGetRowSet(listObject)
-      .compose(rowSet -> {
-        if (rowSet.size() == 0) {
-          return insertList(listObject);
-        }
-        Long registrationListId = rowSet.iterator().next().getLong(LIST_ID_COLUMN);
-        listObject.setLocalId(registrationListId);
-        return Future.succeededFuture(listObject);
-      });
-
-  }
-
-  private Future<ListObject> insertList(ListObject listObject) {
-
-
-    final String insertSql = "INSERT INTO\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
-      "  " + LIST_REALM_COLUMN + ",\n" +
-      "  " + LIST_ID_COLUMN + ",\n" +
-      "  " + LIST_HANDLE_COLUMN + ",\n" +
-      "  " + LIST_NAME_COLUMN + ",\n" +
-      "  " + LIST_APP_COLUMN + ",\n" +
-      "  " + LIST_USER_OWNER_COLUMN + ",\n" +
-      "  " + LIST_CREATION_COLUMN + "\n" +
-      "  )\n" +
-      " values ($1, $2, $3, $4, $5, $6, $7)";
-
-
-    return jdbcPool
-      .withTransaction(sqlConnection ->
-        this.apiApp.getRealmSequenceProvider()
-          .getNextIdForTableAndRealm(sqlConnection, listObject.getRealm(), TABLE_NAME)
-          .compose(nextId -> {
-            listObject.setLocalId(nextId);
-            updateGuid(listObject);
-            return sqlConnection
-              .preparedQuery(insertSql)
-              .execute(Tuple.of(
-                listObject.getRealm().getLocalId(),
-                listObject.getLocalId(),
-                listObject.getHandle(),
-                listObject.getName(),
-                listObject.getApp().getLocalId(),
-                listObject.getOwnerUser() != null ? listObject.getOwnerUser().getLocalId() : null,
-                DateTimeService.getNowInUtc()
-              ))
-              .onFailure(e -> LOGGER.error("Insert List: Sql Error " + e.getMessage() + ". With Sql" + insertSql, e));
-          })
-          .compose(rowSet -> {
-            Long realmId = listObject.getRealm().getLocalId();
-            Long listId = listObject.getLocalId();
-            final String createListRegistrationPartition =
-              "CREATE TABLE IF NOT EXISTS " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "_" + realmId + "_" + listId + "\n" +
-                "    partition of " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "\n" +
-                "        (" + ListUserProvider.REALM_COLUMN + ", " + ListUserProvider.LIST_ID_COLUMN + ")\n" +
-                "        FOR VALUES FROM (" + realmId + "," + listId + ") TO (" + realmId + "," + (listId + 1) + " )";
-            return sqlConnection
-              .preparedQuery(createListRegistrationPartition)
-              .execute()
-              .onFailure(e -> LOGGER.error("List Registration Partition creation Error: Sql Error " + e.getMessage() + ". With Sql" + createListRegistrationPartition, e));
-          })
-          .onFailure(e -> LOGGER.error("List creation Error: Sql Error " + e.getMessage(), e))
-          .compose(rows -> Future.succeededFuture(listObject)));
-  }
-
-  public Future<ListObject> updateList(ListObject listObject) {
-
-    if (listObject.getRealm() == null) {
-      InternalException internalException = new InternalException("The realm is null. You can't update a list without a realm");
-      return Future.failedFuture(internalException);
+    Long newUserCount = listInputProps.getUserCount();
+    if(newUserCount!=null && newUserCount.equals(listObject.getUserCount())){
+      listObject.setUserCount(newUserCount);
+      jdbcUpdate.addUpdatedColumn(ListCols.USER_COUNT, newUserCount);
     }
-    if (listObject.getRealm().getLocalId() == null) {
-      InternalException internalException = new InternalException("The realm id is null. You can't update a list without a realm id");
-      return Future.failedFuture(internalException);
+    Long newUserInCount = listInputProps.getUserInCount();
+    if(newUserInCount!=null && newUserInCount.equals(listObject.getUserInCount())){
+      listObject.setUserInCount(newUserInCount);
+      jdbcUpdate.addUpdatedColumn(ListCols.USER_IN_COUNT, newUserInCount);
     }
 
-    if (listObject.getLocalId() != null) {
+    return jdbcUpdate.execute()
+      .compose(ok -> Future.succeededFuture(listObject));
 
-      String updateByIdSql = "UPDATE \n" +
-        JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
-        " set" +
-        "  " + LIST_HANDLE_COLUMN + " = $1,\n" +
-        "  " + LIST_NAME_COLUMN + " = $2,\n" +
-        "  " + LIST_APP_COLUMN + " = $3,\n" +
-        "  " + LIST_USER_OWNER_COLUMN + " = $4,\n" +
-        "  " + LIST_MODIFICATION_COLUMN + " = $5\n" +
-        "where\n" +
-        "  " + LIST_ID_COLUMN + "= $6\n" +
-        "AND  " + LIST_REALM_COLUMN + "= $7 ";
 
-      return jdbcPool
-        .preparedQuery(updateByIdSql)
-        .execute(Tuple.of(
-          listObject.getHandle(),
-          listObject.getName(),
-          listObject.getApp().getLocalId(),
-          listObject.getOwnerUser() != null ? listObject.getOwnerUser().getLocalId() : null,
-          DateTimeService.getNowInUtc(),
-          listObject.getLocalId(),
-          listObject.getRealm().getLocalId()
-        ))
-        .onFailure(e -> LOGGER.error("Update List by Id Error: Sql Error " + e.getMessage() + ". With Sql" + updateByIdSql, e))
-        .compose(ok -> Future.succeededFuture(listObject));
-    }
-
-    if (listObject.getHandle() == null) {
-      InternalException internalException = new InternalException("The list id and handle are null. You can't update a list without an id or an handle");
-      return Future.failedFuture(internalException);
-    }
-
-    return updateListByHandleAndGetRowSet(listObject)
-      .compose(rowSet -> {
-        if (rowSet.size() == 0) {
-          InternalException internalException = new InternalException("No list where updated with the handle (" + listObject.getHandle() + ") for the realm (" + listObject.getRealm().getHandle() + ")");
-          return Future.failedFuture(internalException);
-        }
-        Long registrationListId = rowSet.iterator().next().getLong(LIST_ID_COLUMN);
-        listObject.setLocalId(registrationListId);
-        return Future.succeededFuture(listObject);
-      });
-  }
-
-  private Future<RowSet<Row>> updateListByHandleAndGetRowSet(ListObject listObject) {
-
-    final String updateByHandleSql = "UPDATE \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
-      " set" +
-      "  " + LIST_NAME_COLUMN + " = $1,\n" +
-      "  " + LIST_APP_COLUMN + " = $2,\n" +
-      "  " + LIST_USER_OWNER_COLUMN + " = $3,\n" +
-      "  " + LIST_MODIFICATION_COLUMN + " = $4\n" +
-      "where\n" +
-      "  " + LIST_HANDLE_COLUMN + "= $5\n" +
-      "AND  " + LIST_REALM_COLUMN + "= $6\n" +
-      "RETURNING " + LIST_ID_COLUMN;
-
-    return jdbcPool
-      .preparedQuery(updateByHandleSql)
-      .execute(Tuple.of(
-        listObject.getName(),
-        listObject.getApp().getLocalId(),
-        listObject.getOwnerUser() != null ? listObject.getOwnerUser().getLocalId() : null,
-        DateTimeService.getNowInUtc(),
-        listObject.getHandle(),
-        listObject.getRealm().getLocalId()
-      ))
-      .onFailure(e -> LOGGER.error("Error Update List by Handle: Sql Error " + e.getMessage() + ". With Sql" + updateByHandleSql, e));
   }
 
 
@@ -458,29 +434,12 @@ public class ListProvider {
 
   public Future<ListObject> postList(ListBody listPostBody, App app) {
 
-
-    /**
-     * User
-     */
-    String ownerIdentifier = listPostBody.getOwnerUserIdentifier();
-    Future<OrganizationUser> futureUser = Future.succeededFuture(null);
-    if (ownerIdentifier != null) {
-      OrganizationUserProvider userProvider = apiApp.getOrganizationUserProvider();
-      futureUser = userProvider.getOrganizationUserByIdentifier(ownerIdentifier);
-    }
-
-    return futureUser
-      .compose(user -> {
-        ListObject listObject = new ListObject();
-        listObject.setRealm(app.getRealm());
-        listObject.setName(listPostBody.getListName());
-        listObject.setTitle(listPostBody.getListTitle());
-        listObject.setDescription(listPostBody.getListDescription());
-        listObject.setHandle(listPostBody.getListHandle());
-        listObject.setOwnerUser(user); // may be null
-        listObject.setApp(app);
-        return this.insertList(listObject);
-      });
+    ListInputProps listObject = new ListInputProps();
+    listObject.setName(listPostBody.getListName());
+    listObject.setTitle(listPostBody.getListTitle());
+    listObject.setHandle(listPostBody.getListHandle());
+    listObject.setOwnerIdentifier(listPostBody.getOwnerUserIdentifier());
+    return this.insertList(app, listObject);
 
   }
 

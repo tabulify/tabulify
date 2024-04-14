@@ -36,6 +36,13 @@ public class JdbcUpdate {
     return this;
   }
 
+  public Future<JdbcRowSet> execute() {
+    return this.jdbcTable.getSchema().getJdbcClient().getPool().getConnection()
+      .compose(
+        this::execute,
+        err -> Future.failedFuture(new InternalException("JdbcUpdate: Unable to get a connection", err))
+      );
+  }
 
   public Future<JdbcRowSet> execute(SqlConnection sqlConnection) {
     StringBuilder updateSqlBuilder = new StringBuilder();
@@ -47,8 +54,8 @@ public class JdbcUpdate {
     List<String> setColStatements = new ArrayList<>();
     for (Map.Entry<JdbcTableColumn, Object> entry : updatedColValues.entrySet()) {
       JdbcTableColumn jdbcTableColumn = entry.getKey();
-      if(this.jdbcTable.getPrimaryKeyColumns().contains(jdbcTableColumn)){
-        return Future.failedFuture(new InternalException(this.jdbcTable.getFullName() + " update: column ("+jdbcTableColumn+") is a primary key column and should not be updated"));
+      if (this.jdbcTable.getPrimaryKeyColumns().contains(jdbcTableColumn)) {
+        return Future.failedFuture(new InternalException(this.jdbcTable.getFullName() + " update: column (" + jdbcTableColumn + ") is a primary key column and should not be updated"));
       }
       tuples.add(entry.getValue());
       setColStatements.add(jdbcTableColumn.getColumnName() + " = $" + tuples.size());
@@ -57,15 +64,15 @@ public class JdbcUpdate {
     updateSqlBuilder.append(String.join(", ", setColStatements))
       .append(" where ");
 
-    if(primaryKeyColValues.isEmpty()){
+    if (primaryKeyColValues.isEmpty()) {
       return Future.failedFuture(new InternalException(this.jdbcTable.getFullName() + " update miss the primary key columns"));
     }
 
     List<String> equalityStatements = new ArrayList<>();
     for (Map.Entry<JdbcTableColumn, Object> entry : primaryKeyColValues.entrySet()) {
       JdbcTableColumn jdbcTableColumn = entry.getKey();
-      if(!this.jdbcTable.getPrimaryKeyColumns().contains(jdbcTableColumn)){
-        return Future.failedFuture(new InternalException(this.jdbcTable.getFullName() + " update: column ("+jdbcTableColumn+") is not a declared primary key columns"));
+      if (!this.jdbcTable.getPrimaryKeyColumns().contains(jdbcTableColumn)) {
+        return Future.failedFuture(new InternalException(this.jdbcTable.getFullName() + " update: column (" + jdbcTableColumn + ") is not a declared primary key columns"));
       }
       tuples.add(entry.getValue());
       equalityStatements.add(jdbcTableColumn.getColumnName() + " = $" + tuples.size());

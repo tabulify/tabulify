@@ -25,8 +25,11 @@ public class JdbcInsert {
     return new JdbcInsert(jdbcTable);
   }
 
-  public JdbcInsert addColumn(JdbcTableColumn cols, Object value) {
-    this.colValues.put(cols, value);
+  public JdbcInsert addColumn(JdbcTableColumn jdbcTableColumn, Object value) {
+    if(this.colValues.containsKey(jdbcTableColumn)){
+      throw new InternalException("The column ("+jdbcTableColumn+") is already present in the insertion list");
+    }
+    this.colValues.put(jdbcTableColumn, value);
     return this;
   }
 

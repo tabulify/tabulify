@@ -12,7 +12,7 @@ import net.bytle.tower.eraldy.graphql.pojo.input.ListUserProps;
 import net.bytle.tower.eraldy.model.openapi.ListUserSource;
 import net.bytle.tower.eraldy.model.openapi.ListUserStatus;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.eraldy.objectProvider.ListUserProvider;
+import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.time.TimeZoneCast;

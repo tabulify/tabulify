@@ -13,6 +13,8 @@ import net.bytle.tower.eraldy.auth.AuthClientHandler;
 import net.bytle.tower.eraldy.auth.RealmSessionHandler;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.module.list.db.ListProvider;
+import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
 import net.bytle.tower.eraldy.module.mailing.db.MailingProvider;
 import net.bytle.tower.eraldy.module.mailing.db.MailingRowProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingjob.MailingJobProvider;
@@ -118,7 +120,7 @@ public class EraldyApiApp extends TowerApp {
      */
     this.realmProvider = new RealmProvider(this, realmSchema);
     this.userProvider = new UserProvider(this, realmSchema);
-    this.listProvider = new ListProvider(this);
+    this.listProvider = new ListProvider(this, realmSchema);
     this.listImportFlow = new ListImportFlow(this);
     this.organizationProvider = new OrganizationProvider(this);
     this.authProvider = new AuthProvider(this);

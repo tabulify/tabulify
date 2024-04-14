@@ -10,6 +10,7 @@ import net.bytle.exception.NullValueException;
 import net.bytle.fs.Fs;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
+import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
 import net.bytle.type.Strings;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
@@ -488,6 +489,34 @@ public class ListImportFlow extends WebFlowAbs {
      * Destroy executor
      */
     executor.close();
+
+    /**
+     * Update the row count
+     */
+    ListImportJobStatus status = executingJob.getStatus();
+    Integer countSuccess = status.getCountSuccess();
+
+    if (countSuccess != null && !countSuccess.equals(0)) {
+
+      executingJob.getList()
+        .onSuccess(list -> {
+          ListInputProps listInputProps = new ListInputProps();
+          Long userCount = list.getUserCount();
+          if (userCount == null) {
+            userCount = 0L;
+          }
+          listInputProps.setUserCount(userCount + countSuccess);
+          Long userInCount = list.getUserInCount();
+          if (userInCount == null) {
+            userInCount = 0L;
+          }
+          listInputProps.setUserInCount(userInCount + countSuccess);
+          this.getApp().getListProvider()
+            .updateList(list, listInputProps);
+        });
+
+    }
+
     /**
      *
      * Execute the next one
