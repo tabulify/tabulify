@@ -29,7 +29,7 @@ public class RealmSequenceProvider {
   private static final String MODIFICATION_TIME_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private static final String CREATION_TIME_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private static final String TABLE_NAME_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + "table_name";
-  private static final String REALM_ID_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
+  private static final String REALM_ID_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + "realm_id";
 
 
   public Future<Long> getNextIdForTableAndRealm(SqlConnection sqlConnection, Realm realm, JdbcTable table) {

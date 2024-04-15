@@ -271,8 +271,8 @@ public class MailingJobProvider {
     }
 
 
-    jdbcUpdate.addPrimaryKeyColumn(MailingJobCols.REALM_ID,mailingJob.getMailing().getRealm().getLocalId());
-    jdbcUpdate.addPrimaryKeyColumn(MailingJobCols.ID,mailingJob.getLocalId());
+    jdbcUpdate.addPredicateColumn(MailingJobCols.REALM_ID,mailingJob.getMailing().getRealm().getLocalId());
+    jdbcUpdate.addPredicateColumn(MailingJobCols.ID,mailingJob.getLocalId());
 
     return jdbcUpdate.execute(connection)
       .compose(rowSet->Future.succeededFuture(mailingJob));

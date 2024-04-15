@@ -52,7 +52,7 @@ public class ListProvider {
   public static final String LIST_APP_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + AppProvider.APP_ID_COLUMN;
   public static final String LIST_USER_OWNER_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + OWNER_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   public static final String LIST_ID_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "id";
-  private static final String LIST_REALM_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
+  private static final String LIST_REALM_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "realm_id";
   static final String LIST_GUID_PREFIX = "lis";
   private final EraldyApiApp apiApp;
 
@@ -206,8 +206,8 @@ public class ListProvider {
   public Future<ListObject> updateList(ListObject listObject, ListInputProps listInputProps) {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.listTable)
-      .addPrimaryKeyColumn(ListCols.ID, listObject.getLocalId())
-      .addPrimaryKeyColumn(ListCols.REALM_ID, listObject.getRealm().getLocalId())
+      .addPredicateColumn(ListCols.ID, listObject.getLocalId())
+      .addPredicateColumn(ListCols.REALM_ID, listObject.getRealm().getLocalId())
       .addUpdatedColumn(ListCols.MODIFICATION_TIME, DateTimeService.getNowInUtc());
 
     String newName = listInputProps.getName();
@@ -460,10 +460,9 @@ public class ListProvider {
       "    on list.list_id = realm_list_user.list_user_list_id\n" +
       " JOIN " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + AppProvider.APP_TABLE_NAME + " app\n" +
       "    on list.list_app_id = app.app_id\n" +
-      "where list_realm_id = $1\n" +
+      "where list.list_realm_id = $1\n" +
       "group by list.list_id, list.list_handle, app.app_uri";
-    return jdbcPool.preparedQuery(
-        sql)
+    return jdbcPool.preparedQuery(sql)
       .execute(Tuple.of(realm.getLocalId()))
       .recover(err -> FailureStatic.SqlFailFuture("List Summary", sql, err))
       .compose(publicationRows -> {

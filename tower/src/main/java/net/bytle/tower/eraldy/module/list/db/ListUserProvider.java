@@ -18,7 +18,6 @@ import net.bytle.tower.eraldy.mixin.ListItemMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
-import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
@@ -61,7 +60,7 @@ public class ListUserProvider {
   public static final String IN_OPT_IN_CONFIRMATION_IP_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_confirmation_ip";
   public static final String IN_OPT_IN_CONFIRMATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_confirmation_time";
   private static final String GUID_PREFIX = "liu";
-  static final String REALM_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
+  static final String REALM_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "realm_id";
 
   private final EraldyApiApp apiApp;
   private static final String CREATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;

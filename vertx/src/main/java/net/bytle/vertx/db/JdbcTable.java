@@ -35,8 +35,8 @@ public class JdbcTable {
     return this.jdbcTableBuilder.jdbcSchema;
   }
 
-  public Set<JdbcTableColumn> getPrimaryKeyColumns() {
-    return this.jdbcTableBuilder.jdbcKeyColumns;
+  public Set<JdbcTableColumn> getPrimaryOrUniqueKeyColumns() {
+    return this.jdbcTableBuilder.jdbcPrimaryOrUniqueKeyColumns;
   }
 
 
@@ -44,7 +44,7 @@ public class JdbcTable {
     private final JdbcSchema jdbcSchema;
     private final String name;
 
-    private final HashSet<JdbcTableColumn> jdbcKeyColumns = new HashSet<>();
+    private final HashSet<JdbcTableColumn> jdbcPrimaryOrUniqueKeyColumns = new HashSet<>();
 
     public JdbcTableBuilder(JdbcSchema jdbcSchema, String name) {
       this.jdbcSchema = jdbcSchema;
@@ -52,7 +52,7 @@ public class JdbcTable {
     }
 
     public JdbcTableBuilder addPrimaryKeyColumn(JdbcTableColumn jdbcTableColumn){
-      this.jdbcKeyColumns.add(jdbcTableColumn);
+      this.jdbcPrimaryOrUniqueKeyColumns.add(jdbcTableColumn);
       return this;
     }
 
@@ -60,5 +60,9 @@ public class JdbcTable {
       return new JdbcTable(this);
     }
 
+    public JdbcTableBuilder addUniqueKeyColumn(JdbcTableColumn tableColumn) {
+      this.jdbcPrimaryOrUniqueKeyColumns.add(tableColumn);
+      return this;
+    }
   }
 }

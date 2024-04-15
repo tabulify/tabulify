@@ -10,16 +10,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JdbcUpdate {
+public class JdbcUpdate extends JdbcQuery {
 
-
-  private final JdbcTable jdbcTable;
   Map<JdbcTableColumn, Object> updatedColValues = new HashMap<>();
-  Map<JdbcTableColumn, Object> primaryKeyColValues = new HashMap<>();
+  Map<JdbcTableColumn, Object> predicateColValues = new HashMap<>();
   private JdbcTableColumn returningColumn = null;
 
   private JdbcUpdate(JdbcTable jdbcTable) {
-    this.jdbcTable = jdbcTable;
+      super(jdbcTable);
 
   }
 
@@ -32,31 +30,23 @@ public class JdbcUpdate {
     return this;
   }
 
-  public JdbcUpdate addPrimaryKeyColumn(JdbcTableColumn cols, Object value) {
-    this.primaryKeyColValues.put(cols, value);
+  public JdbcUpdate addPredicateColumn(JdbcTableColumn cols, Object value) {
+    this.predicateColValues.put(cols, value);
     return this;
-  }
-
-  public Future<JdbcRowSet> execute() {
-    return this.jdbcTable.getSchema().getJdbcClient().getPool().getConnection()
-      .compose(
-        this::execute,
-        err -> Future.failedFuture(new InternalException("JdbcUpdate: Unable to get a connection", err))
-      );
   }
 
   public Future<JdbcRowSet> execute(SqlConnection sqlConnection) {
     StringBuilder updateSqlBuilder = new StringBuilder();
     List<Object> tuples = new ArrayList<>();
     updateSqlBuilder.append("update ")
-      .append(this.jdbcTable.getFullName())
+      .append(this.getJdbcTable().getFullName())
       .append(" set ")
     ;
     List<String> setColStatements = new ArrayList<>();
     for (Map.Entry<JdbcTableColumn, Object> entry : updatedColValues.entrySet()) {
       JdbcTableColumn jdbcTableColumn = entry.getKey();
-      if (this.jdbcTable.getPrimaryKeyColumns().contains(jdbcTableColumn)) {
-        return Future.failedFuture(new InternalException(this.jdbcTable.getFullName() + " update: column (" + jdbcTableColumn + ") is a primary key column and should not be updated"));
+      if (this.getJdbcTable().getPrimaryOrUniqueKeyColumns().contains(jdbcTableColumn)) {
+        return Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " update: column (" + jdbcTableColumn + ") is a primary key column and should not be updated"));
       }
       tuples.add(entry.getValue());
       setColStatements.add(jdbcTableColumn.getColumnName() + " = $" + tuples.size());
@@ -65,15 +55,15 @@ public class JdbcUpdate {
     updateSqlBuilder.append(String.join(", ", setColStatements))
       .append(" where ");
 
-    if (primaryKeyColValues.isEmpty()) {
-      return Future.failedFuture(new InternalException(this.jdbcTable.getFullName() + " update miss the primary key columns"));
+    if (predicateColValues.isEmpty()) {
+      return Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " update miss the primary key columns"));
     }
 
     List<String> equalityStatements = new ArrayList<>();
-    for (Map.Entry<JdbcTableColumn, Object> entry : primaryKeyColValues.entrySet()) {
+    for (Map.Entry<JdbcTableColumn, Object> entry : predicateColValues.entrySet()) {
       JdbcTableColumn jdbcTableColumn = entry.getKey();
-      if (!this.jdbcTable.getPrimaryKeyColumns().contains(jdbcTableColumn)) {
-        return Future.failedFuture(new InternalException(this.jdbcTable.getFullName() + " update: column (" + jdbcTableColumn + ") is not a declared primary key columns"));
+      if (!this.getJdbcTable().getPrimaryOrUniqueKeyColumns().contains(jdbcTableColumn)) {
+        return Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " update: column (" + jdbcTableColumn + ") is not a declared primary or unique key columns"));
       }
       tuples.add(entry.getValue());
       equalityStatements.add(jdbcTableColumn.getColumnName() + " = $" + tuples.size());
@@ -90,7 +80,7 @@ public class JdbcUpdate {
     return sqlConnection
       .preparedQuery(insertSqlString)
       .execute(Tuple.from(tuples))
-      .recover(e -> Future.failedFuture(new InternalException(this.jdbcTable.getFullName() + " table update Error. Sql Error " + e.getMessage() + "\nSQl: " + insertSqlString, e)))
+      .recover(e -> Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " table update Error. Sql Error " + e.getMessage() + "\nSQl: " + insertSqlString, e)))
       .compose(rowSet -> Future.succeededFuture(new JdbcRowSet(rowSet)));
   }
 

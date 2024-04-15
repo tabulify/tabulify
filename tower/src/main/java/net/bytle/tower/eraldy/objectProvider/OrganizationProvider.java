@@ -143,7 +143,7 @@ public class OrganizationProvider {
       });
   }
 
-  private Future<Organization> getById(Long localId, SqlConnection sqlConnection) {
+  Future<Organization> getById(Long localId, SqlConnection sqlConnection) {
     return getById(localId,Organization.class,sqlConnection);
   }
 

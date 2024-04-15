@@ -10,14 +10,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JdbcInsert {
+public class JdbcInsert extends JdbcQuery {
 
 
-  private final JdbcTable jdbcTable;
   Map<JdbcTableColumn, Object> colValues = new HashMap<>();
+  private JdbcTableColumn returningColumn = null;
 
   private JdbcInsert(JdbcTable jdbcTable) {
-    this.jdbcTable = jdbcTable;
+      super(jdbcTable);
+
 
   }
 
@@ -39,7 +40,7 @@ public class JdbcInsert {
     StringBuilder insertSqlBuilder = new StringBuilder();
     List<Object> tuples = new ArrayList<>();
     insertSqlBuilder.append("insert into ")
-      .append(this.jdbcTable.getFullName())
+      .append(this.getJdbcTable().getFullName())
       .append(" (");
 
     List<String> colsStatement = new ArrayList<>();
@@ -56,18 +57,23 @@ public class JdbcInsert {
       .append(String.join(",", dollarStatement))
       .append(")");
 
+    if(this.returningColumn!=null){
+      insertSqlBuilder
+        .append(" returning ")
+        .append(this.returningColumn.getColumnName());
+    }
+
     String insertSqlString = insertSqlBuilder.toString();
     return sqlConnection
       .preparedQuery(insertSqlString)
       .execute(Tuple.from(tuples))
-      .recover(e -> Future.failedFuture(new InternalException(this.jdbcTable.getFullName() + " table insertion Error. Sql Error " + e.getMessage() + "\nSQl: " + insertSqlString, e)))
+      .recover(e -> Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " table insertion Error. Sql Error " + e.getMessage() + "\nSQl: " + insertSqlString, e)))
       .compose(rowSet -> Future.succeededFuture(new JdbcRowSet(rowSet)));
   }
 
-  public Future<JdbcRowSet> execute() {
-    return this.jdbcTable.getSchema().getJdbcClient().getPool().getConnection()
-      .recover(e -> Future.failedFuture(new InternalException("Unable to get a connection for a jdbc insert", e)))
-      .compose(this::execute);
-  }
 
+  public JdbcInsert addReturningColumn(JdbcTableColumn jdbcCol) {
+    this.returningColumn  = jdbcCol;
+    return this;
+  }
 }

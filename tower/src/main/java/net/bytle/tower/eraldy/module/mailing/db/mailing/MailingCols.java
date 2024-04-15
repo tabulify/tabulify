@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.module.mailing.db.mailing;
 
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.OrganizationProvider;
-import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.vertx.db.JdbcSchemaManager;
 import net.bytle.vertx.db.JdbcTableColumn;
@@ -24,7 +23,7 @@ public enum MailingCols implements JdbcTableColumn {
   EMAIL_AUTHOR_USER_ID (MAILING_PREFIX + COLUMN_PART_SEP + "email_author" + COLUMN_PART_SEP + UserProvider.ID_COLUMN),
   ID(MAILING_PREFIX + COLUMN_PART_SEP + "id"),
   NAME(MAILING_PREFIX + COLUMN_PART_SEP + "name"),
-  REALM_ID( MAILING_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN),
+  REALM_ID( MAILING_PREFIX + COLUMN_PART_SEP + "realm_id"),
   STATUS_CODE( MAILING_PREFIX + COLUMN_PART_SEP + "status"),
   EMAIL_SUBJECT (MAILING_PREFIX + COLUMN_PART_SEP + "email_subject"),
   EMAIL_PREVIEW (MAILING_PREFIX + COLUMN_PART_SEP + "email_preview"),

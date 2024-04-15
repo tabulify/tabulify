@@ -44,7 +44,7 @@ public class AppProvider {
   private static final String APP_COLUMN_PREFIX = "app";
   private static final String APP_GUID_PREFIX = "app";
   public static final String APP_TABLE_NAME = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + APP_COLUMN_PREFIX;
-  public static final String APP_REALM_ID_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + RealmProvider.REALM_ID_COLUMN;
+  public static final String APP_REALM_ID_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "realm_id";
   public static final String APP_USER_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "owner" + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   public static final String APP_ORG_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN;
 
