@@ -111,25 +111,25 @@ public class MailingJobProvider {
 
 
   public Future<List<MailingJob>> getMailingJobsRequestHandler(String mailingGuid, RoutingContext routingContext) {
-    Guid guid;
+    Guid mailingGuidObject;
     try {
-      guid = this.apiApp.getMailingProvider().getGuidObject(mailingGuid);
+      mailingGuidObject = this.apiApp.getMailingProvider().getGuidObject(mailingGuid);
     } catch (CastException e) {
       return Future.failedFuture(new IllegalArgumentException("The mailing guid (" + mailingGuid + ") is not valid", e));
     }
 
     return this.apiApp.getAuthProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmOrOrganizationId(), AuthUserScope.MAILING_JOBS_GET, routingContext)
+      .getRealmByLocalIdWithAuthorizationCheck(mailingGuidObject.getRealmOrOrganizationId(), AuthUserScope.MAILING_JOBS_GET, routingContext)
       .compose(realm -> {
 
-        Long mailingJobLocalId = guid.validateRealmAndGetFirstObjectId(realm.getLocalId());
+        Long mailingLocalId = mailingGuidObject.validateRealmAndGetFirstObjectId(realm.getLocalId());
         Mailing mailing = new Mailing();
         mailing.setRealm(realm);
-        mailing.setLocalId(mailingJobLocalId);
+        mailing.setLocalId(mailingLocalId);
         mailing.setGuid(mailingGuid);
 
-        final String sql = "select * from " + this.mailingJobTable.getFullName() + " where " + MailingJobCols.ID.getColumnName() + " = $1 and " + MailingJobCols.REALM_ID.getColumnName() + " = $2";
-        Tuple tuple = Tuple.of(mailingJobLocalId, realm.getLocalId());
+        final String sql = "select * from " + this.mailingJobTable.getFullName() + " where " + MailingJobCols.MAILING_ID.getColumnName() + " = $1 and " + MailingJobCols.REALM_ID.getColumnName() + " = $2";
+        Tuple tuple = Tuple.of(mailing.getLocalId(), mailing.getRealm().getLocalId());
         return this.jdbcPool
           .preparedQuery(sql)
           .execute(tuple)
