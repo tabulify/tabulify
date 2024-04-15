@@ -131,7 +131,7 @@ public class EraldyApiApp extends TowerApp {
     this.hashIds = this.getHttpServer().getServer().getHashId();
     this.authClientProvider = new AuthClientProvider(this);
     this.realmSequenceProvider = new RealmSequenceProvider();
-    this.mailingProvider = new MailingProvider(this,jobsSchema);
+    this.mailingProvider = new MailingProvider(this,realmSchema);
     this.mailingJobProvider = new MailingJobProvider(this, jobsSchema);
     this.mailingRowProvider = new MailingRowProvider(this,jobsSchema);
     this.fileProvider = new FileProvider(this);

@@ -37,15 +37,17 @@ public class JdbcSelect extends JdbcQuery {
 
 
   public Future<JdbcRowSet> execute(SqlConnection sqlConnection) {
-    StringBuilder selectSqlBuilder = new StringBuilder();
-    List<Object> tuples = new ArrayList<>();
-    selectSqlBuilder.append("select * from ")
-      .append(this.getJdbcTable().getFullName());
-
 
     if (predicateColValues.isEmpty()) {
       return Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " select has no predicates"));
     }
+
+    StringBuilder selectSqlBuilder = new StringBuilder();
+    List<Object> tuples = new ArrayList<>();
+    selectSqlBuilder.append("select * from ")
+      .append(this.getJdbcTable().getFullName())
+      .append(" where ");
+
 
     List<String> predicateStatements = new ArrayList<>();
     for (JdbcSingleOperatorPredicate predicate : predicateColValues) {

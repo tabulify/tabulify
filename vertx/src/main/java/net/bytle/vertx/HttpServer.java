@@ -34,6 +34,7 @@ public class HttpServer {
   private BasicAuthHandler basicAuthenticator;
   private PersistentLocalSessionStore persistentSessionStore;
   private BodyHandler bodyHandler;
+  private io.vertx.core.http.HttpServer vertxHttpServer;
 
 
   public HttpServer(builder builder) {
@@ -106,6 +107,7 @@ public class HttpServer {
           .listen();
       })
       .compose(vertxHttpServer -> {
+        this.vertxHttpServer = vertxHttpServer;
         LOGGER.info(appName + " HTTP server mounted on port " + vertxHttpServer.actualPort());
         List<Future<Void>> servicesFutureToStart = this.getServer().getServices().stream().map(TowerService::start).collect(Collectors.toList());
         return Future.join(servicesFutureToStart);
@@ -210,6 +212,10 @@ public class HttpServer {
       throw new NotFoundException();
     }
     return this.bodyHandler;
+  }
+
+  public io.vertx.core.http.HttpServer getVertxServer() {
+    return vertxHttpServer;
   }
 
 

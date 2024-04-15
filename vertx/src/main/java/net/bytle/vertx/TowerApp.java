@@ -12,6 +12,8 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.template.api.Template;
 import net.bytle.type.UriEnhanced;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 /**
@@ -32,7 +34,7 @@ import net.bytle.type.UriEnhanced;
  */
 public abstract class TowerApp {
 
-
+  protected static final Logger LOGGER = LogManager.getLogger(TowerApp.class);
   private final ConfigAccessor configAccessor;
   private final HttpServer httpServer;
   private ForwardProxy proxy;
@@ -417,8 +419,14 @@ public abstract class TowerApp {
   }
 
   public Future<TowerApp> mountListenAndStart() {
-    return mount()
-      .recover(err -> Future.failedFuture(new Exception("Error on App mount for the app (" + this + ")", err)))
+    /**
+     * HTTP server first as it mounts the services declared by the app
+     * (For instance, database schema needs to be created first before the app
+     * can insert init data)
+     */
+    return this.httpServer
+      .mountListenAndStart(this.getAppName())
+      .recover(err -> Future.failedFuture(new Exception("Error on HTTP Server mount for the app (" + this + ")", err)))
       .compose(v -> {
         /**
          * The proxy handling is a `catch-all` handler
@@ -426,10 +434,15 @@ public abstract class TowerApp {
          * than any other routes.
          */
         this.addProxyHandlerForUnknownResourceOfHtmlApp(this.httpServer.getRouter());
-        return this.httpServer.mountListenAndStart(this.getAppName());
+        LOGGER.info("The HTTP server for the app (" + this + ") has been successfully mounted ");
+        return mount();
       })
-      .recover(err -> Future.failedFuture(new Exception("Error on HTTP Server mount for the app (" + this + ")", err)))
-      .compose(v -> Future.succeededFuture(this));
+      .recover(err -> Future.failedFuture(new Exception("Error on App mount for the app (" + this + ")", err)))
+      .compose(v2 -> {
+        LOGGER.info("The app (" + this + ") has been successfully mounted on the http server listening on the port: " + this.httpServer.getVertxServer().actualPort());
+        return Future.succeededFuture(this);
+      });
+
   }
 
 
