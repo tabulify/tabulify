@@ -1,7 +1,6 @@
 package net.bytle.tower.eraldy.api;
 
 import io.vertx.core.Future;
-import io.vertx.ext.web.Router;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
@@ -80,7 +79,6 @@ public class EraldyApiApp extends TowerApp {
   private final EraldySubRealmModel eraldySubRealmModel;
   private final AuthClientProvider authClientProvider;
   private final AuthClientHandler authClientIdHandler;
-  private final RealmSessionHandler sessionHandler;
 
   private final AuthNContextManager authNContextManager;
   private final OrganizationRoleProvider organizationRoleProvider;
@@ -96,6 +94,39 @@ public class EraldyApiApp extends TowerApp {
     super(httpServer, EraldyDomain.getOrCreate(httpServer));
 
     ConfigAccessor configAccessor = httpServer.getServer().getConfigAccessor();
+
+    /**
+     * Client Session and auth first as they should be added first on the router
+     */
+    String realmHandleContextAndSessionKey = "ey-realm-handle";
+    String realmGuidContextAndSessionKey = "ey-realm-guid";
+    /**
+     * Auth client
+     * Determine the auth client (and therefore the realm)
+     * and put it on the routingContext
+     * As a user can log in to only on realm, the session cookie has the name
+     * of the realm in its name
+     * This handler should then be mounted before the session handler
+     */
+    this.authClientIdHandler = AuthClientHandler.config(this)
+      .setRealmGuidContextKey(realmGuidContextAndSessionKey)
+      .setRealmHandleContextKey(realmHandleContextAndSessionKey)
+      .build();
+
+    /**
+     * Session Handlers needs the client id
+     * We add/mount the session after the clientId handler
+     */
+    int cookieMaxAgeOneWeekInSec = 60 * 60 * 24 * 7;
+    int idleSessionTimeoutMs = cookieMaxAgeOneWeekInSec * 1000; // Reconnect once every day
+    RealmSessionHandler
+      .createForApp(this)
+      .setSessionTimeout(idleSessionTimeoutMs)
+      .setRealmHandleContextAndSessionKey(realmHandleContextAndSessionKey)
+      .setRealmGuidContextAndSessionKey(realmGuidContextAndSessionKey)
+      .setCookieMaxAge(cookieMaxAgeOneWeekInSec)
+      .setFailIfRealmNotFound(false);
+
 
     // data directory
     Path runtime = Paths.get("data/runtime");
@@ -131,9 +162,9 @@ public class EraldyApiApp extends TowerApp {
     this.hashIds = this.getHttpServer().getServer().getHashId();
     this.authClientProvider = new AuthClientProvider(this);
     this.realmSequenceProvider = new RealmSequenceProvider();
-    this.mailingProvider = new MailingProvider(this,realmSchema);
+    this.mailingProvider = new MailingProvider(this, realmSchema);
     this.mailingJobProvider = new MailingJobProvider(this, jobsSchema);
-    this.mailingRowProvider = new MailingRowProvider(this,jobsSchema);
+    this.mailingRowProvider = new MailingRowProvider(this, jobsSchema);
     this.fileProvider = new FileProvider(this);
 
     /**
@@ -154,14 +185,13 @@ public class EraldyApiApp extends TowerApp {
     /**
      * OAuth Service
      */
-    String realmGuidContextAndSessionKey = "ey-realm-guid";
-    String realmHandleContextAndSessionKey = "ey-realm-handle";
     AuthNContextManager oAuthContextManager = AuthNContextManager.builder()
       .addContextHandler(this.userRegistrationFlow.handleOAuthAuthentication())
       .addContextHandler(this.userListRegistrationFlow.handleStepOAuthAuthentication())
       .setRealmGuidSessionKey(realmGuidContextAndSessionKey)
       .build();
     this.oauthExternalFlow = new OAuthExternalCodeFlow(this, "/auth/oauth", oAuthContextManager);
+
 
     /**
      * OpenApi
@@ -184,36 +214,6 @@ public class EraldyApiApp extends TowerApp {
     new SqlAnalytics(this);
     this.emailAddressValidator = new EmailAddressValidator(this);
 
-    /**
-     * Handlers
-     */
-    /**
-     * Determine the auth client (and therefore the realm)
-     * and put it on the routingContext
-     * As a user can log in to only on realm, the session cookie has the name
-     * of the realm in its name
-     * This handler should then be mounted before the session handler
-     */
-
-    this.authClientIdHandler = AuthClientHandler.config(this)
-      .setRealmGuidContextKey(realmGuidContextAndSessionKey)
-      .setRealmHandleContextKey(realmHandleContextAndSessionKey)
-      .build();
-    /**
-     * Reconnect once every
-     */
-    int cookieMaxAgeOneWeekInSec = 60 * 60 * 24 * 7;
-    /**
-     * Delete the session if not accessed within this timeout
-     */
-    int idleSessionTimeoutMs = cookieMaxAgeOneWeekInSec * 1000;
-    this.sessionHandler = RealmSessionHandler
-      .createForApp(this)
-      .setSessionTimeout(idleSessionTimeoutMs)
-      .setRealmHandleContextAndSessionKey(realmHandleContextAndSessionKey)
-      .setRealmGuidContextAndSessionKey(realmGuidContextAndSessionKey)
-      .setCookieMaxAge(cookieMaxAgeOneWeekInSec)
-      .setFailIfRealmNotFound(false);
 
   }
 
@@ -420,19 +420,11 @@ public class EraldyApiApp extends TowerApp {
   public Future<Void> mount() {
 
 
-    LOGGER.info("Add Auth Session Cookie");
-    Router router = this.getHttpServer().getRouter();
-    router.route().handler(this.authClientIdHandler);
-    /**
-     * Session Handlers needs the client id
-     * We mount the session after the clientId handler
-     */
-    router.route().handler(this.sessionHandler);
 
     TowerApexDomain apexDomain = this.getApexDomain();
     LOGGER.info("Allow CORS on the domain (" + apexDomain + ")");
     // Allow Browser cross-origin request in the domain
-    BrowserCorsUtil.allowCorsForApexDomain(router, this);
+    BrowserCorsUtil.allowCorsForApexDomain(this.getHttpServer().getRouter(), this);
 
 
     /**

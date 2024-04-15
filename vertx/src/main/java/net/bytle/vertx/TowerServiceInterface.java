@@ -16,6 +16,13 @@ import io.vertx.core.Future;
  * * Mounting (router construction (operations that are needed so that the server may answer))
  * * Start (operations that are needed just after. Example: health check, job, metadata load ...)
  * * Close (release resource and save runtime data)
+ * <p>
+ * It can be:
+ * * Request Handler
+ * * or any third services (such as Jdbc, ...)
+ * The services are executed and mounted in order that they are created.
+ * In case of HTTP request handler, you want to create/declare the authentication handlers first
+ * so that they are executed first.
  */
 public interface TowerServiceInterface {
 

@@ -21,8 +21,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A server represents a TCP/IP server
@@ -70,7 +70,11 @@ public class Server {
   private AnalyticsTracker analyticsTracker;
   private TowerSmtpClientService smtpClient;
   private MapDb mapDb;
-  private final Set<TowerService> services = new HashSet<>();
+  /**
+   * A list because the services should be started in order
+   * (ie session authentication should be first on the router)
+   */
+  private final List<TowerService> services = new ArrayList<>();
   private TowerDnsClient dnsClient;
   private WriteThroughCollection writeThroughCollection;
 
@@ -244,7 +248,7 @@ public class Server {
 
   }
 
-  public Set<TowerService> getServices() {
+  public List<TowerService> getServices() {
     return this.services;
   }
 

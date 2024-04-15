@@ -5,6 +5,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authorization.Authorization;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
@@ -17,11 +18,11 @@ import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.tower.util.Guid;
-import net.bytle.vertx.FrontEndCookie;
-import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.OAuthState;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Set;
 
@@ -49,8 +50,9 @@ import static net.bytle.vertx.auth.ApiKeyAuthenticationProvider.ROOT_AUTHORIZATI
  * After the handler has been executed,
  * next handlers can retrieve the realm with the function {@link #getRequestingClient(RoutingContext)}
  */
-public class AuthClientHandler implements Handler<RoutingContext> {
+public class AuthClientHandler extends TowerService implements Handler<RoutingContext> {
 
+  protected static final Logger LOGGER = LogManager.getLogger(AuthClientHandler.class);
   private static final String CLIENT_ID_CONTEXT_KEY = "client-id-context-key";
 
   /**
@@ -107,13 +109,23 @@ public class AuthClientHandler implements Handler<RoutingContext> {
    */
   private final String realmGuidContextKey;
   private final String realmHandleContextKey;
+  private final HttpServer httpServer;
 
   private AuthClientHandler(Config config) {
-
+    super(config.apiApp.getHttpServer().getServer());
+    this.httpServer= config.apiApp.getHttpServer();
     this.apiApp = config.apiApp;
     this.realmGuidContextKey = config.realmGuidContextKey;
     this.realmHandleContextKey = config.realmHandleContextKey;
 
+  }
+
+  @Override
+  public Future<Void> mount() {
+    LOGGER.info("Add Auth Client Handler");
+    Router router = httpServer.getRouter();
+    router.route().handler(this);
+    return super.mount();
   }
 
   public static Config config(EraldyApiApp eraldyApiApp) {
@@ -413,7 +425,7 @@ public class AuthClientHandler implements Handler<RoutingContext> {
      */
     HttpServerRequest request = context.request();
     String appGuid = request.getHeader(X_PROXY_APP_GUID);
-    if(appGuid!=null){
+    if (appGuid != null) {
       return appGuid;
     }
 
@@ -505,4 +517,6 @@ public class AuthClientHandler implements Handler<RoutingContext> {
       return new AuthClientHandler(this);
     }
   }
+
+
 }

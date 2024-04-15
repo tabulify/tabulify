@@ -18,6 +18,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.vertx.TowerApexDomain;
 import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.TowerService;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * The default Vertx implementation is based on
  * <a href="https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#session-id-properties">owasp</a>
  * recommendation, but because we use a central authentication mechanism and not different authentication by application
- * we can (Github, google, ...) do it
+ * we can (GitHub, Google, ...) do it
  * <p>
  * A handler that maintains a {@link io.vertx.ext.web.Session} for each browser session
  * with a cookie based on a realm key (See {@link #getSessionCookieName(String)}
@@ -51,7 +52,7 @@ import org.slf4j.LoggerFactory;
  * <p>
  * Sessions can’t work if the browser doesn’t support cookies or if the realm key is not set
  */
-public class RealmSessionHandler implements SessionHandler {
+public class RealmSessionHandler extends TowerService implements SessionHandler {
 
   /**
    * The key on the session data where to retrieve the user
@@ -108,6 +109,7 @@ public class RealmSessionHandler implements SessionHandler {
 
 
   public RealmSessionHandler(TowerApp towerApp) {
+    super(towerApp.getHttpServer().getServer());
     this.towerApp = towerApp;
     this.sessionStore = towerApp.getHttpServer().getPersistentSessionStore();
     this.eraldyDomain = towerApp.getApexDomain();
@@ -118,6 +120,13 @@ public class RealmSessionHandler implements SessionHandler {
       RealmSessionHandler.realmSessionHandler = new RealmSessionHandler(towerApp);
     }
     return RealmSessionHandler.realmSessionHandler;
+  }
+
+  @Override
+  public Future<Void> mount() {
+    LOG.info("Realm Session Handler added to the router");
+    towerApp.getHttpServer().getRouter().route().handler(this);
+    return super.mount();
   }
 
   public static RealmSessionHandler get() {

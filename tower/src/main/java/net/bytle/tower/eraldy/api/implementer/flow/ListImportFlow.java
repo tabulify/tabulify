@@ -10,6 +10,7 @@ import net.bytle.exception.NullValueException;
 import net.bytle.fs.Fs;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
+import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
 import net.bytle.type.Strings;
 import net.bytle.type.time.Timestamp;
@@ -493,35 +494,45 @@ public class ListImportFlow extends WebFlowAbs {
     /**
      * Update the row count
      */
-    ListImportJobStatus status = executingJob.getStatus();
-    Integer countSuccess = status.getCountSuccess();
-
-    if (countSuccess != null && !countSuccess.equals(0)) {
-
-      executingJob.getList()
-        .onSuccess(list -> {
-          ListInputProps listInputProps = new ListInputProps();
-          Long userCount = list.getUserCount();
-          if (userCount == null) {
-            userCount = 0L;
+    executingJob
+      .getList()
+      .compose(list -> {
+          ListImportJobStatus status = executingJob.getStatus();
+          Integer countSuccess = status.getCountSuccess();
+          Future<ListObject> updateList = Future.succeededFuture(list);
+          if (countSuccess != null && !countSuccess.equals(0)) {
+            ListInputProps listInputProps = new ListInputProps();
+            Long userCount = list.getUserCount();
+            if (userCount == null) {
+              userCount = 0L;
+            }
+            listInputProps.setUserCount(userCount + countSuccess);
+            Long userInCount = list.getUserInCount();
+            if (userInCount == null) {
+              userInCount = 0L;
+            }
+            listInputProps.setUserInCount(userInCount + countSuccess);
+            updateList = this.getApp().getListProvider()
+              .updateList(list, listInputProps);
           }
-          listInputProps.setUserCount(userCount + countSuccess);
-          Long userInCount = list.getUserInCount();
-          if (userInCount == null) {
-            userInCount = 0L;
-          }
-          listInputProps.setUserInCount(userInCount + countSuccess);
-          this.getApp().getListProvider()
-            .updateList(list, listInputProps);
-        });
+          return updateList;
+        },
+        e -> {
+          /**
+           * If we don't get the list we want to continue still
+           */
+          LOGGER.error("Unable to get the list to set the row counts", e);
+          return Future.succeededFuture();
+        }
+      )
+      .onComplete(v ->
+        /**
+         *
+         * Execute the next job
+         */
+        this.step2ExecuteNextJob()
+      );
 
-    }
-
-    /**
-     *
-     * Execute the next one
-     */
-    this.step2ExecuteNextJob();
   }
 
 
