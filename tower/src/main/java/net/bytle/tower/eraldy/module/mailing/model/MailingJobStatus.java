@@ -12,20 +12,20 @@ public enum MailingJobStatus implements Status {
   /**
    * Open (to process)
    */
-  OPEN(-2,"open"),
+  OPEN(-2,"Open"),
   /**
    * Running (in execution)
    */
-  RUNNING(-1,"running"),
+  RUNNING(-1,"Running"),
   /**
    * Success
    */
-  COMPLETED(0, "success"),
+  COMPLETED(0, "Success"),
   /**
    * A fatal error has occurred during execution
    * (our fault)
    */
-  FATAL_ERROR(1, "fatalError");
+  FATAL_ERROR(1, "FatalError");
 
 
   private final int statusCode;
