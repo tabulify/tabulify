@@ -4,12 +4,14 @@ import graphql.GraphQL;
 import graphql.TypeResolutionEnvironment;
 import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
+import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.graphql.GraphQLHandler;
@@ -17,6 +19,7 @@ import io.vertx.ext.web.handler.graphql.instrumentation.JsonObjectAdapter;
 import io.vertx.ext.web.handler.graphql.instrumentation.VertxFutureAdapter;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.graphql.implementer.UserGraphQLImpl;
+import net.bytle.tower.eraldy.model.manual.Status;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
@@ -71,6 +74,11 @@ public class EraldyGraphQL implements GraphQLDef {
           .typeResolver(this::getUserInterfaceTypeResolver)
           .build()
       )
+      .type(
+        newTypeWiring("Status")
+          .dataFetcher("name", this::getStatusName)
+          .build()
+      )
       .directive("dateFormat", new GraphQLLocalDate())
       .build();
 
@@ -117,6 +125,15 @@ public class EraldyGraphQL implements GraphQLDef {
         builderWithContext.builder().dataLoaderRegistry(userDataLoaderRegistry);
       })
       .build();
+  }
+
+  /**
+   * By default, GraphQL returns the Enum.name()
+   * (ie the name of the enum, not the output of the function getName)
+   */
+  private Future<String> getStatusName(DataFetchingEnvironment dataFetchingEnvironment) {
+    Status status = dataFetchingEnvironment.getSource();
+    return Future.succeededFuture(status.getName());
   }
 
   @NotNull
