@@ -16,7 +16,7 @@ import net.bytle.tower.eraldy.model.manual.EmailAstDocumentBuilder;
 import net.bytle.tower.eraldy.model.manual.EmailTemplateVariables;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
-import net.bytle.tower.eraldy.module.mailing.db.MailingProvider;
+import net.bytle.tower.eraldy.module.mailing.db.mailing.MailingProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingjob.MailingJobProvider;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputProps;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputTestEmail;

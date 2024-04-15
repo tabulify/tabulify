@@ -26,8 +26,8 @@ public class JdbcInsert {
   }
 
   public JdbcInsert addColumn(JdbcTableColumn jdbcTableColumn, Object value) {
-    if(this.colValues.containsKey(jdbcTableColumn)){
-      throw new InternalException("The column ("+jdbcTableColumn+") is already present in the insertion list");
+    if (this.colValues.containsKey(jdbcTableColumn)) {
+      throw new InternalException("The column (" + jdbcTableColumn + ") is already present in the insertion list");
     }
     this.colValues.put(jdbcTableColumn, value);
     return this;
@@ -62,6 +62,12 @@ public class JdbcInsert {
       .execute(Tuple.from(tuples))
       .recover(e -> Future.failedFuture(new InternalException(this.jdbcTable.getFullName() + " table insertion Error. Sql Error " + e.getMessage() + "\nSQl: " + insertSqlString, e)))
       .compose(rowSet -> Future.succeededFuture(new JdbcRowSet(rowSet)));
+  }
+
+  public Future<JdbcRowSet> execute() {
+    return this.jdbcTable.getSchema().getJdbcClient().getPool().getConnection()
+      .recover(e -> Future.failedFuture(new InternalException("Unable to get a connection for a jdbc insert", e)))
+      .compose(this::execute);
   }
 
 }

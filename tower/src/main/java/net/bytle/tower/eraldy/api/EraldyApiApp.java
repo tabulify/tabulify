@@ -15,9 +15,9 @@ import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
-import net.bytle.tower.eraldy.module.mailing.db.MailingProvider;
-import net.bytle.tower.eraldy.module.mailing.db.MailingRowProvider;
+import net.bytle.tower.eraldy.module.mailing.db.mailing.MailingProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingjob.MailingJobProvider;
+import net.bytle.tower.eraldy.module.mailing.db.mailingrow.MailingRowProvider;
 import net.bytle.tower.eraldy.module.mailing.flow.MailingFlow;
 import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
@@ -131,9 +131,9 @@ public class EraldyApiApp extends TowerApp {
     this.hashIds = this.getHttpServer().getServer().getHashId();
     this.authClientProvider = new AuthClientProvider(this);
     this.realmSequenceProvider = new RealmSequenceProvider();
-    this.mailingProvider = new MailingProvider(this);
+    this.mailingProvider = new MailingProvider(this,jobsSchema);
     this.mailingJobProvider = new MailingJobProvider(this, jobsSchema);
-    this.mailingRowProvider = new MailingRowProvider(this);
+    this.mailingRowProvider = new MailingRowProvider(this,jobsSchema);
     this.fileProvider = new FileProvider(this);
 
     /**

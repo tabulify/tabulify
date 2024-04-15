@@ -16,6 +16,7 @@ public class JdbcUpdate {
   private final JdbcTable jdbcTable;
   Map<JdbcTableColumn, Object> updatedColValues = new HashMap<>();
   Map<JdbcTableColumn, Object> primaryKeyColValues = new HashMap<>();
+  private JdbcTableColumn returningColumn = null;
 
   private JdbcUpdate(JdbcTable jdbcTable) {
     this.jdbcTable = jdbcTable;
@@ -80,6 +81,10 @@ public class JdbcUpdate {
     }
     updateSqlBuilder.append(String.join(" and ", equalityStatements));
 
+    if(this.returningColumn!=null){
+      updateSqlBuilder.append(" returning ")
+        .append(this.returningColumn.getColumnName());
+    }
 
     String insertSqlString = updateSqlBuilder.toString();
     return sqlConnection
@@ -89,7 +94,12 @@ public class JdbcUpdate {
       .compose(rowSet -> Future.succeededFuture(new JdbcRowSet(rowSet)));
   }
 
-  public boolean noColumnToUpdate() {
+  public boolean hasNoColumnToUpdate() {
     return this.updatedColValues.isEmpty();
+  }
+
+  public JdbcUpdate addReturningColumn(JdbcTableColumn column) {
+    this.returningColumn = column;
+    return this;
   }
 }

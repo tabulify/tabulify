@@ -280,7 +280,7 @@ public class Mailing {
   /**
    * @param countRow - The total number of email address s to send
    */
-  public void setCountRow(Long countRow) {
+  public void setRowCount(Long countRow) {
     this.countRow = countRow;
   }
 
@@ -295,14 +295,14 @@ public class Mailing {
   /**
    * @param countEmailSuccess - the number of email send successfully
    */
-  public void setCountRowSuccess(Long countEmailSuccess) {
+  public void setRowSuccessCount(Long countEmailSuccess) {
     this.countRowSuccess = countEmailSuccess;
   }
 
   /**
    * @param countExecution - the number of time we executed an SMTP transaction (independently of the status such as success and failure)
    */
-  public void setCountRowExecution(Long countExecution) {
+  public void setRowExecutionCount(Long countExecution) {
     this.countRowExecution = countExecution;
   }
 

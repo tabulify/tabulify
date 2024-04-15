@@ -60,7 +60,7 @@ The version history table is `version_log`
 ### Migration occurs when the server start
 
 Flyway is called when the server starts.
-via the [JdbMigration class](../../vertx/src/main/java/net/bytle/vertx/JdbcSchemaManager.java)
+via the [JdbcSchemaManager class](../../vertx/src/main/java/net/bytle/vertx/db/JdbcSchemaManager.java)
 
 ### Migration occurs with the following Gradle task
 
@@ -111,6 +111,12 @@ We don't use SQL `upsert` because they will increase the sequence
 and create gap.
 ie an insert is performed and rolled-back if the record already exists,
 eating a number in the sequence.
+
+
+### Count column naming
+
+Count column are natural column. We use therefore
+`failure_count` and not `count_failure`
 
 ### Identifier
 

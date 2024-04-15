@@ -266,7 +266,7 @@ public class MailingJobProvider {
       mailingJob.setStatusMessage(newStatusMessage);
     }
 
-    if (jdbcUpdate.noColumnToUpdate()) {
+    if (jdbcUpdate.hasNoColumnToUpdate()) {
       return Future.succeededFuture(mailingJob);
     }
 
