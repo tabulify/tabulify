@@ -425,7 +425,7 @@ public abstract class TowerApp {
      * can insert init data)
      */
     return this.httpServer
-      .mountListenAndStart(this.getAppName())
+      .mountListen(this.getAppName())
       .recover(err -> Future.failedFuture(new Exception("Error on HTTP Server mount for the app (" + this + ")", err)))
       .compose(v -> {
         /**
@@ -438,8 +438,13 @@ public abstract class TowerApp {
         return mount();
       })
       .recover(err -> Future.failedFuture(new Exception("Error on App mount for the app (" + this + ")", err)))
+      .compose(v3 -> {
+        LOGGER.info("The app (" + this + ") has been successfully mounted");
+        return this.httpServer.start(this.getAppName());
+      })
+      .recover(err -> Future.failedFuture(new Exception("Error on App start for the app (" + this + ")", err)))
       .compose(v2 -> {
-        LOGGER.info("The app (" + this + ") has been successfully mounted on the http server listening on the port: " + this.httpServer.getVertxServer().actualPort());
+        LOGGER.info("The app (" + this + ") has been successfully started on the http server listening on the port: " + this.httpServer.getVertxServer().actualPort());
         return Future.succeededFuture(this);
       });
 

@@ -845,7 +845,7 @@ public class UserProvider {
    * @return the user or null
    * @param <T> a user extension
    */
-  private <T extends User> Future<T> getUserByLocalId(Long userId, Long realmId, Class<T> userClass, Realm realm, SqlConnection sqlConnection) {
+  <T extends User> Future<T> getUserByLocalId(Long userId, Long realmId, Class<T> userClass, Realm realm, SqlConnection sqlConnection) {
     assert userId != null;
     assert realmId != null;
 

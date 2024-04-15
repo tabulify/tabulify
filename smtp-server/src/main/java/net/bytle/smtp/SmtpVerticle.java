@@ -152,7 +152,8 @@ public class SmtpVerticle extends AbstractVerticle {
              * No App for now
              */
             return httpServer
-              .mountListenAndStart("Smtp");
+              .mountListen("Smtp")
+              .compose(v->httpServer.start("Smtp"));
           });
       }))
       .onFailure(e -> this.handleVerticleFailure(verticlePromise, e));

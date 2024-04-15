@@ -52,7 +52,7 @@ alter table cs_jobs.realm_mailing_row
   add foreign key (MAILING_ROW_REALM_ID, MAILING_ROW_MAILING_ID) REFERENCES "cs_realms"."realm_mailing" (mailing_realm_id, mailing_id);
 
 comment on column cs_jobs.realm_mailing_row.MAILING_ROW_MAILING_JOB_ID is 'The job id that has executed this row for the last time';
-comment on column cs_jobs.realm_mailing_row.MAILING_ROW_COUNT_FAILURE is 'The number of failed transaction';
+comment on column cs_jobs.realm_mailing_row.MAILING_ROW_FAILURE_COUNT is 'The number of failed transaction';
 comment on column cs_jobs.realm_mailing_row.MAILING_ROW_EMAIL_SERVER_RECEIVER is 'The server (mx) where the email was send (ie the receiver)';
 comment on column cs_jobs.realm_mailing_row.MAILING_ROW_EMAIL_SERVER_SENDER is 'The server that has send this message';
 comment on column cs_jobs.realm_mailing_row.MAILING_ROW_EMAIL_MESSAGE_ID is 'The email message id';

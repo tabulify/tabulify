@@ -506,20 +506,20 @@ public class RealmProvider {
      */
     Long orgaId = row.getLong(REALM_ORGA_ID);
     Future<Organization> futureOrganization = apiApp.getOrganizationProvider().getById(orgaId);
-
-    /**
-     * Future Owner
-     */
-    Long ownerUserLocalId = row.getLong(REALM_OWNER_ID_COLUMN);
-    Future<OrganizationUser> futureOwnerUser = apiApp.getOrganizationUserProvider()
-      .getOrganizationUserByLocalId(ownerUserLocalId, eraldyRealm.getLocalId(), eraldyRealm);
-
-    return Future
-      .all(futureOrganization, futureOwnerUser)
-      .recover(t -> Future.failedFuture(new InternalException("Future All Error for building the realm", t)))
-      .compose(result -> {
-        realm.setOrganization(result.resultAt(0));
-        realm.setOwnerUser(result.resultAt(1));
+    return futureOrganization
+      .recover(t -> Future.failedFuture(new InternalException("Future organizaion for building the realm failed", t)))
+      .compose(organization -> {
+        realm.setOrganization(organization);
+        /**
+         * Future Owner
+         */
+        Long ownerUserLocalId = row.getLong(REALM_OWNER_ID_COLUMN);
+        return apiApp.getOrganizationUserProvider()
+          .getOrganizationUserByLocalId(ownerUserLocalId, eraldyRealm.getLocalId(), eraldyRealm);
+      })
+      .recover(t -> Future.failedFuture(new InternalException("Future user for building the realm failed", t)))
+      .compose(user -> {
+        realm.setOwnerUser(user);
         return Future.succeededFuture(realm);
       });
 
@@ -547,7 +547,7 @@ public class RealmProvider {
       REALM_HANDLE_COLUMN + ",\n" +
       "STRING_AGG(app_uri,', ') as " + aliasAppUris + "\n" +
       "  from \n" +
-       schema.getSchemaName() + "." + AppProvider.APP_TABLE_NAME + " app\n" +
+      schema.getSchemaName() + "." + AppProvider.APP_TABLE_NAME + " app\n" +
       "right join " + this.FULL_QUALIFIED_TABLE_NAME + " realm\n" +
       "on app.app_realm_id = realm.realm_id\n" +
       "group by " + REALM_ID_COLUMN + ", " + REALM_HANDLE_COLUMN + "\n" +

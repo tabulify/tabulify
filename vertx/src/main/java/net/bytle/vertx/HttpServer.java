@@ -58,7 +58,7 @@ public class HttpServer {
    * Mount, Listen and starts
    * @param appName - the App name for logging
    */
-  public Future<HttpServer> mountListenAndStart(String appName) {
+  public Future<HttpServer> mountListen(String appName) {
     HttpServerOptions options = new HttpServerOptions()
       .setLogActivity(false)
       .setHost(this.builder.server.getListeningHost())
@@ -82,14 +82,15 @@ public class HttpServer {
      * With Future.all if there is an error, the handlers of the future still
      * running produce an error when we close Vertx and it adds noise
      */
-
-
     return this.getServer().getVertx().executeBlocking(() -> {
         List<Future<Void>> servicesFutureMount = this.getServer().getServices().stream().map(TowerService::mount).collect(Collectors.toList());
         return Future.join(servicesFutureMount);
       })
       .recover(err -> Future.failedFuture(new InternalException("A service mount failed while mounting the http server", err)))
-      .compose(asyncResult -> {
+      .compose(compositeFuture -> {
+        if(compositeFuture.failed()){
+          return Future.failedFuture(new InternalException("A service mount failed while mounting the http server", compositeFuture.cause()));
+        }
         /**
          * Health Check
          * At the end because the services can register
@@ -109,11 +110,19 @@ public class HttpServer {
       .compose(vertxHttpServer -> {
         this.vertxHttpServer = vertxHttpServer;
         LOGGER.info(appName + " HTTP server mounted on port " + vertxHttpServer.actualPort());
-        List<Future<Void>> servicesFutureToStart = this.getServer().getServices().stream().map(TowerService::start).collect(Collectors.toList());
-        return Future.join(servicesFutureToStart);
-      })
-      .recover(err -> Future.failedFuture(new InternalException("A service start failed while starting the http server", err)))
-      .compose(asyncResult -> {
+        return Future.succeededFuture(this);
+      });
+
+  }
+
+  public Future<HttpServer> start(String appName) {
+    List<Future<Void>> servicesFutureToStart = this.getServer().getServices().stream().map(TowerService::start).collect(Collectors.toList());
+    return Future.join(servicesFutureToStart)
+      .recover(err -> Future.failedFuture(new InternalException("The service join start failed while starting the http server", err)))
+      .compose(compositeFuture -> {
+        if(compositeFuture.failed()){
+          return Future.failedFuture(new InternalException("A service failed while starting the http server", compositeFuture.cause()));
+        }
         LOGGER.info(appName + " HTTP server services started");
         /**
          * Health checks
@@ -132,7 +141,6 @@ public class HttpServer {
         LOGGER.info("App " + appName + " is healthy (passed the health checks)");
         return Future.succeededFuture(this);
       });
-
   }
 
   public int getPublicPort() {

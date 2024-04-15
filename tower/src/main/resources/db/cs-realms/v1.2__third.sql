@@ -109,19 +109,26 @@ comment on column realm_file.FILE_PARENT_ID is 'The parent file (if null, the ro
 -- represents a mailing (sending an email to a list of users)
 create table IF NOT EXISTS realm_mailing
 (
-  MAILING_REALM_ID             BIGINT                      NOT NULL references "realm" (REALM_ID),
-  MAILING_ID                   BIGINT                      NOT NULL,
-  MAILING_NAME                 VARCHAR(50)                 NOT NULL,
-  MAILING_EMAIL_RCPT_LIST_ID   BIGINT                      NOT NULL,
-  MAILING_EMAIL_SUBJECT        VARCHAR(150)                NULL,
-  MAILING_EMAIL_PREVIEW        TEXT                        NULL,
-  MAILING_EMAIL_BODY           TEXT                        NULL,
-  MAILING_EMAIL_AUTHOR_USER_ID BIGINT                      NOT NULL,
-  MAILING_ORGA_ID              BIGINT                      NOT NULL,
-  MAILING_STATUS               INT                         NOT NULL,
-  MAILING_CREATION_TIME        TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  MAILING_MODIFICATION_TIME    TIMESTAMP WITHOUT TIME ZONE NULL
+  MAILING_REALM_ID                BIGINT                      NOT NULL references "realm" (REALM_ID),
+  MAILING_ID                      BIGINT                      NOT NULL,
+  MAILING_NAME                    VARCHAR(50)                 NOT NULL,
+  MAILING_EMAIL_RCPT_LIST_ID      BIGINT                      NOT NULL,
+  MAILING_EMAIL_SUBJECT           VARCHAR(150)                NULL,
+  MAILING_EMAIL_PREVIEW           TEXT                        NULL,
+  MAILING_EMAIL_BODY              TEXT                        NULL,
+  MAILING_EMAIL_AUTHOR_USER_ID    BIGINT                      NOT NULL,
+  mailing_email_language          varchar(2), -- not char otherwise we get 2 empty spaces and not null
+  MAILING_ORGA_ID                 BIGINT                      NOT NULL,
+  MAILING_STATUS                  INT                         NOT NULL,
+  MAILING_JOB_LAST_EXECUTION_TIME TIMESTAMP WITHOUT TIME ZONE NULL,
+  MAILING_JOB_NEXT_EXECUTION_TIME TIMESTAMP WITHOUT TIME ZONE NULL,
+  MAILING_ROW_COUNT               BIGINT                      NULL,
+  MAILING_ROW_SUCCESS_COUNT       BIGINT                      NULL,
+  MAILING_ROW_EXECUTION_COUNT     BIGINT                      NULL,
+  MAILING_CREATION_TIME           TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  MAILING_MODIFICATION_TIME       TIMESTAMP WITHOUT TIME ZONE NULL
 );
+
 
 alter table realm_mailing
   add primary key (MAILING_REALM_ID, MAILING_ID);
@@ -141,7 +148,12 @@ comment on column realm_mailing.MAILING_EMAIL_PREVIEW is 'The email preview';
 comment on column realm_mailing.MAILING_EMAIL_BODY is 'The email body';
 comment on column realm_mailing.MAILING_EMAIL_AUTHOR_USER_ID is 'The author of the email (An organizational user, the id of the user in the realm 1)';
 comment on column realm_mailing.MAILING_STATUS is 'The status (draft, send, scheduled, ...)';
-
+comment on column realm_mailing.mailing_job_last_execution_time is 'The last time a job was executed for this mailing';
+comment on column realm_mailing.mailing_job_next_execution_time is 'The next time that a job will execute for this mailing';
+comment on column realm_mailing.mailing_row_count is 'The number of emails (ie users/email/row) for this mailing to send';
+comment on column realm_mailing.mailing_row_success_count is 'The number of email send successfully (ie successful smtp transaction)';
+comment on column realm_mailing.mailing_row_execution_count is 'The number of smtp transfer execution (successful or not)';
+comment on column realm_mailing.mailing_email_language is 'The language of the email (used in assistive technology)';
 
 -- email as email address
 alter table realm_user

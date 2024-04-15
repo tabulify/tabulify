@@ -113,7 +113,7 @@ public class OrganizationUserProvider {
   }
 
   @SuppressWarnings("SameParameterValue")
-  private Future<OrganizationUser> setOrganizationFromDatabaseRow(Row row, OrganizationUser user, Organization organization) {
+  private Future<OrganizationUser> setOrganizationFromDatabaseRow(Row row, OrganizationUser user, Organization organization, SqlConnection sqlConnection) {
 
     Future<OrganizationUser> futureUser;
     Long userId;
@@ -122,7 +122,7 @@ public class OrganizationUserProvider {
       userId = user.getLocalId();
     } else {
       userId = row.getLong(ORGA_USER_USER_ID_COLUMN);
-      futureUser = this.getOrganisationUserWithoutOrganizationByLocalId(userId);
+      futureUser = this.getOrganisationUserWithoutOrganizationByLocalId(userId,sqlConnection);
     }
 
     return futureUser
@@ -158,14 +158,15 @@ public class OrganizationUserProvider {
    * Build a  OrganizationUser object
    * without organization data
    */
-  private Future<OrganizationUser> getOrganisationUserWithoutOrganizationByLocalId(Long userId) {
+  private Future<OrganizationUser> getOrganisationUserWithoutOrganizationByLocalId(Long userId, SqlConnection sqlConnection) {
 
     return this.apiApp.getUserProvider()
       .getUserByLocalId(
         userId,
         this.apiApp.getEraldyModel().getRealm().getLocalId(),
         OrganizationUser.class,
-        this.apiApp.getEraldyModel().getRealm()
+        this.apiApp.getEraldyModel().getRealm(),
+        sqlConnection
       );
 
   }
@@ -314,7 +315,7 @@ public class OrganizationUserProvider {
         if (row == null) {
           return Future.succeededFuture();
         }
-        return this.setOrganizationFromDatabaseRow(row, organizationUser, null);
+        return this.setOrganizationFromDatabaseRow(row, organizationUser, null, sqlConnection);
       });
   }
 }
