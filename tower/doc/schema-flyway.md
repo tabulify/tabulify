@@ -105,18 +105,35 @@ as pgsql is a static language and that the `record` data type does
 not allow an access by array name.
 See [identifier](identifier.md) for more information
 
-### Don't use SQL Upsert
-
-We don't use SQL `upsert` because they will increase the sequence
-and create gap.
-ie an insert is performed and rolled-back if the record already exists,
-eating a number in the sequence.
-
-
 ### Count column naming
 
 Count column are natural column. We use therefore
 `failure_count` and not `count_failure`
+
+### Renaming
+
+When renaming, you should:
+* create the ALTER statement in the flyway migration script
+* change the correspondent `JdbcTableCols` enum.
+
+We use a mix of:
+* typed SQL with the `JdbcQuery` and `JdbcTableCols` for simple/single query
+* and of dynamic SQL with `Sql file` for more complicated stuff
+
+A column may therefore not be renamed in `SQL file`
+
+If you don't feel safe:
+  * don't
+  * or you may create a view with an alias for the `data analytics guys`.
+  * or you may create new column?
+
+### Don't use SQL Upsert
+
+We don't use SQL `upsert` because they will increase the sequence
+and create gap.
+ie in the upsert, an insert is performed and rolled-back if the record already exists,
+eating a number in the sequence.
+
 
 ### Identifier
 

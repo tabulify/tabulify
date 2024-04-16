@@ -12,9 +12,9 @@ public enum MailingJobCols implements JdbcTableColumn {
   STATUS_MESSAGE("mailing_job_status_message"),
   START_TIME("mailing_job_start_time"),
   END_TIME("mailing_job_end_time"),
-  COUNT_ROW_TO_EXECUTE("mailing_job_count_row_to_execute"),
-  COUNT_ROW_SUCCESS("mailing_job_count_row_success"),
-  COUNT_ROW_EXECUTION("mailing_job_count_row_execution");
+  ROW_TO_EXECUTE_COUNT("mailing_job_row_to_execute_count"),
+  ROW_SUCCESS_COUNT("mailing_job_row_success_count"),
+  ROW_EXECUTION_COUNT("mailing_job_row_execution_count");
 
   private final String colName;
 

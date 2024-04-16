@@ -326,7 +326,9 @@ public class MailingProvider {
       );
     }
 
-    JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.mailingTable);
+    JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.mailingTable)
+      .addPredicateColumn(MailingCols.ID,mailing.getLocalId())
+      .addPredicateColumn(MailingCols.REALM_ID, mailing.getRealm().getLocalId());
 
     /**
      * Patch implementation

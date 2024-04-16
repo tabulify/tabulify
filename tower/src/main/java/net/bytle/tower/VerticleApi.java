@@ -45,7 +45,7 @@ public class VerticleApi extends AbstractVerticle {
               .init();
 
             /**
-             * Create the server
+             * Create the Net server
              */
             Server server = Server.create("Eraldy Api Server", "http", vertx, configAccessor)
               .setFromConfigAccessorWithPort(PORT_DEFAULT)

@@ -89,7 +89,7 @@ public class MailingJobProvider {
                   .addColumn(MailingJobCols.MAILING_ID, mailingJob.getMailing().getLocalId())
                   .addColumn(MailingJobCols.STATUS_CODE, mailingJob.getStatus().getCode())
                   .addColumn(MailingJobCols.START_TIME, mailingJob.getStartTime())
-                  .addColumn(MailingJobCols.COUNT_ROW_TO_EXECUTE, mailingJob.getCountRowToExecute())
+                  .addColumn(MailingJobCols.ROW_TO_EXECUTE_COUNT, mailingJob.getCountRowToExecute())
                   .execute(sqlConnection);
               })
               .compose(rows -> Future.succeededFuture(mailingJob)));
@@ -183,9 +183,9 @@ public class MailingJobProvider {
     mailingJob.setStatusMessage(row.getString(MailingJobCols.STATUS_MESSAGE));
     mailingJob.setStartTime(row.getLocalDateTime(MailingJobCols.START_TIME));
     mailingJob.setEndTime(row.getLocalDateTime(MailingJobCols.END_TIME));
-    mailingJob.setCountRowToExecute(row.getLong(MailingJobCols.COUNT_ROW_TO_EXECUTE));
-    mailingJob.setCountRowSuccess(row.getLong(MailingJobCols.COUNT_ROW_SUCCESS));
-    mailingJob.setCountRowExecution(row.getLong(MailingJobCols.COUNT_ROW_EXECUTION));
+    mailingJob.setCountRowToExecute(row.getLong(MailingJobCols.ROW_TO_EXECUTE_COUNT));
+    mailingJob.setCountRowSuccess(row.getLong(MailingJobCols.ROW_SUCCESS_COUNT));
+    mailingJob.setCountRowExecution(row.getLong(MailingJobCols.ROW_EXECUTION_COUNT));
 
     return mailingJob;
   }
