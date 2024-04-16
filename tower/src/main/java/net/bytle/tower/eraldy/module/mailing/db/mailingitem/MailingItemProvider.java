@@ -14,7 +14,9 @@ import net.bytle.tower.eraldy.objectProvider.UserCols;
 import net.bytle.vertx.db.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MailingItemProvider {
 
@@ -24,7 +26,11 @@ public class MailingItemProvider {
 
   public MailingItemProvider(EraldyApiApp eraldyApiApp, JdbcSchema jdbcSchema) {
     this.apiApp = eraldyApiApp;
+    Map<JdbcTableColumn, JdbcTableColumn> mailingUserForeignsKeys = new HashMap<>();
+    mailingUserForeignsKeys.put(MailingItemCols.REALM_ID, UserCols.REALM_ID);
+    mailingUserForeignsKeys.put(MailingItemCols.USER_ID, UserCols.ID);
     this.mailingRowTable = JdbcTable.build(jdbcSchema, "realm_mailing_item")
+      .addForeignKeyColumns(this.apiApp.getUserProvider().getUserTable(), mailingUserForeignsKeys)
       .build();
   }
 

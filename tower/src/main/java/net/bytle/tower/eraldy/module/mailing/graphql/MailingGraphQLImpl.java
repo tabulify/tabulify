@@ -109,10 +109,10 @@ public class MailingGraphQLImpl {
   }
 
   private Future<List<MailingItem>> getItems(DataFetchingEnvironment dataFetchingEnvironment) {
+    Mailing mailing = dataFetchingEnvironment.getSource();
     Map<String, Object> paginationPropsMap = dataFetchingEnvironment.getArgument("pagination");
     // Type safe (if null, the value was not passed)
     JdbcPagination pagination = new JsonObject(paginationPropsMap).mapTo(JdbcPagination.class);
-    Mailing mailing = dataFetchingEnvironment.getSource();
     return this.app.getMailingItemProvider().getItemsForGraphQL(mailing, pagination);
   }
 

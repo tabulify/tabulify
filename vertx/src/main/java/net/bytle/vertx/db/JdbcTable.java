@@ -1,8 +1,6 @@
 package net.bytle.vertx.db;
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A simple SQL table abstraction
@@ -40,12 +38,21 @@ public class JdbcTable {
     return this.jdbcTableBuilder.jdbcPrimaryOrUniqueKeyColumns;
   }
 
+  public String getName() {
+    return this.jdbcTableBuilder.name;
+  }
+
+  public Map<JdbcTableColumn, JdbcTableColumn> getForeignKeyColumns(JdbcTable joinedTable) {
+    return this.jdbcTableBuilder.foreignKeys.get(joinedTable);
+  }
+
 
   public static class JdbcTableBuilder {
     private final JdbcSchema jdbcSchema;
     private final String name;
 
     private final HashSet<JdbcTableColumn> jdbcPrimaryOrUniqueKeyColumns = new HashSet<>();
+    private final Map<JdbcTable, Map<JdbcTableColumn, JdbcTableColumn>> foreignKeys = new HashMap<>();
 
     public JdbcTableBuilder(JdbcSchema jdbcSchema, String name) {
       this.jdbcSchema = jdbcSchema;
@@ -63,6 +70,11 @@ public class JdbcTable {
 
     public JdbcTableBuilder addUniqueKeyColumn(JdbcTableColumn tableColumn) {
       this.jdbcPrimaryOrUniqueKeyColumns.add(tableColumn);
+      return this;
+    }
+
+    public JdbcTableBuilder addForeignKeyColumns(JdbcTable userTable, Map<JdbcTableColumn, JdbcTableColumn> columnsMapping) {
+      this.foreignKeys.put(userTable, columnsMapping);
       return this;
     }
   }
