@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.module.common.inputs;
+package net.bytle.vertx.db;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * The inputs properties for the pagination of a list of objects
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PaginationInputProps {
+public class JdbcPagination {
 
 
   /**
@@ -32,7 +32,7 @@ public class PaginationInputProps {
    * with the Jackson library
    */
   @SuppressWarnings("unused")
-  public PaginationInputProps() {
+  public JdbcPagination() {
   }
 
   @JsonProperty("searchTerm")

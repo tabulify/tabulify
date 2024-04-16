@@ -33,6 +33,7 @@ import net.bytle.vertx.analytics.event.SignUpEvent;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.db.JdbcSchema;
 import net.bytle.vertx.db.JdbcSchemaManager;
+import net.bytle.vertx.db.JdbcTable;
 import net.bytle.vertx.flow.FlowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +81,7 @@ public class UserProvider {
    */
   private final JsonMapper apiMapper;
   private final String insertPreparedQuery;
+  private JdbcTable userTable;
 
 
   public UserProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
@@ -97,6 +99,11 @@ public class UserProvider {
       .build();
 
     this.FULL_QUALIFIED_USER_TABLE_NAME = jdbcSchema.getSchemaName()+"."+REALM_USER_TABLE_NAME;
+
+    this.userTable = JdbcTable.build(jdbcSchema, REALM_USER_TABLE_NAME)
+      .addPrimaryKeyColumn(UserCols.ID)
+      .addPrimaryKeyColumn(UserCols.REALM_ID)
+      .build();
 
     this.insertPreparedQuery = "INSERT INTO\n" +
       FULL_QUALIFIED_USER_TABLE_NAME + " (\n" +
@@ -936,5 +943,9 @@ public class UserProvider {
           .build()
       ))
       .compose(rows -> Future.succeededFuture(user));
+  }
+
+  public JdbcTable getUserTable() {
+    return this.userTable;
   }
 }

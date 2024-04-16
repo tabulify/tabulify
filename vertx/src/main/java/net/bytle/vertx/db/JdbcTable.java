@@ -1,6 +1,7 @@
 package net.bytle.vertx.db;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -65,4 +66,18 @@ public class JdbcTable {
       return this;
     }
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    JdbcTable jdbcTable = (JdbcTable) o;
+    return Objects.equals(this.getFullName(), jdbcTable.getFullName());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(this.getFullName());
+  }
+
 }

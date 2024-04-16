@@ -496,7 +496,7 @@ public class EraldyApiApp extends TowerApp {
     return this.mailingJobProvider;
   }
 
-  public MailingItemProvider getMailingRowProvider() {
+  public MailingItemProvider getMailingItemProvider() {
     return this.mailingRowProvider;
   }
 }

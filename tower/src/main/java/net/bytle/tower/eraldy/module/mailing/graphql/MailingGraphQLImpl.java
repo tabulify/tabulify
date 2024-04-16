@@ -21,6 +21,7 @@ import net.bytle.tower.eraldy.module.mailing.db.mailingjob.MailingJobProvider;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputProps;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputTestEmail;
 import net.bytle.tower.eraldy.module.mailing.model.Mailing;
+import net.bytle.tower.eraldy.module.mailing.model.MailingItem;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.RichSlateAST;
@@ -28,6 +29,7 @@ import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerSmtpClientService;
+import net.bytle.vertx.db.JdbcPagination;
 
 import java.util.List;
 import java.util.Map;
@@ -95,10 +97,23 @@ public class MailingGraphQLImpl {
           .build()
       )
       .type(
+        newTypeWiring("Mailing")
+          .dataFetcher("items", this::getItems)
+          .build()
+      )
+      .type(
         newTypeWiring("Mutation")
           .dataFetcher("mailingSendTestEmail", this::sendTestEmail)
           .build()
       );
+  }
+
+  private Future<List<MailingItem>> getItems(DataFetchingEnvironment dataFetchingEnvironment) {
+    Map<String, Object> paginationPropsMap = dataFetchingEnvironment.getArgument("pagination");
+    // Type safe (if null, the value was not passed)
+    JdbcPagination pagination = new JsonObject(paginationPropsMap).mapTo(JdbcPagination.class);
+    Mailing mailing = dataFetchingEnvironment.getSource();
+    return this.app.getMailingItemProvider().getItemsForGraphQL(mailing, pagination);
   }
 
   private Future<MailingJob> getMailingJob(DataFetchingEnvironment dataFetchingEnvironment) {

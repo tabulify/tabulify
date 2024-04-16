@@ -87,4 +87,13 @@ public class MailingItem {
     return statusMessage;
   }
 
+  public void setUser(User user) {
+    this.user = user;
+  }
+
+  @JsonProperty("user")
+  public User getUser() {
+    return user;
+  }
+
 }

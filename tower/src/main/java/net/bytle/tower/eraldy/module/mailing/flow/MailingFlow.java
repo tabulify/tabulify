@@ -63,8 +63,8 @@ public class MailingFlow extends WebFlowAbs {
   private Future<MailingJob> executeRows(MailingJob mailingJob) {
 
     return this.getApp()
-      .getMailingRowProvider()
-      .getRows(mailingJob)
+      .getMailingItemProvider()
+      .getItemsForJobExecution(mailingJob)
       .compose(rowSet -> {
         if (rowSet.rowCount() == 0) {
           return this.closeJobAndMailing(mailingJob, "No rows to process anymore");

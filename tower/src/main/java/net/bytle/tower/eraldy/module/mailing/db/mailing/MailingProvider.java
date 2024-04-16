@@ -55,13 +55,13 @@ public class MailingProvider {
 
   private final Pool jdbcPool;
   private final JsonMapper apiMapper;
-  private final String updateRowCountAndStatusToRunningSqlStatement;
+  private final String updateItemCountAndStatusToRunningSqlStatement;
 
   /**
    * Sql to insert the mailing job rows
    * from a mailing job
    */
-  private final String mailingRowsSqlInsertion;
+  private final String mailingItemsSqlInsertion;
   private final JdbcTable mailingTable;
 
   public MailingProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
@@ -78,8 +78,8 @@ public class MailingProvider {
       .addMixIn(ListObject.class, ListItemMixinWithoutRealm.class)
       .build();
 
-    this.updateRowCountAndStatusToRunningSqlStatement = postgresClient.getSqlStatement("mailing/mailing-update-count-row-and-state.sql");
-    this.mailingRowsSqlInsertion = postgresClient.getSqlStatement("mailing/mailing-row-insertion.sql");
+    this.updateItemCountAndStatusToRunningSqlStatement = postgresClient.getSqlStatement("mailing/mailing-update-item-count-and-state.sql");
+    this.mailingItemsSqlInsertion = postgresClient.getSqlStatement("mailing/mailing-item-insertion.sql");
 
 
     this.apiApp.getHttpServer().getServer().getJacksonMapperManager()
@@ -532,7 +532,7 @@ public class MailingProvider {
          * Create the rows
          */
         return connection
-          .preparedQuery(this.mailingRowsSqlInsertion)
+          .preparedQuery(this.mailingItemsSqlInsertion)
           .execute(Tuple.of(
             ListUserStatus.OK.getValue(),
             mailing.getEmailRecipientList().getRealm().getLocalId(),
@@ -545,7 +545,7 @@ public class MailingProvider {
              */
             MailingStatus processingState = MailingStatus.PROCESSING;
             return connection
-              .preparedQuery(this.updateRowCountAndStatusToRunningSqlStatement)
+              .preparedQuery(this.updateItemCountAndStatusToRunningSqlStatement)
               .execute(Tuple.of(
                 processingState.getCode(),
                 mailing.getRealm().getLocalId(),
