@@ -68,7 +68,7 @@ public class MailingItemProvider {
 
   public Future<List<MailingItem>> getItemsForGraphQL(Mailing mailing, JdbcPagination pagination) {
     JdbcTable userTable = this.apiApp.getUserProvider().getUserTable();
-    return JdbcPagedSelect.from(mailingRowTable)
+    return JdbcPaginatedSelect.from(mailingRowTable)
       .addEqualityPredicate(mailingRowTable, MailingItemCols.REALM_ID, mailing.getRealm().getLocalId())
       .addEqualityPredicate(mailingRowTable, MailingItemCols.MAILING_ID, mailing.getLocalId())
       .setSearchColumn(userTable, UserCols.EMAIL_ADDRESS)

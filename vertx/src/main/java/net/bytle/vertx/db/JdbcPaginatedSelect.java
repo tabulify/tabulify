@@ -11,12 +11,12 @@ import java.util.*;
 /**
  * A utility to create paged query
  */
-public class JdbcPagedSelect extends JdbcQuery {
+public class JdbcPaginatedSelect extends JdbcQuery {
 
 
   List<JdbcSingleOperatorPredicate> predicateColValues = new ArrayList<>();
-  private Long limit = null;
-  private Set<JdbcTable> innerJoinTables = new HashSet<>();
+
+  private final Set<JdbcTable> innerJoinTables = new HashSet<>();
   private JdbcTable searchTable;
   private JdbcTableColumn searchColumn;
   private JdbcTableColumn orderedByColumn;
@@ -26,25 +26,20 @@ public class JdbcPagedSelect extends JdbcQuery {
   /**
    * By table, the column and their alias
    */
-  private Map<JdbcTable, Map<JdbcTableColumn, String>> selectedColumns = new HashMap<>();
+  private final Map<JdbcTable, Map<JdbcTableColumn, String>> selectedColumns = new HashMap<>();
 
-  private JdbcPagedSelect(JdbcTable jdbcTable) {
+  private JdbcPaginatedSelect(JdbcTable jdbcTable) {
     super(jdbcTable);
   }
 
-  static public JdbcPagedSelect from(JdbcTable jdbcTable) {
-    return new JdbcPagedSelect(jdbcTable);
+  static public JdbcPaginatedSelect from(JdbcTable jdbcTable) {
+    return new JdbcPaginatedSelect(jdbcTable);
   }
 
 
-  public JdbcPagedSelect addPredicate(JdbcSingleOperatorPredicate predicate) {
-    this.predicateColValues.add(predicate);
-    return this;
-  }
-
-  public JdbcPagedSelect addEqualityPredicate(JdbcTable userTable, JdbcTableColumn cols, Object value) {
+  public JdbcPaginatedSelect addEqualityPredicate(JdbcTable userTable, JdbcTableColumn cols, Object value) {
     this.predicateColValues.add(JdbcSingleOperatorPredicate.builder()
-      .setColumn(cols, value)
+      .setColumn(userTable, cols, value)
       .build());
     return this;
   }
@@ -57,19 +52,20 @@ public class JdbcPagedSelect extends JdbcQuery {
     }
     JdbcTable joinedTable = this.innerJoinTables.iterator().next();
 
-    List<Object> tuples = new ArrayList<>();
 
     /**
      * The SQL block with the row_number and the data
      * (It will be enclosed by the pagination filtering)
      */
     StringBuilder sqlDataBlock = new StringBuilder();
+    String orderByColumnAlias = "rowNumber";
+    String orderBySql = "ORDER BY " + this.orderedByTable.getName() + "." + this.orderedByColumn.getColumnName() + " " + this.orderBySort;
     /**
      * The select
      */
     sqlDataBlock
       .append("select ")
-      .append(String.join(", ", getSelectColumnsSqlExpressions()))
+      .append(String.join(", ", getSelectColumnsSqlExpressions(orderBySql, orderByColumnAlias)))
       .append(" from ")
       .append(this.getJdbcTable().getFullName()).append(" ").append(this.getJdbcTable().getName())
       .append(" inner join ").append(joinedTable.getFullName()).append(" ").append(joinedTable.getName());
@@ -90,47 +86,55 @@ public class JdbcPagedSelect extends JdbcQuery {
       .append(String.join(" and ", onSqlColumnPredicate))
       .append(" where ");
 
-
+    List<Object> bindingValues = new ArrayList<>();
     List<String> predicateStatements = new ArrayList<>();
     for (JdbcSingleOperatorPredicate predicate : predicateColValues) {
-
-      tuples.add(predicate.getValue());
-      StringBuilder predicateBuilder = new StringBuilder();
-      if (predicate.getOrNull()) {
-        predicateBuilder.append("(");
-      }
-      predicateBuilder
-        .append(predicate.getColumn().getColumnName())
-        .append(" ")
-        .append(predicate.getComparisonOperator().toSql())
-        .append(" $")
-        .append(tuples.size());
-      if (predicate.getOrNull()) {
-        predicateBuilder
-          .append(" or ")
-          .append(predicate.getColumn().getColumnName())
-          .append(" is null)");
-      }
-      predicateStatements.add(predicateBuilder.toString());
+      bindingValues.add(predicate.getValue());
+      predicateStatements.add(predicate.toSql(bindingValues.size()));
     }
-    sqlDataBlock.append(String.join(" and ", predicateStatements));
-
-    if (this.limit != null) {
-      sqlDataBlock.append(" LIMIT ").append(this.limit);
+    String searchTerm = this.pagination.getSearchTerm();
+    if (!searchTerm.isEmpty()) {
+      bindingValues.add("%" + searchTerm + "%");
+      predicateStatements.add(this.searchTable.getName() + "." + this.searchColumn.getColumnName() + " like $" + bindingValues.size());
     }
+    sqlDataBlock
+      .append(String.join(" and ", predicateStatements));
 
-    String insertSqlString = sqlDataBlock.toString();
+    String sqlDataBlockString = sqlDataBlock.toString();
+
+    /**
+     * Pagination block
+     */
+    StringBuilder finalSqlQuery = new StringBuilder();
+    finalSqlQuery.append("select pagination.* from (")
+      .append(sqlDataBlockString)
+      .append(") pagination where ");
+
+    // Greater than (if 0, then 1)
+    bindingValues.add(pagination.getPageId() * pagination.getPageSize());
+    finalSqlQuery.append(orderByColumnAlias)
+      .append(" >= 1 + $")
+      .append(bindingValues.size());
+
+    // Less than (if 0, then page size)
+    bindingValues.add((pagination.getPageId()+1) * pagination.getPageSize());
+    finalSqlQuery.append(orderByColumnAlias)
+      .append(" < 1 + $")
+      .append(bindingValues.size());
+
+
     return sqlConnection
-      .preparedQuery(insertSqlString)
-      .execute(Tuple.from(tuples))
-      .recover(e -> Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " table select Error. Sql Error " + e.getMessage() + "\nSQl: " + insertSqlString, e)))
+      .preparedQuery(finalSqlQuery.toString())
+      .execute(Tuple.from(bindingValues))
+      .recover(e -> Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " table paginated select Error. Sql Error " + e.getMessage() + "\nSQl: " + finalSqlQuery, e)))
       .compose(rowSet -> Future.succeededFuture(new JdbcRowSet(rowSet)));
   }
 
   @NotNull
-  private List<String> getSelectColumnsSqlExpressions() {
+  private List<String> getSelectColumnsSqlExpressions(String orderBy, String orderByColumnAlias) {
     List<String> selectColumnsSqlExpressions = new ArrayList<>();
-    selectColumnsSqlExpressions.add("ROW_NUMBER() OVER (ORDER BY " + this.orderedByTable.getName() + "." + this.orderedByColumn.getColumnName() + " " + this.orderBySort + ")");
+
+    selectColumnsSqlExpressions.add("ROW_NUMBER() OVER (" + orderBy + ") " + orderByColumnAlias);
     selectColumnsSqlExpressions.add(this.getJdbcTable().getName() + ".* ");
     for (Map.Entry<JdbcTable, Map<JdbcTableColumn, String>> selectTable : this.selectedColumns.entrySet()) {
       for (Map.Entry<JdbcTableColumn, String> selectColumn : selectTable.getValue().entrySet()) {
@@ -141,14 +145,14 @@ public class JdbcPagedSelect extends JdbcQuery {
   }
 
 
-  public JdbcPagedSelect setSearchColumn(JdbcTable searchTable, JdbcTableColumn searchColumn) {
+  public JdbcPaginatedSelect setSearchColumn(JdbcTable searchTable, JdbcTableColumn searchColumn) {
     this.innerJoinTables.add(searchTable);
     this.searchTable = searchTable;
     this.searchColumn = searchColumn;
     return this;
   }
 
-  public JdbcPagedSelect addOrderBy(JdbcTable orderedByTable, JdbcTableColumn orderedByCol, JdbcSort jdbcSort) {
+  public JdbcPaginatedSelect addOrderBy(JdbcTable orderedByTable, JdbcTableColumn orderedByCol, JdbcSort jdbcSort) {
     this.innerJoinTables.add(orderedByTable);
     this.orderedByTable = orderedByTable;
     this.orderedByColumn = orderedByCol;
@@ -157,15 +161,16 @@ public class JdbcPagedSelect extends JdbcQuery {
   }
 
 
-  public JdbcPagedSelect setPagination(JdbcPagination pagination) {
+  public JdbcPaginatedSelect setPagination(JdbcPagination pagination) {
     this.pagination = pagination;
     return this;
   }
 
-  public JdbcPagedSelect addExtraSelectColumn(JdbcTable userTable, JdbcTableColumn column) {
+  public JdbcPaginatedSelect addExtraSelectColumn(JdbcTable userTable, JdbcTableColumn column) {
     this.innerJoinTables.add(userTable);
     Map<JdbcTableColumn, String> tableColumns = this.selectedColumns.computeIfAbsent(userTable, key -> new HashMap<>());
     tableColumns.put(column, column.getColumnName());
     return this;
   }
+
 }
