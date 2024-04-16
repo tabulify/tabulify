@@ -85,11 +85,12 @@ public class Server {
   }
 
   /**
-   * @param name - the name is used as prefix for the server configuration (ie with the http name, the conf key are `http.host, http.port, ...`)
+   * @param  name - the name is used on third services (ie JDBC connection)
+   * @param confPrefix - a prefix for the server configuration (ie with the http name, the conf key are `http.host, http.port, ...`)
    *             as you can create more than one server listening
    */
-  public static builder create(String name, Vertx vertx, ConfigAccessor configAccessor) {
-    return new builder(name, vertx, configAccessor);
+  public static builder create(String name, String confPrefix, Vertx vertx, ConfigAccessor configAccessor) {
+    return new builder(name,confPrefix, vertx, configAccessor);
   }
 
   /**
@@ -106,7 +107,7 @@ public class Server {
 
   @Override
   public String toString() {
-    return builder.name;
+    return builder.confPrefix;
   }
 
   public String getListeningHost() {
@@ -259,16 +260,21 @@ public class Server {
     return this.writeThroughCollection;
   }
 
+  public String getAppName() {
+    return this.builder.applicationName;
+  }
+
 
   public static class builder {
-    private final String name;
+    private final String confPrefix;
     private final Vertx vertx;
     private final ConfigAccessor configAccessor;
+    private final String applicationName;
     private int listeningPort;
     private int publicPort;
     private String listeningHost;
     private Boolean ssl = false;
-    private String postgresPoolName;
+    private String postgresConfPrefix;
     private boolean enableIpGeoLocation = false;
     private boolean addJwt = false;
     private boolean addApiKeyAuth = false;
@@ -283,14 +289,15 @@ public class Server {
     private ServerHealth serverHealth;
     private boolean enableWriteThroughCollection = false;
 
-    public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
-      this.name = name;
+    public builder(String applicationName, String confPrefix, Vertx vertx, ConfigAccessor configAccessor) {
+      this.applicationName = applicationName;
+      this.confPrefix = confPrefix;
       this.vertx = vertx;
       this.configAccessor = configAccessor;
     }
 
     String getListeningHostKey() {
-      return this.name + "." + Server.HOST;
+      return this.confPrefix + "." + Server.HOST;
     }
 
     public builder setFromConfigAccessorWithPort(int portDefault) {
@@ -312,15 +319,15 @@ public class Server {
     }
 
     private String getSslKey() {
-      return this.name + "." + Server.SSL;
+      return this.confPrefix + "." + Server.SSL;
     }
 
     private String getPublicPortKey() {
-      return this.name + "." + Server.PUBLIC_PORT;
+      return this.confPrefix + "." + Server.PUBLIC_PORT;
     }
 
     private String getListeningPortKey() {
-      return this.name + "." + Server.LISTENING_PORT;
+      return this.confPrefix + "." + Server.LISTENING_PORT;
     }
 
     @SuppressWarnings("unused")
@@ -355,9 +362,9 @@ public class Server {
        */
       this.serverHealth = new ServerHealth(server);
 
-      if (this.postgresPoolName != null) {
-        LOGGER.info("Start creation of JDBC Pool (" + this.postgresPoolName + ")");
-        server.pgDatabaseConnectionPool = JdbcPostgres.create(server, this.postgresPoolName);
+      if (this.postgresConfPrefix != null) {
+        LOGGER.info("Start creation of JDBC Pool (" + this.postgresConfPrefix + ")");
+        server.pgDatabaseConnectionPool = JdbcPostgres.create(server, this.postgresConfPrefix, this.applicationName);
       }
       if (this.enableIpGeoLocation) {
         try {
@@ -451,16 +458,16 @@ public class Server {
     }
 
     /**
-     * @param prefixName - the name is used in the configuration as prefix
+     * @param confPrefix - the name is used in the configuration as prefix and application name
      */
-    public builder enablePostgresDatabase(String prefixName) {
-      this.postgresPoolName = prefixName;
+    public builder enablePostgresDatabase(String confPrefix) {
+      this.postgresConfPrefix = confPrefix;
       return this;
     }
 
 
     public Server.builder addIpGeolocation() {
-      if (this.postgresPoolName == null) {
+      if (this.postgresConfPrefix == null) {
         throw new InternalException("To enable Ip Geolocation, the jdbc pool service should be enabled first");
       }
       this.enableIpGeoLocation = true;

@@ -66,8 +66,4 @@ Future.failedFuture("Timeout")
 
 ## Sql Database Timeout ???
 
-In 4.4.8, I have some connection timeout created by this [line](https://github.com/eclipse-vertx/vertx-sql-client/blob/a2d2f9002a5fce562c8236c3310faad98038bb0d/vertx-sql-client/src/main/java/io/vertx/sqlclient/impl/pool/SqlConnectionPool.java#L219)
-but I have the default setting (30 seconds).
-
-Don't do `pool.query`
-https://github.com/eclipse-vertx/vertx-sql-client/issues/1232
+See [postgres pool](postgres.md)

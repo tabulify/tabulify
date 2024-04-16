@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A wrapper around Vertx JDBC Postgress that handle the
+ * A wrapper around Vertx JDBC Postgres that handle the
  * creation (and the {@link JdbcSchemaManager}
  * <p>
  * <p>
@@ -28,11 +28,11 @@ public class JdbcPostgres extends JdbcClient {
   private final JdbcConnectionInfo jdbcConnectionInfo;
   private final Pool pool;
 
-  public JdbcPostgres(Server server, String connectionInfoPrefix) {
+  public JdbcPostgres(Server server, String confPrefix, String appName) {
 
     super(server);
 
-    jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(connectionInfoPrefix, server.getConfigAccessor());
+    jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(confPrefix, server.getConfigAccessor());
     pgSchemaManager = JdbcSchemaManager.create(this);
 
     String user = jdbcConnectionInfo.getUser();
@@ -47,6 +47,9 @@ public class JdbcPostgres extends JdbcClient {
     } catch (NullValueException e) {
       // not set, null
     }
+    // application_name and not ApplicationName
+    // as seen in PgConnectOptions default properties
+    connectionProps.put("application_name", appName);
 
 
     String postgresUri = jdbcConnectionInfo.getPostgresUri();
@@ -69,11 +72,12 @@ public class JdbcPostgres extends JdbcClient {
       .using(server.getVertx())
       .build();
 
+
   }
 
-  public static JdbcClient create(Server vertx, String jdbcConnectionInfo) {
+  public static JdbcClient create(Server vertx, String confPrefix, String appName) {
 
-    return new JdbcPostgres(vertx, jdbcConnectionInfo);
+    return new JdbcPostgres(vertx, confPrefix, appName);
 
   }
 

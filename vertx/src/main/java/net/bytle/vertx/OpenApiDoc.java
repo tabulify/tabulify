@@ -22,7 +22,7 @@ public class OpenApiDoc {
     TowerApp towerApp = this.openApiService.getOpenApiInstance().getApp();
     tempLocalPath = towerApp.getPathMount();
     if (tempLocalPath.isEmpty()) {
-      tempLocalPath = "/" + towerApp.getAppName().toLowerCase();
+      tempLocalPath = "/" + towerApp.getAppHandle().toLowerCase();
     }
     String rootPath = tempLocalPath;
 

@@ -19,7 +19,7 @@ public class IpApp extends TowerApp {
 
 
   @Override
-  public String getAppName() {
+  public String getAppHandle() {
     return "ip";
   }
 

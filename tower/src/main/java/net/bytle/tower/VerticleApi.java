@@ -47,7 +47,7 @@ public class VerticleApi extends AbstractVerticle {
             /**
              * Create the server
              */
-            Server server = Server.create("http", vertx, configAccessor)
+            Server server = Server.create("Eraldy Api Server", "http", vertx, configAccessor)
               .setFromConfigAccessorWithPort(PORT_DEFAULT)
               .enableApiKeyAuth()
               .enableJwt()
@@ -81,7 +81,7 @@ public class VerticleApi extends AbstractVerticle {
               .createForHttpServer(httpServer)
               .mountListenAndStart()
               .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
-              .onSuccess(app-> apiApp = (EraldyApiApp) app);
+              .onSuccess(app -> apiApp = (EraldyApiApp) app);
 
           })
           /**

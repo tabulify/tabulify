@@ -63,7 +63,7 @@ public abstract class TowerApp {
    * used in path as identifiant (other than java)
    * <p>
    */
-  public abstract String getAppName();
+  public abstract String getAppHandle();
 
 
   /**
@@ -147,7 +147,7 @@ public abstract class TowerApp {
    * @return the template
    */
   public Template getTemplate(String templateName) {
-    String templateResourcesPath = getApexDomain().getFileSystemPathName() + "/" + this.getAppName() + "/" + templateName;
+    String templateResourcesPath = getApexDomain().getFileSystemPathName() + "/" + this.getAppHandle() + "/" + templateName;
     return TemplateEngine.getLocalHtmlEngine(this.httpServer.getServer().getVertx())
       .compile(templateResourcesPath);
   }
@@ -400,7 +400,7 @@ public abstract class TowerApp {
    * @return the name used in the configuration file
    */
   public String getAppConfName() {
-    return (this.getApexDomain().getFileSystemPathName() + "." + this.getAppName()).toLowerCase();
+    return (this.getApexDomain().getFileSystemPathName() + "." + this.getAppHandle()).toLowerCase();
   }
 
 
@@ -410,7 +410,7 @@ public abstract class TowerApp {
 
   @Override
   public String toString() {
-    return getApexDomain().getFileSystemPathName() + "." + getAppName();
+    return getApexDomain().getFileSystemPathName() + "." + getAppHandle();
   }
 
 
@@ -425,7 +425,7 @@ public abstract class TowerApp {
      * can insert init data)
      */
     return this.httpServer
-      .mountListen(this.getAppName())
+      .mountListen(this.getAppHandle())
       .recover(err -> Future.failedFuture(new Exception("Error on HTTP Server mount for the app (" + this + ")", err)))
       .compose(v -> {
         /**
@@ -440,7 +440,7 @@ public abstract class TowerApp {
       .recover(err -> Future.failedFuture(new Exception("Error on App mount for the app (" + this + ")", err)))
       .compose(v3 -> {
         LOGGER.info("The app (" + this + ") has been successfully mounted");
-        return this.httpServer.start(this.getAppName());
+        return this.httpServer.start(this.getAppHandle());
       })
       .recover(err -> Future.failedFuture(new Exception("Error on App start for the app (" + this + ")", err)))
       .compose(v2 -> {

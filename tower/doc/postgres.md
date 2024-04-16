@@ -4,6 +4,29 @@
 ## About
 We use postgres version `15.1`.
 
+## Pool and timeout
+
+A timeout may come when there is no connection available in the pool
+if the connections are not released or busy.
+
+Connection needs to be:
+  * released (ie closed)
+  * or get with the `pool.withConnection` function
+
+You can check it:
+* on Postgres side with (For Eraldy Api)
+```sql
+select * from pg_stat_activity where application_name like '%raldy%'  and state = 'active'
+```
+* on Vertx with the metrics `vertx_sql_queue_pending` ?
+
+### Timeout Bug
+In 4.4.8, I have some connection timeout created by this [line](https://github.com/eclipse-vertx/vertx-sql-client/blob/a2d2f9002a5fce562c8236c3310faad98038bb0d/vertx-sql-client/src/main/java/io/vertx/sqlclient/impl/pool/SqlConnectionPool.java#L219)
+but I have the default setting (30 seconds).
+
+Don't do `pool.query` ?
+https://github.com/eclipse-vertx/vertx-sql-client/issues/1232
+
 ## Doc
 
   * For database migration, see [scheme](schema-flyway.md)

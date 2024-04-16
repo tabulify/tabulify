@@ -90,8 +90,10 @@ public class EraldyApiApp extends TowerApp {
   private final MailingRowProvider mailingRowProvider;
 
 
+
   public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
     super(httpServer, EraldyDomain.getOrCreate(httpServer));
+
 
     ConfigAccessor configAccessor = httpServer.getServer().getConfigAccessor();
 
@@ -132,7 +134,7 @@ public class EraldyApiApp extends TowerApp {
     Path runtime = Paths.get("data/runtime");
     if (JavaEnvs.IS_DEV) {
       // put it in the build
-      runtime = Paths.get("build/" + this.getAppName().toLowerCase() + "/data/runtime");
+      runtime = Paths.get("build/" + this.getAppHandle().toLowerCase() + "/data/runtime");
     }
     this.runtimeDataDirectory = configAccessor.getPath(RUNTIME_DATA_DIR_CONF, runtime);
     Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
@@ -226,7 +228,7 @@ public class EraldyApiApp extends TowerApp {
 
 
   @Override
-  public String getAppName() {
+  public String getAppHandle() {
     return "Api";
   }
 
