@@ -54,6 +54,19 @@ type Status {
 }
 
 """
+Pagination parameters
+"""
+input Pagination {
+  """The Id of the page requested"""
+  pageId: Int
+  """The size of the pages"""
+  pageSize: Int
+  """A search term to filter on"""
+  searchTerm: String
+}
+
+
+"""
 A mailing
 """
 type Mailing {
@@ -80,15 +93,41 @@ type Mailing {
   """The last execution time"""
   jobLastExecutionTime: String @dateFormat
   """The number of email in the mailing to send"""
-  countRow: Int
-  """The number of email successfully send (ie Successful transaction)"""
-  countRowSuccess: Int
-  """The number of execution by row (ie SMTP transaction)"""
-  countRowExecution: Int
+  itemCount: Int
+  """The number of email successfully delivered / send (ie Successful SMTP transaction)"""
+  itemSuccessCount: Int
+  """The number of execution by item (ie number of SMTP transaction executed)"""
+  itemExecutionCount: Int
+  """The items"""
+  items(pagination: Pagination): [MailingItem]
   """The creation time"""
   creationTime: String @dateFormat
   """The modification time"""
   modificationTime: String @dateFormat
+
+}
+
+
+"""
+A mailing order line
+"""
+type MailingItem {
+  """The Guid of the mailing line"""
+  guid: ID!
+  """The mailing"""
+  mailing: Mailing!
+  """The user"""
+  user: User!
+  """The Status"""
+  status: Status!
+  """The Status message"""
+  statusMessage: String
+  """The Start time"""
+  creationTime: String! @dateFormat
+  """The End time"""
+  modificationTime: String @dateFormat
+  """The number of failure"""
+  failureCount: Int!
 }
 
 """
@@ -108,11 +147,11 @@ type MailingJob {
   """The End time"""
   endTime: String @dateFormat
   """The number of row to execute"""
-  countRowToExecute: Int!
+  rowToExecuteCount: Int!
   """The number of email successfully send (ie Successful SMTP transaction)"""
-  countRowSuccess: Int
+  rowSuccessCount: Int
   """The number of executed row (ie SMTP transaction)"""
-  countRowExecution: Int
+  rowExecutionCount: Int
 }
 
 
@@ -216,6 +255,23 @@ input MailingInputTestEmail {
   recipientEmailAddress: String!
 }
 
+# Source GitHub: https://docs.github.com/en/graphql/overview/rate-limits-and-node-limits-for-the-graphql-api
+"""Represents the client's rate limit"""
+type RateLimit {
+
+  """The maximum number of points the client is permitted to consume in a the window."""
+  limit: Int!
+
+  """The number of points remaining in the current rate limit window."""
+  remaining: Int!
+
+  """The time at which the current rate limit window resets in UTC epoch seconds."""
+  resetAt: String! @dateFormat
+
+  """ The number of points used in the current rate limit window."""
+  used: Int!
+
+}
 
 type Query {
   """A mailing"""

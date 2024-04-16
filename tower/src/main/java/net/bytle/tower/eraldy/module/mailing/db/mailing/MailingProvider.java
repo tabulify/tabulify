@@ -278,9 +278,9 @@ public class MailingProvider {
     mailing.setStatus(status);
     mailing.setJobLastExecutionTime(row.getLocalDateTime(MailingCols.LAST_EXECUTION_TIME));
     mailing.setJobNextExecutionTime(row.getLocalDateTime(MailingCols.NEXT_EXECUTION_TIME));
-    mailing.setRowCount(row.getLong(MailingCols.ROW_COUNT));
-    mailing.setRowSuccessCount(row.getLong(MailingCols.ROW_SUCCESS_COUNT));
-    mailing.setRowExecutionCount(row.getLong(MailingCols.ROW_EXECUTION_COUNT));
+    mailing.setRowCount(row.getLong(MailingCols.ITEM_COUNT));
+    mailing.setRowSuccessCount(row.getLong(MailingCols.ITEM_SUCCESS_COUNT));
+    mailing.setRowExecutionCount(row.getLong(MailingCols.ITEM_EXECUTION_COUNT));
 
     return mailing;
 
@@ -558,7 +558,7 @@ public class MailingProvider {
               ))
               .compose(
                 rowSet -> {
-                  Long countRow = rowSet.iterator().next().getLong(MailingCols.ROW_COUNT.getColumnName());
+                  Long countRow = rowSet.iterator().next().getLong(MailingCols.ITEM_COUNT.getColumnName());
                   mailing.setRowCount(countRow);
                   mailing.setStatus(processingState);
                   return Future.succeededFuture();

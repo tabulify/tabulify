@@ -105,6 +105,20 @@ as pgsql is a static language and that the `record` data type does
 not allow an access by array name.
 See [identifier](identifier.md) for more information
 
+### Item: List object naming (row, line, item, object, node)
+
+For the element of a list, we may use the following term:
+  * row,
+  * line,
+  * item,
+  * object
+  * node
+  * entity
+
+In general, we go with the delivery term: ie `item`
+
+An order have `line of items` in a sales order.
+
 ### Count column naming
 
 Count column are natural column. We use therefore
@@ -113,19 +127,28 @@ Count column are natural column. We use therefore
 ### Renaming
 
 When renaming, you should:
-* create the ALTER statement in the flyway migration script
-* change the correspondent `JdbcTableCols` enum.
+* in the backend
+  * create the ALTER statement in the flyway migration script
+  * change the correspondent `JdbcTableCols` enum.
+  * change the corresponding `sql file`
+  * change the Pojo
+  * change the GraphQL API
+* on the frontend
+  * change the typescript type
+  * change the GraphQL query
+
+This is not an easy task.
 
 We use a mix of:
 * typed SQL with the `JdbcQuery` and `JdbcTableCols` for simple/single query
 * and of dynamic SQL with `Sql file` for more complicated stuff
 
-A column may therefore not be renamed in `SQL file`
+Because of the dynamic side, a column rename is a big endeavor, and we may forget a step (ie renamed in `SQL file` for instance)
 
 If you don't feel safe:
   * don't
-  * or you may create a view with an alias for the `data analytics guys`.
-  * or you may create new column?
+  * or create a new column with deprecation
+  * or create a view with an alias for the `data analytics guys`.
 
 ### Don't use SQL Upsert
 

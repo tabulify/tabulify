@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.module.mailing.db.mailingrow;
+package net.bytle.tower.eraldy.module.mailing.db.mailingitem;
 
 import io.vertx.core.Future;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
@@ -7,15 +7,15 @@ import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
 import net.bytle.tower.eraldy.module.mailing.model.MailingRowStatus;
 import net.bytle.vertx.db.*;
 
-public class MailingRowProvider {
+public class MailingItemProvider {
 
   private final EraldyApiApp apiApp;
     private final JdbcTable mailingRowTable;
 
 
-  public MailingRowProvider(EraldyApiApp eraldyApiApp, JdbcSchema jdbcSchema) {
+  public MailingItemProvider(EraldyApiApp eraldyApiApp, JdbcSchema jdbcSchema) {
     this.apiApp = eraldyApiApp;
-    this.mailingRowTable = JdbcTable.build(jdbcSchema, "realm_mailing_row")
+    this.mailingRowTable = JdbcTable.build(jdbcSchema, "realm_mailing_item")
       .build();
   }
 
@@ -31,7 +31,7 @@ public class MailingRowProvider {
       .addPredicate(
         JdbcSingleOperatorPredicate
           .builder()
-          .setColumn(MailingRowCols.COUNT_FAILURE, this.apiApp.getMailingFlow().getMaxCountFailureOnRow())
+          .setColumn(MailingItemCols.COUNT_FAILURE, this.apiApp.getMailingFlow().getMaxCountFailureOnRow())
           .setOperator(JdbcComparisonOperator.LESS_THAN)
           .setOrNull(true)
           .build()
@@ -39,13 +39,13 @@ public class MailingRowProvider {
       .addPredicate(
         JdbcSingleOperatorPredicate
           .builder()
-          .setColumn(MailingRowCols.STATUS_CODE, MailingRowStatus.OK.getCode())
+          .setColumn(MailingItemCols.STATUS_CODE, MailingRowStatus.OK.getCode())
           .setOperator(JdbcComparisonOperator.NOT_EQUAL)
           .setOrNull(true)
           .build()
       )
-      .addEqualityPredicate(MailingRowCols.REALM_ID, mailing.getEmailRecipientList().getRealm().getLocalId())
-      .addEqualityPredicate(MailingRowCols.MAILING_ID, mailing.getLocalId())
+      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getEmailRecipientList().getRealm().getLocalId())
+      .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getLocalId())
       .addLimit(mailingJob.getCountRowToExecute());
 
     return jdbcSelect.execute();

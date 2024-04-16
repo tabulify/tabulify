@@ -6,9 +6,9 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import java.time.LocalDateTime;
 
 /**
- * A mailing row
+ * A mailing item to deliver
  */
-public class MailingRow {
+public class MailingItem {
 
 
   private String guid;
@@ -18,11 +18,11 @@ public class MailingRow {
   private User user;
 
   private LocalDateTime creationTime;
-  private Long countFailure;
+  private Long failureCount;
   private LocalDateTime modificationTime;
   private String statusMessage;
 
-  public MailingRow() {
+  public MailingItem() {
   }
 
 
@@ -61,12 +61,12 @@ public class MailingRow {
   }
 
   @JsonProperty("countFailure")
-  public Long getCountFailure() {
-    return countFailure;
+  public Long getFailureCount() {
+    return failureCount;
   }
 
-  public void setCountFailure(Long rowCountToExecute) {
-    this.countFailure = rowCountToExecute;
+  public void setFailureCount(Long rowCountToExecute) {
+    this.failureCount = rowCountToExecute;
   }
 
   public void setModificationTime(LocalDateTime modificationTime) {

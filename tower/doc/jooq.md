@@ -1,8 +1,8 @@
-# Jooq
+# Jooq (Static SQL Type)
 
 ## About
-We tried to used it to generate table class and SQL
-but the Vertx Postgres SQL uses `$1` for binding and it's a little bit complicated.
+We tried to use it to generate table class and SQL
+but the Vertx Postgres SQL uses `$1` for binding, and it's a little bit complicated.
 
 
 Furthermore, you need to add it in the build process:
@@ -10,13 +10,20 @@ Furthermore, you need to add it in the build process:
 * then read the schema and generate each time
 We added on it then on schema change via Java code.
 
-The generation time is not short.
+* The generation time is not short.
+* The idea can help us parse our query and detect errors early.
 
-We just create our own table and sql generation.
+For these reasons, we just create our own table and sql generation.
 
 ie
+server:
 * update flyway script
 * update our table abstraction
+* update the Pojo
+* update GraphQL
+frontend:
+* update Javascript Type
+* update the GraphQL Query
 
 ## Archive
 

@@ -15,8 +15,8 @@ import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailing.MailingProvider;
+import net.bytle.tower.eraldy.module.mailing.db.mailingitem.MailingItemProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingjob.MailingJobProvider;
-import net.bytle.tower.eraldy.module.mailing.db.mailingrow.MailingRowProvider;
 import net.bytle.tower.eraldy.module.mailing.flow.MailingFlow;
 import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
@@ -87,7 +87,7 @@ public class EraldyApiApp extends TowerApp {
   private final MailingProvider mailingProvider;
   private final FileProvider fileProvider;
   private final MailingJobProvider mailingJobProvider;
-  private final MailingRowProvider mailingRowProvider;
+  private final MailingItemProvider mailingRowProvider;
 
 
 
@@ -166,7 +166,7 @@ public class EraldyApiApp extends TowerApp {
     this.realmSequenceProvider = new RealmSequenceProvider();
     this.mailingProvider = new MailingProvider(this, realmSchema);
     this.mailingJobProvider = new MailingJobProvider(this, jobsSchema);
-    this.mailingRowProvider = new MailingRowProvider(this, jobsSchema);
+    this.mailingRowProvider = new MailingItemProvider(this, jobsSchema);
     this.fileProvider = new FileProvider(this);
 
     /**
@@ -496,7 +496,7 @@ public class EraldyApiApp extends TowerApp {
     return this.mailingJobProvider;
   }
 
-  public MailingRowProvider getMailingRowProvider() {
+  public MailingItemProvider getMailingRowProvider() {
     return this.mailingRowProvider;
   }
 }

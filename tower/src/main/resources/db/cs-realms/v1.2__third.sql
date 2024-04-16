@@ -122,9 +122,9 @@ create table IF NOT EXISTS realm_mailing
   MAILING_STATUS                  INT                         NOT NULL,
   MAILING_JOB_LAST_EXECUTION_TIME TIMESTAMP WITHOUT TIME ZONE NULL,
   MAILING_JOB_NEXT_EXECUTION_TIME TIMESTAMP WITHOUT TIME ZONE NULL,
-  MAILING_ROW_COUNT               BIGINT                      NULL,
-  MAILING_ROW_SUCCESS_COUNT       BIGINT                      NULL,
-  MAILING_ROW_EXECUTION_COUNT     BIGINT                      NULL,
+  MAILING_ITEM_COUNT               BIGINT                      NULL,
+  MAILING_ITEM_SUCCESS_COUNT       BIGINT                      NULL,
+  MAILING_ITEM_EXECUTION_COUNT     BIGINT                      NULL,
   MAILING_CREATION_TIME           TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   MAILING_MODIFICATION_TIME       TIMESTAMP WITHOUT TIME ZONE NULL
 );
@@ -150,9 +150,9 @@ comment on column realm_mailing.MAILING_EMAIL_AUTHOR_USER_ID is 'The author of t
 comment on column realm_mailing.MAILING_STATUS is 'The status (draft, send, scheduled, ...)';
 comment on column realm_mailing.mailing_job_last_execution_time is 'The last time a job was executed for this mailing';
 comment on column realm_mailing.mailing_job_next_execution_time is 'The next time that a job will execute for this mailing';
-comment on column realm_mailing.mailing_row_count is 'The number of emails (ie users/email/row) for this mailing to send';
-comment on column realm_mailing.mailing_row_success_count is 'The number of email send successfully (ie successful smtp transaction)';
-comment on column realm_mailing.mailing_row_execution_count is 'The number of smtp transfer execution (successful or not)';
+comment on column realm_mailing.mailing_item_count is 'The number of emails (ie users/email/row) for this mailing to send';
+comment on column realm_mailing.mailing_item_success_count is 'The number of email send successfully (ie successful smtp transaction)';
+comment on column realm_mailing.mailing_item_execution_count is 'The number of smtp transfer execution (successful or not)';
 comment on column realm_mailing.mailing_email_language is 'The language of the email (used in assistive technology)';
 
 -- email as email address
