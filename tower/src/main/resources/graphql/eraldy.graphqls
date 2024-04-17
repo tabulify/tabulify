@@ -107,6 +107,16 @@ type Mailing {
 
 }
 
+type ListUser {
+  """The Guid of the mailing line"""
+  guid: ID!
+  """The user"""
+  user: User!
+  """The list"""
+  list: List!
+  """The status"""
+  status: Status!
+}
 
 """
 A mailing order line
@@ -117,7 +127,7 @@ type MailingItem {
   """The mailing"""
   mailing: Mailing!
   """The user"""
-  user: User!
+  listUser: ListUser!
   """The Status"""
   status: Status!
   """The Status message"""

@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  * The props to create or update a list user
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListUserProps {
+public class ListUserInputProps {
 
 
   protected ListUserStatus status;
@@ -36,7 +36,7 @@ public class ListUserProps {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public ListUserProps() {
+  public ListUserInputProps() {
   }
 
 

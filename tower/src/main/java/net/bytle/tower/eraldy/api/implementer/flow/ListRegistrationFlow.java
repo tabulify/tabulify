@@ -16,7 +16,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.ListRegistrationEmailCallback;
 import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.tower.eraldy.graphql.pojo.input.ListUserProps;
+import net.bytle.tower.eraldy.graphql.pojo.input.ListUserInputProps;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
@@ -83,21 +83,21 @@ public class ListRegistrationFlow extends WebFlowAbs {
       .getListByGuidObject(listGuid)
       .recover(err -> Future.failedFuture(new InternalException(err)))
       .compose(list -> {
-        ListUserProps listUserProps = new ListUserProps();
-        listUserProps.setInOptInTime(optInTime);
-        listUserProps.setInOptInConfirmationTime(DateTimeService.getNowInUtc());
-        listUserProps.setInOptInIp(optInIp);
+        ListUserInputProps listUserInputProps = new ListUserInputProps();
+        listUserInputProps.setInOptInTime(optInTime);
+        listUserInputProps.setInOptInConfirmationTime(DateTimeService.getNowInUtc());
+        listUserInputProps.setInOptInIp(optInIp);
         try {
           String realRemoteClient = HttpRequestUtil.getRealRemoteClientIp(ctx.request());
-          listUserProps.setInOptInConfirmationIp(realRemoteClient);
+          listUserInputProps.setInOptInConfirmationIp(realRemoteClient);
         } catch (NotFoundException e) {
           LOGGER.warn("List registration validation: The remote ip client could not be found. Error: " + e.getMessage());
         }
-        listUserProps.setInListUserSource(listUserSource);
+        listUserInputProps.setInListUserSource(listUserSource);
         return this
           .getApp()
           .getListUserProvider()
-          .insertListUser(user, list,listUserProps)
+          .insertListUser(user, list, listUserInputProps)
           .recover(err -> Future.failedFuture(new InternalException(err)))
           .compose(Future::succeededFuture);
       });

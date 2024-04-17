@@ -1,11 +1,12 @@
 package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import net.bytle.tower.eraldy.model.manual.Status;
 
 /**
 * The status of the user on the list
 */
-public enum ListUserStatus {
+public enum ListUserStatus implements Status {
 
   OK(0),
 
@@ -34,6 +35,26 @@ public enum ListUserStatus {
       }
     }
     throw new IllegalArgumentException("Unexpected value '" + value + "'");
+  }
+
+  @Override
+  public Integer getCode() {
+    return value;
+  }
+
+  @Override
+  public Integer getOrder() {
+    return 1;
+  }
+
+  @Override
+  public String getName() {
+    return this.name();
+  }
+
+  @Override
+  public String getDescription() {
+    return this.name();
   }
 
 }

@@ -95,6 +95,13 @@ If the returned data is null and should not, you'll get an error.
 
 At request time, but you don't need to find it in the frontend where undefined / null should not be null.
 
+
+```
+2 GraphQL errors. Errors:
+ - The field at path '/mailing/items[0]/failureCount' was declared as a non null type, but the code involved in retrieving data has wrongly returned a null value.  The graphql specification requires that the parent field be set to null, or if that is non nullable that it bubble up null to its parent and so on. The non-nullable type is 'Int' within parent type 'MailingItem',
+ - The field at path '/mailing/items[1]/failureCount' was declared as a non null type, but the code involved in retrieving data has wrongly returned a null value.  The graphql specification requires that the parent field be set to null, or if that is non nullable that it bubble up null to its parent and so on. The non-nullable type is 'Int' within parent type 'MailingItem' (HttpStatus: 200)
+```
+
 ## Implementation
 
 See GraphQLService.java

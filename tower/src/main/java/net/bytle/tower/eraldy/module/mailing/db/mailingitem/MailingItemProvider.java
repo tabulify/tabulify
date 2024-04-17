@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.model.openapi.ListUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.mailing.model.Mailing;
@@ -14,10 +15,7 @@ import net.bytle.tower.eraldy.objectProvider.UserCols;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.db.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MailingItemProvider {
 
@@ -86,10 +84,9 @@ public class MailingItemProvider {
       .execute(jdbcRowSet -> {
         List<MailingItem> mailingItems = new ArrayList<>();
         for (JdbcRow jdbcRow : jdbcRowSet) {
-          MailingItem mailingItem = this.buildingMailingItemFromRow(jdbcRow);
-          mailingItem.setMailing(mailing);
-          // Add address
-          User user = mailingItem.getUser();
+          MailingItem mailingItem = this.buildingMailingItemFromRow(jdbcRow, mailing);
+          // Add address email for front end
+          User user = mailingItem.getListUser().getUser();
           user.setEmailAddress(jdbcRow.getString(UserCols.EMAIL_ADDRESS));
           mailingItems.add(mailingItem);
         }
@@ -98,7 +95,12 @@ public class MailingItemProvider {
 
   }
 
-  private MailingItem buildingMailingItemFromRow(JdbcRow jdbcRow) {
+  /**
+   *
+   * @param jdbcRow - the row
+   * @param mailing - the mailing is mandatory to build the list user
+   */
+  private MailingItem buildingMailingItemFromRow(JdbcRow jdbcRow, Mailing mailing) {
     MailingItem mailingItem = new MailingItem();
 
     /**
@@ -110,11 +112,13 @@ public class MailingItemProvider {
     /**
      * Mailing
      */
-    Mailing mailing = new Mailing();
-    Long mailingId = jdbcRow.getLong(MailingItemCols.MAILING_ID);
-    mailing.setLocalId(mailingId);
-    mailing.setRealm(realm);
+
+      Long mailingId = jdbcRow.getLong(MailingItemCols.MAILING_ID);
+    if(!Objects.equals(mailingId, mailing.getLocalId())){
+      throw new InternalException("Bad mailing id");
+    }
     mailingItem.setMailing(mailing);
+
 
     /**
      * User
@@ -123,7 +127,15 @@ public class MailingItemProvider {
     user.setLocalId(jdbcRow.getLong(MailingItemCols.USER_ID));
     user.setRealm(realm);
     this.apiApp.getUserProvider().updateGuid(user);
-    mailingItem.setUser(user);
+
+    /**
+     * List User
+     */
+    ListUser listUser = new ListUser();
+    listUser.setList(mailing.getEmailRecipientList());
+    listUser.setUser(user);
+    this.apiApp.getListUserProvider().updateGuid(listUser);
+    mailingItem.setListUser(listUser);
 
     /**
      * Guid
@@ -146,7 +158,7 @@ public class MailingItemProvider {
      * Mailing Job
      */
     Long mailingJobId = jdbcRow.getLong(MailingItemCols.MAILING_JOB_ID);
-    if(mailingJobId!=null) {
+    if (mailingJobId != null) {
       MailingJob mailingJob = new MailingJob();
       mailingJob.setLocalId(mailingJobId);
       mailingJob.setMailing(mailing);
@@ -163,7 +175,7 @@ public class MailingItemProvider {
     /**
      * Processing attribute
      */
-    mailingItem.setFailureCount(jdbcRow.getInteger(MailingItemCols.COUNT_FAILURE));
+    mailingItem.setFailureCount(jdbcRow.getInteger(MailingItemCols.COUNT_FAILURE, 0));
     mailingItem.setEmailDate(jdbcRow.getLocalDateTime(MailingItemCols.EMAIL_DATE));
 
     return mailingItem;
@@ -175,7 +187,7 @@ public class MailingItemProvider {
       GUID_PREFIX,
       mailingItem.getMailing().getRealm().getLocalId(),
       mailingItem.getMailing().getLocalId(),
-      mailingItem.getUser().getLocalId()
+      mailingItem.getListUser().getUser().getLocalId()
     );
     mailingItem.setGuid(guid.toString());
 

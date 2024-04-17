@@ -8,7 +8,7 @@ import net.bytle.dns.DnsIp;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
-import net.bytle.tower.eraldy.graphql.pojo.input.ListUserProps;
+import net.bytle.tower.eraldy.graphql.pojo.input.ListUserInputProps;
 import net.bytle.tower.eraldy.model.openapi.ListUserSource;
 import net.bytle.tower.eraldy.model.openapi.ListUserStatus;
 import net.bytle.tower.eraldy.model.openapi.User;
@@ -170,7 +170,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                     /**
                      * Insert
                      */
-                    ListUserProps listUserInsertionProps = new ListUserProps();
+                    ListUserInputProps listUserInsertionProps = new ListUserInputProps();
                     listUserInsertionProps.setInListUserSource(ListUserSource.IMPORT);
                     listUserInsertionProps.setStatus(ListUserStatus.OK);
                     if (this.optInOrigin == null) {

@@ -1,7 +1,7 @@
 package net.bytle.tower.eraldy.module.mailing.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.model.openapi.ListUser;
 
 import java.time.LocalDateTime;
 
@@ -15,7 +15,6 @@ public class MailingItem {
   private MailingItemStatus status;
 
   private Mailing mailing;
-  private User user;
 
   private LocalDateTime creationTime;
   private Integer failureCount;
@@ -23,6 +22,7 @@ public class MailingItem {
   private String statusMessage;
   private MailingJob mailingJob;
   private LocalDateTime emailDate;
+  private ListUser listUser;
 
   public MailingItem() {
   }
@@ -89,14 +89,6 @@ public class MailingItem {
     return statusMessage;
   }
 
-  public void setUser(User user) {
-    this.user = user;
-  }
-
-  @JsonProperty("user")
-  public User getUser() {
-    return user;
-  }
 
   public void setGuid(String guidString) {
     this.guid = guidString;
@@ -117,5 +109,14 @@ public class MailingItem {
   @JsonProperty("emailDate")
   public LocalDateTime getEmailDate() {
     return emailDate;
+  }
+
+  public void setListUser(ListUser listUser) {
+    this.listUser = listUser;
+  }
+
+  @JsonProperty("listUser")
+  public ListUser getListUser() {
+    return listUser;
   }
 }

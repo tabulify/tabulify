@@ -10,7 +10,7 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.graphql.pojo.input.ListUserProps;
+import net.bytle.tower.eraldy.graphql.pojo.input.ListUserInputProps;
 import net.bytle.tower.eraldy.jackson.JacksonListUserSourceDeserializer;
 import net.bytle.tower.eraldy.jackson.JacksonListUserSourceSerializer;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
@@ -97,7 +97,7 @@ public class ListUserProvider {
 
   }
 
-  private void computeGuidForListUserObject(ListUser listUser) {
+  public void updateGuid(ListUser listUser) {
     if (listUser.getGuid() != null) {
       return;
     }
@@ -111,9 +111,9 @@ public class ListUserProvider {
   }
 
   @SuppressWarnings("unused")
-  private Future<ListUser> updateListUser(ListUser listUser, ListUserProps listUserProps) {
+  private Future<ListUser> updateListUser(ListUser listUser, ListUserInputProps listUserInputProps) {
 
-    ListUserStatus status = listUserProps.getStatus();
+    ListUserStatus status = listUserInputProps.getStatus();
     if(status==null){
       return Future.succeededFuture(listUser);
     }
@@ -153,7 +153,7 @@ public class ListUserProvider {
       .compose(e->Future.succeededFuture(listUser));
   }
 
-  public Future<ListUser> insertListUser(User user, ListObject list, ListUserProps listUserProps) {
+  public Future<ListUser> insertListUser(User user, ListObject list, ListUserInputProps listUserInputProps) {
 
     // on conflict do nothing because the insert can happen twice if the user
     // click on the url twice
@@ -176,7 +176,7 @@ public class ListUserProvider {
       "ON CONFLICT(" + REALM_COLUMN + "," + ID_COLUMN + "," + USER_ID_COLUMN + ") DO NOTHING";
 
 
-    ListUser listUser = getListUser(user, list, listUserProps);
+    ListUser listUser = buildListUserFromUserListAndInput(user, list, listUserInputProps);
 
     return jdbcPool
       .preparedQuery(sql)
@@ -198,24 +198,25 @@ public class ListUserProvider {
 
   }
 
+
   @NotNull
-  private ListUser getListUser(User user, ListObject list, ListUserProps listUserProps) {
+  private ListUser buildListUserFromUserListAndInput(User user, ListObject list, ListUserInputProps listUserInputProps) {
     ListUser listUser = new ListUser();
     listUser.setUser(user);
     listUser.setList(list);
-    listUser.setInSourceId(listUserProps.getInListUserSource());
-    listUser.setInOptInOrigin(listUserProps.getInOptInOrigin());
-    listUser.setInOptInIp(listUserProps.getInOptInIp());
-    listUser.setInOptInTime(listUserProps.getInOptInTime());
-    listUser.setInOptInConfirmationIp(listUserProps.getInOptInConfirmationIp());
-    listUser.setInOptInConfirmationTime(listUserProps.getInOptInConfirmationTime());
+    listUser.setInSourceId(listUserInputProps.getInListUserSource());
+    listUser.setInOptInOrigin(listUserInputProps.getInOptInOrigin());
+    listUser.setInOptInIp(listUserInputProps.getInOptInIp());
+    listUser.setInOptInTime(listUserInputProps.getInOptInTime());
+    listUser.setInOptInConfirmationIp(listUserInputProps.getInOptInConfirmationIp());
+    listUser.setInOptInConfirmationTime(listUserInputProps.getInOptInConfirmationTime());
     listUser.setStatus(ListUserStatus.OK);
-    this.computeGuidForListUserObject(listUser);
+    this.updateGuid(listUser);
     return listUser;
   }
 
 
-  private Future<ListUser> getListUserFromDatabaseRow(Row row) {
+  private Future<ListUser> buildListUserFromDatabaseRow(Row row) {
 
     Long realmId = row.getLong(REALM_COLUMN);
 
@@ -254,7 +255,7 @@ public class ListUserProvider {
             listUser.setInOptInConfirmationIp(row.getString(IN_OPT_IN_CONFIRMATION_IP_COLUMN));
             listUser.setInOptInConfirmationTime(row.getLocalDateTime(IN_OPT_IN_CONFIRMATION_TIME_COLUMN));
 
-            this.computeGuidForListUserObject(listUser);
+            this.updateGuid(listUser);
 
             return Future.succeededFuture(listUser);
           });
@@ -302,7 +303,7 @@ public class ListUserProvider {
         }
 
         Row row = userRows.iterator().next();
-        return getListUserFromDatabaseRow(row);
+        return buildListUserFromDatabaseRow(row);
       });
   }
 
