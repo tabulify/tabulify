@@ -22,7 +22,23 @@ public class EmailAddress {
 
   private final String mailAddress;
   private final DnsName domain;
+  /**
+   * The part before the arobase
+   */
   private final String localPart;
+  /**
+   * The part before any plus in the local part
+   * or the local part if none
+   * <p>
+   * For example,
+   * if the email address is john+shopping@gmail.com,
+   * or john+anythingyouwant@gmail.com
+   * localPartBox is john
+   * <p>
+   * And you can reach john at john@gmail.com
+   */
+  private final String localPartBox;
+
 
   public EmailAddress(String mailAddress) throws EmailCastException {
     this.mailAddress = mailAddress;
@@ -37,6 +53,14 @@ public class EmailAddress {
       throw new EmailCastException("The domain (" + absoluteName + ")is not valid (");
     }
     this.localPart = split[0];
+
+    // LocalPartBox (email without the Alias ie + part)
+    int indexOfPlus = this.localPart.indexOf("+");
+    if (indexOfPlus != -1) {
+      this.localPartBox = this.localPart.substring(0, indexOfPlus);
+    } else {
+      this.localPartBox = this.localPart;
+    }
 
 
     /**
@@ -89,14 +113,18 @@ public class EmailAddress {
   }
 
   /**
-   *
-   * @return the email in lowercase format
+   * @return the email in lowercase format without any specified alias functionality (ie no + in the local part)
    * ChatGpt: In practice, most mail servers and services treat both the local and domain parts of email addresses as case-insensitive.
    * Nonetheless, it's always recommended to follow the standard conventions and use lowercase characters
    * for the entire email address to avoid potential issues or confusion.
    */
   public String toNormalizedString() {
-    return this.mailAddress.toLowerCase();
+
+    String emailWithoutAlias = this.localPartBox + "@" + this.domain.toStringWithoutRoot();
+    return emailWithoutAlias.toLowerCase();
+
   }
+
+
 
 }

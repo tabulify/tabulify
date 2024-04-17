@@ -10,7 +10,9 @@ public enum UserCols implements JdbcTableColumn {
   EMAIL_ADDRESS("user_email_address"),
   CREATION_IME("user_creation_time"),
   MODIFICATION_IME("user_modification_time"),
-  ;
+  DATA("user_data"),
+  STATUS("user_status"),
+  CREATION_TIME("user_creation_time"), PASSWORD("user_password");
 
   private final String columnName;
 

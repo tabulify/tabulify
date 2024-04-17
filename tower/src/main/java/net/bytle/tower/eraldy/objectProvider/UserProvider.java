@@ -4,7 +4,6 @@ package net.bytle.tower.eraldy.objectProvider;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
@@ -28,12 +27,13 @@ import net.bytle.tower.util.PasswordHashManager;
 import net.bytle.tower.util.Postgres;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
-import net.bytle.vertx.*;
+import net.bytle.vertx.DateTimeService;
+import net.bytle.vertx.Server;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.analytics.event.SignUpEvent;
 import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.db.JdbcSchema;
-import net.bytle.vertx.db.JdbcSchemaManager;
-import net.bytle.vertx.db.JdbcTable;
+import net.bytle.vertx.db.*;
 import net.bytle.vertx.flow.FlowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +60,6 @@ public class UserProvider {
 
 
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
-  private static final String STATUS_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "status";
   private static final String DATA = "data";
 
   public static final String DATA_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + DATA;
@@ -98,7 +97,7 @@ public class UserProvider {
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .build();
 
-    this.FULL_QUALIFIED_USER_TABLE_NAME = jdbcSchema.getSchemaName()+"."+REALM_USER_TABLE_NAME;
+    this.FULL_QUALIFIED_USER_TABLE_NAME = jdbcSchema.getSchemaName() + "." + REALM_USER_TABLE_NAME;
 
     this.userTable = JdbcTable.build(jdbcSchema, REALM_USER_TABLE_NAME)
       .addPrimaryKeyColumn(UserCols.ID)
@@ -199,19 +198,14 @@ public class UserProvider {
   private Future<Boolean> exists(User user) {
     String sql;
     Future<RowSet<Row>> futureResponse;
+    JdbcSelect select = JdbcSelect.from(this.userTable)
+      .addEqualityPredicate(UserCols.REALM_ID, user.getRealm().getLocalId());
     if (user.getLocalId() != null) {
 
-      sql = "select " + ID_COLUMN +
-        " from " + FULL_QUALIFIED_USER_TABLE_NAME +
-        " where " +
-        ID_COLUMN + " = $1 " +
-        "AND " + REALM_COLUMN + " = $2 ";
-      futureResponse = jdbcPool
-        .preparedQuery(sql)
-        .execute(Tuple.of(
-          user.getLocalId(),
-          user.getRealm().getLocalId()
-        ));
+      select
+        .addEqualityPredicate(UserCols.ID, user.getLocalId());
+
+
     } else {
       String email = user.getEmailAddress();
       if (email == null) {
@@ -219,21 +213,18 @@ public class UserProvider {
         InternalException internalException = new InternalException(failureMessage);
         return Future.failedFuture(internalException);
       }
-      sql = "select " + ID_COLUMN +
-        " from " + FULL_QUALIFIED_USER_TABLE_NAME +
-        " where " +
-        EMAIL_ADDRESS_COLUMN + " = $1 " +
-        "AND " + REALM_COLUMN + " = $2 ";
-      futureResponse = jdbcPool
-        .preparedQuery(sql)
-        .execute(Tuple.of(
-          email,
-          user.getRealm().getLocalId()
-        ));
+      EmailAddress emailAddress;
+      try {
+        emailAddress = EmailAddress.of(email);
+      } catch (EmailCastException e) {
+        throw new RuntimeException(e);
+      }
+      select
+        .addEqualityPredicate(UserCols.EMAIL_ADDRESS, emailAddress.toNormalizedString());
+
     }
-    return futureResponse
-      .onFailure(t -> LOGGER.error("userProvider: exist: Error while executing the following sql:\n" + sql, t))
-      .compose(rows -> {
+    return select
+      .execute(rows -> {
         if (rows.size() == 1) {
           return Future.succeededFuture(true);
         } else {
@@ -336,101 +327,68 @@ public class UserProvider {
    * @return the realm
    */
   public Future<List<User>> getUsers(Realm realm, Long pageId, Long pageSize, String searchTerm) {
-    String searchTermFiltering = "";
-    Tuple parametersTuples = Tuple.of(realm.getLocalId(), pageSize, pageId, pageSize, pageId + 1);
-    if (searchTerm != null && !searchTerm.trim().isEmpty()) {
-      searchTermFiltering = " AND " + EMAIL_ADDRESS_COLUMN + " like $6";
-      parametersTuples.addString("%" + searchTerm + "%");
-    }
-    String sql = "select *" +
-      " from (" +
-      "   SELECT " +
-      "      ROW_NUMBER() OVER (ORDER BY user_creation_time DESC) AS rn," +
-      "      *" +
-      "   FROM " + FULL_QUALIFIED_USER_TABLE_NAME +
-      "   where " + REALM_COLUMN + " = $1" +
-      searchTermFiltering +
-      "  ) as userNumbered" +
-      " where rn >= 1 + $2::BIGINT * $3::BIGINT" +
-      "  and rn < $4::BIGINT * $5::BIGINT + 1";
-    return jdbcPool.preparedQuery(sql)
-      .execute(parametersTuples)
-      .compose(userRows -> {
 
-          List<Future<?>> futureUsers = new ArrayList<>();
-          for (Row row : userRows) {
-            Future<User> user = getUserFromRow(row, User.class, realm);
-            futureUsers.add(user);
+    JdbcPagination jdbcPagination = new JdbcPagination();
+    jdbcPagination.setPageId(pageId);
+    jdbcPagination.setPageSize(pageSize);
+    jdbcPagination.setSearchTerm(searchTerm);
+    return JdbcPaginatedSelect.from(this.userTable)
+      .addEqualityPredicate(UserCols.REALM_ID, realm.getLocalId())
+      .setSearchColumn(UserCols.EMAIL_ADDRESS)
+      .setPagination(jdbcPagination)
+      .addOrderBy(UserCols.CREATION_IME)
+      .execute(userRows -> {
+
+          List<User> users = new ArrayList<>();
+          for (JdbcRow row : userRows) {
+            User user = getUserFromRow(row, User.class, realm);
+            users.add(user);
           }
-          /**
-           * https://vertx.io/docs/vertx-core/java/#_future_coordination
-           * https://stackoverflow.com/questions/71936229/vertx-compositefuture-on-completion-of-all-futures
-           */
-          return Future
-            .all(futureUsers)
-            .map(CompositeFuture::<User>list);
 
-        },
-        err -> Future.failedFuture(new InternalException("Error while retrieving the users: " + err.getMessage() + ". Sql:\n" + sql, err))
+          return Future.succeededFuture(users);
+        }
       );
   }
 
   /**
    * @param row        - the resulting row
    * @param userClass  - the user class to return
-   * @param knownRealm - the realm that was part of the query or null if unknown
+   * @param realm - the realm
    */
-  <T extends User> Future<T> getUserFromRow(Row row, Class<T> userClass, Realm knownRealm) {
+  <T extends User> T getUserFromRow(JdbcRow row, Class<T> userClass, Realm realm) {
 
+    JsonObject jsonAppData = Postgres.getFromJsonB(row, UserCols.DATA);
+    T user = Json.decodeValue(jsonAppData.toBuffer(), userClass);
 
-    Long userRealmId = row.getLong(REALM_COLUMN);
-    Long id = row.getLong(ID_COLUMN);
+    Long userRealmId = row.getLong(UserCols.REALM_ID);
+    if (!realm.getLocalId().equals(userRealmId)) {
+      throw new InternalException("User Realm Id and passed realm are not the same");
+    }
+    user.setRealm(realm);
+    user.setLocalId(row.getLong(UserCols.ID));
+    this.updateGuid(user);
+
 
     /**
      * OrganizationUser realm check
      */
     try {
-      this.apiApp.getOrganizationUserProvider().checkOrganizationUserRealmId(userClass, userRealmId);
+      this.apiApp.getOrganizationUserProvider().checkOrganizationUserRealmId(userClass, user);
     } catch (AssertionException e) {
-      return Future.failedFuture(TowerFailureException
-        .builder()
-        .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
-        .setMessage("You can't build a organization user from this row. User: " + id + ", realm: " + userRealmId + ")")
-        .setCauseException(e)
-        .build()
-      );
+      throw new InternalException("You can't build a organization user from this row. User: " + user + ", realm: " + userRealmId + ")", e);
     }
 
 
-    boolean validRealm = knownRealm != null && knownRealm.getLocalId().equals(userRealmId);
-    Future<Realm> realmFuture;
-    if (validRealm) {
-      realmFuture = Future.succeededFuture(knownRealm);
-    } else {
-      realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromLocalId(userRealmId);
+    user.setEmailAddress(row.getString(UserCols.EMAIL_ADDRESS));
+    Integer status = row.getInteger(UserCols.STATUS);
+    if (status == null) {
+      status = 0;
     }
-    return realmFuture
-      .onFailure(FailureStatic::failFutureWithTrace)
-      .compose(realm -> {
+    user.setStatus(status);
+    user.setCreationTime(row.getLocalDateTime(UserCols.CREATION_TIME));
+    user.setModificationTime(row.getLocalDateTime(UserCols.MODIFICATION_IME));
+    return user;
 
-
-        JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
-        T user = Json.decodeValue(jsonAppData.toBuffer(), userClass);
-
-        user.setLocalId(id);
-        user.setRealm(realm);
-        this.updateGuid(user);
-        user.setEmailAddress(row.getString(EMAIL_ADDRESS_COLUMN));
-        Integer status = row.getInteger(STATUS_COLUMN);
-        if (status == null) {
-          status = 0;
-        }
-        user.setStatus(status);
-        user.setCreationTime(row.getLocalDateTime(CREATION_COLUMN));
-        user.setModificationTime(row.getLocalDateTime(MODIFICATION_TIME_COLUMN));
-        return Future.succeededFuture(user);
-      });
 
   }
 
@@ -498,26 +456,21 @@ public class UserProvider {
     assert userEmail != null;
     assert realmLocalId != null;
 
-    String sql = "SELECT * FROM  " + FULL_QUALIFIED_USER_TABLE_NAME +
-      " WHERE " +
-      EMAIL_ADDRESS_COLUMN + " = $1\n" +
-      " AND " + REALM_COLUMN + " = $2";
-    String lowerCaseEmailAddress = userEmail.toNormalizedString();
 
-    return sqlConnection
-      .preparedQuery(sql)
-      .execute(Tuple.of(lowerCaseEmailAddress, realmLocalId))
-      .compose(
-        userRows -> {
+    return JdbcSelect.from(this.userTable)
+      .addEqualityPredicate(UserCols.EMAIL_ADDRESS, userEmail.toNormalizedString())
+      .addEqualityPredicate(UserCols.REALM_ID, realm.getLocalId())
+      .execute(sqlConnection, userRows -> {
 
-          if (userRows.size() == 0) {
-            // return Future.failedFuture(new NotFoundException("the user id (" + userId + ") was not found"));
-            return Future.succeededFuture();
-          }
+        if (userRows.size() == 0) {
+          // return Future.failedFuture(new NotFoundException("the user id (" + userId + ") was not found"));
+          return Future.succeededFuture();
+        }
 
-          Row row = userRows.iterator().next();
-          return getUserFromRow(row, userClass, realm);
-        }, err -> Future.failedFuture(new InternalError("Error while retrieving the user by email and realm. Sql: \n" + sql, err)));
+        JdbcRow row = userRows.iterator().next();
+        T userFromRow = getUserFromRow(row, userClass, realm);
+        return Future.succeededFuture(userFromRow);
+      });
   }
 
   public Future<User> getUserFromGuidOrEmail(String userGuid, String userEmail, Realm realm) {
@@ -692,19 +645,15 @@ public class UserProvider {
    * @param realm        - the realm
    * @return a user if the user handle, realm and password combination are good
    */
-  Future<? extends User> getUserByPassword(String userEmail, String userPassword, Realm realm) {
+  Future<? extends User> getUserByPassword(EmailAddress userEmail, String userPassword, Realm realm) {
 
     String hashedPassword = PasswordHashManager.get().hash(userPassword);
 
-    String sql = "SELECT * FROM  " + FULL_QUALIFIED_USER_TABLE_NAME +
-      " WHERE " +
-      EMAIL_ADDRESS_COLUMN + " = $1\n" +
-      " AND " + REALM_COLUMN + " = $2" +
-      " AND " + PASSWORD_COLUMN + " = $3";
-    return jdbcPool.preparedQuery(sql)
-      .execute(Tuple.of(userEmail, realm.getLocalId(), hashedPassword))
-      .compose(
-        userRows -> {
+    return JdbcSelect.from(this.userTable)
+      .addEqualityPredicate(UserCols.EMAIL_ADDRESS, userEmail.toNormalizedString())
+      .addEqualityPredicate(UserCols.REALM_ID, realm.getLocalId())
+      .addEqualityPredicate(UserCols.PASSWORD, hashedPassword)
+      .execute(userRows -> {
           if (userRows.size() == 0) {
             return Future.succeededFuture();
           }
@@ -714,29 +663,22 @@ public class UserProvider {
           } else {
             userClass = User.class;
           }
-          Row row = userRows.iterator().next();
-          return getUserFromRow(row, userClass, realm);
-        },
-        err -> Future.failedFuture(TowerFailureException.builder()
-          .setMessage("Error while retrieving the user by email, password and realm. Sql: \n" + sql)
-          .setCauseException(err)
-          .build())
+          JdbcRow row = userRows.iterator().next();
+          User userFromRow = getUserFromRow(row, userClass, realm);
+          return Future.succeededFuture(userFromRow);
+        }
       );
 
   }
 
 
   @SuppressWarnings("unused")
-  private Future<List<User>> getUsersFromRows(RowSet<Row> userRows, Realm knowRealm) {
-    List<Future<User>> users = new ArrayList<>();
-    for (Row row : userRows) {
+  private List<User> getUsersFromRows(JdbcRowSet userRows, Realm knowRealm) {
+    List<User> users = new ArrayList<>();
+    for (JdbcRow row : userRows) {
       users.add(getUserFromRow(row, User.class, knowRealm));
     }
-    return Future.all(users)
-      .compose(results -> {
-        List<User> list = results.list();
-        return Future.succeededFuture(list);
-      });
+    return users;
   }
 
   public Guid getGuidFromHash(String userGuid) throws CastException {
@@ -853,25 +795,22 @@ public class UserProvider {
    * @param <T> a user extension
    */
   <T extends User> Future<T> getUserByLocalId(Long userId, Long realmId, Class<T> userClass, Realm realm, SqlConnection sqlConnection) {
+
     assert userId != null;
     assert realmId != null;
 
-    String sql = "SELECT * FROM  " + FULL_QUALIFIED_USER_TABLE_NAME +
-      " WHERE \n" +
-      " " + ID_COLUMN + " = $1\n" +
-      " AND " + REALM_COLUMN + " = $2";
-    return sqlConnection
-      .preparedQuery(sql)
-      .execute(Tuple.of(userId, realmId))
-      .recover(t -> Future.failedFuture(new InternalException("Error while retrieving the user by id. Sql: " + sql, t)))
-      .compose(userRows -> {
+    return JdbcSelect.from(this.userTable)
+      .addEqualityPredicate(UserCols.ID, userId)
+      .addEqualityPredicate(UserCols.REALM_ID, realmId)
+      .execute(sqlConnection, userRows -> {
 
         if (userRows.size() == 0) {
           return Future.succeededFuture();
         }
 
-        Row row = userRows.iterator().next();
-        return getUserFromRow(row, userClass, realm);
+        JdbcRow row = userRows.iterator().next();
+        T userFromRow = getUserFromRow(row, userClass, realm);
+        return Future.succeededFuture(userFromRow);
 
       });
   }
@@ -897,7 +836,7 @@ public class UserProvider {
   private <T extends User> Future<T> insertUser(T user, SqlConnection sqlConnection) {
 
     return this.apiApp.getRealmSequenceProvider()
-      .getNextIdForTableAndRealm(sqlConnection, user.getRealm(), REALM_USER_TABLE_NAME)
+      .getNextIdForTableAndRealm(sqlConnection, user.getRealm(), this.userTable)
       .recover(err -> Future.failedFuture(
         TowerFailureException.builder()
           .setCauseException(err)

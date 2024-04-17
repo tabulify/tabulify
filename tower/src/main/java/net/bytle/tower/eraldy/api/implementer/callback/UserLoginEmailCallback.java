@@ -59,11 +59,11 @@ public class UserLoginEmailCallback extends WebFlowEmailCallbackAbs {
         .buildWithContextFailingTerminal(ctx);
       return;
     }
-    String realmHandle = authUser.getRealmGuid();
+    String realmGuid = authUser.getRealmGuid();
     EraldyApiApp apiApp = (EraldyApiApp) this.getWebFlow().getApp();
     apiApp
       .getAuthProvider()
-      .getAuthUserForSessionByEmailNotNull(emailAddress, realmHandle)
+      .getAuthUserForSessionByEmailNotNull(emailAddress, realmGuid)
       .onFailure(ctx::fail)
       .onSuccess(authUserForSession -> apiApp.getAuthNContextManager()
         .newAuthNContext(ctx, webFlow, authUserForSession, OAuthState.createEmpty(), jwtClaims)

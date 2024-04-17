@@ -38,19 +38,21 @@ public class JdbcPaginatedSelect extends JdbcQuery {
 
 
   public JdbcPaginatedSelect addEqualityPredicate(JdbcTable userTable, JdbcTableColumn cols, Object value) {
-    this.predicateColValues.add(JdbcSingleOperatorPredicate.builder()
-      .setColumn(userTable, cols, value)
-      .build());
+    this.addEventuallyInnerJoinTable(userTable);
+    this.predicateColValues.add(
+      JdbcSingleOperatorPredicate.builder()
+        .setColumn(userTable, cols, value)
+        .build()
+    );
     return this;
   }
 
 
   public Future<JdbcRowSet> execute(SqlConnection sqlConnection) {
 
-    if (this.innerJoinTables.size() != 1) {
-      return Future.failedFuture(new InternalException("The Paged Select supports for now a SQL with 2 tables, only one declared."));
+    if (this.innerJoinTables.size() > 1) {
+      return Future.failedFuture(new InternalException("The Paginated Select supports for now a SQL with maximum 2 tables, not " + this.innerJoinTables + 1));
     }
-    JdbcTable joinedTable = this.innerJoinTables.iterator().next();
 
 
     /**
@@ -67,25 +69,39 @@ public class JdbcPaginatedSelect extends JdbcQuery {
       .append("select ")
       .append(String.join(", ", getSelectColumnsSqlExpressions(orderBySql, orderByColumnAlias)))
       .append(" from ")
-      .append(this.getJdbcTable().getFullName()).append(" ").append(this.getJdbcTable().getName())
-      .append(" inner join ").append(joinedTable.getFullName()).append(" ").append(joinedTable.getName());
+      .append(this.getJdbcTable().getFullName())
+      .append(" ")
+      .append(this.getJdbcTable().getName()); // alias
+    if (!this.innerJoinTables.isEmpty()) {
+      JdbcTable joinedTable = this.innerJoinTables.iterator().next();
+      sqlDataBlock
+        .append(" inner join ")
+        .append(joinedTable.getFullName())
+        .append(" ")
+        .append(joinedTable.getName()) // name is alias for now
+      ;
+      /**
+       * On columns
+       */
+      List<String> onSqlColumnPredicate = new ArrayList<>();
+      Map<JdbcTableColumn, JdbcTableColumn> foreignKeyColumnMapping = this.getJdbcTable().getForeignKeyColumns(joinedTable);
+      if (foreignKeyColumnMapping.isEmpty()) {
+        return Future.failedFuture(new InternalException("The foreign key column mapping for the table (" + joinedTable + ") are not present in the table definition of (" + this.getJdbcTable() + ")"));
+      }
+      for (Map.Entry<JdbcTableColumn, JdbcTableColumn> joinColumnMapping : foreignKeyColumnMapping.entrySet()) {
+        onSqlColumnPredicate.add(this.getJdbcTable().getName() + "." + joinColumnMapping.getKey().getColumnName() + " = " + joinedTable.getName() + "." + joinColumnMapping.getValue().getColumnName());
+      }
+      sqlDataBlock
+        .append(" on ")
+        .append(String.join(" and ", onSqlColumnPredicate));
+    }
+
+
+    sqlDataBlock.append(" where ");
 
     /**
-     * On columns
+     * Predicates
      */
-    List<String> onSqlColumnPredicate = new ArrayList<>();
-    Map<JdbcTableColumn, JdbcTableColumn> foreignKeyColumnMapping = this.getJdbcTable().getForeignKeyColumns(joinedTable);
-    if (foreignKeyColumnMapping.isEmpty()) {
-      return Future.failedFuture(new InternalException("The foreign key column mapping for the table (" + joinedTable + ") are not present in the table definition of (" + this.getJdbcTable() + ")"));
-    }
-    for (Map.Entry<JdbcTableColumn, JdbcTableColumn> joinColumnMapping : foreignKeyColumnMapping.entrySet()) {
-      onSqlColumnPredicate.add(this.getJdbcTable().getName() + "." + joinColumnMapping.getKey().getColumnName() + " = " + joinedTable.getName() + "." + joinColumnMapping.getValue().getColumnName());
-    }
-    sqlDataBlock
-      .append(" on ")
-      .append(String.join(" and ", onSqlColumnPredicate))
-      .append(" where ");
-
     List<Object> bindingValues = new ArrayList<>();
     List<String> predicateStatements = new ArrayList<>();
     for (JdbcSingleOperatorPredicate predicate : predicateColValues) {
@@ -97,9 +113,11 @@ public class JdbcPaginatedSelect extends JdbcQuery {
       bindingValues.add("%" + searchTerm + "%");
       predicateStatements.add(this.searchTable.getName() + "." + this.searchColumn.getColumnName() + " like $" + bindingValues.size());
     }
-    sqlDataBlock
-      .append(String.join(" and ", predicateStatements));
+    sqlDataBlock.append(String.join(" and ", predicateStatements));
 
+    /**
+     * Primary Sql Block
+     */
     String sqlDataBlockString = sqlDataBlock.toString();
 
     /**
@@ -162,18 +180,29 @@ public class JdbcPaginatedSelect extends JdbcQuery {
 
 
   public JdbcPaginatedSelect setSearchColumn(JdbcTable searchTable, JdbcTableColumn searchColumn) {
-    this.innerJoinTables.add(searchTable);
+    this.addEventuallyInnerJoinTable(searchTable);
     this.searchTable = searchTable;
     this.searchColumn = searchColumn;
     return this;
   }
 
   public JdbcPaginatedSelect addOrderBy(JdbcTable orderedByTable, JdbcTableColumn orderedByCol, JdbcSort jdbcSort) {
-    this.innerJoinTables.add(orderedByTable);
+    this.addEventuallyInnerJoinTable(orderedByTable);
     this.orderedByTable = orderedByTable;
     this.orderedByColumn = orderedByCol;
     this.orderBySort = jdbcSort;
     return this;
+  }
+
+  public JdbcPaginatedSelect addOrderBy(JdbcTableColumn orderedByCol) {
+    addOrderBy(this.getJdbcTable(),orderedByCol,JdbcSort.ASC);
+    return this;
+  }
+
+  private void addEventuallyInnerJoinTable(JdbcTable potentialInnerTable) {
+    if(!potentialInnerTable.equals(this.getJdbcTable())) {
+      this.innerJoinTables.add(potentialInnerTable);
+    }
   }
 
 
@@ -187,9 +216,19 @@ public class JdbcPaginatedSelect extends JdbcQuery {
   }
 
   public JdbcPaginatedSelect addExtraSelectColumn(JdbcTable userTable, JdbcTableColumn column) {
-    this.innerJoinTables.add(userTable);
+    this.addEventuallyInnerJoinTable(userTable);
     Map<JdbcTableColumn, String> tableColumns = this.selectedColumns.computeIfAbsent(userTable, key -> new HashMap<>());
     tableColumns.put(column, column.getColumnName());
+    return this;
+  }
+
+  public JdbcPaginatedSelect addEqualityPredicate(JdbcTableColumn column, Object value) {
+    this.addEqualityPredicate(this.getJdbcTable(), column, value);
+    return this;
+  }
+
+  public JdbcPaginatedSelect setSearchColumn(JdbcTableColumn column) {
+    this.setSearchColumn(this.getJdbcTable(), column);
     return this;
   }
 

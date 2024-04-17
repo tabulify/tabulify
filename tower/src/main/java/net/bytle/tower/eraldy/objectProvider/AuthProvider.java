@@ -338,7 +338,7 @@ public class AuthProvider {
    * @param realm        - the realm
    * @return a user if the user handle, realm and password combination are good
    */
-  public Future<AuthUser> getAuthUserForSessionByPasswordNotNull(String userEmail, String userPassword, Realm realm) {
+  public Future<AuthUser> getAuthUserForSessionByPasswordNotNull(EmailAddress userEmail, String userPassword, Realm realm) {
 
     return this.apiApp.getUserProvider()
       .getUserByPassword(userEmail, userPassword, realm)

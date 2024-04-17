@@ -31,11 +31,11 @@ public class MailingItemProvider {
 
   public MailingItemProvider(EraldyApiApp eraldyApiApp, JdbcSchema jdbcSchema) {
     this.apiApp = eraldyApiApp;
-    Map<JdbcTableColumn, JdbcTableColumn> mailingUserForeignsKeys = new HashMap<>();
-    mailingUserForeignsKeys.put(MailingItemCols.REALM_ID, UserCols.REALM_ID);
-    mailingUserForeignsKeys.put(MailingItemCols.USER_ID, UserCols.ID);
+    Map<JdbcTableColumn, JdbcTableColumn> mailingUserForeignKeys = new HashMap<>();
+    mailingUserForeignKeys.put(MailingItemCols.REALM_ID, UserCols.REALM_ID);
+    mailingUserForeignKeys.put(MailingItemCols.USER_ID, UserCols.ID);
     this.mailingItemTable = JdbcTable.build(jdbcSchema, "realm_mailing_item")
-      .addForeignKeyColumns(this.apiApp.getUserProvider().getUserTable(), mailingUserForeignsKeys)
+      .addForeignKeyColumns(this.apiApp.getUserProvider().getUserTable(), mailingUserForeignKeys)
       .build();
   }
 

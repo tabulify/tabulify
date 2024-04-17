@@ -1,5 +1,6 @@
 package net.bytle.vertx.db;
 
+import io.vertx.core.json.JsonObject;
 import io.vertx.sqlclient.Row;
 
 import java.time.LocalDateTime;
@@ -34,6 +35,14 @@ public class JdbcRow {
 
   public LocalDateTime getLocalDateTime(JdbcTableColumn column) {
     return this.row.getLocalDateTime(column.getColumnName());
+  }
+
+  public Object getValue(JdbcTableColumn column) {
+    return this.row.getValue(column.getColumnName());
+  }
+
+  public JsonObject getJsonObject(JdbcTableColumn column) {
+    return this.row.getJsonObject(column.getColumnName());
   }
 
 }

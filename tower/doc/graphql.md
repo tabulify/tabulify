@@ -87,6 +87,19 @@ Ie book has an owner if the owner is not requested don't make the request
 If there is an error to retrieve a sub-property, the
 main property is returned.
 
+### Partial Fetching / Object building
+
+The building is hierarchical, query driven.
+
+When building an object, you don't need to make extra select
+to build a sub-object.
+
+You build from the row and GraphQL takes care of the building of
+the sub-object (known as connection) if wired.
+
+You don't deal with it. You just build from the database row.
+And it's so quieter in your head.
+
 ### Enforce not null
 
 GraphQl will check if your value is conforming and throw an error if not.
