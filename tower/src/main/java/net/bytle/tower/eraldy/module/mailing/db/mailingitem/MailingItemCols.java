@@ -14,7 +14,8 @@ public enum MailingItemCols implements JdbcTableColumn {
   CREATION_TIME("mailing_item_creation_time"),
   MODIFICATION_TIME("mailing_item_modification_time"),
   PLANNED_DELIVERY_TIME("mailing_item_planned_delivery_time"),
-  COUNT_FAILURE("mailing_item_failure_count");
+  COUNT_FAILURE("mailing_item_failure_count"),
+  EMAIL_DATE("mailing_item_email_date");
 
   private final String colName;
 

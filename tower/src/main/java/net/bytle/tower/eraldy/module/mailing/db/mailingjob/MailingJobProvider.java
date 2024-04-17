@@ -97,7 +97,7 @@ public class MailingJobProvider {
 
   }
 
-  private void updateGuid(MailingJob mailingJob) {
+  public void updateGuid(MailingJob mailingJob) {
     mailingJob.setGuid(
       this.apiApp
         .createGuidFromRealmAndObjectId(

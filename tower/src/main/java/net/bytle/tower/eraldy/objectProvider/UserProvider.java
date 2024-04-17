@@ -81,7 +81,7 @@ public class UserProvider {
    */
   private final JsonMapper apiMapper;
   private final String insertPreparedQuery;
-  private JdbcTable userTable;
+  private final JdbcTable userTable;
 
 
   public UserProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
@@ -435,7 +435,7 @@ public class UserProvider {
   }
 
 
-  private <T extends User> void updateGuid(T user) {
+  public <T extends User> void updateGuid(T user) {
     if (user.getGuid() != null) {
       return;
     }

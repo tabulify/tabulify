@@ -87,6 +87,14 @@ Ie book has an owner if the owner is not requested don't make the request
 If there is an error to retrieve a sub-property, the
 main property is returned.
 
+### Enforce not null
+
+GraphQl will check if your value is conforming and throw an error if not.
+
+If the returned data is null and should not, you'll get an error.
+
+At request time, but you don't need to find it in the frontend where undefined / null should not be null.
+
 ## Implementation
 
 See GraphQLService.java
@@ -197,3 +205,8 @@ https://www.graphql-java.com/documentation/execution#exceptions-while-fetching-d
 They are all Spring based.
 Parser comes from GraphQL Java. See [Example](
 https://github.com/kobylynskyi/graphql-java-codegen/blob/main/src/main/java/com/kobylynskyi/graphql/codegen/parser/GraphQLDocumentParser.java#L155)
+
+
+## Exception handling
+
+See https://www.graphql-java.com/documentation/execution#exceptions-while-fetching-data

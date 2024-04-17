@@ -18,9 +18,11 @@ public class MailingItem {
   private User user;
 
   private LocalDateTime creationTime;
-  private Long failureCount;
+  private Integer failureCount;
   private LocalDateTime modificationTime;
   private String statusMessage;
+  private MailingJob mailingJob;
+  private LocalDateTime emailDate;
 
   public MailingItem() {
   }
@@ -61,12 +63,12 @@ public class MailingItem {
   }
 
   @JsonProperty("countFailure")
-  public Long getFailureCount() {
+  public Integer getFailureCount() {
     return failureCount;
   }
 
-  public void setFailureCount(Long rowCountToExecute) {
-    this.failureCount = rowCountToExecute;
+  public void setFailureCount(Integer failureCount) {
+    this.failureCount = failureCount;
   }
 
   public void setModificationTime(LocalDateTime modificationTime) {
@@ -96,4 +98,24 @@ public class MailingItem {
     return user;
   }
 
+  public void setGuid(String guidString) {
+    this.guid = guidString;
+  }
+
+  public void setMailingJob(MailingJob mailingJob) {
+    this.mailingJob = mailingJob;
+  }
+
+  public void setEmailDate(LocalDateTime emailDate) {
+    this.emailDate = emailDate;
+  }
+  @JsonProperty("mailingJob")
+  public MailingJob getMailingJob() {
+    return mailingJob;
+  }
+
+  @JsonProperty("emailDate")
+  public LocalDateTime getEmailDate() {
+    return emailDate;
+  }
 }

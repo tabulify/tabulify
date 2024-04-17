@@ -11,6 +11,7 @@ import net.bytle.tower.eraldy.module.mailing.model.MailingItem;
 import net.bytle.tower.eraldy.module.mailing.model.MailingItemStatus;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
 import net.bytle.tower.eraldy.objectProvider.UserCols;
+import net.bytle.tower.util.Guid;
 import net.bytle.vertx.db.*;
 
 import java.util.ArrayList;
@@ -22,6 +23,12 @@ public class MailingItemProvider {
 
   private final EraldyApiApp apiApp;
   private final JdbcTable mailingItemTable;
+
+
+  /**
+   * mat and not mai because mai is already taken by mailing
+   */
+  private final String GUID_PREFIX = "mat";
 
 
   public MailingItemProvider(EraldyApiApp eraldyApiApp, JdbcSchema jdbcSchema) {
@@ -115,7 +122,13 @@ public class MailingItemProvider {
     User user = new User();
     user.setLocalId(jdbcRow.getLong(MailingItemCols.USER_ID));
     user.setRealm(realm);
+    this.apiApp.getUserProvider().updateGuid(user);
     mailingItem.setUser(user);
+
+    /**
+     * Guid
+     */
+    this.updateGuid(mailingItem);
 
     /**
      * Status
@@ -126,7 +139,45 @@ public class MailingItemProvider {
     } catch (NotFoundException e) {
       throw new InternalException("The mailing item status code (" + statusCode + ") is unknown for the mailing item (" + mailingItem + ")");
     }
+    String statusMessage = jdbcRow.getString(MailingItemCols.STATUS_MESSAGE);
+    mailingItem.setStatusMessage(statusMessage);
+
+    /**
+     * Mailing Job
+     */
+    Long mailingJobId = jdbcRow.getLong(MailingItemCols.MAILING_JOB_ID);
+    if(mailingJobId!=null) {
+      MailingJob mailingJob = new MailingJob();
+      mailingJob.setLocalId(mailingJobId);
+      mailingJob.setMailing(mailing);
+      this.apiApp.getMailingJobProvider().updateGuid(mailingJob);
+      mailingItem.setMailingJob(mailingJob);
+    }
+
+    /**
+     * Time
+     */
+    mailingItem.setCreationTime(jdbcRow.getLocalDateTime(MailingItemCols.CREATION_TIME));
+    mailingItem.setModificationTime(jdbcRow.getLocalDateTime(MailingItemCols.MODIFICATION_TIME));
+
+    /**
+     * Processing attribute
+     */
+    mailingItem.setFailureCount(jdbcRow.getInteger(MailingItemCols.COUNT_FAILURE));
+    mailingItem.setEmailDate(jdbcRow.getLocalDateTime(MailingItemCols.EMAIL_DATE));
 
     return mailingItem;
+  }
+
+  private void updateGuid(MailingItem mailingItem) {
+
+    Guid guid = this.apiApp.createGuidStringFromRealmAndTwoObjectId(
+      GUID_PREFIX,
+      mailingItem.getMailing().getRealm().getLocalId(),
+      mailingItem.getMailing().getLocalId(),
+      mailingItem.getUser().getLocalId()
+    );
+    mailingItem.setGuid(guid.toString());
+
   }
 }
