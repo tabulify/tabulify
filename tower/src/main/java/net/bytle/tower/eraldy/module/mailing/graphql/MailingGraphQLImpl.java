@@ -98,7 +98,7 @@ public class MailingGraphQLImpl {
       )
       .type(
         newTypeWiring("Mailing")
-          .dataFetcher("items", this::getItems)
+          .dataFetcher("items", this::getMailingItems)
           .build()
       )
       .type(
@@ -108,7 +108,7 @@ public class MailingGraphQLImpl {
       );
   }
 
-  private Future<List<MailingItem>> getItems(DataFetchingEnvironment dataFetchingEnvironment) {
+  private Future<List<MailingItem>> getMailingItems(DataFetchingEnvironment dataFetchingEnvironment) {
     Mailing mailing = dataFetchingEnvironment.getSource();
     Map<String, Object> paginationPropsMap = dataFetchingEnvironment.getArgument("pagination");
     // Type safe (if null, the value was not passed)

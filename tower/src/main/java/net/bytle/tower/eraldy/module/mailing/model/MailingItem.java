@@ -12,7 +12,7 @@ public class MailingItem {
 
 
   private String guid;
-  private MailingRowStatus status;
+  private MailingItemStatus status;
 
   private Mailing mailing;
   private User user;
@@ -26,7 +26,7 @@ public class MailingItem {
   }
 
 
-  public void setStatus(MailingRowStatus status) {
+  public void setStatus(MailingItemStatus status) {
     this.status = status;
   }
 
@@ -51,7 +51,7 @@ public class MailingItem {
   }
 
   @JsonProperty("status")
-  public MailingRowStatus getStatus() {
+  public MailingItemStatus getStatus() {
     return this.status;
   }
 

@@ -7,7 +7,7 @@ import net.bytle.tower.eraldy.model.manual.Status;
  * The status of the mailing
  * (ie SMTP status)
  */
-public enum MailingRowStatus implements Status {
+public enum MailingItemStatus implements Status {
 
 
   PENDING(-2, 1, "Pending", "Not processed"),
@@ -26,7 +26,7 @@ public enum MailingRowStatus implements Status {
   private final String description;
   private final int order;
 
-  MailingRowStatus(int code, int order, String name, String description) {
+  MailingItemStatus(int code, int order, String name, String description) {
     this.order = order;
     this.code = code;
     this.name = name;
@@ -34,8 +34,8 @@ public enum MailingRowStatus implements Status {
   }
 
 
-  public static MailingRowStatus fromStatusCode(int statusCode) throws NotFoundException {
-    for (MailingRowStatus value : values()) {
+  public static MailingItemStatus fromStatusCode(int statusCode) throws NotFoundException {
+    for (MailingItemStatus value : values()) {
       if (value.code == statusCode) {
         return value;
       }

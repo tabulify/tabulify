@@ -8,8 +8,8 @@ import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.mailing.model.Mailing;
 import net.bytle.tower.eraldy.module.mailing.model.MailingItem;
+import net.bytle.tower.eraldy.module.mailing.model.MailingItemStatus;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
-import net.bytle.tower.eraldy.module.mailing.model.MailingRowStatus;
 import net.bytle.tower.eraldy.objectProvider.UserCols;
 import net.bytle.vertx.db.*;
 
@@ -21,7 +21,7 @@ import java.util.Map;
 public class MailingItemProvider {
 
   private final EraldyApiApp apiApp;
-  private final JdbcTable mailingRowTable;
+  private final JdbcTable mailingItemTable;
 
 
   public MailingItemProvider(EraldyApiApp eraldyApiApp, JdbcSchema jdbcSchema) {
@@ -29,7 +29,7 @@ public class MailingItemProvider {
     Map<JdbcTableColumn, JdbcTableColumn> mailingUserForeignsKeys = new HashMap<>();
     mailingUserForeignsKeys.put(MailingItemCols.REALM_ID, UserCols.REALM_ID);
     mailingUserForeignsKeys.put(MailingItemCols.USER_ID, UserCols.ID);
-    this.mailingRowTable = JdbcTable.build(jdbcSchema, "realm_mailing_item")
+    this.mailingItemTable = JdbcTable.build(jdbcSchema, "realm_mailing_item")
       .addForeignKeyColumns(this.apiApp.getUserProvider().getUserTable(), mailingUserForeignsKeys)
       .build();
   }
@@ -42,7 +42,7 @@ public class MailingItemProvider {
 
     Mailing mailing = mailingJob.getMailing();
 
-    JdbcSelect jdbcSelect = JdbcSelect.from(mailingRowTable)
+    JdbcSelect jdbcSelect = JdbcSelect.from(mailingItemTable)
       .addPredicate(
         JdbcSingleOperatorPredicate
           .builder()
@@ -54,7 +54,7 @@ public class MailingItemProvider {
       .addPredicate(
         JdbcSingleOperatorPredicate
           .builder()
-          .setColumn(MailingItemCols.STATUS_CODE, MailingRowStatus.OK.getCode())
+          .setColumn(MailingItemCols.STATUS_CODE, MailingItemStatus.OK.getCode())
           .setOperator(JdbcComparisonOperator.NOT_EQUAL)
           .setOrNull(true)
           .build()
@@ -68,9 +68,9 @@ public class MailingItemProvider {
 
   public Future<List<MailingItem>> getItemsForGraphQL(Mailing mailing, JdbcPagination pagination) {
     JdbcTable userTable = this.apiApp.getUserProvider().getUserTable();
-    return JdbcPaginatedSelect.from(mailingRowTable)
-      .addEqualityPredicate(mailingRowTable, MailingItemCols.REALM_ID, mailing.getRealm().getLocalId())
-      .addEqualityPredicate(mailingRowTable, MailingItemCols.MAILING_ID, mailing.getLocalId())
+    return JdbcPaginatedSelect.from(mailingItemTable)
+      .addEqualityPredicate(mailingItemTable, MailingItemCols.REALM_ID, mailing.getRealm().getLocalId())
+      .addEqualityPredicate(mailingItemTable, MailingItemCols.MAILING_ID, mailing.getLocalId())
       .setSearchColumn(userTable, UserCols.EMAIL_ADDRESS)
       .addExtraSelectColumn(userTable, UserCols.EMAIL_ADDRESS)
       .addEqualityPredicate(userTable, UserCols.REALM_ID, mailing.getRealm().getLocalId())
@@ -84,6 +84,7 @@ public class MailingItemProvider {
           // Add address
           User user = mailingItem.getUser();
           user.setEmailAddress(jdbcRow.getString(UserCols.EMAIL_ADDRESS));
+          mailingItems.add(mailingItem);
         }
         return Future.succeededFuture(mailingItems);
       });
@@ -121,7 +122,7 @@ public class MailingItemProvider {
      */
     Integer statusCode = jdbcRow.getInteger(MailingItemCols.STATUS_CODE);
     try {
-      mailingItem.setStatus(MailingRowStatus.fromStatusCode(statusCode));
+      mailingItem.setStatus(MailingItemStatus.fromStatusCode(statusCode));
     } catch (NotFoundException e) {
       throw new InternalException("The mailing item status code (" + statusCode + ") is unknown for the mailing item (" + mailingItem + ")");
     }
