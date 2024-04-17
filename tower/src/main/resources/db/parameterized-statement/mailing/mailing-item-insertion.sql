@@ -3,10 +3,12 @@ insert into cs_jobs.realm_mailing_item
 (mailing_item_realm_id,
  mailing_item_mailing_id,
  mailing_item_user_id,
+ mailing_item_status_code,
  mailing_item_creation_time)
 select listUser.list_user_realm_id,
        mailing.mailing_id,
        listUser.list_user_user_id,
+       -2,
        now()
 from cs_realms.realm_list_user listUser
        inner join cs_realms.realm_mailing mailing on listUser.list_user_realm_id = mailing.mailing_realm_id and

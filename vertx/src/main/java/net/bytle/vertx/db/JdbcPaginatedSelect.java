@@ -117,13 +117,13 @@ public class JdbcPaginatedSelect extends JdbcQuery {
       .append(" where ");
 
     // Greater than (if 0, then 1)
-    bindingValues.add(pagination.getPageId() * pagination.getPageSize());
+    bindingValues.add((pagination.getPageId() - 1) * pagination.getPageSize());
     finalSqlQuery.append(orderByColumnAlias)
       .append(" >= 1 + $")
       .append(bindingValues.size());
 
     // Less than (if 0, then page size)
-    bindingValues.add((pagination.getPageId() + 1) * pagination.getPageSize());
+    bindingValues.add((pagination.getPageId()) * pagination.getPageSize());
     finalSqlQuery
       .append(" and ")
       .append(orderByColumnAlias)
@@ -179,6 +179,10 @@ public class JdbcPaginatedSelect extends JdbcQuery {
 
   public JdbcPaginatedSelect setPagination(JdbcPagination pagination) {
     this.pagination = pagination;
+    Long pageId = pagination.getPageId();
+    if (pageId <= 0) {
+      throw new IllegalArgumentException("The pagination id value (" + pageId + ") is not greater than zero. Should start at 1");
+    }
     return this;
   }
 

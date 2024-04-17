@@ -10,7 +10,8 @@ import net.bytle.tower.eraldy.model.manual.Status;
 public enum MailingRowStatus implements Status {
 
 
-
+  PENDING(-2, 1, "Pending", "Not processed"),
+  PROCESSING(-1, 1, "Processing", "In Process"),
   /**
    * Email send
    */

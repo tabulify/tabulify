@@ -16,7 +16,7 @@ public class JdbcPagination {
    */
   private String searchTerm;
   /**
-   * The page id starting at 1
+   * The page id starting at 1 (not zero)
    */
   private Long pageId;
 
