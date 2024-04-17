@@ -86,6 +86,8 @@ public class MailingProvider {
       .addDeserializer(MailingStatus.class, new JacksonMailingStatusDeserializer());
 
     this.mailingTable = JdbcTable.build(jdbcSchema, "realm_mailing")
+      .addPrimaryKeyColumn(MailingCols.ID)
+      .addPrimaryKeyColumn(MailingCols.REALM_ID)
       .build();
 
   }

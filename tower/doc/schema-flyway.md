@@ -146,8 +146,8 @@ We use a mix of:
 Because of the dynamic side, a column rename is a big endeavor, and we may forget a step (ie renamed in `SQL file` for instance)
 
 If you don't feel safe:
-  * don't
-  * or create a new column with deprecation
+  * don't, just change the wrapper (ie database class POJO)
+  * or create a new column with deprecation (GraphQL permits that)
   * or create a view with an alias for the `data analytics guys`.
 
 ### Don't use SQL Upsert
@@ -161,6 +161,18 @@ eating a number in the sequence.
 ### Identifier
 
 See [identifier](identifier.md)
+
+### Handle
+
+Some table have a unique column known as handle.
+
+A handle is a textual identifier (same as DNS label)
+
+This column has 2 purposes:
+* the first: inserting/getting data in test
+* a human id in Analytics event or URL so that you can read them (generated guid are pretty useless)
+
+From a user perspective, they are not so important.
 
 ### Json data type
 

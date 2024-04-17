@@ -172,6 +172,18 @@ public class OrganizationUserProvider {
   }
 
 
+  /**
+   * Check that the user is an Organization user
+   */
+  <T extends User> void checkOrganizationUserRealmId(Class<T> userClass, T user) throws AssertionException {
+    checkOrganizationUserRealmId(userClass, user.getRealm().getLocalId());
+  }
+
+  /**
+   *
+   * @deprecated use the function with the user {@link #checkOrganizationUserRealmId(Class, User)} in place of the long so that we can also validate the user
+   */
+  @Deprecated
   <T extends User> void checkOrganizationUserRealmId(Class<T> userClass, Long localId) throws AssertionException {
     if (userClass.equals(OrganizationUser.class) && !this.apiApp.getEraldyModel().isRealmLocalId(localId)) {
       Long eraldyRealmLocalId = this.apiApp.getEraldyModel().getRealmLocalId();

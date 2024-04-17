@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * A wrapper around a {@link User}
+ * A wrapper around a {@link User} (ie User is json serializable)
  * It implements our own claims that identifies a user
  * <p>
  * A AuthUser Claims may be created for user registration, meaning that the user

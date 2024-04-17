@@ -41,7 +41,7 @@ public class OrganizationApiImpl implements OrganizationApi {
 
     Guid guid;
     try {
-      guid = this.apiApp.getOrganizationProvider().createGuid(orgaIdentifier);
+      guid = this.apiApp.getOrganizationProvider().createGuidFromHash(orgaIdentifier);
     } catch (CastException e) {
       return Future.failedFuture(
         TowerFailureException.builder()

@@ -86,34 +86,11 @@ public class AuthProvider {
 
   }
 
+  /**
+   * Return a valid model user from an authUser
+   * The authUser should be a valid user in the database (not an oauth token)
+   */
   private <T extends User> T toModelUser(AuthUser authUser, Class<T> userClass) throws NotSignedInOrganizationUser {
-    Realm realm = new Realm();
-    /**
-     * Audience guid may be null when we get an Oauth user
-     * from an external oauth provider for instance
-     */
-    String audience = authUser.getAudience();
-    if (audience != null) {
-      try {
-        realm.setGuid(audience);
-        Guid realmGuid = this.apiApp.getRealmProvider().getGuidFromHash(audience);
-        realm.setLocalId(realmGuid.getRealmOrOrganizationId());
-      } catch (CastException e) {
-        throw new InternalException("The audience value (" + audience + ") is not a valid realm guid", e);
-      }
-    }
-    String audienceHandle = authUser.getAudienceHandle();
-    if (audienceHandle == null && audience == null) {
-      throw new InternalException("The audience and the audience handle values should not be together null");
-    }
-    realm.setHandle(audienceHandle);
-
-    try {
-      this.apiApp.getOrganizationUserProvider().checkOrganizationUserRealmId(userClass, realm.getLocalId());
-    } catch (AssertionException e) {
-      throw new NotSignedInOrganizationUser(e);
-    }
-
 
     T userEraldy;
     try {
@@ -121,28 +98,84 @@ public class AuthProvider {
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
       throw new InternalException("Unable to create a user instance", e);
     }
+
+    /**
+     * Realm / Audience
+     * <p>
+     * First because it's in the user guid
+     */
+    Realm realm = new Realm();
+    String audience = authUser.getAudience();
+    if (audience == null) {
+      throw new InternalException("The audience/realm guid should not be null for a user");
+    }
+    try {
+      realm.setGuid(audience);
+      Guid realmGuid = this.apiApp.getRealmProvider().getGuidFromHash(audience);
+      realm.setLocalId(realmGuid.getRealmOrOrganizationId());
+    } catch (CastException e) {
+      throw new InternalException("The audience value (" + audience + ") is not a valid realm guid", e);
+    }
+
+    String audienceHandle = authUser.getAudienceHandle();
+    realm.setHandle(audienceHandle);
     userEraldy.setRealm(realm);
-    String subjectGivenName = authUser.getSubjectGivenName();
-    userEraldy.setGivenName(subjectGivenName);
-    String subject = authUser.getSubject();
+
+    /**
+     * Identifier (guid and email)
+     */
     String subjectEmail = authUser.getSubjectEmail();
-    if (subject == null && subjectEmail == null) {
-      throw new InternalException("The subject and the subject email values should not be together null");
+    if (subjectEmail == null) {
+      throw new InternalException("The subject email values should not be null");
     }
     userEraldy.setEmailAddress(subjectEmail);
-    if (subject != null) {
-      /**
-       * when retrieving an external Auth User from a social provider,
-       * we don't have any subject
-       */
-      userEraldy.setGuid(subject);
-      try {
-        Guid guid = this.apiApp.getUserProvider().getGuidFromHash(subject);
-        userEraldy.setLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()));
-      } catch (CastException e) {
-        throw new InternalException(e);
-      }
+    String subject = authUser.getSubject();
+    if (subject == null) {
+      throw new InternalException("The subject (user guid) values should not be null");
     }
+    try {
+      Guid guid = this.apiApp.getUserProvider().getGuidFromHash(subject);
+      userEraldy.setLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()));
+      userEraldy.setGuid(subject);
+    } catch (CastException e) {
+      throw new InternalException("The user guid is not valid", e);
+    }
+
+
+    /**
+     * Organization
+     */
+    if (userClass.equals(OrganizationUser.class)) {
+      try {
+        this.apiApp.getOrganizationUserProvider().checkOrganizationUserRealmId(userClass, userEraldy);
+      } catch (AssertionException e) {
+        throw new NotSignedInOrganizationUser(e);
+      }
+      String organizationGuidString = authUser.getOrganizationGuid();
+      if (organizationGuidString == null) {
+        throw new InternalException("The organizational user (" + userEraldy.getEmailAddress() + "," + userEraldy.getRealm().getLocalId() + ") does not have any organization guid");
+      }
+      Guid orgaGuidObject;
+      try {
+        orgaGuidObject = this.apiApp.getOrganizationProvider().createGuidFromHash(organizationGuidString);
+      } catch (CastException e) {
+        throw new InternalException("The organization guid ("+organizationGuidString+") is not valid", e);
+      }
+      Organization organization = new Organization();
+      organization.setGuid(organizationGuidString);
+      organization.setLocalId(orgaGuidObject.getRealmOrOrganizationId());
+      organization.setHandle(authUser.getOrganizationHandle());
+      ((OrganizationUser) userEraldy).setOrganization(organization);
+
+    }
+
+
+    /**
+     * Other attributes
+     */
+    String subjectGivenName = authUser.getSubjectGivenName();
+    userEraldy.setGivenName(subjectGivenName);
+
     String subjectFamilyName = authUser.getSubjectFamilyName();
     String subjectFullName = subjectGivenName;
     if (subjectFullName != null && subjectFamilyName != null) {
@@ -153,7 +186,9 @@ public class AuthProvider {
     userEraldy.setLocation(authUser.getSubjectLocation());
     userEraldy.setWebsite(authUser.getSubjectBlog());
     userEraldy.setAvatar(authUser.getSubjectAvatar());
+
     return userEraldy;
+
   }
 
   /**

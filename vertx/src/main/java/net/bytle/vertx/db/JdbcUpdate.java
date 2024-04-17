@@ -63,7 +63,7 @@ public class JdbcUpdate extends JdbcQuery {
     for (Map.Entry<JdbcTableColumn, Object> entry : predicateColValues.entrySet()) {
       JdbcTableColumn jdbcTableColumn = entry.getKey();
       if (!this.getJdbcTable().getPrimaryOrUniqueKeyColumns().contains(jdbcTableColumn)) {
-        return Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " update: column (" + jdbcTableColumn + ") is not a declared primary or unique key columns"));
+        return Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " update: column (" + jdbcTableColumn + ") is not a declared primary or unique key columns for the table ("+this.getJdbcTable()+")"));
       }
       tuples.add(entry.getValue());
       equalityStatements.add(jdbcTableColumn.getColumnName() + " = $" + tuples.size());

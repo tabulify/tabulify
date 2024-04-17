@@ -97,7 +97,7 @@ public class OrganizationProvider {
   }
 
 
-  public Guid createGuid(String guid) throws CastException {
+  public Guid createGuidFromHash(String guid) throws CastException {
     return apiApp.createGuidFromHashWithOneId(GUID_PREFIX, guid);
   }
 
@@ -146,5 +146,6 @@ public class OrganizationProvider {
   Future<Organization> getById(Long localId, SqlConnection sqlConnection) {
     return getById(localId,Organization.class,sqlConnection);
   }
+
 
 }
