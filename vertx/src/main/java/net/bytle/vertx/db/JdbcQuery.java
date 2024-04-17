@@ -35,7 +35,7 @@ public abstract class JdbcQuery {
       .compose(
         connection -> this.execute(connection)
           .compose(buildFunction)
-          .recover(err -> Future.failedFuture(new InternalException(this.getClass().getSimpleName() + ": The build function errors", err)))
+          .recover(err -> Future.failedFuture(new InternalException(this.getClass().getSimpleName() + ": The build function returns an error. Error: "+err.getMessage(), err)))
           .eventually(() -> connection.close())
       );
   }

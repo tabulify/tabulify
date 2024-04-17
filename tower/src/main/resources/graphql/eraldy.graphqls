@@ -147,11 +147,11 @@ type MailingJob {
   """The End time"""
   endTime: String @dateFormat
   """The number of row to execute"""
-  rowToExecuteCount: Int!
+  itemToExecuteCount: Int!
   """The number of email successfully send (ie Successful SMTP transaction)"""
-  rowSuccessCount: Int
+  itemSuccessCount: Int
   """The number of executed row (ie SMTP transaction)"""
-  rowExecutionCount: Int
+  itemExecutionCount: Int
 }
 
 

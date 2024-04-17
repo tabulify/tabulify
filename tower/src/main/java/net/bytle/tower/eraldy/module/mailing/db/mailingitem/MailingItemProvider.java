@@ -61,7 +61,7 @@ public class MailingItemProvider {
       )
       .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getEmailRecipientList().getRealm().getLocalId())
       .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getLocalId())
-      .addLimit(mailingJob.getCountRowToExecute());
+      .addLimit(mailingJob.getItemToExecuteCount());
 
     return jdbcSelect.execute();
   }

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 /**
- * A utility to create paged query
+ * A utility to create paginated query
  */
 public class JdbcPaginatedSelect extends JdbcQuery {
 
@@ -106,9 +106,15 @@ public class JdbcPaginatedSelect extends JdbcQuery {
      * Pagination block
      */
     StringBuilder finalSqlQuery = new StringBuilder();
-    finalSqlQuery.append("select pagination.* from (")
+    String queryDataBlockName = "pagination";
+    finalSqlQuery
+      .append("select ")
+      .append(queryDataBlockName)
+      .append(".* from (")
       .append(sqlDataBlockString)
-      .append(") pagination where ");
+      .append(") ")
+      .append(queryDataBlockName)
+      .append(" where ");
 
     // Greater than (if 0, then 1)
     bindingValues.add(pagination.getPageId() * pagination.getPageSize());
@@ -117,11 +123,21 @@ public class JdbcPaginatedSelect extends JdbcQuery {
       .append(bindingValues.size());
 
     // Less than (if 0, then page size)
-    bindingValues.add((pagination.getPageId()+1) * pagination.getPageSize());
-    finalSqlQuery.append(orderByColumnAlias)
+    bindingValues.add((pagination.getPageId() + 1) * pagination.getPageSize());
+    finalSqlQuery
+      .append(" and ")
+      .append(orderByColumnAlias)
       .append(" < 1 + $")
       .append(bindingValues.size());
 
+    // final order by
+    finalSqlQuery.append(" ")
+      .append(" ORDER BY ")
+      .append(queryDataBlockName)
+      .append(".")
+      .append(this.orderedByColumn.getColumnName())
+      .append(" ")
+      .append(this.orderBySort);
 
     return sqlConnection
       .preparedQuery(finalSqlQuery.toString())

@@ -15,10 +15,10 @@ public class MailingJob {
   private Mailing mailing;
   private String guid;
   private LocalDateTime startTime;
-  private Long countRowToExecute;
+  private Long itemToExecuteCount;
   private LocalDateTime endTime;
-  private Long countRowSuccess;
-  private Long countRowExecution;
+  private Long itemSuccessCount;
+  private Long itemExecutionCount;
   private String statusMessage;
 
   public MailingJob() {
@@ -70,24 +70,24 @@ public class MailingJob {
   }
 
   @JsonProperty("countRowToExecute")
-  public Long getCountRowToExecute() {
-    return countRowToExecute;
+  public Long getItemToExecuteCount() {
+    return itemToExecuteCount;
   }
 
-  public void setCountRowToExecute(Long rowCountToExecute) {
-    this.countRowToExecute = rowCountToExecute;
+  public void setItemToExecuteCount(Long rowCountToExecute) {
+    this.itemToExecuteCount = rowCountToExecute;
   }
 
   public void setEndTime(LocalDateTime endTime) {
     this.endTime = endTime;
   }
 
-  public void setCountRowSuccess(Long rowCountSuccess) {
-    this.countRowSuccess = rowCountSuccess;
+  public void setItemSuccessCount(Long rowCountSuccess) {
+    this.itemSuccessCount = rowCountSuccess;
   }
 
-  public void setCountRowExecution(Long rowCountExecution) {
-    this.countRowExecution = rowCountExecution;
+  public void setItemExecutionCount(Long rowCountExecution) {
+    this.itemExecutionCount = rowCountExecution;
   }
 
   @JsonProperty("endTime")
@@ -96,13 +96,13 @@ public class MailingJob {
   }
 
   @JsonProperty("countRowSuccess")
-  public Long getCountRowSuccess() {
-    return countRowSuccess;
+  public Long getItemSuccessCount() {
+    return itemSuccessCount;
   }
 
   @JsonProperty("countRowExecution")
-  public Long getCountRowExecution() {
-    return countRowExecution;
+  public Long getItemExecutionCount() {
+    return itemExecutionCount;
   }
 
   public void setStatusMessage(String statusMessage) {
