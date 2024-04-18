@@ -40,7 +40,7 @@ public class JdbcPaginatedSelect extends JdbcQuery {
 
 
   public JdbcPaginatedSelect addEqualityPredicate(JdbcTable userTable, JdbcTableColumn cols, Object value) {
-    this.mainSelect.addEqualityPredicate(userTable,cols,value);
+    this.mainSelect.addEqualityPredicate(userTable, cols, value);
     return this;
   }
 
@@ -53,10 +53,10 @@ public class JdbcPaginatedSelect extends JdbcQuery {
     this.mainSelect.addSelectExpression("ROW_NUMBER() OVER (" + orderBySql + ") " + orderByColumnAlias);
 
     String searchTerm = this.pagination.getSearchTerm();
-    if (!searchTerm.isEmpty()) {
+    if (!(searchTerm == null || searchTerm.isEmpty())) {
       this.mainSelect.addPredicate(
         JdbcSingleOperatorPredicate.builder()
-          .setColumn(this.searchTable,this.searchColumn,"%" + searchTerm + "%")
+          .setColumn(this.searchTable, this.searchColumn, "%" + searchTerm + "%")
           .setOperator(JdbcComparisonOperator.LIKE)
           .build()
       );
@@ -114,7 +114,6 @@ public class JdbcPaginatedSelect extends JdbcQuery {
   }
 
 
-
   public JdbcPaginatedSelect setSearchColumn(JdbcTable searchTable, JdbcTableColumn searchColumn) {
     this.searchTable = searchTable;
     this.searchColumn = searchColumn;
@@ -132,11 +131,9 @@ public class JdbcPaginatedSelect extends JdbcQuery {
   }
 
   public JdbcPaginatedSelect addOrderBy(JdbcTableColumn orderedByCol) {
-    addOrderBy(this.getJdbcTable(),orderedByCol,JdbcSort.ASC);
+    addOrderBy(this.getJdbcTable(), orderedByCol, JdbcSort.ASC);
     return this;
   }
-
-
 
 
   public JdbcPaginatedSelect setPagination(JdbcPagination pagination) {

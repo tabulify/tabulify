@@ -70,8 +70,8 @@ public class RealmApiImpl implements RealmApi {
 
     RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
     pageSize = routingContextWrapper.getRequestQueryParameterAsLong("pageSize", 10L);
-    pageId = routingContextWrapper.getRequestQueryParameterAsLong("pageId", 0L);
-    searchTerm = routingContextWrapper.getRequestQueryParameterAsString("searchTerm", null);
+    pageId = routingContextWrapper.getRequestQueryParameterAsLong("pageId", 1L);
+    searchTerm = routingContextWrapper.getRequestQueryParameterAsString("searchTerm", "");
 
     UserProvider userProvider = apiApp.getUserProvider();
     Long finalPageId = pageId;

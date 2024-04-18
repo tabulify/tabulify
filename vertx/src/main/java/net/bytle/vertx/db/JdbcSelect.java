@@ -113,8 +113,7 @@ public class JdbcSelect extends JdbcQuery {
       .append(" from ")
       .append(this.getJdbcTable().getFullName())
       .append(" ")
-      .append(this.getJdbcTable().getName()) // alias
-      .append(" where ");
+      .append(this.getJdbcTable().getName()); // alias
 
     if (this.innerJoinTables.size() > 1) {
       throw new InternalException("The Paginated Select supports for now a SQL with maximum 2 tables, not " + this.innerJoinTables + 1);
@@ -143,6 +142,14 @@ public class JdbcSelect extends JdbcQuery {
         .append(String.join(" and ", onSqlColumnPredicate));
     }
 
+    /**
+     * Where
+     */
+    selectSqlBuilder.append(" where ");
+
+    /**
+     * Predicates
+     */
     List<Object> bindingValues = new ArrayList<>();
     List<String> predicateStatements = new ArrayList<>();
     for (JdbcSingleOperatorPredicate predicate : predicateColValues) {
