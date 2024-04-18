@@ -100,6 +100,14 @@ the sub-object (known as connection) if wired.
 You don't deal with it. You just build from the database row.
 And it's so quieter in your head.
 
+### No blocking between connection
+
+Because of the hierarchical nature of the object building,
+if you use a connection, it's scoped to a unique rows.
+
+You don't run the error that you may use 2 connections
+that may block each other.
+
 ### Enforce not null
 
 GraphQl will check if your value is conforming and throw an error if not.

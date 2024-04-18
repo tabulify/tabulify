@@ -3,7 +3,7 @@
 # If you want to put real secret such as for the oauth, you should copy the value
 # into the file .tower.secret.yml
 ---
-pg.pool_size: 5
+pg.pool_size: 15
 pg.url: jdbc:postgresql://localhost:5433/postgres
 pg.password: welcome
 pg.user: postgres
