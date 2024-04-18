@@ -3,6 +3,7 @@
 # If you want to put real secret such as for the oauth, you should copy the value
 # into the file .tower.secret.yml
 ---
+# pool size: 4 is too little, 8 is a minimum
 pg.pool_size: 15
 pg.url: jdbc:postgresql://localhost:5433/postgres
 pg.password: welcome

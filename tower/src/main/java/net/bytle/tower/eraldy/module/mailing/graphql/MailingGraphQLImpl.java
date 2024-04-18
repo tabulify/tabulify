@@ -3,19 +3,15 @@ package net.bytle.tower.eraldy.module.mailing.graphql;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.idl.RuntimeWiring;
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.CastException;
-import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
-import net.bytle.tower.eraldy.model.manual.EmailAstDocumentBuilder;
-import net.bytle.tower.eraldy.model.manual.EmailTemplateVariables;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
+import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.mailing.db.mailing.MailingProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingjob.MailingJobProvider;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputProps;
@@ -24,11 +20,8 @@ import net.bytle.tower.eraldy.module.mailing.model.Mailing;
 import net.bytle.tower.eraldy.module.mailing.model.MailingItem;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.RichSlateAST;
-import net.bytle.type.EmailAddress;
-import net.bytle.type.EmailCastException;
 import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerSmtpClientService;
+import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.JdbcPagination;
 
 import java.util.List;
@@ -71,6 +64,27 @@ public class MailingGraphQLImpl {
           .dataFetcher("mailingJob", this::getMailingJob)
           .build()
       )
+      /**
+       * Data Type mapping
+       */
+      .type(
+        newTypeWiring("Mailing")
+          .dataFetcher("emailAuthor", this::getMailingEmailAuthor)
+          .build()
+      )
+      .type(
+        newTypeWiring("Mailing")
+          .dataFetcher("emailRecipientList", this::getMailingRecipientList)
+          .build()
+      )
+      .type(
+        newTypeWiring("Mailing")
+          .dataFetcher("items", this::getMailingItems)
+          .build()
+      )
+      /**
+       * Mutation
+       */
       .type(
         newTypeWiring("Mutation")
           .dataFetcher("mailingUpdate", this::updateMailing)
@@ -87,25 +101,31 @@ public class MailingGraphQLImpl {
           .build()
       )
       .type(
-        newTypeWiring("Mailing")
-          .dataFetcher("emailAuthor", this::getMailingEmailAuthor)
-          .build()
-      )
-      .type(
-        newTypeWiring("Mailing")
-          .dataFetcher("emailRecipientList", this::getMailingRecipientList)
-          .build()
-      )
-      .type(
-        newTypeWiring("Mailing")
-          .dataFetcher("items", this::getMailingItems)
+        newTypeWiring("Mutation")
+          .dataFetcher("mailingSendTestEmail", this::sendTestEmail)
           .build()
       )
       .type(
         newTypeWiring("Mutation")
-          .dataFetcher("mailingSendTestEmail", this::sendTestEmail)
+          .dataFetcher("mailingDeliverItem", this::deliverItem)
           .build()
       );
+  }
+
+  private Future<MailingItem> deliverItem(DataFetchingEnvironment dataFetchingEnvironment) {
+    String guid = dataFetchingEnvironment.getArgument("guid");
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return this.app.getMailingItemProvider().getByGuidRequestHandler(guid, routingContext, AuthUserScope.MAILING_DELIVER_ITEM)
+      .compose(mailingItem -> {
+        if (mailingItem == null) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+            .setMessage("The mailing item (" + guid + ") was not found")
+            .build()
+          );
+        }
+        return this.app.getMailingFlow().deliverItem(mailingItem);
+      });
   }
 
   private Future<List<MailingItem>> getMailingItems(DataFetchingEnvironment dataFetchingEnvironment) {
@@ -132,10 +152,13 @@ public class MailingGraphQLImpl {
     String guid = dataFetchingEnvironment.getArgument("guid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
     return mailingProvider.getByGuidRequestHandler(guid, routingContext, AuthUserScope.MAILING_EXECUTE)
-      .compose(mailing-> this.app.getMailingFlow()
+      .compose(mailing -> this.app.getMailingFlow()
         .execute(mailing));
   }
 
+  /**
+   * Send a test mail
+   */
   private Future<Boolean> sendTestEmail(DataFetchingEnvironment dataFetchingEnvironment) {
     String guid = dataFetchingEnvironment.getArgument("guid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
@@ -144,88 +167,12 @@ public class MailingGraphQLImpl {
     MailingInputTestEmail mailingInputProps = new JsonObject(mappingPropsMap).mapTo(MailingInputTestEmail.class);
 
     return mailingProvider.getByGuidRequestHandler(guid, routingContext, AuthUserScope.MAILING_SEND_TEST_EMAIL)
-      .compose(mailing -> this.app.getMailingProvider().getEmailAuthorAtRequestTime(mailing)
-        .compose(emailAuthor -> {
+      .compose(mailing ->{
 
-          TowerSmtpClientService smtpClientService = this.app.getEmailSmtpClientService();
+          User recipient = new User();
+          recipient.setEmailAddress(mailingInputProps.getRecipientEmailAddress());
 
-          /**
-           * Author
-           */
-          String authorEmailAsString = emailAuthor.getEmailAddress();
-          EmailAddress authorEmailAddress;
-          try {
-            authorEmailAddress = new EmailAddress(authorEmailAsString);
-          } catch (EmailCastException e) {
-            return Future.failedFuture(new InternalException("The email (" + authorEmailAsString + ") of the author is invalid", e));
-          }
-
-          /**
-           * Recipient
-           */
-          String inputEmailAddress = mailingInputProps.getRecipientEmailAddress();
-          EmailAddress recipientEmailAddress;
-          try {
-            recipientEmailAddress = new EmailAddress(inputEmailAddress);
-          } catch (EmailCastException e) {
-            return Future.failedFuture(new InternalException("The email (" + inputEmailAddress + ") of the recipient is invalid", e));
-          }
-
-          /**
-           * Variables
-           */
-          JsonObject variables = EmailTemplateVariables.create()
-            .setRecipientGivenName(recipientEmailAddress.getLocalPart())
-            .getVariables();
-
-          String emailSubjectRsAst = mailing.getEmailSubject();
-          String emailSubject = "Test email of the mailing " + mailing.getName();
-          if (emailSubjectRsAst != null) {
-            emailSubject = RichSlateAST.createFromFormInputAst(emailSubjectRsAst)
-              .addVariables(variables)
-              .build()
-              .toEmailText();
-          }
-          MailMessage email = smtpClientService.createVertxMailMessage()
-            .setTo(recipientEmailAddress.toNormalizedString())
-            .setFrom(authorEmailAddress.toNormalizedString())
-            .setSubject(emailSubject);
-
-          String mailBody = mailing.getEmailBody();
-
-          if (mailBody != null) {
-
-            String emailPreview = mailing.getEmailPreview();
-            if (emailPreview != null) {
-              emailPreview = RichSlateAST.createFromFormInputAst(emailPreview)
-                .addVariables(variables)
-                .build()
-                .toEmailText();
-            }
-
-            /**
-             * HTML Body Building
-             */
-            RichSlateAST richSlateAST = new RichSlateAST
-              .Builder()
-              .addVariables(variables)
-              .setDocument(
-                EmailAstDocumentBuilder.create()
-                  .setTitle(emailSubject)
-                  .setLanguage(mailing.getEmailLanguage())
-                  .setPreview(emailPreview)
-                  .setBody(new JsonArray(mailing.getEmailBody()))
-                  .build()
-              )
-              .build();
-            email.setHtml(richSlateAST.toEmailHTML());
-            email.setText(richSlateAST.toEmailText());
-
-          }
-
-          return smtpClientService
-            .getVertxMailClientForSenderWithSigning(recipientEmailAddress.getDomainName().toStringWithoutRoot())
-            .sendMail(email)
+          return this.app.getMailingFlow().sendMail(recipient, mailing)
             .recover(t -> Future.failedFuture(
               TowerFailureException.builder()
                 .setMessage("Error while sending the test email. Message: " + t.getMessage())
@@ -234,8 +181,11 @@ public class MailingGraphQLImpl {
             ))
             .compose(mailResult -> Future.succeededFuture(true));
 
-        }));
+        });
   }
+
+
+
 
 
   public Future<Mailing> getMailing(DataFetchingEnvironment dataFetchingEnvironment) {
@@ -267,14 +217,14 @@ public class MailingGraphQLImpl {
    */
   public Future<OrganizationUser> getMailingEmailAuthor(DataFetchingEnvironment dataFetchingEnvironment) {
     Mailing mailing = dataFetchingEnvironment.getSource();
-    return this.mailingProvider.getEmailAuthorAtRequestTime(mailing);
+    return this.mailingProvider.buildEmailAuthorAtRequestTimeEventually(mailing);
   }
 
   /**
    * List Late Fetch
    */
   public Future<ListObject> getMailingRecipientList(DataFetchingEnvironment dataFetchingEnvironment) {
-    Mailing mailing =  dataFetchingEnvironment.getSource();
+    Mailing mailing = dataFetchingEnvironment.getSource();
     return this.mailingProvider.getListAtRequestTime(mailing);
   }
 
@@ -290,7 +240,7 @@ public class MailingGraphQLImpl {
     }
 
     return this.app.getAuthProvider()
-      .getRealmByLocalIdWithAuthorizationCheck( guid.getRealmOrOrganizationId(), AuthUserScope.MAILINGS_LIST_GET,routingContext)
+      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmOrOrganizationId(), AuthUserScope.MAILINGS_LIST_GET, routingContext)
       .compose(realm -> mailingProvider.getMailingsByListWithLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm));
 
   }

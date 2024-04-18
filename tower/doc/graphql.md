@@ -82,6 +82,12 @@ with a function:
 No need to build the whole object
 Ie book has an owner if the owner is not requested don't make the request
 
+### Hierarchical building is cost-efficient
+
+Because the building happens hierarchically:
+* if you do a batch select (ie select items to deliver), you are not building for each item, the order. In our case, the mailing, the app, the realm.
+* you also do type/not found verification because the parent is build before.
+
 ### Partial data on errors
 
 If there is an error to retrieve a sub-property, the

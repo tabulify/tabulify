@@ -245,7 +245,7 @@ public class MailingProvider {
      * Orga User
      * The full user is retrieved if requested
      * (In graphQl, by the function that is mapped to the type)
-     * ie {@link #getEmailAuthorAtRequestTime(Mailing)}
+     * ie {@link #buildEmailAuthorAtRequestTimeEventually(Mailing)}
      */
     Long orgaId = row.getLong(MailingCols.ORGA_ID);
     assert Objects.equals(realm.getOrganization().getLocalId(), orgaId);
@@ -499,14 +499,18 @@ public class MailingProvider {
    * The object is build at request time
    * (Feature of GraphQL where a type can be matched to a function)
    */
-  public Future<OrganizationUser> getEmailAuthorAtRequestTime(Mailing mailing) {
+  public Future<OrganizationUser> buildEmailAuthorAtRequestTimeEventually(Mailing mailing) {
     OrganizationUser emailAuthor = mailing.getEmailAuthor();
-    String guid = emailAuthor.getGuid();
-    if (guid != null) {
+    String emailAddress = emailAuthor.getEmailAddress();
+    if (emailAddress != null) {
       return Future.succeededFuture(emailAuthor);
     }
     return this.apiApp.getOrganizationUserProvider()
-      .getOrganizationUserByLocalId(emailAuthor.getLocalId(), emailAuthor.getRealm().getLocalId(), emailAuthor.getRealm());
+      .getOrganizationUserByLocalId(emailAuthor.getLocalId(), emailAuthor.getRealm().getLocalId(), emailAuthor.getRealm())
+      .compose(emailAuthorFuture->{
+        mailing.setEmailAuthor(emailAuthorFuture);
+        return Future.succeededFuture(emailAuthorFuture);
+      });
   }
 
   public Future<ListObject> getListAtRequestTime(Mailing mailing) {

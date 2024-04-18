@@ -1,9 +1,12 @@
 package net.bytle.tower.eraldy.module.mailing.db.mailingitem;
 
 import io.vertx.core.Future;
+import io.vertx.ext.web.RoutingContext;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.ListUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
@@ -13,6 +16,8 @@ import net.bytle.tower.eraldy.module.mailing.model.MailingItemStatus;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
 import net.bytle.tower.eraldy.objectProvider.UserCols;
 import net.bytle.tower.util.Guid;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.*;
 
 import java.util.*;
@@ -31,6 +36,10 @@ public class MailingItemProvider {
 
   public MailingItemProvider(EraldyApiApp eraldyApiApp, JdbcSchema jdbcSchema) {
     this.apiApp = eraldyApiApp;
+
+    /**
+     * Add foreign key to the user table to get the email address
+     */
     Map<JdbcTableColumn, JdbcTableColumn> mailingUserForeignKeys = new HashMap<>();
     mailingUserForeignKeys.put(MailingItemCols.REALM_ID, UserCols.REALM_ID);
     mailingUserForeignKeys.put(MailingItemCols.USER_ID, UserCols.ID);
@@ -112,9 +121,8 @@ public class MailingItemProvider {
     /**
      * Mailing
      */
-
-      Long mailingId = jdbcRow.getLong(MailingItemCols.MAILING_ID);
-    if(!Objects.equals(mailingId, mailing.getLocalId())){
+    Long mailingId = jdbcRow.getLong(MailingItemCols.MAILING_ID);
+    if (!Objects.equals(mailingId, mailing.getLocalId())) {
       throw new InternalException("Bad mailing id");
     }
     mailingItem.setMailing(mailing);
@@ -191,5 +199,56 @@ public class MailingItemProvider {
     );
     mailingItem.setGuid(guid.toString());
 
+  }
+
+  public Future<MailingItem> getByGuidRequestHandler(String guidHash, RoutingContext routingContext, AuthUserScope authUserScope) {
+
+    Guid guid;
+    try {
+      guid = this.createGuidFromHash(guidHash);
+    } catch (CastException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setType(TowerFailureTypeEnum.BAD_STRUCTURE_422)
+        .setMessage("The guid (" + guidHash + ") is not a valid mailing item guid")
+        .setCauseException(e)
+        .build()
+      );
+    }
+
+    return this.apiApp.getRealmProvider()
+      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmOrOrganizationId(), authUserScope, routingContext)
+      .compose(realm -> this.apiApp.getMailingProvider().getByLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm))
+      .compose(mailing -> this.getItemByLocalId(guid.validateAndGetSecondObjectId(mailing.getRealm().getLocalId()), mailing));
+  }
+
+  /**
+   * @param userId the user id
+   * @param mailing with a realm
+   * @return The mailing item or null
+   */
+  private Future<MailingItem> getItemByLocalId(Long userId, Mailing mailing) {
+    return JdbcSelect.from(this.mailingItemTable)
+      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getRealm().getLocalId())
+      .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getLocalId())
+      .addEqualityPredicate(MailingItemCols.USER_ID, userId)
+      .addExtraSelectColumn(this.apiApp.getUserProvider().getUserTable(), UserCols.EMAIL_ADDRESS)
+      .execute(jdbcRowSet -> {
+        if (jdbcRowSet.size() == 0) {
+          return Future.succeededFuture();
+        }
+        if (jdbcRowSet.size() != 1) {
+          return Future.failedFuture("The mailing item selection returns more than one row");
+        }
+        JdbcRow jdbcRow = jdbcRowSet.iterator().next();
+        MailingItem mailingItem = this.buildingMailingItemFromRow(jdbcRow, mailing);
+        // Add address email for mailing
+        User user = mailingItem.getListUser().getUser();
+        user.setEmailAddress(jdbcRow.getString(UserCols.EMAIL_ADDRESS));
+        return Future.succeededFuture(mailingItem);
+      });
+  }
+
+  private Guid createGuidFromHash(String guid) throws CastException {
+    return this.apiApp.createGuidFromHashWithOneRealmIdAndTwoObjectId(GUID_PREFIX, guid);
   }
 }

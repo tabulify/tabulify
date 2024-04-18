@@ -305,4 +305,6 @@ type Mutation {
   mailingSendTestEmail(guid: ID!, props: MailingInputTestEmail!): Boolean
   """Execute the mailing"""
   mailingExecute(guid: ID!): MailingJob
+  """Deliver a mailing item"""
+  mailingItemDeliver(guid: ID!): MailingItem
 }

@@ -126,5 +126,12 @@ public class EmailAddress {
   }
 
 
+  /**
+   * @return the local part without any alias part (ie
+   * from john+alias@smith.com, it will be john
+   */
+  public String getLocalBox() {
+    return this.localPartBox;
+  }
 
 }
