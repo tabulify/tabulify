@@ -64,7 +64,7 @@ public class OrganizationUserProvider {
         if (user == null) {
           return Future.succeededFuture();
         }
-        return getOrganizationUserEnrichedWithOrganizationDataEventually(user);
+        return addOrganizationDataEventually(user);
       });
   }
 
@@ -75,9 +75,9 @@ public class OrganizationUserProvider {
    * @param organizationUser - the organization user to add extra info
    * @return null or the organizationUser enriched with the organization
    */
-  public Future<OrganizationUser> getOrganizationUserEnrichedWithOrganizationDataEventually(OrganizationUser organizationUser) {
+  public Future<OrganizationUser> addOrganizationDataEventually(OrganizationUser organizationUser) {
 
-    return this.jdbcPool.withConnection(sqlConnection-> getOrganizationUserEnrichedWithOrganizationDataEventually(organizationUser,sqlConnection));
+    return this.jdbcPool.withConnection(sqlConnection-> addOrganizationDataEventually(organizationUser,sqlConnection));
 
   }
 
@@ -225,7 +225,7 @@ public class OrganizationUserProvider {
         if (user == null) {
           return Future.succeededFuture();
         }
-        return getOrganizationUserEnrichedWithOrganizationDataEventually(user);
+        return addOrganizationDataEventually(user);
       });
   }
 
@@ -237,7 +237,7 @@ public class OrganizationUserProvider {
         if (resultUser == null) {
           return Future.failedFuture(new InternalException("The result user should not be null for the user (" + organizationUser + ")"));
         }
-        return getOrganizationUserEnrichedWithOrganizationDataEventually(resultUser);
+        return addOrganizationDataEventually(resultUser);
       })
       .compose(resultOrganizationUser -> {
         if (resultOrganizationUser == null) {
@@ -257,7 +257,7 @@ public class OrganizationUserProvider {
    * Getsert: Get or insert the user
    */
   public Future<OrganizationUser> getsertOnServerStartup(OrganizationUser organizationUser, SqlConnection sqlConnection) {
-    return this.getOrganizationUserEnrichedWithOrganizationDataEventually(organizationUser, sqlConnection)
+    return this.addOrganizationDataEventually(organizationUser, sqlConnection)
       .recover(t -> Future.failedFuture(new InternalException("Error while selecting the eraldy owner realm", t)))
       .compose(selectedOrganizationUser -> {
         Future<OrganizationUser> futureOrganizationUser;
@@ -320,7 +320,7 @@ public class OrganizationUserProvider {
    * @param sqlConnection - the sql connection for transaction
    * @return null or the organizationUser enriched with the organization
    */
-  private Future<OrganizationUser> getOrganizationUserEnrichedWithOrganizationDataEventually(OrganizationUser organizationUser, SqlConnection sqlConnection) {
+  private Future<OrganizationUser> addOrganizationDataEventually(OrganizationUser organizationUser, SqlConnection sqlConnection) {
 
     return this.getOrganizationRowForUser(organizationUser, sqlConnection)
       .compose(row -> {

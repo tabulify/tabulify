@@ -4,7 +4,8 @@ public enum JdbcComparisonOperator {
 
   EQUALITY("="),
   LESS_THAN("<"),
-  NOT_EQUAL("!=");
+  NOT_EQUAL("!="),
+  LIKE("like");
 
   private final String sqlSyntax;
 

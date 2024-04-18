@@ -419,15 +419,43 @@ public class UserProvider {
   }
 
 
+  /**
+   * @return A user or null
+   */
   public Future<? extends User> getUserByEmail(EmailAddress userEmail, Realm realm) {
 
+    /**
+     * We create an organization user if this is a eraldy
+     * user and cast it back to a normal user
+     * if it was not found in a organization
+     */
     Class<? extends User> userClass;
     if (this.apiApp.getEraldyModel().isEraldyRealm(realm)) {
       userClass = OrganizationUser.class;
     } else {
       userClass = User.class;
     }
-    return getUserByEmail(userEmail, realm.getLocalId(), userClass, realm);
+    return getUserByEmail(userEmail, realm.getLocalId(), userClass, realm)
+      .compose(user -> {
+        if (user == null) {
+          return Future.succeededFuture();
+        }
+        Future<? extends User> futureUser;
+        if (user instanceof OrganizationUser) {
+          futureUser = this.apiApp.getOrganizationUserProvider().addOrganizationDataEventually((OrganizationUser) user);
+        } else {
+          futureUser = Future.succeededFuture(user);
+        }
+        return futureUser;
+      })
+      .compose(user -> {
+        if (user instanceof OrganizationUser) {
+          if (((OrganizationUser) user).getOrganization() == null) {
+            return Future.succeededFuture((User) user);
+          }
+        }
+        return Future.succeededFuture(user);
+      });
 
 
   }
@@ -463,12 +491,12 @@ public class UserProvider {
       .execute(sqlConnection, userRows -> {
 
         if (userRows.size() == 0) {
-          // return Future.failedFuture(new NotFoundException("the user id (" + userId + ") was not found"));
           return Future.succeededFuture();
         }
 
         JdbcRow row = userRows.iterator().next();
         T userFromRow = getUserFromRow(row, userClass, realm);
+
         return Future.succeededFuture(userFromRow);
       });
   }

@@ -70,6 +70,7 @@ public class JdbcSingleOperatorPredicate {
       return this;
     }
 
+
     public Builder setOperator(JdbcComparisonOperator operator) {
       this.operator = operator;
       return this;
