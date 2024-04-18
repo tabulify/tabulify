@@ -24,11 +24,14 @@ Reprocessing: process real-time data and re-process historical data in the same 
 
 ## Code Gold rule / Law - Constitution of design
 
-  * Create objects as soon as possible, ie after the main. ie pass objects, not primary data type to a function. Why? Because they control the structure at creation, and we don't need to deal with this error at a latter stage. Example:
-    * email address as string
-    * and email as object
-  * Due to the first rule (use object as most as possible for data), pojo can't be used internally as parameter because they hold only primitive data type
-  * Don't return `Null`. Throw instead to avoid a NPE. NULL means that it does not exist or was not set and is a database type not a functional type.
+  * Create objects as soon as possible, ie after the main. ie pass objects, not primary data type to a function. Why? Because
+      * they control the structure at creation, and we don't need to deal with this error at a latter stage.
+      * we will not make ew error if we need to pass an object type versus a string
+    * Example:
+      * email address as string vs email as object
+      * domain name vs string
+  * Due to the first rule (use object as much as possible for data), pojo can be used internally as parameter because if the serialization and deserialization of type is implemented
+  * Don't return `Null`. Throw instead to avoid a NPE. NULL is data type. It means that it does not exist or was not set and is a database type not a functional type.
   * Explicit is better than implicit
 * Builder pattern:
   * most object building needs some cross validation step (validation between argument)

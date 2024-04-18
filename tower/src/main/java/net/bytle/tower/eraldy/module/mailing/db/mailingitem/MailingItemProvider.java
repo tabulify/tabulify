@@ -10,6 +10,7 @@ import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.ListUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.mailing.inputs.MailingItemInputProps;
 import net.bytle.tower.eraldy.module.mailing.model.Mailing;
 import net.bytle.tower.eraldy.module.mailing.model.MailingItem;
 import net.bytle.tower.eraldy.module.mailing.model.MailingItemStatus;
@@ -20,6 +21,7 @@ import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.*;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class MailingItemProvider {
@@ -60,7 +62,7 @@ public class MailingItemProvider {
       .addPredicate(
         JdbcSingleOperatorPredicate
           .builder()
-          .setColumn(MailingItemCols.COUNT_FAILURE, this.apiApp.getMailingFlow().getMaxCountFailureOnRow())
+          .setColumn(MailingItemCols.FAILURE_COUNT, this.apiApp.getMailingFlow().getMaxCountFailureOnRow())
           .setOperator(JdbcComparisonOperator.LESS_THAN)
           .setOrNull(true)
           .build()
@@ -183,8 +185,9 @@ public class MailingItemProvider {
     /**
      * Processing attribute
      */
-    mailingItem.setFailureCount(jdbcRow.getInteger(MailingItemCols.COUNT_FAILURE, 0));
-    mailingItem.setEmailDate(jdbcRow.getLocalDateTime(MailingItemCols.EMAIL_DATE));
+    mailingItem.setFailureCount(jdbcRow.getInteger(MailingItemCols.FAILURE_COUNT, 0));
+    mailingItem.setDeliveryDate(jdbcRow.getLocalDateTime(MailingItemCols.DELIVERY_DATE));
+    mailingItem.setPlannedDeliveryTime(jdbcRow.getLocalDateTime(MailingItemCols.PLANNED_DELIVERY_TIME));
 
     return mailingItem;
   }
@@ -250,5 +253,65 @@ public class MailingItemProvider {
 
   private Guid createGuidFromHash(String guid) throws CastException {
     return this.apiApp.createGuidFromHashWithOneRealmIdAndTwoObjectId(GUID_PREFIX, guid);
+  }
+
+  public Future<MailingItem> update(MailingItem mailingItem, MailingItemInputProps mailingItemInputProps) {
+
+    JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.mailingItemTable)
+      .addPredicateColumn(MailingItemCols.REALM_ID, mailingItem.getMailing().getRealm().getLocalId())
+      .addPredicateColumn(MailingItemCols.MAILING_ID, mailingItem.getMailing().getLocalId())
+      .addPredicateColumn(MailingItemCols.USER_ID, mailingItem.getListUser().getUser().getLocalId());
+
+    MailingItemStatus newStatus = mailingItemInputProps.getStatus();
+    if (newStatus != null && newStatus.getCode() > mailingItem.getStatus().getCode()) {
+      mailingItem.setStatus(newStatus);
+      jdbcUpdate.addUpdatedColumn(MailingItemCols.STATUS_CODE, newStatus.getCode());
+    }
+
+    String newStatusMessage = mailingItemInputProps.getStatusMessage();
+    if (newStatusMessage != null) {
+      mailingItem.setStatusMessage(newStatusMessage);
+      jdbcUpdate.addUpdatedColumn(MailingItemCols.STATUS_MESSAGE, newStatusMessage);
+    }
+
+    MailingJob newMailingJob = mailingItemInputProps.getMailingJob();
+    if (newMailingJob != null) {
+      mailingItem.setMailingJob(newMailingJob);
+      jdbcUpdate.addUpdatedColumn(MailingItemCols.MAILING_JOB_ID, newMailingJob.getLocalId());
+    }
+
+    LocalDateTime plannedDeliveryTime = mailingItemInputProps.getPlannedDeliveryTime();
+    if (plannedDeliveryTime != null) {
+      mailingItem.setPlannedDeliveryTime(plannedDeliveryTime);
+      jdbcUpdate.addUpdatedColumn(MailingItemCols.PLANNED_DELIVERY_TIME, plannedDeliveryTime);
+    }
+
+    Integer failureCount = mailingItemInputProps.getFailureCount();
+    if (failureCount != null) {
+      mailingItem.setFailureCount(failureCount);
+      jdbcUpdate.addUpdatedColumn(MailingItemCols.FAILURE_COUNT, failureCount);
+    }
+
+    String messageId = mailingItemInputProps.getMessageId();
+    if(messageId!=null){
+      mailingItem.setEmailMessageId(messageId);
+      jdbcUpdate.addUpdatedColumn(MailingItemCols.EMAIL_MESSAGE_ID, failureCount);
+    }
+
+    LocalDateTime deliveryDate = mailingItemInputProps.getDeliveryDate();
+    if(deliveryDate!=null){
+      mailingItem.setDeliveryDate(deliveryDate);
+      jdbcUpdate.addUpdatedColumn(MailingItemCols.DELIVERY_DATE, deliveryDate);
+    }
+
+
+    if(jdbcUpdate.hasNoColumnToUpdate()){
+      return Future.succeededFuture(mailingItem);
+    }
+
+    return jdbcUpdate
+      .execute()
+      .compose(v->Future.succeededFuture(mailingItem));
+
   }
 }

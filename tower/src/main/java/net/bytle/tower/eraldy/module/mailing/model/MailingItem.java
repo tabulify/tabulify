@@ -19,9 +19,11 @@ public class MailingItem {
   private LocalDateTime creationTime;
   private Integer failureCount;
   private LocalDateTime modificationTime;
+  private LocalDateTime plannedDeliveryTime;
   private String statusMessage;
   private MailingJob mailingJob;
   private LocalDateTime emailDate;
+  private String emailMessageId;
   private ListUser listUser;
 
   public MailingItem() {
@@ -98,7 +100,7 @@ public class MailingItem {
     this.mailingJob = mailingJob;
   }
 
-  public void setEmailDate(LocalDateTime emailDate) {
+  public void setDeliveryDate(LocalDateTime emailDate) {
     this.emailDate = emailDate;
   }
   @JsonProperty("mailingJob")
@@ -118,5 +120,23 @@ public class MailingItem {
   @JsonProperty("listUser")
   public ListUser getListUser() {
     return listUser;
+  }
+
+  @JsonProperty("plannedDeliveryTime")
+  public LocalDateTime getPlannedDeliveryTime() {
+    return plannedDeliveryTime;
+  }
+
+  public void setPlannedDeliveryTime(LocalDateTime plannedDeliveryTime) {
+    this.plannedDeliveryTime = plannedDeliveryTime;
+  }
+
+  @JsonProperty("emailMessageId")
+  public String getEmailMessageId() {
+    return emailMessageId;
+  }
+
+  public void setEmailMessageId(String emailMessageId) {
+    this.emailMessageId = emailMessageId;
   }
 }

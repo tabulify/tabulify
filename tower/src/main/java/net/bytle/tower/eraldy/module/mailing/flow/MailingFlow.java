@@ -11,11 +11,13 @@ import net.bytle.tower.eraldy.model.manual.EmailAstDocumentBuilder;
 import net.bytle.tower.eraldy.model.manual.EmailTemplateVariables;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputProps;
+import net.bytle.tower.eraldy.module.mailing.inputs.MailingItemInputProps;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingJobInputProps;
 import net.bytle.tower.eraldy.module.mailing.model.*;
 import net.bytle.tower.util.RichSlateAST;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
+import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.TowerSmtpClientService;
@@ -139,7 +141,7 @@ public class MailingFlow extends WebFlowAbs {
    * Deliver, send and item
    * (The mailing item has been build with a user with an address and a given name)
    */
-  public Future<MailingItem> deliverItem(MailingItem mailingItem) {
+  public Future<MailingItem> deliverItem(MailingItem mailingItem, MailingJob mailingJob) {
     if (mailingItem.getStatus() == MailingItemStatus.OK) {
       return Future.failedFuture(TowerFailureException.builder()
         .setType(TowerFailureTypeEnum.BAD_STATE_400)
@@ -147,22 +149,28 @@ public class MailingFlow extends WebFlowAbs {
         .build()
       );
     }
+
+    MailingItemInputProps mailingItemInputProps = new MailingItemInputProps();
+    mailingItemInputProps.setDeliveryDate(DateTimeService.getNowInUtc());
+    if (mailingJob != null) {
+      mailingItemInputProps.setMailingJob(mailingJob);
+    }
+
     User recipientUser = mailingItem.getListUser().getUser();
     return this.sendMail(recipientUser, mailingItem.getMailing())
       .compose(
         mailingResult -> {
-
-          mailingItem.setStatus(MailingItemStatus.OK);
-          // mailingResult.getMessageID();
-          return Future.succeededFuture(mailingItem);
-
+          mailingItemInputProps.setStatus(MailingItemStatus.OK);
+          mailingItemInputProps.setMessageId(mailingResult.getMessageID());
+          return Future.succeededFuture();
         },
         err -> {
-          mailingItem.setStatus(MailingItemStatus.ERROR);
-          mailingItem.setStatusMessage(err.getMessage());
-          return Future.succeededFuture(mailingItem);
-
-        });
+          mailingItemInputProps.setStatus(MailingItemStatus.ERROR);
+          mailingItemInputProps.setStatusMessage(err.getMessage());
+          return Future.succeededFuture();
+        })
+      .compose(v -> this.getApp().getMailingItemProvider()
+        .update(mailingItem, mailingItemInputProps));
   }
 
   /**
@@ -175,7 +183,9 @@ public class MailingFlow extends WebFlowAbs {
 
     TowerSmtpClientService smtpClientService = this.getApp().getEmailSmtpClientService();
 
-    return this.getApp().getMailingProvider().buildEmailAuthorAtRequestTimeEventually(mailing)
+    return this.getApp()
+      .getMailingProvider()
+      .buildEmailAuthorAtRequestTimeEventually(mailing)
       .compose(emailAuthor -> {
 
         /**
@@ -257,7 +267,7 @@ public class MailingFlow extends WebFlowAbs {
         }
 
         return smtpClientService
-          .getVertxMailClientForSenderWithSigning(recipientEmailAddress.getDomainName().toStringWithoutRoot())
+          .getVertxMailClientForSenderWithSigning(authorEmailAddress)
           .sendMail(email);
       });
   }

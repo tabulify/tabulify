@@ -124,7 +124,7 @@ public class MailingGraphQLImpl {
             .build()
           );
         }
-        return this.app.getMailingFlow().deliverItem(mailingItem);
+        return this.app.getMailingFlow().deliverItem(mailingItem, null);
       });
   }
 

@@ -3,6 +3,8 @@ package net.bytle.vertx;
 import io.vertx.ext.mail.*;
 import net.bytle.email.*;
 import net.bytle.exception.InternalException;
+import net.bytle.type.DnsName;
+import net.bytle.type.EmailAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +63,7 @@ public class TowerSmtpClientService {
   /**
    * All clients
    */
-  private final Map<String, MailClient> transactionalMailClientsMap = new HashMap<>();
+  private final Map<DnsName, MailClient> transactionalMailClientsMap = new HashMap<>();
 
 
   private Boolean useWiserAsTransactionalClient = false;
@@ -137,14 +139,14 @@ public class TowerSmtpClientService {
   }
 
 
-  public MailClient getVertxMailClientForSenderWithSigning(String senderDomain) {
+  public MailClient getVertxMailClientForSenderWithSigning(EmailAddress senderEmail) {
 
 
     if (useWiserAsTransactionalClient) {
       if (this.wiserMailClient != null) {
         return this.wiserMailClient;
       }
-      MailConfig mailConfig = getMailConfigWithDkim(senderDomain);
+      MailConfig mailConfig = getMailConfigWithDkim(senderEmail);
       /**
        * Same as {@link WiserConfiguration#WISER_PORT}
        */
@@ -153,26 +155,26 @@ public class TowerSmtpClientService {
       return this.wiserMailClient;
     }
 
-    MailClient mailClient = transactionalMailClientsMap.get(senderDomain);
+    MailClient mailClient = transactionalMailClientsMap.get(senderEmail.getDomainName());
     if (mailClient != null) {
       return mailClient;
     }
 
-    MailConfig config = getMailConfigWithDkim(senderDomain);
+    MailConfig config = getMailConfigWithDkim(senderEmail);
     mailClient = MailClient.create(this.providerConfig.server.getVertx(), config);
-    transactionalMailClientsMap.put(senderDomain, mailClient);
+    transactionalMailClientsMap.put(senderEmail.getDomainName(), mailClient);
     return mailClient;
 
   }
 
-  private MailConfig getMailConfigWithDkim(String senderDomain) {
+  private MailConfig getMailConfigWithDkim(EmailAddress sender) {
     // https://github.com/vert-x3/vertx-mail-client/blob/master/src/test/java/io/vertx/ext/mail/MailWithDKIMSignTest.java
     // https://github.com/gaol/vertx-mail-client/wiki/DKIM-Implementation
     DKIMSignOptions dkimSignOptions = new DKIMSignOptions()
       .setPrivateKey(this.providerConfig.dkimPrivateKey)
       //.setAuid("@example.com") user agent identifier (default @sdid)
       .setSelector(this.providerConfig.dkimSelector)
-      .setSdid(senderDomain);
+      .setSdid(sender.getDomainName().toStringWithoutRoot());
 
     MailConfig vertxMailConfig = new MailConfig()
       .setUserAgent(this.providerConfig.userAgentName)
