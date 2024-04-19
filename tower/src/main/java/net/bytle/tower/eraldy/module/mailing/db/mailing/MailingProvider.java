@@ -507,7 +507,7 @@ public class MailingProvider {
       return Future.succeededFuture(emailAuthor);
     }
     return this.apiApp.getOrganizationUserProvider()
-      .getOrganizationUserByLocalId(emailAuthor.getLocalId(), emailAuthor.getRealm().getLocalId(), emailAuthor.getRealm())
+      .getOrganizationUserByLocalId(emailAuthor.getLocalId())
       .compose(emailAuthorFuture->{
         mailing.setEmailAuthor(emailAuthorFuture);
         return Future.succeededFuture(emailAuthorFuture);

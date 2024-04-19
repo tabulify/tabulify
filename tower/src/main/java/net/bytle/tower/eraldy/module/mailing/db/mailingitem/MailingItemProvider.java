@@ -15,7 +15,7 @@ import net.bytle.tower.eraldy.module.mailing.model.Mailing;
 import net.bytle.tower.eraldy.module.mailing.model.MailingItem;
 import net.bytle.tower.eraldy.module.mailing.model.MailingItemStatus;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
-import net.bytle.tower.eraldy.objectProvider.UserCols;
+import net.bytle.tower.eraldy.module.user.db.UserCols;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.EmailAddress;
 import net.bytle.vertx.TowerFailureException;

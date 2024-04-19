@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.model.openapi;
+package net.bytle.tower.eraldy.module.user.inputs;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,20 +7,15 @@ import net.bytle.type.EmailAddress;
 
 import java.net.URI;
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.TimeZone;
 
 /**
- * A user
+ * A input props user
  **/
-@com.fasterxml.jackson.annotation.JsonIdentityInfo( generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = User.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class User   {
+public class UserInputProps {
 
 
-  protected String guid;
-
-  protected Long localId;
 
   protected String handle;
 
@@ -34,7 +29,7 @@ public class User   {
 
   protected UserStatus status;
 
-  protected String disabledReason;
+  protected String statusMessage;
 
   protected URI avatar;
 
@@ -46,13 +41,8 @@ public class User   {
 
   protected TimeZone timeZone;
 
-  protected LocalDateTime creationTime;
-
-  protected LocalDateTime modificationTime;
-
   protected LocalDateTime lastActiveTime;
 
-  protected Realm realm;
 
   /**
   * The empty constructor is
@@ -60,41 +50,9 @@ public class User   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public User () {
+  public UserInputProps() {
   }
 
-  /**
-  * @return guid It is the global identifier * a string representation of realm id + user local id * never changes. It's the public id that: * you can see in the url * send to external application such as Analytics SAAS provider.  The database id (ie realm id + user local id) is not public.
-  */
-  @JsonProperty("guid")
-  public String getGuid() {
-    return guid;
-  }
-
-  /**
-  * @param guid It is the global identifier * a string representation of realm id + user local id * never changes. It's the public id that: * you can see in the url * send to external application such as Analytics SAAS provider.  The database id (ie realm id + user local id) is not public.
-  */
-  @SuppressWarnings("unused")
-  public void setGuid(String guid) {
-    this.guid = guid;
-  }
-
-  /**
-  * @return localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
-  */
-  @com.fasterxml.jackson.annotation.JsonAlias({"id"})
-  @JsonProperty("localId")
-  public Long getLocalId() {
-    return localId;
-  }
-
-  /**
-  * @param localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
-  */
-  @SuppressWarnings("unused")
-  public void setLocalId(Long localId) {
-    this.localId = localId;
-  }
 
   /**
   * @return handle The handle of the user
@@ -194,20 +152,18 @@ public class User   {
     this.status = status;
   }
 
-  /**
-  * @return disabledReason The reason of the soft delete
-  */
-  @JsonProperty("disabledReason")
+
+  @JsonProperty("statusMessage")
   public String getStatusMessage() {
-    return disabledReason;
+    return statusMessage;
   }
 
   /**
-  * @param disabledReason The reason of the soft delete
+  * @param statusMessage The status message (the reason)
   */
   @SuppressWarnings("unused")
-  public void setStatusMessage(String disabledReason) {
-    this.disabledReason = disabledReason;
+  public void setStatusMessage(String statusMessage) {
+    this.statusMessage = statusMessage;
   }
 
   /**
@@ -291,38 +247,6 @@ public class User   {
   }
 
   /**
-  * @return creationTime The creation time of the user in UTC
-  */
-  @JsonProperty("creationTime")
-  public LocalDateTime getCreationTime() {
-    return creationTime;
-  }
-
-  /**
-  * @param creationTime The creation time of the user in UTC
-  */
-  @SuppressWarnings("unused")
-  public void setCreationTime(LocalDateTime creationTime) {
-    this.creationTime = creationTime;
-  }
-
-  /**
-  * @return modificationTime The last modification time of the user in UTC
-  */
-  @JsonProperty("modificationTime")
-  public LocalDateTime getModificationTime() {
-    return modificationTime;
-  }
-
-  /**
-  * @param modificationTime The last modification time of the user in UTC
-  */
-  @SuppressWarnings("unused")
-  public void setModificationTime(LocalDateTime modificationTime) {
-    this.modificationTime = modificationTime;
-  }
-
-  /**
   * @return lastActiveTime the last active time (should be on date level)
   */
   @JsonProperty("lastActiveTime")
@@ -338,43 +262,5 @@ public class User   {
     this.lastActiveTime = lastActiveTime;
   }
 
-  /**
-  * @return realm
-  */
-  @JsonProperty("realm")
-  public Realm getRealm() {
-    return realm;
-  }
-
-  /**
-  * @param realm Set realm
-  */
-  @SuppressWarnings("unused")
-  public void setRealm(Realm realm) {
-    this.realm = realm;
-  }
-
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    User user = (User) o;
-    return Objects.equals(guid, user.guid);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(guid);
-  }
-
-  @Override
-  public String toString() {
-    return guid + ", " + emailAddress + ", " + handle;
-  }
 
 }

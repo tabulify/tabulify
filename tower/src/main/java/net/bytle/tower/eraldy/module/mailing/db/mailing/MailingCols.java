@@ -1,8 +1,8 @@
 package net.bytle.tower.eraldy.module.mailing.db.mailing;
 
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
+import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.objectProvider.OrganizationProvider;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.vertx.db.JdbcSchemaManager;
 import net.bytle.vertx.db.JdbcTableColumn;
 

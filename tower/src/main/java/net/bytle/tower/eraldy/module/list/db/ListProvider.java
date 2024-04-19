@@ -21,10 +21,10 @@ import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
+import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.OrganizationUserProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.*;
 import net.bytle.vertx.db.*;
@@ -346,7 +346,7 @@ public class ListProvider {
         Future<OrganizationUser> ownerFuture = Future.succeededFuture();
         if (ownerId != null) {
           ownerFuture = apiApp.getOrganizationUserProvider()
-            .getOrganizationUserByLocalId(ownerId, realmResult.getLocalId(), realmResult);
+            .getOrganizationUserByLocalId(ownerId);
         }
 
         return Future

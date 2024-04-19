@@ -15,6 +15,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.FailureStatic;
@@ -359,7 +360,7 @@ public class AppProvider {
     Long userId = row.getLong(APP_USER_COLUMN);
     Future<OrganizationUser> userFuture = apiApp
       .getOrganizationUserProvider()
-      .getOrganizationUserByLocalId(userId, realm.getLocalId(), realm);
+      .getOrganizationUserByLocalId(userId);
     Future<Realm> realmFuture;
     Long realmId = row.getLong(APP_REALM_ID_COLUMN);
     RealmProvider realmProvider = this.apiApp.getRealmProvider();

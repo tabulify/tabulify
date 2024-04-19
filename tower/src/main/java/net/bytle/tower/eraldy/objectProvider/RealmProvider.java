@@ -470,15 +470,6 @@ public class RealmProvider {
      */
     EraldyApiApp apiApp = this.getApp();
     EraldyModel eraldyModel = apiApp.getEraldyModel();
-    Realm eraldyRealm;
-    if (eraldyModel.isRealmLocalId(realmId)) {
-      // Special case when we build the eraldy realm itself
-      // on start
-      // otherwise we got a recursion
-      eraldyRealm = realm;
-    } else {
-      eraldyRealm = eraldyModel.getRealm();
-    }
 
     /**
      * Future Org
@@ -494,7 +485,7 @@ public class RealmProvider {
          */
         Long ownerUserLocalId = row.getLong(RealmCols.OWNER_ID);
         return apiApp.getOrganizationUserProvider()
-          .getOrganizationUserByLocalId(ownerUserLocalId, eraldyRealm.getLocalId(), eraldyRealm);
+          .getOrganizationUserByLocalId(ownerUserLocalId);
       })
       .recover(t -> Future.failedFuture(new InternalException("Future user for building the realm failed", t)))
       .compose(user -> {

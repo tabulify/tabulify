@@ -18,7 +18,7 @@ import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceDeserializer;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceSerializer;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
+import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerFailureException;
@@ -229,7 +229,7 @@ public class ListUserProvider {
 
         Long userId = row.getLong(USER_ID_COLUMN);
         Future<User> publisherFuture = apiApp.getUserProvider()
-          .getUserByLocalId(userId, realm.getLocalId(), User.class, realm);
+          .getUserByLocalId(userId, realm);
 
         return Future
           .all(publicationFuture, publisherFuture)

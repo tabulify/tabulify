@@ -30,4 +30,12 @@ public class TimeZoneUtil {
     }
     return TimeZone.getTimeZone(zoneId);
   }
+
+  public static TimeZone getTimeZoneFailSafe(String zoneId) {
+    try {
+      return getTimeZoneWithValidation(zoneId);
+    } catch (TimeZoneCast e) {
+      throw new RuntimeException("The timezone (" + zoneId + ") is not valid");
+    }
+  }
 }

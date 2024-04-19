@@ -11,9 +11,9 @@ import net.bytle.exception.NullValueException;
 import net.bytle.tower.eraldy.graphql.pojo.input.ListUserInputProps;
 import net.bytle.tower.eraldy.model.openapi.ListUserSource;
 import net.bytle.tower.eraldy.model.openapi.ListUserStatus;
-import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
+import net.bytle.tower.eraldy.module.user.db.UserProvider;
+import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.time.TimeZoneCast;
 import net.bytle.type.time.TimeZoneUtil;
@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.LocalDateTime;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 /**
@@ -112,41 +113,41 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
         }
         return this.listImportJob.getList()
           .compose(list -> userProvider
-            .getUserByEmail(emailInternetAddress, list.getRealm().getLocalId(), User.class, list.getRealm())
+            .getUserByEmail(emailInternetAddress, list.getRealm())
             .compose(userFromRegistry -> {
               if (userFromRegistry != null) {
                 if (this.listImportJob.getUserAction() == ListImportUserAction.UPDATE) {
+                  UserInputProps userInputProps = new UserInputProps();
                   boolean userShouldUpdate = false;
                   if (!this.givenName.isBlank() && !userFromRegistry.getGivenName().equals(this.givenName)) {
-                    userFromRegistry.setGivenName(this.givenName);
+                    userInputProps.setGivenName(this.givenName);
                     userShouldUpdate = true;
                   }
                   if (!this.familyName.isBlank() && !userFromRegistry.getFamilyName().equals(this.familyName)) {
-                    userFromRegistry.setFamilyName(this.familyName);
+                    userInputProps.setFamilyName(this.familyName);
                     userShouldUpdate = true;
                   }
                   if (userShouldUpdate) {
                     this.userStatus = ListImportUserStatus.UPDATED;
-                    return userProvider.updateUser(userFromRegistry);
+                    return userProvider.updateUser(userFromRegistry,userInputProps);
                   }
                 }
                 return Future.succeededFuture(userFromRegistry);
               } else {
-                User newUser = new User();
-                newUser.setEmailAddress(emailInternetAddress);
-                newUser.setGivenName(this.givenName);
-                newUser.setFamilyName(this.familyName);
+                UserInputProps userInputProps = new UserInputProps();
+                userInputProps.setEmailAddress(emailInternetAddress);
+                userInputProps.setGivenName(this.givenName);
+                userInputProps.setFamilyName(this.familyName);
                 if (!timeZoneString.isEmpty()) {
                   try {
-                    String timeZoneId = TimeZoneUtil.getTimeZoneWithValidation(timeZoneString).getID();
-                    newUser.setTimeZone(timeZoneId);
+                    TimeZone timeZone = TimeZoneUtil.getTimeZoneWithValidation(timeZoneString);
+                    userInputProps.setTimeZone(timeZone);
                   } catch (TimeZoneCast e) {
                     return Future.failedFuture(new CastException("The timezone (" + timeZoneString + ") is not a valid time zone. Skipped.", e));
                   }
                 }
-                newUser.setRealm(list.getRealm());
                 this.userStatus = ListImportUserStatus.CREATED;
-                return userProvider.insertUserAndTrackEvent(newUser, FlowType.LIST_IMPORT);
+                return userProvider.insertUserAndTrackEvent(list.getRealm(), userInputProps, FlowType.LIST_IMPORT);
               }
             })
             .compose(

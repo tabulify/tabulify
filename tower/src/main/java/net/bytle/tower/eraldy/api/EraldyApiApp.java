@@ -18,8 +18,11 @@ import net.bytle.tower.eraldy.module.mailing.db.mailing.MailingProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingitem.MailingItemProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingjob.MailingJobProvider;
 import net.bytle.tower.eraldy.module.mailing.flow.MailingFlow;
+import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.module.user.jackson.JacksonEmailAddressDeserializer;
 import net.bytle.tower.eraldy.module.user.jackson.JacksonEmailAddressSerializer;
+import net.bytle.tower.eraldy.module.user.jackson.JacksonTimeZoneDeserializer;
+import net.bytle.tower.eraldy.module.user.jackson.JacksonTimeZoneSerializer;
 import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
 import net.bytle.tower.util.Env;
@@ -40,6 +43,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.TimeZone;
 
 import static net.bytle.tower.util.Guid.*;
 
@@ -153,12 +157,14 @@ public class EraldyApiApp extends TowerApp {
 
     /**
      * Jackson common type
-     * Email Address
+     * Email Address and time zone
      * (Must be before the provider below as they make use of it)
      */
     httpServer.getServer().getJacksonMapperManager()
       .addDeserializer(EmailAddress.class, new JacksonEmailAddressDeserializer())
-      .addSerializer(EmailAddress.class, new JacksonEmailAddressSerializer());
+      .addSerializer(EmailAddress.class, new JacksonEmailAddressSerializer())
+      .addSerializer(TimeZone.class, new JacksonTimeZoneSerializer())
+      .addDeserializer(TimeZone.class, new JacksonTimeZoneDeserializer());
 
     /**
      * DataBase Provider/Manager

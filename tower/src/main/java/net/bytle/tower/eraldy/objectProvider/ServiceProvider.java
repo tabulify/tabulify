@@ -18,6 +18,7 @@ import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.Service;
 import net.bytle.tower.eraldy.model.openapi.ServiceSmtp;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeService;
@@ -304,7 +305,7 @@ public class ServiceProvider {
     Future<User> futureImpersonatedUser = Future.succeededFuture();
     if (impersonatedUserId != null) {
       futureImpersonatedUser = apiApp.getUserProvider()
-        .getUserByLocalId(impersonatedUserId, realm.getLocalId(), User.class, realm);
+        .getUserByLocalId(impersonatedUserId, realm);
     }
     Future<Realm> realmFuture = Future.succeededFuture(realm);
     if (realm == null) {

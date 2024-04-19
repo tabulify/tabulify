@@ -2,7 +2,10 @@ package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.exception.*;
+import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
+import net.bytle.exception.NotAuthorizedException;
+import net.bytle.exception.NotFoundException;
 import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationUser;
@@ -21,7 +24,6 @@ import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlow;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -58,7 +60,7 @@ public class AuthProvider {
    */
   private OrganizationUser getSignedInOrganizationalUserOrThrows(RoutingContext routingContext) throws NotFoundException, NotSignedInOrganizationUser {
     AuthUser authUser = this.getSignedInAuthUser(routingContext);
-    return toModelUser(authUser, OrganizationUser.class);
+    return toModelUser(authUser);
   }
 
   /**
@@ -90,16 +92,9 @@ public class AuthProvider {
    * Return a valid model user from an authUser
    * The authUser should be a valid user in the database (not an oauth token)
    */
-  private <T extends User> T toModelUser(AuthUser authUser, Class<T> userClass) throws NotSignedInOrganizationUser {
+  private <T extends User> T toModelUser(AuthUser authUser) throws NotSignedInOrganizationUser {
 
-    T userEraldy;
-    try {
-      userEraldy = userClass.getDeclaredConstructor().newInstance();
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-      throw new InternalException("Unable to create a user instance", e);
-    }
-
-    /**
+        /**
      * Realm / Audience
      * <p>
      * First because it's in the user guid
@@ -119,6 +114,7 @@ public class AuthProvider {
 
     String audienceHandle = authUser.getAudienceHandle();
     realm.setHandle(audienceHandle);
+    T userEraldy = this.apiApp.getUserProvider().createUserObjectFromRealm(realm);
     userEraldy.setRealm(realm);
 
     /**
@@ -142,12 +138,8 @@ public class AuthProvider {
     /**
      * Organization
      */
-    if (userClass.equals(OrganizationUser.class)) {
-      try {
-        this.apiApp.getOrganizationUserProvider().checkOrganizationUserRealmId(userClass, userEraldy);
-      } catch (AssertionException e) {
-        throw new NotSignedInOrganizationUser(e);
-      }
+    if (userEraldy instanceof OrganizationUser) {
+
       String organizationGuidString = authUser.getOrganizationGuid();
       if (organizationGuidString == null) {
         throw new InternalException("The organizational user (" + userEraldy.getEmailAddress() + "," + userEraldy.getRealm().getLocalId() + ") does not have any organization guid");
@@ -198,11 +190,11 @@ public class AuthProvider {
   public User toBaseModelUser(AuthUser authUser) {
 
     try {
-      return toModelUser(authUser, User.class);
+      return toModelUser(authUser);
     } catch (NotSignedInOrganizationUser e) {
       // the exception is for an organizational user
       // it should not happen as we ask a model user
-      throw new InternalException("The auth user could ne be retrieved as base user", e);
+      throw new InternalException("The auth user could not be retrieved as base user", e);
     }
 
   }
@@ -223,7 +215,7 @@ public class AuthProvider {
   private User getSignedInBaseUserOrThrow(RoutingContext routingContext) throws NotFoundException {
     AuthUser authUser = this.getSignedInAuthUser(routingContext);
     try {
-      return toModelUser(authUser, User.class);
+      return toModelUser(authUser);
     } catch (NotSignedInOrganizationUser e) {
       // the exception is for an organizational user
       // it should not happen as we ask a model user
