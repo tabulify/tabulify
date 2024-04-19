@@ -9,19 +9,25 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Organization;
+import net.bytle.tower.eraldy.module.organization.db.OrganizationCols;
+import net.bytle.tower.eraldy.module.organization.inputs.OrganizationInputProps;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
+import net.bytle.vertx.db.JdbcInsert;
+import net.bytle.vertx.db.JdbcSchema;
 import net.bytle.vertx.db.JdbcSchemaManager;
+import net.bytle.vertx.db.JdbcTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.LocalDateTime;
 
 import static net.bytle.vertx.db.JdbcSchemaManager.COLUMN_PART_SEP;
 
 public class OrganizationProvider {
 
 
-
-    protected static final Logger LOGGER = LoggerFactory.getLogger(OrganizationProvider.class);
+  protected static final Logger LOGGER = LoggerFactory.getLogger(OrganizationProvider.class);
   public static final String TABLE_NAME = "organization";
 
   public static final String QUALIFIED_TABLE_NAME = JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME;
@@ -37,13 +43,16 @@ public class OrganizationProvider {
   public static final String ORGA_HANDLE_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "handle";
   @SuppressWarnings("unused")
   private static final String ORGA_MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
-  private static final String ORGA_CREATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private final Pool jdbcPool;
+  private final JdbcTable orgaTable;
 
 
-  public OrganizationProvider(EraldyApiApp apiApp) {
+  public OrganizationProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
     this.apiApp = apiApp;
     this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
+    this.orgaTable = JdbcTable.build(jdbcSchema, TABLE_NAME)
+      .addPrimaryKeyColumn(OrganizationCols.ID)
+      .build();
   }
 
 
@@ -104,47 +113,45 @@ public class OrganizationProvider {
   /**
    * Getsert: Get or insert the user
    */
-  public Future<Organization> getsert(Organization organization, SqlConnection sqlConnection) {
+  public Future<Organization> getsert(Long organizationId, OrganizationInputProps organizationInputProps, SqlConnection sqlConnection) {
 
-    return this.getById(organization.getLocalId(), sqlConnection)
+    return this.getById(organizationId, sqlConnection)
       .recover(t -> Future.failedFuture(new InternalException("Error while selecting the organization", t)))
       .compose(storedOrganization -> {
         if (storedOrganization != null) {
           return Future.succeededFuture(storedOrganization);
         } else {
-          return this.insert(organization, sqlConnection);
+          return this.insert(organizationId, organizationInputProps, sqlConnection);
         }
       });
 
   }
 
-  private Future<Organization> insert(Organization organization, SqlConnection sqlConnection) {
-    String sql = "INSERT INTO\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
-      "  " + ORGA_ID_COLUMN + ",\n" +
-      "  " + ORGA_HANDLE_COLUMN + ",\n" +
-      "  " + ORGA_CREATION_TIME_COLUMN + "\n" +
-      "  )\n" +
-      " values ($1, $2, $3)\n" +
-      " returning " + ORGA_ID_COLUMN;
+  private Future<Organization> insert(Long organizationId, OrganizationInputProps organizationInputProps, SqlConnection sqlConnection) {
 
-    return sqlConnection.preparedQuery(sql)
-      .execute(Tuple.of(
-        organization.getLocalId(),
-        organization.getHandle(),
-        DateTimeService.getNowInUtc()
-      ))
-      .recover(e -> Future.failedFuture(new InternalException("Error: " + e.getMessage() + ", while inserting the orga user with the sql\n" + sql, e)))
+
+    LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
+    return JdbcInsert.into(this.orgaTable)
+      .addColumn(OrganizationCols.CREATION_TIME, nowInUtc)
+      .addColumn(OrganizationCols.ID, organizationId)
+      .addColumn(OrganizationCols.HANDLE, organizationInputProps.getHandle())
+      .addColumn(OrganizationCols.NAME, organizationInputProps.getName())
+      .addReturningColumn(OrganizationCols.ID)
+      .execute(sqlConnection)
       .compose(orgRows -> {
-        Long orgLocalId = orgRows.iterator().next().getLong(ORGA_ID_COLUMN);
+        Long orgLocalId = orgRows.iterator().next().getLong(OrganizationCols.ID);
+        Organization organization = new Organization();
         organization.setLocalId(orgLocalId);
         this.computeGuid(organization);
+        organization.setName(organizationInputProps.getName());
+        organization.setHandle(organizationInputProps.getHandle());
+        organization.setCreationTime(nowInUtc);
         return Future.succeededFuture(organization);
       });
   }
 
   Future<Organization> getById(Long localId, SqlConnection sqlConnection) {
-    return getById(localId,Organization.class,sqlConnection);
+    return getById(localId, Organization.class, sqlConnection);
   }
 
 

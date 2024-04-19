@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.objectProvider;
+package net.bytle.tower.eraldy.module.organization.db;
 
 import io.vertx.core.Future;
 import io.vertx.sqlclient.Pool;
@@ -14,6 +14,7 @@ import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
+import net.bytle.tower.eraldy.objectProvider.OrganizationProvider;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
@@ -184,15 +185,8 @@ public class OrganizationUserProvider {
 
 
   /**
-   * Check that the user is an Organization user
-   */
-  public <T extends User> void checkOrganizationUserRealmId(Class<T> userClass, T user) throws AssertionException {
-    checkOrganizationUserRealmId(userClass, user.getRealm().getLocalId());
-  }
-
-  /**
    *
-   * @deprecated use the function with the user {@link #checkOrganizationUserRealmId(Class, User)} in place of the long so that we can also validate the user
+   * @deprecated not needed as the type of user created depend on the realm
    */
   @Deprecated
   <T extends User> void checkOrganizationUserRealmId(Class<T> userClass, Long localId) throws AssertionException {

@@ -18,6 +18,7 @@ import net.bytle.tower.eraldy.module.mailing.db.mailing.MailingProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingitem.MailingItemProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingjob.MailingJobProvider;
 import net.bytle.tower.eraldy.module.mailing.flow.MailingFlow;
+import net.bytle.tower.eraldy.module.organization.db.OrganizationUserProvider;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.module.user.jackson.JacksonEmailAddressDeserializer;
 import net.bytle.tower.eraldy.module.user.jackson.JacksonEmailAddressSerializer;
@@ -171,10 +172,9 @@ public class EraldyApiApp extends TowerApp {
      */
     this.userProvider = new UserProvider(this, realmSchema);
     this.organizationUserProvider = new OrganizationUserProvider(this);
+    this.organizationProvider = new OrganizationProvider(this,realmSchema);
     this.realmProvider = new RealmProvider(this, realmSchema);
     this.listProvider = new ListProvider(this, realmSchema);
-    this.listImportFlow = new ListImportFlow(this);
-    this.organizationProvider = new OrganizationProvider(this);
     this.authProvider = new AuthProvider(this);
     this.listUserProvider = new ListUserProvider(this);
     this.serviceProvider = new ServiceProvider(this);
@@ -201,6 +201,7 @@ public class EraldyApiApp extends TowerApp {
     this.emailLoginFlow = new EmailLoginFlow(this);
     this.passwordLoginFlow = new PasswordLoginFlow(this);
     this.mailingFlow = new MailingFlow(this);
+    this.listImportFlow = new ListImportFlow(this);
 
     /**
      * OAuth Service

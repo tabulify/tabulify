@@ -12,6 +12,7 @@ import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationU
 import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
@@ -94,7 +95,7 @@ public class AuthProvider {
    */
   private <T extends User> T toModelUser(AuthUser authUser) throws NotSignedInOrganizationUser {
 
-        /**
+    /**
      * Realm / Audience
      * <p>
      * First because it's in the user guid
@@ -430,25 +431,46 @@ public class AuthProvider {
    * @return a user suitable
    */
   public Future<AuthUser> insertUserFromLoginAuthUserClaims(AuthUser authUserAsClaims, RoutingContext routingContext, WebFlow webFlow) {
-    User user = toBaseModelUser(authUserAsClaims);
+
+    String realmGuid = authUserAsClaims.getRealmGuid();
     return this.apiApp
-      .getUserProvider()
-      .insertUser(user)
-      .compose(insertedUser -> toAuthUserForSession(user)
-        .compose(authUserForSession -> {
-          SignUpEvent signUpEvent = new SignUpEvent();
-          signUpEvent.getRequest().setFlowGuid(webFlow.getFlowType().getId().toString());
-          signUpEvent.getRequest().setFlowHandle(webFlow.getFlowType().getHandle());
-          this.apiApp
-            .getHttpServer()
-            .getServer()
-            .getTrackerAnalytics()
-            .eventBuilder(signUpEvent)
-            .setAuthUser(authUserForSession)
-            .setRoutingContext(routingContext)
-            .processEvent();
-          return Future.succeededFuture(authUserForSession);
-        }));
+      .getRealmProvider()
+      .getRealmFromIdentifier(realmGuid)
+      .compose(realm -> {
+        if (realm == null) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setMessage("The realm (" + realmGuid + ") was not found")
+            .build());
+        }
+        UserInputProps userInputProps;
+        try {
+          userInputProps = toUserInput(authUserAsClaims);
+        } catch (EmailCastException e) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setType(TowerFailureTypeEnum.BAD_STRUCTURE_422)
+            .setMessage(e.getMessage())
+            .setCauseException(e)
+            .build());
+        }
+        return this.apiApp.getUserProvider()
+          .insertUser(realm, userInputProps)
+          .compose(insertedUser -> toAuthUserForSession(insertedUser)
+            .compose(authUserForSession -> {
+              SignUpEvent signUpEvent = new SignUpEvent();
+              signUpEvent.getRequest().setFlowGuid(webFlow.getFlowType().getId().toString());
+              signUpEvent.getRequest().setFlowHandle(webFlow.getFlowType().getHandle());
+              this.apiApp
+                .getHttpServer()
+                .getServer()
+                .getTrackerAnalytics()
+                .eventBuilder(signUpEvent)
+                .setAuthUser(authUserForSession)
+                .setRoutingContext(routingContext)
+                .processEvent();
+              return Future.succeededFuture(authUserForSession);
+            }));
+      });
+
 
   }
 
@@ -512,13 +534,37 @@ public class AuthProvider {
         if (userInDb == null) {
           return Future.succeededFuture();
         }
+        UserInputProps userInput;
+        try {
+          userInput = toUserInput(authUserClaims);
+        } catch (EmailCastException e) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setType(TowerFailureTypeEnum.BAD_STRUCTURE_422)
+            .setMessage(e.getMessage())
+            .setCauseException(e)
+            .build());
+        }
         return this.apiApp
           .getUserProvider()
-          .patchUserIfPropertyValueIsNull(userInDb, toBaseModelUser(authUserClaims))
+          .updateUser(userInDb, userInput)
           .compose(patchUser -> toAuthUserForSession(patchUser)
             .compose(Future::succeededFuture)
           );
       });
+  }
+
+  private UserInputProps toUserInput(AuthUser authUserClaims) throws EmailCastException {
+    UserInputProps userInputProps = new UserInputProps();
+    String subjectEmail = authUserClaims.getSubjectEmail();
+    EmailAddress emailAddress = EmailAddress.of(subjectEmail);
+    userInputProps.setEmailAddress(emailAddress);
+    userInputProps.setGivenName(authUserClaims.getSubjectGivenName());
+    userInputProps.setFamilyName(authUserClaims.getSubjectFamilyName());
+    userInputProps.setBio(authUserClaims.getSubjectBio());
+    userInputProps.setAvatar(authUserClaims.getSubjectAvatar());
+    userInputProps.setLocation(authUserClaims.getSubjectLocation());
+    userInputProps.setWebsite(authUserClaims.getSubjectBlog());
+    return userInputProps;
   }
 
 

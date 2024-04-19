@@ -4,6 +4,8 @@ import io.vertx.core.Future;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.organization.inputs.OrganizationInputProps;
+import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.ConfigAccessor;
@@ -191,12 +193,11 @@ public class EraldyModel {
            * Create if not exists and get the Eraldy Model
            * (ie getsert)
            */
-          Organization initialEraldyOrganization = new Organization();
-          initialEraldyOrganization.setLocalId(REALM_USER_LOCAL_ID);
+          OrganizationInputProps initialEraldyOrganization = new OrganizationInputProps();
           initialEraldyOrganization.setHandle("eraldy");
           initialEraldyOrganization.setName("Eraldy");
           Future<Organization> futureOrganization = this.apiApp.getOrganizationProvider()
-            .getsert(initialEraldyOrganization, sqlConnection);
+            .getsert(REALM_USER_LOCAL_ID,initialEraldyOrganization, sqlConnection);
 
           /**
            * The organization roles
@@ -229,9 +230,8 @@ public class EraldyModel {
               /**
                * Organization User
                */
-              OrganizationUser initialRealmOwnerUser = new OrganizationUser();
-              initialRealmOwnerUser.setLocalId(REALM_USER_LOCAL_ID);
-              initialEraldyRealm.setOwnerUser(initialRealmOwnerUser);
+              UserInputProps initialRealmOwnerUser = new UserInputProps();
+
 
               return this.apiApp.getRealmProvider()
                 .getsertOnServerStartup(initialEraldyRealm, sqlConnection)
@@ -242,13 +242,12 @@ public class EraldyModel {
 
                   OrganizationUser ownerUser = eraldyRealm.getOwnerUser();
                   Future<OrganizationUser> futureOwnerUser;
-                  if (ownerUser != null && !ownerUser.getLocalId().equals(initialRealmOwnerUser.getLocalId())) {
+                  if (ownerUser != null && !ownerUser.getLocalId().equals(REALM_USER_LOCAL_ID)) {
                     futureOwnerUser = Future.succeededFuture(ownerUser);
                   } else {
                     /**
                      * Realm Owner user getsertion
                      */
-                    initialRealmOwnerUser.setRealm(eraldyRealm);
                     initialRealmOwnerUser.setGivenName(apexDomain.getOwnerName());
                     initialRealmOwnerUser.setEmailAddress(apexDomain.getOwnerEmail());
                     try {
@@ -258,10 +257,11 @@ public class EraldyModel {
                     }
                     futureOwnerUser = apiApp
                       .getUserProvider()
-                      .getsertOnServerStartup(initialRealmOwnerUser, sqlConnection, OrganizationUser.class)
+                      .getsertOnServerStartup(eraldyRealm,REALM_USER_LOCAL_ID,initialRealmOwnerUser, sqlConnection)
                       .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner user", t)))
                       .compose(resUser -> {
                           LOGGER.info("Eraldy Realm Owner User getserted as Realm User");
+                        initialEraldyRealm.setOwnerUser((OrganizationUser) resUser);
                           /**
                            * get sert the user as organization user
                            */
