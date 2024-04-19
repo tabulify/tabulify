@@ -5,6 +5,8 @@ import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.organization.inputs.OrganizationInputProps;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
+import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.type.UriEnhanced;
@@ -193,11 +195,11 @@ public class EraldyModel {
            * Create if not exists and get the Eraldy Model
            * (ie getsert)
            */
-          OrganizationInputProps initialEraldyOrganization = new OrganizationInputProps();
-          initialEraldyOrganization.setHandle("eraldy");
-          initialEraldyOrganization.setName("Eraldy");
+          OrganizationInputProps organizationInputProps = new OrganizationInputProps();
+          organizationInputProps.setHandle("eraldy");
+          organizationInputProps.setName("Eraldy");
           Future<Organization> futureOrganization = this.apiApp.getOrganizationProvider()
-            .getsert(REALM_USER_LOCAL_ID,initialEraldyOrganization, sqlConnection);
+            .getsert(REALM_USER_LOCAL_ID, organizationInputProps, sqlConnection);
 
           /**
            * The organization roles
@@ -215,26 +217,29 @@ public class EraldyModel {
               LOGGER.info("Eraldy Organization and roles getserted");
 
               Organization eraldyOrganization = composite.resultAt(0);
+
               /**
                * Realm
                * (Cross, before updating the realm
                * need to be a property of the organizational user)
                */
               TowerApexDomain apexDomain = apiApp.getApexDomain();
-              Realm initialEraldyRealm = new Realm();
-              initialEraldyRealm.setHandle(apexDomain.getRealmHandle());
-              initialEraldyRealm.setName(apexDomain.getName());
-              initialEraldyRealm.setLocalId(this.getRealmLocalId());
-              initialEraldyRealm.setOrganization(eraldyOrganization);
+
+              RealmInputProps realmInputProps = new RealmInputProps();
+              realmInputProps.setHandle(apexDomain.getRealmHandle());
+              realmInputProps.setName(apexDomain.getName());
+              OrgaUserGuid realmOwnerOrgaUserGuid = new OrgaUserGuid();
+              realmOwnerOrgaUserGuid.setLocalId(REALM_USER_LOCAL_ID);
+              realmInputProps.setOwnerUserGuid(realmOwnerOrgaUserGuid);
 
               /**
                * Organization User
                */
-              UserInputProps initialRealmOwnerUser = new UserInputProps();
+              UserInputProps realmOwnerInputProps = new UserInputProps();
 
 
               return this.apiApp.getRealmProvider()
-                .getsertOnServerStartup(initialEraldyRealm, sqlConnection)
+                .getsertOnServerStartup(this.getRealmLocalId(), eraldyOrganization, null, realmInputProps, sqlConnection)
                 .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy realm", t)))
                 .compose(eraldyRealm -> {
                   LOGGER.info("Eraldy Realm getserted");
@@ -248,26 +253,26 @@ public class EraldyModel {
                     /**
                      * Realm Owner user getsertion
                      */
-                    initialRealmOwnerUser.setGivenName(apexDomain.getOwnerName());
-                    initialRealmOwnerUser.setEmailAddress(apexDomain.getOwnerEmail());
+                    realmOwnerInputProps.setGivenName(apexDomain.getOwnerName());
+                    realmOwnerInputProps.setEmailAddress(apexDomain.getOwnerEmail());
                     try {
-                      initialRealmOwnerUser.setAvatar(new URI("https://2.gravatar.com/avatar/cbc56a3848d90024bdc76629a1cfc1d9"));
+                      realmOwnerInputProps.setAvatar(new URI("https://2.gravatar.com/avatar/cbc56a3848d90024bdc76629a1cfc1d9"));
                     } catch (URISyntaxException e) {
                       throw new InternalException("The eraldy owner URL is not valid", e);
                     }
                     futureOwnerUser = apiApp
                       .getUserProvider()
-                      .getsertOnServerStartup(eraldyRealm,REALM_USER_LOCAL_ID,initialRealmOwnerUser, sqlConnection)
+                      .getsertOnServerStartup(eraldyRealm, REALM_USER_LOCAL_ID, realmOwnerInputProps, sqlConnection)
                       .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner user", t)))
-                      .compose(resUser -> {
+                      .compose(eraldyRealmOwner -> {
                           LOGGER.info("Eraldy Realm Owner User getserted as Realm User");
-                        initialEraldyRealm.setOwnerUser((OrganizationUser) resUser);
+                          this.eraldyRealm.setOwnerUser((OrganizationUser) eraldyRealmOwner);
                           /**
                            * get sert the user as organization user
                            */
-                          resUser.setOrganization(eraldyOrganization);
+                          ((OrganizationUser) eraldyRealmOwner).setOrganization(eraldyOrganization);
                           return apiApp.getOrganizationUserProvider()
-                            .getsertOnServerStartup(resUser, sqlConnection);
+                            .getsertOnServerStartup((OrganizationUser) eraldyRealmOwner, sqlConnection);
                         }
                       )
                       .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner organization user", t)));

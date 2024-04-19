@@ -13,9 +13,13 @@ import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaUserGuidDeserializer;
+import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaUserSerializer;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.objectProvider.OrganizationProvider;
 import net.bytle.vertx.DateTimeService;
+import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.JdbcSchemaManager;
@@ -55,7 +59,14 @@ public class OrganizationUserProvider {
 
   public OrganizationUserProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
-    this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
+    Server server = apiApp.getHttpServer().getServer();
+    this.jdbcPool = server.getPostgresClient().getPool();
+
+    server
+      .getJacksonMapperManager()
+      .addDeserializer(OrgaUserGuid.class, new JacksonOrgaUserGuidDeserializer(apiApp))
+      .addSerializer(OrgaUserGuid.class, new JacksonOrgaUserSerializer(apiApp));
+
   }
 
 

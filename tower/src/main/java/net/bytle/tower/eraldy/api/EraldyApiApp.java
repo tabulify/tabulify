@@ -106,6 +106,14 @@ public class EraldyApiApp extends TowerApp {
     ConfigAccessor configAccessor = httpServer.getServer().getConfigAccessor();
 
     /**
+     * Model and app
+     * Model first as other may use the realm id and so
+     * (example: the organization user guid needs the eraldy realm id)
+     */
+    this.eraldyModel = new EraldyModel(this);
+    this.eraldySubRealmModel = EraldySubRealmModel.getOrCreate(this);
+
+    /**
      * Client Session and auth first as they should be added first on the router
      */
     String realmHandleContextAndSessionKey = "ey-realm-handle";
@@ -187,11 +195,7 @@ public class EraldyApiApp extends TowerApp {
     this.mailingRowProvider = new MailingItemProvider(this, jobsSchema);
     this.fileProvider = new FileProvider(this);
 
-    /**
-     * Model and app
-     */
-    this.eraldyModel = new EraldyModel(this);
-    this.eraldySubRealmModel = EraldySubRealmModel.getOrCreate(this);
+
 
     /**
      * Flow management

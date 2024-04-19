@@ -11,7 +11,6 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
-import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
@@ -19,6 +18,8 @@ import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
+import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerFailureException;
@@ -177,36 +178,6 @@ public class RealmProvider {
     return this.apiApp;
   }
 
-  /**
-   * @param realm the realm to upsert
-   * @return the realm with the id
-   */
-  public Future<Realm> upsertRealm(Realm realm) {
-
-    if (realm.getLocalId() != null || realm.getGuid() != null) {
-      return updateRealm(realm);
-    }
-    String handle = realm.getHandle();
-    if (handle == null) {
-      InternalException internalException = new InternalException("The realm handle is mandatory to upsert a realm");
-      return Future.failedFuture(internalException);
-    }
-    /**
-     * We don't use the SQL upsert statement
-     * to no create a gap in the sequence
-     * See identifier.md for more info
-     */
-    return updateRealmByHandleAndGetRowSet(realm)
-      .compose(rowSet -> {
-        if (rowSet.size() == 0) {
-          return insertRealm(realm);
-        }
-        Long realmId = rowSet.iterator().next().getLong(RealmCols.ID);
-        realm.setLocalId(realmId);
-        this.updateGuid(realm);
-        return Future.succeededFuture(realm);
-      });
-  }
 
   /**
    * @param realm - the realm to check
@@ -247,109 +218,116 @@ public class RealmProvider {
       });
   }
 
-  private Future<Realm> insertRealm(Realm realm) {
-    return this.realmTable.getSchema().getJdbcClient().getPool().withConnection(sqlConnection -> this.insertRealm(realm,sqlConnection));
+  private Future<Realm> insertRealm(Long askedRealmId, Organization organization, OrganizationUser organizationUser, RealmInputProps realmInputProps) {
+    return this.realmTable.getSchema().getJdbcClient().getPool().withConnection(sqlConnection -> this.insertRealm(askedRealmId, organization, organizationUser, realmInputProps, sqlConnection));
   }
-  private Future<Realm> insertRealm(Realm realm, SqlConnection sqlConnection) {
 
-    String handle = realm.getHandle();
+  private Future<Realm> insertRealm(Long askedRealmId, Organization organization, OrganizationUser organizationUser, RealmInputProps realmInputProps, SqlConnection sqlConnection) {
+
+    String handle = realmInputProps.getHandle();
     if (handle == null) {
       throw new InternalException("The realm handle cannot be null on realm insertion");
     }
-    OrganizationUser ownerUser = realm.getOwnerUser();
+    OrgaUserGuid ownerUser = realmInputProps.getOwnerUserGuid();
     if (ownerUser == null) {
       throw new InternalException("The owner user of the realm (handle: " + handle + ") cannot be null on realm insertion");
     }
 
-    /**
-     * Create the insert
-     * (the id may be known as it's the case
-     * when inserting the fist Eraldy realm with the id 1)
-     */
 
-
-    return JdbcInsert.into(this.realmTable)
-      .addColumn(RealmCols.HANDLE, realm.getHandle())
-      .addColumn(RealmCols.ORGA_ID, realm.getOrganization().getLocalId())
-      .addColumn(RealmCols.NAME, realm.getHandle())
-      .addColumn(RealmCols.OWNER_ID, realm.getOwnerUser().getLocalId())
+    JdbcInsert jdbcInsert = JdbcInsert.into(this.realmTable)
       .addColumn(RealmCols.CREATION_TIME, DateTimeService.getNowInUtc())
-      .addReturningColumn(RealmCols.ID)
+      .addReturningColumn(RealmCols.ID);
+
+    Realm realm = new Realm();
+    /**
+     * the id may be known as it's the case
+     * when inserting the fist Eraldy realm with the id 1
+     */
+    if (askedRealmId != null) {
+      jdbcInsert.addColumn(RealmCols.ID, askedRealmId);
+      realm.setLocalId(askedRealmId);
+    }
+
+    realm.setHandle(realmInputProps.getHandle());
+    jdbcInsert.addColumn(RealmCols.HANDLE, realm.getHandle());
+
+    realm.setOrganization(organization);
+    jdbcInsert.addColumn(RealmCols.ORGA_ID, realm.getOrganization().getLocalId());
+
+    realm.setName(realmInputProps.getName());
+    jdbcInsert.addColumn(RealmCols.NAME, realm.getName());
+
+    /**
+     * organizationUser may be null for the first insert
+     * of the Eraldy Realm
+     */
+    Long userId;
+    if (organizationUser == null) {
+      if (!(askedRealmId != null && askedRealmId.equals(1L))) {
+        return Future.failedFuture(new InternalException("The organization user cannot be null for a realm"));
+      }
+      userId = realmInputProps.getOwnerUserGuid().getLocalId();
+    } else {
+      userId = organizationUser.getLocalId();
+    }
+    realm.setOwnerUser(organizationUser);
+    jdbcInsert.addColumn(RealmCols.OWNER_ID, userId);
+
+    return jdbcInsert
       .execute(sqlConnection)
       .compose(rows -> {
-        Long realmId = rows.iterator().next().getLong(RealmCols.ID);
-        Long askedRealmLocalIdOnInsert = realm.getLocalId();
-        if (askedRealmLocalIdOnInsert != null && !askedRealmLocalIdOnInsert.equals(realmId)) {
+        Long realmIdAfterInsertion = rows.iterator().next().getLong(RealmCols.ID);
+        if (askedRealmId != null && !askedRealmId.equals(realmIdAfterInsertion)) {
           /**
            * Case when we insert a realm when we want the id
            * The Eraldy realm should be 1 is the main case
            */
-          String error = "The asked realm id (" + askedRealmLocalIdOnInsert + ") did not get the same id but the id (" + realmId + ")";
+          String error = "The asked realm id (" + askedRealmId + ") did not get the same id but the id (" + askedRealmId + ")";
           if (JavaEnvs.IS_DEV) {
             error += "In Dev, delete the SQL schema and restart. An error like that is due to an error on start between the 2 inserts";
           }
           return Future.failedFuture(new InternalException(error));
         }
-        realm.setLocalId(realmId);
+        realm.setLocalId(askedRealmId);
         this.updateGuid(realm);
         return Future.succeededFuture(realm);
       });
   }
 
 
-  private Future<Realm> updateRealm(Realm realm) {
+  private Future<Realm> updateRealm(Realm realm, RealmInputProps realmInputProps) {
 
-
-    if (realm.getLocalId() != null) {
-
-
-      return JdbcUpdate.into(this.realmTable)
-        .addPredicateColumn(RealmCols.ID, realm.getLocalId())
-        .addUpdatedColumn(RealmCols.HANDLE, realm.getHandle())
-        .addUpdatedColumn(RealmCols.ORGA_ID, realm.getOrganization().getLocalId())
-        .addUpdatedColumn(RealmCols.NAME, realm.getName())
-        .addUpdatedColumn(RealmCols.MODIFICATION_TIME, DateTimeService.getNowInUtc())
-        .execute()
-        .compose(ok -> {
-            // Compute the guid: A realm may have an id without guid
-            // This is the case for the Eraldy realm where the database id is known
-            // as instantiation but not the guid
-            this.updateGuid(realm);
-            return Future.succeededFuture(realm);
-          }
-        );
-    }
-
-    String handle = realm.getHandle();
-    if (handle == null) {
-      InternalException internalException = new InternalException("To update a realm, an id or handle is mandatory");
-      return Future.failedFuture(internalException);
-    }
-
-    return updateRealmByHandleAndGetRowSet(realm)
-      .compose(rows -> {
-        Long realmId = rows.iterator().next().getLong(RealmCols.ID);
-        realm.setLocalId(realmId);
-        this.updateGuid(realm);
-        return Future.succeededFuture(realm);
-      });
-
-  }
-
-  private Future<JdbcRowSet> updateRealmByHandleAndGetRowSet(Realm realm) {
-
-    Organization organization = realm.getOrganization();
-    if (organization == null) {
-      throw new IllegalArgumentException("The organization of realm can not be null");
-    }
-
-    return JdbcUpdate.into(this.realmTable)
-      .addPredicateColumn(RealmCols.HANDLE, realm.getHandle())
-      .addUpdatedColumn(RealmCols.ORGA_ID, realm.getOrganization().getLocalId())
-      .addUpdatedColumn(RealmCols.NAME, realm.getName())
-      .addUpdatedColumn(RealmCols.MODIFICATION_TIME, DateTimeService.getNowInUtc())
+    JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.realmTable)
+      .addPredicateColumn(RealmCols.ID, realm.getLocalId())
       .addReturningColumn(RealmCols.ID)
-      .execute();
+      .addUpdatedColumn(RealmCols.MODIFICATION_TIME, DateTimeService.getNowInUtc());
+
+    String newHandle = realmInputProps.getHandle();
+    if (newHandle != null && !Objects.equals(newHandle, realm.getHandle())) {
+      realm.setHandle(newHandle);
+      jdbcUpdate.addUpdatedColumn(RealmCols.HANDLE, realm.getHandle());
+    }
+
+
+    String newName = realmInputProps.getName();
+    if (newName != null && !Objects.equals(newName, realm.getName())) {
+      realm.setName(newName);
+      jdbcUpdate.addUpdatedColumn(RealmCols.NAME, realm.getName());
+    }
+
+    return jdbcUpdate
+      .execute()
+      .compose(ok -> {
+          if (ok.size() != 1) {
+            return Future.failedFuture(
+              TowerFailureException.builder()
+                .setMessage("The realm update did not update any row")
+                .build()
+            );
+          }
+          return Future.succeededFuture(realm);
+        }
+      );
 
   }
 
@@ -469,7 +447,6 @@ public class RealmProvider {
      * Eraldy Realm
      */
     EraldyApiApp apiApp = this.getApp();
-    EraldyModel eraldyModel = apiApp.getEraldyModel();
 
     /**
      * Future Org
@@ -584,16 +561,16 @@ public class RealmProvider {
   /**
    * Getsert: get or insert a realm with a local id or a handle
    *
-   * @param realm         - the realm to insert
+   * @param realmInputProps         - the realm to insert
    * @param sqlConnection - the insertion connection to defer constraint on transaction
    * @return the realm inserted
    */
-  public Future<Realm> getsertOnServerStartup(Realm realm, SqlConnection sqlConnection) {
+  public Future<Realm> getsertOnServerStartup(Long realmId, Organization organization, OrganizationUser organizationUser, RealmInputProps realmInputProps, SqlConnection sqlConnection) {
     Future<Realm> selectRealmFuture;
-    if (realm.getLocalId() != null) {
-      selectRealmFuture = this.getRealmFromLocalId(realm.getLocalId(), sqlConnection);
+    if (realmId != null) {
+      selectRealmFuture = this.getRealmFromLocalId(realmId, sqlConnection);
     } else {
-      String realmHandle = realm.getHandle();
+      String realmHandle = realmInputProps.getHandle();
       if (realmHandle == null) {
         return Future.failedFuture(new InternalException("The realm to getsert should have an identifier (id, or handle)"));
       }
@@ -605,7 +582,7 @@ public class RealmProvider {
         if (selectedRealm != null) {
           futureRealm = Future.succeededFuture(selectedRealm);
         } else {
-          futureRealm = this.insertRealm(realm,sqlConnection);
+          futureRealm = this.insertRealm(realmId, organization, organizationUser, realmInputProps, sqlConnection);
         }
         return futureRealm;
       });
