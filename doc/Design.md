@@ -27,6 +27,7 @@ Reprocessing: process real-time data and re-process historical data in the same 
   * Create objects as soon as possible, ie after the main. ie pass objects, not primary data type to a function. Why? Because
       * they control the structure at creation, and we don't need to deal with this error at a latter stage.
       * we will not make ew error if we need to pass an object type versus a string
+      * they allow for normalization of output (ie email should be lowercase without alias)
     * Example:
       * email address as string vs email as object
       * domain name vs string

@@ -6,13 +6,14 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authentication.TokenCredentials;
 import io.vertx.ext.auth.oauth2.OAuth2Auth;
-import io.vertx.ext.auth.oauth2.OAuth2FlowType;
 import io.vertx.ext.auth.oauth2.OAuth2Options;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
 import net.bytle.exception.InternalException;
 import net.bytle.java.JavaEnvs;
+import net.bytle.type.EmailAddress;
+import net.bytle.type.EmailCastException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -44,7 +45,6 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
        */
       OAuth2Auth.create(oAuthExternal.getFlow().getApp().getHttpServer().getServer().getVertx(), new OAuth2Options()
         .setHttpClientOptions(new HttpClientOptions())
-        .setFlow(OAuth2FlowType.AUTH_CODE)
         .setClientId(clientId)
         .setClientSecret(clientSecret)
         .setSite("https://github.com/login")
@@ -139,26 +139,34 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
       .compose(res2 -> {
 
         JsonArray githubResponse = res2.body();
-        String email = null;
+        String primaryEmail = null;
         Boolean verified = false;
         for (int i = 0; i < githubResponse.size(); i++) {
           JsonObject privateEmail = githubResponse.getJsonObject(i);
-          email = privateEmail.getString("email");
+          primaryEmail = privateEmail.getString("email");
           Boolean primary = privateEmail.getBoolean("primary");
           verified = privateEmail.getBoolean("verified");
           if (primary) {
             break;
           }
         }
-        if (email == null) {
+        if (primaryEmail == null) {
           return Future.failedFuture("A primary email was not found on GitHub, authenticate via another method");
         }
+
         if (verified == null || !verified) {
-          return Future.failedFuture("Your primary email is not verified on GitHub, authenticate via another method or verify the primary email (" + email + ")");
+          return Future.failedFuture("Your primary email is not verified on GitHub, authenticate via another method or verify the primary email (" + primaryEmail + ")");
         }
 
-        AuthUser user = AuthUser.builder()
-          .setSubjectEmail(email)
+          EmailAddress primaryEmailObject;
+          try {
+              primaryEmailObject = EmailAddress.of(primaryEmail);
+          } catch (EmailCastException e) {
+            return Future.failedFuture("The GitHub primary email ("+primaryEmail+") is not valid");
+          }
+
+          AuthUser user = AuthUser.builder()
+          .setSubjectEmail(primaryEmailObject)
           .setSubjectGivenName(githubUserName)
           .setSubjectBio(githubBio)
           .setSubjectBlog(finalGithubUserBlog)

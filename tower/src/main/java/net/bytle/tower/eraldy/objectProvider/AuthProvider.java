@@ -122,12 +122,9 @@ public class AuthProvider {
     userEraldy.setRealm(realm);
 
     /**
-     * Identifier (guid and email)
+     * Email (We wrote the email, it should be good)
      */
-    String subjectEmail = authUser.getSubjectEmail();
-    if (subjectEmail == null) {
-      throw new InternalException("The subject email values should not be null");
-    }
+    EmailAddress subjectEmail = EmailAddress.ofFailSafe(authUser.getSubjectEmail());
     userEraldy.setEmailAddress(subjectEmail);
     String subject = authUser.getSubject();
     if (subject == null) {
@@ -159,7 +156,7 @@ public class AuthProvider {
       try {
         orgaGuidObject = this.apiApp.getOrganizationProvider().createGuidFromHash(organizationGuidString);
       } catch (CastException e) {
-        throw new InternalException("The organization guid ("+organizationGuidString+") is not valid", e);
+        throw new InternalException("The organization guid (" + organizationGuidString + ") is not valid", e);
       }
       Organization organization = new Organization();
       organization.setGuid(organizationGuidString);
@@ -571,7 +568,7 @@ public class AuthProvider {
     AnalyticsUser analyticsUser = new AnalyticsUser();
     analyticsUser.setGuid(user.getGuid());
     // user.getHandle(), handle is email
-    analyticsUser.setEmail(user.getEmailAddress());
+    analyticsUser.setEmail(user.getEmailAddress().toNormalizedString());
     analyticsUser.setGivenName(user.getGivenName());
     analyticsUser.setFamilyName(user.getFamilyName());
     analyticsUser.setAvatar(user.getAvatar());

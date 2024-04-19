@@ -17,6 +17,7 @@ import net.bytle.tower.eraldy.module.mailing.model.MailingItemStatus;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
 import net.bytle.tower.eraldy.objectProvider.UserCols;
 import net.bytle.tower.util.Guid;
+import net.bytle.type.EmailAddress;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.*;
@@ -98,7 +99,7 @@ public class MailingItemProvider {
           MailingItem mailingItem = this.buildingMailingItemFromRow(jdbcRow, mailing);
           // Add address email for front end
           User user = mailingItem.getListUser().getUser();
-          user.setEmailAddress(jdbcRow.getString(UserCols.EMAIL_ADDRESS));
+          user.setEmailAddress(EmailAddress.ofFailSafe(jdbcRow.getString(UserCols.EMAIL_ADDRESS)));
           mailingItems.add(mailingItem);
         }
         return Future.succeededFuture(mailingItems);
@@ -246,7 +247,7 @@ public class MailingItemProvider {
         MailingItem mailingItem = this.buildingMailingItemFromRow(jdbcRow, mailing);
         // Add address email for mailing
         User user = mailingItem.getListUser().getUser();
-        user.setEmailAddress(jdbcRow.getString(UserCols.EMAIL_ADDRESS));
+        user.setEmailAddress(EmailAddress.ofFailSafe(jdbcRow.getString(UserCols.EMAIL_ADDRESS)));
         return Future.succeededFuture(mailingItem);
       });
   }

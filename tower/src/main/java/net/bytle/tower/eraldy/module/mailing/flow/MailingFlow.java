@@ -16,7 +16,6 @@ import net.bytle.tower.eraldy.module.mailing.inputs.MailingJobInputProps;
 import net.bytle.tower.eraldy.module.mailing.model.*;
 import net.bytle.tower.util.RichSlateAST;
 import net.bytle.type.EmailAddress;
-import net.bytle.type.EmailCastException;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
@@ -191,24 +190,12 @@ public class MailingFlow extends WebFlowAbs {
         /**
          * Author
          */
-        String authorEmailAsString = emailAuthor.getEmailAddress();
-        EmailAddress authorEmailAddress;
-        try {
-          authorEmailAddress = new EmailAddress(authorEmailAsString);
-        } catch (EmailCastException e) {
-          return Future.failedFuture(new InternalException("The email (" + authorEmailAsString + ") of the author is invalid", e));
-        }
+        EmailAddress authorEmailAddress = emailAuthor.getEmailAddress();
 
         /**
          * Recipient
          */
-        String inputEmailAddress = recipient.getEmailAddress();
-        EmailAddress recipientEmailAddress;
-        try {
-          recipientEmailAddress = new EmailAddress(inputEmailAddress);
-        } catch (EmailCastException e) {
-          return Future.failedFuture(new InternalException("The email (" + inputEmailAddress + ") of the recipient is invalid", e));
-        }
+        EmailAddress recipientEmailAddress = recipient.getEmailAddress();
 
         /**
          * Variables

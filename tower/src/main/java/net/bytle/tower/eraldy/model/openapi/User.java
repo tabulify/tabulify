@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.type.EmailAddress;
 
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -21,7 +22,7 @@ public class User   {
 
   protected String handle;
 
-  protected String emailAddress;
+  protected EmailAddress emailAddress;
 
   protected String givenName;
 
@@ -113,7 +114,7 @@ public class User   {
   * @return emailAddress The email address of the user
   */
   @JsonProperty("emailAddress")
-  public String getEmailAddress() {
+  public EmailAddress getEmailAddress() {
     return emailAddress;
   }
 
@@ -121,7 +122,7 @@ public class User   {
   * @param emailAddress The email address of the user
   */
   @SuppressWarnings("unused")
-  public void setEmailAddress(String emailAddress) {
+  public void setEmailAddress(EmailAddress emailAddress) {
     this.emailAddress = emailAddress;
   }
 

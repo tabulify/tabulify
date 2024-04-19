@@ -160,7 +160,7 @@ public class ListRegistrationValidationLetter {
         .setSenderName(publisherName)
         .setSenderFullName(publisher.getFamilyName())
         .setSenderAvatar(publisher.getAvatar() != null ? publisher.getAvatar().toString() : null)
-        .setSenderEmail(publisher.getEmailAddress())
+        .setSenderEmail(publisher.getEmailAddress().toNormalizedString())
         .setSenderTitle(publisher.getTitle())
         .setBrandLogo(publisherApp.getLogo() != null ? publisherApp.getLogo().toString() : null)
         .setBrandName(publisherApp.getName())

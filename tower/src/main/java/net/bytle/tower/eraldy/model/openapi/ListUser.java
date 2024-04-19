@@ -2,7 +2,7 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.jackson.JacksonListUserSourceDeserializer;
+import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceDeserializer;
 
 import java.time.LocalDateTime;
 import java.util.Objects;

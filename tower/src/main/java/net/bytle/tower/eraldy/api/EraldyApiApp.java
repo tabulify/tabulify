@@ -18,11 +18,14 @@ import net.bytle.tower.eraldy.module.mailing.db.mailing.MailingProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingitem.MailingItemProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingjob.MailingJobProvider;
 import net.bytle.tower.eraldy.module.mailing.flow.MailingFlow;
+import net.bytle.tower.eraldy.module.user.jackson.JacksonEmailAddressDeserializer;
+import net.bytle.tower.eraldy.module.user.jackson.JacksonEmailAddressSerializer;
 import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
 import net.bytle.tower.util.Env;
 import net.bytle.tower.util.EraldySubRealmModel;
 import net.bytle.tower.util.Guid;
+import net.bytle.type.EmailAddress;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthNContextManager;
@@ -149,17 +152,26 @@ public class EraldyApiApp extends TowerApp {
       .build();
 
     /**
+     * Jackson common type
+     * Email Address
+     * (Must be before the provider below as they make use of it)
+     */
+    httpServer.getServer().getJacksonMapperManager()
+      .addDeserializer(EmailAddress.class, new JacksonEmailAddressDeserializer())
+      .addSerializer(EmailAddress.class, new JacksonEmailAddressSerializer());
+
+    /**
      * DataBase Provider/Manager
      */
-    this.realmProvider = new RealmProvider(this, realmSchema);
     this.userProvider = new UserProvider(this, realmSchema);
+    this.organizationUserProvider = new OrganizationUserProvider(this);
+    this.realmProvider = new RealmProvider(this, realmSchema);
     this.listProvider = new ListProvider(this, realmSchema);
     this.listImportFlow = new ListImportFlow(this);
     this.organizationProvider = new OrganizationProvider(this);
     this.authProvider = new AuthProvider(this);
     this.listUserProvider = new ListUserProvider(this);
     this.serviceProvider = new ServiceProvider(this);
-    this.organizationUserProvider = new OrganizationUserProvider(this);
     this.organizationRoleProvider = new OrganizationRoleProvider(this);
     this.hashIds = this.getHttpServer().getServer().getHashId();
     this.authClientProvider = new AuthClientProvider(this);

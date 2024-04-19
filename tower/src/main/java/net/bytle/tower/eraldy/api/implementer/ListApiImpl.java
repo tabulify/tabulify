@@ -27,6 +27,8 @@ import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
 import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Casts;
+import net.bytle.type.EmailAddress;
+import net.bytle.type.EmailCastException;
 import net.bytle.type.Strings;
 import net.bytle.vertx.*;
 
@@ -237,10 +239,10 @@ public class ListApiImpl implements ListApi {
     ListProvider listProvider = this.apiApp.getListProvider();
     return listProvider.getListByIdentifierFoundInPathParameterAndVerifyScope(routingContext, AuthUserScope.LIST_PATCH)
       .compose(list -> {
-        if(list==null){
+        if (list == null) {
           return Future.failedFuture(TowerFailureException.builder()
             .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-            .setMessage("The list ("+listIdentifier+") was not found")
+            .setMessage("The list (" + listIdentifier + ") was not found")
             .build()
           );
         }
@@ -251,7 +253,7 @@ public class ListApiImpl implements ListApi {
         listInputProps.setOwnerIdentifier(listBody.getOwnerUserIdentifier());
 
         return listProvider
-          .updateList(list,listInputProps)
+          .updateList(list, listInputProps)
           .compose(updatedList -> Future.succeededFuture(new ApiResponse<>(updatedList).setMapper(listProvider.getApiMapper())));
       });
 
@@ -350,7 +352,18 @@ public class ListApiImpl implements ListApi {
     listGuid, String subscriberName, String subscriberEmail, Boolean debug) {
 
     ListUserPostBody listRegistrationPostBody = new ListUserPostBody();
-    listRegistrationPostBody.setUserEmail(subscriberEmail);
+
+    EmailAddress subscriberAddress;
+    try {
+      subscriberAddress = EmailAddress.of(subscriberEmail);
+    } catch (EmailCastException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .setMessage("The email address (" + subscriberEmail + ") is not valid")
+        .build()
+      );
+    }
+    listRegistrationPostBody.setUserEmail(subscriberAddress);
 
     Vertx vertx = routingContext.vertx();
     return apiApp

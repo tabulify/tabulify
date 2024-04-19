@@ -5,7 +5,6 @@ import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.auth.AuthUserUtils;
 import net.bytle.vertx.flow.SmtpSender;
 
@@ -19,7 +18,7 @@ public class UsersUtil {
    */
   @Deprecated
   public static String getEmailAddressWithName(User user) {
-    String address = user.getEmailAddress();
+    String address = user.getEmailAddress().toNormalizedString();
     if (address == null) {
       throw new InternalException("The user email should not be null");
     }
@@ -45,31 +44,6 @@ public class UsersUtil {
 
     return AuthUserUtils.getNameOrNameFromEmail(user.getGivenName(), user.getEmailAddress());
 
-  }
-
-
-  /**
-   * @param user - the user
-   * @return a user with default value that can be used for templating
-   */
-  public static User getPublicUserForTemplateWithDefaultValues(User user) {
-    User outputUser = new User();
-    outputUser.setEmailAddress(user.getEmailAddress());
-    String defaultName;
-    try {
-      defaultName = UsersUtil.getNameOrNameFromEmail(user);
-      outputUser.setGivenName(defaultName);
-    } catch (NotFoundException | AddressException e) {
-      throw new InternalException("Should not occurs, a database user should have a valid email at least", e);
-    }
-    outputUser.setFamilyName(user.getFamilyName() != null ? user.getFamilyName() : defaultName);
-    outputUser.setAvatar(user.getAvatar());
-    outputUser.setTitle(user.getTitle());
-    return outputUser;
-  }
-
-  public static boolean isEraldyUser(User user) {
-    return EraldyDomain.get().isEraldyId(user.getRealm().getLocalId());
   }
 
 

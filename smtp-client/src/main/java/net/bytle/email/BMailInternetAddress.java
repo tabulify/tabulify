@@ -49,6 +49,20 @@ public class BMailInternetAddress {
     return new BMailInternetAddress(internetAddress);
   }
 
+  public static BMailInternetAddress of(EmailAddress email, String name) throws AddressException {
+    if (email == null) {
+      throw new AddressException("The email given was null");
+    }
+    InternetAddress internetAddress = new InternetAddress(email.toNormalizedString());
+    if (name != null) {
+      try {
+        internetAddress.setPersonal(name);
+      } catch (UnsupportedEncodingException e) {
+        throw new InternalException(e);
+      }
+    }
+    return new BMailInternetAddress(internetAddress);
+  }
   @Override
   public String toString() {
     return this.getInternetAddress().toString();

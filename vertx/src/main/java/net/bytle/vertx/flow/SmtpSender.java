@@ -1,5 +1,7 @@
 package net.bytle.vertx.flow;
 
+import net.bytle.type.EmailAddress;
+
 import java.net.URI;
 
 /**
@@ -7,12 +9,12 @@ import java.net.URI;
  */
 public class SmtpSender {
   private String name;
-  private String email;
+  private EmailAddress email;
   private String fullName;
   private URI avatar;
   private String title;
 
-  public String getEmail() {
+  public EmailAddress getEmail() {
     return this.email;
   }
 
@@ -24,7 +26,7 @@ public class SmtpSender {
     this.name = name;
   }
 
-  public void setEmail(String email) {
+  public void setEmail(EmailAddress email) {
     this.email = email;
   }
 

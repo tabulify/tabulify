@@ -8,6 +8,7 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
 import net.bytle.type.Casts;
+import net.bytle.type.EmailAddress;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -273,9 +274,9 @@ public class AuthUser {
     /**
      * @param email - the email of the subject
      */
-    public Builder setSubjectEmail(String email) {
+    public Builder setSubjectEmail(EmailAddress email) {
 
-      claims.put(AuthUserJwtClaims.CUSTOM_SUBJECT_EMAIL.toString(), email);
+      claims.put(AuthUserJwtClaims.CUSTOM_SUBJECT_EMAIL.toString(), email.toNormalizedString());
       return this;
 
     }

@@ -35,6 +35,7 @@ import net.bytle.vertx.analytics.event.SignUpEvent;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.db.*;
 import net.bytle.vertx.flow.FlowType;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,23 +89,33 @@ public class UserProvider {
     this.apiApp = apiApp;
     Server server = this.apiApp.getHttpServer().getServer();
     this.jdbcPool = server.getPostgresClient().getPool();
-    this.databaseMapper = server.getJacksonMapperManager().jsonMapperBuilder()
+
+    JacksonMapperManager jacksonMapperManager = server.getJacksonMapperManager();
+
+
+    /**
+     * Mapper
+     */
+    this.databaseMapper = jacksonMapperManager.jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .build();
-    this.apiMapper = this.apiApp.getHttpServer().getServer().getJacksonMapperManager().jsonMapperBuilder()
+    this.apiMapper = jacksonMapperManager.jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .build();
 
-    this.FULL_QUALIFIED_USER_TABLE_NAME = jdbcSchema.getSchemaName() + "." + REALM_USER_TABLE_NAME;
+
+
 
     this.userTable = JdbcTable.build(jdbcSchema, REALM_USER_TABLE_NAME)
       .addPrimaryKeyColumn(UserCols.ID)
       .addPrimaryKeyColumn(UserCols.REALM_ID)
       .build();
 
-    this.insertPreparedQuery = "INSERT INTO\n" +
+    this.FULL_QUALIFIED_USER_TABLE_NAME = this.userTable.getFullName();
+
+      this.insertPreparedQuery = "INSERT INTO\n" +
       FULL_QUALIFIED_USER_TABLE_NAME + " (\n" +
       "  " + REALM_COLUMN + ",\n" +
       "  " + ID_COLUMN + ",\n" +
@@ -205,22 +216,15 @@ public class UserProvider {
       select
         .addEqualityPredicate(UserCols.ID, user.getLocalId());
 
-
     } else {
-      String email = user.getEmailAddress();
+      EmailAddress email = user.getEmailAddress();
       if (email == null) {
         String failureMessage = "An id or email should be given to check the existence of a user";
         InternalException internalException = new InternalException(failureMessage);
         return Future.failedFuture(internalException);
       }
-      EmailAddress emailAddress;
-      try {
-        emailAddress = EmailAddress.of(email);
-      } catch (EmailCastException e) {
-        throw new RuntimeException(e);
-      }
       select
-        .addEqualityPredicate(UserCols.EMAIL_ADDRESS, emailAddress.toNormalizedString());
+        .addEqualityPredicate(UserCols.EMAIL_ADDRESS, email.toNormalizedString());
 
     }
     return select
@@ -258,7 +262,7 @@ public class UserProvider {
       return jdbcPool
         .preparedQuery(sql)
         .execute(Tuple.of(
-          user.getEmailAddress().toLowerCase(),
+          user.getEmailAddress().toNormalizedString(),
           pgJsonString,
           DateTimeService.getNowInUtc(),
           user.getLocalId(),
@@ -285,7 +289,7 @@ public class UserProvider {
   }
 
   private <T extends User> Future<RowSet<Row>> updateUserByEmailAndReturnRowSet(T user) {
-    String email = user.getEmailAddress();
+    EmailAddress email = user.getEmailAddress();
     if (email == null) {
       InternalException internalException = new InternalException("A email is mandatory");
       return Future.failedFuture(internalException);
@@ -305,7 +309,7 @@ public class UserProvider {
       .execute(Tuple.of(
         dataJsonString,
         DateTimeService.getNowInUtc(),
-        user.getEmailAddress().toLowerCase(),
+        user.getEmailAddress().toNormalizedString(),
         user.getRealm().getLocalId()
       ))
       .onFailure(error -> LOGGER.error("User Update by handle error: Error:" + error.getMessage() + ", Sql: " + updateSql, error));
@@ -379,7 +383,7 @@ public class UserProvider {
     }
 
 
-    user.setEmailAddress(row.getString(UserCols.EMAIL_ADDRESS));
+    user.setEmailAddress(EmailAddress.ofFailSafe(row.getString(UserCols.EMAIL_ADDRESS)));
     Integer status = row.getInteger(UserCols.STATUS);
     if (status == null) {
       status = 0;
@@ -551,7 +555,7 @@ public class UserProvider {
   public Future<Realm> getUserRealmAndUpdateUserIdEventuallyFromRequestData(String realmIdentifier, User userRequested) {
 
     String userGuid = userRequested.getGuid();
-    String userEmail = userRequested.getEmailAddress();
+    EmailAddress userEmail = userRequested.getEmailAddress();
 
     Future<Realm> realmFuture;
     if (userGuid == null) {
@@ -779,18 +783,9 @@ public class UserProvider {
       );
     } else {
 
-      String emailAddress = userToGetSert.getEmailAddress();
-      if (emailAddress == null) {
-        return Future.failedFuture(new InternalException("On user getSert an email or id should be given"));
-      }
-      EmailAddress bMailInternetAddress;
-      try {
-        bMailInternetAddress = EmailAddress.of(emailAddress);
-      } catch (EmailCastException e) {
-        return Future.failedFuture(new InternalException("The email address (" + emailAddress + ") of the user to getSert is not valid", e));
-      }
+      EmailAddress emailAddress = userToGetSert.getEmailAddress();
       futureGetUser = this.getUserByEmail(
-        bMailInternetAddress,
+        emailAddress,
         userToGetSert.getRealm().getLocalId(),
         clazz,
         userToGetSert.getRealm(),
@@ -884,20 +879,13 @@ public class UserProvider {
         user.setLocalId(seqUserId);
         this.updateGuid(user);
         String databaseJsonString = this.toDatabaseJsonString(user);
-        String email = user.getEmailAddress();
-        String emailAddressNormalized;
-        try {
-          emailAddressNormalized = EmailAddress.of(email)
-            .toNormalizedString();
-        } catch (EmailCastException e) {
-          return Future.failedFuture(new InternalError("The email value (" + email + ") is not valid", e));
-        }
+
         return sqlConnection
           .preparedQuery(insertPreparedQuery)
           .execute(Tuple.of(
               user.getRealm().getLocalId(),
               user.getLocalId(),
-              emailAddressNormalized,
+              user.getEmailAddress().toNormalizedString(),
               databaseJsonString,
               DateTimeService.getNowInUtc()
             )

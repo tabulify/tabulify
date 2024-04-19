@@ -63,8 +63,8 @@ public class TowerFailureHandler implements Handler<Throwable> {
       String stackTraceAsString = Exceptions.getStackTraceAsString(thrown);
       MailMessage mailMessage = mailProvider
         .createVertxMailMessage()
-        .setFrom(SysAdmin.getEmail())
-        .setTo(SysAdmin.getEmail())
+        .setFrom(SysAdmin.getEmail().toNormalizedString())
+        .setTo(SysAdmin.getEmail().toNormalizedString())
         .setSubject("Tower: An error has occurred. " + thrown.getMessage())
         .setText(stackTraceAsString);
 

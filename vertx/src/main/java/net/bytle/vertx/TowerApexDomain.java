@@ -1,5 +1,7 @@
 package net.bytle.vertx;
 
+import net.bytle.type.EmailAddress;
+
 /**
  * This class represents the apex domain of an app
  * ie in member.xxx.combostrap.com, the apex is combostrap.com
@@ -75,7 +77,7 @@ public abstract class TowerApexDomain {
 
   public abstract String getOwnerName();
 
-  public abstract String getOwnerEmail();
+  public abstract EmailAddress getOwnerEmail();
 
   public abstract String getName();
 

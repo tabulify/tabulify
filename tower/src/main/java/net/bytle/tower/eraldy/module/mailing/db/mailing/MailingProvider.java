@@ -23,6 +23,7 @@ import net.bytle.tower.eraldy.module.mailing.jackson.JacksonMailingStatusDeseria
 import net.bytle.tower.eraldy.module.mailing.model.Mailing;
 import net.bytle.tower.eraldy.module.mailing.model.MailingStatus;
 import net.bytle.tower.util.Guid;
+import net.bytle.type.EmailAddress;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerFailureException;
@@ -501,7 +502,7 @@ public class MailingProvider {
    */
   public Future<OrganizationUser> buildEmailAuthorAtRequestTimeEventually(Mailing mailing) {
     OrganizationUser emailAuthor = mailing.getEmailAuthor();
-    String emailAddress = emailAuthor.getEmailAddress();
+    EmailAddress emailAddress = emailAuthor.getEmailAddress();
     if (emailAddress != null) {
       return Future.succeededFuture(emailAuthor);
     }

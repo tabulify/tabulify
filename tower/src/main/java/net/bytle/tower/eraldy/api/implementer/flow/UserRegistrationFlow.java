@@ -85,7 +85,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
     }
 
     User newUser = new User();
-    newUser.setEmailAddress(emailAddress.toNormalizedString());
+    newUser.setEmailAddress(emailAddress);
     newUser.setRealm(realm);
     String realmNameOrHandle = RealmProvider.getNameOrHandle(realm);
 

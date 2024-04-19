@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.type.EmailAddress;
 
 import java.net.URI;
 import java.util.Objects;
@@ -13,7 +14,7 @@ import java.util.Objects;
 public class ListUserPostBody   {
 
 
-  protected String userEmail;
+  protected EmailAddress userEmail;
 
   protected URI redirectUri;
 
@@ -30,7 +31,7 @@ public class ListUserPostBody   {
   * @return userEmail The email of the public user that want to subscribe
   */
   @JsonProperty("userEmail")
-  public String getUserEmail() {
+  public EmailAddress getUserEmail() {
     return userEmail;
   }
 
@@ -38,7 +39,7 @@ public class ListUserPostBody   {
   * @param userEmail The email of the public user that want to subscribe
   */
   @SuppressWarnings("unused")
-  public void setUserEmail(String userEmail) {
+  public void setUserEmail(EmailAddress userEmail) {
     this.userEmail = userEmail;
   }
 

@@ -50,8 +50,8 @@ public class Log4jRootLogger {
       .setSmtpUsername(mailSmtpParameterFromConfig.getUserName())
       .setSmtpPort(mailSmtpParameterFromConfig.getPort())
       .setSubject("Log4j: General Failure in the tower app")
-      .setFrom(SysAdmin.getEmail())
-      .setTo(SysAdmin.getEmail())
+      .setFrom(SysAdmin.getEmail().toNormalizedString())
+      .setTo(SysAdmin.getEmail().toNormalizedString())
       .build();
     config.addAppender(smtpAppender);
 

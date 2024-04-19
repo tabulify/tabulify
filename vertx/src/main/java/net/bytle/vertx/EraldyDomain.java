@@ -1,6 +1,7 @@
 package net.bytle.vertx;
 
 import net.bytle.exception.InternalException;
+import net.bytle.type.EmailAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +24,7 @@ public class EraldyDomain extends TowerApexDomain {
   private static final String REALM_NAME = "Eraldy";
 
   private static final String USER_OWNER_NAME = "Nico";
-  private static final String USER_OWNER_EMAIL = "nico@eraldy.com";
+  private static final EmailAddress USER_OWNER_EMAIL = EmailAddress.ofFailSafe("nico@eraldy.com");
 
 
   private static EraldyDomain eraldyDomain;
@@ -75,18 +76,13 @@ public class EraldyDomain extends TowerApexDomain {
   }
 
   @Override
-  public String getOwnerEmail() {
+  public EmailAddress getOwnerEmail() {
     return USER_OWNER_EMAIL;
   }
 
   @Override
   public String getName() {
     return REALM_NAME;
-  }
-
-
-  public boolean isEraldyId(Long realmId) {
-    return getRealmLocalId().equals(realmId);
   }
 
 

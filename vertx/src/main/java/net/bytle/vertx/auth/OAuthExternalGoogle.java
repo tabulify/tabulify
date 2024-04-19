@@ -7,6 +7,8 @@ import io.vertx.ext.auth.oauth2.providers.GoogleAuth;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.InternalException;
 import net.bytle.java.JavaEnvs;
+import net.bytle.type.EmailAddress;
+import net.bytle.type.EmailCastException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -98,8 +100,14 @@ public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
         throw new InternalException("Google Picture URL (" + pictureUrl + ") is not valid", e);
       }
     }
+    EmailAddress primaryEmailObject;
+    try {
+      primaryEmailObject = EmailAddress.of(email);
+    } catch (EmailCastException e) {
+      return Future.failedFuture("The GitHub primary email ("+email+") is not valid");
+    }
     AuthUser user = AuthUser.builder()
-      .setSubjectEmail(email)
+      .setSubjectEmail(primaryEmailObject)
       .setSubjectAvatar(googleUserAvatarUri)
       .setSubjectGivenName(AuthUserUtils.getGivenNameFromCase(givenName, familyName))
       .setSubjectFamilyName(AuthUserUtils.getFamilyNameFromCase(familyName, givenName))

@@ -63,6 +63,11 @@ public class JacksonMapperManager extends TowerService {
     return javaTimeModule;
   }
 
+  public SimpleModule getSimpleModule() {
+
+    return simpleModule;
+  }
+
   public void enableTimeModuleForVertx() {
     this.enableTimeModule = true;
   }
@@ -89,7 +94,7 @@ public class JacksonMapperManager extends TowerService {
       simpleModule = new SimpleModule();
     }
     simpleModule.addDeserializer(type, deser);
-    LOGGER.info("Jackson deserializer for the type ("+type.toString()+") added");
+    LOGGER.info("Jackson deserializer for the type (" + type.toString() + ") added");
     return this;
   }
 
@@ -103,7 +108,7 @@ public class JacksonMapperManager extends TowerService {
       simpleModule = new SimpleModule();
     }
     simpleModule.addSerializer(type, ser);
-    LOGGER.info("Jackson serializer for the type ("+type.toString()+") added");
+    LOGGER.info("Jackson serializer for the type (" + type.toString() + ") added");
     return this;
   }
 
@@ -141,6 +146,10 @@ public class JacksonMapperManager extends TowerService {
         .builder()
         .build();
       mapper.registerModule(getJavaTimeModule());
+      simpleModule = getSimpleModule();
+      if (simpleModule != null) {
+        mapper.registerModule(simpleModule);
+      }
       if (disableFailOnUnknownProperties) {
         /**
          * To avoid unrecognizable field when we develop if we have stored a json

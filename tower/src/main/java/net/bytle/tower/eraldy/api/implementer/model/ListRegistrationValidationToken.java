@@ -10,6 +10,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.ListUserPostBody;
 import net.bytle.tower.util.Env;
+import net.bytle.type.EmailAddress;
 import net.bytle.type.UriEnhanced;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.HttpRequestUtil;
@@ -39,7 +40,7 @@ public class ListRegistrationValidationToken {
    * The uri location of the opt-in form
    */
   private URI optInUri;
-  private String userEmail;
+  private EmailAddress userEmail;
   private final String listGuid;
 
   public ListRegistrationValidationToken(ListObject listObject) {
@@ -66,7 +67,7 @@ public class ListRegistrationValidationToken {
   }
 
   @JsonProperty("userEmail")
-  public String getUserEmail() {
+  public EmailAddress getUserEmail() {
     return userEmail;
   }
 

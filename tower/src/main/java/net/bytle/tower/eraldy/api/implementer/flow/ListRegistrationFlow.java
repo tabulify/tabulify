@@ -6,7 +6,6 @@ import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.json.schema.ValidationException;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
@@ -126,15 +125,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
       );
     }
 
-    /**
-     * Email validation
-     */
-    BMailInternetAddress validatedEmailAddress;
-    try {
-      validatedEmailAddress = BMailInternetAddress.of(listUserPostBody.getUserEmail());
-    } catch (AddressException e) {
-      throw ValidationException.create("The email is not valid. Error: " + e.getMessage(), "userEmail", listUserPostBody.getUserEmail());
-    }
+
+
 
 
     /**
@@ -150,7 +142,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       .compose(listItem -> {
 
         User user = new User();
-        user.setEmailAddress(validatedEmailAddress.toNormalizedString());
+        user.setEmailAddress(listUserPostBody.getUserEmail());
         Realm listRealm = listItem.getRealm();
         user.setRealm(listRealm);
 

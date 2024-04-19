@@ -5,6 +5,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.type.EmailAddress;
 
 public class EraldySubRealmModel {
   public static final String REALM_HANDLE = "datacadamia";
@@ -27,7 +28,7 @@ public class EraldySubRealmModel {
     datacadamiaRealm.setOrganization(eraldyRealm.getOrganization());
     OrganizationUser initialOwnerUser = new OrganizationUser();
     initialOwnerUser.setRealm(eraldyRealm);
-    initialOwnerUser.setEmailAddress("owner@datacadamia.com");
+    initialOwnerUser.setEmailAddress(EmailAddress.ofFailSafe("owner@datacadamia.com"));
 
     return this.apiApp.getHttpServer().getServer().getPostgresClient()
       .getPool()

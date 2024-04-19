@@ -1,6 +1,7 @@
 package net.bytle.type;
 
 import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 
 import java.util.Objects;
 
@@ -41,6 +42,9 @@ public class EmailAddress {
 
 
   public EmailAddress(String mailAddress) throws EmailCastException {
+    if (mailAddress == null) {
+      throw new InternalException("The email value should not be null");
+    }
     this.mailAddress = mailAddress;
     final String[] split = mailAddress.split("@");
     if (split.length != 2) {
@@ -75,10 +79,23 @@ public class EmailAddress {
     if (this.domain.toStringWithoutRoot().startsWith("[")) {
       throw new EmailCastException("The domain should not start with a [");
     }
+
   }
 
   public static EmailAddress of(String mail) throws EmailCastException {
     return new EmailAddress(mail);
+  }
+
+  /**
+   * A method that does not throw because we write the email as literal, or
+   * we retrieve in a database an email that we already have validated on write
+   */
+  public static EmailAddress ofFailSafe(String emailAddress) {
+      try {
+          return EmailAddress.of(emailAddress);
+      } catch (EmailCastException e) {
+          throw new RuntimeException("The email address is not valid ("+emailAddress+"). Error: "+e.getMessage(),e);
+      }
   }
 
   @Override
@@ -133,5 +150,6 @@ public class EmailAddress {
   public String getLocalBox() {
     return this.localPartBox;
   }
+
 
 }

@@ -1,8 +1,7 @@
 package net.bytle.vertx.auth;
 
-import jakarta.mail.internet.AddressException;
-import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.NotFoundException;
+import net.bytle.type.EmailAddress;
 import net.bytle.type.Strings;
 
 /**
@@ -41,7 +40,7 @@ public class AuthUserUtils {
     return familyName;
   }
 
-  public static String getNameOrNameFromEmail(String name, String email) throws NotFoundException, AddressException {
+  public static String getNameOrNameFromEmail(String name, EmailAddress email) throws NotFoundException {
 
     if (name != null) {
       return name;
@@ -51,7 +50,7 @@ public class AuthUserUtils {
       // should not happen as an email is mandatory
       throw new NotFoundException("No name could be found for this user");
     }
-    return BMailInternetAddress.of(email).getLocalPart();
+    return email.getLocalBox();
 
   }
 }

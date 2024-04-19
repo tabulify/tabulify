@@ -111,7 +111,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
       .setSenderName(smtpSender.getName())
       .setSenderFullName(smtpSender.getFullname())
       .setSenderAvatar(smtpSender.getAvatar() != null ? smtpSender.getAvatar().toString() : null)
-      .setSenderEmail(smtpSender.getEmail())
+      .setSenderEmail(smtpSender.getEmail().toNormalizedString())
       .setSenderTitle(smtpSender.getTitle())
       .setBrandLogoWidth("25px")
       .setActionIsGo(true)
