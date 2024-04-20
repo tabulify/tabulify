@@ -13,6 +13,7 @@ import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.organization.inputs.OrgaUserInputProps;
 import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaUserGuidDeserializer;
 import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaUserSerializer;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
@@ -22,7 +23,10 @@ import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.db.JdbcInsert;
+import net.bytle.vertx.db.JdbcSchema;
 import net.bytle.vertx.db.JdbcSchemaManager;
+import net.bytle.vertx.db.JdbcTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,15 +56,20 @@ public class OrganizationUserProvider {
   public static final String ORGA_USER_USER_ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   public static final String ORGA_USER_ORGA_ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN;
 
-  public static final String ORGA_USER_ORGA_ROLE_ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "orga_role_id";
   public static final String ORGA_USER_CREATION_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   public static final String ORGA_USER_MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private final Pool jdbcPool;
+  private final JdbcTable organizationUserTable;
 
-  public OrganizationUserProvider(EraldyApiApp apiApp) {
+  public OrganizationUserProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
     this.apiApp = apiApp;
     Server server = apiApp.getHttpServer().getServer();
     this.jdbcPool = server.getPostgresClient().getPool();
+
+    this.organizationUserTable = JdbcTable.build(jdbcSchema, TABLE_NAME)
+      .addPrimaryKeyColumn(OrganizationUserCols.USER_ID)
+      .addPrimaryKeyColumn(OrganizationUserCols.ORGA_ID)
+      .build();
 
     server
       .getJacksonMapperManager()
@@ -258,37 +267,36 @@ public class OrganizationUserProvider {
   }
 
 
-  public Future<OrganizationUser> insertUser(OrganizationUser organizationUser) {
-
-    return this.jdbcPool.withConnection(sqlConnection -> insertUser(organizationUser, sqlConnection));
-  }
-
-
   /**
-   * Getsert: Get or insert the user
+   * Getsert: Get or insert the org user record
+   * The user is in the Organization user format to receive
+   * the org data
    */
-  public Future<OrganizationUser> getsertOnServerStartup(OrganizationUser organizationUser, SqlConnection sqlConnection) {
-    return this.addOrganizationDataEventually(organizationUser, sqlConnection)
+  public Future<OrganizationUser> getsertOnServerStartup(Organization organization, OrganizationUser user, OrgaUserInputProps orgaUserInputProps, SqlConnection sqlConnection) {
+    return this.addOrganizationDataEventually(user, sqlConnection)
       .recover(t -> Future.failedFuture(new InternalException("Error while selecting the eraldy owner realm", t)))
       .compose(selectedOrganizationUser -> {
         if (selectedOrganizationUser instanceof OrganizationUser) {
           return Future.succeededFuture((OrganizationUser) selectedOrganizationUser);
         }
-        return this.insertUser(organizationUser, sqlConnection);
+        return this.insertOrgaUser(organization, user, orgaUserInputProps, sqlConnection);
       });
   }
 
-  private Future<OrganizationUser> insertUser(OrganizationUser organizationUser, SqlConnection sqlConnection) {
+  /**
+   *
+   * @param organization - the organization
+   * @param organizationUser - the user (without organization data)
+   * @param orgaUserInputProps - the props
+   * @param sqlConnection - the connection (used for first eraldy data load)
+   */
+  private Future<OrganizationUser> insertOrgaUser(Organization organization, OrganizationUser organizationUser, OrgaUserInputProps orgaUserInputProps, SqlConnection sqlConnection) {
     try {
       this.checkOrganizationUserRealmId(OrganizationUser.class, organizationUser.getRealm().getLocalId());
     } catch (AssertionException e) {
       return Future.failedFuture(new InternalException("This user has not the Eraldy realm. He cannot be an organization user.", e));
     }
 
-    Organization organization = organizationUser.getOrganization();
-    if (organization == null) {
-      return Future.failedFuture(new InternalException("The organization should not be null when inserting an organizational user"));
-    }
     Long organizationLocalId = organization.getLocalId();
     if (organizationLocalId == null) {
       return Future.failedFuture(new InternalException("The organization id should not be null when inserting an organization user"));
@@ -298,25 +306,17 @@ public class OrganizationUserProvider {
       return Future.failedFuture(new InternalException("The user id should not be null when inserting an organization user"));
     }
 
-    String sql = "INSERT INTO\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
-      "  " + ORGA_USER_USER_ID_COLUMN + ",\n" +
-      "  " + ORGA_USER_ORGA_ID_COLUMN + ",\n" +
-      "  " + ORGA_USER_ORGA_ROLE_ID_COLUMN + ",\n" +
-      "  " + ORGA_USER_CREATION_COLUMN + "\n" +
-      "  )\n" +
-      " values ($1, $2, $3, $4)\n";
+    /**
+     * Build the orga user
+     */
+    organizationUser.setOrganization(organization);
+    organizationUser.setOrgaRole(orgaUserInputProps.getRole());
 
-    Tuple ownerInsertTuple = Tuple.of(
-      userLocalId,
-      organizationLocalId,
-      OrganizationRoleProvider.OWNER_ROLE_ID,
-      DateTimeService.getNowInUtc()
-    );
-    return sqlConnection
-      .preparedQuery(sql)
-      .execute(ownerInsertTuple)
-      .recover(e -> Future.failedFuture(new InternalException("Error: " + e.getMessage() + ", while inserting the orga user with the sql\n" + sql, e)))
+    return JdbcInsert.into(this.organizationUserTable)
+      .addColumn(OrganizationUserCols.CREATION_TIME,DateTimeService.getNowInUtc())
+      .addColumn(OrganizationUserCols.USER_ID,organizationUser.getLocalId())
+      .addColumn(OrganizationUserCols.ROLE_ID,organizationUser.getOrgaRole().getId())
+      .execute(sqlConnection)
       .compose(userRows -> Future.succeededFuture(organizationUser));
   }
 

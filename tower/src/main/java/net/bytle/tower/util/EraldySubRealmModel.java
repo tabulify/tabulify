@@ -5,6 +5,10 @@ import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.module.organization.inputs.OrgaUserInputProps;
+import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
+import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
+import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.type.EmailAddress;
 
 public class EraldySubRealmModel {
@@ -22,34 +26,42 @@ public class EraldySubRealmModel {
   public Future<Void> insertModelInDatabase() {
 
     Realm eraldyRealm = this.apiApp.getEraldyModel().getRealm();
-    Realm datacadamiaRealm = new Realm();
-    datacadamiaRealm.setHandle(REALM_HANDLE);
-    datacadamiaRealm.setName(REALM_HANDLE + " Realm");
-    datacadamiaRealm.setOrganization(eraldyRealm.getOrganization());
-    OrganizationUser initialOwnerUser = new OrganizationUser();
-    initialOwnerUser.setRealm(eraldyRealm);
-    initialOwnerUser.setEmailAddress(EmailAddress.ofFailSafe("owner@datacadamia.com"));
+
+
+    UserInputProps userInputProps = new UserInputProps();
+
+    userInputProps.setEmailAddress(EmailAddress.ofFailSafe("owner@datacadamia.com"));
 
     return this.apiApp.getHttpServer().getServer().getPostgresClient()
       .getPool()
-      .withConnection(sqlConnection -> apiApp.getUserProvider()
-        .getsertOnServerStartup(initialOwnerUser, sqlConnection, OrganizationUser.class)
+      .withConnection(sqlConnection -> apiApp
+        .getUserProvider()
+        .getsertOnServerStartup(eraldyRealm,null, userInputProps, sqlConnection)
         .recover(err->Future.failedFuture(new InternalException("Error on user getsert",err)))
         .compose(ownerUser -> {
-          ownerUser.setOrganization(eraldyRealm.getOrganization());
-          return apiApp.getOrganizationUserProvider()
-            .getsertOnServerStartup(ownerUser, sqlConnection);
-        })
-        .recover(err->Future.failedFuture(new InternalException("Error on user organization getsert",err)))
-        .compose(ownerResult -> {
-            datacadamiaRealm.setOwnerUser(ownerResult);
-            return this.apiApp.getRealmProvider()
-              .getsertOnServerStartup(datacadamiaRealm, sqlConnection);
-          }
-        )
-        .recover(err->Future.failedFuture(new InternalException("Error on realm getsert",err)))
-        .compose(realm -> Future.succeededFuture()));
+          /**
+           * Create a organisation user row
+           */
+          OrgaUserInputProps organisationUserInputProps = new OrgaUserInputProps();
+          organisationUserInputProps.setRole(OrgaRole.OWNER);
+          return apiApp
+            .getOrganizationUserProvider()
+            .getsertOnServerStartup(eraldyRealm.getOrganization(), (OrganizationUser) ownerUser, organisationUserInputProps, sqlConnection)
+            .recover(err->Future.failedFuture(new InternalException("Error on user organization getsert",err)))
+            .compose(ownerResult -> {
 
+              ownerResult.setOrganization(eraldyRealm.getOrganization());
+
+              RealmInputProps realmInputProps = new RealmInputProps();
+              realmInputProps.setHandle(REALM_HANDLE);
+              realmInputProps.setName(REALM_HANDLE + " Realm");
+                return this.apiApp.getRealmProvider()
+                  .getsertOnServerStartup(null, ownerResult,realmInputProps, sqlConnection);
+              }
+            )
+            .recover(err->Future.failedFuture(new InternalException("Error on realm getsert",err)))
+            .compose(realm -> Future.succeededFuture());
+        }));
 
   }
 }

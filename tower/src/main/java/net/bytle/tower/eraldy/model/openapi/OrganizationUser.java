@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 
 import java.util.Objects;
 
@@ -14,6 +15,7 @@ public class OrganizationUser extends User  {
 
 
   protected Organization organization;
+  private OrgaRole orgaRole;
 
   /**
   * The empty constructor is
@@ -65,4 +67,11 @@ public class OrganizationUser extends User  {
     return super.toString() + super.toString();
   }
 
+  public void setOrgaRole(OrgaRole role) {
+    this.orgaRole = role;
+  }
+
+  public OrgaRole getOrgaRole() {
+    return this.orgaRole;
+  }
 }

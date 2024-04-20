@@ -28,6 +28,7 @@ Reprocessing: process real-time data and re-process historical data in the same 
       * they control the structure at creation, and we don't need to deal with this error at a latter stage.
       * we will not make ew error if we need to pass an object type versus a string
       * they allow for normalization of output (ie email should be lowercase without alias)
+      * they help with signature controle (if the type does not match versus string, string)
     * Example:
       * email address as string vs email as object
       * domain name vs string

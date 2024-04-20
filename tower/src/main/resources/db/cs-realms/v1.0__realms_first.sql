@@ -25,7 +25,7 @@ create table organization_user
   ORGA_USER_ORGA_ID           BIGINT                      NOT NULL REFERENCES organization (ORGA_ID),
   ORGA_USER_USER_ID           BIGINT                      NOT NULL,
   ORGA_USER_REALM_ID          BIGINT                      NOT NULL CHECK (ORGA_USER_REALM_ID = 1),
-  ORGA_USER_ORGA_ROLE_ID      BIGINT                      NOT NULL REFERENCES organization_role (orga_role_id),
+  ORGA_USER_ROLE_ID           BIGINT                      NOT NULL REFERENCES organization_role (orga_role_id),
   ORGA_USER_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   ORGA_USER_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL,
   CONSTRAINT organization_user_pk PRIMARY KEY (ORGA_USER_ORGA_ID, ORGA_USER_USER_ID)
@@ -207,7 +207,6 @@ alter table realm_list_user
 comment on table realm_list_user is 'A list of users registered to the list. The table does not have any id as it can be become huge.';
 comment on column realm_list_user.LIST_USER_USER_ID is 'The subscriber';
 comment on column realm_list_user.LIST_USER_STATUS_CODE is 'Registered, unregistered, cleaned (bounced)';
-
 
 
 -- represents a mailing (sending an email to a list of users)
