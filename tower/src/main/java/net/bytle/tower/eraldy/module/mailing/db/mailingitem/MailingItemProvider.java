@@ -46,8 +46,8 @@ public class MailingItemProvider {
     Map<JdbcTableColumn, JdbcTableColumn> mailingUserForeignKeys = new HashMap<>();
     mailingUserForeignKeys.put(MailingItemCols.REALM_ID, UserCols.REALM_ID);
     mailingUserForeignKeys.put(MailingItemCols.USER_ID, UserCols.ID);
-    this.mailingItemTable = JdbcTable.build(jdbcSchema, "realm_mailing_item")
-      .addForeignKeyColumns(this.apiApp.getUserProvider().getUserTable(), mailingUserForeignKeys)
+    this.mailingItemTable = JdbcTable.build(jdbcSchema, "realm_mailing_item", UserCols.values())
+      .addForeignKeyColumns(mailingUserForeignKeys)
       .build();
   }
 
@@ -294,25 +294,25 @@ public class MailingItemProvider {
     }
 
     String messageId = mailingItemInputProps.getMessageId();
-    if(messageId!=null){
+    if (messageId != null) {
       mailingItem.setEmailMessageId(messageId);
       jdbcUpdate.addUpdatedColumn(MailingItemCols.EMAIL_MESSAGE_ID, failureCount);
     }
 
     LocalDateTime deliveryDate = mailingItemInputProps.getDeliveryDate();
-    if(deliveryDate!=null){
+    if (deliveryDate != null) {
       mailingItem.setDeliveryDate(deliveryDate);
       jdbcUpdate.addUpdatedColumn(MailingItemCols.DELIVERY_DATE, deliveryDate);
     }
 
 
-    if(jdbcUpdate.hasNoColumnToUpdate()){
+    if (jdbcUpdate.hasNoColumnToUpdate()) {
       return Future.succeededFuture(mailingItem);
     }
 
     return jdbcUpdate
       .execute()
-      .compose(v->Future.succeededFuture(mailingItem));
+      .compose(v -> Future.succeededFuture(mailingItem));
 
   }
 }

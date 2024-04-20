@@ -46,7 +46,10 @@ public class EraldyModel {
    * Example: `http(s)://domain.com/path/%s/%s`
    */
   private static final String MEMBER_REGISTRATION_URL = "member.list.registration.url.template";
-  private static final long REALM_USER_LOCAL_ID = 1L;
+
+  private static final long ORGA_LOCAL_ID = 1L;
+  public static final long REALM_LOCAL_ID = 1L;
+  private static final long OWNER_LOCAL_ID = 1L;
   private static final Long APP_MEMBER_ID = 1L;
   private static final Long APP_INTERACT_ID = 2L;
   private final EraldyApiApp apiApp;
@@ -193,6 +196,21 @@ public class EraldyModel {
         .query("SET CONSTRAINTS ALL DEFERRED")
         .execute()
         .compose(ar -> {
+
+          /**
+           * Owner in GUID
+           */
+          OrgaUserGuid eraldyOwnerUserGuid = new OrgaUserGuid();
+          eraldyOwnerUserGuid.setLocalId(OWNER_LOCAL_ID);
+
+
+          OrgaUser realmOwner = new OrgaUser();
+          realmOwner.setLocalId(OWNER_LOCAL_ID);
+          Realm realmForRealmOwner = new Realm();
+          realmForRealmOwner.setLocalId(REALM_LOCAL_ID);
+          realmOwner.setRealm(realmForRealmOwner);
+          realmOwner.setOrgaRole(OrgaRole.OWNER);
+
           /**
            * Create if not exists and get the Eraldy Model
            * (ie getsert)
@@ -200,8 +218,9 @@ public class EraldyModel {
           OrganizationInputProps organizationInputProps = new OrganizationInputProps();
           organizationInputProps.setHandle("eraldy");
           organizationInputProps.setName("Eraldy");
+          organizationInputProps.setOwnerGuid(eraldyOwnerUserGuid);
           Future<Organization> futureOrganization = this.apiApp.getOrganizationProvider()
-            .getsert(REALM_USER_LOCAL_ID, organizationInputProps, sqlConnection);
+            .getsert(ORGA_LOCAL_ID, organizationInputProps, sqlConnection);
 
           /**
            * The organization roles
@@ -219,6 +238,7 @@ public class EraldyModel {
               LOGGER.info("Eraldy Organization and roles getserted");
 
               Organization eraldyOrganization = composite.resultAt(0);
+              realmOwner.setOrganization(eraldyOrganization);
 
               /**
                * Realm
@@ -226,25 +246,17 @@ public class EraldyModel {
                * need to be a property of the organizational user)
                */
               TowerApexDomain apexDomain = apiApp.getApexDomain();
-
               RealmInputProps realmInputProps = new RealmInputProps();
               realmInputProps.setHandle(apexDomain.getRealmHandle());
               realmInputProps.setName(apexDomain.getName());
-              OrgaUserGuid realmOwnerOrgaUserGuid = new OrgaUserGuid();
-              realmOwnerOrgaUserGuid.setLocalId(REALM_USER_LOCAL_ID);
-              realmInputProps.setOwnerUserGuid(realmOwnerOrgaUserGuid);
+              realmInputProps.setOwnerUserGuid(eraldyOwnerUserGuid);
 
               /**
                * Realm
                * We create nep objects
                */
               UserInputProps realmOwnerInputProps = new UserInputProps();
-              OrganizationUser realmOwner = new OrganizationUser();
-              Realm realmForRealmOwner = new Realm();
-              realmForRealmOwner.setLocalId(this.getRealmLocalId());
-              realmOwner.setRealm(realmForRealmOwner);
-              realmOwner.setOrganization(eraldyOrganization);
-              realmOwner.setOrgaRole(OrgaRole.OWNER);
+
 
               return this.apiApp.getRealmProvider()
                 .getsertOnServerStartup(this.getRealmLocalId(), realmOwner, realmInputProps, sqlConnection)
@@ -253,9 +265,9 @@ public class EraldyModel {
                   LOGGER.info("Eraldy Realm getserted");
                   this.eraldyRealm = eraldyRealm;
 
-                  OrganizationUser ownerUser = eraldyRealm.getOwnerUser();
-                  Future<OrganizationUser> futureOwnerUser;
-                  if (ownerUser != null && !ownerUser.getLocalId().equals(REALM_USER_LOCAL_ID)) {
+                  OrgaUser ownerUser = eraldyRealm.getOwnerUser();
+                  Future<OrgaUser> futureOwnerUser;
+                  if (ownerUser != null && !ownerUser.getLocalId().equals(OWNER_LOCAL_ID)) {
                     /**
                      * If the user has changed, we take it instead
                      */
@@ -273,18 +285,18 @@ public class EraldyModel {
                     }
                     futureOwnerUser = apiApp
                       .getUserProvider()
-                      .getsertOnServerStartup(eraldyRealm, REALM_USER_LOCAL_ID, realmOwnerInputProps, sqlConnection)
+                      .getsertOnServerStartup(eraldyRealm, OWNER_LOCAL_ID, realmOwnerInputProps, sqlConnection)
                       .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner user", t)))
                       .compose(eraldyRealmOwner -> {
                           LOGGER.info("Eraldy Realm Owner User getserted as Realm User");
-                          this.eraldyRealm.setOwnerUser((OrganizationUser) eraldyRealmOwner);
+                          this.eraldyRealm.setOwnerUser((OrgaUser) eraldyRealmOwner);
                           /**
                            * get sert the user as organization user
                            */
                           OrgaUserInputProps orgaUserInputProps = new OrgaUserInputProps();
                           orgaUserInputProps.setRole(OrgaRole.OWNER);
                           return apiApp.getOrganizationUserProvider()
-                            .getsertOnServerStartup(eraldyOrganization, (OrganizationUser) eraldyRealmOwner, orgaUserInputProps, sqlConnection);
+                            .getsertOnServerStartup(eraldyOrganization, (OrgaUser) eraldyRealmOwner, orgaUserInputProps, sqlConnection);
                         }
                       )
                       .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner organization user", t)));
@@ -301,8 +313,12 @@ public class EraldyModel {
 
   }
 
+  /**
+   * @deprecated use the {@link #REALM_LOCAL_ID} constant instead, it's not a conf at all
+   */
+  @Deprecated
   public Long getRealmLocalId() {
-    return this.apiApp.getApexDomain().getRealmLocalId();
+    return REALM_LOCAL_ID;
   }
 
   public Realm getRealm() {

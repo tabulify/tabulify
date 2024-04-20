@@ -68,9 +68,11 @@ create table IF NOT EXISTS realm_user
   USER_FAMILY_NAME       VARCHAR(50)                 NULL,
   USER_TITLE             VARCHAR(255)                NULL,
   USER_BIO               VARCHAR(255)                NULL,
+  USER_LOCATION          VARCHAR(50),
   USER_AVATAR            VARCHAR(255),
   USER_WEBSITE           VARCHAR(255),
   USER_TIME_ZONE         VARCHAR(32),
+  USER_LAST_ACTIVE_TIME  TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   USER_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   USER_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
 ) PARTITION BY LIST (USER_REALM_ID);
@@ -88,6 +90,7 @@ comment on column realm_user.USER_TITLE is 'Job title';
 comment on column realm_user.USER_BIO is 'A text explicatif';
 comment on column realm_user.USER_WEBSITE is 'An URL';
 comment on column realm_user.USER_AVATAR is 'An URL to a avatar';
+comment on column realm_user.USER_LAST_ACTIVE_TIME is 'The last active time (Updated at login time at least)';
 
 -- Constraint
 -- Defer for initial insertion of the first eraldy org, realm and app

@@ -2,7 +2,7 @@ package net.bytle.tower.eraldy.module.organization.db;
 
 import net.bytle.vertx.db.JdbcTableColumn;
 
-public enum OrganizationUserCols implements JdbcTableColumn {
+public enum OrgaUserCols implements JdbcTableColumn {
 
 
   USER_ID("orga_user_user_id"),
@@ -13,7 +13,7 @@ public enum OrganizationUserCols implements JdbcTableColumn {
 
   private final String columnName;
 
-  OrganizationUserCols(String columnName) {
+  OrgaUserCols(String columnName) {
     this.columnName = columnName;
   }
 

@@ -14,7 +14,7 @@ import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithRealm;
 import net.bytle.tower.eraldy.model.openapi.App;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
@@ -93,7 +93,7 @@ public class UserProvider {
       .build();
 
 
-    this.userTable = JdbcTable.build(jdbcSchema, REALM_USER_TABLE_NAME)
+    this.userTable = JdbcTable.build(jdbcSchema, REALM_USER_TABLE_NAME, UserCols.values())
       .addPrimaryKeyColumn(UserCols.ID)
       .addPrimaryKeyColumn(UserCols.REALM_ID)
       .build();
@@ -182,26 +182,20 @@ public class UserProvider {
 
       jdbcUpdate.addPredicateColumn(UserCols.ID, user.getLocalId());
 
-      String newHandle = userInputProps.getHandle();
-      if (newHandle != null && !Objects.equals(newHandle, user.getHandle())) {
-        user.setHandle(newHandle);
-        jdbcUpdate.addUpdatedColumn(UserCols.HANDLE, newHandle);
+      EmailAddress newEmailAddress = userInputProps.getEmailAddress();
+      if (newEmailAddress != null && !Objects.equals(newEmailAddress.toNormalizedString(), user.getEmailAddress().toNormalizedString())) {
+        user.setEmailAddress(newEmailAddress);
+        jdbcUpdate.addUpdatedColumn(UserCols.EMAIL_ADDRESS, user.getEmailAddress().toNormalizedString());
       }
 
-    } else if (user.getHandle() != null) {
+    } else if (user.getEmailAddress() != null) {
 
-      jdbcUpdate.addPredicateColumn(UserCols.HANDLE, user.getHandle());
+      jdbcUpdate.addPredicateColumn(UserCols.EMAIL_ADDRESS, user.getEmailAddress());
 
     } else {
 
-      return Future.failedFuture(new InternalException("To update a user, the id or handle should be not null"));
+      return Future.failedFuture(new InternalException("To update a user, the id or email should be not null"));
 
-    }
-
-    EmailAddress newEmailAddress = userInputProps.getEmailAddress();
-    if (newEmailAddress != null && !Objects.equals(newEmailAddress.toNormalizedString(), user.getEmailAddress().toNormalizedString())) {
-      user.setEmailAddress(newEmailAddress);
-      jdbcUpdate.addUpdatedColumn(UserCols.EMAIL_ADDRESS, user.getEmailAddress().toNormalizedString());
     }
 
     String newFamilyName = userInputProps.getFamilyName();
@@ -344,7 +338,6 @@ public class UserProvider {
 
 
     user.setEmailAddress(EmailAddress.ofFailSafe(row.getString(UserCols.EMAIL_ADDRESS)));
-    user.setHandle(row.getString(UserCols.HANDLE));
     Integer status = row.getInteger(UserCols.STATUS, 0);
     UserStatus userStatus = UserStatus.fromStatusCodeFailSafe(status);
     user.setStatus(userStatus);
@@ -470,8 +463,6 @@ public class UserProvider {
 
 
   }
-
-
 
 
   public Future<Void> updatePassword(Long userLocalId, Long realmLocalId, String password) {
@@ -708,10 +699,7 @@ public class UserProvider {
         this.updateGuid(user);
 
         user.setEmailAddress(userInputProps.getEmailAddress());
-        jdbcInsert.addColumn(UserCols.EMAIL_ADDRESS, user.getEmailAddress());
-
-        user.setHandle(userInputProps.getHandle());
-        jdbcInsert.addColumn(UserCols.HANDLE, user.getHandle());
+        jdbcInsert.addColumn(UserCols.EMAIL_ADDRESS, user.getEmailAddress().toNormalizedString());
 
         user.setGivenName(userInputProps.getGivenName());
         jdbcInsert.addColumn(UserCols.GIVEN_NAME, user.getGivenName());
@@ -728,14 +716,23 @@ public class UserProvider {
         user.setLocation(userInputProps.getLocation());
         jdbcInsert.addColumn(UserCols.LOCATION, user.getLocation());
 
-        user.setTimeZone(userInputProps.getTimeZone());
-        jdbcInsert.addColumn(UserCols.TIME_ZONE, user.getTimeZone().getID());
+        TimeZone timeZone = userInputProps.getTimeZone();
+        if (timeZone != null) {
+          user.setTimeZone(timeZone);
+          jdbcInsert.addColumn(UserCols.TIME_ZONE, user.getTimeZone().getID());
+        }
 
-        user.setAvatar(userInputProps.getAvatar());
-        jdbcInsert.addColumn(UserCols.AVATAR, user.getAvatar());
+        URI avatar = userInputProps.getAvatar();
+        if(avatar!=null) {
+          user.setAvatar(avatar);
+          jdbcInsert.addColumn(UserCols.AVATAR, user.getAvatar().toString());
+        }
 
-        user.setWebsite(userInputProps.getWebsite());
-        jdbcInsert.addColumn(UserCols.WEBSITE, user.getWebsite());
+        URI website = userInputProps.getWebsite();
+        if(website!=null) {
+          user.setWebsite(website);
+          jdbcInsert.addColumn(UserCols.WEBSITE, user.getWebsite().toString());
+        }
 
         return jdbcInsert
           .execute(sqlConnection, jdbcRowSet -> Future.succeededFuture(user));
@@ -747,7 +744,9 @@ public class UserProvider {
 
     try {
       //noinspection unchecked
-      return (T) this.getUserClass(realm).getDeclaredConstructor().newInstance();
+      T user = (T) this.getUserClass(realm).getDeclaredConstructor().newInstance();
+      user.setRealm(realm);
+      return user;
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
       throw new RuntimeException("Unable to create a user pojo. Error: " + e.getMessage(), e);
     }
@@ -762,7 +761,7 @@ public class UserProvider {
   private Class<? extends User> getUserClass(Realm realm) {
 
     if (this.apiApp.getEraldyModel().isEraldyRealm(realm)) {
-      return OrganizationUser.class;
+      return OrgaUser.class;
     }
     return User.class;
 

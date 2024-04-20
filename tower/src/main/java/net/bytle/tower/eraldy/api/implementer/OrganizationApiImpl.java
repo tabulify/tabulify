@@ -74,7 +74,7 @@ public class OrganizationApiImpl implements OrganizationApi {
   }
 
   @Override
-  public Future<ApiResponse<OrganizationUser>> organizationUserMeGet(RoutingContext routingContext) {
+  public Future<ApiResponse<OrgaUser>> organizationUserMeGet(RoutingContext routingContext) {
     AuthUser signedInUser;
     try {
       signedInUser = this.apiApp.getAuthProvider().getSignedInAuthUser(routingContext);
@@ -98,7 +98,7 @@ public class OrganizationApiImpl implements OrganizationApi {
               .buildWithContextFailing(routingContext)
           );
         }
-        ApiResponse<OrganizationUser> response = new ApiResponse<>(orgUser)
+        ApiResponse<OrgaUser> response = new ApiResponse<>(orgUser)
           .setMapper(this.orgUserMapper);
         return Future.succeededFuture(response);
       });

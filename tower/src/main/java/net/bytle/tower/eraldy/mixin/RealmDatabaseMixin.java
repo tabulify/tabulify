@@ -3,8 +3,8 @@ package net.bytle.tower.eraldy.mixin;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.model.openapi.App;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.Organization;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 
 
 /**
@@ -32,7 +32,7 @@ public abstract class RealmDatabaseMixin {
 
   @JsonIgnore
   @JsonProperty("ownerUser")
-  abstract OrganizationUser getOwnerUser();
+  abstract OrgaUser getOwnerUser();
 
   @JsonIgnore
   @JsonProperty("organization")

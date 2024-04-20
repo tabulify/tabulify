@@ -86,7 +86,7 @@ public class MailingProvider {
     this.apiApp.getHttpServer().getServer().getJacksonMapperManager()
       .addDeserializer(MailingStatus.class, new JacksonMailingStatusDeserializer());
 
-    this.mailingTable = JdbcTable.build(jdbcSchema, "realm_mailing")
+    this.mailingTable = JdbcTable.build(jdbcSchema, "realm_mailing", MailingCols.values())
       .addPrimaryKeyColumn(MailingCols.ID)
       .addPrimaryKeyColumn(MailingCols.REALM_ID)
       .build();
@@ -169,7 +169,7 @@ public class MailingProvider {
         jdbcInsert.addColumn(MailingCols.EMAIL_RCPT_LIST_ID, mailing.getEmailRecipientList().getLocalId());
 
         // owner
-        OrganizationUser ownerUser = ListProvider.getOwnerUser(list);
+        OrgaUser ownerUser = ListProvider.getOwnerUser(list);
         mailing.setEmailAuthor(ownerUser);
         jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_USER_ID, ownerUser.getLocalId());
         jdbcInsert.addColumn(MailingCols.ORGA_ID, ownerUser.getOrganization().getLocalId());
@@ -251,7 +251,7 @@ public class MailingProvider {
     Long orgaId = row.getLong(MailingCols.ORGA_ID);
     assert Objects.equals(realm.getOrganization().getLocalId(), orgaId);
     Long userId = row.getLong(MailingCols.EMAIL_AUTHOR_USER_ID);
-    OrganizationUser authorUser = new OrganizationUser();
+    OrgaUser authorUser = new OrgaUser();
     authorUser.setLocalId(userId);
     authorUser.setRealm(realm);
     mailing.setEmailAuthor(authorUser);
@@ -404,7 +404,7 @@ public class MailingProvider {
     }
 
     String newAuthorGuid = mailingInputProps.getEmailAuthorGuid();
-    Future<OrganizationUser> newAuthorFuture = Future.succeededFuture();
+    Future<OrgaUser> newAuthorFuture = Future.succeededFuture();
     if (newAuthorGuid != null) {
       newAuthorFuture = this.apiApp.getOrganizationUserProvider().getOrganizationUserByIdentifier(newAuthorGuid);
     }
@@ -500,8 +500,8 @@ public class MailingProvider {
    * The object is build at request time
    * (Feature of GraphQL where a type can be matched to a function)
    */
-  public Future<OrganizationUser> buildEmailAuthorAtRequestTimeEventually(Mailing mailing) {
-    OrganizationUser emailAuthor = mailing.getEmailAuthor();
+  public Future<OrgaUser> buildEmailAuthorAtRequestTimeEventually(Mailing mailing) {
+    OrgaUser emailAuthor = mailing.getEmailAuthor();
     EmailAddress emailAddress = emailAuthor.getEmailAddress();
     if (emailAddress != null) {
       return Future.succeededFuture(emailAuthor);

@@ -73,7 +73,7 @@ public class RealmProvider {
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .build();
 
-    this.realmTable = JdbcTable.build(schema, "realm")
+    this.realmTable = JdbcTable.build(schema, "realm", RealmCols.values())
       .addPrimaryKeyColumn(RealmCols.ID)
       .addUniqueKeyColumn(RealmCols.HANDLE)
       .build();
@@ -226,7 +226,7 @@ public class RealmProvider {
    * @param askedRealmId - use for Eraldy Realm only - the asked realm id (ie 1)
    * @return the inserted realm
    */
-  private Future<Realm> insertRealm(OrganizationUser ownerUser, RealmInputProps realmInputProps, SqlConnection sqlConnection, Long askedRealmId) {
+  private Future<Realm> insertRealm(OrgaUser ownerUser, RealmInputProps realmInputProps, SqlConnection sqlConnection, Long askedRealmId) {
 
     String handle = realmInputProps.getHandle();
     if (handle == null) {
@@ -385,7 +385,7 @@ public class RealmProvider {
       });
   }
 
-  public Future<List<Realm>> getRealmsForOwner(OrganizationUser user) {
+  public Future<List<Realm>> getRealmsForOwner(OrgaUser user) {
 
     return JdbcSelect.from(this.realmTable)
       .addEqualityPredicate(RealmCols.ORGA_ID, user.getOrganization().getLocalId())
@@ -566,7 +566,7 @@ public class RealmProvider {
    * @param sqlConnection - the insertion connection to defer constraint on transaction
    * @return the realm inserted
    */
-  public Future<Realm> getsertOnServerStartup(Long realmId, OrganizationUser organizationUser, RealmInputProps realmInputProps, SqlConnection sqlConnection) {
+  public Future<Realm> getsertOnServerStartup(Long realmId, OrgaUser ownerUser, RealmInputProps realmInputProps, SqlConnection sqlConnection) {
     Future<Realm> selectRealmFuture;
     if (realmId != null) {
       selectRealmFuture = this.getRealmFromLocalId(realmId, sqlConnection);
@@ -583,7 +583,7 @@ public class RealmProvider {
         if (selectedRealm != null) {
           futureRealm = Future.succeededFuture(selectedRealm);
         } else {
-          futureRealm = this.insertRealm(organizationUser, realmInputProps, sqlConnection, realmId);
+          futureRealm = this.insertRealm(ownerUser, realmInputProps, sqlConnection, realmId);
         }
         return futureRealm;
       });

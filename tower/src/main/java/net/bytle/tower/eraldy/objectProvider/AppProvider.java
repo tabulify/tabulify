@@ -358,7 +358,7 @@ public class AppProvider {
 
   private Future<App> getFromRow(Row row, Realm realm) {
     Long userId = row.getLong(APP_USER_COLUMN);
-    Future<OrganizationUser> userFuture = apiApp
+    Future<OrgaUser> userFuture = apiApp
       .getOrganizationUserProvider()
       .getOrganizationUserByLocalId(userId);
     Future<Realm> realmFuture;
@@ -378,7 +378,7 @@ public class AppProvider {
       .all(userFuture, realmFuture)
       .recover(t -> Future.failedFuture(new InternalException("AppProvider getFromRows Error (" + t.getMessage() + ")", t)))
       .compose(compositeFuture -> {
-        OrganizationUser organizationUser = compositeFuture.resultAt(0);
+        OrgaUser orgaUser = compositeFuture.resultAt(0);
         Realm realmResult = compositeFuture.resultAt(1);
         String uri = row.getString(APP_HANDLE_COLUMN);
 
@@ -410,7 +410,7 @@ public class AppProvider {
         /**
          * Foreign Objects
          */
-        app.setOwnerUser(organizationUser);
+        app.setOwnerUser(orgaUser);
 
         return Future.succeededFuture(app);
       });
@@ -471,7 +471,7 @@ public class AppProvider {
      * User
      */
     String userIdentifier = appPostBody.getUserIdentifier();
-    Future<OrganizationUser> futureOrgUser;
+    Future<OrgaUser> futureOrgUser;
     if (userIdentifier == null) {
       futureOrgUser = Future.succeededFuture();
     } else {

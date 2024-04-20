@@ -10,7 +10,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.mailing.db.mailing.MailingProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingjob.MailingJobProvider;
@@ -215,7 +215,7 @@ public class MailingGraphQLImpl {
   /**
    * Author Late Fetch
    */
-  public Future<OrganizationUser> getMailingEmailAuthor(DataFetchingEnvironment dataFetchingEnvironment) {
+  public Future<OrgaUser> getMailingEmailAuthor(DataFetchingEnvironment dataFetchingEnvironment) {
     Mailing mailing = dataFetchingEnvironment.getSource();
     return this.mailingProvider.buildEmailAuthorAtRequestTimeEventually(mailing);
   }

@@ -22,7 +22,6 @@ public class User   {
 
   protected Long localId;
 
-  protected String handle;
 
   protected EmailAddress emailAddress;
 
@@ -96,21 +95,6 @@ public class User   {
     this.localId = localId;
   }
 
-  /**
-  * @return handle The handle of the user
-  */
-  @JsonProperty("handle")
-  public String getHandle() {
-    return handle;
-  }
-
-  /**
-  * @param handle The handle of the user
-  */
-  @SuppressWarnings("unused")
-  public void setHandle(String handle) {
-    this.handle = handle;
-  }
 
   /**
   * @return emailAddress The email address of the user
@@ -374,7 +358,7 @@ public class User   {
 
   @Override
   public String toString() {
-    return guid + ", " + emailAddress + ", " + handle;
+    return guid + ", " + emailAddress;
   }
 
 }

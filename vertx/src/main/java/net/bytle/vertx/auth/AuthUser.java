@@ -6,7 +6,6 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authorization.Authorization;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NullValueException;
 import net.bytle.type.Casts;
 import net.bytle.type.EmailAddress;
 
@@ -62,26 +61,15 @@ public class AuthUser {
     return claims.getString(AuthUserJwtClaims.SUBJECT.toString());
   }
 
-  @SuppressWarnings("unused")
-  public String getSubjectHandle() throws NullValueException {
-    String userHandle = claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_HANDLE.toString());
-    if (userHandle == null) {
-      throw new NullValueException("No subject handle");
-    }
-    return userHandle;
-  }
 
   public String getSubjectEmail() {
     return claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_EMAIL.getJwtKey());
   }
 
 
-
   public User getVertxUser() {
 
-
     return this.user;
-
 
   }
 
@@ -229,13 +217,6 @@ public class AuthUser {
       return this;
     }
 
-    /**
-     * @param subjectHandle - a handle is a unique descriptif name for the subject
-     */
-    public Builder setSubjectHandle(String subjectHandle) {
-      claims.put(AuthUserJwtClaims.CUSTOM_SUBJECT_HANDLE.toString(), subjectHandle);
-      return this;
-    }
 
     public Builder setSubjectGivenName(String subjectGivenName) {
       claims.put(AuthUserJwtClaims.CUSTOM_SUBJECT_GIVEN_NAME.toString(), subjectGivenName);

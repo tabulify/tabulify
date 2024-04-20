@@ -1,5 +1,7 @@
 package net.bytle.vertx.db;
 
+import net.bytle.exception.InternalException;
+
 import java.util.*;
 
 /**
@@ -16,8 +18,8 @@ public class JdbcTable {
 
   }
 
-  public static JdbcTableBuilder build(JdbcSchema jdbcSchema, String name) {
-    return new JdbcTableBuilder(jdbcSchema, name);
+  public static JdbcTableBuilder build(JdbcSchema jdbcSchema, String name, JdbcTableColumn[] tableColumns) {
+    return new JdbcTableBuilder(jdbcSchema, name, tableColumns);
   }
 
 
@@ -43,7 +45,7 @@ public class JdbcTable {
   }
 
   public Map<JdbcTableColumn, JdbcTableColumn> getForeignKeyColumns(JdbcTable joinedTable) {
-    return this.jdbcTableBuilder.foreignKeys.get(joinedTable);
+    return this.jdbcTableBuilder.jdbcSchema.getJdbcClient().getDatabaseMeta().getForeignKeyColumns(this,joinedTable);
   }
 
 
@@ -52,29 +54,42 @@ public class JdbcTable {
     private final String name;
 
     private final HashSet<JdbcTableColumn> jdbcPrimaryOrUniqueKeyColumns = new HashSet<>();
-    private final Map<JdbcTable, Map<JdbcTableColumn, JdbcTableColumn>> foreignKeys = new HashMap<>();
+    private final  Map<JdbcTableColumn, JdbcTableColumn> foreignKeys = new HashMap<>();
+    private final Set<JdbcTableColumn> columns;
 
-    public JdbcTableBuilder(JdbcSchema jdbcSchema, String name) {
+    public <T extends Enum<T> & JdbcTableColumn> JdbcTableBuilder(JdbcSchema jdbcSchema, String name, JdbcTableColumn[] columns) {
       this.jdbcSchema = jdbcSchema;
       this.name = name;
+      this.columns = new HashSet<>(List.of(columns));
     }
 
     public JdbcTableBuilder addPrimaryKeyColumn(JdbcTableColumn jdbcTableColumn){
+      this.checkColumn(jdbcTableColumn);
       this.jdbcPrimaryOrUniqueKeyColumns.add(jdbcTableColumn);
       return this;
     }
 
+    private void checkColumn(JdbcTableColumn jdbcTableColumn) {
+      if(!columns.contains(jdbcTableColumn)){
+        throw new InternalException("The column ("+jdbcTableColumn+") is not a declared column of the table ("+this+")");
+      }
+    }
+
     public JdbcTable build() {
-      return new JdbcTable(this);
+
+      JdbcTable jdbcTable = new JdbcTable(this);
+      this.jdbcSchema.getJdbcClient().getDatabaseMeta().registerTable(jdbcTable);
+      return jdbcTable;
     }
 
     public JdbcTableBuilder addUniqueKeyColumn(JdbcTableColumn tableColumn) {
+      this.checkColumn(tableColumn);
       this.jdbcPrimaryOrUniqueKeyColumns.add(tableColumn);
       return this;
     }
 
-    public JdbcTableBuilder addForeignKeyColumns(JdbcTable userTable, Map<JdbcTableColumn, JdbcTableColumn> columnsMapping) {
-      this.foreignKeys.put(userTable, columnsMapping);
+    public JdbcTableBuilder addForeignKeyColumns(Map<JdbcTableColumn, JdbcTableColumn> columnsMapping) {
+      this.foreignKeys.putAll(columnsMapping);
       return this;
     }
   }

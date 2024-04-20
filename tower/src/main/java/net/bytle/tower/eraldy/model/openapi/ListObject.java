@@ -25,7 +25,7 @@ public class ListObject   {
 
   protected String description;
 
-  protected OrganizationUser ownerUser;
+  protected OrgaUser ownerUser;
 
   protected App app;
 
@@ -148,7 +148,7 @@ public class ListObject   {
   * @return ownerUser
   */
   @JsonProperty("ownerUser")
-  public OrganizationUser getOwnerUser() {
+  public OrgaUser getOwnerUser() {
     return ownerUser;
   }
 
@@ -156,7 +156,7 @@ public class ListObject   {
   * @param ownerUser Set ownerUser
   */
   @SuppressWarnings("unused")
-  public void setOwnerUser(OrganizationUser ownerUser) {
+  public void setOwnerUser(OrgaUser ownerUser) {
     this.ownerUser = ownerUser;
   }
 

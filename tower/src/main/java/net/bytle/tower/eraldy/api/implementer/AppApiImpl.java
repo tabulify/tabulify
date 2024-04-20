@@ -41,11 +41,9 @@ public class AppApiImpl implements AppApi {
   public Future<ApiResponse<List<ListObject>>> appAppIdentifierListsGet(RoutingContext routingContext, String appIdentifier) {
 
     ListProvider listProvider = this.apiApp.getListProvider();
-    Future<Realm> realmFuture;
+    Guid guid;
     try {
-      Guid guid = this.apiApp.getAppProvider().getGuidFromHash(appIdentifier);
-      long realmId = guid.getRealmOrOrganizationId();
-      realmFuture = this.apiApp.getRealmProvider().getRealmFromLocalIdOrAutCli(realmId, routingContext);
+      guid = this.apiApp.getAppProvider().getGuidFromHash(appIdentifier);
     } catch (CastException e) {
       return Future.failedFuture(TowerFailureException.builder()
         .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
@@ -53,7 +51,8 @@ public class AppApiImpl implements AppApi {
         .build()
       );
     }
-    return realmFuture
+    return this.apiApp.getRealmProvider()
+      .getRealmFromLocalId(guid.getRealmOrOrganizationId())
       .compose(realmRes -> this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realmRes, AuthUserScope.APP_LISTS_GET))
       .compose(realmAfterCheck -> this.apiApp.getAppProvider().getAppByIdentifier(appIdentifier, realmAfterCheck))
       .compose(listProvider::getListsForApp)

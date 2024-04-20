@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.api.implementer;
 
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
+import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.RealmApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
@@ -36,21 +37,7 @@ public class RealmApiImpl implements RealmApi {
   @Override
   public Future<ApiResponse<net.bytle.tower.eraldy.model.openapi.Realm>> realmPost(RoutingContext routingContext, RealmPostBody realmPost) {
 
-    net.bytle.tower.eraldy.model.openapi.Realm realm = new net.bytle.tower.eraldy.model.openapi.Realm();
-    String handle = realmPost.getHandle();
-    realm.setHandle(handle);
-    realm.setName(realmPost.getName());
-
-    RealmProvider realmProvider = this.apiApp.getRealmProvider();
-    return realmProvider
-      .upsertRealm(realm)
-      .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-      .compose(newRealm -> {
-          ApiResponse<net.bytle.tower.eraldy.model.openapi.Realm> response = new ApiResponse<>(newRealm)
-            .setMapper(this.apiApp.getRealmProvider().getPublicJsonMapper());
-          return Future.succeededFuture(response);
-        }
-      );
+    return Future.failedFuture(new InternalException("Not implemented"));
 
   }
 
@@ -60,9 +47,9 @@ public class RealmApiImpl implements RealmApi {
     AuthProvider authProvider = this.apiApp.getAuthProvider();
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(realmIdentifier)
-      .compose(realm-> authProvider.checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_LISTS_GET))
+      .compose(realm -> authProvider.checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_LISTS_GET))
       .compose(listProvider::getListsForRealm)
-      .compose(lists->Future.succeededFuture(new ApiResponse<>(lists).setMapper(listProvider.getApiMapper())));
+      .compose(lists -> Future.succeededFuture(new ApiResponse<>(lists).setMapper(listProvider.getApiMapper())));
   }
 
   @Override

@@ -17,7 +17,6 @@ public class UserInputProps {
 
 
 
-  protected String handle;
 
   protected EmailAddress emailAddress;
 
@@ -51,23 +50,6 @@ public class UserInputProps {
   */
   @SuppressWarnings("unused")
   public UserInputProps() {
-  }
-
-
-  /**
-  * @return handle The handle of the user
-  */
-  @JsonProperty("handle")
-  public String getHandle() {
-    return handle;
-  }
-
-  /**
-  * @param handle The handle of the user
-  */
-  @SuppressWarnings("unused")
-  public void setHandle(String handle) {
-    this.handle = handle;
   }
 
   /**

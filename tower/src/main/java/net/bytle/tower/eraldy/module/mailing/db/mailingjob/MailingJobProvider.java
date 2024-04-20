@@ -38,7 +38,7 @@ public class MailingJobProvider {
   public MailingJobProvider(EraldyApiApp eraldyApiApp, JdbcSchema jobsSchema) {
     this.apiApp = eraldyApiApp;
 
-    this.mailingJobTable =  JdbcTable.build(jobsSchema,"realm_mailing_job")
+    this.mailingJobTable =  JdbcTable.build(jobsSchema,"realm_mailing_job", MailingJobCols.values())
       .addPrimaryKeyColumn(MailingJobCols.ID)
       .addPrimaryKeyColumn(MailingJobCols.REALM_ID)
       .build();

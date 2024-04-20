@@ -68,7 +68,6 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     if (superToken.equals(token)) {
       User user = AuthUser.builder()
         .setSubject("root")
-        .setSubjectHandle("root")
         .addAuthorization(API_KEY_PROVIDER_ID, ROOT_AUTHORIZATION)
         .build()
         .getVertxUser();

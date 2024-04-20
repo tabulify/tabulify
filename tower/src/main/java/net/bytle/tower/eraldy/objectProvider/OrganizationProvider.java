@@ -2,9 +2,7 @@ package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.Future;
 import io.vertx.sqlclient.Pool;
-import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.SqlConnection;
-import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
@@ -13,10 +11,7 @@ import net.bytle.tower.eraldy.module.organization.db.OrganizationCols;
 import net.bytle.tower.eraldy.module.organization.inputs.OrganizationInputProps;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
-import net.bytle.vertx.db.JdbcInsert;
-import net.bytle.vertx.db.JdbcSchema;
-import net.bytle.vertx.db.JdbcSchemaManager;
-import net.bytle.vertx.db.JdbcTable;
+import net.bytle.vertx.db.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +25,6 @@ public class OrganizationProvider {
   protected static final Logger LOGGER = LoggerFactory.getLogger(OrganizationProvider.class);
   public static final String TABLE_NAME = "organization";
 
-  public static final String QUALIFIED_TABLE_NAME = JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME;
-
   /**
    * Lower case is important
    */
@@ -40,9 +33,7 @@ public class OrganizationProvider {
   public static final String ORGA_ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "id";
   private static final String GUID_PREFIX = "org";
   private final EraldyApiApp apiApp;
-  public static final String ORGA_HANDLE_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "handle";
   @SuppressWarnings("unused")
-  private static final String ORGA_MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private final Pool jdbcPool;
   private final JdbcTable orgaTable;
 
@@ -50,7 +41,7 @@ public class OrganizationProvider {
   public OrganizationProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
     this.apiApp = apiApp;
     this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
-    this.orgaTable = JdbcTable.build(jdbcSchema, TABLE_NAME)
+    this.orgaTable = JdbcTable.build(jdbcSchema, TABLE_NAME, OrganizationCols.values())
       .addPrimaryKeyColumn(OrganizationCols.ID)
       .build();
   }
@@ -68,12 +59,10 @@ public class OrganizationProvider {
 
   private <T extends Organization> Future<T> getById(Long orgaId, Class<T> clazz, SqlConnection sqlConnection) {
 
-    String sql = "SELECT * FROM\n" +
-      QUALIFIED_TABLE_NAME + "\n" +
-      "WHERE " + ORGA_ID_COLUMN + " = $1";
-    return sqlConnection.preparedQuery(sql)
-      .execute(Tuple.of(orgaId))
-      .onFailure(e -> LOGGER.error("Error: " + e.getMessage() + ", while retrieving the realm by id with the sql\n" + sql, e))
+    return JdbcSelect.from(this.orgaTable)
+      .addEqualityPredicate(OrganizationCols.ID,orgaId)
+      .execute(sqlConnection)
+      .onFailure(e -> LOGGER.error("Error: " + e.getMessage() + ", while retrieving the orga by id", e))
       .compose(orgRows -> {
 
         if (orgRows.size() == 0) {
@@ -83,14 +72,14 @@ public class OrganizationProvider {
         if (orgRows.size() != 1) {
           return Future.failedFuture(new InternalException("the orga id (" + orgaId + ") returns more than one row"));
         }
-        Row row = orgRows.iterator().next();
+        JdbcRow row = orgRows.iterator().next();
         return this.getOrganizationFromDatabaseRow(row, clazz);
       });
   }
 
-  private <T extends Organization> Future<T> getOrganizationFromDatabaseRow(Row row, Class<T> clazz) {
-    String orgaHandle = row.getString(ORGA_HANDLE_COLUMN);
-    Long orgaId = row.getLong(ORGA_ID_COLUMN);
+  private <T extends Organization> Future<T> getOrganizationFromDatabaseRow(JdbcRow row, Class<T> clazz) {
+    String orgaHandle = row.getString(OrganizationCols.HANDLE);
+    Long orgaId = row.getLong(OrganizationCols.ID);
 
     Organization organization = new Organization();
     organization.setLocalId(orgaId);
@@ -136,6 +125,8 @@ public class OrganizationProvider {
       .addColumn(OrganizationCols.ID, organizationId)
       .addColumn(OrganizationCols.HANDLE, organizationInputProps.getHandle())
       .addColumn(OrganizationCols.NAME, organizationInputProps.getName())
+      .addColumn(OrganizationCols.OWNER_ID, organizationInputProps.getOwnerGuid().getLocalId())
+      .addColumn(OrganizationCols.REALM_ID, organizationInputProps.getOwnerGuid().getRealmId())
       .addReturningColumn(OrganizationCols.ID)
       .execute(sqlConnection)
       .compose(orgRows -> {

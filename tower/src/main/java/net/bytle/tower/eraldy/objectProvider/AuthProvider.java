@@ -59,7 +59,7 @@ public class AuthProvider {
    * @throws NotFoundException           - if the user is not found
    * @throws NotSignedInOrganizationUser - if the user is not an organization user
    */
-  private OrganizationUser getSignedInOrganizationalUserOrThrows(RoutingContext routingContext) throws NotFoundException, NotSignedInOrganizationUser {
+  private OrgaUser getSignedInOrganizationalUserOrThrows(RoutingContext routingContext) throws NotFoundException, NotSignedInOrganizationUser {
     AuthUser authUser = this.getSignedInAuthUser(routingContext);
     return toModelUser(authUser);
   }
@@ -139,7 +139,7 @@ public class AuthProvider {
     /**
      * Organization
      */
-    if (userEraldy instanceof OrganizationUser) {
+    if (userEraldy instanceof OrgaUser) {
 
       String organizationGuidString = authUser.getOrganizationGuid();
       if (organizationGuidString == null) {
@@ -155,7 +155,7 @@ public class AuthProvider {
       organization.setGuid(organizationGuidString);
       organization.setLocalId(orgaGuidObject.getRealmOrOrganizationId());
       organization.setHandle(authUser.getOrganizationHandle());
-      ((OrganizationUser) userEraldy).setOrganization(organization);
+      ((OrgaUser) userEraldy).setOrganization(organization);
 
     }
 
@@ -233,7 +233,7 @@ public class AuthProvider {
    * @param routingContext - the routing context
    * @return a user or a failed future
    */
-  public Future<OrganizationUser> getSignedInOrganizationalUser(RoutingContext routingContext) {
+  public Future<OrgaUser> getSignedInOrganizationalUser(RoutingContext routingContext) {
     try {
       return Future.succeededFuture(this.apiApp.getAuthProvider().getSignedInOrganizationalUserOrThrows(routingContext));
     } catch (NotFoundException e) {
@@ -407,12 +407,11 @@ public class AuthProvider {
     AuthUser.Builder authUserBuilder = AuthUser
       .builder()
       .setSubject(user.getGuid())
-      .setSubjectHandle(user.getHandle())
       .setSubjectEmail(user.getEmailAddress())
       .setRealmGuid(user.getRealm().getGuid())
       .setRealmHandle(user.getRealm().getHandle());
-    if (user instanceof OrganizationUser) {
-      Organization organization = ((OrganizationUser) user).getOrganization();
+    if (user instanceof OrgaUser) {
+      Organization organization = ((OrgaUser) user).getOrganization();
       // An organization user object is
       // a Eraldy user with or without an organization
       if (organization != null) {
@@ -475,16 +474,16 @@ public class AuthProvider {
   }
 
   /**
-   * @param user - the user to transform in auth user (This is a normal user build even if the user is a {@link OrganizationUser})
+   * @param user - the user to transform in auth user (This is a normal user build even if the user is a {@link OrgaUser})
    * @return an auth user suitable to be put in a session (ie with role and permission)
    */
   private Future<AuthUser> toAuthUserForSession(User user) {
 
     AuthUser.Builder authUserBuilder = toAuthUserBuilder(user);
     Future<List<Realm>> futureRealmOwnerList;
-    Future<OrganizationUser> futureOrgaUser;
-    if (user instanceof OrganizationUser) {
-      OrganizationUser orgUser = (OrganizationUser) user;
+    Future<OrgaUser> futureOrgaUser;
+    if (user instanceof OrgaUser) {
+      OrgaUser orgUser = (OrgaUser) user;
       futureRealmOwnerList = this.apiApp.getRealmProvider().getRealmsForOwner(orgUser);
       futureOrgaUser = this.apiApp.getOrganizationUserProvider().addOrganizationDataEventually(orgUser);
     } else {
@@ -496,7 +495,7 @@ public class AuthProvider {
       .compose(
         res -> {
           List<Realm> realmList = res.resultAt(0);
-          OrganizationUser orgaUser = res.resultAt(1);
+          OrgaUser orgaUser = res.resultAt(1);
           if (realmList != null) {
             List<Long> realmListLongId = realmList.stream()
               .map(Realm::getLocalId)
@@ -612,8 +611,8 @@ public class AuthProvider {
     analyticsUser.setAvatar(user.getAvatar());
     analyticsUser.setRealmGuid(user.getRealm().getGuid());
     analyticsUser.setRealmHandle(user.getRealm().getHandle());
-    if (user instanceof OrganizationUser) {
-      Organization organization = ((OrganizationUser) user).getOrganization();
+    if (user instanceof OrgaUser) {
+      Organization organization = ((OrgaUser) user).getOrganization();
       // An organization user object is
       // a Eraldy user with or without an organization
       if (organization != null) {

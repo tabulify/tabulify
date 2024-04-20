@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.module.organization.inputs;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 
 /**
  * Organization for the users using the Combostrap product (Not from the user of other Realm)
@@ -14,6 +15,15 @@ public class OrganizationInputProps {
 
   protected String name;
 
+  protected OrgaUserGuid ownerGuid;
+
+  public OrgaUserGuid getOwnerGuid() {
+    return ownerGuid;
+  }
+
+  public void setOwnerGuid(OrgaUserGuid ownerGuid) {
+    this.ownerGuid = ownerGuid;
+  }
 
   /**
   * The empty constructor is

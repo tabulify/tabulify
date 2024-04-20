@@ -77,7 +77,7 @@ public class ListProvider {
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .addMixIn(ListObject.class, ListItemMixinWithRealm.class)
       .build();
-    this.listTable = JdbcTable.build(jdbcSchema, "realm_list")
+    this.listTable = JdbcTable.build(jdbcSchema, "realm_list", ListCols.values())
       .addPrimaryKeyColumn(ListCols.ID)
       .addPrimaryKeyColumn(ListCols.REALM_ID)
       .build()
@@ -100,8 +100,8 @@ public class ListProvider {
     listObject.setGuid(guid);
   }
 
-  public static OrganizationUser getOwnerUser(ListObject list) {
-    OrganizationUser ownerUser = list.getOwnerUser();
+  public static OrgaUser getOwnerUser(ListObject list) {
+    OrgaUser ownerUser = list.getOwnerUser();
     if (ownerUser != null) {
       return ownerUser;
     }
@@ -143,7 +143,7 @@ public class ListProvider {
      * User
      */
     String ownerIdentifier = listInputProps.getOwnerGuid();
-    Future<OrganizationUser> futureUser = Future.succeededFuture();
+    Future<OrgaUser> futureUser = Future.succeededFuture();
     if (ownerIdentifier != null) {
       OrganizationUserProvider userProvider = apiApp.getOrganizationUserProvider();
       futureUser = userProvider.getOrganizationUserByIdentifier(ownerIdentifier);
@@ -245,10 +245,10 @@ public class ListProvider {
       long userLocalId = ownerGuidObject.validateRealmAndGetFirstObjectId(listObject.getRealm().getLocalId());
       jdbcUpdate.addUpdatedColumn(ListCols.OWNER_USER_ID, userLocalId);
       // Lazy initialization (GraphQL feature)
-      OrganizationUser organizationUser = new OrganizationUser();
-      organizationUser.setLocalId(userLocalId);
-      organizationUser.setRealm(listObject.getRealm());
-      listObject.setOwnerUser(organizationUser);
+      OrgaUser orgaUser = new OrgaUser();
+      orgaUser.setLocalId(userLocalId);
+      orgaUser.setRealm(listObject.getRealm());
+      listObject.setOwnerUser(orgaUser);
     }
 
     /**
@@ -343,7 +343,7 @@ public class ListProvider {
         }
 
         Long ownerId = row.getLong(LIST_USER_OWNER_COLUMN);
-        Future<OrganizationUser> ownerFuture = Future.succeededFuture();
+        Future<OrgaUser> ownerFuture = Future.succeededFuture();
         if (ownerId != null) {
           ownerFuture = apiApp.getOrganizationUserProvider()
             .getOrganizationUserByLocalId(ownerId);
@@ -385,7 +385,7 @@ public class ListProvider {
               throw ValidationException.create("The app was not found", "appId", null);
             }
             listItem.setApp(appResult);
-            OrganizationUser publisher = mapper.resultAt(1);
+            OrgaUser publisher = mapper.resultAt(1);
             if (publisher != null) {
               listItem.setOwnerUser(publisher);
             }

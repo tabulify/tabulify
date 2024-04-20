@@ -79,10 +79,6 @@ public enum AuthUserJwtClaims {
    */
   JWT_ID("jti"),
 
-  /**
-   * A subject handle is a unique descriptif name for the subject
-   */
-  CUSTOM_SUBJECT_HANDLE("subHandle"),
 
   /**
    * The client IP of the request

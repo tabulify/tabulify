@@ -3,7 +3,7 @@ package net.bytle.tower.eraldy.module.mailing.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 
 import java.time.LocalDateTime;
@@ -26,7 +26,7 @@ public class Mailing {
   protected String emailBody;
   protected String emailPreview;
 
-  protected OrganizationUser emailAuthor;
+  protected OrgaUser emailAuthor;
 
   protected ListObject emailRecipientList;
 
@@ -153,7 +153,7 @@ public class Mailing {
    * @return emailAuthor
    */
   @JsonProperty("emailAuthor")
-  public OrganizationUser getEmailAuthor() {
+  public OrgaUser getEmailAuthor() {
     return emailAuthor;
   }
 
@@ -161,7 +161,7 @@ public class Mailing {
    * @param emailAuthor Set emailAuthor
    */
   @SuppressWarnings("unused")
-  public void setEmailAuthor(OrganizationUser emailAuthor) {
+  public void setEmailAuthor(OrgaUser emailAuthor) {
     this.emailAuthor = emailAuthor;
   }
 

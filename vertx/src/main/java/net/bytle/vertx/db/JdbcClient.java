@@ -1,5 +1,6 @@
 package net.bytle.vertx.db;
 
+import io.vertx.core.Future;
 import io.vertx.sqlclient.Pool;
 import net.bytle.exception.InternalException;
 import net.bytle.type.Strings;
@@ -17,6 +18,8 @@ import javax.sql.DataSource;
  *   * read sql in resources
  */
 public abstract class JdbcClient extends TowerService {
+
+  private final JdbcDatabaseMeta databaseMeta = new JdbcDatabaseMeta();
 
   public JdbcClient(Server server) {
     super(server);
@@ -49,5 +52,16 @@ public abstract class JdbcClient extends TowerService {
     return sql;
 
   }
+
+  @Override
+  public Future<Void> mount() {
+    this.databaseMeta.buildGraph();
+    return super.mount();
+  }
+
+  public JdbcDatabaseMeta getDatabaseMeta() {
+    return this.databaseMeta;
+  }
+
 
 }

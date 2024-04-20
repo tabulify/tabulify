@@ -20,7 +20,7 @@ import io.vertx.ext.web.handler.graphql.instrumentation.VertxFutureAdapter;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.graphql.implementer.UserGraphQLImpl;
 import net.bytle.tower.eraldy.model.manual.Status;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
 import net.bytle.vertx.graphql.GraphQLDef;
@@ -169,7 +169,7 @@ public class EraldyGraphQL implements GraphQLDef {
    */
   private GraphQLObjectType getUserInterfaceTypeResolver(TypeResolutionEnvironment env) {
     Object javaObject = env.getObject();
-    if (javaObject instanceof OrganizationUser) {
+    if (javaObject instanceof OrgaUser) {
       return env.getSchema().getObjectType("OrganizationUser");
     }
     return env.getSchema().getObjectType("User");
