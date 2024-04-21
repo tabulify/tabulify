@@ -97,55 +97,15 @@ public class AuthProvider {
   private <T extends User> T toModelUser(AuthUser authUser) throws NotSignedInOrganizationUser {
 
     /**
-     * Realm / Audience
-     * <p>
-     * First because it's in the user guid
-     */
-    Realm realm = new Realm();
-    String audience = authUser.getAudience();
-    if (audience == null) {
-      throw new InternalException("The audience/realm guid should not be null for a user");
-    }
-    try {
-      realm.setGuid(audience);
-      Guid realmGuid = this.apiApp.getRealmProvider().getGuidFromHash(audience);
-      realm.setLocalId(realmGuid.getRealmOrOrganizationId());
-    } catch (CastException e) {
-      throw new InternalException("The audience value (" + audience + ") is not a valid realm guid", e);
-    }
-
-    String audienceHandle = authUser.getAudienceHandle();
-    realm.setHandle(audienceHandle);
-    T userEraldy = this.apiApp.getUserProvider().createUserObjectFromRealm(realm);
-    userEraldy.setRealm(realm);
-
-    /**
-     * Email (We wrote the email, it should be good)
-     */
-    EmailAddress subjectEmail = EmailAddress.ofFailSafe(authUser.getSubjectEmail());
-    userEraldy.setEmailAddress(subjectEmail);
-    String subject = authUser.getSubject();
-    if (subject == null) {
-      throw new InternalException("The subject (user guid) values should not be null");
-    }
-    try {
-      Guid guid = this.apiApp.getUserProvider().getGuidFromHash(subject);
-      userEraldy.setLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()));
-      userEraldy.setGuid(subject);
-    } catch (CastException e) {
-      throw new InternalException("The user guid is not valid", e);
-    }
-
-
-    /**
      * Organization
      */
-    if (userEraldy instanceof OrgaUser) {
+    String organizationGuidString = authUser.getOrganizationGuid();
+    T user;
+    if (organizationGuidString != null) {
 
-      String organizationGuidString = authUser.getOrganizationGuid();
-      if (organizationGuidString == null) {
-        throw new InternalException("The organizational user (" + userEraldy.getEmailAddress() + "," + userEraldy.getRealm().getLocalId() + ") does not have any organization guid");
-      }
+      //noinspection unchecked
+      user = (T) new OrgaUser();
+
       Guid orgaGuidObject;
       try {
         orgaGuidObject = this.apiApp.getOrganizationProvider().createGuidFromHash(organizationGuidString);
@@ -156,29 +116,75 @@ public class AuthProvider {
       organization.setGuid(organizationGuidString);
       organization.setLocalId(orgaGuidObject.getRealmOrOrganizationId());
       organization.setHandle(authUser.getOrganizationHandle());
-      ((OrgaUser) userEraldy).setOrganization(organization);
+      ((OrgaUser) user).setOrganization(organization);
 
+    } else {
+      //noinspection unchecked
+      user = (T) new User();
     }
 
+    /**
+     * Realm / Audience
+     * <p>
+     * First because it's in the user guid
+     */
+    Realm realm = new Realm();
+    String audience = authUser.getAudience();
+    if (audience == null) {
+      throw new InternalException("The audience/realm guid should not be null for a user");
+    }
+    Guid realmGuid;
+    try {
+      realm.setGuid(audience);
+      realmGuid = this.apiApp.getRealmProvider().getGuidFromHash(audience);
+    } catch (CastException e) {
+      throw new InternalException("The audience value (" + audience + ") is not a valid realm guid", e);
+    }
+
+    long realmId = realmGuid.getRealmOrOrganizationId();
+    realm.setLocalId(realmId);
+    if (user instanceof OrgaUser && realmId != EraldyModel.REALM_LOCAL_ID) {
+      throw new InternalException("An orga user should have the Eraldy realm, not the realm (" + realmId + ")");
+    }
+    String audienceHandle = authUser.getAudienceHandle();
+    realm.setHandle(audienceHandle);
+    user.setRealm(realm);
+
+    /**
+     * Email (We wrote the email, it should be good)
+     */
+    EmailAddress subjectEmail = EmailAddress.ofFailSafe(authUser.getSubjectEmail());
+    user.setEmailAddress(subjectEmail);
+    String subject = authUser.getSubject();
+    if (subject == null) {
+      throw new InternalException("The subject (user guid) values should not be null");
+    }
+    try {
+      Guid guid = this.apiApp.getUserProvider().getGuidFromHash(subject);
+      user.setLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()));
+      user.setGuid(subject);
+    } catch (CastException e) {
+      throw new InternalException("The user guid is not valid", e);
+    }
 
     /**
      * Other attributes
      */
     String subjectGivenName = authUser.getSubjectGivenName();
-    userEraldy.setGivenName(subjectGivenName);
+    user.setGivenName(subjectGivenName);
 
     String subjectFamilyName = authUser.getSubjectFamilyName();
     String subjectFullName = subjectGivenName;
     if (subjectFullName != null && subjectFamilyName != null) {
       subjectFullName += " " + subjectFamilyName;
     }
-    userEraldy.setFamilyName(subjectFullName);
-    userEraldy.setBio(authUser.getSubjectBio());
-    userEraldy.setLocation(authUser.getSubjectLocation());
-    userEraldy.setWebsite(authUser.getSubjectBlog());
-    userEraldy.setAvatar(authUser.getSubjectAvatar());
+    user.setFamilyName(subjectFullName);
+    user.setBio(authUser.getSubjectBio());
+    user.setLocation(authUser.getSubjectLocation());
+    user.setWebsite(authUser.getSubjectBlog());
+    user.setAvatar(authUser.getSubjectAvatar());
 
-    return userEraldy;
+    return user;
 
   }
 
@@ -350,10 +356,11 @@ public class AuthProvider {
 
   public Future<AuthUser> getAuthUserForSessionByEmailNotNull(EmailAddress email, String realmIdentifier) {
 
-    return this.apiApp.getUserProvider()
+    return this.apiApp
+      .getUserProvider()
       .getUserByEmail(email, realmIdentifier)
-      .compose(userInDb -> {
-        if (userInDb == null) {
+      .compose(user -> {
+        if (user == null) {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setType(TowerFailureTypeEnum.NOT_FOUND_404)
@@ -361,7 +368,7 @@ public class AuthProvider {
               .build()
           );
         }
-        return toAuthUserForSession(userInDb)
+        return toAuthUserForSession(user)
           .compose(Future::succeededFuture);
       });
 
@@ -475,43 +482,31 @@ public class AuthProvider {
   }
 
   /**
-   * @param user - the user to transform in auth user (This is a normal user build even if the user is a {@link OrgaUser})
+   * @param user - the user to transform in auth user
    * @return an auth user suitable to be put in a session (ie with role and permission)
    */
-  private Future<AuthUser> toAuthUserForSession(User user) {
+  private <T extends User> Future<AuthUser> toAuthUserForSession(T user) {
 
     AuthUser.Builder authUserBuilder = toAuthUserBuilder(user);
-    Future<List<Realm>> futureRealmOwnerList;
-    Future<OrgaUser> futureOrgaUser;
-    if (user instanceof OrgaUser) {
-      OrgaUser orgUser = (OrgaUser) user;
-      futureRealmOwnerList = this.apiApp.getRealmProvider().getRealmsForOwner(orgUser);
-      futureOrgaUser = this.apiApp.getOrganizationUserProvider().getOrganizationUser(orgUser);
-    } else {
-      futureRealmOwnerList = Future.succeededFuture();
-      futureOrgaUser = Future.succeededFuture();
-    }
 
-    return Future.all(futureRealmOwnerList, futureOrgaUser)
-      .compose(
-        res -> {
-          List<Realm> realmList = res.resultAt(0);
-          OrgaUser orgaUser = res.resultAt(1);
-          if (realmList != null) {
-            List<Long> realmListLongId = realmList.stream()
-              .map(Realm::getLocalId)
-              .collect(Collectors.toList());
-            authUserBuilder.put(REALMS_ID_KEY, realmListLongId);
-          }
-          if (orgaUser != null) {
-            Organization organization = orgaUser.getOrganization();
-            if (organization != null) {
-              authUserBuilder.setOrganizationGuid(organization.getGuid());
-              authUserBuilder.setOrganizationHandle(organization.getHandle());
-            }
-          }
-          return Future.succeededFuture(authUserBuilder.build());
-        });
+    Future<List<Realm>> futureRealmOwnerList = Future.succeededFuture();
+    if (user instanceof OrgaUser) {
+      OrgaUser orgaUser = (OrgaUser) user;
+      Organization organization = orgaUser.getOrganization();
+      authUserBuilder.setOrganizationGuid(organization.getGuid());
+      authUserBuilder.setOrganizationHandle(organization.getHandle());
+      futureRealmOwnerList = this.apiApp.getRealmProvider().getRealmsForOwner(orgaUser);
+    }
+    return futureRealmOwnerList
+      .compose(realmList -> {
+        if (realmList != null) {
+          List<Long> realmListLongId = realmList.stream()
+            .map(Realm::getLocalId)
+            .collect(Collectors.toList());
+          authUserBuilder.put(REALMS_ID_KEY, realmListLongId);
+        }
+        return Future.succeededFuture(authUserBuilder.build());
+      });
 
   }
 

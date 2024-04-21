@@ -9,6 +9,7 @@ import io.vertx.json.schema.ValidationException;
 import io.vertx.sqlclient.*;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
+import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
@@ -38,7 +39,6 @@ import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -310,7 +310,8 @@ public class UserProvider {
 
           List<User> users = new ArrayList<>();
           for (JdbcRow row : userRows) {
-            User user = getUserFromRow(row, realm);
+            User user = new User();
+            buildUserFromRow(user, row, realm);
             users.add(user);
           }
 
@@ -323,10 +324,8 @@ public class UserProvider {
    * @param row        - the resulting row
    * @param realm - the realm
    */
-  <T extends User> T getUserFromRow(JdbcRow row, Realm realm) {
+  <T extends User> T buildUserFromRow(T user, JdbcRow row, Realm realm) {
 
-
-    T user = this.createUserObjectFromRealm(realm);
 
     Long userRealmId = row.getLong(UserCols.REALM_ID);
     if (!realm.getLocalId().equals(userRealmId)) {
@@ -433,17 +432,8 @@ public class UserProvider {
     return JdbcSelect.from(this.userTable)
       .addEqualityPredicate(UserCols.EMAIL_ADDRESS, userEmail.toNormalizedString())
       .addEqualityPredicate(UserCols.REALM_ID, realm.getLocalId())
-      .execute(sqlConnection, userRows -> {
+      .execute(sqlConnection, userRows -> this.buildUserFromRowSet(userRows, realm));
 
-        if (userRows.size() == 0) {
-          return Future.succeededFuture();
-        }
-
-        JdbcRow row = userRows.iterator().next();
-        T userFromRow = getUserFromRow(row, realm);
-
-        return Future.succeededFuture(userFromRow);
-      });
   }
 
   public Future<User> getUserFromGuidOrEmail(String userGuid, String userEmail, Realm realm) {
@@ -540,15 +530,7 @@ public class UserProvider {
       .addEqualityPredicate(UserCols.EMAIL_ADDRESS, userEmail.toNormalizedString())
       .addEqualityPredicate(UserCols.REALM_ID, realm.getLocalId())
       .addEqualityPredicate(UserCols.PASSWORD, hashedPassword)
-      .execute(userRows -> {
-          if (userRows.size() == 0) {
-            return Future.succeededFuture();
-          }
-          JdbcRow row = userRows.iterator().next();
-          User userFromRow = getUserFromRow(row, realm);
-          return Future.succeededFuture(userFromRow);
-        }
-      );
+      .execute(userRows -> this.buildUserFromRowSet(userRows, realm));
 
   }
 
@@ -557,7 +539,8 @@ public class UserProvider {
   private List<User> getUsersFromRows(JdbcRowSet userRows, Realm knowRealm) {
     List<User> users = new ArrayList<>();
     for (JdbcRow row : userRows) {
-      users.add(getUserFromRow(row, knowRealm));
+      User user = new User();
+      users.add(buildUserFromRow(user, row, knowRealm));
     }
     return users;
   }
@@ -666,16 +649,28 @@ public class UserProvider {
     return JdbcSelect.from(this.userTable)
       .addEqualityPredicate(UserCols.ID, userId)
       .addEqualityPredicate(UserCols.REALM_ID, realm.getLocalId())
-      .execute(sqlConnection, userRows -> {
+      .execute(sqlConnection, userRow -> this.buildUserFromRowSet(userRow, realm));
+  }
 
-        if (userRows.size() == 0) {
-          return Future.succeededFuture();
-        }
+  private <T extends User> Future<T> buildUserFromRowSet(JdbcRowSet rowSet, Realm realm) {
 
-        JdbcRow row = userRows.iterator().next();
-        T userFromRow = getUserFromRow(row, realm);
+    if (rowSet.size() == 0) {
+      return Future.succeededFuture();
+    }
+
+    JdbcRow row = rowSet.iterator().next();
+    Long userId = row.getLong(UserCols.ID);
+    Future<OrgaUser> futureOrgaUser = Future.succeededFuture();
+    if (realm.getLocalId().equals(EraldyModel.REALM_LOCAL_ID)) {
+      futureOrgaUser = this.apiApp.getOrganizationUserProvider().createOrganizationUserObjectFromLocalIdOrNull(userId);
+    }
+
+    return futureOrgaUser
+      .compose(orgaUser -> {
+        //noinspection unchecked
+        T user = (T) Objects.requireNonNullElseGet(orgaUser, User::new);
+        T userFromRow = buildUserFromRow(user, row, realm);
         return Future.succeededFuture(userFromRow);
-
       });
   }
 
@@ -698,10 +693,10 @@ public class UserProvider {
       });
   }
 
-  private <T extends User> Future<T> insertUser(Realm realm, UserInputProps userInputProps, SqlConnection sqlConnection) {
+  private Future<User> insertUser(Realm realm, UserInputProps userInputProps, SqlConnection sqlConnection) {
 
 
-    T user = this.createUserObjectFromRealm(realm);
+    User user = new User();
 
     return this.apiApp.getRealmSequenceProvider()
       .getNextIdForTableAndRealm(sqlConnection, realm, this.userTable)
@@ -769,33 +764,6 @@ public class UserProvider {
         return jdbcInsert
           .execute(sqlConnection, jdbcRowSet -> Future.succeededFuture(user));
       });
-
-  }
-
-  public <T extends User> T createUserObjectFromRealm(Realm realm) {
-
-    try {
-      //noinspection unchecked
-      T user = (T) this.getUserClass(realm).getDeclaredConstructor().newInstance();
-      user.setRealm(realm);
-      return user;
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-      throw new RuntimeException("Unable to create a user pojo. Error: " + e.getMessage(), e);
-    }
-
-  }
-
-  /**
-   * We create an organization user if this is an eraldy
-   * user and cast it back to a normal user
-   * if it was not found in an organization
-   */
-  private Class<? extends User> getUserClass(Realm realm) {
-
-    if (this.apiApp.getEraldyModel().isEraldyRealm(realm)) {
-      return OrgaUser.class;
-    }
-    return User.class;
 
   }
 

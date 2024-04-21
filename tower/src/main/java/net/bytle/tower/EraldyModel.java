@@ -270,7 +270,7 @@ public class EraldyModel {
               UserInputProps realmOwnerInputProps = new UserInputProps();
 
               return this.apiApp.getRealmProvider()
-                .getsertOnServerStartup(this.getRealmLocalId(), realmOwner, realmInputProps, sqlConnection)
+                .getsertOnServerStartup(REALM_LOCAL_ID, realmOwner, realmInputProps, sqlConnection)
                 .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy realm", t)))
                 .compose(eraldyRealm -> {
                   LOGGER.info("Eraldy Realm getserted");
@@ -307,7 +307,7 @@ public class EraldyModel {
                           OrgaUserInputProps orgaUserInputProps = new OrgaUserInputProps();
                           orgaUserInputProps.setRole(OrgaRole.OWNER);
                           return apiApp.getOrganizationUserProvider()
-                            .getsertOnServerStartup(eraldyOrganization, (OrgaUser) eraldyRealmOwner, orgaUserInputProps, sqlConnection);
+                            .getsertOnServerStartup(eraldyOrganization, eraldyRealmOwner, orgaUserInputProps, sqlConnection);
                         }
                       )
                       .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner organization user", t)));
@@ -326,13 +326,6 @@ public class EraldyModel {
 
   }
 
-  /**
-   * @deprecated use the {@link #REALM_LOCAL_ID} constant instead, it's not a conf at all
-   */
-  @Deprecated
-  public Long getRealmLocalId() {
-    return REALM_LOCAL_ID;
-  }
 
   public Realm getRealm() {
     return eraldyRealm;
@@ -340,10 +333,6 @@ public class EraldyModel {
 
   public boolean isRealmLocalId(Long localId) {
     return Objects.equals(localId, apiApp.getApexDomain().getRealmLocalId());
-  }
-
-  public boolean isEraldyRealm(Realm realm) {
-    return this.getRealmLocalId().equals(realm.getLocalId());
   }
 
 

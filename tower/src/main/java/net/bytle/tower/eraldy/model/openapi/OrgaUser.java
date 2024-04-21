@@ -7,11 +7,10 @@ import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import java.util.Objects;
 
 /**
- * A user in the Eraldy realm that may be part of an organization
- * * An orga user may have no Organiation.
- * * An orga user is an eraldy user
+ * A user:
+ * * in the Eraldy realm
+ * * that belongs / has an organization (Multiple orga is not supported)
  * <p>
- * They are the users of the Eraldy realm that are part of an organization.
  * They may own Realms, App, List.
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -75,6 +74,7 @@ public class OrgaUser extends User  {
     this.orgaRole = role;
   }
 
+  @SuppressWarnings("unused")
   public OrgaRole getOrgaRole() {
     return this.orgaRole;
   }
