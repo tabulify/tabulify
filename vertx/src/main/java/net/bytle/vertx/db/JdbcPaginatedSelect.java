@@ -39,8 +39,6 @@ public class JdbcPaginatedSelect extends JdbcQuery {
   }
 
 
-
-
   public Future<JdbcRowSet> execute(SqlConnection sqlConnection) {
 
 
@@ -51,11 +49,10 @@ public class JdbcPaginatedSelect extends JdbcQuery {
     String searchTerm = this.pagination.getSearchTerm();
     if (!(searchTerm == null || searchTerm.isEmpty())) {
       this.mainSelect.addPredicate(
-         this.sqlEngine
-           .createPredicateBuilder()
+        JdbcSingleOperatorPredicate
+          .create()
           .setColumn(this.searchColumn, "%" + searchTerm + "%")
           .setOperator(JdbcComparisonOperator.LIKE)
-          .build()
       );
     }
 
@@ -111,12 +108,12 @@ public class JdbcPaginatedSelect extends JdbcQuery {
   }
 
 
-  public JdbcPaginatedSelect setSearchColumn( JdbcColumn searchColumn) {
+  public JdbcPaginatedSelect setSearchColumn(JdbcColumn searchColumn) {
     this.searchColumn = searchColumn;
     return this;
   }
 
-  public JdbcPaginatedSelect addOrderBy( JdbcColumn orderedByCol, JdbcSort jdbcSort) {
+  public JdbcPaginatedSelect addOrderBy(JdbcColumn orderedByCol, JdbcSort jdbcSort) {
     /**
      * The orderBy happens at the end, we don't add it in the mainSelect
      */

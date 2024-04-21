@@ -44,17 +44,23 @@ public class JdbcSelect extends JdbcQuery {
   }
 
 
-  public JdbcSelect addPredicate(JdbcSingleOperatorPredicate predicate) {
-    this.predicateColValues.add(predicate);
+  public JdbcSelect addPredicate(JdbcSingleOperatorPredicate.Builder predicateBuilder) {
+
+    this.predicateColValues.add(
+      predicateBuilder
+        .build(this.sqlStatementEngine)
+    );
     return this;
   }
 
   public JdbcSelect addEqualityPredicate(JdbcColumn jdbcColumn, Object value) {
     this.addEventuallyForeignTable(jdbcColumn);
 
-    this.predicateColValues.add(JdbcSingleOperatorPredicate.builder(this.sqlStatementEngine)
-      .setColumn(jdbcColumn, value)
-      .build());
+    this.predicateColValues.add(
+      JdbcSingleOperatorPredicate.create()
+        .setColumn(jdbcColumn, value)
+        .build(sqlStatementEngine)
+    );
     return this;
   }
 

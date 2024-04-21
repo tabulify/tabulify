@@ -64,8 +64,4 @@ public class JdbcSqlStatementEngine {
     return this.getTableOfColumn(column).getName()+"."+column.getColumnName();
   }
 
-  public JdbcSingleOperatorPredicate.Builder createPredicateBuilder() {
-    return   JdbcSingleOperatorPredicate.builder(this);
-  }
-
 }

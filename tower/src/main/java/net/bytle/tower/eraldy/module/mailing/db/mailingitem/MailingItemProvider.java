@@ -61,23 +61,21 @@ public class MailingItemProvider {
 
     Mailing mailing = mailingJob.getMailing();
 
-    JdbcSqlStatementEngine sqlEngine = this.mailingItemTable.getSchema().getJdbcClient().getSqlStatementEngine();
+
     JdbcSelect jdbcSelect = JdbcSelect.from(mailingItemTable)
       .addPredicate(
         JdbcSingleOperatorPredicate
-          .builder(sqlEngine)
+          .create()
           .setColumn(MailingItemCols.FAILURE_COUNT, this.apiApp.getMailingFlow().getMaxCountFailureOnRow())
           .setOperator(JdbcComparisonOperator.LESS_THAN)
           .setOrNull(true)
-          .build()
       )
       .addPredicate(
         JdbcSingleOperatorPredicate
-          .builder(sqlEngine)
+          .create()
           .setColumn(MailingItemCols.STATUS_CODE, MailingItemStatus.OK.getCode())
           .setOperator(JdbcComparisonOperator.NOT_EQUAL)
           .setOrNull(true)
-          .build()
       )
       .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getEmailRecipientList().getRealm().getLocalId())
       .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getLocalId())

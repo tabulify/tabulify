@@ -7,8 +7,8 @@ public class JdbcSingleOperatorPredicate {
     this.builder = builder;
   }
 
-  public static Builder builder(JdbcSqlStatementEngine databaseInfo) {
-    return new Builder(databaseInfo);
+  public static Builder create() {
+    return new Builder();
   }
 
   public JdbcColumn getColumn() {
@@ -51,14 +51,13 @@ public class JdbcSingleOperatorPredicate {
   }
 
   public static class Builder {
-    private final JdbcSqlStatementEngine sqlEngine;
+    private JdbcSqlStatementEngine sqlEngine;
     private JdbcColumn column;
     private Object value;
     private JdbcComparisonOperator operator = JdbcComparisonOperator.EQUALITY;
     private boolean orNull = false;
 
-    public Builder(JdbcSqlStatementEngine sqlEngine) {
-      this.sqlEngine = sqlEngine;
+    public Builder() {
     }
 
     public Builder setColumn(JdbcColumn column, Object value) {
@@ -78,8 +77,13 @@ public class JdbcSingleOperatorPredicate {
       return this;
     }
 
-    public JdbcSingleOperatorPredicate build() {
+    /**
+     * The build is executed by the query, not the user
+     */
+    public JdbcSingleOperatorPredicate build(JdbcSqlStatementEngine sqlStatementEngine) {
+      this.sqlEngine = sqlStatementEngine;
       return new JdbcSingleOperatorPredicate(this);
     }
+
   }
 }
