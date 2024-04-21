@@ -7,6 +7,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotAuthorizedException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.AuthClient;
+import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationUser;
 import net.bytle.tower.eraldy.auth.AuthClientScope;
@@ -485,7 +486,7 @@ public class AuthProvider {
     if (user instanceof OrgaUser) {
       OrgaUser orgUser = (OrgaUser) user;
       futureRealmOwnerList = this.apiApp.getRealmProvider().getRealmsForOwner(orgUser);
-      futureOrgaUser = this.apiApp.getOrganizationUserProvider().addOrganizationDataEventually(orgUser);
+      futureOrgaUser = this.apiApp.getOrganizationUserProvider().getOrganizationUser(orgUser);
     } else {
       futureRealmOwnerList = Future.succeededFuture();
       futureOrgaUser = Future.succeededFuture();
@@ -639,7 +640,7 @@ public class AuthProvider {
      * We have only Eraldy client, we give the authorization to them
      * As of now, there is no notion of proxy by in the auth client
      */
-    if (!this.apiApp.getEraldyModel().getRealmLocalId().equals(authClient.getApp().getRealm().getLocalId())) {
+    if (!authClient.getApp().getRealm().getLocalId().equals(EraldyModel.REALM_LOCAL_ID)) {
       throw new NotAuthorizedException();
     }
   }

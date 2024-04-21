@@ -88,7 +88,7 @@ public class OrganizationUserProvider {
         if (user == null) {
           return Future.succeededFuture();
         }
-        return addOrganizationDataEventually((OrgaUser) user);
+        return getOrganizationUser((OrgaUser) user);
       })
       .compose(eventualOrgaUser -> {
         if (eventualOrgaUser instanceof OrgaUser) {
@@ -109,9 +109,9 @@ public class OrganizationUserProvider {
    * @param orgaUser - the organization user to add extra info
    * @return null or the organizationUser enriched with the organization
    */
-  public <T extends User> Future<T> addOrganizationDataEventually(OrgaUser orgaUser) {
+  public <T extends User> Future<T> getOrganizationUser(OrgaUser orgaUser) {
 
-    return this.jdbcPool.withConnection(sqlConnection -> addOrganizationDataEventually(orgaUser, sqlConnection));
+    return this.jdbcPool.withConnection(sqlConnection -> getOrganizationUser(orgaUser, sqlConnection));
 
   }
 
@@ -252,7 +252,7 @@ public class OrganizationUserProvider {
           return Future.succeededFuture();
         }
         // With the eraldy realm, the user is an organization user
-        return addOrganizationDataEventually((OrgaUser) user);
+        return getOrganizationUser((OrgaUser) user);
       })
       .compose(orgaUser -> {
         if (orgaUser instanceof OrgaUser) {
@@ -273,11 +273,11 @@ public class OrganizationUserProvider {
    * the org data
    */
   public Future<OrgaUser> getsertOnServerStartup(Organization organization, OrgaUser user, OrgaUserInputProps orgaUserInputProps, SqlConnection sqlConnection) {
-    return this.addOrganizationDataEventually(user, sqlConnection)
+    return this.getOrganizationUser(user, sqlConnection)
       .recover(t -> Future.failedFuture(new InternalException("Error while selecting the eraldy owner realm", t)))
-      .compose(selectedOrganizationUser -> {
-        if (selectedOrganizationUser instanceof OrgaUser) {
-          return Future.succeededFuture((OrgaUser) selectedOrganizationUser);
+      .compose(organizationUser -> {
+        if (organizationUser != null) {
+          return Future.succeededFuture((OrgaUser) organizationUser);
         }
         return this.insertOrgaUser(organization, user, orgaUserInputProps, sqlConnection);
       });
@@ -328,14 +328,15 @@ public class OrganizationUserProvider {
    * @param sqlConnection - the sql connection for transaction
    * @return null or the organizationUser enriched with the organization
    */
-  private <T extends User> Future<T> addOrganizationDataEventually(OrgaUser orgaUser, SqlConnection sqlConnection) {
+  private <T extends User> Future<T> getOrganizationUser(OrgaUser orgaUser, SqlConnection sqlConnection) {
 
     return this.getOrganizationRowForUser(orgaUser, sqlConnection)
       .compose(row -> {
         if (row == null) {
-          // cast it below
-          //noinspection unchecked
-          return (Future<T>) Future.succeededFuture((User) orgaUser);
+          // casting below to User will not change the object type
+          // we can test instanceOf
+          // we return null
+          return Future.succeededFuture();
         }
         //noinspection unchecked
         return (Future<T>) this.setOrganizationFromDatabaseRow(row, orgaUser, null, sqlConnection);

@@ -257,7 +257,6 @@ public class EraldyModel {
                */
               UserInputProps realmOwnerInputProps = new UserInputProps();
 
-
               return this.apiApp.getRealmProvider()
                 .getsertOnServerStartup(this.getRealmLocalId(), realmOwner, realmInputProps, sqlConnection)
                 .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy realm", t)))
@@ -305,8 +304,10 @@ public class EraldyModel {
                 });
 
             });
-        }))
+        })
+      )
       .compose(realmOwnerUser -> {
+        LOGGER.info("Eraldy Realm model loaded");
         eraldyRealm.setOwnerUser(realmOwnerUser);
         return Future.succeededFuture();
       });

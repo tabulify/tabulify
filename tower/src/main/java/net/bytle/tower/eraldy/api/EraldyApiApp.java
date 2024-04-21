@@ -98,7 +98,6 @@ public class EraldyApiApp extends TowerApp {
   private final MailingItemProvider mailingRowProvider;
 
 
-
   public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
     super(httpServer, EraldyDomain.getOrCreate(httpServer));
 
@@ -180,7 +179,7 @@ public class EraldyApiApp extends TowerApp {
      */
     this.userProvider = new UserProvider(this, realmSchema);
     this.organizationUserProvider = new OrganizationUserProvider(this, realmSchema);
-    this.organizationProvider = new OrganizationProvider(this,realmSchema);
+    this.organizationProvider = new OrganizationProvider(this, realmSchema);
     this.realmProvider = new RealmProvider(this, realmSchema);
     this.listProvider = new ListProvider(this, realmSchema);
     this.authProvider = new AuthProvider(this);
@@ -194,7 +193,6 @@ public class EraldyApiApp extends TowerApp {
     this.mailingJobProvider = new MailingJobProvider(this, jobsSchema);
     this.mailingRowProvider = new MailingItemProvider(this, jobsSchema);
     this.fileProvider = new FileProvider(this);
-
 
 
     /**
@@ -445,7 +443,6 @@ public class EraldyApiApp extends TowerApp {
   public Future<Void> mount() {
 
 
-
     TowerApexDomain apexDomain = this.getApexDomain();
     LOGGER.info("Allow CORS on the domain (" + apexDomain + ")");
     // Allow Browser cross-origin request in the domain
@@ -455,21 +452,26 @@ public class EraldyApiApp extends TowerApp {
     /**
      * The Eraldy base realm and base apps
      */
-    return eraldyModel.mount()
-      .recover(err -> Future.failedFuture(new InternalException("Eraldy model mount has failed", err)))
-      .compose(v -> {
-        /**
-         * Dev only
-         */
-        Future<Void> datacadamiaModel = Future.succeededFuture();
-        if (Env.IS_DEV) {
-          // Add a sub-realm for test/purpose only
-          datacadamiaModel = eraldySubRealmModel.insertModelInDatabase();
-        }
-        return datacadamiaModel;
-      })
-      .recover(err -> Future.failedFuture(new InternalException("Datacadamia model mount has failed", err)))
-      .compose(v -> super.mount());
+    return eraldyModel
+      .mount()
+      .compose(
+        v -> {
+          /**
+           * Dev only
+           */
+          Future<Void> datacadamiaModel = Future.succeededFuture();
+          if (Env.IS_DEV) {
+            // Add a sub-realm for test/purpose only
+            datacadamiaModel = eraldySubRealmModel.insertModelInDatabase();
+          }
+          return datacadamiaModel;
+        },
+        err -> Future.failedFuture(new InternalException("Eraldy model mount has failed", err))
+      )
+      .compose(
+        v -> super.mount(),
+        err -> Future.failedFuture(new InternalException("Datacadamia model mount has failed", err))
+      );
   }
 
   public AuthClientProvider getAuthClientProvider() {

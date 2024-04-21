@@ -10,8 +10,12 @@ import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.type.EmailAddress;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class EraldySubRealmModel {
+  private static final Logger LOGGER = LogManager.getLogger(EraldySubRealmModel.class);
+
   public static final String REALM_HANDLE = "datacadamia";
   private final EraldyApiApp apiApp;
 
@@ -29,7 +33,6 @@ public class EraldySubRealmModel {
 
 
     UserInputProps userInputProps = new UserInputProps();
-
     userInputProps.setEmailAddress(EmailAddress.ofFailSafe("owner@datacadamia.com"));
 
     return this.apiApp.getHttpServer().getServer().getPostgresClient()
@@ -42,6 +45,7 @@ public class EraldySubRealmModel {
           /**
            * Create a organisation user row
            */
+          LOGGER.info(REALM_HANDLE+": ownerUser created");
           OrgaUserInputProps organisationUserInputProps = new OrgaUserInputProps();
           organisationUserInputProps.setRole(OrgaRole.OWNER);
           return apiApp
@@ -50,6 +54,7 @@ public class EraldySubRealmModel {
             .recover(err->Future.failedFuture(new InternalException("Error on user organization getsert",err)))
             .compose(ownerResult -> {
 
+              LOGGER.info(REALM_HANDLE+": organisation ownerUser created");
               ownerResult.setOrganization(eraldyRealm.getOrganization());
 
               RealmInputProps realmInputProps = new RealmInputProps();

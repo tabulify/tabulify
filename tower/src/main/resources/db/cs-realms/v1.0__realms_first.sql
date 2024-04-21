@@ -131,7 +131,7 @@ create table IF NOT EXISTS realm_app
 alter table realm_app
   add primary key (APP_REALM_ID, APP_ID);
 alter table realm_app
-  add unique (APP_REALM_ID, APP_HANDLE);
+  add unique (APP_REALM_ID, APP_HANDLE) DEFERRABLE INITIALLY IMMEDIATE;
 -- Defer for initial insertion of the first eraldy org, realm and app
 alter table realm_app
   add foreign key (APP_ORGA_ID, APP_OWNER_USER_ID) REFERENCES organization_user (ORGA_USER_ORGA_ID, ORGA_USER_USER_ID) DEFERRABLE INITIALLY IMMEDIATE;
