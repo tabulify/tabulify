@@ -300,7 +300,6 @@ public class EraldyModel {
                       .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy owner user", t)))
                       .compose(eraldyRealmOwner -> {
                           LOGGER.info("Eraldy Realm Owner User getserted as Realm User");
-                          this.eraldyRealm.setOwnerUser((OrgaUser) eraldyRealmOwner);
                           /**
                            * get sert the user as organization user
                            */
