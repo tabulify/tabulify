@@ -14,12 +14,12 @@ public abstract class JdbcQuery {
     this.jdbcTable = jdbcTable;
   }
 
-  public JdbcTable getJdbcTable() {
+  public JdbcTable getDomesticJdbcTable() {
     return jdbcTable;
   }
 
   public Future<JdbcRowSet> execute() {
-    return this.getJdbcTable().getSchema().getJdbcClient().getPool()
+    return this.getDomesticJdbcTable().getSchema().getJdbcClient().getPool()
       .getConnection()
       .compose(
         connection -> this.execute(connection)
@@ -29,7 +29,7 @@ public abstract class JdbcQuery {
   }
 
   public <T> Future<T> execute(Function<JdbcRowSet, Future<T>> buildFunction) {
-    return this.getJdbcTable().getSchema().getJdbcClient().getPool()
+    return this.getDomesticJdbcTable().getSchema().getJdbcClient().getPool()
       .getConnection()
       .recover(err -> Future.failedFuture(new InternalException(this.getClass().getSimpleName() + ": Unable to get a connection", err)))
       .compose(

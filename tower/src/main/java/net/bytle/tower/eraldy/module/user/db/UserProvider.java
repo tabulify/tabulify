@@ -338,18 +338,33 @@ public class UserProvider {
 
 
     user.setEmailAddress(EmailAddress.ofFailSafe(row.getString(UserCols.EMAIL_ADDRESS)));
-    Integer status = row.getInteger(UserCols.STATUS, 0);
-    UserStatus userStatus = UserStatus.fromStatusCodeFailSafe(status);
+    UserStatus userStatus = UserStatus.fromStatusCodeFailSafe(row.getInteger(UserCols.STATUS_CODE));
     user.setStatus(userStatus);
+
+    /**
+     * Time
+     */
     user.setCreationTime(row.getLocalDateTime(UserCols.CREATION_TIME));
     user.setModificationTime(row.getLocalDateTime(UserCols.MODIFICATION_IME));
     user.setLastActiveTime(row.getLocalDateTime(UserCols.LAST_ACTIVE_TIME));
+
+    /**
+     * Name
+     */
     user.setGivenName(row.getString(UserCols.GIVEN_NAME));
     user.setFamilyName(row.getString(UserCols.FAMILY_NAME));
     user.setTitle(row.getString(UserCols.TITLE));
-    user.setBio(row.getString(UserCols.BIO));
+
+    /**
+     * Location
+     */
     user.setLocation(row.getString(UserCols.LOCATION));
     user.setTimeZone(TimeZoneUtil.getTimeZoneFailSafe(row.getString(UserCols.TIME_ZONE)));
+
+    /**
+     * Description
+     */
+    user.setBio(row.getString(UserCols.BIO));
     user.setWebsite(URI.create(row.getString(UserCols.WEBSITE)));
     user.setAvatar(URI.create(row.getString(UserCols.AVATAR)));
 
@@ -707,6 +722,9 @@ public class UserProvider {
         user.setFamilyName(userInputProps.getFamilyName());
         jdbcInsert.addColumn(UserCols.FAMILY_NAME, user.getFamilyName());
 
+        user.setStatus(UserStatus.OK);
+        jdbcInsert.addColumn(UserCols.STATUS_CODE, user.getStatus().getCode());
+
         user.setTitle(userInputProps.getTitle());
         jdbcInsert.addColumn(UserCols.TITLE, user.getTitle());
 
@@ -767,7 +785,4 @@ public class UserProvider {
 
   }
 
-  public JdbcTable getUserTable() {
-    return this.userTable;
-  }
 }

@@ -1,8 +1,8 @@
 package net.bytle.tower.eraldy.module.mailing.db.mailingjob;
 
-import net.bytle.vertx.db.JdbcTableColumn;
+import net.bytle.vertx.db.JdbcColumn;
 
-public enum MailingJobCols implements JdbcTableColumn {
+public enum MailingJobCols implements JdbcColumn {
 
   ID("mailing_job_id"),
   REALM_ID("mailing_job_realm_id"),

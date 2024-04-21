@@ -12,11 +12,11 @@ public class JdbcRow {
     this.row = row;
   }
 
-  public Long getLong(JdbcTableColumn column) {
+  public Long getLong(JdbcColumn column) {
     return this.row.getLong(column.getColumnName());
   }
 
-  public Integer getInteger(JdbcTableColumn column, Integer defaultValue) {
+  public Integer getInteger(JdbcColumn column, Integer defaultValue) {
     Integer intNumber = this.row.getInteger(column.getColumnName());
     if (intNumber == null) {
       return defaultValue;
@@ -24,24 +24,24 @@ public class JdbcRow {
     return intNumber;
   }
 
-  public Integer getInteger(JdbcTableColumn column) {
+  public Integer getInteger(JdbcColumn column) {
     return getInteger(column, null);
   }
 
 
-  public String getString(JdbcTableColumn column) {
+  public String getString(JdbcColumn column) {
     return this.row.getString(column.getColumnName());
   }
 
-  public LocalDateTime getLocalDateTime(JdbcTableColumn column) {
+  public LocalDateTime getLocalDateTime(JdbcColumn column) {
     return this.row.getLocalDateTime(column.getColumnName());
   }
 
-  public Object getValue(JdbcTableColumn column) {
+  public Object getValue(JdbcColumn column) {
     return this.row.getValue(column.getColumnName());
   }
 
-  public JsonObject getJsonObject(JdbcTableColumn column) {
+  public JsonObject getJsonObject(JdbcColumn column) {
     return this.row.getJsonObject(column.getColumnName());
   }
 

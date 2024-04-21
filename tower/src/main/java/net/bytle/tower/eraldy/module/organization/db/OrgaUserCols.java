@@ -1,8 +1,8 @@
 package net.bytle.tower.eraldy.module.organization.db;
 
-import net.bytle.vertx.db.JdbcTableColumn;
+import net.bytle.vertx.db.JdbcColumn;
 
-public enum OrgaUserCols implements JdbcTableColumn {
+public enum OrgaUserCols implements JdbcColumn {
 
 
   USER_ID("orga_user_user_id"),

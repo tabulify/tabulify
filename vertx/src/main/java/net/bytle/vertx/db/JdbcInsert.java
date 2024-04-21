@@ -13,8 +13,8 @@ import java.util.Map;
 public class JdbcInsert extends JdbcQuery {
 
 
-  Map<JdbcTableColumn, Object> colValues = new HashMap<>();
-  private JdbcTableColumn returningColumn = null;
+  Map<JdbcColumn, Object> colValues = new HashMap<>();
+  private JdbcColumn returningColumn = null;
 
   private JdbcInsert(JdbcTable jdbcTable) {
       super(jdbcTable);
@@ -26,11 +26,11 @@ public class JdbcInsert extends JdbcQuery {
     return new JdbcInsert(jdbcTable);
   }
 
-  public JdbcInsert addColumn(JdbcTableColumn jdbcTableColumn, Object value) {
-    if (this.colValues.containsKey(jdbcTableColumn)) {
-      throw new InternalException("The column (" + jdbcTableColumn + ") is already present in the insertion list");
+  public JdbcInsert addColumn(JdbcColumn jdbcColumn, Object value) {
+    if (this.colValues.containsKey(jdbcColumn)) {
+      throw new InternalException("The column (" + jdbcColumn + ") is already present in the insertion list");
     }
-    this.colValues.put(jdbcTableColumn, value);
+    this.colValues.put(jdbcColumn, value);
     return this;
   }
 
@@ -40,12 +40,12 @@ public class JdbcInsert extends JdbcQuery {
     StringBuilder insertSqlBuilder = new StringBuilder();
     List<Object> tuples = new ArrayList<>();
     insertSqlBuilder.append("insert into ")
-      .append(this.getJdbcTable().getFullName())
+      .append(this.getDomesticJdbcTable().getFullName())
       .append(" (");
 
     List<String> colsStatement = new ArrayList<>();
     List<String> dollarStatement = new ArrayList<>();
-    for (Map.Entry<JdbcTableColumn, Object> entry : colValues.entrySet()) {
+    for (Map.Entry<JdbcColumn, Object> entry : colValues.entrySet()) {
 
       tuples.add(entry.getValue());
       colsStatement.add(entry.getKey().getColumnName());
@@ -67,12 +67,12 @@ public class JdbcInsert extends JdbcQuery {
     return sqlConnection
       .preparedQuery(insertSqlString)
       .execute(Tuple.from(tuples))
-      .recover(e -> Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " table insertion Error. Sql Error " + e.getMessage() + "\nSQl: " + insertSqlString, e)))
+      .recover(e -> Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " table insertion Error. Sql Error " + e.getMessage() + "\nSQl: " + insertSqlString, e)))
       .compose(rowSet -> Future.succeededFuture(new JdbcRowSet(rowSet)));
   }
 
 
-  public JdbcInsert addReturningColumn(JdbcTableColumn jdbcCol) {
+  public JdbcInsert addReturningColumn(JdbcColumn jdbcCol) {
     this.returningColumn  = jdbcCol;
     return this;
   }

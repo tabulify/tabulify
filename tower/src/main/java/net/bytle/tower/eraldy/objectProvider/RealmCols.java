@@ -1,13 +1,13 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
+import net.bytle.vertx.db.JdbcColumn;
 import net.bytle.vertx.db.JdbcSchemaManager;
-import net.bytle.vertx.db.JdbcTableColumn;
 
 import static net.bytle.tower.eraldy.objectProvider.RealmProvider.TABLE_PREFIX;
 import static net.bytle.vertx.db.JdbcSchemaManager.COLUMN_PART_SEP;
 
-public enum RealmCols implements JdbcTableColumn {
+public enum RealmCols implements JdbcColumn {
 
   ID(TABLE_PREFIX + COLUMN_PART_SEP + "id"),
 

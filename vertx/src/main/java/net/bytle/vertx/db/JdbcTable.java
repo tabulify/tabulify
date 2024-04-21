@@ -18,7 +18,7 @@ public class JdbcTable {
 
   }
 
-  public static JdbcTableBuilder build(JdbcSchema jdbcSchema, String name, JdbcTableColumn[] tableColumns) {
+  public static JdbcTableBuilder build(JdbcSchema jdbcSchema, String name, JdbcColumn[] tableColumns) {
     return new JdbcTableBuilder(jdbcSchema, name, tableColumns);
   }
 
@@ -32,11 +32,11 @@ public class JdbcTable {
   }
 
 
-  public JdbcSchema getSchema(){
+  public JdbcSchema getSchema() {
     return this.jdbcTableBuilder.jdbcSchema;
   }
 
-  public Set<JdbcTableColumn> getPrimaryOrUniqueKeyColumns() {
+  public Set<JdbcColumn> getPrimaryOrUniqueKeyColumns() {
     return this.jdbcTableBuilder.jdbcPrimaryOrUniqueKeyColumns;
   }
 
@@ -44,8 +44,16 @@ public class JdbcTable {
     return this.jdbcTableBuilder.name;
   }
 
-  public Map<JdbcTableColumn, JdbcTableColumn> getForeignKeyColumns(JdbcTable joinedTable) {
-    return this.jdbcTableBuilder.jdbcSchema.getJdbcClient().getDatabaseMeta().getForeignKeyColumns(this,joinedTable);
+  public Map<JdbcColumn, JdbcColumn> getForeignKeyColumns(JdbcTable joinedTable) {
+    return this.jdbcTableBuilder.jdbcSchema.getJdbcClient().getSqlStatementEngine().getForeignKeyColumns(this, joinedTable);
+  }
+
+  public Set<JdbcColumn> getColumns() {
+    return this.jdbcTableBuilder.columns;
+  }
+
+  public boolean hasColumn(JdbcColumn jdbcColumn) {
+    return this.jdbcTableBuilder.columns.contains(jdbcColumn);
   }
 
 
@@ -53,43 +61,47 @@ public class JdbcTable {
     private final JdbcSchema jdbcSchema;
     private final String name;
 
-    private final HashSet<JdbcTableColumn> jdbcPrimaryOrUniqueKeyColumns = new HashSet<>();
-    private final  Map<JdbcTableColumn, JdbcTableColumn> foreignKeys = new HashMap<>();
-    private final Set<JdbcTableColumn> columns;
+    private final HashSet<JdbcColumn> jdbcPrimaryOrUniqueKeyColumns = new HashSet<>();
 
-    public <T extends Enum<T> & JdbcTableColumn> JdbcTableBuilder(JdbcSchema jdbcSchema, String name, JdbcTableColumn[] columns) {
+    private final Set<JdbcColumn> columns;
+
+    public JdbcTableBuilder(JdbcSchema jdbcSchema, String name, JdbcColumn[] columns) {
       this.jdbcSchema = jdbcSchema;
       this.name = name;
       this.columns = new HashSet<>(List.of(columns));
     }
 
-    public JdbcTableBuilder addPrimaryKeyColumn(JdbcTableColumn jdbcTableColumn){
-      this.checkColumn(jdbcTableColumn);
-      this.jdbcPrimaryOrUniqueKeyColumns.add(jdbcTableColumn);
+    public JdbcTableBuilder addPrimaryKeyColumn(JdbcColumn jdbcColumn) {
+      this.checkColumn(jdbcColumn);
+      this.jdbcPrimaryOrUniqueKeyColumns.add(jdbcColumn);
       return this;
     }
 
-    private void checkColumn(JdbcTableColumn jdbcTableColumn) {
-      if(!columns.contains(jdbcTableColumn)){
-        throw new InternalException("The column ("+jdbcTableColumn+") is not a declared column of the table ("+this+")");
+    private void checkColumn(JdbcColumn jdbcColumn) {
+      if (!columns.contains(jdbcColumn)) {
+        throw new InternalException("The column (" + jdbcColumn + ") is not a declared column of the table (" + this + ")");
       }
     }
 
     public JdbcTable build() {
 
       JdbcTable jdbcTable = new JdbcTable(this);
-      this.jdbcSchema.getJdbcClient().getDatabaseMeta().registerTable(jdbcTable);
+      this.jdbcSchema.getJdbcClient().getSqlStatementEngine().registerTable(jdbcTable);
       return jdbcTable;
     }
 
-    public JdbcTableBuilder addUniqueKeyColumn(JdbcTableColumn tableColumn) {
+    public JdbcTableBuilder addUniqueKeyColumn(JdbcColumn tableColumn) {
       this.checkColumn(tableColumn);
       this.jdbcPrimaryOrUniqueKeyColumns.add(tableColumn);
       return this;
     }
 
-    public JdbcTableBuilder addForeignKeyColumns(Map<JdbcTableColumn, JdbcTableColumn> columnsMapping) {
-      this.foreignKeys.putAll(columnsMapping);
+    public JdbcTableBuilder addForeignKeyColumns(Map<JdbcColumn, JdbcColumn> columnsMapping) {
+      // first column should be the first party table
+      for (JdbcColumn jdbcColumn : columnsMapping.keySet()) {
+        this.checkColumn(jdbcColumn);
+      }
+      this.jdbcSchema.getJdbcClient().getSqlStatementEngine().registerForeignKey(columnsMapping);
       return this;
     }
   }

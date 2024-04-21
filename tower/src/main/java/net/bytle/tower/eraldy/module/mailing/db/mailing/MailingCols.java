@@ -3,13 +3,13 @@ package net.bytle.tower.eraldy.module.mailing.db.mailing;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.objectProvider.OrganizationProvider;
+import net.bytle.vertx.db.JdbcColumn;
 import net.bytle.vertx.db.JdbcSchemaManager;
-import net.bytle.vertx.db.JdbcTableColumn;
 
 import static net.bytle.tower.eraldy.module.mailing.db.mailing.MailingProvider.MAILING_PREFIX;
 import static net.bytle.vertx.db.JdbcSchemaManager.COLUMN_PART_SEP;
 
-public enum MailingCols implements JdbcTableColumn {
+public enum MailingCols implements JdbcColumn {
 
   MODIFICATION_TIME(MAILING_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX),
   CREATION_TIME (MAILING_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX),

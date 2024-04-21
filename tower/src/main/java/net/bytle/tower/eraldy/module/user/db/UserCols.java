@@ -1,8 +1,8 @@
 package net.bytle.tower.eraldy.module.user.db;
 
-import net.bytle.vertx.db.JdbcTableColumn;
+import net.bytle.vertx.db.JdbcColumn;
 
-public enum UserCols implements JdbcTableColumn {
+public enum UserCols implements JdbcColumn {
 
 
   ID("user_id"),
@@ -13,7 +13,6 @@ public enum UserCols implements JdbcTableColumn {
   EMAIL_ADDRESS("user_email_address"),
   MODIFICATION_IME("user_modification_time"),
   DATA("user_data"),
-  STATUS("user_status"),
   CREATION_TIME("user_creation_time"),
   PASSWORD("user_password"),
 

@@ -7,11 +7,11 @@ public class JdbcSingleOperatorPredicate {
     this.builder = builder;
   }
 
-  public static Builder builder() {
-    return new Builder();
+  public static Builder builder(JdbcSqlStatementEngine databaseInfo) {
+    return new Builder(databaseInfo);
   }
 
-  public JdbcTableColumn getColumn() {
+  public JdbcColumn getColumn() {
     return this.builder.column;
   }
 
@@ -33,10 +33,8 @@ public class JdbcSingleOperatorPredicate {
     if (this.getOrNull()) {
       predicateBuilder.append("(");
     }
-    String columnName = this.getColumn().getColumnName();
-    if(this.builder.jdbcTable!=null){
-      columnName = this.builder.jdbcTable.getName()+"."+columnName;
-    }
+    String columnName = this.builder.sqlEngine.toFullColumnName(this.getColumn());
+
     predicateBuilder
       .append(columnName)
       .append(" ")
@@ -53,18 +51,17 @@ public class JdbcSingleOperatorPredicate {
   }
 
   public static class Builder {
-    private JdbcTableColumn column;
+    private final JdbcSqlStatementEngine sqlEngine;
+    private JdbcColumn column;
     private Object value;
     private JdbcComparisonOperator operator = JdbcComparisonOperator.EQUALITY;
     private boolean orNull = false;
-    private JdbcTable jdbcTable;
 
-    public Builder setColumn(JdbcTable jdbcTable, JdbcTableColumn column, Object value) {
-      this.jdbcTable = jdbcTable;
-      return setColumn(column, value);
+    public Builder(JdbcSqlStatementEngine sqlEngine) {
+      this.sqlEngine = sqlEngine;
     }
 
-    public Builder setColumn(JdbcTableColumn column, Object value) {
+    public Builder setColumn(JdbcColumn column, Object value) {
       this.column = column;
       this.value = value;
       return this;

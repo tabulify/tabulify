@@ -1,8 +1,8 @@
 package net.bytle.tower.eraldy.module.list.db;
 
-import net.bytle.vertx.db.JdbcTableColumn;
+import net.bytle.vertx.db.JdbcColumn;
 
-public enum ListCols implements JdbcTableColumn {
+public enum ListCols implements JdbcColumn {
 
   ID("list_id"),
   REALM_ID("list_realm_id"),

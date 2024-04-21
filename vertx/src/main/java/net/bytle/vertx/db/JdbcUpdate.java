@@ -12,9 +12,9 @@ import java.util.Map;
 
 public class JdbcUpdate extends JdbcQuery {
 
-  Map<JdbcTableColumn, Object> updatedColValues = new HashMap<>();
-  Map<JdbcTableColumn, Object> predicateColValues = new HashMap<>();
-  private JdbcTableColumn returningColumn = null;
+  Map<JdbcColumn, Object> updatedColValues = new HashMap<>();
+  Map<JdbcColumn, Object> predicateColValues = new HashMap<>();
+  private JdbcColumn returningColumn = null;
 
   private JdbcUpdate(JdbcTable jdbcTable) {
       super(jdbcTable);
@@ -25,12 +25,12 @@ public class JdbcUpdate extends JdbcQuery {
     return new JdbcUpdate(jdbcTable);
   }
 
-  public JdbcUpdate addUpdatedColumn(JdbcTableColumn cols, Object value) {
+  public JdbcUpdate addUpdatedColumn(JdbcColumn cols, Object value) {
     this.updatedColValues.put(cols, value);
     return this;
   }
 
-  public JdbcUpdate addPredicateColumn(JdbcTableColumn cols, Object value) {
+  public JdbcUpdate addPredicateColumn(JdbcColumn cols, Object value) {
     this.predicateColValues.put(cols, value);
     return this;
   }
@@ -39,34 +39,34 @@ public class JdbcUpdate extends JdbcQuery {
     StringBuilder updateSqlBuilder = new StringBuilder();
     List<Object> tuples = new ArrayList<>();
     updateSqlBuilder.append("update ")
-      .append(this.getJdbcTable().getFullName())
+      .append(this.getDomesticJdbcTable().getFullName())
       .append(" set ")
     ;
     List<String> setColStatements = new ArrayList<>();
-    for (Map.Entry<JdbcTableColumn, Object> entry : updatedColValues.entrySet()) {
-      JdbcTableColumn jdbcTableColumn = entry.getKey();
-      if (this.getJdbcTable().getPrimaryOrUniqueKeyColumns().contains(jdbcTableColumn)) {
-        return Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " update: column (" + jdbcTableColumn + ") is a primary key column and should not be updated"));
+    for (Map.Entry<JdbcColumn, Object> entry : updatedColValues.entrySet()) {
+      JdbcColumn jdbcColumn = entry.getKey();
+      if (this.getDomesticJdbcTable().getPrimaryOrUniqueKeyColumns().contains(jdbcColumn)) {
+        return Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " update: column (" + jdbcColumn + ") is a primary key column and should not be updated"));
       }
       tuples.add(entry.getValue());
-      setColStatements.add(jdbcTableColumn.getColumnName() + " = $" + tuples.size());
+      setColStatements.add(jdbcColumn.getColumnName() + " = $" + tuples.size());
 
     }
     updateSqlBuilder.append(String.join(", ", setColStatements))
       .append(" where ");
 
     if (predicateColValues.isEmpty()) {
-      return Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " update miss the primary key columns"));
+      return Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " update miss the primary key columns"));
     }
 
     List<String> equalityStatements = new ArrayList<>();
-    for (Map.Entry<JdbcTableColumn, Object> entry : predicateColValues.entrySet()) {
-      JdbcTableColumn jdbcTableColumn = entry.getKey();
-      if (!this.getJdbcTable().getPrimaryOrUniqueKeyColumns().contains(jdbcTableColumn)) {
-        return Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " update: column (" + jdbcTableColumn + ") is not a declared primary or unique key columns for the table ("+this.getJdbcTable()+")"));
+    for (Map.Entry<JdbcColumn, Object> entry : predicateColValues.entrySet()) {
+      JdbcColumn jdbcColumn = entry.getKey();
+      if (!this.getDomesticJdbcTable().getPrimaryOrUniqueKeyColumns().contains(jdbcColumn)) {
+        return Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " update: column (" + jdbcColumn + ") is not a declared primary or unique key columns for the table ("+this.getDomesticJdbcTable()+")"));
       }
       tuples.add(entry.getValue());
-      equalityStatements.add(jdbcTableColumn.getColumnName() + " = $" + tuples.size());
+      equalityStatements.add(jdbcColumn.getColumnName() + " = $" + tuples.size());
 
     }
     updateSqlBuilder.append(String.join(" and ", equalityStatements));
@@ -80,7 +80,7 @@ public class JdbcUpdate extends JdbcQuery {
     return sqlConnection
       .preparedQuery(insertSqlString)
       .execute(Tuple.from(tuples))
-      .recover(e -> Future.failedFuture(new InternalException(this.getJdbcTable().getFullName() + " table update Error. Sql Error " + e.getMessage() + "\nSQl: " + insertSqlString, e)))
+      .recover(e -> Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " table update Error. Sql Error " + e.getMessage() + "\nSQl: " + insertSqlString, e)))
       .compose(rowSet -> Future.succeededFuture(new JdbcRowSet(rowSet)));
   }
 
@@ -88,7 +88,7 @@ public class JdbcUpdate extends JdbcQuery {
     return this.updatedColValues.isEmpty();
   }
 
-  public JdbcUpdate addReturningColumn(JdbcTableColumn column) {
+  public JdbcUpdate addReturningColumn(JdbcColumn column) {
     this.returningColumn = column;
     return this;
   }

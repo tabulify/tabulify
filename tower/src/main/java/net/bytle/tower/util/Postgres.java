@@ -2,8 +2,8 @@ package net.bytle.tower.util;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.sqlclient.Row;
+import net.bytle.vertx.db.JdbcColumn;
 import net.bytle.vertx.db.JdbcRow;
-import net.bytle.vertx.db.JdbcTableColumn;
 
 public class Postgres {
 
@@ -25,7 +25,8 @@ public class Postgres {
     return row.getJsonObject(columnName);
   }
 
-  public static JsonObject getFromJsonB(JdbcRow row, JdbcTableColumn columnName) {
+  @SuppressWarnings("unused")
+  public static JsonObject getFromJsonB(JdbcRow row, JdbcColumn columnName) {
     /**
      * The Native Postgres driver return a PGObject
      * but with the Native Pg Client, we can return a JsonObject directly

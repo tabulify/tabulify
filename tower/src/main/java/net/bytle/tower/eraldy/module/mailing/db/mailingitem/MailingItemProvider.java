@@ -43,10 +43,12 @@ public class MailingItemProvider {
     /**
      * Add foreign key to the user table to get the email address
      */
-    Map<JdbcTableColumn, JdbcTableColumn> mailingUserForeignKeys = new HashMap<>();
+    Map<JdbcColumn, JdbcColumn> mailingUserForeignKeys = new HashMap<>();
     mailingUserForeignKeys.put(MailingItemCols.REALM_ID, UserCols.REALM_ID);
     mailingUserForeignKeys.put(MailingItemCols.USER_ID, UserCols.ID);
-    this.mailingItemTable = JdbcTable.build(jdbcSchema, "realm_mailing_item", UserCols.values())
+    this.mailingItemTable = JdbcTable.build(jdbcSchema, "realm_mailing_item", MailingItemCols.values())
+      .addPrimaryKeyColumn(MailingItemCols.REALM_ID)
+      .addPrimaryKeyColumn(MailingItemCols.USER_ID)
       .addForeignKeyColumns(mailingUserForeignKeys)
       .build();
   }
@@ -59,10 +61,11 @@ public class MailingItemProvider {
 
     Mailing mailing = mailingJob.getMailing();
 
+    JdbcSqlStatementEngine sqlEngine = this.mailingItemTable.getSchema().getJdbcClient().getSqlStatementEngine();
     JdbcSelect jdbcSelect = JdbcSelect.from(mailingItemTable)
       .addPredicate(
         JdbcSingleOperatorPredicate
-          .builder()
+          .builder(sqlEngine)
           .setColumn(MailingItemCols.FAILURE_COUNT, this.apiApp.getMailingFlow().getMaxCountFailureOnRow())
           .setOperator(JdbcComparisonOperator.LESS_THAN)
           .setOrNull(true)
@@ -70,7 +73,7 @@ public class MailingItemProvider {
       )
       .addPredicate(
         JdbcSingleOperatorPredicate
-          .builder()
+          .builder(sqlEngine)
           .setColumn(MailingItemCols.STATUS_CODE, MailingItemStatus.OK.getCode())
           .setOperator(JdbcComparisonOperator.NOT_EQUAL)
           .setOrNull(true)
@@ -84,14 +87,14 @@ public class MailingItemProvider {
   }
 
   public Future<List<MailingItem>> getItemsForGraphQL(Mailing mailing, JdbcPagination pagination) {
-    JdbcTable userTable = this.apiApp.getUserProvider().getUserTable();
+
     return JdbcPaginatedSelect.from(mailingItemTable)
-      .addEqualityPredicate(mailingItemTable, MailingItemCols.REALM_ID, mailing.getRealm().getLocalId())
-      .addEqualityPredicate(mailingItemTable, MailingItemCols.MAILING_ID, mailing.getLocalId())
-      .setSearchColumn(userTable, UserCols.EMAIL_ADDRESS)
-      .addExtraSelectColumn(userTable, UserCols.EMAIL_ADDRESS)
-      .addEqualityPredicate(userTable, UserCols.REALM_ID, mailing.getRealm().getLocalId())
-      .addOrderBy(userTable, UserCols.EMAIL_ADDRESS, JdbcSort.ASC)
+      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getRealm().getLocalId())
+      .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getLocalId())
+      .setSearchColumn(UserCols.EMAIL_ADDRESS)
+      .addExtraSelectColumn(UserCols.EMAIL_ADDRESS)
+      .addEqualityPredicate(UserCols.REALM_ID, mailing.getRealm().getLocalId())
+      .addOrderBy(UserCols.EMAIL_ADDRESS, JdbcSort.ASC)
       .setPagination(pagination)
       .execute(jdbcRowSet -> {
         List<MailingItem> mailingItems = new ArrayList<>();
@@ -235,7 +238,7 @@ public class MailingItemProvider {
       .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getRealm().getLocalId())
       .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getLocalId())
       .addEqualityPredicate(MailingItemCols.USER_ID, userId)
-      .addExtraSelectColumn(this.apiApp.getUserProvider().getUserTable(), UserCols.EMAIL_ADDRESS)
+      .addSelectColumn(UserCols.EMAIL_ADDRESS)
       .execute(jdbcRowSet -> {
         if (jdbcRowSet.size() == 0) {
           return Future.succeededFuture();

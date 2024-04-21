@@ -1,8 +1,9 @@
 package net.bytle.vertx.db;
 
-public interface JdbcTableColumn {
+public interface JdbcColumn {
 
 
   String getColumnName();
+
 
 }
