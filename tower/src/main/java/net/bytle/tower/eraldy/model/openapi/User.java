@@ -13,9 +13,9 @@ import java.util.TimeZone;
 /**
  * A user
  **/
-@com.fasterxml.jackson.annotation.JsonIdentityInfo( generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = User.class)
+@com.fasterxml.jackson.annotation.JsonIdentityInfo(generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = User.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class User   {
+public class User {
 
 
   protected String guid;
@@ -54,33 +54,33 @@ public class User   {
   protected Realm realm;
 
   /**
-  * The empty constructor is
-  * needed for the construction of the pojo
-  * with the Jackson library
-  */
+   * The empty constructor is
+   * needed for the construction of the pojo
+   * with the Jackson library
+   */
   @SuppressWarnings("unused")
-  public User () {
+  public User() {
   }
 
   /**
-  * @return guid It is the global identifier * a string representation of realm id + user local id * never changes. It's the public id that: * you can see in the url * send to external application such as Analytics SAAS provider.  The database id (ie realm id + user local id) is not public.
-  */
+   * @return guid It is the global identifier * a string representation of realm id + user local id * never changes. It's the public id that: * you can see in the url * send to external application such as Analytics SAAS provider.  The database id (ie realm id + user local id) is not public.
+   */
   @JsonProperty("guid")
   public String getGuid() {
     return guid;
   }
 
   /**
-  * @param guid It is the global identifier * a string representation of realm id + user local id * never changes. It's the public id that: * you can see in the url * send to external application such as Analytics SAAS provider.  The database id (ie realm id + user local id) is not public.
-  */
+   * @param guid It is the global identifier * a string representation of realm id + user local id * never changes. It's the public id that: * you can see in the url * send to external application such as Analytics SAAS provider.  The database id (ie realm id + user local id) is not public.
+   */
   @SuppressWarnings("unused")
   public void setGuid(String guid) {
     this.guid = guid;
   }
 
   /**
-  * @return localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
-  */
+   * @return localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
+   */
   @com.fasterxml.jackson.annotation.JsonAlias({"id"})
   @JsonProperty("localId")
   public Long getLocalId() {
@@ -88,8 +88,8 @@ public class User   {
   }
 
   /**
-  * @param localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
-  */
+   * @param localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
+   */
   @SuppressWarnings("unused")
   public void setLocalId(Long localId) {
     this.localId = localId;
@@ -97,24 +97,24 @@ public class User   {
 
 
   /**
-  * @return emailAddress The email address of the user
-  */
+   * @return emailAddress The email address of the user
+   */
   @JsonProperty("emailAddress")
   public EmailAddress getEmailAddress() {
     return emailAddress;
   }
 
   /**
-  * @param emailAddress The email address of the user
-  */
+   * @param emailAddress The email address of the user
+   */
   @SuppressWarnings("unused")
   public void setEmailAddress(EmailAddress emailAddress) {
     this.emailAddress = emailAddress;
   }
 
   /**
-  * @return givenName The short and informal name of the user (used in signature, known also as the given, calling or first name)
-  */
+   * @return givenName The short and informal name of the user (used in signature, known also as the given, calling or first name)
+   */
   @com.fasterxml.jackson.annotation.JsonAlias({"name"})
   @JsonProperty("givenName")
   public String getGivenName() {
@@ -122,217 +122,218 @@ public class User   {
   }
 
   /**
-  * @param givenName The short and informal name of the user (used in signature, known also as the given, calling or first name)
-  */
+   * @param givenName The short and informal name of the user (used in signature, known also as the given, calling or first name)
+   */
   @SuppressWarnings("unused")
   public void setGivenName(String givenName) {
     this.givenName = givenName;
   }
 
   /**
-  * @return familyName The family name of the user
-  */
-  @com.fasterxml.jackson.annotation.JsonAlias({"fullname","fullName"})
+   * @return familyName The family name of the user
+   */
+  @com.fasterxml.jackson.annotation.JsonAlias({"fullname", "fullName"})
   @JsonProperty("familyName")
   public String getFamilyName() {
     return familyName;
   }
 
   /**
-  * @param familyName The family name of the user
-  */
+   * @param familyName The family name of the user
+   */
   @SuppressWarnings("unused")
   public void setFamilyName(String familyName) {
     this.familyName = familyName;
   }
 
   /**
-  * @return title The title of the user (a short user description such as a role used in signature)
-  */
+   * @return title The title of the user (a short user description such as a role used in signature)
+   */
   @JsonProperty("title")
   public String getTitle() {
     return title;
   }
 
   /**
-  * @param title The title of the user (a short user description such as a role used in signature)
-  */
+   * @param title The title of the user (a short user description such as a role used in signature)
+   */
   @SuppressWarnings("unused")
   public void setTitle(String title) {
     this.title = title;
   }
 
   /**
-  * @return status Status code (Soft delete, ...)
-  */
+   * @return status Status code (Soft delete, ...)
+   */
   @JsonProperty("status")
   public UserStatus getStatus() {
     return status;
   }
 
   /**
-  * @param status Status code (Soft delete, ...)
-  */
+   * @param status Status code (Soft delete, ...)
+   */
   @SuppressWarnings("unused")
   public void setStatus(UserStatus status) {
     this.status = status;
   }
 
   /**
-  * @return disabledReason The reason of the soft delete
-  */
+   * @return disabledReason The reason of the soft delete
+   */
   @JsonProperty("disabledReason")
   public String getStatusMessage() {
     return disabledReason;
   }
 
   /**
-  * @param disabledReason The reason of the soft delete
-  */
+   * @param disabledReason The reason of the soft delete
+   */
   @SuppressWarnings("unused")
   public void setStatusMessage(String disabledReason) {
     this.disabledReason = disabledReason;
   }
 
   /**
-  * @return avatar The avatar image of the user
-  */
+   * @return avatar The avatar image of the user
+   */
   @JsonProperty("avatar")
   public URI getAvatar() {
     return avatar;
   }
 
   /**
-  * @param avatar The avatar image of the user
-  */
+   * @param avatar The avatar image of the user
+   */
   @SuppressWarnings("unused")
   public void setAvatar(URI avatar) {
     this.avatar = avatar;
   }
 
   /**
-  * @return bio A description for the user
-  */
+   * @return bio A description for the user
+   */
   @JsonProperty("bio")
   public String getBio() {
     return bio;
   }
 
   /**
-  * @param bio A description for the user
-  */
+   * @param bio A description for the user
+   */
   @SuppressWarnings("unused")
   public void setBio(String bio) {
     this.bio = bio;
   }
 
   /**
-  * @return website A link to a user website
-  */
+   * @return website A link to a user website
+   */
   @JsonProperty("website")
   public URI getWebsite() {
     return website;
   }
 
   /**
-  * @param website A link to a user website
-  */
+   * @param website A link to a user website
+   */
   @SuppressWarnings("unused")
   public void setWebsite(URI website) {
     this.website = website;
   }
 
   /**
-  * @return location The location of the user A free text that the user updates
-  */
+   * @return location The location of the user A free text that the user updates
+   */
   @JsonProperty("location")
   public String getLocation() {
     return location;
   }
 
   /**
-  * @param location The location of the user A free text that the user updates
-  */
+   * @param location The location of the user A free text that the user updates
+   */
   @SuppressWarnings("unused")
   public void setLocation(String location) {
     this.location = location;
   }
 
   /**
-  * @return timeZone The timezone full name (In Java, the timezone id)
-  */
+   * @return timeZone The timezone full name (In Java, the timezone id)
+   * It's just informational. The timezone of the client device is used to localize date and string
+   */
   @JsonProperty("timeZone")
   public TimeZone getTimeZone() {
     return timeZone;
   }
 
   /**
-  * @param timeZone The timezone full name (In Java, the timezone id)
-  */
+   * @param timeZone The timezone full name (In Java, the timezone id)
+   */
   @SuppressWarnings("unused")
   public void setTimeZone(TimeZone timeZone) {
     this.timeZone = timeZone;
   }
 
   /**
-  * @return creationTime The creation time of the user in UTC
-  */
+   * @return creationTime The creation time of the user in UTC
+   */
   @JsonProperty("creationTime")
   public LocalDateTime getCreationTime() {
     return creationTime;
   }
 
   /**
-  * @param creationTime The creation time of the user in UTC
-  */
+   * @param creationTime The creation time of the user in UTC
+   */
   @SuppressWarnings("unused")
   public void setCreationTime(LocalDateTime creationTime) {
     this.creationTime = creationTime;
   }
 
   /**
-  * @return modificationTime The last modification time of the user in UTC
-  */
+   * @return modificationTime The last modification time of the user in UTC
+   */
   @JsonProperty("modificationTime")
   public LocalDateTime getModificationTime() {
     return modificationTime;
   }
 
   /**
-  * @param modificationTime The last modification time of the user in UTC
-  */
+   * @param modificationTime The last modification time of the user in UTC
+   */
   @SuppressWarnings("unused")
   public void setModificationTime(LocalDateTime modificationTime) {
     this.modificationTime = modificationTime;
   }
 
   /**
-  * @return lastActiveTime the last active time (should be on date level)
-  */
+   * @return lastActiveTime the last active time (should be on date level)
+   */
   @JsonProperty("lastActiveTime")
   public LocalDateTime getLastActiveTime() {
     return lastActiveTime;
   }
 
   /**
-  * @param lastActiveTime the last active time (should be on date level)
-  */
+   * @param lastActiveTime the last active time (should be on date level)
+   */
   @SuppressWarnings("unused")
   public void setLastActiveTime(LocalDateTime lastActiveTime) {
     this.lastActiveTime = lastActiveTime;
   }
 
   /**
-  * @return realm
-  */
+   * @return realm
+   */
   @JsonProperty("realm")
   public Realm getRealm() {
     return realm;
   }
 
   /**
-  * @param realm Set realm
-  */
+   * @param realm Set realm
+   */
   @SuppressWarnings("unused")
   public void setRealm(Realm realm) {
     this.realm = realm;

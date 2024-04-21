@@ -8,6 +8,7 @@ public enum OrgaUserCols implements JdbcColumn {
   USER_ID("orga_user_user_id"),
   ORGA_ID("orga_user_orga_id"),
   ROLE_ID("orga_user_role_id"),
+  REALM_ID("orga_user_realm_id"),
   MODIFICATION_IME("orga_user_modification_time"),
   CREATION_TIME("orga_user_creation_time");
 

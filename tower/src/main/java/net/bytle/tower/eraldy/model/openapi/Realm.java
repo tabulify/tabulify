@@ -27,9 +27,9 @@ public class Realm   {
 
   protected Long userCount;
 
-  protected Long appCount;
+  protected Integer appCount;
 
-  protected Long listCount;
+  protected Integer listCount;
 
   protected Integer listUserInCount;
 
@@ -158,7 +158,7 @@ public class Realm   {
   * @return appCount The number of apps for the realm
   */
   @JsonProperty("appCount")
-  public Long getAppCount() {
+  public Integer getAppCount() {
     return appCount;
   }
 
@@ -166,7 +166,7 @@ public class Realm   {
   * @param appCount The number of apps for the realm
   */
   @SuppressWarnings("unused")
-  public void setAppCount(Long appCount) {
+  public void setAppCount(Integer appCount) {
     this.appCount = appCount;
   }
 
@@ -174,7 +174,7 @@ public class Realm   {
   * @return listCount The number of lists for the realm
   */
   @JsonProperty("listCount")
-  public Long getListCount() {
+  public Integer getListCount() {
     return listCount;
   }
 
@@ -182,7 +182,7 @@ public class Realm   {
   * @param listCount The number of lists for the realm
   */
   @SuppressWarnings("unused")
-  public void setListCount(Long listCount) {
+  public void setListCount(Integer listCount) {
     this.listCount = listCount;
   }
 
@@ -198,7 +198,7 @@ public class Realm   {
   * @param listUserInCount The number of active user on the list
   */
   @SuppressWarnings("unused")
-  public void setListUserInCount(Integer listUserInCount) {
+  public void setUserInCount(Integer listUserInCount) {
     this.listUserInCount = listUserInCount;
   }
 

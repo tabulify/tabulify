@@ -96,6 +96,18 @@ public class EraldyModel {
     } catch (URISyntaxException e) {
       throw new ConfigIllegalException("The member registration url value (" + uriRegistrationPathTemplate + ") of the conf (" + MEMBER_REGISTRATION_URL + ") is not a valid URI template", e);
     }
+
+    /**
+     * The realm is used during initial insertion
+     * of an organisation user at {@link #mount()}
+     * It's updated just after in the {@link #mount()}
+     */
+    Organization organization = new Organization();
+    organization.setLocalId(ORGA_LOCAL_ID);
+    this.eraldyRealm = new Realm();
+    this.eraldyRealm.setLocalId(REALM_LOCAL_ID);
+    this.eraldyRealm.setOrganization(organization);
+
   }
 
   public Future<Void> mount() {

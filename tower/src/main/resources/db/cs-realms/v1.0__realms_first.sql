@@ -24,7 +24,7 @@ create table organization_user
 (
   ORGA_USER_ORGA_ID           BIGINT                      NOT NULL REFERENCES organization (ORGA_ID),
   ORGA_USER_USER_ID           BIGINT                      NOT NULL,
-  ORGA_USER_REALM_ID          BIGINT                      NOT NULL CHECK (ORGA_USER_REALM_ID = 1),
+  ORGA_USER_REALM_ID          BIGINT                      NOT NULL DEFAULT 1 CHECK (ORGA_USER_REALM_ID = 1),
   ORGA_USER_ROLE_ID           BIGINT                      NOT NULL REFERENCES organization_role (orga_role_id),
   ORGA_USER_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   ORGA_USER_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL,
@@ -32,6 +32,7 @@ create table organization_user
 );
 comment on table organization_user is 'The users of the organization';
 comment on column organization_user.ORGA_USER_USER_ID is 'The user id of the realm id 1. It''s not a sequence';
+comment on column organization_user.ORGA_USER_REALM_ID is 'The Eraldy realm (1). The column is here to a foreign key to the realm user table';
 
 -- a list of all realm
 create table IF NOT EXISTS realm
@@ -41,6 +42,10 @@ create table IF NOT EXISTS realm
   REALM_HANDLE            varchar(32)                 NULL UNIQUE,
   REALM_ORGA_ID           BIGINT                      NOT NULL REFERENCES organization,
   REALM_OWNER_USER_ID     BIGINT                      NOT NULL,
+  REALM_USER_COUNT        BIGINT                      NOT NULL DEFAULT 0,
+  REALM_USER_IN_COUNT     BIGINT                      NOT NULL DEFAULT 0,
+  REALM_APP_COUNT         INTEGER                     NOT NULL DEFAULT 0,
+  REALM_LIST_COUNT        INTEGER                     NOT NULL DEFAULT 0,
   REALM_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   REALM_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
 );

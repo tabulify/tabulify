@@ -359,14 +359,23 @@ public class UserProvider {
      * Location
      */
     user.setLocation(row.getString(UserCols.LOCATION));
-    user.setTimeZone(TimeZoneUtil.getTimeZoneFailSafe(row.getString(UserCols.TIME_ZONE)));
+    String timeZoneId = row.getString(UserCols.TIME_ZONE);
+    if (timeZoneId != null) {
+      user.setTimeZone(TimeZoneUtil.getTimeZoneFailSafe(timeZoneId));
+    }
 
     /**
      * Description
      */
     user.setBio(row.getString(UserCols.BIO));
-    user.setWebsite(URI.create(row.getString(UserCols.WEBSITE)));
-    user.setAvatar(URI.create(row.getString(UserCols.AVATAR)));
+    String websiteStringUrl = row.getString(UserCols.WEBSITE);
+    if (websiteStringUrl != null) {
+      user.setWebsite(URI.create(websiteStringUrl));
+    }
+    String avatar = row.getString(UserCols.AVATAR);
+    if (avatar != null) {
+      user.setAvatar(URI.create(avatar));
+    }
 
     return user;
 
@@ -716,7 +725,12 @@ public class UserProvider {
         user.setEmailAddress(userInputProps.getEmailAddress());
         jdbcInsert.addColumn(UserCols.EMAIL_ADDRESS, user.getEmailAddress().toNormalizedString());
 
-        user.setGivenName(userInputProps.getGivenName());
+        String givenName = userInputProps.getGivenName();
+        if (givenName == null) {
+          // Given name is mandatory (used everywhere)
+          givenName = user.getEmailAddress().getLocalBox();
+        }
+        user.setGivenName(givenName);
         jdbcInsert.addColumn(UserCols.GIVEN_NAME, user.getGivenName());
 
         user.setFamilyName(userInputProps.getFamilyName());
@@ -741,13 +755,13 @@ public class UserProvider {
         }
 
         URI avatar = userInputProps.getAvatar();
-        if(avatar!=null) {
+        if (avatar != null) {
           user.setAvatar(avatar);
           jdbcInsert.addColumn(UserCols.AVATAR, user.getAvatar().toString());
         }
 
         URI website = userInputProps.getWebsite();
-        if(website!=null) {
+        if (website != null) {
           user.setWebsite(website);
           jdbcInsert.addColumn(UserCols.WEBSITE, user.getWebsite().toString());
         }

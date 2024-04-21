@@ -7,6 +7,7 @@ import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.AssertionException;
 import net.bytle.exception.InternalException;
+import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.OrganizationRoleProvider;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
@@ -309,13 +310,27 @@ public class OrganizationUserProvider {
     /**
      * Build the orga user
      */
-    orgaUser.setOrganization(organization);
-    orgaUser.setOrgaRole(orgaUserInputProps.getRole());
-
-    return JdbcInsert.into(this.organizationUserTable)
-      .addColumn(OrgaUserCols.CREATION_TIME,DateTimeService.getNowInUtc())
+    JdbcInsert jdbcInsert = JdbcInsert.into(this.organizationUserTable)
+      .addColumn(OrgaUserCols.CREATION_TIME, DateTimeService.getNowInUtc())
       .addColumn(OrgaUserCols.USER_ID, orgaUser.getLocalId())
-      .addColumn(OrgaUserCols.ROLE_ID, orgaUser.getOrgaRole().getId())
+      .addColumn(OrgaUserCols.REALM_ID, EraldyModel.REALM_LOCAL_ID);
+
+    /**
+     * Orga
+     */
+    orgaUser.setOrganization(organization);
+    jdbcInsert.addColumn(OrgaUserCols.ORGA_ID, orgaUser.getOrganization().getLocalId());
+
+    /**
+     * Role
+     */
+    orgaUser.setOrgaRole(orgaUserInputProps.getRole());
+    jdbcInsert.addColumn(OrgaUserCols.ROLE_ID, orgaUser.getOrgaRole().getId());
+
+    /**
+     * Execute
+     */
+    return jdbcInsert
       .execute(sqlConnection)
       .compose(userRows -> Future.succeededFuture(orgaUser));
   }

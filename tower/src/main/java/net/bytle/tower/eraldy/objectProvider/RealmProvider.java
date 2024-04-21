@@ -18,7 +18,6 @@ import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
-import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
@@ -220,7 +219,7 @@ public class RealmProvider {
 
   /**
    *
-   * @param ownerUser - the ower
+   * @param ownerUser - the owner (passed because it may not exist at initial insertion)
    * @param realmInputProps - the input props
    * @param sqlConnection - the connection
    * @param askedRealmId - use for Eraldy Realm only - the asked realm id (ie 1)
@@ -232,8 +231,7 @@ public class RealmProvider {
     if (handle == null) {
       throw new InternalException("The realm handle cannot be null on realm insertion");
     }
-    OrgaUserGuid ownerUserGuid = realmInputProps.getOwnerUserGuid();
-    if (ownerUserGuid == null) {
+    if (ownerUser == null) {
       throw new InternalException("The owner user of the realm (handle: " + handle + ") cannot be null on realm insertion");
     }
 
@@ -263,16 +261,14 @@ public class RealmProvider {
     jdbcInsert.addColumn(RealmCols.NAME, realm.getName());
 
     /**
-     * organizationUser may be null for the first insert
-     * of the Eraldy Realm
+     * The user must exist (The db constraint check already that but yeah)
      */
     Long userId = ownerUser.getLocalId();
-    if (!(userId.equals(realmInputProps.getOwnerUserGuid().getLocalId()))) {
+    if (realmInputProps.getOwnerUserGuid() != null && !userId.equals(realmInputProps.getOwnerUserGuid().getLocalId())) {
       return Future.failedFuture(new InternalException("The organization user and the input user does not have the same value"));
     }
-
     realm.setOwnerUser(ownerUser);
-    jdbcInsert.addColumn(RealmCols.OWNER_ID, ownerUser.getLocalId());
+    jdbcInsert.addColumn(RealmCols.OWNER_ID, realm.getOwnerUser().getLocalId());
 
     return jdbcInsert
       .execute(sqlConnection)
@@ -289,7 +285,7 @@ public class RealmProvider {
           }
           return Future.failedFuture(new InternalException(error));
         }
-        realm.setLocalId(askedRealmId);
+        realm.setLocalId(realmIdAfterInsertion);
         this.updateGuid(realm);
         return Future.succeededFuture(realm);
       });
@@ -318,11 +314,11 @@ public class RealmProvider {
 
     return jdbcUpdate
       .execute()
-      .compose(ok -> {
-          if (ok.size() != 1) {
+      .compose(rowSet -> {
+          if (rowSet.size() != 1) {
             return Future.failedFuture(
               TowerFailureException.builder()
-                .setMessage("The realm update did not update any row")
+                .setMessage("The realm update (" + realm.getLocalId() + ") updated not 1 row but " + rowSet.size())
                 .build()
             );
           }
@@ -435,9 +431,10 @@ public class RealmProvider {
     /**
      * Analytics
      */
-    realm.setUserCount(Objects.requireNonNullElse(row.getLong(RealmCols.USER_COUNT), 0L));
-    realm.setAppCount(Objects.requireNonNullElse(row.getLong(RealmCols.APP_COUNT), 0L));
-    realm.setListCount(Objects.requireNonNullElse(row.getLong(RealmCols.LIST_COUNT), 0L));
+    realm.setUserCount(row.getLong(RealmCols.USER_COUNT));
+    realm.setUserInCount(row.getInteger(RealmCols.USER_IN_COUNT));
+    realm.setAppCount(row.getInteger(RealmCols.APP_COUNT));
+    realm.setListCount(row.getInteger(RealmCols.LIST_COUNT));
 
     /**
      * Scalar Properties

@@ -8,7 +8,11 @@ import java.util.Objects;
 
 /**
  * A user in the Eraldy realm that may be part of an organization
- * They are the users of the Eraldy realm that are part of an organization. They may own Realms, App, List.
+ * * An orga user may have no Organiation.
+ * * An orga user is an eraldy user
+ * <p>
+ * They are the users of the Eraldy realm that are part of an organization.
+ * They may own Realms, App, List.
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OrgaUser extends User  {

@@ -33,7 +33,9 @@ public class RealmSequenceProvider {
 
 
   public Future<Long> getNextIdForTableAndRealm(SqlConnection sqlConnection, Realm realm, JdbcTable table) {
-    return this.getNextIdForTableAndRealm(sqlConnection, realm, table.getFullName());
+    // not full table name because we may move them from schema
+    String name = table.getName();
+    return this.getNextIdForTableAndRealm(sqlConnection, realm, name);
   }
 
 

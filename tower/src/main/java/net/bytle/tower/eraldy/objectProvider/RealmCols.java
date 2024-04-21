@@ -13,18 +13,20 @@ public enum RealmCols implements JdbcColumn {
 
   HANDLE(TABLE_PREFIX + COLUMN_PART_SEP + "handle"),
   ORGA_ID(TABLE_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN),
-  OWNER_ID( TABLE_PREFIX + COLUMN_PART_SEP + "owner" + COLUMN_PART_SEP + UserProvider.ID_COLUMN),
+  OWNER_ID(TABLE_PREFIX + COLUMN_PART_SEP + "owner" + COLUMN_PART_SEP + UserProvider.ID_COLUMN),
 
   CREATION_TIME(TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX),
   MODIFICATION_TIME(TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX),
 
 
   USER_COUNT(TABLE_PREFIX + COLUMN_PART_SEP + "user" + COLUMN_PART_SEP + "count"),
+  USER_IN_COUNT(TABLE_PREFIX + COLUMN_PART_SEP + "user" + COLUMN_PART_SEP + "in" + COLUMN_PART_SEP + "count"),
   LIST_COUNT(TABLE_PREFIX + COLUMN_PART_SEP + "list" + COLUMN_PART_SEP + "count"),
   APP_COUNT(TABLE_PREFIX + COLUMN_PART_SEP + "app" + COLUMN_PART_SEP + "count"),
   NAME(TABLE_PREFIX + COLUMN_PART_SEP + "name");
 
-  private final String columnName ;
+
+  private final String columnName;
 
   RealmCols(String s) {
     this.columnName = s;
