@@ -15,8 +15,8 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
-import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerFailureException;
@@ -43,7 +43,7 @@ public class AppProvider {
 
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String APP_COLUMN_PREFIX = "app";
-  private static final String APP_GUID_PREFIX = "app";
+  public static final String APP_GUID_PREFIX = "app";
   public static final String APP_TABLE_NAME = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + APP_COLUMN_PREFIX;
   public static final String APP_REALM_ID_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "realm_id";
   public static final String APP_USER_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "owner" + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
@@ -74,6 +74,7 @@ public class AppProvider {
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .build();
+
 
     this.updateSqlById = "UPDATE \n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + APP_TABLE_NAME + "\n" +
@@ -461,7 +462,7 @@ public class AppProvider {
       long appId;
       try {
         appId = this.getGuidFromHash(appGuid)
-          .validateRealmAndGetFirstObjectId(realm.getLocalId());
+          .getAppLocalId(realm.getLocalId());
       } catch (CastException e) {
         throw ValidationException.create("The app guid is not valid", "appGuid", appGuid);
       }
@@ -488,22 +489,27 @@ public class AppProvider {
 
   }
 
-  public Guid getGuidFromHash(String appGuid) throws CastException {
-    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(APP_GUID_PREFIX, appGuid);
+  public AppGuid getGuidFromHash(String appGuid) throws CastException {
+    return this.apiApp
+      .getHttpServer()
+      .getServer()
+      .getJacksonMapperManager()
+      .getDeserializer(AppGuid.class)
+      .deserialize(appGuid);
   }
 
-  public Future<App> getAppByGuid(Guid guid, Realm realm) {
+  public Future<App> getAppByGuid(AppGuid guid, Realm realm) {
 
     Future<Realm> realmFuture;
     if (realm != null) {
       realmFuture = Future.succeededFuture(realm);
     } else {
       realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromLocalId(guid.getRealmOrOrganizationId());
+        .getRealmFromLocalId(guid.getRealmId());
     }
     return realmFuture
       .compose(realmRes -> {
-        long appId = guid.validateRealmAndGetFirstObjectId(realmRes.getLocalId());
+        long appId = guid.getAppLocalId(realmRes.getLocalId());
         return getAppById(appId, realmRes);
       });
   }
@@ -627,7 +633,7 @@ public class AppProvider {
 
   public Future<App> getAppByIdentifier(String appIdentifier, Realm realm) {
     try {
-      Guid guid = this.getGuidFromHash(appIdentifier);
+      AppGuid guid = this.getGuidFromHash(appIdentifier);
       return this.getAppByGuid(guid, realm);
     } catch (CastException e) {
       return getAppByHandle(appIdentifier, realm);

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -38,6 +39,7 @@ public class ListObject   {
   protected Long userInCount;
 
   protected Long mailingCount;
+  private LocalDateTime creationTime;
 
   /**
   * The empty constructor is
@@ -279,4 +281,11 @@ public class ListObject   {
     return guid + ", " + handle;
   }
 
+  public void setCreationTime(LocalDateTime localDateTime) {
+    this.creationTime = localDateTime;
+  }
+
+  public LocalDateTime getCreationTime() {
+    return this.creationTime;
+  }
 }

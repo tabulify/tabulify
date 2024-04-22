@@ -3,7 +3,7 @@ package net.bytle.tower.eraldy.module.organization.model;
 import net.bytle.tower.EraldyModel;
 
 /**
- * A orga guid is the realm id 1
+ * A orga user guid is the Eraldy Realm id 1
  * and a local id
  */
 public class OrgaUserGuid {
@@ -22,7 +22,8 @@ public class OrgaUserGuid {
     return this.localId;
   }
 
-  public Long getRealmId() {
+
+  public long getEraldyRealmId() {
     return EraldyModel.REALM_LOCAL_ID;
   }
 

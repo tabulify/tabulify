@@ -20,8 +20,10 @@ import net.bytle.tower.eraldy.mixin.ListItemMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationUserProvider;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
@@ -32,6 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -142,17 +147,18 @@ public class ListProvider {
     /**
      * User
      */
-    String ownerIdentifier = listInputProps.getOwnerGuid();
-    Future<OrgaUser> futureUser = Future.succeededFuture();
+    OrgaUserGuid ownerIdentifier = listInputProps.getOwnerGuid();
+    Future<OrgaUser> futureUser = Future.succeededFuture(app.getOwnerUser());
     if (ownerIdentifier != null) {
       OrganizationUserProvider userProvider = apiApp.getOrganizationUserProvider();
-      futureUser = userProvider.getOrganizationUserByIdentifier(ownerIdentifier);
+      futureUser = userProvider.getOrganizationUserByLocalId(ownerIdentifier.getLocalId());
     }
 
     return futureUser
       .compose(user -> {
 
         JdbcInsert jdbcInsert = JdbcInsert.into(this.listTable);
+
 
         // New list
         ListObject newList = new ListObject();
@@ -165,11 +171,18 @@ public class ListProvider {
         jdbcInsert.addColumn(ListCols.REALM_ID, app.getRealm().getLocalId());
         newList.setApp(app);
         jdbcInsert.addColumn(ListCols.APP_ID, app.getLocalId());
-        newList.setName(listInputProps.getName());
-        jdbcInsert.addColumn(ListCols.NAME, listInputProps.getName());
-        newList.setName(listInputProps.getHandle());
+        String name = listInputProps.getName();
+        if (name == null) {
+          name = "List of " + LocalDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_DATE);
+        }
+        newList.setName(name);
+        jdbcInsert.addColumn(ListCols.NAME, newList.getName());
+
+        newList.setHandle(listInputProps.getHandle());
         jdbcInsert.addColumn(ListCols.HANDLE, listInputProps.getHandle());
-        jdbcInsert.addColumn(ListCols.CREATION_TIME, DateTimeService.getNowInUtc());
+
+        newList.setCreationTime(DateTimeService.getNowInUtc());
+        jdbcInsert.addColumn(ListCols.CREATION_TIME, newList.getCreationTime());
 
         return jdbcPool
           .withTransaction(sqlConnection ->
@@ -222,32 +235,15 @@ public class ListProvider {
       listObject.setHandle(newHandle);
     }
 
-    String ownerGuid = listInputProps.getOwnerGuid();
-    if (ownerGuid != null) {
-      Guid ownerGuidObject;
-      try {
-        ownerGuidObject = this.apiApp.getUserProvider().getGuidFromHash(ownerGuid);
-      } catch (CastException e) {
-        return Future.failedFuture(TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-          .setMessage("The value (" + ownerGuid + ") is not a valid guid")
-          .setCauseException(e)
-          .build()
-        );
-      }
-      long ownerRealmId = ownerGuidObject.getRealmOrOrganizationId();
-      if (!listObject.getRealm().getLocalId().equals(ownerRealmId)) {
-        return Future.failedFuture(TowerFailureException.builder()
-          .setMessage("The owner and the list does not belong to the same realm")
-          .build()
-        );
-      }
-      long userLocalId = ownerGuidObject.validateRealmAndGetFirstObjectId(listObject.getRealm().getLocalId());
+    OrgaUserGuid ownerGuidObject = listInputProps.getOwnerGuid();
+    if (ownerGuidObject != null) {
+
+      long userLocalId = ownerGuidObject.getLocalId();
       jdbcUpdate.addUpdatedColumn(ListCols.OWNER_USER_ID, userLocalId);
       // Lazy initialization (GraphQL feature)
       OrgaUser orgaUser = new OrgaUser();
       orgaUser.setLocalId(userLocalId);
-      orgaUser.setRealm(listObject.getRealm());
+      orgaUser.setRealm(this.apiApp.getEraldyModel().getRealm());
       listObject.setOwnerUser(orgaUser);
     }
 
@@ -255,12 +251,12 @@ public class ListProvider {
      * May happen after an import
      */
     Long newUserCount = listInputProps.getUserCount();
-    if(newUserCount!=null && newUserCount.equals(listObject.getUserCount())){
+    if (newUserCount != null && newUserCount.equals(listObject.getUserCount())) {
       listObject.setUserCount(newUserCount);
       jdbcUpdate.addUpdatedColumn(ListCols.USER_COUNT, newUserCount);
     }
     Long newUserInCount = listInputProps.getUserInCount();
-    if(newUserInCount!=null && newUserInCount.equals(listObject.getUserInCount())){
+    if (newUserInCount != null && newUserInCount.equals(listObject.getUserInCount())) {
       listObject.setUserInCount(newUserInCount);
       jdbcUpdate.addUpdatedColumn(ListCols.USER_IN_COUNT, newUserInCount);
     }
@@ -425,23 +421,6 @@ public class ListProvider {
       });
   }
 
-  /**
-   * Build a list object from a post and insert it
-   *
-   * @param listPostBody - the post object
-   * @return the list created
-   */
-
-  public Future<ListObject> postList(ListBody listPostBody, App app) {
-
-    ListInputProps listObject = new ListInputProps();
-    listObject.setName(listPostBody.getListName());
-    listObject.setTitle(listPostBody.getListTitle());
-    listObject.setHandle(listPostBody.getListHandle());
-    listObject.setOwnerIdentifier(listPostBody.getOwnerUserIdentifier());
-    return this.insertList(app, listObject);
-
-  }
 
 
   public Future<ListObject> getListByGuidObject(Guid listGuid) {
@@ -663,4 +642,39 @@ public class ListProvider {
   }
 
 
+  public Future<ListObject> insertListRequestHandler(String appGuid, ListInputProps listInputProps, RoutingContext routingContext) {
+
+    AppGuid appGuidObject;
+    try {
+      appGuidObject = this.apiApp.getAppProvider().getGuidFromHash(appGuid);
+    } catch (CastException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .setMessage("The app guid (" + appGuid + ") is not valid")
+        .buildWithContextFailing(routingContext)
+      );
+    }
+    return this.apiApp.getRealmProvider()
+      .getRealmByLocalIdWithAuthorizationCheck(appGuidObject.getRealmId(), AuthUserScope.LIST_CREATION, routingContext)
+      .compose(realm -> {
+        if (realm == null) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+            .setMessage("The realm for the app guid (" + appGuid + ") was not found")
+            .buildWithContextFailing(routingContext)
+          );
+        }
+        return this.apiApp.getAppProvider().getAppById(appGuidObject.getAppLocalId(realm.getLocalId()), realm);
+      })
+      .compose(app -> {
+        if (app == null) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+            .setMessage("The app with the guid (" + appGuid + ") was not found")
+            .buildWithContextFailing(routingContext)
+          );
+        }
+        return this.insertList(app, listInputProps);
+      });
+  }
 }

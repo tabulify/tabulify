@@ -25,6 +25,7 @@ import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
 import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Casts;
 import net.bytle.type.EmailAddress;
@@ -250,7 +251,19 @@ public class ListApiImpl implements ListApi {
         listInputProps.setHandle(listBody.getListHandle());
         listInputProps.setName(listBody.getListName());
         listInputProps.setTitle(listBody.getListTitle());
-        listInputProps.setOwnerIdentifier(listBody.getOwnerUserIdentifier());
+        String ownerUserIdentifier = listBody.getOwnerUserIdentifier();
+        OrgaUserGuid orgaUserGuid;
+        try {
+          orgaUserGuid = this.apiApp.getHttpServer().getServer().getJacksonMapperManager().getDeserializer(OrgaUserGuid.class).deserialize(ownerUserIdentifier);
+        } catch (CastException e) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+            .setMessage("The owner guid identifier (" + ownerUserIdentifier + ") is not valid")
+            .setCauseException(e)
+            .build()
+          );
+        }
+        listInputProps.setOwnerIdentifier(orgaUserGuid);
 
         return listProvider
           .updateList(list, listInputProps)

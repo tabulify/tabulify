@@ -1,11 +1,12 @@
 package net.bytle.tower.eraldy.api.implementer;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import graphql.schema.DataFetchingEnvironment;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.CastException;
-import net.bytle.exception.NotFoundException;
+import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AppApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
@@ -14,11 +15,13 @@ import net.bytle.tower.eraldy.mixin.AppPublicMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
-import net.bytle.tower.util.Guid;
-import net.bytle.vertx.*;
+import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureTypeEnum;
 
 import java.util.List;
 
@@ -41,7 +44,7 @@ public class AppApiImpl implements AppApi {
   public Future<ApiResponse<List<ListObject>>> appAppIdentifierListsGet(RoutingContext routingContext, String appIdentifier) {
 
     ListProvider listProvider = this.apiApp.getListProvider();
-    Guid guid;
+    AppGuid guid;
     try {
       guid = this.apiApp.getAppProvider().getGuidFromHash(appIdentifier);
     } catch (CastException e) {
@@ -52,7 +55,7 @@ public class AppApiImpl implements AppApi {
       );
     }
     return this.apiApp.getRealmProvider()
-      .getRealmFromLocalId(guid.getRealmOrOrganizationId())
+      .getRealmFromLocalId(guid.getRealmId())
       .compose(realmRes -> this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realmRes, AuthUserScope.APP_LISTS_GET))
       .compose(realmAfterCheck -> this.apiApp.getAppProvider().getAppByIdentifier(appIdentifier, realmAfterCheck))
       .compose(listProvider::getListsForApp)
@@ -61,64 +64,14 @@ public class AppApiImpl implements AppApi {
 
   }
 
+
   @Override
   public Future<ApiResponse<ListObject>> appAppListPost(RoutingContext routingContext, String appIdentifier, ListBody listBody, String realmIdentifier) {
 
-    RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
-    try {
-      appIdentifier = routingContextWrapper.getRequestPathParameter("appIdentifier").getString();
-    } catch (NotFoundException e) {
-      throw ValidationException.create("An app identifier (handle or guid) should be given", "appIdentifier", null);
-    }
-    realmIdentifier = routingContextWrapper.getRequestQueryParameterAsString("realmIdentifier");
-    Future<Realm> realmFuture;
-    Guid guid = null;
-    try {
-      guid = this.apiApp.getAppProvider().getGuidFromHash(appIdentifier);
-      realmFuture = this.apiApp.getRealmProvider().getRealmFromLocalId(guid.getRealmOrOrganizationId());
-    } catch (CastException e) {
-      if (realmIdentifier == null) {
-        throw ValidationException.create("An realm identifier (handle or guid) should be given when the app identifier (" + appIdentifier + ") is a handle", "realmIdentifier", null);
-      }
-      realmFuture = this.apiApp.getRealmProvider().getRealmFromIdentifier(realmIdentifier);
-    }
-
-    Guid finalGuid = guid;
-    String finalAppIdentifier = appIdentifier;
-    String finalRealmIdentifier = realmIdentifier;
-    return realmFuture
-      .compose(realm -> {
-
-        if (realm == null) {
-          String message;
-          if (finalGuid != null) {
-            message = "The realm for the app (" + finalAppIdentifier + ") was not found";
-          } else {
-            message = "The realm (" + finalRealmIdentifier + ") was not found";
-          }
-          return Future.failedFuture(
-            TowerFailureException.builder()
-              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-              .setMessage(message)
-              .build()
-          );
-        }
-
-        return apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.LIST_CREATION);
-      })
-      .compose(futureRealm -> {
-        if (finalGuid != null) {
-          return this.apiApp.getAppProvider().getAppById(finalGuid.validateRealmAndGetFirstObjectId(futureRealm.getLocalId()), futureRealm);
-        }
-        return this.apiApp.getAppProvider().getAppByHandle(finalAppIdentifier, futureRealm);
-      })
-      .compose(futureApp -> {
-        ListProvider listProvider = apiApp.getListProvider();
-        return listProvider
-          .postList(listBody, futureApp)
-          .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-          .compose(publication -> Future.succeededFuture(new ApiResponse<>(publication).setMapper(listProvider.getApiMapper())));
-      });
+    /**
+     * See {@link net.bytle.tower.eraldy.module.list.graphql.ListGraphQLImpl#createList(DataFetchingEnvironment)}
+     */
+    return Future.failedFuture(new InternalException("Deprecated for the graphql createList mutation"));
 
 
   }
@@ -128,10 +81,10 @@ public class AppApiImpl implements AppApi {
 
 
     Future<Realm> futureRealm;
-    Guid appGuid = null;
+    AppGuid appGuid = null;
     try {
-      appGuid = this.apiApp.getAppProvider().getGuidFromHash(appIdentifier);
-      futureRealm = this.apiApp.getRealmProvider().getRealmFromLocalId(appGuid.getRealmOrOrganizationId());
+      appGuid = this.apiApp.getHttpServer().getServer().getJacksonMapperManager().getDeserializer(AppGuid.class).deserialize(appIdentifier);
+      futureRealm = this.apiApp.getRealmProvider().getRealmFromLocalId(appGuid.getRealmId());
     } catch (CastException e) {
       if (realmIdentifier == null) {
         return Future.failedFuture(
@@ -145,7 +98,7 @@ public class AppApiImpl implements AppApi {
       futureRealm = this.apiApp.getRealmProvider().getRealmFromIdentifier(realmIdentifier);
     }
 
-    Guid finalAppGuid = appGuid;
+    AppGuid finalAppGuid = appGuid;
     return futureRealm.compose(realm -> {
         if (realm == null) {
           String message;
@@ -165,7 +118,7 @@ public class AppApiImpl implements AppApi {
       }).compose(realm -> {
         Future<App> futureApp;
         if (finalAppGuid != null) {
-          futureApp = this.apiApp.getAppProvider().getAppById(finalAppGuid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm);
+          futureApp = this.apiApp.getAppProvider().getAppById(finalAppGuid.getAppLocalId(realm.getLocalId()), realm);
         } else {
           futureApp = this.apiApp.getAppProvider().getAppByHandle(appIdentifier, realm);
         }

@@ -43,6 +43,7 @@ public class OrganizationUserProvider {
   private final Pool jdbcPool;
   private final JdbcTable organizationUserTable;
 
+
   public OrganizationUserProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
     this.apiApp = apiApp;
     Server server = apiApp.getHttpServer().getServer();
@@ -52,6 +53,11 @@ public class OrganizationUserProvider {
       .addPrimaryKeyColumn(OrgaUserCols.USER_ID)
       .addPrimaryKeyColumn(OrgaUserCols.ORGA_ID)
       .build();
+
+    /**
+     * Hack as it's used transitory
+     * while we move to GraphQL
+     */
 
     server
       .getJacksonMapperManager()
@@ -251,6 +257,8 @@ public class OrganizationUserProvider {
         return this.getOrganizationUserByLocalId(user.getLocalId(), sqlConnection);
       });
   }
+
+
 
 
 }

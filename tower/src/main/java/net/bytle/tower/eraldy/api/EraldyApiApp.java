@@ -215,7 +215,6 @@ public class EraldyApiApp extends TowerApp {
       .build();
     this.oauthExternalFlow = new OAuthExternalCodeFlow(this, "/auth/oauth", oAuthContextManager);
 
-
     /**
      * OpenApi
      */
@@ -524,4 +523,5 @@ public class EraldyApiApp extends TowerApp {
   public MailingItemProvider getMailingItemProvider() {
     return this.mailingRowProvider;
   }
+
 }

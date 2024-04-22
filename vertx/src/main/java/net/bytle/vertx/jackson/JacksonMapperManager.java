@@ -1,11 +1,15 @@
 package net.bytle.vertx.jackson;
 
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.Future;
 import io.vertx.core.json.jackson.DatabindCodec;
+import net.bytle.exception.InternalException;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerService;
 import org.apache.logging.log4j.LogManager;
@@ -34,6 +38,7 @@ public class JacksonMapperManager extends TowerService {
   private final JavaTimeModule javaTimeModule;
   private boolean enableTimeModule;
   private SimpleModule simpleModule;
+  private final Map<Class<?>, JacksonJsonStringDeserializer<?>> deserializers = new HashMap<>();
 
   public JacksonMapperManager(Server server) {
     super(server);
@@ -89,11 +94,12 @@ public class JacksonMapperManager extends TowerService {
    * The equivalent to the object annotations but for the vertx mapper
    * <pre>@com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = JacksonListUserSourceDeserializer.class)</pre>
    */
-  public <T> JacksonMapperManager addDeserializer(Class<T> type, JsonDeserializer<? extends T> deser) {
+  public <T> JacksonMapperManager addDeserializer(Class<T> type, JacksonJsonStringDeserializer<? extends T> deser) {
     if (this.simpleModule == null) {
       simpleModule = new SimpleModule();
     }
     simpleModule.addDeserializer(type, deser);
+    this.deserializers.put(type, deser);
     LOGGER.info("Jackson deserializer for the type (" + type.toString() + ") added");
     return this;
   }
@@ -128,6 +134,16 @@ public class JacksonMapperManager extends TowerService {
       LOGGER.info("Jackson simple module registered");
     }
     return super.mount();
+  }
+
+  public <T> JacksonJsonStringDeserializer<T> getDeserializer(Class<T> clazz) {
+    JacksonJsonStringDeserializer<?> jacksonJsonStringDeserializer = this.deserializers.get(clazz);
+    if (jacksonJsonStringDeserializer == null) {
+      throw new InternalException("The jackson deserializer for the class (" + clazz.getSimpleName() + ") was not found (ie not registered)");
+    }
+    // should be good on insertion
+    //noinspection unchecked
+    return (JacksonJsonStringDeserializer<T>) jacksonJsonStringDeserializer;
   }
 
   public class JsonMapperBuilder {

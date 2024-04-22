@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.module.list.inputs;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 
 /**
  * List Input Props
@@ -17,7 +18,7 @@ public class ListInputProps {
 
   protected String title;
 
-  private String ownerGuid;
+  private OrgaUserGuid ownerGuid;
   private Long userCount;
   private Long userInCount;
 
@@ -65,13 +66,13 @@ public class ListInputProps {
 
 
   @JsonProperty("ownerGuid")
-  public String getOwnerGuid() {
+  public OrgaUserGuid getOwnerGuid() {
     return ownerGuid;
   }
 
 
   @SuppressWarnings("unused")
-  public void setOwnerIdentifier(String ownerGuid) {
+  public void setOwnerIdentifier(OrgaUserGuid ownerGuid) {
     this.ownerGuid = ownerGuid;
   }
 

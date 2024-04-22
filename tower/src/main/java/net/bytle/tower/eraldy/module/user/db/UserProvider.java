@@ -19,7 +19,9 @@ import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
+import net.bytle.tower.eraldy.module.user.jackson.JacksonUserGuidDeserializer;
 import net.bytle.tower.eraldy.module.user.jackson.JacksonUserStatusDeserializer;
+import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import net.bytle.tower.eraldy.module.user.model.UserStatus;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.util.Guid;
@@ -84,7 +86,9 @@ public class UserProvider {
 
     JacksonMapperManager jacksonMapperManager = server.getJacksonMapperManager();
 
-    jacksonMapperManager.addDeserializer(UserStatus.class, new JacksonUserStatusDeserializer());
+    jacksonMapperManager
+      .addDeserializer(UserStatus.class, new JacksonUserStatusDeserializer())
+      .addDeserializer(UserGuid.class, new JacksonUserGuidDeserializer(apiApp));
 
     this.apiMapper = jacksonMapperManager.jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithRealm.class)
@@ -660,6 +664,18 @@ public class UserProvider {
 
     JdbcRow row = rowSet.iterator().next();
     Long userId = row.getLong(UserCols.ID);
+
+    /**
+     * We don't know if a user is an organizational user before hands.
+     * Therefore we check based on the realm if the user is an organization user.
+     * <p>
+     * We could send to the login app, the type of user that we want
+     * but, it would make difficult to see that the user exists
+     * and to handle this case to show a proposition
+     * <p>
+     * OrgaUser is also a nice way to pass the information that the user is
+     * more than a normal user in the code.
+     */
     Future<OrgaUser> futureOrgaUser = Future.succeededFuture();
     if (realm.getLocalId().equals(EraldyModel.REALM_LOCAL_ID)) {
       futureOrgaUser = this.apiApp.getOrganizationUserProvider().createOrganizationUserObjectFromLocalIdOrNull(userId);
@@ -667,6 +683,9 @@ public class UserProvider {
 
     return futureOrgaUser
       .compose(orgaUser -> {
+        /**
+         * If Orga user is null, this is a normal user
+         */
         //noinspection unchecked
         T user = (T) Objects.requireNonNullElseGet(orgaUser, User::new);
         T userFromRow = buildUserFromRow(user, row, realm);

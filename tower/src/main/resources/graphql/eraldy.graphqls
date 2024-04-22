@@ -234,11 +234,16 @@ type List {
   userCount: Int
 }
 
-#interface MutationResponse {
-#  code: String!
-#  success: Boolean!
-#  message: String!
-#}
+input ListInput {
+  """A short descriptive name"""
+  name: String
+  """A unique handle"""
+  handle: String
+  """A title"""
+  title: String
+  """The Guid of the owner"""
+  ownerUserGuid: ID
+}
 
 input MailingInput {
   """A short descriptive name"""
@@ -307,4 +312,6 @@ type Mutation {
   mailingExecute(guid: ID!): MailingJob
   """Deliver a mailing item"""
   mailingItemDeliver(guid: ID!): MailingItem
+  """Create a list"""
+  listCreate(appGuid: ID!, props:ListInput): List
 }

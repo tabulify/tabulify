@@ -22,6 +22,7 @@ import net.bytle.tower.eraldy.graphql.implementer.UserGraphQLImpl;
 import net.bytle.tower.eraldy.model.manual.Status;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.list.graphql.ListGraphQLImpl;
 import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
 import net.bytle.vertx.graphql.GraphQLDef;
 import net.bytle.vertx.graphql.GraphQLLocalDate;
@@ -60,9 +61,10 @@ public class EraldyGraphQL implements GraphQLDef {
     RuntimeWiring.Builder wiringBuilder = newRuntimeWiring();
 
     /**
-     * Our implementation
+     * Our implementations
      */
     new MailingGraphQLImpl(this, wiringBuilder);
+    new ListGraphQLImpl(this, wiringBuilder);
     UserGraphQLImpl userImpl = new UserGraphQLImpl(this);
 
     /**
@@ -185,7 +187,6 @@ public class EraldyGraphQL implements GraphQLDef {
   public Handler<RoutingContext> getHandler() {
     return this.graphQLHandler;
   }
-
 
 
 }

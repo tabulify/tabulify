@@ -15,9 +15,9 @@ import net.bytle.tower.AuthClient;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
-import net.bytle.tower.util.Guid;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.OAuthState;
@@ -357,7 +357,7 @@ public class AuthClientHandler extends TowerService implements Handler<RoutingCo
                   return;
                 }
                 AppProvider appProvider = apiApp.getAppProvider();
-                Guid appGuid;
+                AppGuid appGuid;
                 try {
                   appGuid = appProvider.getGuidFromHash(proxyAppId);
                 } catch (CastException e) {
