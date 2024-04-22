@@ -15,6 +15,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.app.jackson.JacksonAppGuidDeserializer;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.vertx.DateTimeService;
@@ -75,6 +76,8 @@ public class AppProvider {
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .build();
 
+    this.apiApp.getHttpServer().getServer().getJacksonMapperManager()
+      .addDeserializer(AppGuid.class, new JacksonAppGuidDeserializer(apiApp));
 
     this.updateSqlById = "UPDATE \n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + APP_TABLE_NAME + "\n" +
