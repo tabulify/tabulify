@@ -133,7 +133,7 @@ public class OrganizationUserProvider {
         .getOrganizationProvider()
         .getById(orgaId);
     } else {
-      if (knownOrganization.getLocalId().equals(orgaId)) {
+      if (!knownOrganization.getLocalId().equals(orgaId)) {
         return Future.failedFuture(new InternalException("Orga id between row (" + orgaId + ") and organization (" + knownOrganization.getLocalId() + ") not consistent (ie not the same)"));
       }
       futureOrganization = Future.succeededFuture(knownOrganization);

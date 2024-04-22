@@ -224,6 +224,8 @@ type List {
   guid: ID!
   """A short descriptive name"""
   name: String!
+  """A unique handle"""
+  handle: String
   """The owner of the list"""
   ownerUser: OrganizationUser
   """The application"""
@@ -232,6 +234,10 @@ type List {
   userInCount: Int
   """The number of users in the list"""
   userCount: Int
+  """The number of mailing for the list"""
+  mailingCount: Int
+  """The registration page URL for the list"""
+  registrationUrl: String
 }
 
 input ListInput {

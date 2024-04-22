@@ -147,7 +147,7 @@ public class ListProvider {
     /**
      * User
      */
-    OrgaUserGuid ownerIdentifier = listInputProps.getOwnerGuid();
+    OrgaUserGuid ownerIdentifier = listInputProps.getOwnerUserGuid();
     Future<OrgaUser> futureUser = Future.succeededFuture(app.getOwnerUser());
     if (ownerIdentifier != null) {
       OrganizationUserProvider userProvider = apiApp.getOrganizationUserProvider();
@@ -162,17 +162,34 @@ public class ListProvider {
 
         // New list
         ListObject newList = new ListObject();
-        if (user != null) {
-          newList.setOwnerUser(user);
-          jdbcInsert.addColumn(ListCols.OWNER_USER_ID, user.getLocalId());
-        }
 
+        /**
+         * Owner
+         */
+        if (user == null) {
+          user = app.getOwnerUser();
+        }
+        newList.setOwnerUser(user);
+        jdbcInsert.addColumn(ListCols.OWNER_USER_ID, user.getLocalId());
+        jdbcInsert.addColumn(ListCols.ORGA_ID, user.getOrganization().getLocalId());
+
+        /**
+         * Realm
+         */
         newList.setRealm(app.getRealm());
         jdbcInsert.addColumn(ListCols.REALM_ID, app.getRealm().getLocalId());
+
+        /**
+         * App
+         */
         newList.setApp(app);
         jdbcInsert.addColumn(ListCols.APP_ID, app.getLocalId());
+
+        /**
+         * Name
+         */
         String name = listInputProps.getName();
-        if (name == null) {
+        if (name == null || name.isBlank()) {
           name = "List of " + LocalDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_DATE);
         }
         newList.setName(name);
@@ -235,7 +252,7 @@ public class ListProvider {
       listObject.setHandle(newHandle);
     }
 
-    OrgaUserGuid ownerGuidObject = listInputProps.getOwnerGuid();
+    OrgaUserGuid ownerGuidObject = listInputProps.getOwnerUserGuid();
     if (ownerGuidObject != null) {
 
       long userLocalId = ownerGuidObject.getLocalId();
@@ -420,7 +437,6 @@ public class ListProvider {
         return getListFromRow(row, null, realm);
       });
   }
-
 
 
   public Future<ListObject> getListByGuidObject(Guid listGuid) {

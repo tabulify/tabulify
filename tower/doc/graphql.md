@@ -129,6 +129,16 @@ At request time, but you don't need to find it in the frontend where undefined /
  - The field at path '/mailing/items[1]/failureCount' was declared as a non null type, but the code involved in retrieving data has wrongly returned a null value.  The graphql specification requires that the parent field be set to null, or if that is non nullable that it bubble up null to its parent and so on. The non-nullable type is 'Int' within parent type 'MailingItem' (HttpStatus: 200)
 ```
 
+### Private / Public Field Access
+
+You may want to update aggregate such as the user count when a user is added.
+
+The problem is that it's a private operation.
+How do you do it?
+
+You can always use the same input object without publicly advertising it.
+
+
 ## Implementation
 
 See GraphQLService.java

@@ -11,12 +11,13 @@ public enum ListCols implements JdbcColumn {
   TITLE("list_title"),
   APP_ID("list_app_id"),
   OWNER_USER_ID("list_owner_user_id"),
+  ORGA_ID("list_orga_id"),
   USER_COUNT("list_user_count"),
   USER_IN_COUNT("list_user_in_count"),
   MAILING_COUNT("list_mailing_count"),
   CREATION_TIME("list_creation_time"),
-  MODIFICATION_TIME("list_modification_time"),
-  ;
+  MODIFICATION_TIME("list_modification_time");
+
 
   private final String columnName;
 

@@ -18,7 +18,7 @@ public class ListInputProps {
 
   protected String title;
 
-  private OrgaUserGuid ownerGuid;
+  private OrgaUserGuid ownerUserGuid;
   private Long userCount;
   private Long userInCount;
 
@@ -66,14 +66,14 @@ public class ListInputProps {
 
 
   @JsonProperty("ownerGuid")
-  public OrgaUserGuid getOwnerGuid() {
-    return ownerGuid;
+  public OrgaUserGuid getOwnerUserGuid() {
+    return ownerUserGuid;
   }
 
 
   @SuppressWarnings("unused")
-  public void setOwnerIdentifier(OrgaUserGuid ownerGuid) {
-    this.ownerGuid = ownerGuid;
+  public void setOwnerUserGuid(OrgaUserGuid ownerGuid) {
+    this.ownerUserGuid = ownerGuid;
   }
 
   @JsonProperty("title")

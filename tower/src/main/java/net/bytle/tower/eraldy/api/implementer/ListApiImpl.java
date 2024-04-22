@@ -263,7 +263,7 @@ public class ListApiImpl implements ListApi {
             .build()
           );
         }
-        listInputProps.setOwnerIdentifier(orgaUserGuid);
+        listInputProps.setOwnerUserGuid(orgaUserGuid);
 
         return listProvider
           .updateList(list, listInputProps)
