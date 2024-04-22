@@ -16,6 +16,7 @@ import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaUserGuidDes
 import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaUserSerializer;
 import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
+import net.bytle.tower.eraldy.module.user.db.UserCols;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerFailureException;
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -49,9 +51,13 @@ public class OrganizationUserProvider {
     Server server = apiApp.getHttpServer().getServer();
     this.jdbcPool = server.getPostgresClient().getPool();
 
+    HashMap<JdbcColumn, JdbcColumn> userForeignKeys = new HashMap<>();
+    userForeignKeys.put(OrgaUserCols.USER_ID, UserCols.ID);
+    userForeignKeys.put(OrgaUserCols.REALM_ID, UserCols.REALM_ID);
     this.organizationUserTable = JdbcTable.build(jdbcSchema, TABLE_NAME, OrgaUserCols.values())
       .addPrimaryKeyColumn(OrgaUserCols.USER_ID)
       .addPrimaryKeyColumn(OrgaUserCols.ORGA_ID)
+      .addForeignKeyColumns(userForeignKeys)
       .build();
 
     /**
@@ -161,26 +167,35 @@ public class OrganizationUserProvider {
     }
   }
 
-  public Future<List<User>> getOrgUsers(Organization organization) {
+  public Future<List<OrgaUser>> getOrgUsers(Organization organization) {
 
     return JdbcSelect.from(this.organizationUserTable)
+      .addSelectAllColumnsFromTable(this.apiApp.getUserProvider().getTable())
       .addEqualityPredicate(OrgaUserCols.ORGA_ID, organization.getLocalId())
       .execute()
-      .compose(
-        userRows -> {
-          List<Future<OrgaUser>> users = new ArrayList<>();
-          for (JdbcRow row : userRows) {
-            users.add(this.createOrganizationUserFromDatabaseRow(row, organization));
-          }
-          // all: stop on the first failure
-          return Future.all(users);
-        },
-        err -> Future.failedFuture(new InternalException("Unable to get the org users for the organization (" + organization + "). Message:" + err.getMessage(), err))
-      )
-      .compose(
-        res -> Future.succeededFuture(res.list()),
-        err -> Future.failedFuture(new InternalException("Unable to build the org users for the organization (" + organization + "). Message:" + err.getMessage(), err))
-      );
+      .recover(err -> Future.failedFuture(new InternalException("Unable to get the org users for the organization (" + organization + "). Message:" + err.getMessage(), err)))
+      .compose(rowSet -> {
+        List<Future<OrgaUser>> users = new ArrayList<>();
+        for (JdbcRow row : rowSet) {
+          Future<OrgaUser> organizationUserFromDatabaseRow = this
+            .createOrganizationUserFromDatabaseRow(row, organization)
+            .compose(orgaUser -> {
+              OrgaUser user = this.apiApp.getUserProvider().buildUserFromRow(orgaUser, row, this.apiApp.getEraldyModel().getRealm());
+              return Future.succeededFuture(user);
+            });
+          users.add(organizationUserFromDatabaseRow);
+        }
+        // all: stop on the first failure
+        return Future.all(users)
+          .recover(err -> Future.failedFuture(new InternalException("Unable to build the org users for the organization (" + organization + "). Message:" + err.getMessage(), err)))
+          .compose(composite -> {
+            if (composite.failed()) {
+              Throwable cause = composite.cause();
+              return Future.failedFuture(new InternalException("A future failed for the composite get org users for the organization (" + organization + "). Message:" + cause.getMessage(), cause));
+            }
+            return Future.succeededFuture(composite.list());
+          });
+      });
 
   }
 
@@ -257,8 +272,6 @@ public class OrganizationUserProvider {
         return this.getOrganizationUserByLocalId(user.getLocalId(), sqlConnection);
       });
   }
-
-
 
 
 }

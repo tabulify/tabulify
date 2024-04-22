@@ -12,7 +12,6 @@ public enum UserCols implements JdbcColumn {
    */
   EMAIL_ADDRESS("user_email_address"),
   MODIFICATION_IME("user_modification_time"),
-  DATA("user_data"),
   CREATION_TIME("user_creation_time"),
   PASSWORD("user_password"),
 

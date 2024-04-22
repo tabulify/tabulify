@@ -95,6 +95,13 @@ Every column name has the table `prefix`.
 Why ? Because:
 * it allows code completion (sql writing starts with the column list, not with the table, make it difficult for the intellisense to help typing)
 * it permits to avoid name conflict (ie `name` for instance is a reserved word and should be quoted)
+* it permits to avoid alias conflict in a Select sql. Example: all column name are unique.
+```sql
+select organization_user.* ,
+   realm_user.user_password as user_password,
+   realm_user.user_creation_time as user_creation_time,
+   from ....
+```
 * it permits to see quickly for who is the attribute (ie `realm_name` is for the realm)
 * it's consistent with the java naming (`realName`)
 * it's used in the [guid identifier](identifier.md#guid) as header and to not mix id between tables.

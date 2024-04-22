@@ -328,7 +328,7 @@ public class UserProvider {
    * @param row        - the resulting row
    * @param realm - the realm
    */
-  <T extends User> T buildUserFromRow(T user, JdbcRow row, Realm realm) {
+  public <T extends User> T buildUserFromRow(T user, JdbcRow row, Realm realm) {
 
 
     Long userRealmId = row.getLong(UserCols.REALM_ID);
@@ -786,4 +786,7 @@ public class UserProvider {
 
   }
 
+  public JdbcTable getTable() {
+    return this.userTable;
+  }
 }

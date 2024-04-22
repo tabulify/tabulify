@@ -202,4 +202,17 @@ public class JdbcSelect extends JdbcQuery {
     }
     return this;
   }
+
+  /**
+   * Add all columns from a table to the select
+   * @param table - the table
+   */
+  public JdbcSelect addSelectAllColumnsFromTable(JdbcTable table) {
+    this.foreignTables.add(table);
+    for(JdbcColumn jdbcColumn: table.getColumns()){
+      this.addSelectColumn(jdbcColumn);
+    }
+    return this;
+  }
+
 }
