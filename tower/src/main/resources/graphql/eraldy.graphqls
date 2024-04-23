@@ -295,6 +295,8 @@ type RateLimit {
 }
 
 type Query {
+  """A list"""
+  list(listGuid: ID!): List
   """A mailing"""
   mailing(guid: ID!): Mailing
   """A mailing job"""

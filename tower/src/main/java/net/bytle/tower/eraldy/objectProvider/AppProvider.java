@@ -147,7 +147,11 @@ public class AppProvider {
    * The function is created to be sure that the
    * identifier data (id) and the guid are consistent in the app object
    */
-  private void updateGuid(App app) {
+  public void updateGuid(App app) {
+    //noinspection ConstantConditions
+    if (app == null) {
+      throw new InternalException("The app should not be null to compute the guid");
+    }
     if (app.getGuid() != null) {
       return;
     }
@@ -158,10 +162,6 @@ public class AppProvider {
     Long realmId = realm.getLocalId();
     if (realmId == null) {
       throw new InternalException("The realm id should not be null to compute the guid");
-    }
-    //noinspection ConstantConditions
-    if (app == null) {
-      throw new InternalException("The app should not be null to compute the guid");
     }
     Long appId = app.getLocalId();
     if (appId == null) {

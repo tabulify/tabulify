@@ -5,6 +5,7 @@ import graphql.schema.idl.RuntimeWiring;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
@@ -17,7 +18,7 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 public class ListGraphQLImpl {
 
 
-    private final ListProvider listProvider;
+  private final ListProvider listProvider;
 
   public ListGraphQLImpl(EraldyGraphQL eraldyGraphQL, RuntimeWiring.Builder typeWiringBuilder) {
 
@@ -27,6 +28,14 @@ public class ListGraphQLImpl {
      * Map type to function
      */
     typeWiringBuilder
+      /**
+       * Query
+       */
+      .type(
+        newTypeWiring("Query")
+          .dataFetcher("list", this::getList)
+          .build()
+      )
       /**
        * Mutation
        */
@@ -42,6 +51,11 @@ public class ListGraphQLImpl {
       );
   }
 
+  private Future<ListObject> getList(DataFetchingEnvironment dataFetchingEnvironment) {
+    String listGuid = dataFetchingEnvironment.getArgument("listGuid");
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return listProvider.getByGuidRequestHandler(listGuid, routingContext, AuthUserScope.LIST_GET);
+  }
 
 
   public Future<ListObject> createList(DataFetchingEnvironment dataFetchingEnvironment) {

@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 
 import java.util.Objects;
@@ -14,32 +15,32 @@ import java.util.Objects;
  * They may own Realms, App, List.
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class OrgaUser extends User  {
+public class OrgaUser extends User {
 
 
   protected Organization organization;
   private OrgaRole orgaRole;
 
   /**
-  * The empty constructor is
-  * needed for the construction of the pojo
-  * with the Jackson library
-  */
+   * The empty constructor is
+   * needed for the construction of the pojo
+   * with the Jackson library
+   */
   @SuppressWarnings("unused")
   public OrgaUser() {
   }
 
   /**
-  * @return organization
-  */
+   * @return organization
+   */
   @JsonProperty("organization")
   public Organization getOrganization() {
     return organization;
   }
 
   /**
-  * @param organization Set organization
-  */
+   * @param organization Set organization
+   */
   @SuppressWarnings("unused")
   public void setOrganization(Organization organization) {
     this.organization = organization;
@@ -57,7 +58,15 @@ public class OrgaUser extends User  {
     OrgaUser orgaUser = (OrgaUser) o;
     return super.equals(o) &&
 
-            Objects.equals(organization, orgaUser.organization);
+      Objects.equals(organization, orgaUser.organization);
+  }
+
+  @Override
+  public void setRealm(Realm realm) {
+    if (!realm.getLocalId().equals(EraldyModel.REALM_LOCAL_ID)) {
+      throw new RuntimeException("The realm of an orga user should be the Eraldy realm");
+    }
+    super.setRealm(realm);
   }
 
   @Override

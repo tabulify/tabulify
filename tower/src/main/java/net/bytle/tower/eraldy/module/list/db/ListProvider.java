@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.json.schema.ValidationException;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
@@ -310,114 +309,88 @@ public class ListProvider {
          * the {@link CompositeFuture#all(java.util.List) all function} does not
          * take other thing than a raw future
          */
-        List<Future<ListObject>> futurePublications = new ArrayList<>();
+        List<ListObject> listObjects = new ArrayList<>();
         for (Row row : rowSet) {
-          Future<ListObject> futurePublication = getListFromRow(row, null, realm);
-          futurePublications.add(futurePublication);
+          ListObject futurePublication = getListFromRow(row, realm, null);
+          listObjects.add(futurePublication);
         }
 
-        /**
-         * https://vertx.io/docs/vertx-core/java/#_future_coordination
-         * https://stackoverflow.com/questions/71936229/vertx-compositefuture-on-completion-of-all-futures
-         */
-        return Future
-          .all(futurePublications)
-          .onFailure(FailureStatic::failFutureWithTrace)
-          .map(CompositeFuture::<ListObject>list);
+        return Future.succeededFuture(listObjects);
       });
 
   }
 
-  private Future<ListObject> getListFromRow(Row row, App knownApp, Realm knownRealm) {
+  private ListObject getListFromRow(Row row, Realm realm, App app) {
 
+    assert realm != null : "The realm should not be null";
 
-    Realm appRealm = knownRealm;
-    if (appRealm == null && knownApp != null) {
-      appRealm = knownApp.getRealm();
-    }
-    Future<Realm> realmFuture = Future.succeededFuture(appRealm);
+    ListObject listObject = new ListObject();
+
+    /**
+     * Local Id
+     */
+    Long listId = row.getLong(LIST_ID_COLUMN);
+    listObject.setLocalId(listId);
+
+    /**
+     * App
+     */
     Long realmId = row.getLong(LIST_REALM_COLUMN);
-    if (appRealm == null) {
-      realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromLocalId(realmId);
-    } else {
-      if (!Objects.equals(appRealm.getLocalId(), realmId)) {
-        InternalException internalException = new InternalException("The realms between the row (" + realmId + ") and the known app or realm (" + appRealm.getLocalId() + ") are inconsistent ");
-        return Future.failedFuture(internalException);
-      }
+    if (!Objects.equals(realmId, realm.getLocalId())) {
+      throw new InternalException("The passed realm (" + realm.getLocalId() + ") and the database realm id (" + realmId + " differs");
     }
-    return realmFuture
-      .compose(realmResult -> {
+    if (app == null) {
+      app = new App();
+      app.setLocalId(row.getLong(LIST_APP_COLUMN));
+      app.setRealm(realm);
+      this.apiApp.getAppProvider().updateGuid(app);
+    }
+    listObject.setApp(app);
 
-        Long listId = row.getLong(LIST_ID_COLUMN);
+    /**
+     * Guid
+     */
+    this.updateGuid(listObject);
 
-        Future<App> appFuture = Future.succeededFuture(knownApp);
-        if (knownApp == null) {
-          Long publisherAppId = row.getLong(LIST_APP_COLUMN);
-          appFuture = this.apiApp.getAppProvider()
-            .getAppById(publisherAppId, realmResult);
-        }
-
-        Long ownerId = row.getLong(LIST_USER_OWNER_COLUMN);
-        Future<OrgaUser> ownerFuture = Future.succeededFuture();
-        if (ownerId != null) {
-          ownerFuture = apiApp.getOrganizationUserProvider()
-            .getOrganizationUserByLocalId(ownerId);
-        }
-
-        return Future
-          .all(appFuture, ownerFuture)
-          .recover(e -> Future.failedFuture(new InternalException("getListFromRow error " + e.getMessage(), e)))
-          .compose(mapper -> {
-
-
-            ListObject listObject = new ListObject();
-
-            String handleString = row.getString(LIST_HANDLE_COLUMN);
-            if (handleString != null) {
-              Handle listHandle = Handle.ofFailSafe(handleString);
-              listObject.setHandle(listHandle);
-            }
-
-            /**
-             * Identifier
-             * Realm is in the app
-             */
-            listObject.setLocalId(listId);
-            App appResult = mapper.resultAt(0);
-            if (appResult == null) {
-              throw ValidationException.create("The app was not found", "appId", null);
-            }
-            listObject.setApp(appResult);
-            this.updateGuid(listObject);
+    /**
+     * Owner
+     */
+    Long ownerId = row.getLong(LIST_USER_OWNER_COLUMN);
+    OrgaUser orgaUser = new OrgaUser();
+    listObject.setOwnerUser(orgaUser);
+    orgaUser.setLocalId(ownerId);
+    orgaUser.setRealm(this.apiApp.getEraldyModel().getRealm());
+    this.apiApp.getUserProvider().updateGuid(orgaUser);
 
 
-            /**
-             * Scalar
-             */
-            listObject.setName(row.getString(LIST_NAME_COLUMN));
+    /**
+     * Handle
+     */
+    String handleString = row.getString(LIST_HANDLE_COLUMN);
+    if (handleString != null) {
+      Handle listHandle = Handle.ofFailSafe(handleString);
+      listObject.setHandle(listHandle);
+    }
 
-            /**
-             * Analytics
-             */
-            listObject.setUserCount(Objects.requireNonNullElse(row.getLong(LIST_USER_COUNT_COLUMN), 0L));
-            listObject.setUserInCount(Objects.requireNonNullElse(row.getLong(LIST_USER_IN_COUNT_COLUMN), 0L));
-            listObject.setMailingCount(Objects.requireNonNullElse(row.getLong(LIST_MAILING_COUNT_COLUMN), 0L));
+    /**
+     * Scalar
+     */
+    listObject.setName(row.getString(LIST_NAME_COLUMN));
+
+    /**
+     * Analytics
+     */
+    listObject.setUserCount(Objects.requireNonNullElse(row.getLong(LIST_USER_COUNT_COLUMN), 0L));
+    listObject.setUserInCount(Objects.requireNonNullElse(row.getLong(LIST_USER_IN_COUNT_COLUMN), 0L));
+    listObject.setMailingCount(Objects.requireNonNullElse(row.getLong(LIST_MAILING_COUNT_COLUMN), 0L));
 
 
-            OrgaUser publisher = mapper.resultAt(1);
-            if (publisher != null) {
-              listObject.setOwnerUser(publisher);
-            }
-
-
-            URI memberListRegistrationPath = this.apiApp.getEraldyModel().getMemberListRegistrationPath(listObject);
-            listObject.setRegistrationUrl(memberListRegistrationPath);
-            return Future.succeededFuture(listObject);
-
-          });
-      });
-
+    /**
+     * Registration
+     */
+    URI memberListRegistrationPath = this.apiApp.getEraldyModel().getMemberListRegistrationPath(listObject);
+    listObject.setRegistrationUrl(memberListRegistrationPath);
+    return listObject;
 
   }
 
@@ -441,7 +414,7 @@ public class ListProvider {
         }
 
         Row row = userRows.iterator().next();
-        return getListFromRow(row, null, realm);
+        return Future.succeededFuture(getListFromRow(row, realm, null));
       });
   }
 
@@ -517,16 +490,12 @@ public class ListProvider {
          * the {@link CompositeFuture#all(java.util.List)}  all function } does not
          * take other thing than a raw future
          */
-        java.util.List<Future<ListObject>> futureLists = new ArrayList<>();
+        java.util.List<ListObject> listObjects = new ArrayList<>();
         for (Row row : listRows) {
-          Future<ListObject> futurePublication = getListFromRow(row, app, app.getRealm());
-          futureLists.add(futurePublication);
+          ListObject futurePublication = getListFromRow(row, app.getRealm(), app);
+          listObjects.add(futurePublication);
         }
-
-        return Future
-          .all(futureLists)
-          .onFailure(FailureStatic::failFutureWithTrace)
-          .map(CompositeFuture::<ListObject>list);
+        return Future.succeededFuture(listObjects);
       });
   }
 
@@ -553,7 +522,7 @@ public class ListProvider {
         }
 
         Row row = userRows.iterator().next();
-        return getListFromRow(row, null, realm);
+        return Future.succeededFuture(getListFromRow(row, realm, null));
       });
   }
 
@@ -722,7 +691,7 @@ public class ListProvider {
             .build()
           );
         }
-        return this.getListById(listGuidObject.getListLocalId(realm.getLocalId()), realm);
+        return this.getListById(listGuidObject.getListLocalId(), realm);
       })
       .compose(list -> {
         if (list == null) {
@@ -736,5 +705,22 @@ public class ListProvider {
           .updateList(list, listInputProps)
           .compose(Future::succeededFuture);
       });
+  }
+
+  public Future<ListObject> getByGuidRequestHandler(String listGuid, RoutingContext routingContext, AuthUserScope authUserScope) {
+    ListGuid listGuidObject;
+    try {
+      listGuidObject = this.apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listGuid);
+    } catch (CastException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .setMessage("The list guid (" + listGuid + ") is not valid")
+        .build()
+      );
+    }
+    return this.apiApp.getRealmProvider()
+      .getRealmByLocalIdWithAuthorizationCheck(listGuidObject.getRealmId(), authUserScope, routingContext)
+      .compose(realm -> this.getListById(listGuidObject.getListLocalId(), realm));
+
   }
 }
