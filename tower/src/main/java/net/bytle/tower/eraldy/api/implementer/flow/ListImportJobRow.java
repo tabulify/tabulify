@@ -114,7 +114,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
         }
         return this.listImportJob.getList()
           .compose(list -> userProvider
-            .getUserByEmail(emailInternetAddress, list.getRealm())
+            .getUserByEmail(emailInternetAddress, list.getApp().getRealm())
             .compose(userFromRegistry -> {
               if (userFromRegistry != null) {
                 if (this.listImportJob.getUserAction() == ListImportUserAction.UPDATE) {
@@ -148,7 +148,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                   }
                 }
                 this.userStatus = ListImportUserStatus.CREATED;
-                return userProvider.insertUserAndTrackEvent(list.getRealm(), userInputProps, FlowType.LIST_IMPORT);
+                return userProvider.insertUserAndTrackEvent(list.getApp().getRealm(), userInputProps, FlowType.LIST_IMPORT);
               }
             })
             .compose(

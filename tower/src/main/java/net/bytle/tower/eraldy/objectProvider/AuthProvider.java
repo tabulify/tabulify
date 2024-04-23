@@ -591,7 +591,7 @@ public class AuthProvider {
   }
 
   public Future<ListObject> checkListAuthorization(RoutingContext routingContext, ListObject list, AuthUserScope authUserScope) {
-    return this.checkRealmAuthorization(routingContext, list.getRealm(), authUserScope)
+    return this.checkRealmAuthorization(routingContext, list.getApp().getRealm(), authUserScope)
       .compose(realm -> Future.succeededFuture(list));
   }
 

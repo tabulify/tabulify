@@ -192,9 +192,9 @@ type Realm {
   """A short descriptive name"""
   name: String!
   """An unique human id"""
-  handle: String!
+  handle: String
   """The owner of the realm"""
-  ownerUser: OrganizationUser
+  ownerUser: OrganizationUser!
   """The number of user in the realm"""
   userCount: Int!
   """The number of app in the realm"""
@@ -214,7 +214,7 @@ type App {
   The owner of the App
   This user is shown in AuthN page as support user
   """
-  ownerUser: OrganizationUser
+  ownerUser: OrganizationUser!
   """The realm of the App"""
   realm: Realm!
 }
@@ -227,17 +227,17 @@ type List {
   """A unique handle"""
   handle: String
   """The owner of the list"""
-  ownerUser: OrganizationUser
+  ownerUser: OrganizationUser!
   """The application"""
   app: App!
   """The number of users that are still active"""
-  userInCount: Int
+  userInCount: Int!
   """The number of users in the list"""
-  userCount: Int
+  userCount: Int!
   """The number of mailing for the list"""
-  mailingCount: Int
+  mailingCount: Int!
   """The registration page URL for the list"""
-  registrationUrl: String
+  registrationUrl: String!
 }
 
 input ListInput {

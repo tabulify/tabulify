@@ -50,13 +50,17 @@ public class JacksonMapperManager extends TowerService {
     javaTimeModule.addSerializer(LocalDateTime.class, new JacksonLocalDateTimeSerializer());
     javaTimeModule.addDeserializer(LocalDateTime.class, new JacksonLocalDateTimeDeserializer());
 
+
+    simpleModule = new SimpleModule();
+
     /**
      * Jackson common type
      * Email Address, handle and time zone
      * (Must be before all data type as they make use of it)
+     * We don't add them to the simple module right away because we keep a list of them
+     * in case we need to serialize/deserialize manually
      */
-    simpleModule = new SimpleModule();
-    simpleModule
+    this
       .addDeserializer(EmailAddress.class, new JacksonEmailAddressDeserializer())
       .addSerializer(EmailAddress.class, new JacksonEmailAddressSerializer())
       .addSerializer(TimeZone.class, new JacksonTimeZoneSerializer())

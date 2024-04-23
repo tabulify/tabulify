@@ -108,7 +108,7 @@ public class ListProvider {
     if (listObject.getGuid() != null) {
       return;
     }
-    String guid = apiApp.createGuidFromRealmAndObjectId(LIST_GUID_PREFIX, listObject.getRealm(), listObject.getLocalId()).toString();
+    String guid = apiApp.createGuidFromRealmAndObjectId(LIST_GUID_PREFIX, listObject.getApp().getRealm(), listObject.getLocalId()).toString();
     listObject.setGuid(guid);
   }
 
@@ -181,15 +181,10 @@ public class ListProvider {
         jdbcInsert.addColumn(ListCols.ORGA_ID, user.getOrganization().getLocalId());
 
         /**
-         * Realm
-         */
-        newList.setRealm(app.getRealm());
-        jdbcInsert.addColumn(ListCols.REALM_ID, app.getRealm().getLocalId());
-
-        /**
-         * App
+         * Realm and App
          */
         newList.setApp(app);
+        jdbcInsert.addColumn(ListCols.REALM_ID, app.getRealm().getLocalId());
         jdbcInsert.addColumn(ListCols.APP_ID, app.getLocalId());
 
         /**
@@ -221,7 +216,7 @@ public class ListProvider {
                 return jdbcInsert.execute(sqlConnection);
               })
               .compose(rowSet -> {
-                Long realmId = newList.getRealm().getLocalId();
+                Long realmId = newList.getApp().getLocalId();
                 Long listId = newList.getLocalId();
                 final String createListRegistrationPartition =
                   "CREATE TABLE IF NOT EXISTS " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "_" + realmId + "_" + listId + "\n" +
@@ -244,7 +239,7 @@ public class ListProvider {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.listTable)
       .addPredicateColumn(ListCols.ID, listObject.getLocalId())
-      .addPredicateColumn(ListCols.REALM_ID, listObject.getRealm().getLocalId())
+      .addPredicateColumn(ListCols.REALM_ID, listObject.getApp().getRealm().getLocalId())
       .addUpdatedColumn(ListCols.MODIFICATION_TIME, DateTimeService.getNowInUtc());
 
     String newName = listInputProps.getName();
@@ -260,7 +255,7 @@ public class ListProvider {
     }
 
     OrgaUserGuid ownerGuidObject = listInputProps.getOwnerUserGuid();
-    if (ownerGuidObject != null && !Objects.equals(ownerGuidObject, listObject.getOwnerUser().getGuid()) ) {
+    if (ownerGuidObject != null && !Objects.equals(ownerGuidObject, listObject.getOwnerUser().getGuid())) {
 
       long userLocalId = ownerGuidObject.getLocalId();
       jdbcUpdate.addUpdatedColumn(ListCols.OWNER_USER_ID, userLocalId);
@@ -269,6 +264,7 @@ public class ListProvider {
       orgaUser.setLocalId(userLocalId);
       orgaUser.setRealm(this.apiApp.getEraldyModel().getRealm());
       listObject.setOwnerUser(orgaUser);
+
     }
 
     /**
@@ -354,7 +350,7 @@ public class ListProvider {
       .compose(realmResult -> {
 
         Long listId = row.getLong(LIST_ID_COLUMN);
-        Handle listHandle = Handle.ofFailSafe(row.getString(LIST_HANDLE_COLUMN));
+
         Future<App> appFuture = Future.succeededFuture(knownApp);
         if (knownApp == null) {
           Long publisherAppId = row.getLong(LIST_APP_COLUMN);
@@ -375,45 +371,50 @@ public class ListProvider {
           .compose(mapper -> {
 
 
-            ListObject listItem = new ListObject();
+            ListObject listObject = new ListObject();
+
+            String handleString = row.getString(LIST_HANDLE_COLUMN);
+            if(handleString!=null) {
+              Handle listHandle = Handle.ofFailSafe(handleString);
+              listObject.setHandle(listHandle);
+            }
 
             /**
              * Identifier
+             * Realm is in the app
              */
-            listItem.setLocalId(listId);
-            listItem.setRealm(realmResult);
-            this.updateGuid(listItem);
-            listItem.setHandle(listHandle);
-
-            /**
-             * Scalar
-             */
-            listItem.setName(row.getString(LIST_NAME_COLUMN));
-
-            /**
-             * Analytics
-             */
-            listItem.setUserCount(Objects.requireNonNullElse(row.getLong(LIST_USER_COUNT_COLUMN), 0L));
-            listItem.setUserInCount(Objects.requireNonNullElse(row.getLong(LIST_USER_IN_COUNT_COLUMN), 0L));
-            listItem.setMailingCount(Objects.requireNonNullElse(row.getLong(LIST_MAILING_COUNT_COLUMN), 0L));
-
-            /**
-             * Futures
-             */
+            listObject.setLocalId(listId);
             App appResult = mapper.resultAt(0);
             if (appResult == null) {
               throw ValidationException.create("The app was not found", "appId", null);
             }
-            listItem.setApp(appResult);
+            listObject.setApp(appResult);
+            this.updateGuid(listObject);
+
+
+
+            /**
+             * Scalar
+             */
+            listObject.setName(row.getString(LIST_NAME_COLUMN));
+
+            /**
+             * Analytics
+             */
+            listObject.setUserCount(Objects.requireNonNullElse(row.getLong(LIST_USER_COUNT_COLUMN), 0L));
+            listObject.setUserInCount(Objects.requireNonNullElse(row.getLong(LIST_USER_IN_COUNT_COLUMN), 0L));
+            listObject.setMailingCount(Objects.requireNonNullElse(row.getLong(LIST_MAILING_COUNT_COLUMN), 0L));
+
+
             OrgaUser publisher = mapper.resultAt(1);
             if (publisher != null) {
-              listItem.setOwnerUser(publisher);
+              listObject.setOwnerUser(publisher);
             }
 
-            listItem.setRealm(realmResult);
-            URI memberListRegistrationPath = this.apiApp.getEraldyModel().getMemberListRegistrationPath(listItem);
-            listItem.setRegistrationUrl(memberListRegistrationPath);
-            return Future.succeededFuture(listItem);
+
+            URI memberListRegistrationPath = this.apiApp.getEraldyModel().getMemberListRegistrationPath(listObject);
+            listObject.setRegistrationUrl(memberListRegistrationPath);
+            return Future.succeededFuture(listObject);
 
           });
       });
@@ -661,7 +662,7 @@ public class ListProvider {
   }
 
   public Future<Void> deleteByList(ListObject listObject) {
-    return deleteById(listObject.getLocalId(), listObject.getRealm());
+    return deleteById(listObject.getLocalId(), listObject.getApp().getRealm());
   }
 
 
@@ -687,7 +688,7 @@ public class ListProvider {
             .buildWithContextFailing(routingContext)
           );
         }
-        return this.apiApp.getAppProvider().getAppById(appGuidObject.getAppLocalId(realm.getLocalId()), realm);
+        return this.apiApp.getAppProvider().getAppById(appGuidObject.getAppLocalId(), realm);
       })
       .compose(app -> {
         if (app == null) {

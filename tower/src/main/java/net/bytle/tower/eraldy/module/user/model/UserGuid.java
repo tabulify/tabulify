@@ -35,7 +35,7 @@ public class UserGuid {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (!(o instanceof UserGuid)) return false;
     UserGuid userGuid = (UserGuid) o;
     return localId == userGuid.localId && realmId == userGuid.realmId;
   }

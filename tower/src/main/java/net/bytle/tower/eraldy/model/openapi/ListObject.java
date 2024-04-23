@@ -31,7 +31,6 @@ public class ListObject   {
 
   protected App app;
 
-  protected Realm realm;
 
   protected URI registrationUrl;
 
@@ -177,22 +176,6 @@ public class ListObject   {
   @SuppressWarnings("unused")
   public void setApp(App app) {
     this.app = app;
-  }
-
-  /**
-  * @return realm
-  */
-  @JsonProperty("realm")
-  public Realm getRealm() {
-    return realm;
-  }
-
-  /**
-  * @param realm Set realm
-  */
-  @SuppressWarnings("unused")
-  public void setRealm(Realm realm) {
-    this.realm = realm;
   }
 
   /**

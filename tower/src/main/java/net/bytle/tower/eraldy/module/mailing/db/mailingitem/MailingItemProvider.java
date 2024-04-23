@@ -77,7 +77,7 @@ public class MailingItemProvider {
           .setOperator(JdbcComparisonOperator.NOT_EQUAL)
           .setOrNull(true)
       )
-      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getEmailRecipientList().getRealm().getLocalId())
+      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getEmailRecipientList().getApp().getRealm().getLocalId())
       .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getLocalId())
       .addLimit(mailingJob.getItemToExecuteCount());
 

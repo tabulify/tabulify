@@ -20,16 +20,19 @@ import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
+import net.bytle.type.Handle;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.*;
 import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -259,8 +262,9 @@ public class UserRegistrationFlow extends WebFlowAbs {
          * (Jwt Claims are used to pass analytics data to the event)
          */
         App requestingApp = this.getApp().getAppProvider().getRequestingApp(ctx);
-        jwtClaims.setAppGuid(requestingApp.getGuid());
-        jwtClaims.setAppHandle(requestingApp.getHandle());
+        JacksonMapperManager jacksonMapper = this.getApp().getHttpServer().getServer().getJacksonMapperManager();
+        jwtClaims.setAppGuid(jacksonMapper.getSerializer(AppGuid.class).serialize(requestingApp.getGuid()));
+        jwtClaims.setAppHandle(jacksonMapper.getSerializer(Handle.class).serialize(requestingApp.getHandle()));
 
         /**
          * Insert and login

@@ -33,6 +33,7 @@ import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import net.bytle.vertx.db.JdbcClient;
 import net.bytle.vertx.db.JdbcSchema;
 import net.bytle.vertx.graphql.GraphQLService;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 import net.bytle.vertx.resilience.EmailAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -90,6 +91,7 @@ public class EraldyApiApp extends TowerApp {
   private final FileProvider fileProvider;
   private final MailingJobProvider mailingJobProvider;
   private final MailingItemProvider mailingRowProvider;
+  private final JacksonMapperManager jackson;
 
 
   public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
@@ -157,8 +159,11 @@ public class EraldyApiApp extends TowerApp {
       .setJavaPackageForClassGeneration("net.bytle.jobs")
       .build();
 
-
-
+    /**
+     * Jackson (De/Ser)
+     * (just an alias because it's used pretty everywhere)
+     */
+    this.jackson = httpServer.getServer().getJacksonMapperManager();
 
     /**
      * DataBase Provider/Manager
@@ -510,4 +515,7 @@ public class EraldyApiApp extends TowerApp {
     return this.mailingRowProvider;
   }
 
+  public JacksonMapperManager getJackson() {
+    return this.jackson;
+  }
 }

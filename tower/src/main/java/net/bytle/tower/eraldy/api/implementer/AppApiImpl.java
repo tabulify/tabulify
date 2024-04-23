@@ -19,6 +19,7 @@ import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
+import net.bytle.type.Handle;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
@@ -118,9 +119,21 @@ public class AppApiImpl implements AppApi {
       }).compose(realm -> {
         Future<App> futureApp;
         if (finalAppGuid != null) {
-          futureApp = this.apiApp.getAppProvider().getAppById(finalAppGuid.getAppLocalId(realm.getLocalId()), realm);
+          futureApp = this.apiApp.getAppProvider().getAppById(finalAppGuid.getAppLocalId(), realm);
         } else {
-          futureApp = this.apiApp.getAppProvider().getAppByHandle(appIdentifier, realm);
+            Handle handleIdentifier;
+            try {
+                handleIdentifier = this.apiApp.getHttpServer().getServer().getJacksonMapperManager().getDeserializer(Handle.class).deserialize(appIdentifier);
+            } catch (CastException e) {
+              return Future.failedFuture(
+                TowerFailureException
+                  .builder()
+                  .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+                  .setMessage("The app identifier is not valid handle (" + appIdentifier + ")")
+                  .buildWithContextFailing(routingContext)
+              );
+            }
+            futureApp = this.apiApp.getAppProvider().getAppByHandle(handleIdentifier, realm);
         }
         return futureApp;
       })

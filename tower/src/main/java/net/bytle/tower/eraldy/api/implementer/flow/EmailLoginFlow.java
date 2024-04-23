@@ -19,7 +19,9 @@ import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
+import net.bytle.type.Handle;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthJwtClaims;
@@ -28,6 +30,7 @@ import net.bytle.vertx.auth.OAuthInternalSession;
 import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +85,7 @@ public class EmailLoginFlow extends WebFlowAbs {
 
     App requestingApp = this.getApp().getAppProvider().getRequestingApp(routingContext);
 
+    JacksonMapperManager jackson = this.getApp().getHttpServer().getServer().getJacksonMapperManager();
     AuthJwtClaims jwtClaims = getApp()
       .getAuthProvider()
       .toAuthUserBuilder(modelUserToLogin)
@@ -92,8 +96,8 @@ public class EmailLoginFlow extends WebFlowAbs {
       .build()
       .toJwtClaims()
       .addRequestClaims(routingContext)
-      .setAppGuid(requestingApp.getGuid())
-      .setAppHandle(requestingApp.getHandle());
+      .setAppGuid(jackson.getSerializer(AppGuid.class).serialize(requestingApp.getGuid()))
+      .setAppHandle(jackson.getSerializer(Handle.class).serialize(requestingApp.getHandle()));
 
 
     /**

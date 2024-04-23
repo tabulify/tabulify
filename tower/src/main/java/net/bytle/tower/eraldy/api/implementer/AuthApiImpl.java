@@ -12,12 +12,15 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
+import net.bytle.type.Handle;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.OAuthAccessTokenResponse;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.*;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 
 public class AuthApiImpl implements AuthApi {
 
@@ -95,10 +98,10 @@ public class AuthApiImpl implements AuthApi {
       .compose(listItem -> {
 
         App requestingApp = this.apiApp.getAppProvider().getRequestingApp(routingContext);
-        String requestingAppGuid = requestingApp.getGuid();
+        AppGuid requestingAppGuid = requestingApp.getGuid();
         if (listItem != null) {
 
-          String listAppGuid = listItem.getApp().getGuid();
+          AppGuid listAppGuid = listItem.getApp().getGuid();
           if (!requestingAppGuid.equals(listAppGuid)) {
             return Future.failedFuture(
               TowerFailureException.builder()
@@ -116,6 +119,7 @@ public class AuthApiImpl implements AuthApi {
           );
         }
 
+        JacksonMapperManager jacksonManager = this.apiApp.getJackson();
         /**
          * OAuth is an independent package,
          * we need to set all analytics data
@@ -124,8 +128,8 @@ public class AuthApiImpl implements AuthApi {
           .createEmpty()
           .setListGuid(finalListGuid)
           .setClientId(finalClientId)
-          .setAppGuid(requestingAppGuid)
-          .setAppHandle(requestingApp.getHandle())
+          .setAppGuid(jacksonManager.getSerializer(AppGuid.class).serialize(requestingAppGuid))
+          .setAppHandle(jacksonManager.getSerializer(Handle.class).serialize(requestingApp.getHandle()))
           .setRealmIdentifier(requestingApp.getRealm().getGuid())
           .setRealmHandle(requestingApp.getRealm().getHandle())
           .setOrganisationGuid(requestingApp.getRealm().getOrganization().getGuid())

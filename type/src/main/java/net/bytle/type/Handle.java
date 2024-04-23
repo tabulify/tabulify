@@ -14,13 +14,21 @@ public class Handle {
   private final String handle;
 
   public Handle(String s) throws HandleCastException {
+    /**
+     * The handle object should be null, not the value
+     */
     if (s == null) {
-      handle = null;
-      return;
+      throw new HandleCastException("A handle cannot be null");
     }
+    /**
+     * Forms may send empty string
+     * We don't allow as it means that this is also null
+     * <p>
+     * Putting the value to null does not help as it's
+     * used to select rows. You don't want to select all null value.
+     */
     if (s.isBlank()) {
-      handle = null;
-      return;
+      throw new HandleCastException("A handle cannot be the empty string or contains only whitespace");
     }
     try {
       handle = DnsName.create(s).toStringWithoutRoot();
@@ -41,7 +49,7 @@ public class Handle {
       }
   }
 
-  public String getValueOrNull() {
+  public String getValue() {
     return handle;
   }
 
@@ -57,4 +65,6 @@ public class Handle {
   public int hashCode() {
     return Objects.hash(handle);
   }
+
+
 }

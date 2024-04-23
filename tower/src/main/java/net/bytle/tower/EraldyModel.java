@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.organization.inputs.OrgaUserInputProps;
 import net.bytle.tower.eraldy.module.organization.inputs.OrganizationInputProps;
 import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
@@ -11,10 +12,12 @@ import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
+import net.bytle.type.Handle;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.TowerApexDomain;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -60,13 +63,16 @@ public class EraldyModel {
    * This uri is where the users can register publicly to the list
    */
   private final String uriRegistrationPathTemplate;
+  private final JacksonMapperManager jacksonManager;
 
   Realm eraldyRealm;
   private AuthClient memberClient;
 
 
   public EraldyModel(EraldyApiApp apiApp) throws ConfigIllegalException {
+
     this.apiApp = apiApp;
+    this.jacksonManager = apiApp.getHttpServer().getServer().getJacksonMapperManager();
     ConfigAccessor configAccessor = apiApp.getHttpServer().getServer().getConfigAccessor();
     String interactUri = configAccessor.getString(INTERACT_APP_URI_CONF, "https://interact." + apiApp.getApexDomain().getUrlAuthority());
     try {
@@ -75,6 +81,7 @@ public class EraldyModel {
     } catch (Exception e) {
       throw new ConfigIllegalException("The member app value (" + interactUri + ") of the conf (" + INTERACT_APP_URI_CONF + ") is not a valid URI", e);
     }
+
     /**
      * For redirect
      */
@@ -85,12 +92,17 @@ public class EraldyModel {
     } catch (Exception e) {
       throw new ConfigIllegalException("The member app value (" + memberUri + ") of the conf (" + MEMBER_APP_URI_CONF + ") is not a valid URI", e);
     }
+
+
+    /**
+     * List registration URL
+     */
     this.uriRegistrationPathTemplate = configAccessor.getString(MEMBER_REGISTRATION_URL, memberUri + "/app/%s/list/%s/registration");
     try {
       String listGuid = "lis-yolo";
-      String appGuid = "app-youlou";
-      URI uri = getMemberListRegistrationPath(appGuid, listGuid);
-      if (!uri.getPath().contains(listGuid) || !uri.getPath().contains(appGuid)) {
+      String appGuidString = "app-youlou";
+      URI uri = getMemberListRegistrationPath(appGuidString, listGuid);
+      if (!uri.getPath().contains(listGuid) || !uri.getPath().contains(appGuidString)) {
         throw new ConfigIllegalException("The member registration url value (" + uriRegistrationPathTemplate + ") of the conf (" + MEMBER_REGISTRATION_URL + ") is not a valid URI template because it seems to not include 2 %s placeholder");
       }
     } catch (URISyntaxException e) {
@@ -111,9 +123,11 @@ public class EraldyModel {
   }
 
   public Future<Void> mount() {
+
     return deferredConnectionMount()
       .compose(v -> connectionMount());
   }
+
 
   /**
    * This is not a transaction
@@ -129,7 +143,7 @@ public class EraldyModel {
     App memberApp = new App();
     memberApp.setLocalId(APP_MEMBER_ID);
     memberApp.setName("Members");
-    memberApp.setHandle("members");
+    memberApp.setHandle(this.jacksonManager.getDeserializer(Handle.class).deserializeFailSafe("members"));
     memberApp.setHome(URI.create("https://eraldy.com"));
     memberApp.setOwnerUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
     memberApp.setRealm(this.eraldyRealm);
@@ -150,7 +164,7 @@ public class EraldyModel {
         App interactApp = new App();
         interactApp.setLocalId(APP_INTERACT_ID);
         interactApp.setName("Interact");
-        interactApp.setHandle("interact");
+        interactApp.setHandle(this.jacksonManager.getDeserializer(Handle.class).deserializeFailSafe("interact"));
         interactApp.setHome(URI.create("https://eraldy.com"));
         interactApp.setOwnerUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
         interactApp.setRealm(this.eraldyRealm);
@@ -343,20 +357,22 @@ public class EraldyModel {
 
   /**
    * A private utility function used at build time to test if the URI is valid.
-   * That's why the signature does not have the {@link ListObject} object but 2 strings
+   * That's why the signature does not have object such as the {@link ListObject} object but 2 strings
    * <p>
    * The public function {@link #getMemberListRegistrationPath(ListObject)} does have a {@link ListObject}
    * as signature
    */
-  private URI getMemberListRegistrationPath(String appGuid, String listGuid) throws URISyntaxException {
+  private URI getMemberListRegistrationPath(String appGuidHash, String listGuid) throws URISyntaxException {
 
-    return new URI(String.format(this.uriRegistrationPathTemplate, appGuid, listGuid));
+
+    return new URI(String.format(this.uriRegistrationPathTemplate, appGuidHash, listGuid));
 
   }
 
   public URI getMemberListRegistrationPath(ListObject listObject) {
+    String appGuidHash = this.jacksonManager.getSerializer(AppGuid.class).serialize(listObject.getApp().getGuid());
     try {
-      return getMemberListRegistrationPath(listObject.getApp().getGuid(), listObject.getGuid());
+      return getMemberListRegistrationPath(appGuidHash, listObject.getGuid());
     } catch (URISyntaxException e) {
       throw new InternalException("The URI should have been tested at build time of Eraldy Model", e);
     }

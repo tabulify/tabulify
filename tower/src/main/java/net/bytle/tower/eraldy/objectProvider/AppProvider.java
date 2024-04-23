@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.json.schema.ValidationException;
 import io.vertx.sqlclient.*;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalStructure;
@@ -18,11 +17,13 @@ import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.app.jackson.JacksonAppGuidDeserializer;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
+import net.bytle.type.Handle;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.JdbcSchemaManager;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -164,8 +165,10 @@ public class AppProvider {
     if (appId == null) {
       throw new InternalException("The app id should not be null to compute the guid");
     }
-    String hashGuid = this.apiApp.createGuidFromRealmAndObjectId(APP_GUID_PREFIX, app.getRealm(), app.getLocalId()).toString();
-    app.setGuid(hashGuid);
+    AppGuid appGuid = new AppGuid();
+    appGuid.setRealmId(app.getRealm().getLocalId());
+    appGuid.setLocalId(app.getLocalId());
+    app.setGuid(appGuid);
   }
 
   /**
@@ -298,7 +301,7 @@ public class AppProvider {
           app.getLocalId())
         );
     } else {
-      String appHandle = app.getHandle();
+      Handle appHandle = app.getHandle();
       if (appHandle == null) {
         String failureMessage = "An id, or handle should be given to check the existence of an app";
         InternalException internalException = new InternalException(failureMessage);
@@ -384,7 +387,7 @@ public class AppProvider {
       .compose(compositeFuture -> {
         OrgaUser orgaUser = compositeFuture.resultAt(0);
         Realm realmResult = compositeFuture.resultAt(1);
-        String uri = row.getString(APP_HANDLE_COLUMN);
+
 
         App app = new App();
 
@@ -395,7 +398,18 @@ public class AppProvider {
         app.setLocalId(appId);
         app.setRealm(realmResult);
         this.updateGuid(app);
-        app.setHandle(uri);
+
+        String handleString = row.getString(APP_HANDLE_COLUMN);
+        if (handleString != null) {
+          Handle handle;
+          try {
+            handle = this.apiApp.getHttpServer().getServer().getJacksonMapperManager().getDeserializer(Handle.class).deserialize(handleString);
+          } catch (CastException e) {
+            throw new InternalException("The handle string value from the database (" + handleString + ") is not valid", e);
+          }
+          app.setHandle(handle);
+        }
+
 
         /**
          * Scalars
@@ -422,7 +436,7 @@ public class AppProvider {
   }
 
 
-  public Future<App> getAppByHandle(String handle, Realm realm) {
+  public Future<App> getAppByHandle(Handle handle, Realm realm) {
 
     return this.jdbcPool.withConnection(sqlConnection -> getAppByHandle(handle, realm, sqlConnection));
   }
@@ -435,10 +449,44 @@ public class AppProvider {
    */
   public Future<App> postApp(AppPostBody appPostBody, Realm realm) {
 
-
+    JacksonMapperManager jacksonMapperManager = this.apiApp.getHttpServer().getServer().getJacksonMapperManager();
     App app = new App();
-    app.setGuid(appPostBody.getAppGuid());
-    app.setHandle(appPostBody.getAppHandle());
+
+    /**
+     * App Guid
+     */
+    AppGuid appGuid;
+    try {
+      appGuid = jacksonMapperManager.getDeserializer(AppGuid.class).deserialize(appPostBody.getAppGuid());
+    } catch (CastException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setMessage("The App Guid (" + appPostBody.getAppGuid() + ") is not valid. " + e.getMessage())
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .setCauseException(e)
+        .build()
+      );
+    }
+    app.setGuid(appGuid);
+
+    /**
+     * Handle
+     */
+    String appHandle = appPostBody.getAppHandle();
+    if (appHandle != null) {
+      Handle handle;
+      try {
+        handle = jacksonMapperManager.getDeserializer(Handle.class).deserialize(appHandle);
+      } catch (CastException e) {
+        return Future.failedFuture(TowerFailureException.builder()
+          .setMessage("The App Handle (" + appHandle + ") is not valid. " + e.getMessage())
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setCauseException(e)
+          .build()
+        );
+      }
+      app.setHandle(handle);
+    }
+
     URI appUri = appPostBody.getAppHome();
     try {
       validateDomainUri(appUri);
@@ -458,18 +506,10 @@ public class AppProvider {
     app.setPrimaryColor(appPostBody.getAppPrimaryColor());
     app.setTerms(appPostBody.getAppTerms());
     app.setRealm(realm);
-    String appGuid = app.getGuid();
 
     if (appGuid != null) {
       app.setGuid(appGuid);
-      long appId;
-      try {
-        appId = this.getGuidFromHash(appGuid)
-          .getAppLocalId(realm.getLocalId());
-      } catch (CastException e) {
-        throw ValidationException.create("The app guid is not valid", "appGuid", appGuid);
-      }
-      app.setLocalId(appId);
+      app.setLocalId(appGuid.getAppLocalId());
     }
     /**
      * User
@@ -512,7 +552,7 @@ public class AppProvider {
     }
     return realmFuture
       .compose(realmRes -> {
-        long appId = guid.getAppLocalId(realmRes.getLocalId());
+        long appId = guid.getAppLocalId();
         return getAppById(appId, realmRes);
       });
   }
@@ -533,8 +573,8 @@ public class AppProvider {
     if (app.getLocalId() != null) {
       selectApp = this.getAppById(app.getLocalId(), app.getRealm());
     } else {
-      String handle = app.getHandle();
-      if (handle == null) {
+      Handle handle = app.getHandle();
+      if (handle == null || handle.getValue() == null) {
         return Future.failedFuture(new InternalException("The app to getsert should have an identifier (local id, or handle)"));
       }
       selectApp = this.getAppByHandle(handle, app.getRealm());
@@ -554,13 +594,13 @@ public class AppProvider {
    * @param sqlConnection - a connection with or without transaction
    * @return the app or null
    */
-  private Future<App> getAppByHandle(String appHandle, Realm realm, SqlConnection sqlConnection) {
+  private Future<App> getAppByHandle(Handle appHandle, Realm realm, SqlConnection sqlConnection) {
     return sqlConnection.preparedQuery(
         "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + APP_TABLE_NAME
           + " WHERE " + APP_HANDLE_COLUMN + " = $1 "
           + "and " + APP_REALM_ID_COLUMN + " = $2 ")
       .execute(Tuple.of(
-        appHandle,
+        appHandle.getValue(),
         realm.getLocalId()
       ))
       .onFailure(FailureStatic::failFutureWithTrace)
@@ -639,7 +679,18 @@ public class AppProvider {
       AppGuid guid = this.getGuidFromHash(appIdentifier);
       return this.getAppByGuid(guid, realm);
     } catch (CastException e) {
-      return getAppByHandle(appIdentifier, realm);
+      Handle handle;
+      try {
+        handle = this.apiApp.getHttpServer().getServer().getJacksonMapperManager().getDeserializer(Handle.class).deserialize(appIdentifier);
+      } catch (CastException ex) {
+        return Future.failedFuture(TowerFailureException.builder()
+          .setMessage("The appIdentifier (" + appIdentifier + ") is not a valid guid or handle. " + e.getMessage())
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setCauseException(e)
+          .build()
+        );
+      }
+      return getAppByHandle(handle, realm);
     }
 
   }

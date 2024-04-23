@@ -17,17 +17,20 @@ import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.graphql.pojo.input.ListUserInputProps;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
+import net.bytle.type.Handle;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.*;
 import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -139,11 +142,11 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
     return getApp().getListProvider()
       .getListByGuidHashIdentifier(listGuidHash)
-      .compose(listItem -> {
+      .compose(listObject -> {
 
         User user = new User();
         user.setEmailAddress(listUserPostBody.getUserEmail());
-        Realm listRealm = listItem.getRealm();
+        Realm listRealm = listObject.getApp().getRealm();
         user.setRealm(listRealm);
 
         AuthJwtClaims jwtClaims = getApp().getAuthProvider()
@@ -152,7 +155,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .setListGuid(listGuidHash)
           .setRedirectUri(listUserPostBody.getRedirectUri());
 
-        User listOwnerUser = ListProvider.getOwnerUser(listItem);
+        User listOwnerUser = ListProvider.getOwnerUser(listObject);
         SmtpSender sender = UsersUtil.toSenderUser(listOwnerUser);
         String subscriberRecipientName;
         try {
@@ -177,9 +180,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .getUserListRegistrationFlow()
           .getCallback()
           .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, subscriberRecipientName, jwtClaims, clientCallbackQueryProperties)
-          .setPreview("Validate your registration to the list `" + listItem.getName() + "`")
+          .setPreview("Validate your registration to the list `" + listObject.getName() + "`")
           .addIntroParagraph(
-            "I just got a subscription request to the list <mark>" + listItem.getName() + "</mark> with your email." +
+            "I just got a subscription request to the list <mark>" + listObject.getName() + "</mark> with your email." +
               "<br>For bot and consent protections, we check that it was really you asking.")
 
           .setActionName("Click on this link to validate your registration.")
@@ -195,7 +198,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .compose(html -> {
             String text = letter.generatePlainText();
 
-            String mailSubject = "Registration validation to the list `" + listItem.getName() + "`";
+            String mailSubject = "Registration validation to the list `" + listObject.getName() + "`";
             TowerSmtpClientService towerSmtpClientService = this.getApp().getHttpServer().getServer().getSmtpClient();
 
             String ownerEmailAddressInRfcFormat;
@@ -240,7 +243,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
               .compose(mailResult -> {
 
                 // Send feedback to the list owner
-                String title = "The user (" + subscriberAddressWithName + ") received a validation email for the list (" + listItem.getHandle() + ").";
+                String title = "The user (" + subscriberAddressWithName + ") received a validation email for the list (" + listObject.getHandle() + ").";
                 MailMessage ownerFeedbackEmail = towerSmtpClientService
                   .createVertxMailMessage()
                   .setTo(ownerEmailAddressInRfcFormat)
@@ -347,8 +350,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
               /**
                * Analytics Claims
                */
-              jwtClaims.setAppGuid(listUser.getList().getApp().getGuid());
-              jwtClaims.setAppHandle(listUser.getList().getApp().getHandle());
+              JacksonMapperManager jacksonMapper = this.getApp().getHttpServer().getServer().getJacksonMapperManager();
+              jwtClaims.setAppGuid(jacksonMapper.getSerializer(AppGuid.class).serialize(listUser.getList().getApp().getGuid()));
+              jwtClaims.setAppHandle(jacksonMapper.getSerializer(Handle.class).serialize(listUser.getList().getApp().getHandle()));
 
               /**
                * Authenticate

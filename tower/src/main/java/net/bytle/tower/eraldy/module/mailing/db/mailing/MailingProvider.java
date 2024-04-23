@@ -153,7 +153,7 @@ public class MailingProvider {
         jdbcInsert.addColumn(MailingCols.CREATION_TIME, mailing.getCreationTime());
 
         // realm
-        mailing.setRealm(list.getRealm());
+        mailing.setRealm(list.getApp().getRealm());
         jdbcInsert.addColumn(MailingCols.REALM_ID, mailing.getRealm().getLocalId());
 
         // name
@@ -177,7 +177,7 @@ public class MailingProvider {
         return jdbcPool
           .withTransaction(sqlConnection ->
             this.apiApp.getRealmSequenceProvider()
-              .getNextIdForTableAndRealm(sqlConnection, list.getRealm(), this.mailingTable)
+              .getNextIdForTableAndRealm(sqlConnection, list.getApp().getRealm(), this.mailingTable)
               .compose(nextId -> {
 
                 // local id
@@ -265,7 +265,9 @@ public class MailingProvider {
     Long listId = row.getLong(MailingCols.EMAIL_RCPT_LIST_ID);
     ListObject recipientList = new ListObject();
     recipientList.setLocalId(listId);
-    recipientList.setRealm(realm);
+    App app = new App();
+    app.setRealm(realm);
+    recipientList.setApp(app);
     mailing.setEmailRecipientList(recipientList);
 
     /**
@@ -521,7 +523,7 @@ public class MailingProvider {
       return Future.succeededFuture(listObject);
     }
     return this.apiApp.getListProvider()
-      .getListById(listObject.getLocalId(), listObject.getRealm());
+      .getListById(listObject.getLocalId(), listObject.getApp().getRealm());
   }
 
 
@@ -542,7 +544,7 @@ public class MailingProvider {
           .preparedQuery(this.mailingItemsSqlInsertion)
           .execute(Tuple.of(
             ListUserStatus.OK.getValue(),
-            mailing.getEmailRecipientList().getRealm().getLocalId(),
+            mailing.getEmailRecipientList().getApp().getRealm().getLocalId(),
             mailing.getLocalId()
           ))
           .recover(e -> Future.failedFuture(new InternalException("Mailing Job Rows insertion err error: Sql Error " + e.getMessage(), e)))

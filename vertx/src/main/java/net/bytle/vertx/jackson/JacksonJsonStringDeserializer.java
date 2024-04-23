@@ -14,4 +14,15 @@ public abstract class JacksonJsonStringDeserializer<T> extends JsonDeserializer<
    */
   public abstract T deserialize(String value) throws CastException;
 
+  /**
+   * Fail when the data is a literal or come from the database
+   */
+  public T deserializeFailSafe(String value) {
+    try {
+      return deserialize(value);
+    } catch (CastException e) {
+      throw new RuntimeException("The value (" + value + ") could not be deserialized", e);
+    }
+  }
+
 }

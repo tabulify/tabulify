@@ -102,7 +102,7 @@ public class ListUserProvider {
       return;
     }
     String guid = this.getGuidObjectFromLocalIds(
-        listUser.getList().getRealm(),
+        listUser.getList().getApp().getRealm(),
         listUser.getList().getLocalId(),
         listUser.getUser().getLocalId()
       )
@@ -145,7 +145,7 @@ public class ListUserProvider {
       .execute(Tuple.of(
         listUser.getStatus().getValue(),
         DateTimeService.getNowInUtc(),
-        listUser.getList().getRealm().getLocalId(),
+        listUser.getList().getApp().getRealm().getLocalId(),
         listUser.getList().getLocalId(),
         listUser.getUser().getLocalId()
       ))
@@ -181,7 +181,7 @@ public class ListUserProvider {
     return jdbcPool
       .preparedQuery(sql)
       .execute(Tuple.of(
-        listUser.getList().getRealm().getLocalId(),
+        listUser.getList().getApp().getRealm().getLocalId(),
         listUser.getList().getLocalId(),
         listUser.getUser().getLocalId(),
         listUser.getInSourceId().getValue(),
@@ -265,10 +265,10 @@ public class ListUserProvider {
   }
 
   public Future<ListUser> getListUserByListAndUser(ListObject listObject, User user) {
-    if (!Objects.equals(listObject.getRealm().getLocalId(), user.getRealm().getLocalId())) {
+    if (!Objects.equals(listObject.getApp().getRealm().getLocalId(), user.getRealm().getLocalId())) {
       throw new InternalException("The realm should be the same between a list and a user for a registration");
     }
-    return getListUserByLocalIds(listObject.getLocalId(), user.getLocalId(), listObject.getRealm().getLocalId());
+    return getListUserByLocalIds(listObject.getLocalId(), user.getLocalId(), listObject.getApp().getRealm().getLocalId());
   }
 
   private Future<ListUser> getListUserByLocalIds(Long listId, Long userId, Long realmId) {

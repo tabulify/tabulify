@@ -2,6 +2,8 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.type.Handle;
 
 import java.net.URI;
 import java.util.Objects;
@@ -16,9 +18,9 @@ public class App   {
 
   protected Long localId;
 
-  protected String guid;
+  protected AppGuid guid;
 
-  protected String handle;
+  protected Handle handle;
 
   protected String name;
 
@@ -67,7 +69,7 @@ public class App   {
   * @return guid The global app id (realm id + local app id)
   */
   @JsonProperty("guid")
-  public String getGuid() {
+  public AppGuid getGuid() {
     return guid;
   }
 
@@ -75,7 +77,7 @@ public class App   {
   * @param guid The global app id (realm id + local app id)
   */
   @SuppressWarnings("unused")
-  public void setGuid(String guid) {
+  public void setGuid(AppGuid guid) {
     this.guid = guid;
   }
 
@@ -83,7 +85,7 @@ public class App   {
   * @return handle The handle of the app. The handle is unique for all apps on the realm. It follows the DNS name constraint
   */
   @JsonProperty("handle")
-  public String getHandle() {
+  public Handle getHandle() {
     return handle;
   }
 
@@ -91,7 +93,7 @@ public class App   {
   * @param handle The handle of the app. The handle is unique for all apps on the realm. It follows the DNS name constraint
   */
   @SuppressWarnings("unused")
-  public void setHandle(String handle) {
+  public void setHandle(Handle handle) {
     this.handle = handle;
   }
 

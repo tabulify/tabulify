@@ -50,6 +50,7 @@ public class JacksonOrgaUserGuidDeserializer extends JacksonJsonStringDeserializ
     }
     OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
     orgaUserGuid.setLocalId(userGuid.validateRealmAndGetFirstObjectId(realmId));
+    orgaUserGuid.setRealmId(EraldyModel.REALM_LOCAL_ID);
     return orgaUserGuid;
   }
 

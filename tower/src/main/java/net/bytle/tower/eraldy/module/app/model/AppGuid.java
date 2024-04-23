@@ -1,9 +1,5 @@
 package net.bytle.tower.eraldy.module.app.model;
 
-import net.bytle.exception.InternalException;
-
-import java.util.Objects;
-
 public class AppGuid {
 
 
@@ -18,10 +14,8 @@ public class AppGuid {
   }
 
 
-  public long getAppLocalId(Long realmId) {
-    if(!Objects.equals(this.realmId, realmId)){
-      throw new InternalException("The realm ids does not match");
-    }
+  public long getAppLocalId() {
+
     return this.localId;
   }
 
