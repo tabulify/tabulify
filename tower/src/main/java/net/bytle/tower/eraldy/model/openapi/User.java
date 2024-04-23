@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import net.bytle.tower.eraldy.module.user.model.UserStatus;
 import net.bytle.type.EmailAddress;
 
@@ -18,7 +19,7 @@ import java.util.TimeZone;
 public class User {
 
 
-  protected String guid;
+  protected UserGuid guid;
 
   protected Long localId;
 
@@ -66,7 +67,7 @@ public class User {
    * @return guid It is the global identifier * a string representation of realm id + user local id * never changes. It's the public id that: * you can see in the url * send to external application such as Analytics SAAS provider.  The database id (ie realm id + user local id) is not public.
    */
   @JsonProperty("guid")
-  public String getGuid() {
+  public UserGuid getGuid() {
     return guid;
   }
 
@@ -74,7 +75,7 @@ public class User {
    * @param guid It is the global identifier * a string representation of realm id + user local id * never changes. It's the public id that: * you can see in the url * send to external application such as Analytics SAAS provider.  The database id (ie realm id + user local id) is not public.
    */
   @SuppressWarnings("unused")
-  public void setGuid(String guid) {
+  public void setGuid(UserGuid guid) {
     this.guid = guid;
   }
 

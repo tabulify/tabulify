@@ -260,7 +260,7 @@ public class ListProvider {
     }
 
     OrgaUserGuid ownerGuidObject = listInputProps.getOwnerUserGuid();
-    if (ownerGuidObject != null) {
+    if (ownerGuidObject != null && !Objects.equals(ownerGuidObject, listObject.getOwnerUser().getGuid()) ) {
 
       long userLocalId = ownerGuidObject.getLocalId();
       jdbcUpdate.addUpdatedColumn(ListCols.OWNER_USER_ID, userLocalId);

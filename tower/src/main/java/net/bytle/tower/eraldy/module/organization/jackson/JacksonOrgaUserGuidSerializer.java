@@ -12,12 +12,12 @@ import net.bytle.vertx.HashId;
 
 import java.io.IOException;
 
-public class JacksonOrgaUserSerializer extends JsonSerializer<OrgaUserGuid> {
+public class JacksonOrgaUserGuidSerializer extends JsonSerializer<OrgaUserGuid> {
 
 
 
   private final HashId hashIds;
-  public JacksonOrgaUserSerializer(EraldyApiApp apiApp) {
+  public JacksonOrgaUserGuidSerializer(EraldyApiApp apiApp) {
     this.hashIds = apiApp.getHttpServer().getServer().getHashId();
 
   }

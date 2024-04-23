@@ -1,5 +1,7 @@
 package net.bytle.tower.eraldy.module.user.model;
 
+import java.util.Objects;
+
 /**
  * A general user
  * If you are modeling an owner, you want to use the {@link net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid}
@@ -27,4 +29,16 @@ public class UserGuid {
     return this.realmId;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    UserGuid userGuid = (UserGuid) o;
+    return localId == userGuid.localId && realmId == userGuid.realmId;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(localId, realmId);
+  }
 }

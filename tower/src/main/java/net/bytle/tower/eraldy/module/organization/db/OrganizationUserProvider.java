@@ -13,7 +13,7 @@ import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.organization.inputs.OrgaUserInputProps;
 import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaUserGuidDeserializer;
-import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaUserSerializer;
+import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaUserGuidSerializer;
 import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.user.db.UserCols;
@@ -68,7 +68,7 @@ public class OrganizationUserProvider {
     server
       .getJacksonMapperManager()
       .addDeserializer(OrgaUserGuid.class, new JacksonOrgaUserGuidDeserializer(apiApp))
-      .addSerializer(OrgaUserGuid.class, new JacksonOrgaUserSerializer(apiApp));
+      .addSerializer(OrgaUserGuid.class, new JacksonOrgaUserGuidSerializer(apiApp));
 
   }
 

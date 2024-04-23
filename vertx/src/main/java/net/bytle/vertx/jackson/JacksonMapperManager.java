@@ -56,11 +56,13 @@ public class JacksonMapperManager extends TowerService {
      * (Must be before all data type as they make use of it)
      */
     simpleModule = new SimpleModule();
-    simpleModule.addDeserializer(EmailAddress.class, new JacksonEmailAddressDeserializer())
+    simpleModule
+      .addDeserializer(EmailAddress.class, new JacksonEmailAddressDeserializer())
       .addSerializer(EmailAddress.class, new JacksonEmailAddressSerializer())
       .addSerializer(TimeZone.class, new JacksonTimeZoneSerializer())
       .addDeserializer(TimeZone.class, new JacksonTimeZoneDeserializer())
-      .addDeserializer(Handle.class, new JacksonHandleDeserializer());
+      .addDeserializer(Handle.class, new JacksonHandleDeserializer())
+      .addSerializer(Handle.class, new JacksonHandleSerializer());
 
   }
 
