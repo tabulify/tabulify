@@ -374,7 +374,7 @@ public class ListProvider {
             ListObject listObject = new ListObject();
 
             String handleString = row.getString(LIST_HANDLE_COLUMN);
-            if(handleString!=null) {
+            if (handleString != null) {
               Handle listHandle = Handle.ofFailSafe(handleString);
               listObject.setHandle(listHandle);
             }
@@ -390,7 +390,6 @@ public class ListProvider {
             }
             listObject.setApp(appResult);
             this.updateGuid(listObject);
-
 
 
             /**

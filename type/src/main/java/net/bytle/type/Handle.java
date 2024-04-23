@@ -18,7 +18,7 @@ public class Handle {
      * The handle object should be null, not the value
      */
     if (s == null) {
-      throw new HandleCastException("A handle cannot be null");
+      throw new HandleCastException("A handle value cannot be null. Set the handle object to null instead.");
     }
     /**
      * Forms may send empty string
