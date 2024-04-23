@@ -1,4 +1,6 @@
 directive @dateFormat on FIELD_DEFINITION
+scalar AppGuid
+scalar EmailAddress
 
 """
 There is 2 kinds of user
@@ -7,7 +9,7 @@ There is 2 kinds of user
 """
 interface UserI {
   guid: ID!
-  emailAddress: String!
+  emailAddress: EmailAddress!
   givenName: String
   realm: Realm!
 }
@@ -17,7 +19,7 @@ A realm user
 """
 type User implements UserI {
   guid: ID!
-  emailAddress: String!
+  emailAddress: EmailAddress!
   givenName: String
   realm: Realm!
 }
@@ -31,7 +33,7 @@ type OrganizationUser implements UserI {
   """The global id"""
   guid: ID!
   """The email address"""
-  emailAddress: String!
+  emailAddress: EmailAddress!
   """The given name"""
   givenName: String
   """The Eraldy realm"""
@@ -207,7 +209,7 @@ type Realm {
 
 type App {
   """The global uid"""
-  guid: ID!
+  guid: AppGuid!
   """A short descriptive name"""
   name: String!
   """

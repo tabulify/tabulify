@@ -87,4 +87,5 @@ public class OrgaUser extends User {
   public OrgaRole getOrgaRole() {
     return this.orgaRole;
   }
+
 }

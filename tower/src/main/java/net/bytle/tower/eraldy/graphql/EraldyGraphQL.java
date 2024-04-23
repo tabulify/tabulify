@@ -6,6 +6,7 @@ import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
@@ -22,10 +23,12 @@ import net.bytle.tower.eraldy.graphql.implementer.UserGraphQLImpl;
 import net.bytle.tower.eraldy.model.manual.Status;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.app.graphql.GraphQLAppGuidCoercing;
 import net.bytle.tower.eraldy.module.list.graphql.ListGraphQLImpl;
 import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
 import net.bytle.vertx.graphql.GraphQLDef;
 import net.bytle.vertx.graphql.GraphQLLocalDate;
+import net.bytle.vertx.graphql.scalar.GraphQLEmailCoercing;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderFactory;
 import org.dataloader.DataLoaderRegistry;
@@ -52,13 +55,31 @@ public class EraldyGraphQL implements GraphQLDef {
       .fileSystem().readFileBlocking("graphql/eraldy.graphqls").toString();
     SchemaParser schemaParser = new SchemaParser();
     TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schema);
-
-
     /**
      * Wiring Builder
      * (The builder to attach the type to our implementation)
      */
     RuntimeWiring.Builder wiringBuilder = newRuntimeWiring();
+
+    /**
+     * Scalar
+     */
+    final GraphQLScalarType EMAIL = GraphQLScalarType
+      .newScalar()
+      .name("EmailAddress")
+      .description("Email Address")
+      .coercing(new GraphQLEmailCoercing())
+      .build();
+    wiringBuilder.scalar(EMAIL);
+
+    final GraphQLScalarType APPGUID = GraphQLScalarType
+      .newScalar()
+      .name("AppGuid")
+      .description("App Guid Address")
+      .coercing(new GraphQLAppGuidCoercing(this.app.getJackson()))
+      .build();
+    wiringBuilder.scalar(APPGUID);
+
 
     /**
      * Our implementations

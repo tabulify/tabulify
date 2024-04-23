@@ -25,7 +25,6 @@ import net.bytle.tower.eraldy.module.list.jackson.JacksonListGuidDeserializer;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationUserProvider;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
-import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.util.Guid;
@@ -54,10 +53,8 @@ public class ListProvider {
   protected static final String TABLE_NAME = "realm_list";
 
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
-  private static final String OWNER_PREFIX = "owner";
   private static final String LIST_PREFIX = "list";
   public static final String LIST_APP_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + AppProvider.APP_ID_COLUMN;
-  public static final String LIST_USER_OWNER_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + OWNER_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   public static final String LIST_ID_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "id";
   private static final String LIST_REALM_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "realm_id";
   public static final String LIST_GUID_PREFIX = "lis";
@@ -354,11 +351,14 @@ public class ListProvider {
 
     /**
      * Owner
+     * Id + Orga
      */
-    Long ownerId = row.getLong(LIST_USER_OWNER_COLUMN);
+    Organization organisation = new Organization();
+    organisation.setLocalId(row.getLong(ListCols.ORGA_ID.getColumnName()));
     OrgaUser orgaUser = new OrgaUser();
+    orgaUser.setOrganization(organisation);
     listObject.setOwnerUser(orgaUser);
-    orgaUser.setLocalId(ownerId);
+    orgaUser.setLocalId(row.getLong(ListCols.OWNER_USER_ID.getColumnName()));
     orgaUser.setRealm(this.apiApp.getEraldyModel().getRealm());
     this.apiApp.getUserProvider().updateGuid(orgaUser);
 
@@ -722,5 +722,37 @@ public class ListProvider {
       .getRealmByLocalIdWithAuthorizationCheck(listGuidObject.getRealmId(), authUserScope, routingContext)
       .compose(realm -> this.getListById(listGuidObject.getListLocalId(), realm));
 
+  }
+
+  public Future<OrgaUser> buildListOwnerUserAtRequestTimeEventually(ListObject list) {
+    if (!(list.getOwnerUser() == null || list.getOwnerUser().getEmailAddress() == null)) {
+      return Future.succeededFuture(list.getOwnerUser());
+    }
+    Long localId = list.getOwnerUser().getLocalId();
+    if (localId == null) {
+      return Future.failedFuture(new InternalException("The build of the list did not set the local id on the owner user"));
+    }
+    return this.apiApp.getOrganizationUserProvider()
+      .getOrganizationUserByLocalId(localId);
+  }
+
+  public Future<App> buildAppAtRequestTimeEventually(ListObject list) {
+    /**
+     * Name is mandatory
+     * If not set, not built.
+     */
+    if (!(list.getApp() == null || list.getApp().getName() == null)) {
+      return Future.succeededFuture(list.getApp());
+    }
+    Long localId = list.getApp().getLocalId();
+    if (localId == null) {
+      return Future.failedFuture(new InternalException("The build of the list did not set the local id of the app"));
+    }
+    Realm realm = list.getApp().getRealm();
+    if (realm == null) {
+      return Future.failedFuture(new InternalException("The build of the list did not set the realm of the app"));
+    }
+    return this.apiApp.getAppProvider()
+      .getAppById(localId, realm);
   }
 }

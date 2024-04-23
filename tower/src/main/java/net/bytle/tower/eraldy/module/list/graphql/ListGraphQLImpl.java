@@ -7,7 +7,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
+import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
 
@@ -37,6 +39,19 @@ public class ListGraphQLImpl {
           .build()
       )
       /**
+       * Data Type mapping
+       */
+      .type(
+        newTypeWiring("List")
+          .dataFetcher("ownerUser", this::getListOwnerUser)
+          .build()
+      )
+      .type(
+        newTypeWiring("List")
+          .dataFetcher("app", this::getListApp)
+          .build()
+      )
+      /**
        * Mutation
        */
       .type(
@@ -49,6 +64,16 @@ public class ListGraphQLImpl {
           .dataFetcher("listUpdate", this::updateList)
           .build()
       );
+  }
+
+  private Future<App> getListApp(DataFetchingEnvironment dataFetchingEnvironment) {
+    ListObject list = dataFetchingEnvironment.getSource();
+    return listProvider.buildAppAtRequestTimeEventually(list);
+  }
+
+  private Future<OrgaUser> getListOwnerUser(DataFetchingEnvironment dataFetchingEnvironment) {
+    ListObject list = dataFetchingEnvironment.getSource();
+    return listProvider.buildListOwnerUserAtRequestTimeEventually(list);
   }
 
   private Future<ListObject> getList(DataFetchingEnvironment dataFetchingEnvironment) {

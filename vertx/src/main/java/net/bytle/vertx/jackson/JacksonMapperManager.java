@@ -140,6 +140,11 @@ public class JacksonMapperManager extends TowerService {
 
   @Override
   public Future<Void> mount() {
+    this.registerModuleOnVertxStaticObjectMapper();
+    return super.mount();
+  }
+
+  private void registerModuleOnVertxStaticObjectMapper() {
     /**
      * Data bind codec is the vertx static object mapper
      * used by the {@link io.vertx.core.json.JsonObject}
@@ -153,7 +158,6 @@ public class JacksonMapperManager extends TowerService {
       vertxMapper.registerModule(this.simpleModule);
       LOGGER.info("Jackson simple module registered");
     }
-    return super.mount();
   }
 
   public <T> JacksonJsonStringDeserializer<T> getDeserializer(Class<T> clazz) {
