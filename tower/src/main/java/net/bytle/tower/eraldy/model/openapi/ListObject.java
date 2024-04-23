@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.type.Handle;
 
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -18,7 +19,7 @@ public class ListObject   {
 
   protected String guid;
 
-  protected String handle;
+  protected Handle handle;
 
   protected String name;
 
@@ -86,7 +87,7 @@ public class ListObject   {
   * @return handle A handle (unique code) for the list
   */
   @JsonProperty("handle")
-  public String getHandle() {
+  public Handle getHandle() {
     return handle;
   }
 
@@ -94,7 +95,7 @@ public class ListObject   {
   * @param handle A handle (unique code) for the list
   */
   @SuppressWarnings("unused")
-  public void setHandle(String handle) {
+  public void setHandle(Handle handle) {
     this.handle = handle;
   }
 

@@ -10,14 +10,18 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.Future;
 import io.vertx.core.json.jackson.DatabindCodec;
 import net.bytle.exception.InternalException;
+import net.bytle.type.EmailAddress;
+import net.bytle.type.Handle;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerService;
+import net.bytle.vertx.jackson.deser.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * The entry point of Jackson are mapper that
@@ -45,6 +49,19 @@ public class JacksonMapperManager extends TowerService {
     javaTimeModule = new JavaTimeModule();
     javaTimeModule.addSerializer(LocalDateTime.class, new JacksonLocalDateTimeSerializer());
     javaTimeModule.addDeserializer(LocalDateTime.class, new JacksonLocalDateTimeDeserializer());
+
+    /**
+     * Jackson common type
+     * Email Address, handle and time zone
+     * (Must be before all data type as they make use of it)
+     */
+    simpleModule = new SimpleModule();
+    simpleModule.addDeserializer(EmailAddress.class, new JacksonEmailAddressDeserializer())
+      .addSerializer(EmailAddress.class, new JacksonEmailAddressSerializer())
+      .addSerializer(TimeZone.class, new JacksonTimeZoneSerializer())
+      .addDeserializer(TimeZone.class, new JacksonTimeZoneDeserializer())
+      .addDeserializer(Handle.class, new JacksonHandleDeserializer());
+
   }
 
   /**
@@ -95,9 +112,7 @@ public class JacksonMapperManager extends TowerService {
    * <pre>@com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = JacksonListUserSourceDeserializer.class)</pre>
    */
   public <T> JacksonMapperManager addDeserializer(Class<T> type, JacksonJsonStringDeserializer<? extends T> deser) {
-    if (this.simpleModule == null) {
-      simpleModule = new SimpleModule();
-    }
+
     simpleModule.addDeserializer(type, deser);
     this.deserializers.put(type, deser);
     LOGGER.info("Jackson deserializer for the type (" + type.toString() + ") added");
@@ -110,9 +125,7 @@ public class JacksonMapperManager extends TowerService {
    * <pre>@com.fasterxml.jackson.databind.annotation.JsonSerialize(using = JacksonListUserSourceSerializer.class)</pre>
    */
   public <T> JacksonMapperManager addSerializer(Class<? extends T> type, JsonSerializer<T> ser) {
-    if (this.simpleModule == null) {
-      simpleModule = new SimpleModule();
-    }
+
     simpleModule.addSerializer(type, ser);
     LOGGER.info("Jackson serializer for the type (" + type.toString() + ") added");
     return this;
@@ -163,9 +176,8 @@ public class JacksonMapperManager extends TowerService {
         .build();
       mapper.registerModule(getJavaTimeModule());
       simpleModule = getSimpleModule();
-      if (simpleModule != null) {
-        mapper.registerModule(simpleModule);
-      }
+      mapper.registerModule(simpleModule);
+
       if (disableFailOnUnknownProperties) {
         /**
          * To avoid unrecognizable field when we develop if we have stored a json

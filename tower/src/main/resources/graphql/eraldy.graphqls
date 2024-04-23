@@ -320,4 +320,6 @@ type Mutation {
   mailingItemDeliver(guid: ID!): MailingItem
   """Create a list"""
   listCreate(appGuid: ID!, props:ListInput): List
+  """Update a list"""
+  listUpdate(listGuid: ID!, props:ListInput): List
 }

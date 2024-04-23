@@ -1,5 +1,6 @@
 package net.bytle.tower.eraldy.api.implementer;
 
+import graphql.schema.DataFetchingEnvironment;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
@@ -24,8 +25,6 @@ import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
-import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
-import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Casts;
 import net.bytle.type.EmailAddress;
@@ -237,38 +236,11 @@ public class ListApiImpl implements ListApi {
 
   @Override
   public Future<ApiResponse<ListObject>> listListPatch(RoutingContext routingContext, String listIdentifier, ListBody listBody, String realmIdentifier) {
-    ListProvider listProvider = this.apiApp.getListProvider();
-    return listProvider.getListByIdentifierFoundInPathParameterAndVerifyScope(routingContext, AuthUserScope.LIST_PATCH)
-      .compose(list -> {
-        if (list == null) {
-          return Future.failedFuture(TowerFailureException.builder()
-            .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-            .setMessage("The list (" + listIdentifier + ") was not found")
-            .build()
-          );
-        }
-        ListInputProps listInputProps = new ListInputProps();
-        listInputProps.setHandle(listBody.getListHandle());
-        listInputProps.setName(listBody.getListName());
-        listInputProps.setTitle(listBody.getListTitle());
-        String ownerUserIdentifier = listBody.getOwnerUserIdentifier();
-        OrgaUserGuid orgaUserGuid;
-        try {
-          orgaUserGuid = this.apiApp.getHttpServer().getServer().getJacksonMapperManager().getDeserializer(OrgaUserGuid.class).deserialize(ownerUserIdentifier);
-        } catch (CastException e) {
-          return Future.failedFuture(TowerFailureException.builder()
-            .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-            .setMessage("The owner guid identifier (" + ownerUserIdentifier + ") is not valid")
-            .setCauseException(e)
-            .build()
-          );
-        }
-        listInputProps.setOwnerUserGuid(orgaUserGuid);
 
-        return listProvider
-          .updateList(list, listInputProps)
-          .compose(updatedList -> Future.succeededFuture(new ApiResponse<>(updatedList).setMapper(listProvider.getApiMapper())));
-      });
+    /**
+     * See {@link net.bytle.tower.eraldy.module.list.graphql.ListGraphQLImpl#updateList(DataFetchingEnvironment)}
+     */
+    throw new InternalException("depreacted");
 
 
   }

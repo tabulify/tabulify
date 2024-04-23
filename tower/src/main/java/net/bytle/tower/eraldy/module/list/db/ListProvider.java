@@ -22,12 +22,15 @@ import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
+import net.bytle.tower.eraldy.module.list.jackson.JacksonListGuidDeserializer;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationUserProvider;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.util.Guid;
+import net.bytle.type.Handle;
 import net.bytle.vertx.*;
 import net.bytle.vertx.db.*;
 import org.slf4j.Logger;
@@ -58,7 +61,7 @@ public class ListProvider {
   public static final String LIST_USER_OWNER_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + OWNER_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   public static final String LIST_ID_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "id";
   private static final String LIST_REALM_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "realm_id";
-  static final String LIST_GUID_PREFIX = "lis";
+  public static final String LIST_GUID_PREFIX = "lis";
   private final EraldyApiApp apiApp;
 
   public static final String LIST_HANDLE_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "handle";
@@ -75,6 +78,10 @@ public class ListProvider {
     this.apiApp = apiApp;
     Server server = apiApp.getHttpServer().getServer();
     this.jdbcPool = jdbcSchema.getJdbcClient().getPool();
+
+    server.getJacksonMapperManager()
+      .addDeserializer(ListGuid.class, new JacksonListGuidDeserializer(apiApp));
+
     this.apiMapper = server.getJacksonMapperManager()
       .jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
@@ -246,8 +253,8 @@ public class ListProvider {
       listObject.setName(newName);
     }
 
-    String newHandle = listInputProps.getHandle();
-    if (newHandle != null && !listObject.getHandle().equals(newHandle)) {
+    Handle newHandle = listInputProps.getHandle();
+    if (newHandle != null && !Objects.equals(listObject.getHandle(), newHandle)) {
       jdbcUpdate.addUpdatedColumn(ListCols.HANDLE, newHandle);
       listObject.setHandle(newHandle);
     }
@@ -347,7 +354,7 @@ public class ListProvider {
       .compose(realmResult -> {
 
         Long listId = row.getLong(LIST_ID_COLUMN);
-        String listHandle = row.getString(LIST_HANDLE_COLUMN);
+        Handle listHandle = Handle.ofFailSafe(row.getString(LIST_HANDLE_COLUMN));
         Future<App> appFuture = Future.succeededFuture(knownApp);
         if (knownApp == null) {
           Long publisherAppId = row.getLong(LIST_APP_COLUMN);
@@ -691,6 +698,43 @@ public class ListProvider {
           );
         }
         return this.insertList(app, listInputProps);
+      });
+  }
+
+  public Future<ListObject> updateListRequestHandler(String listGuid, ListInputProps listInputProps, RoutingContext routingContext) {
+
+    ListGuid listGuidObject;
+    try {
+      listGuidObject = this.apiApp.getHttpServer().getServer().getJacksonMapperManager().getDeserializer(ListGuid.class).deserialize(listGuid);
+    } catch (CastException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .setMessage("The list guid (" + listGuid + ") is not valid")
+        .build()
+      );
+    }
+    ListProvider listProvider = this.apiApp.getListProvider();
+    return this.apiApp.getRealmProvider().getRealmByLocalIdWithAuthorizationCheck(listGuidObject.getRealmId(), AuthUserScope.LIST_PATCH, routingContext)
+      .compose(realm -> {
+        if (realm == null) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setMessage("The realm for the list (" + listGuid + ") was not found")
+            .build()
+          );
+        }
+        return this.getListById(listGuidObject.getListLocalId(realm.getLocalId()), realm);
+      })
+      .compose(list -> {
+        if (list == null) {
+          return Future.failedFuture(TowerFailureException.builder()
+            .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+            .setMessage("The list (" + listGuid + ") was not found")
+            .build()
+          );
+        }
+        return listProvider
+          .updateList(list, listInputProps)
+          .compose(Future::succeededFuture);
       });
   }
 }

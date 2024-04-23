@@ -4,6 +4,7 @@ package net.bytle.tower.eraldy.module.list.inputs;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
+import net.bytle.type.Handle;
 
 /**
  * List Input Props
@@ -12,7 +13,7 @@ import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ListInputProps {
 
-  protected String handle;
+  protected Handle handle;
 
   protected String name;
 
@@ -36,7 +37,7 @@ public class ListInputProps {
    * @return guid The public id (derived from the database/local id)
    */
   @JsonProperty("handle")
-  public String getHandle() {
+  public Handle getHandle() {
     return handle;
   }
 
@@ -44,7 +45,7 @@ public class ListInputProps {
    * @param handle The public id (derived from the database/local id)
    */
   @SuppressWarnings("unused")
-  public void setHandle(String handle) {
+  public void setHandle(Handle handle) {
     this.handle = handle;
   }
 
@@ -65,7 +66,7 @@ public class ListInputProps {
   }
 
 
-  @JsonProperty("ownerGuid")
+  @JsonProperty("ownerUserGuid")
   public OrgaUserGuid getOwnerUserGuid() {
     return ownerUserGuid;
   }

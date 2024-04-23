@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.module.user.jackson;
+package net.bytle.vertx.jackson.deser;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
