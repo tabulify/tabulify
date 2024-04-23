@@ -20,6 +20,7 @@ import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.tower.eraldy.module.user.jackson.JacksonUserGuidDeserializer;
+import net.bytle.tower.eraldy.module.user.jackson.JacksonUserGuidSerializer;
 import net.bytle.tower.eraldy.module.user.jackson.JacksonUserStatusDeserializer;
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import net.bytle.tower.eraldy.module.user.model.UserStatus;
@@ -88,7 +89,9 @@ public class UserProvider {
 
     jacksonMapperManager
       .addDeserializer(UserStatus.class, new JacksonUserStatusDeserializer())
-      .addDeserializer(UserGuid.class, new JacksonUserGuidDeserializer(apiApp));
+      .addDeserializer(UserGuid.class, new JacksonUserGuidDeserializer(apiApp))
+      .addSerializer(UserGuid.class, new JacksonUserGuidSerializer(apiApp))
+    ;
 
     this.apiMapper = jacksonMapperManager.jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithRealm.class)
@@ -390,12 +393,16 @@ public class UserProvider {
     if (user.getGuid() != null) {
       return;
     }
-    String guid = this.getGuidFromUser(user).toString();
-    user.setGuid(guid);
+    user.setGuid(this.getGuidFromUser(user));
   }
 
-  private Guid getGuidFromUser(User user) {
-    return apiApp.createGuidFromRealmAndObjectId(USR_GUID_PREFIX, user.getRealm(), user.getLocalId());
+  private UserGuid getGuidFromUser(User user) {
+
+    UserGuid userGuid = new UserGuid();
+    userGuid.setRealmId(user.getRealm().getLocalId());
+    userGuid.setLocalId(user.getLocalId());
+    return userGuid;
+
   }
 
   /**
@@ -455,7 +462,7 @@ public class UserProvider {
 
   public <T extends User> Future<T> getUserByGuid(String guid, Realm realm) {
 
-    Guid guidObject;
+    UserGuid guidObject;
     try {
       guidObject = this.getGuidFromHash(guid);
     } catch (CastException e) {
@@ -463,20 +470,20 @@ public class UserProvider {
     }
     Future<Realm> futureRealm;
     if (realm != null) {
-      if (realm.getLocalId() != guidObject.getRealmOrOrganizationId()) {
-        return Future.failedFuture(new InternalException("The user guid (" + guid + ") has a realm (" + guidObject.getRealmOrOrganizationId() + " that is not the same than the passed realm (" + realm.getLocalId() + ")"));
+      if (!Objects.equals(realm.getLocalId(), guidObject.getRealmId())) {
+        return Future.failedFuture(new InternalException("The user guid (" + guid + ") has a realm (" + guidObject.getRealmId() + " that is not the same than the passed realm (" + realm.getLocalId() + ")"));
       }
       futureRealm = Future.succeededFuture(realm);
     } else {
       futureRealm = this.apiApp.getRealmProvider()
-        .getRealmFromLocalId(guidObject.getRealmOrOrganizationId());
+        .getRealmFromLocalId(guidObject.getRealmId());
     }
     return futureRealm
       .compose(realmResult -> {
         if (realmResult == null) {
           return Future.failedFuture(new InternalException("The realm was not found"));
         }
-        return this.getUserByLocalId(guidObject.validateRealmAndGetFirstObjectId(realmResult.getLocalId()), realmResult);
+        return this.getUserByLocalId(guidObject.getLocalId(), realmResult);
       });
 
 
@@ -549,8 +556,8 @@ public class UserProvider {
     return users;
   }
 
-  public Guid getGuidFromHash(String userGuid) throws CastException {
-    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(USR_GUID_PREFIX, userGuid);
+  public UserGuid getGuidFromHash(String userGuid) throws CastException {
+    return apiApp.getHttpServer().getServer().getJacksonMapperManager().getDeserializer(UserGuid.class).deserialize(userGuid);
   }
 
   public ObjectMapper getApiMapper() {
@@ -788,5 +795,9 @@ public class UserProvider {
 
   public JdbcTable getTable() {
     return this.userTable;
+  }
+
+  public String serializeUserGuid(UserGuid guid) {
+    return this.apiApp.getHttpServer().getServer().getJacksonMapperManager().getSerializer(UserGuid.class).serialize(guid);
   }
 }

@@ -14,6 +14,7 @@ import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
+import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
@@ -160,9 +161,9 @@ public class AuthProvider {
       throw new InternalException("The subject (user guid) values should not be null");
     }
     try {
-      Guid guid = this.apiApp.getUserProvider().getGuidFromHash(subject);
-      user.setLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()));
-      user.setGuid(subject);
+      UserGuid guid = this.apiApp.getUserProvider().getGuidFromHash(subject);
+      user.setLocalId(guid.getLocalId());
+      user.setGuid(guid);
     } catch (CastException e) {
       throw new InternalException("The user guid is not valid", e);
     }
@@ -412,9 +413,11 @@ public class AuthProvider {
    * @return a base auth user (that can be used as claims in order to create a token or to create an auth user for a session)
    */
   public <T extends User> AuthUser.Builder toAuthUserBuilder(T user) {
+
+
     AuthUser.Builder authUserBuilder = AuthUser
       .builder()
-      .setSubject(user.getGuid())
+      .setSubject(this.apiApp.getUserProvider().serializeUserGuid(user.getGuid()))
       .setSubjectEmail(user.getEmailAddress())
       .setRealmGuid(user.getRealm().getGuid())
       .setRealmHandle(user.getRealm().getHandle());
@@ -599,8 +602,8 @@ public class AuthProvider {
 
   public <T extends User> AnalyticsUser toAnalyticsUser(T user) {
     AnalyticsUser analyticsUser = new AnalyticsUser();
-    analyticsUser.setGuid(user.getGuid());
-    // user.getHandle(), handle is email
+    analyticsUser.setGuid(this.apiApp.getUserProvider().serializeUserGuid(user.getGuid()));
+    // note: handle is email
     analyticsUser.setEmail(user.getEmailAddress().toNormalizedString());
     analyticsUser.setGivenName(user.getGivenName());
     analyticsUser.setFamilyName(user.getFamilyName());

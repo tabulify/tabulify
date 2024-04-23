@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.module.user.model.UserGuid;
 
 import java.util.Objects;
 
@@ -20,7 +21,7 @@ public class ListImportJobRowStatus   {
 
   protected Integer rowId;
 
-  protected String userGuid;
+  protected UserGuid userGuid;
 
   protected Integer userStatus;
 
@@ -105,7 +106,7 @@ public class ListImportJobRowStatus   {
   * @return userGuid The user guid (may be null)
   */
   @JsonProperty("userGuid")
-  public String getUserGuid() {
+  public UserGuid getUserGuid() {
     return userGuid;
   }
 
@@ -113,7 +114,7 @@ public class ListImportJobRowStatus   {
   * @param userGuid The user guid (may be null)
   */
   @SuppressWarnings("unused")
-  public void setUserGuid(String userGuid) {
+  public void setUserGuid(UserGuid userGuid) {
     this.userGuid = userGuid;
   }
 

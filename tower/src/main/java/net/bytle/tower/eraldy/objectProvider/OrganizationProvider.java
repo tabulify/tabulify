@@ -126,7 +126,7 @@ public class OrganizationProvider {
       .addColumn(OrganizationCols.HANDLE, organizationInputProps.getHandle())
       .addColumn(OrganizationCols.NAME, organizationInputProps.getName())
       .addColumn(OrganizationCols.OWNER_ID, organizationInputProps.getOwnerGuid().getLocalId())
-      .addColumn(OrganizationCols.REALM_ID, organizationInputProps.getOwnerGuid().getEraldyRealmId())
+      .addColumn(OrganizationCols.REALM_ID, organizationInputProps.getOwnerGuid().getRealmId())
       .addReturningColumn(OrganizationCols.ID)
       .execute(sqlConnection)
       .compose(orgRows -> {

@@ -1,7 +1,6 @@
 package net.bytle.vertx.jackson;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -43,6 +42,7 @@ public class JacksonMapperManager extends TowerService {
   private boolean enableTimeModule;
   private SimpleModule simpleModule;
   private final Map<Class<?>, JacksonJsonStringDeserializer<?>> deserializers = new HashMap<>();
+  private final Map<Class<?>, JacksonJsonStringSerializer<?>> serializers = new HashMap<>();
 
   public JacksonMapperManager(Server server) {
     super(server);
@@ -126,9 +126,10 @@ public class JacksonMapperManager extends TowerService {
    * The equivalent to the object annotations but for the vertx mapper
    * <pre>@com.fasterxml.jackson.databind.annotation.JsonSerialize(using = JacksonListUserSourceSerializer.class)</pre>
    */
-  public <T> JacksonMapperManager addSerializer(Class<? extends T> type, JsonSerializer<T> ser) {
+  public <T> JacksonMapperManager addSerializer(Class<? extends T> type, JacksonJsonStringSerializer<T> ser) {
 
     simpleModule.addSerializer(type, ser);
+    this.serializers.put(type, ser);
     LOGGER.info("Jackson serializer for the type (" + type.toString() + ") added");
     return this;
   }
@@ -159,6 +160,16 @@ public class JacksonMapperManager extends TowerService {
     // should be good on insertion
     //noinspection unchecked
     return (JacksonJsonStringDeserializer<T>) jacksonJsonStringDeserializer;
+  }
+
+  public <T> JacksonJsonStringSerializer<T> getSerializer(Class<T> clazz) {
+    JacksonJsonStringSerializer<?> jacksonJsonStringSerializer = this.serializers.get(clazz);
+    if (jacksonJsonStringSerializer == null) {
+      throw new InternalException("The jackson serializer for the class (" + clazz.getSimpleName() + ") was not found (ie not registered)");
+    }
+    // should be good on insertion
+    //noinspection unchecked
+    return (JacksonJsonStringSerializer<T>) jacksonJsonStringSerializer;
   }
 
   public class JsonMapperBuilder {

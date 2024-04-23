@@ -14,6 +14,7 @@ import net.bytle.tower.eraldy.model.openapi.ListUserStatus;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
+import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.time.TimeZoneCast;
 import net.bytle.type.time.TimeZoneUtil;
@@ -49,7 +50,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
   private String confirmIp;
   private String confirmTime;
   private String timeZoneString;
-  private String userGuid;
+  private UserGuid userGuid;
   private ListImportListUserStatus listUserStatus = ListImportListUserStatus.NOTHING;
   private ListImportUserStatus userStatus = ListImportUserStatus.NOTHING;
   private String listUserGuid;

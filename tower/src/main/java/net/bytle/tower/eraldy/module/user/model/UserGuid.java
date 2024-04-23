@@ -14,10 +14,13 @@ public class UserGuid {
 
   public UserGuid() {
   }
-  public void setRealmId(long realmId) {
+  public void setRealmId(Long realmId) {
+    assert realmId != null : "Local realm Id cannot be null";
     this.realmId = realmId;
+
   }
-  public void setLocalId(long localId) {
+  public void setLocalId(Long localId) {
+    assert localId != null : "Local user Id cannot be null";
     this.localId = localId;
   }
 
@@ -41,4 +44,5 @@ public class UserGuid {
   public int hashCode() {
     return Objects.hash(localId, realmId);
   }
+
 }

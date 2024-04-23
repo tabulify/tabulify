@@ -14,8 +14,8 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.model.openapi.UserPostBody;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
+import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.util.Guid;
 import net.bytle.type.EmailAddress;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
@@ -37,10 +37,10 @@ public class UserApiImpl implements UserApi {
     Future<Realm> realmFuture;
     UserProvider userProvider = apiApp.getUserProvider();
     RealmProvider realmProvider = apiApp.getRealmProvider();
-    Guid userGuid = null;
+    UserGuid userGuid = null;
     try {
       userGuid = userProvider.getGuidFromHash(userIdentifier);
-      realmFuture = realmProvider.getRealmFromLocalId(userGuid.getRealmOrOrganizationId());
+      realmFuture = realmProvider.getRealmFromLocalId(userGuid.getRealmId());
     } catch (CastException e) {
       if (realmIdentifier == null) {
         return Future.failedFuture(
@@ -54,7 +54,7 @@ public class UserApiImpl implements UserApi {
         .getRealmFromIdentifier(realmIdentifier);
     }
 
-    Guid finalUserGuid = userGuid;
+    UserGuid finalUserGuid = userGuid;
     return realmFuture
       .compose(realm -> {
         if (realm == null) {
@@ -71,7 +71,7 @@ public class UserApiImpl implements UserApi {
         Future<User> futureUser;
         if (finalUserGuid != null) {
           futureUser = userProvider.getUserByLocalId(
-            finalUserGuid.validateRealmAndGetFirstObjectId(realmChecked.getLocalId()),
+            finalUserGuid.getLocalId(),
             realmChecked
           );
         } else {
@@ -159,7 +159,7 @@ public class UserApiImpl implements UserApi {
 
 
     Future<Realm> realmFuture;
-    Guid guid = null;
+    UserGuid guid = null;
     UserProvider userProvider = this.apiApp.getUserProvider();
     if (userGuid == null) {
       if (realmIdentifier == null) {
@@ -175,7 +175,7 @@ public class UserApiImpl implements UserApi {
         return Future.failedFuture(new IllegalArgumentException("The user guid is not valid (" + userGuid + ")"));
       }
 
-      long realmId = guid.getRealmOrOrganizationId();
+      long realmId = guid.getRealmId();
 
       realmFuture = this.apiApp
         .getRealmProvider()
@@ -184,12 +184,12 @@ public class UserApiImpl implements UserApi {
     }
 
 
-    Guid finalGuid = guid;
+    UserGuid finalGuid = guid;
     return realmFuture
       .compose(realm -> {
         Future<User> futureUser = Future.succeededFuture();
         if (finalGuid != null) {
-          long userIdFromGuid = finalGuid.validateRealmAndGetFirstObjectId(finalGuid.getRealmOrOrganizationId());
+          long userIdFromGuid = finalGuid.getLocalId();
           futureUser = userProvider.getUserByLocalId(userIdFromGuid, realm);
         }
         return futureUser
