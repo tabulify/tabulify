@@ -14,6 +14,7 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
+import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
 import net.bytle.type.Handle;
@@ -131,8 +132,8 @@ public class AuthApiImpl implements AuthApi {
           .setClientId(finalClientId)
           .setAppGuid(jacksonManager.getSerializer(AppGuid.class).serialize(requestingAppGuid))
           .setAppHandle(jacksonManager.getSerializer(Handle.class).serialize(requestingApp.getHandle()))
-          .setRealmIdentifier(requestingApp.getRealm().getGuid())
-          .setRealmHandle(requestingApp.getRealm().getHandle())
+          .setRealmIdentifier(jacksonManager.getSerializer(RealmGuid.class).serialize(requestingApp.getRealm().getGuid()))
+          .setRealmHandle(jacksonManager.getSerializer(Handle.class).serialize(requestingApp.getRealm().getHandle()))
           .setOrganisationGuid(jacksonManager.getSerializer(OrgaGuid.class).serialize(requestingApp.getRealm().getOrganization().getGuid()))
           .setOrganisationHandle(jacksonManager.getSerializer(Handle.class).serialize(requestingApp.getRealm().getOrganization().getHandle()))
           .setRedirectUri(redirectUriEnhanced);

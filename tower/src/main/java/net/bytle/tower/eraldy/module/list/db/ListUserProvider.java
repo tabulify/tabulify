@@ -57,7 +57,6 @@ public class ListUserProvider {
   public static final String IN_OPT_IN_ORIGIN_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_origin";
   public static final String IN_OPT_IN_IP_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_ip";
   public static final String IN_OPT_IN_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_time";
-  public static final String OUT_OPT_OUT_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "out_opt_out_time";
 
   public static final String IN_OPT_IN_CONFIRMATION_IP_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_confirmation_ip";
   public static final String IN_OPT_IN_CONFIRMATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_confirmation_time";
@@ -100,7 +99,7 @@ public class ListUserProvider {
     Map<JdbcColumn, JdbcColumn> foreignKeysListColumn = new HashMap<>();
     foreignKeysListColumn.put(ListUserCols.REALM_ID, ListCols.REALM_ID);
     foreignKeysListColumn.put(ListUserCols.LIST_ID, ListCols.ID);
-    this.listUserTable = JdbcTable.build(jdbcSchema,TABLE_NAME, ListUserCols.values())
+    this.listUserTable = JdbcTable.build(jdbcSchema, TABLE_NAME, ListUserCols.values())
       .addPrimaryKeyColumn(ListUserCols.REALM_ID)
       .addPrimaryKeyColumn(ListUserCols.LIST_ID)
       .addPrimaryKeyColumn(ListUserCols.USER_ID)
@@ -127,44 +126,43 @@ public class ListUserProvider {
   @SuppressWarnings("unused")
   private Future<ListUser> updateListUser(ListUser listUser, ListUserInputProps listUserInputProps) {
 
+
     ListUserStatus status = listUserInputProps.getStatus();
-    if(status==null){
+    if (status == null) {
       return Future.succeededFuture(listUser);
     }
 
-    if(status == listUser.getStatus()){
+    if (status == listUser.getStatus()) {
       return Future.succeededFuture(listUser);
     }
 
     /**
      * Only unsubscription for now
      */
-    if(status!=ListUserStatus.UNSUBSCRIBED){
+    if (status != ListUserStatus.UNSUBSCRIBED) {
       return Future.succeededFuture(listUser);
     }
 
-    String sql = "UPDATE \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
-      " SET\n" +
-      "  " + STATUS_COLUMN + " = $1,\n" +
-      "  " + OUT_OPT_OUT_TIME_COLUMN + " = $2,\n" +
-      "  " + MODIFICATION_TIME_COLUMN + " = $3\n" +
-      "where\n" +
-      "  " + REALM_COLUMN + " = $4\n" +
-      "AND  " + ID_COLUMN + " = $5\n" +
-      "AND  " + USER_ID_COLUMN + " = $6\n";
+    JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.listUserTable)
+      .addPredicateColumn(ListUserCols.REALM_ID, listUser.getList().getApp().getRealm().getLocalId())
+      .addPredicateColumn(ListUserCols.LIST_ID, listUser.getList().getLocalId())
+      .addPredicateColumn(ListUserCols.USER_ID, listUser.getUser().getLocalId());
 
-    return jdbcPool
-      .preparedQuery(sql)
-      .execute(Tuple.of(
-        listUser.getStatus().getValue(),
-        DateTimeService.getNowInUtc(),
-        listUser.getList().getApp().getRealm().getLocalId(),
-        listUser.getList().getLocalId(),
-        listUser.getUser().getLocalId()
-      ))
-      .onFailure(e -> LOGGER.error("List User Update Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e))
-      .compose(e->Future.succeededFuture(listUser));
+
+    LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
+    listUser.setModificationTime(nowInUtc);
+    jdbcUpdate.addUpdatedColumn(ListUserCols.MODIFICATION_TIME, listUser.getModificationTime());
+
+    listUser.setStatus(status);
+    jdbcUpdate.addUpdatedColumn(ListUserCols.STATUS_CODE, listUser.getStatus().getCode());
+
+    listUser.setOutOptOutTime(nowInUtc);
+    jdbcUpdate.addUpdatedColumn(ListUserCols.OUT_OPT_OUT_TIME, listUser.getOutOptOutTime());
+
+    return jdbcUpdate
+      .execute()
+      .compose(e -> Future.succeededFuture(listUser));
+
   }
 
   public Future<ListUser> insertListUser(User user, ListObject list, ListUserInputProps listUserInputProps) {
@@ -360,8 +358,8 @@ public class ListUserProvider {
       .addExtraSelectColumn(UserCols.EMAIL_ADDRESS)
       .setSearchColumn(UserCols.EMAIL_ADDRESS)
       .addOrderBy(ListUserCols.CREATION_TIME)
-      .addEqualityPredicate(ListUserCols.REALM_ID,realmId)
-      .addEqualityPredicate(ListUserCols.LIST_ID,listId)
+      .addEqualityPredicate(ListUserCols.REALM_ID, realmId)
+      .addEqualityPredicate(ListUserCols.LIST_ID, listId)
       .execute()
       .compose(registrationRows -> {
 
@@ -380,7 +378,7 @@ public class ListUserProvider {
           listUserShort.setUserGuid(userGuid);
           String subscriberEmail = row.getString(UserCols.EMAIL_ADDRESS);
           listUserShort.setUserEmail(subscriberEmail);
-          LocalDateTime localDateTime = row.getLocalDateTime(ListUserCols.IN_OPT_CONFIRMATION_TIME);
+          LocalDateTime localDateTime = row.getLocalDateTime(ListUserCols.OPT_IN_CONFIRMATION_TIME);
           listUserShort.setConfirmationTime(localDateTime);
           Integer registrationStatus = row.getInteger(ListUserCols.STATUS_CODE);
           listUserShort.setStatus(registrationStatus);

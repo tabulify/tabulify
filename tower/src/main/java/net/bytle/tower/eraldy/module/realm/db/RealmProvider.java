@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.objectProvider;
+package net.bytle.tower.eraldy.module.realm.db;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,8 +18,15 @@ import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.organization.db.OrganizationCols;
 import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
+import net.bytle.tower.eraldy.module.realm.jackson.JacksonRealmGuidDeserializer;
+import net.bytle.tower.eraldy.module.realm.jackson.JacksonRealmGuidSerializer;
+import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
+import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.util.Guid;
+import net.bytle.type.Handle;
+import net.bytle.type.HandleCastException;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
@@ -75,7 +82,12 @@ public class RealmProvider {
     this.realmTable = JdbcTable.build(schema, "realm", RealmCols.values())
       .addPrimaryKeyColumn(RealmCols.ID)
       .addUniqueKeyColumn(RealmCols.HANDLE)
+      .addForeignKeyColumn(RealmCols.ORGA_ID, OrganizationCols.ID)
       .build();
+
+    jacksonMapperManager
+      .addDeserializer(RealmGuid.class, new JacksonRealmGuidDeserializer(apiApp))
+      .addSerializer(RealmGuid.class, new JacksonRealmGuidSerializer(apiApp));
 
   }
 
@@ -88,7 +100,7 @@ public class RealmProvider {
     if (realm.getName() != null) {
       return realm.getName();
     }
-    return realm.getHandle();
+    return realm.getHandle().getValue();
   }
 
 
@@ -102,8 +114,9 @@ public class RealmProvider {
     if (realm.getGuid() != null) {
       return;
     }
-    String guid = this.getGuidFromLong(realm.getLocalId()).toString();
-    realm.setGuid(guid);
+    RealmGuid realmGuid = new RealmGuid();
+    realmGuid.setLocalId(realm.getLocalId());
+    realm.setGuid(realmGuid);
   }
 
 
@@ -113,12 +126,11 @@ public class RealmProvider {
    * @throws NotFoundException if the guid is empty
    */
   void updateIdFromGuid(Realm realm) throws CastException, NotFoundException {
-    String guid = realm.getGuid();
+    RealmGuid guid = realm.getGuid();
     if (guid == null) {
       throw new NotFoundException("The guid is empty");
     }
-    Long id = apiApp.createGuidFromRealmOrOrganizationId(REALM_GUID_PREFIX, guid).getRealmOrOrganizationId();
-    realm.setLocalId(id);
+    realm.setLocalId(guid.getLocalId());
   }
 
 
@@ -198,13 +210,13 @@ public class RealmProvider {
       }
       jdbcSelect.addEqualityPredicate(RealmCols.ID, realm.getLocalId());
     } else {
-      String handle = realm.getHandle();
+      Handle handle = realm.getHandle();
       if (handle == null) {
         String failureMessage = "An id, guid or handle should be given to check the existence of a realm";
         InternalException internalException = new InternalException(failureMessage);
         return Future.failedFuture(internalException);
       }
-      jdbcSelect.addEqualityPredicate(RealmCols.HANDLE, handle);
+      jdbcSelect.addEqualityPredicate(RealmCols.HANDLE, handle.getValue());
     }
     return jdbcSelect
       .execute()
@@ -227,13 +239,8 @@ public class RealmProvider {
    */
   private Future<Realm> insertRealm(OrgaUser ownerUser, RealmInputProps realmInputProps, SqlConnection sqlConnection, Long askedRealmId) {
 
-    String handle = realmInputProps.getHandle();
-    if (handle == null) {
-      throw new InternalException("The realm handle cannot be null on realm insertion");
-    }
-    if (ownerUser == null) {
-      throw new InternalException("The owner user of the realm (handle: " + handle + ") cannot be null on realm insertion");
-    }
+
+    assert ownerUser != null : "The owner user of the realm cannot be null on realm insertion";
 
 
     JdbcInsert jdbcInsert = JdbcInsert.into(this.realmTable)
@@ -249,9 +256,11 @@ public class RealmProvider {
       jdbcInsert.addColumn(RealmCols.ID, askedRealmId);
       realm.setLocalId(askedRealmId);
     }
-
-    realm.setHandle(realmInputProps.getHandle());
-    jdbcInsert.addColumn(RealmCols.HANDLE, realm.getHandle());
+    Handle handle = realmInputProps.getHandle();
+    if(handle!=null) {
+      realm.setHandle(handle);
+      jdbcInsert.addColumn(RealmCols.HANDLE, realm.getHandle().getValue());
+    }
 
     Organization organization = ownerUser.getOrganization();
     realm.setOrganization(organization);
@@ -299,7 +308,7 @@ public class RealmProvider {
       .addReturningColumn(RealmCols.ID)
       .addUpdatedColumn(RealmCols.MODIFICATION_TIME, DateTimeService.getNowInUtc());
 
-    String newHandle = realmInputProps.getHandle();
+    Handle newHandle = realmInputProps.getHandle();
     if (newHandle != null && !Objects.equals(newHandle, realm.getHandle())) {
       realm.setHandle(newHandle);
       jdbcUpdate.addUpdatedColumn(RealmCols.HANDLE, realm.getHandle());
@@ -348,11 +357,11 @@ public class RealmProvider {
           return Future.failedFuture(new InternalException("the realm id (" + realmId + ") returns  more than one application"));
         }
         JdbcRow row = userRows.iterator().next();
-        return this.getRealmFromDatabaseRow(row);
+        return Future.succeededFuture(this.getRealmFromDatabaseRow(row));
       });
   }
 
-  private Future<Realm> getRealmFromHandle(String realmHandle) {
+  private Future<Realm> getRealmFromHandle(Handle realmHandle) {
     return this.realmTable.getSchema().getJdbcClient().getPool()
       .withConnection(sqlConnection -> this.getRealmFromHandle(realmHandle, sqlConnection));
   }
@@ -361,10 +370,10 @@ public class RealmProvider {
    * @param realmHandle   - the handle
    * @return the realm or null if not found
    */
-  private Future<Realm> getRealmFromHandle(String realmHandle, SqlConnection sqlConnection) {
+  private Future<Realm> getRealmFromHandle(Handle realmHandle, SqlConnection sqlConnection) {
 
     return JdbcSelect.from(this.realmTable)
-      .addEqualityPredicate(RealmCols.HANDLE, realmHandle)
+      .addEqualityPredicate(RealmCols.HANDLE, realmHandle.getValue())
       .execute(sqlConnection)
       .compose(userRows -> {
 
@@ -376,7 +385,7 @@ public class RealmProvider {
           return Future.failedFuture(new InternalException("the realm handle (" + realmHandle + ") returns more than one application"));
         }
         JdbcRow row = userRows.iterator().next();
-        return this.getRealmFromDatabaseRow(row);
+        return Future.succeededFuture(this.getRealmFromDatabaseRow(row));
 
       });
   }
@@ -398,25 +407,18 @@ public class RealmProvider {
 
 
   private Future<List<Realm>> getRealmsFromRows(JdbcRowSet realmRows) {
-    List<Future<Realm>> futureRealms = new ArrayList<>();
+    List<Realm> realms = new ArrayList<>();
     for (JdbcRow row : realmRows) {
 
-      Future<Realm> futureRealm = this.getRealmFromDatabaseRow(row);
-      futureRealms.add(futureRealm);
+      Realm futureRealm = this.getRealmFromDatabaseRow(row);
+      realms.add(futureRealm);
 
     }
-    return Future.all(futureRealms)
-      .recover(t -> Future.failedFuture(new InternalException("Error while getting the future realms", t)))
-      .compose(compositeFuture -> {
-        if (compositeFuture.failed()) {
-          return Future.failedFuture(new InternalException("getRealms For row composite failure", compositeFuture.cause()));
-        }
-        return Future.succeededFuture(compositeFuture.list());
-      });
+    return Future.succeededFuture(realms);
   }
 
 
-  public Future<Realm> getRealmFromDatabaseRow(JdbcRow row) {
+  public Realm getRealmFromDatabaseRow(JdbcRow row) {
 
     Realm realm = new Realm();
 
@@ -426,7 +428,7 @@ public class RealmProvider {
     Long realmId = row.getLong(RealmCols.ID);
     realm.setLocalId(realmId);
     this.updateGuid(realm);
-    realm.setHandle(row.getString(RealmCols.HANDLE));
+    realm.setHandle(Handle.ofFailSafe(row.getString(RealmCols.HANDLE)));
 
     /**
      * Analytics
@@ -441,32 +443,26 @@ public class RealmProvider {
      */
     realm.setName(row.getString(RealmCols.NAME));
 
-    /**
-     * Eraldy Realm
-     */
-    EraldyApiApp apiApp = this.getApp();
 
     /**
-     * Future Org
+     * Org
      */
     Long orgaId = row.getLong(RealmCols.ORGA_ID);
-    Future<Organization> futureOrganization = apiApp.getOrganizationProvider().getById(orgaId);
-    return futureOrganization
-      .recover(t -> Future.failedFuture(new InternalException("Future organization for building the realm failed", t)))
-      .compose(organization -> {
-        realm.setOrganization(organization);
-        /**
-         * Future Owner
-         */
-        Long ownerUserLocalId = row.getLong(RealmCols.OWNER_ID);
-        return apiApp.getOrganizationUserProvider()
-          .getOrganizationUserByLocalId(ownerUserLocalId);
-      })
-      .recover(t -> Future.failedFuture(new InternalException("Future user for building the realm failed", t)))
-      .compose(user -> {
-        realm.setOwnerUser(user);
-        return Future.succeededFuture(realm);
-      });
+    Organization organization = new Organization();
+    organization.setLocalId(orgaId);
+    realm.setOrganization(organization);
+
+    /**
+     * Owner
+     */
+    Long ownerUserLocalId = row.getLong(RealmCols.OWNER_ID);
+    OrgaUser orgaUser = new OrgaUser();
+    orgaUser.setOrganization(organization);
+    orgaUser.setLocalId(ownerUserLocalId);
+    orgaUser.setRealm(this.apiApp.getEraldyModel().getRealm());
+    realm.setOwnerUser(orgaUser);
+
+    return realm;
 
   }
 
@@ -530,7 +526,15 @@ public class RealmProvider {
     if (this.isRealmGuidIdentifier(realmIdentifier)) {
       return getRealmFromGuid(realmIdentifier);
     }
-    return getRealmFromHandle(realmIdentifier);
+      try {
+          return getRealmFromHandle(Handle.of(realmIdentifier));
+      } catch (HandleCastException e) {
+          return Future.failedFuture(TowerFailureException
+            .builder()
+            .setMessage("The realm identifier ("+realmIdentifier+") is not a guid, nor a valid handle. Message: "+e.getMessage())
+            .build()
+          );
+      }
 
   }
 
@@ -568,7 +572,7 @@ public class RealmProvider {
     if (realmId != null) {
       selectRealmFuture = this.getRealmFromLocalId(realmId, sqlConnection);
     } else {
-      String realmHandle = realmInputProps.getHandle();
+      Handle realmHandle = realmInputProps.getHandle();
       if (realmHandle == null) {
         return Future.failedFuture(new InternalException("The realm to getsert should have an identifier (id, or handle)"));
       }
@@ -590,4 +594,11 @@ public class RealmProvider {
     return getRealmFromIdentifier(realmIdentifier);
   }
 
+  public Future<Organization> buildOrganizationAtRequestTimeEventually(Realm realm) {
+    if(realm.getOrganization().getName()!=null){
+      return Future.succeededFuture(realm.getOrganization());
+    }
+    return this.apiApp.getOrganizationProvider()
+      .getById(realm.getOrganization().getLocalId());
+  }
 }

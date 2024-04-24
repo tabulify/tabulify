@@ -17,6 +17,8 @@ import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.app.jackson.JacksonAppGuidDeserializer;
 import net.bytle.tower.eraldy.module.app.jackson.JacksonAppGuidSerializer;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.organization.db.OrganizationProvider;
+import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.type.Handle;
 import net.bytle.vertx.DateTimeService;

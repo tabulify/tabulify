@@ -14,9 +14,9 @@ import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
+import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
-import net.bytle.tower.util.Guid;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
 import net.bytle.type.Handle;
@@ -132,21 +132,18 @@ public class AuthProvider {
     if (audience == null) {
       throw new InternalException("The audience/realm guid should not be null for a user");
     }
-    Guid realmGuid;
-    try {
-      realm.setGuid(audience);
-      realmGuid = this.apiApp.getRealmProvider().getGuidFromHash(audience);
-    } catch (CastException e) {
-      throw new InternalException("The audience value (" + audience + ") is not a valid realm guid", e);
-    }
+    RealmGuid realmGuid = this.apiApp.getJackson().getDeserializer(RealmGuid.class).deserializeFailSafe(audience);
+    realm.setGuid(realmGuid);
 
-    long realmId = realmGuid.getRealmOrOrganizationId();
+    long realmId = realmGuid.getLocalId();
     realm.setLocalId(realmId);
     if (user instanceof OrgaUser && realmId != EraldyModel.REALM_LOCAL_ID) {
       throw new InternalException("An orga user should have the Eraldy realm, not the realm (" + realmId + ")");
     }
     String audienceHandle = authUser.getAudienceHandle();
-    realm.setHandle(audienceHandle);
+    if (audienceHandle != null) {
+      realm.setHandle(Handle.ofFailSafe(audienceHandle));
+    }
     user.setRealm(realm);
 
     /**
@@ -417,8 +414,8 @@ public class AuthProvider {
       .builder()
       .setSubject(jackson.getSerializer(UserGuid.class).serialize(user.getGuid()))
       .setSubjectEmail(user.getEmailAddress())
-      .setRealmGuid(user.getRealm().getGuid())
-      .setRealmHandle(user.getRealm().getHandle());
+      .setRealmGuid(jackson.getSerializer(RealmGuid.class).serialize(user.getRealm().getGuid()))
+      .setRealmHandle(jackson.getSerializer(Handle.class).serialize(user.getRealm().getHandle()));
     if (user instanceof OrgaUser) {
       Organization organization = ((OrgaUser) user).getOrganization();
       // An organization user object is
@@ -608,8 +605,8 @@ public class AuthProvider {
     analyticsUser.setGivenName(user.getGivenName());
     analyticsUser.setFamilyName(user.getFamilyName());
     analyticsUser.setAvatar(user.getAvatar());
-    analyticsUser.setRealmGuid(user.getRealm().getGuid());
-    analyticsUser.setRealmHandle(user.getRealm().getHandle());
+    analyticsUser.setRealmGuid(jackson.getSerializer(RealmGuid.class).serialize(user.getRealm().getGuid()));
+    analyticsUser.setRealmHandle(jackson.getSerializer(Handle.class).serialize(user.getRealm().getHandle()));
     if (user instanceof OrgaUser) {
       Organization organization = ((OrgaUser) user).getOrganization();
       // An organization user object is

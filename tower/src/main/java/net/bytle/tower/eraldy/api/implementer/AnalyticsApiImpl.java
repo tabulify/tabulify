@@ -10,6 +10,7 @@ import net.bytle.tower.eraldy.api.openapi.interfaces.AnalyticsApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
+import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.type.Handle;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerApp;
@@ -95,8 +96,8 @@ public class AnalyticsApiImpl implements AnalyticsApi {
     Realm authRealm = authClient.getApp().getRealm();
     analyticsClient.setAppOrganisationGuid(jackson.getSerializer(OrgaGuid.class).serialize(authRealm.getOrganization().getGuid()));
     analyticsClient.setAppOrganisationHandle(jackson.getSerializer(Handle.class).serialize(authRealm.getOrganization().getHandle()));
-    analyticsClient.setAppRealmGuid(authRealm.getGuid());
-    analyticsClient.setAppRealmHandle(authRealm.getHandle());
+    analyticsClient.setAppRealmGuid(jackson.getSerializer(RealmGuid.class).serialize(authRealm.getGuid()));
+    analyticsClient.setAppRealmHandle(jackson.getSerializer(Handle.class).serialize(authRealm.getHandle()));
 
 
     /**

@@ -2,6 +2,7 @@ package net.bytle.vertx;
 
 import net.bytle.exception.InternalException;
 import net.bytle.type.EmailAddress;
+import net.bytle.type.Handle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +21,7 @@ public class EraldyDomain extends TowerApexDomain {
    */
   private static final String COMBO_APEX_DOMAIN_CONFIG_KEY = "eraldy.apex.domain";
   private static final long ERALDY_REALM_ID = 1L;
-  private static final String REALM_HANDLE = "eraldy";
+  private static final Handle REALM_HANDLE = Handle.ofFailSafe("eraldy");
   private static final String REALM_NAME = "Eraldy";
 
   private static final String USER_OWNER_NAME = "Nico";
@@ -61,7 +62,7 @@ public class EraldyDomain extends TowerApexDomain {
   }
 
   @Override
-  public String getRealmHandle() {
+  public Handle getRealmHandle() {
     return REALM_HANDLE;
   }
 

@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.module.organization.graphql;
+package net.bytle.tower.eraldy.module.realm.graphql;
 
 import graphql.GraphQLContext;
 import graphql.execution.CoercedVariables;
@@ -7,18 +7,18 @@ import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingSerializeException;
 import net.bytle.exception.CastException;
-import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
+import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
-public class GraphQLOrgaGuidCoercing implements Coercing<OrgaGuid, String> {
+public class GraphQLRealmGuidCoercing implements Coercing<RealmGuid, String> {
 
   private final JacksonMapperManager jacksonMapperManager;
 
-  public GraphQLOrgaGuidCoercing(JacksonMapperManager jacksonMapperManager) {
+  public GraphQLRealmGuidCoercing(JacksonMapperManager jacksonMapperManager) {
     this.jacksonMapperManager = jacksonMapperManager;
   }
 
@@ -28,17 +28,17 @@ public class GraphQLOrgaGuidCoercing implements Coercing<OrgaGuid, String> {
   @Override
   public @Nullable String serialize(@NotNull Object dataFetcherResult, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingSerializeException {
 
-    return this.jacksonMapperManager.getSerializer(OrgaGuid.class).serialize((OrgaGuid) dataFetcherResult);
+    return this.jacksonMapperManager.getSerializer(RealmGuid.class).serialize((RealmGuid) dataFetcherResult);
 
   }
 
   @Override
-  public @Nullable OrgaGuid parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
+  public @Nullable RealmGuid parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
     String string = input.toString();
     try {
-      return this.jacksonMapperManager.getDeserializer(OrgaGuid.class).deserialize(string);
+      return this.jacksonMapperManager.getDeserializer(RealmGuid.class).deserialize(string);
     } catch (CastException e) {
-      throw new CoercingParseLiteralException("The value (" + string + ") is not a valid orga guid. Error: " + e.getMessage(), e);
+      throw new CoercingParseLiteralException("The value (" + string + ") is not a valid realm guid. Error: "+e.getMessage(), e);
     }
   }
 

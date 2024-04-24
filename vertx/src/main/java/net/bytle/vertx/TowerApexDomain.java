@@ -1,6 +1,7 @@
 package net.bytle.vertx;
 
 import net.bytle.type.EmailAddress;
+import net.bytle.type.Handle;
 
 /**
  * This class represents the apex domain of an app
@@ -68,7 +69,7 @@ public abstract class TowerApexDomain {
     return apexNameWithoutPort;
   }
 
-  public abstract String getRealmHandle();
+  public abstract Handle getRealmHandle();
 
   /**
    * @return the realm local id

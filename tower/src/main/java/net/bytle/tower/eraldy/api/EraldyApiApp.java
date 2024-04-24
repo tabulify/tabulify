@@ -18,7 +18,9 @@ import net.bytle.tower.eraldy.module.mailing.db.mailing.MailingProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingitem.MailingItemProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingjob.MailingJobProvider;
 import net.bytle.tower.eraldy.module.mailing.flow.MailingFlow;
+import net.bytle.tower.eraldy.module.organization.db.OrganizationProvider;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationUserProvider;
+import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
@@ -327,12 +329,6 @@ public class EraldyApiApp extends TowerApp {
   public Guid createGuidFromHashWithOneRealmIdAndTwoObjectId(String guidPrefix, String guid) throws CastException {
     return new builder(this.hashIds, guidPrefix)
       .setCipherText(guid, REALM_ID_TWO_OBJECT_ID_TYPE)
-      .build();
-  }
-
-  public Guid createGuidFromRealmOrOrganizationId(String shortPrefix, String guid) throws CastException {
-    return new builder(this.hashIds, shortPrefix)
-      .setCipherText(guid, ONE_ID_TYPE)
       .build();
   }
 

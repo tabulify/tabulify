@@ -2,6 +2,7 @@ directive @dateFormat on FIELD_DEFINITION
 scalar AppGuid
 scalar UserGuid
 scalar OrgaGuid
+scalar RealmGuid
 scalar EmailAddress
 scalar Handle
 
@@ -193,11 +194,11 @@ A realm has:
 * one or more apps
 """
 type Realm {
-  guid: ID!
+  guid: RealmGuid!
   """A short descriptive name"""
   name: String!
   """An unique human id"""
-  handle: String
+  handle: Handle
   """The owner of the realm"""
   ownerUser: OrganizationUser!
   """The number of user in the realm"""
@@ -215,7 +216,7 @@ type App {
   guid: AppGuid!
   """A short descriptive name"""
   name: String!
-  """A uniqe name identifier"""
+  """A unique name identifier"""
   handle: Handle
   """
   The owner of the App

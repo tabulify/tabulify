@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.module.realm.inputs;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
+import net.bytle.type.Handle;
 
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -12,7 +13,7 @@ public class RealmInputProps {
 
   protected String name;
 
-  protected String handle;
+  protected Handle handle;
   private Long appCount;
   private Long userCount;
   private Long listCount;
@@ -49,7 +50,7 @@ public class RealmInputProps {
   * @return handle The handle is a name unique identifier. It's used as:   - basic authentication: \"WWW-Authenticate: Basic realm=\"WallyWorld\"   - database schema, dns name
   */
   @JsonProperty("handle")
-  public String getHandle() {
+  public Handle getHandle() {
     return handle;
   }
 
@@ -57,7 +58,7 @@ public class RealmInputProps {
   * @param handle The handle is a name unique identifier. It's used as:   - basic authentication: \"WWW-Authenticate: Basic realm=\"WallyWorld\"   - database schema, dns name
   */
   @SuppressWarnings("unused")
-  public void setHandle(String handle) {
+  public void setHandle(Handle handle) {
     this.handle = handle;
   }
 

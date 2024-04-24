@@ -21,8 +21,9 @@ import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
+import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
-import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
 import net.bytle.type.Handle;
@@ -232,11 +233,12 @@ public class UserRegistrationFlow extends WebFlowAbs {
      * The requested realm should be the same as the user realm
      */
     Realm requestingRealm = this.getApp().getRealmProvider().getRequestingRealm(ctx);
-    if (!requestingRealm.getGuid().equals(authUser.getRealmGuid())) {
+    RealmGuid authUserRealmGuid = this.getApp().getJackson().getDeserializer(RealmGuid.class).deserializeFailSafe(authUser.getRealmGuid());
+    if (!requestingRealm.getGuid().equals(authUserRealmGuid)) {
       TowerFailureException
         .builder()
         .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500) // callback our fault
-        .setMessage("The requesting realm (" + requestingRealm.getGuid() + ") is not the same as the claims (" + authUser.getRealmGuid() + ")")
+        .setMessage("The requesting realm (" + requestingRealm.getGuid() + ") is not the same as the claims (" + authUserRealmGuid + ")")
         .buildWithContextFailingTerminal(ctx);
       return;
     }

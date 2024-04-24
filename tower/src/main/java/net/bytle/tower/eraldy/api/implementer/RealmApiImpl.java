@@ -9,9 +9,9 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
+import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
-import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.vertx.*;
 
 import java.util.ArrayList;

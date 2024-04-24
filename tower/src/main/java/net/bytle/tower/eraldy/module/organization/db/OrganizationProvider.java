@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.objectProvider;
+package net.bytle.tower.eraldy.module.organization.db;
 
 import io.vertx.core.Future;
 import io.vertx.sqlclient.Pool;
@@ -8,7 +8,6 @@ import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.Organization;
-import net.bytle.tower.eraldy.module.organization.db.OrganizationCols;
 import net.bytle.tower.eraldy.module.organization.inputs.OrganizationInputProps;
 import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaGuidDeserializer;
 import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaGuidSerializer;
@@ -88,6 +87,7 @@ public class OrganizationProvider {
     Organization organization = new Organization();
     organization.setCreationTime(row.getLocalDateTime(OrganizationCols.CREATION_TIME));
     organization.setHandle(Handle.ofFailSafe(row.getString(OrganizationCols.HANDLE)));
+    organization.setName(row.getString(OrganizationCols.NAME));
     organization.setLocalId(row.getLong(OrganizationCols.ID));
     organization.setModificationTime(row.getLocalDateTime(OrganizationCols.MODIFICATION_IME));
 

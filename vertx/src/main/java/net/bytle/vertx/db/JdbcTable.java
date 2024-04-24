@@ -104,6 +104,18 @@ public class JdbcTable {
       this.jdbcSchema.getJdbcClient().getSqlStatementEngine().registerForeignKey(columnsMapping);
       return this;
     }
+
+    /**
+     * Add a simple column foreign key from one domestic column (pk, unique) to another foreign column (pk, unique)
+     * Don't use this function, if the foreign key has multiple columns, use {@link #addForeignKeyColumns(Map)}
+     * instead
+     */
+    public JdbcTableBuilder addForeignKeyColumn(JdbcColumn domesticColumn, JdbcColumn foreignColumn) {
+      Map<JdbcColumn, JdbcColumn> foreign = new HashMap<>();
+      foreign.put(domesticColumn, foreignColumn);
+      addForeignKeyColumns(foreign);
+      return this;
+    }
   }
 
   @Override

@@ -1,10 +1,11 @@
-package net.bytle.tower.eraldy.objectProvider;
+package net.bytle.tower.eraldy.module.realm.db;
 
+import net.bytle.tower.eraldy.module.organization.db.OrganizationProvider;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.vertx.db.JdbcColumn;
 import net.bytle.vertx.db.JdbcSchemaManager;
 
-import static net.bytle.tower.eraldy.objectProvider.RealmProvider.TABLE_PREFIX;
+import static net.bytle.tower.eraldy.module.realm.db.RealmProvider.TABLE_PREFIX;
 import static net.bytle.vertx.db.JdbcSchemaManager.COLUMN_PART_SEP;
 
 public enum RealmCols implements JdbcColumn {

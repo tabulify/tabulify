@@ -13,8 +13,8 @@ public enum ListUserCols implements JdbcColumn {
   IN_OPT_IN_ORIGIN("list_user_in_opt_in_origin"),
   IN_OPT_IN_IP("list_user_in_opt_in_ip"),
   IN_OPT_IN_TIME("list_user_in_opt_in_time"),
-  IN_OPT_CONFIRMATION_IP("list_user_in_opt_confirmation_ip"),
-  IN_OPT_CONFIRMATION_TIME("list_user_in_opt_confirmation_time"),
+  IN_OPT_CONFIRMATION_IP("list_user_in_opt_in_confirmation_ip"),
+  OPT_IN_CONFIRMATION_TIME("list_user_in_opt_in_confirmation_time"),
   OUT_OPT_OUT_TIME("list_user_out_opt_out_time"),
 
   CREATION_TIME("list_user_creation_time"),

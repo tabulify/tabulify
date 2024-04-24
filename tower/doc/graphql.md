@@ -114,9 +114,14 @@ if you use a connection, it's scoped to a unique rows.
 You don't run the error that you may use 2 connections
 that may block each other.
 
-### Enforce not null
+### Enforce not null / Avoid undefined
 
 GraphQl will check if your value is conforming and throw an error if not.
+
+You will minimize the common error:
+```
+Cannot read properties of undefined (reading 'substring')
+```
 
 If the returned data is null and should not, you'll get an error.
 

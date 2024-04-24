@@ -17,7 +17,7 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
-import net.bytle.tower.eraldy.objectProvider.RealmProvider;
+import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
 import net.bytle.vertx.*;

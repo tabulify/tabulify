@@ -2,6 +2,8 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
+import net.bytle.type.Handle;
 
 import java.util.Objects;
 
@@ -15,7 +17,7 @@ public class Realm   {
 
   protected Long localId;
 
-  protected String guid;
+  protected RealmGuid guid;
 
   protected String name;
 
@@ -23,7 +25,7 @@ public class Realm   {
 
   protected OrgaUser ownerUser;
 
-  protected String handle;
+  protected Handle handle;
 
   protected Long userCount;
 
@@ -62,7 +64,7 @@ public class Realm   {
   * @return guid The public id (derived from the database id)
   */
   @JsonProperty("guid")
-  public String getGuid() {
+  public RealmGuid getGuid() {
     return guid;
   }
 
@@ -70,7 +72,7 @@ public class Realm   {
   * @param guid The public id (derived from the database id)
   */
   @SuppressWarnings("unused")
-  public void setGuid(String guid) {
+  public void setGuid(RealmGuid guid) {
     this.guid = guid;
   }
 
@@ -126,7 +128,7 @@ public class Realm   {
   * @return handle The handle is a name unique identifier. It's used as:   - basic authentication: \"WWW-Authenticate: Basic realm=\"WallyWorld\"   - database schema, dns name
   */
   @JsonProperty("handle")
-  public String getHandle() {
+  public Handle getHandle() {
     return handle;
   }
 
@@ -134,7 +136,7 @@ public class Realm   {
   * @param handle The handle is a name unique identifier. It's used as:   - basic authentication: \"WWW-Authenticate: Basic realm=\"WallyWorld\"   - database schema, dns name
   */
   @SuppressWarnings("unused")
-  public void setHandle(String handle) {
+  public void setHandle(Handle handle) {
     this.handle = handle;
   }
 

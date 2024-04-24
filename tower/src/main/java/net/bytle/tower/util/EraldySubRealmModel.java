@@ -9,13 +9,14 @@ import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.type.EmailAddress;
+import net.bytle.type.Handle;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class EraldySubRealmModel {
   private static final Logger LOGGER = LogManager.getLogger(EraldySubRealmModel.class);
 
-  public static final String REALM_HANDLE = "datacadamia";
+  public static final Handle REALM_HANDLE = Handle.ofFailSafe("datacadamia");
   private final EraldyApiApp apiApp;
 
   public EraldySubRealmModel(EraldyApiApp apiApp) {
