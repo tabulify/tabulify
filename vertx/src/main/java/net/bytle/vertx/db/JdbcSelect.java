@@ -178,10 +178,10 @@ public class JdbcSelect extends JdbcQuery {
       selectSqlBuilder.append(" LIMIT ").append(this.limit);
     }
 
-    String insertSqlString = selectSqlBuilder.toString();
+    String selectSql = selectSqlBuilder.toString();
 
 
-    return new JdbcPreparedStatement(insertSqlString, bindingValues);
+    return new JdbcPreparedStatement(selectSql, bindingValues);
   }
 
   /**

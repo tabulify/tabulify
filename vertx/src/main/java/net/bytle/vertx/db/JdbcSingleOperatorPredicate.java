@@ -35,6 +35,10 @@ public class JdbcSingleOperatorPredicate {
     }
     String columnName = this.builder.sqlEngine.toFullColumnName(this.getColumn());
 
+    /**
+     * Note if we need to pass the data type
+     * this is done like that: $3::BIGINT for Long
+     */
     predicateBuilder
       .append(columnName)
       .append(" ")

@@ -117,7 +117,7 @@ public class OrganizationUserProvider {
       .addEqualityPredicate(OrgaUserCols.USER_ID, userLocalId)
       .execute(sqlConnection)
       .compose(jdbcRowSet -> {
-        if (jdbcRowSet == null) {
+        if (jdbcRowSet == null || jdbcRowSet.size() == 0) {
           return Future.succeededFuture();
         }
         if (jdbcRowSet.size() > 1) {

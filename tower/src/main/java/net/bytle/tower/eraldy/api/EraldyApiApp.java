@@ -174,7 +174,7 @@ public class EraldyApiApp extends TowerApp {
     this.realmProvider = new RealmProvider(this, realmSchema);
     this.listProvider = new ListProvider(this, realmSchema);
     this.authProvider = new AuthProvider(this);
-    this.listUserProvider = new ListUserProvider(this);
+    this.listUserProvider = new ListUserProvider(this, realmSchema);
     this.serviceProvider = new ServiceProvider(this);
     this.organizationRoleProvider = new OrganizationRoleProvider(this);
     this.hashIds = this.getHttpServer().getServer().getHashId();

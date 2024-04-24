@@ -18,12 +18,12 @@ import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceDeserializer;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceSerializer;
+import net.bytle.tower.eraldy.module.user.db.UserCols;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.db.JdbcClient;
-import net.bytle.vertx.db.JdbcSchemaManager;
+import net.bytle.vertx.db.*;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -47,7 +49,7 @@ public class ListUserProvider {
   static final String TABLE_NAME = "realm_list_user";
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String LIST_USER_PREFIX = "list_user";
-  public static final String STATUS_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "status";
+  public static final String STATUS_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "status_code";
   public static final String ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN;
   public static final String LIST_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN;
   public static final String USER_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
@@ -67,11 +69,11 @@ public class ListUserProvider {
   private static final String MODIFICATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
 
   private final Pool jdbcPool;
-  private final String registrationsBySearchTermSql;
   private final ObjectMapper apiMapper;
+  private final JdbcTable listUserTable;
 
 
-  public ListUserProvider(EraldyApiApp apiApp) {
+  public ListUserProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
 
     this.apiApp = apiApp;
     JdbcClient postgresClient = apiApp.getHttpServer().getServer().getPostgresClient();
@@ -92,7 +94,19 @@ public class ListUserProvider {
     jacksonMapperManager.addSerializer(ListUserSource.class, new JacksonListUserSourceSerializer());
 
 
-    this.registrationsBySearchTermSql = postgresClient.getSqlStatement("list-registration-users-by-search-term.sql");
+    Map<JdbcColumn, JdbcColumn> foreignKeysUserColumn = new HashMap<>();
+    foreignKeysUserColumn.put(ListUserCols.REALM_ID, UserCols.REALM_ID);
+    foreignKeysUserColumn.put(ListUserCols.USER_ID, UserCols.ID);
+    Map<JdbcColumn, JdbcColumn> foreignKeysListColumn = new HashMap<>();
+    foreignKeysListColumn.put(ListUserCols.REALM_ID, ListCols.REALM_ID);
+    foreignKeysListColumn.put(ListUserCols.LIST_ID, ListCols.ID);
+    this.listUserTable = JdbcTable.build(jdbcSchema,TABLE_NAME, ListUserCols.values())
+      .addPrimaryKeyColumn(ListUserCols.REALM_ID)
+      .addPrimaryKeyColumn(ListUserCols.LIST_ID)
+      .addPrimaryKeyColumn(ListUserCols.USER_ID)
+      .addForeignKeyColumns(foreignKeysListColumn)
+      .addForeignKeyColumns(foreignKeysUserColumn)
+      .build();
 
 
   }
@@ -334,63 +348,21 @@ public class ListUserProvider {
       return Future.failedFuture(e);
     }
 
-
     long realmId = guid.getRealmOrOrganizationId();
     long listId = guid.validateRealmAndGetFirstObjectId(realmId);
-    String sql;
-    Tuple sqlParameters;
-    if (searchTerm != null && !searchTerm.trim().isEmpty()) {
 
-      sql = this.registrationsBySearchTermSql;
-      sqlParameters = Tuple.of(
-        realmId,
-        "%" + searchTerm + "%",
-        listId,
-        pageSize,
-        pageId,
-        pageSize,
-        pageId + 1
-      );
-
-    } else {
-      /**
-       * The query on the whole set
-       * (without search term)
-       */
-      sql = "SELECT registration_pages.list_user_creation_time,\n" +
-        "       registration_pages.list_user_user_id as user_id,\n" +
-        "       registration_pages.list_user_status,\n" +
-        "       realm_user.user_email_address as user_email\n" +
-        "FROM (select *\n" +
-        "      from (SELECT ROW_NUMBER() OVER (ORDER BY list_user_creation_time DESC) AS rn,\n" +
-        "                   *\n" +
-        "            FROM cs_realms.realm_list_user registration\n" +
-        "            where registration.list_user_realm_id = $1\n" +
-        "              AND registration.list_user_list_id = $2) registration\n" +
-        "      where rn >= 1 + $3::BIGINT * $4::BIGINT\n" +
-        "        and rn < $5::BIGINT * $6::BIGINT + 1" +
-        "       ) registration_pages\n" +
-        "         JOIN cs_realms.realm_user realm_user\n" +
-        "              on registration_pages.list_user_user_id = realm_user.user_id\n" +
-        "                  and registration_pages.list_user_realm_id = realm_user.user_realm_id\n" +
-        "        order by registration_pages.list_user_creation_time desc";
-      sqlParameters = Tuple.of(
-        realmId,
-        listId,
-        pageSize,
-        pageId,
-        pageSize,
-        pageId + 1
-      );
-    }
-
-
-    return jdbcPool.preparedQuery(sql)
-      .execute(sqlParameters)
-      .recover(err -> Future.failedFuture(TowerFailureException.builder()
-        .setMessage("Error while getting the user of the list with the sql: " + sql)
-        .setCauseException(err)
-        .build()))
+    JdbcPagination pagination = new JdbcPagination();
+    pagination.setSearchTerm(searchTerm);
+    pagination.setPageSize(pageSize);
+    pagination.setPageId(pageId);
+    return JdbcPaginatedSelect.from(this.listUserTable)
+      .setPagination(pagination)
+      .addExtraSelectColumn(UserCols.EMAIL_ADDRESS)
+      .setSearchColumn(UserCols.EMAIL_ADDRESS)
+      .addOrderBy(ListUserCols.CREATION_TIME)
+      .addEqualityPredicate(ListUserCols.REALM_ID,realmId)
+      .addEqualityPredicate(ListUserCols.LIST_ID,listId)
+      .execute()
       .compose(registrationRows -> {
 
         java.util.List<ListUserShort> futureSubscriptions = new ArrayList<>();
@@ -398,21 +370,19 @@ public class ListUserProvider {
           return Future.succeededFuture(futureSubscriptions);
         }
 
-        for (Row row : registrationRows) {
+        for (JdbcRow row : registrationRows) {
 
           ListUserShort listUserShort = new ListUserShort();
-          String userIdAliasInQuery = "user_id";
-          Long userId = row.getLong(userIdAliasInQuery);
+          Long userId = row.getLong(ListUserCols.USER_ID);
           String guidString = apiApp.createGuidStringFromRealmAndTwoObjectId(GUID_PREFIX, realmId, listId, userId).toString();
           listUserShort.setGuid(guidString);
           String userGuid = apiApp.getUserProvider().createUserGuid(realmId, userId).toString();
           listUserShort.setUserGuid(userGuid);
-          String userEmailAliasInQuery = "user_email";
-          String subscriberEmail = row.getString(userEmailAliasInQuery);
+          String subscriberEmail = row.getString(UserCols.EMAIL_ADDRESS);
           listUserShort.setUserEmail(subscriberEmail);
-          LocalDateTime localDateTime = row.getLocalDateTime(CREATION_TIME_COLUMN);
+          LocalDateTime localDateTime = row.getLocalDateTime(ListUserCols.IN_OPT_CONFIRMATION_TIME);
           listUserShort.setConfirmationTime(localDateTime);
-          Integer registrationStatus = row.getInteger(STATUS_COLUMN);
+          Integer registrationStatus = row.getInteger(ListUserCols.STATUS_CODE);
           listUserShort.setStatus(registrationStatus);
           futureSubscriptions.add(listUserShort);
 

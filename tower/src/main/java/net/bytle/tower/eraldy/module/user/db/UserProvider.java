@@ -722,8 +722,6 @@ public class UserProvider {
   private Future<User> insertUser(Realm realm, UserInputProps userInputProps, SqlConnection sqlConnection) {
 
 
-    User user = new User();
-
     return this.apiApp.getRealmSequenceProvider()
       .getNextIdForTableAndRealm(sqlConnection, realm, this.userTable)
       .recover(err -> Future.failedFuture(
@@ -734,10 +732,16 @@ public class UserProvider {
       ))
       .compose(seqUserId -> {
 
+        LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
+        User user = new User();
+        user.setRealm(realm);
+        user.setCreationTime(nowInUtc);
+        user.setLastActiveTime(nowInUtc);
+
         JdbcInsert jdbcInsert = JdbcInsert.into(this.userTable)
-          .addColumn(UserCols.CREATION_TIME, DateTimeService.getNowInUtc())
-          .addColumn(UserCols.LAST_ACTIVE_TIME, DateTimeService.getNowInUtc())
-          .addColumn(UserCols.REALM_ID, realm.getLocalId());
+          .addColumn(UserCols.CREATION_TIME, user.getCreationTime())
+          .addColumn(UserCols.LAST_ACTIVE_TIME, user.getLastActiveTime())
+          .addColumn(UserCols.REALM_ID, user.getRealm().getLocalId());
 
         user.setLocalId(seqUserId);
         jdbcInsert.addColumn(UserCols.ID, user.getLocalId());

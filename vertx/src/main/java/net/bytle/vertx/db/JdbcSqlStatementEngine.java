@@ -1,6 +1,8 @@
 package net.bytle.vertx.db;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,20 +19,26 @@ public class JdbcSqlStatementEngine {
 
 
   private final Map<JdbcColumn, JdbcTable> columnToTableMap = new HashMap<>();
-  private final Map<JdbcColumn,JdbcColumn> foreignKeyColumnsMapping = new HashMap<>();
+  /**
+   * A list of foreign key columns mapping
+   * (Why a list and not a map, because a domestic column may have more than one foreign columns)
+   */
+  private final List<Map<JdbcColumn,JdbcColumn>> foreignKeyDefs = new ArrayList<>();
 
   public Map<JdbcColumn, JdbcColumn> getForeignKeyColumns(JdbcTable domesticTable, JdbcTable foreignTable) {
     Map<JdbcColumn, JdbcColumn> foreignKeys = new HashMap<>();
-    for(Map.Entry<JdbcColumn,JdbcColumn> foreignKeyColumnsMapping:this.foreignKeyColumnsMapping.entrySet()){
-      JdbcTable domesticKeyColumnTable = this.getTableOfColumn(foreignKeyColumnsMapping.getKey());
-      if(!domesticKeyColumnTable.equals(domesticTable)){
-        continue;
+    for(Map<JdbcColumn,JdbcColumn> foreignKey: foreignKeyDefs) {
+      for (Map.Entry<JdbcColumn, JdbcColumn> foreignKeyColumnsMapping : foreignKey.entrySet()) {
+        JdbcTable domesticKeyColumnTable = this.getTableOfColumn(foreignKeyColumnsMapping.getKey());
+        if (!domesticKeyColumnTable.equals(domesticTable)) {
+          continue;
+        }
+        JdbcTable foreignValueColumnTable = this.getTableOfColumn(foreignKeyColumnsMapping.getValue());
+        if (!foreignValueColumnTable.equals(foreignTable)) {
+          continue;
+        }
+        return foreignKey;
       }
-      JdbcTable foreignValueColumnTable = this.getTableOfColumn(foreignKeyColumnsMapping.getValue());
-      if(!foreignValueColumnTable.equals(foreignTable)){
-        continue;
-      }
-      foreignKeys.put(foreignKeyColumnsMapping.getKey(),foreignKeyColumnsMapping.getValue());
     }
     return foreignKeys;
   }
@@ -48,7 +56,7 @@ public class JdbcSqlStatementEngine {
    * When a table is build with foreign keys, it registers its foreign keys
    */
   public void registerForeignKey(Map<JdbcColumn, JdbcColumn> columnsMapping) {
-    this.foreignKeyColumnsMapping.putAll(columnsMapping);
+    this.foreignKeyDefs.add(columnsMapping);
   }
 
   public JdbcTable getTableOfColumn(JdbcColumn jdbcColumn){
