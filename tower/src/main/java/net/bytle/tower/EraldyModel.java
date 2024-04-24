@@ -336,7 +336,7 @@ public class EraldyModel {
       .compose(realmOwnerUser -> {
         LOGGER.info("Eraldy Realm model loaded");
         if (realmOwnerUser == null) {
-          return Future.failedFuture("The returned eraldy owner was null");
+          return Future.failedFuture("The returned eraldy owner was null. Be sure to use the same sql connection on all operations");
         }
         eraldyRealm.setOwnerUser(realmOwnerUser);
         return Future.succeededFuture();

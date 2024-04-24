@@ -443,7 +443,7 @@ public class UserProvider {
     return JdbcSelect.from(this.userTable)
       .addEqualityPredicate(UserCols.EMAIL_ADDRESS, userEmail.toNormalizedString())
       .addEqualityPredicate(UserCols.REALM_ID, realm.getLocalId())
-      .execute(sqlConnection, userRows -> this.buildUserFromRowSet(userRows, realm));
+      .execute(sqlConnection, userRows -> this.buildUserFromRowSet(userRows, realm, sqlConnection));
 
   }
 
@@ -533,7 +533,7 @@ public class UserProvider {
    * @param realm        - the realm
    * @return a user if the user handle, realm and password combination are good
    */
-  public Future<? extends User> getUserByPassword(EmailAddress userEmail, String userPassword, Realm realm) {
+  public <T extends User> Future<T> getUserByPassword(EmailAddress userEmail, String userPassword, Realm realm, SqlConnection sqlConnection) {
 
     String hashedPassword = PasswordHashManager.get().hash(userPassword);
 
@@ -541,7 +541,7 @@ public class UserProvider {
       .addEqualityPredicate(UserCols.EMAIL_ADDRESS, userEmail.toNormalizedString())
       .addEqualityPredicate(UserCols.REALM_ID, realm.getLocalId())
       .addEqualityPredicate(UserCols.PASSWORD, hashedPassword)
-      .execute(userRows -> this.buildUserFromRowSet(userRows, realm));
+      .execute(userRows -> this.buildUserFromRowSet(userRows, realm, sqlConnection));
 
   }
 
@@ -660,10 +660,10 @@ public class UserProvider {
     return JdbcSelect.from(this.userTable)
       .addEqualityPredicate(UserCols.ID, userId)
       .addEqualityPredicate(UserCols.REALM_ID, realm.getLocalId())
-      .execute(sqlConnection, userRow -> this.buildUserFromRowSet(userRow, realm));
+      .execute(sqlConnection, userRow -> this.buildUserFromRowSet(userRow, realm, sqlConnection));
   }
 
-  private <T extends User> Future<T> buildUserFromRowSet(JdbcRowSet rowSet, Realm realm) {
+  private <T extends User> Future<T> buildUserFromRowSet(JdbcRowSet rowSet, Realm realm, SqlConnection sqlConnection) {
 
     if (rowSet.size() == 0) {
       return Future.succeededFuture();
@@ -685,7 +685,7 @@ public class UserProvider {
      */
     Future<OrgaUser> futureOrgaUser = Future.succeededFuture();
     if (realm.getLocalId().equals(EraldyModel.REALM_LOCAL_ID)) {
-      futureOrgaUser = this.apiApp.getOrganizationUserProvider().createOrganizationUserObjectFromLocalIdOrNull(userId);
+      futureOrgaUser = this.apiApp.getOrganizationUserProvider().createOrganizationUserObjectFromLocalIdOrNull(userId,sqlConnection);
     }
 
     return futureOrgaUser
@@ -803,5 +803,9 @@ public class UserProvider {
 
   public String serializeUserGuid(UserGuid guid) {
     return this.apiApp.getHttpServer().getServer().getJacksonMapperManager().getSerializer(UserGuid.class).serialize(guid);
+  }
+
+  public <T extends User> Future<T> getUserByPassword(EmailAddress userEmail, String userPassword, Realm realm) {
+    return this.jdbcPool.withConnection(sqlConnection -> getUserByPassword(userEmail, userPassword, realm, sqlConnection));
   }
 }

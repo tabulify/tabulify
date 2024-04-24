@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class JdbcInsert extends JdbcQuery {
 
@@ -38,7 +39,7 @@ public class JdbcInsert extends JdbcQuery {
   public Future<JdbcRowSet> execute(SqlConnection sqlConnection) {
 
     StringBuilder insertSqlBuilder = new StringBuilder();
-    List<Object> tuples = new ArrayList<>();
+    List<Object> bindValues = new ArrayList<>();
     insertSqlBuilder.append("insert into ")
       .append(this.getDomesticJdbcTable().getFullName())
       .append(" (");
@@ -47,9 +48,9 @@ public class JdbcInsert extends JdbcQuery {
     List<String> dollarStatement = new ArrayList<>();
     for (Map.Entry<JdbcColumn, Object> entry : colValues.entrySet()) {
 
-      tuples.add(entry.getValue());
+      bindValues.add(entry.getValue());
       colsStatement.add(entry.getKey().getColumnName());
-      dollarStatement.add("$" + tuples.size());
+      dollarStatement.add("$" + bindValues.size());
 
     }
     insertSqlBuilder.append(String.join(",\n", colsStatement))
@@ -66,8 +67,8 @@ public class JdbcInsert extends JdbcQuery {
     String insertSqlString = insertSqlBuilder.toString();
     return sqlConnection
       .preparedQuery(insertSqlString)
-      .execute(Tuple.from(tuples))
-      .recover(e -> Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " table insertion Error. Sql Error " + e.getMessage() + "\nSQl: " + insertSqlString, e)))
+      .execute(Tuple.from(bindValues))
+      .recover(e -> Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " table insertion Error. Sql Error " + e.getMessage() + "\nValues:"+ bindValues.stream().map(Object::toString).collect(Collectors.joining(", ")) + "\nSQl: " + insertSqlString, e)))
       .compose(rowSet -> Future.succeededFuture(new JdbcRowSet(rowSet)));
   }
 
