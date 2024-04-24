@@ -119,6 +119,9 @@ public class JacksonMapperManager extends TowerService {
    */
   public <T> JacksonMapperManager addDeserializer(Class<T> type, JacksonJsonStringDeserializer<? extends T> deser) {
 
+    if(this.deserializers.containsKey(type)){
+      throw new InternalException("The deserializer for the type ("+type.getSimpleName()+") has been already added. Did you set it at initialization only?");
+    }
     simpleModule.addDeserializer(type, deser);
     this.deserializers.put(type, deser);
     LOGGER.info("Jackson deserializer for the type (" + type.toString() + ") added");
@@ -132,6 +135,9 @@ public class JacksonMapperManager extends TowerService {
    */
   public <T> JacksonMapperManager addSerializer(Class<? extends T> type, JacksonJsonStringSerializer<T> ser) {
 
+    if(this.serializers.containsKey(type)){
+      throw new InternalException("The serializer for the type ("+type.getSimpleName()+") has been already added. Did you set it at initialization only?");
+    }
     simpleModule.addSerializer(type, ser);
     this.serializers.put(type, ser);
     LOGGER.info("Jackson serializer for the type (" + type.toString() + ") added");

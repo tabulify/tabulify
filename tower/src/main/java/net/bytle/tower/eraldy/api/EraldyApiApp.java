@@ -92,6 +92,7 @@ public class EraldyApiApp extends TowerApp {
   private final MailingJobProvider mailingJobProvider;
   private final MailingItemProvider mailingRowProvider;
   private final JacksonMapperManager jackson;
+  private final AppProvider appProvider;
 
 
   public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
@@ -172,6 +173,7 @@ public class EraldyApiApp extends TowerApp {
     this.organizationUserProvider = new OrganizationUserProvider(this, realmSchema);
     this.organizationProvider = new OrganizationProvider(this, realmSchema);
     this.realmProvider = new RealmProvider(this, realmSchema);
+    this.appProvider = new AppProvider(this);
     this.listProvider = new ListProvider(this, realmSchema);
     this.authProvider = new AuthProvider(this);
     this.listUserProvider = new ListUserProvider(this, realmSchema);
@@ -312,7 +314,7 @@ public class EraldyApiApp extends TowerApp {
   }
 
   public AppProvider getAppProvider() {
-    return new AppProvider(this);
+    return this.appProvider;
   }
 
 

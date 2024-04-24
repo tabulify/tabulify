@@ -30,6 +30,7 @@ Reprocessing: process real-time data and re-process historical data in the same 
       * they allow for normalization of output (ie email should be lowercase without alias)
       * they help with signature controle (if the type does not match versus string, string)
       * they help with the toString (you print once). Example UserGuid, would print the realm and the id
+      * they help with equality. Example: combined primary key - list of user (list and user)
     * Example:
       * email address as string vs email as object
       * domain name vs string
