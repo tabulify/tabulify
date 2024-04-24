@@ -9,11 +9,14 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AnalyticsApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
+import net.bytle.type.Handle;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import net.bytle.vertx.analytics.model.AnalyticsEventClient;
 import net.bytle.vertx.analytics.model.AnalyticsEventState;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -88,9 +91,10 @@ public class AnalyticsApiImpl implements AnalyticsApi {
       analyticsEvent.setClient(analyticsClient);
     }
     analyticsClient.setClientGuid(authClient.getGuid());
+    JacksonMapperManager jackson = this.apiApp.getJackson();
     Realm authRealm = authClient.getApp().getRealm();
-    analyticsClient.setAppOrganisationGuid(authRealm.getOrganization().getGuid());
-    analyticsClient.setAppOrganisationHandle(authRealm.getOrganization().getHandle());
+    analyticsClient.setAppOrganisationGuid(jackson.getSerializer(OrgaGuid.class).serialize(authRealm.getOrganization().getGuid()));
+    analyticsClient.setAppOrganisationHandle(jackson.getSerializer(Handle.class).serialize(authRealm.getOrganization().getHandle()));
     analyticsClient.setAppRealmGuid(authRealm.getGuid());
     analyticsClient.setAppRealmHandle(authRealm.getHandle());
 

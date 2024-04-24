@@ -13,11 +13,13 @@ import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationU
 import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
+import net.bytle.type.Handle;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.analytics.event.SignUpEvent;
@@ -26,6 +28,7 @@ import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
 import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlow;
+import net.bytle.vertx.jackson.JacksonMapperManager;
 
 import java.util.List;
 import java.util.Set;
@@ -107,16 +110,11 @@ public class AuthProvider {
       //noinspection unchecked
       user = (T) new OrgaUser();
 
-      Guid orgaGuidObject;
-      try {
-        orgaGuidObject = this.apiApp.getOrganizationProvider().createGuidFromHash(organizationGuidString);
-      } catch (CastException e) {
-        throw new InternalException("The organization guid (" + organizationGuidString + ") is not valid", e);
-      }
+      OrgaGuid orgaGuidObject = this.apiApp.getJackson().getDeserializer(OrgaGuid.class).deserializeFailSafe(organizationGuidString);
       Organization organization = new Organization();
-      organization.setGuid(organizationGuidString);
-      organization.setLocalId(orgaGuidObject.getRealmOrOrganizationId());
-      organization.setHandle(authUser.getOrganizationHandle());
+      organization.setGuid(orgaGuidObject);
+      organization.setLocalId(orgaGuidObject.getLocalId());
+      organization.setHandle(Handle.ofFailSafe(authUser.getOrganizationHandle()));
       ((OrgaUser) user).setOrganization(organization);
 
     } else {
@@ -414,20 +412,20 @@ public class AuthProvider {
    */
   public <T extends User> AuthUser.Builder toAuthUserBuilder(T user) {
 
-
+    JacksonMapperManager jackson = this.apiApp.getJackson();
     AuthUser.Builder authUserBuilder = AuthUser
       .builder()
-      .setSubject(this.apiApp.getUserProvider().serializeUserGuid(user.getGuid()))
+      .setSubject(jackson.getSerializer(UserGuid.class).serialize(user.getGuid()))
       .setSubjectEmail(user.getEmailAddress())
       .setRealmGuid(user.getRealm().getGuid())
       .setRealmHandle(user.getRealm().getHandle());
     if (user instanceof OrgaUser) {
       Organization organization = ((OrgaUser) user).getOrganization();
       // An organization user object is
-      // a Eraldy user with or without an organization
+      // An Eraldy user with or without an organization
       if (organization != null) {
-        authUserBuilder.setOrganizationGuid(organization.getGuid());
-        authUserBuilder.setOrganizationHandle(organization.getHandle());
+        authUserBuilder.setOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(organization.getGuid()));
+        authUserBuilder.setOrganizationHandle(jackson.getSerializer(Handle.class).serialize(organization.getHandle()));
       }
     }
     return authUserBuilder;
@@ -494,10 +492,11 @@ public class AuthProvider {
 
     Future<List<Realm>> futureRealmOwnerList = Future.succeededFuture();
     if (user instanceof OrgaUser) {
+      JacksonMapperManager jackson = this.apiApp.getJackson();
       OrgaUser orgaUser = (OrgaUser) user;
       Organization organization = orgaUser.getOrganization();
-      authUserBuilder.setOrganizationGuid(organization.getGuid());
-      authUserBuilder.setOrganizationHandle(organization.getHandle());
+      authUserBuilder.setOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(organization.getGuid()));
+      authUserBuilder.setOrganizationHandle(jackson.getSerializer(Handle.class).serialize(organization.getHandle()));
       futureRealmOwnerList = this.apiApp.getRealmProvider().getRealmsForOwner(orgaUser);
     }
     return futureRealmOwnerList
@@ -601,6 +600,7 @@ public class AuthProvider {
   }
 
   public <T extends User> AnalyticsUser toAnalyticsUser(T user) {
+    JacksonMapperManager jackson = this.apiApp.getJackson();
     AnalyticsUser analyticsUser = new AnalyticsUser();
     analyticsUser.setGuid(this.apiApp.getUserProvider().serializeUserGuid(user.getGuid()));
     // note: handle is email
@@ -615,8 +615,8 @@ public class AuthProvider {
       // An organization user object is
       // a Eraldy user with or without an organization
       if (organization != null) {
-        analyticsUser.setOrganizationGuid(organization.getGuid());
-        analyticsUser.setOrganizationHandle(organization.getHandle());
+        analyticsUser.setOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(organization.getGuid()));
+        analyticsUser.setOrganizationHandle(jackson.getSerializer(Handle.class).serialize(organization.getHandle()));
       }
     }
     return analyticsUser;

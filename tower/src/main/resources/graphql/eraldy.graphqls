@@ -1,6 +1,9 @@
 directive @dateFormat on FIELD_DEFINITION
 scalar AppGuid
+scalar UserGuid
+scalar OrgaGuid
 scalar EmailAddress
+scalar Handle
 
 """
 There is 2 kinds of user
@@ -8,7 +11,7 @@ There is 2 kinds of user
 * The users of an organization (Eraldy realm)
 """
 interface UserI {
-  guid: ID!
+  guid: UserGuid!
   emailAddress: EmailAddress!
   givenName: String
   realm: Realm!
@@ -18,7 +21,7 @@ interface UserI {
 A realm user
 """
 type User implements UserI {
-  guid: ID!
+  guid: UserGuid!
   emailAddress: EmailAddress!
   givenName: String
   realm: Realm!
@@ -31,7 +34,7 @@ that belongs to an organization
 """
 type OrganizationUser implements UserI {
   """The global id"""
-  guid: ID!
+  guid: UserGuid!
   """The email address"""
   emailAddress: EmailAddress!
   """The given name"""
@@ -103,7 +106,7 @@ type Mailing {
   """The items"""
   items(pagination: Pagination): [MailingItem]
   """The creation time"""
-  creationTime: String @dateFormat
+  creationTime: String! @dateFormat
   """The modification time"""
   modificationTime: String @dateFormat
 
@@ -171,13 +174,13 @@ type MailingJob {
 The Organization is the Eraldy client
 """
 type Organization {
-  guid: ID!
+  guid: OrgaGuid!
   """A short descriptive name"""
-  name: String
+  name: String!
   """An unique human id"""
-  handle: String
+  handle: Handle
   """The creation time"""
-  creationTime: String @dateFormat
+  creationTime: String! @dateFormat
   """The modification time"""
   modificationTime: String @dateFormat
 }
@@ -212,6 +215,8 @@ type App {
   guid: AppGuid!
   """A short descriptive name"""
   name: String!
+  """A uniqe name identifier"""
+  handle: Handle
   """
   The owner of the App
   This user is shown in AuthN page as support user
@@ -226,8 +231,8 @@ type List {
   guid: ID!
   """A short descriptive name"""
   name: String!
-  """A unique handle"""
-  handle: String
+  """A unique name identifier"""
+  handle: Handle
   """The owner of the list"""
   ownerUser: OrganizationUser!
   """The application"""

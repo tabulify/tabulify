@@ -13,7 +13,7 @@ public class Handle {
   private static final int MAX_LENGTH = 32;
   private final String handle;
 
-  public Handle(String s) throws HandleCastException {
+  private Handle(String s) throws HandleCastException {
     /**
      * The handle object should be null, not the value
      */
@@ -47,6 +47,10 @@ public class Handle {
       } catch (HandleCastException e) {
           throw new RuntimeException(e);
       }
+  }
+
+  public static Handle of(String string) throws HandleCastException {
+    return new Handle(string);
   }
 
   public String getValue() {

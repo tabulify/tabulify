@@ -17,6 +17,9 @@ public class JacksonHandleSerializer extends JacksonJsonStringSerializer<Handle>
 
   @Override
   public String serialize(Handle value) {
+    if (value == null) {
+      return null;
+    }
     return value.getValue();
   }
 

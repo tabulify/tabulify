@@ -242,7 +242,7 @@ public class EraldyModel {
            * (ie getsert)
            */
           OrganizationInputProps organizationInputProps = new OrganizationInputProps();
-          organizationInputProps.setHandle("eraldy");
+          organizationInputProps.setHandle(Handle.ofFailSafe("eraldy"));
           organizationInputProps.setName("Eraldy");
           organizationInputProps.setOwnerGuid(eraldyOwnerUserGuid);
           Future<Organization> futureOrganization = this.apiApp.getOrganizationProvider()

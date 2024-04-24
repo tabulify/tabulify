@@ -16,13 +16,14 @@ public class JacksonHandleDeserializer extends JacksonJsonStringDeserializer<Han
     try {
       return deserialize(value);
     } catch (CastException e) {
-      throw new IOException("The email address (" + value + ") is not valid. Error: " + e.getMessage(), e);
+      throw new IOException("The handle value (" + value + ") is not valid. Error: " + e.getMessage(), e);
     }
 
   }
 
   @Override
   public Handle deserialize(String s) throws CastException {
-    return new Handle(s);
+    return Handle.of(s);
   }
+
 }

@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.module.organization.inputs;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
+import net.bytle.type.Handle;
 
 /**
  * Organization for the users using the Combostrap product (Not from the user of other Realm)
@@ -11,7 +12,7 @@ import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 public class OrganizationInputProps {
 
 
-  protected String handle;
+  protected Handle handle;
 
   protected String name;
 
@@ -39,7 +40,7 @@ public class OrganizationInputProps {
   * @return handle Organization Handle (a human identifier)
   */
   @JsonProperty("handle")
-  public String getHandle() {
+  public Handle getHandle() {
     return handle;
   }
 
@@ -47,7 +48,7 @@ public class OrganizationInputProps {
   * @param handle Organization Handle (a human identifier)
   */
   @SuppressWarnings("unused")
-  public void setHandle(String handle) {
+  public void setHandle(Handle handle) {
     this.handle = handle;
   }
 

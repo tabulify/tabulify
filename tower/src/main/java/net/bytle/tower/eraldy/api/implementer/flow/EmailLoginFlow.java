@@ -20,6 +20,7 @@ import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.type.Handle;
 import net.bytle.type.UriEnhanced;
@@ -91,8 +92,8 @@ public class EmailLoginFlow extends WebFlowAbs {
       .toAuthUserBuilder(modelUserToLogin)
       .setRealmGuid(requestingApp.getRealm().getGuid())
       .setRealmHandle(requestingApp.getRealm().getHandle())
-      .setOrganizationGuid(requestingApp.getRealm().getOrganization().getGuid())
-      .setOrganizationHandle(requestingApp.getRealm().getOrganization().getHandle())
+      .setOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(requestingApp.getRealm().getOrganization().getGuid()))
+      .setOrganizationHandle(jackson.getSerializer(Handle.class).serialize(requestingApp.getRealm().getOrganization().getHandle()))
       .build()
       .toJwtClaims()
       .addRequestClaims(routingContext)

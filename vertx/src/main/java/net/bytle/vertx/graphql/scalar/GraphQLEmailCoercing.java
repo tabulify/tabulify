@@ -1,17 +1,13 @@
 package net.bytle.vertx.graphql.scalar;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import graphql.GraphQLContext;
 import graphql.execution.CoercedVariables;
 import graphql.language.Value;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingSerializeException;
-import io.vertx.core.json.jackson.DatabindCodec;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
-import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,15 +20,9 @@ public class GraphQLEmailCoercing implements Coercing<EmailAddress, String> {
    */
   @Override
   public @Nullable String serialize(@NotNull Object dataFetcherResult, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingSerializeException {
-    try {
-      /**
-       * See {@link JacksonMapperManager#registerModuleOnVertxStaticObjectMapper()}
-       */
-      ObjectMapper jacksonMapper = DatabindCodec.mapper();
-      return jacksonMapper.writeValueAsString(dataFetcherResult);
-    } catch (JsonProcessingException e) {
-      throw new CoercingSerializeException("Unable to serialize an email", e);
-    }
+
+    return ((EmailAddress) dataFetcherResult).toNormalizedString();
+
   }
 
   @Override

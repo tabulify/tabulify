@@ -26,9 +26,12 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.app.graphql.GraphQLAppGuidCoercing;
 import net.bytle.tower.eraldy.module.list.graphql.ListGraphQLImpl;
 import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
+import net.bytle.tower.eraldy.module.organization.graphql.GraphQLOrgaGuidCoercing;
+import net.bytle.tower.eraldy.module.user.graphql.GraphQLUserGuidCoercing;
 import net.bytle.vertx.graphql.GraphQLDef;
 import net.bytle.vertx.graphql.GraphQLLocalDate;
 import net.bytle.vertx.graphql.scalar.GraphQLEmailCoercing;
+import net.bytle.vertx.graphql.scalar.GraphQLHandleCoercing;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderFactory;
 import org.dataloader.DataLoaderRegistry;
@@ -71,14 +74,36 @@ public class EraldyGraphQL implements GraphQLDef {
       .coercing(new GraphQLEmailCoercing())
       .build();
     wiringBuilder.scalar(EMAIL);
+    final GraphQLScalarType HANDLE = GraphQLScalarType
+      .newScalar()
+      .name("Handle")
+      .description("An unique name identifier")
+      .coercing(new GraphQLHandleCoercing())
+      .build();
+    wiringBuilder.scalar(HANDLE);
 
-    final GraphQLScalarType APPGUID = GraphQLScalarType
+    final GraphQLScalarType APP_GUID = GraphQLScalarType
       .newScalar()
       .name("AppGuid")
-      .description("App Guid Address")
+      .description("The guid for an app")
       .coercing(new GraphQLAppGuidCoercing(this.app.getJackson()))
       .build();
-    wiringBuilder.scalar(APPGUID);
+    wiringBuilder.scalar(APP_GUID);
+
+    final GraphQLScalarType USER_GUID = GraphQLScalarType
+      .newScalar()
+      .name("UserGuid")
+      .description("The Guid for a user")
+      .coercing(new GraphQLUserGuidCoercing(this.app.getJackson()))
+      .build();
+    wiringBuilder.scalar(USER_GUID);
+    final GraphQLScalarType ORGA_GUID = GraphQLScalarType
+      .newScalar()
+      .name("OrgaGuid")
+      .description("The Guid for a organization")
+      .coercing(new GraphQLOrgaGuidCoercing(this.app.getJackson()))
+      .build();
+    wiringBuilder.scalar(ORGA_GUID);
 
 
     /**

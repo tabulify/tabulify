@@ -2,6 +2,8 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
+import net.bytle.type.Handle;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -13,11 +15,11 @@ import java.util.Objects;
 public class Organization   {
 
 
-  protected String guid;
+  protected OrgaGuid guid;
 
   protected Long localId;
 
-  protected String handle;
+  protected Handle handle;
 
   protected String name;
 
@@ -38,7 +40,7 @@ public class Organization   {
   * @return guid The string representation of the organization id
   */
   @JsonProperty("guid")
-  public String getGuid() {
+  public OrgaGuid getGuid() {
     return guid;
   }
 
@@ -46,7 +48,7 @@ public class Organization   {
   * @param guid The string representation of the organization id
   */
   @SuppressWarnings("unused")
-  public void setGuid(String guid) {
+  public void setGuid(OrgaGuid guid) {
     this.guid = guid;
   }
 
@@ -71,7 +73,7 @@ public class Organization   {
   * @return handle Organization Handle (a human identifier)
   */
   @JsonProperty("handle")
-  public String getHandle() {
+  public Handle getHandle() {
     return handle;
   }
 
@@ -79,7 +81,7 @@ public class Organization   {
   * @param handle Organization Handle (a human identifier)
   */
   @SuppressWarnings("unused")
-  public void setHandle(String handle) {
+  public void setHandle(Handle handle) {
     this.handle = handle;
   }
 
