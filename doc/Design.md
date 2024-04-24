@@ -29,6 +29,7 @@ Reprocessing: process real-time data and re-process historical data in the same 
       * we will not make ew error if we need to pass an object type versus a string
       * they allow for normalization of output (ie email should be lowercase without alias)
       * they help with signature controle (if the type does not match versus string, string)
+      * they help with the toString (you print once). Example UserGuid, would print the realm and the id
     * Example:
       * email address as string vs email as object
       * domain name vs string

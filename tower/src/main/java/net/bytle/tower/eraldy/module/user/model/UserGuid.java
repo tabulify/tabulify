@@ -45,4 +45,8 @@ public class UserGuid {
     return Objects.hash(localId, realmId);
   }
 
+  @Override
+  public String toString() {
+    return "localId=" + localId +", realmId=" + realmId;
+  }
 }

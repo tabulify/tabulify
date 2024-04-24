@@ -663,7 +663,7 @@ public class AppProvider {
             Tuple.of(
               app.getRealm().getLocalId(),
               app.getLocalId(),
-              app.getHandle(),
+              app.getHandle().getValue(),
               app.getName(),
               app.getHome().toString(),
               app.getOwnerUser().getOrganization().getLocalId(),

@@ -70,5 +70,9 @@ public class Handle {
     return Objects.hash(handle);
   }
 
+  @Override
+  public String toString() {
+    return handle;
+  }
 
 }

@@ -19,8 +19,6 @@ import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.user.db.UserCols;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.Server;
-import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -207,11 +205,11 @@ public class OrganizationUserProvider {
     if (user instanceof OrgaUser) {
       return Future.succeededFuture((OrgaUser) user);
     }
-    return Future.failedFuture(TowerFailureException.builder()
-      .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
-      .setMessage("The user (" + user + ") is not an organizational user")
-      .build()
-    );
+    /**
+     * We have for now a user, but it's not an orga user
+     * therefore we return null
+     */
+    return Future.succeededFuture();
   }
 
 

@@ -3,7 +3,6 @@ package net.bytle.tower.util;
 import io.vertx.core.Future;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.module.organization.inputs.OrgaUserInputProps;
 import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
@@ -50,7 +49,7 @@ public class EraldySubRealmModel {
           organisationUserInputProps.setRole(OrgaRole.OWNER);
           return apiApp
             .getOrganizationUserProvider()
-            .getsertOnServerStartup(eraldyRealm.getOrganization(), (OrgaUser) ownerUser, organisationUserInputProps, sqlConnection)
+            .getsertOnServerStartup(eraldyRealm.getOrganization(), ownerUser, organisationUserInputProps, sqlConnection)
             .recover(err->Future.failedFuture(new InternalException("Error on user organization getsert",err)))
             .compose(ownerResult -> {
 
