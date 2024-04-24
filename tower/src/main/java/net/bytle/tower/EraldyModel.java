@@ -289,6 +289,8 @@ public class EraldyModel {
                 .compose(eraldyRealm -> {
                   LOGGER.info("Eraldy Realm getserted");
                   this.eraldyRealm = eraldyRealm;
+                  // orga is build lazily
+                  this.eraldyRealm.setOrganization(eraldyOrganization);
 
                   OrgaUser ownerUser = eraldyRealm.getOwnerUser();
                   Future<OrgaUser> futureOwnerUser;
@@ -333,6 +335,9 @@ public class EraldyModel {
       )
       .compose(realmOwnerUser -> {
         LOGGER.info("Eraldy Realm model loaded");
+        if (realmOwnerUser == null) {
+          return Future.failedFuture("The returned eraldy owner was null");
+        }
         eraldyRealm.setOwnerUser(realmOwnerUser);
         return Future.succeededFuture();
       });
