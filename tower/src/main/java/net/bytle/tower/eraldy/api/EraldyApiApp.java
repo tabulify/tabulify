@@ -12,6 +12,7 @@ import net.bytle.tower.eraldy.auth.AuthClientHandler;
 import net.bytle.tower.eraldy.auth.RealmSessionHandler;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.module.app.db.AppProvider;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailing.MailingProvider;

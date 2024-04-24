@@ -36,8 +36,8 @@ public class JdbcTable {
     return this.jdbcTableBuilder.jdbcSchema;
   }
 
-  public Set<JdbcColumn> getPrimaryOrUniqueKeyColumns() {
-    return this.jdbcTableBuilder.jdbcPrimaryOrUniqueKeyColumns;
+  public Set<JdbcColumn> getPrimaryKeyColumns() {
+    return this.jdbcTableBuilder.jdbcPrimaryKeyColumns;
   }
 
   public String getName() {
@@ -61,7 +61,8 @@ public class JdbcTable {
     private final JdbcSchema jdbcSchema;
     private final String name;
 
-    private final HashSet<JdbcColumn> jdbcPrimaryOrUniqueKeyColumns = new HashSet<>();
+    private final Set<JdbcColumn> jdbcPrimaryKeyColumns = new HashSet<>();
+    private final List<Set<JdbcColumn>> jdbcUniqueKeyColumns = new ArrayList<>();
 
     private final Set<JdbcColumn> columns;
 
@@ -73,7 +74,7 @@ public class JdbcTable {
 
     public JdbcTableBuilder addPrimaryKeyColumn(JdbcColumn jdbcColumn) {
       this.checkColumn(jdbcColumn);
-      this.jdbcPrimaryOrUniqueKeyColumns.add(jdbcColumn);
+      this.jdbcPrimaryKeyColumns.add(jdbcColumn);
       return this;
     }
 
@@ -90,14 +91,20 @@ public class JdbcTable {
       return jdbcTable;
     }
 
+    /**
+     * Add a unique key of 1 domestic column
+     */
     public JdbcTableBuilder addUniqueKeyColumn(JdbcColumn tableColumn) {
       this.checkColumn(tableColumn);
-      this.jdbcPrimaryOrUniqueKeyColumns.add(tableColumn);
+      this.jdbcUniqueKeyColumns.add(Set.of(tableColumn));
       return this;
     }
 
+    /**
+     * Add a foreign key with column mappings
+     */
     public JdbcTableBuilder addForeignKeyColumns(Map<JdbcColumn, JdbcColumn> columnsMapping) {
-      // first column should be the first party table
+      // first column should be the first party/domestic table
       for (JdbcColumn jdbcColumn : columnsMapping.keySet()) {
         this.checkColumn(jdbcColumn);
       }
@@ -112,8 +119,19 @@ public class JdbcTable {
      */
     public JdbcTableBuilder addForeignKeyColumn(JdbcColumn domesticColumn, JdbcColumn foreignColumn) {
       Map<JdbcColumn, JdbcColumn> foreign = new HashMap<>();
+      this.checkColumn(domesticColumn);
       foreign.put(domesticColumn, foreignColumn);
       addForeignKeyColumns(foreign);
+      return this;
+    }
+
+    /**
+     * Add a unique key of 2 domestic columns
+     */
+    public JdbcTableBuilder addUniqueKeyColumns(JdbcColumn domesticColumn, JdbcColumn domesticColumn1) {
+      this.checkColumn(domesticColumn);
+      this.checkColumn(domesticColumn1);
+      this.jdbcUniqueKeyColumns.add(Set.of(domesticColumn, domesticColumn1));
       return this;
     }
   }

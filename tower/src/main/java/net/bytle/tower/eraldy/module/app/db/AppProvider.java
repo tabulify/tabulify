@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.objectProvider;
+package net.bytle.tower.eraldy.module.app.db;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,6 +14,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.app.inputs.AppInputProps;
 import net.bytle.tower.eraldy.module.app.jackson.JacksonAppGuidDeserializer;
 import net.bytle.tower.eraldy.module.app.jackson.JacksonAppGuidSerializer;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
@@ -25,7 +26,10 @@ import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.db.JdbcSchema;
 import net.bytle.vertx.db.JdbcSchemaManager;
+import net.bytle.vertx.db.JdbcTable;
+import net.bytle.vertx.db.JdbcUpdate;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +51,7 @@ public class AppProvider {
   protected static final Logger LOGGER = LoggerFactory.getLogger(AppProvider.class);
 
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
-  private static final String APP_COLUMN_PREFIX = "app";
+  protected static final String APP_COLUMN_PREFIX = "app";
   public static final String APP_GUID_PREFIX = "app";
   public static final String APP_TABLE_NAME = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + APP_COLUMN_PREFIX;
   public static final String APP_REALM_ID_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "realm_id";
@@ -66,12 +70,12 @@ public class AppProvider {
   private final EraldyApiApp apiApp;
   private final Pool jdbcPool;
   private final JsonMapper apiMapper;
-  private final String updateSqlById;
   private final String insertSql;
   private final String updateSqlByHandle;
+  private final JdbcTable appTable;
 
 
-  public AppProvider(EraldyApiApp apiApp) {
+  public AppProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
     this.apiApp = apiApp;
     this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
     this.apiMapper = apiApp.getHttpServer().getServer().getJacksonMapperManager()
@@ -84,17 +88,12 @@ public class AppProvider {
       .addDeserializer(AppGuid.class, new JacksonAppGuidDeserializer(apiApp))
       .addSerializer(AppGuid.class, new JacksonAppGuidSerializer(apiApp));
 
-    this.updateSqlById = "UPDATE \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + APP_TABLE_NAME + "\n" +
-      "set\n" +
-      "  " + APP_HANDLE_COLUMN + " = $1,\n" +
-      "  " + APP_NAME_COLUMN + " = $2, \n" +
-      "  " + APP_HOME_COLUMN + " = $3, \n" +
-      "  " + APP_USER_COLUMN + " = $4, \n" +
-      "  " + APP_MODIFICATION_TIME + " = $5 \n" +
-      "where\n" +
-      "  " + APP_REALM_ID_COLUMN + "= $6\n" +
-      " AND " + APP_ID_COLUMN + "= $7";
+    this.appTable = JdbcTable.build(jdbcSchema,APP_TABLE_NAME,AppCols.values())
+      .addPrimaryKeyColumn(AppCols.ID)
+      .addPrimaryKeyColumn(AppCols.REALM_ID)
+      .addUniqueKeyColumns(AppCols.REALM_ID,AppCols.HANDLE)
+      .build();
+
 
     updateSqlByHandle = "UPDATE \n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + APP_TABLE_NAME + " \n" +
@@ -226,39 +225,20 @@ public class AppProvider {
 
   }
 
-  private Future<App> updateApp(App app) {
+  private Future<App> updateApp(App app, AppInputProps appInputProps) {
 
-    if (app.getLocalId() != null) {
+    JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.appTable);
 
-      return jdbcPool
-        .preparedQuery(updateSqlById)
-        .execute(Tuple.of(
-          app.getHandle(),
-          app.getOwnerUser().getLocalId(),
-          app.getName(),
-          app.getHome(),
-          DateTimeService.getNowInUtc(),
-          app.getRealm().getLocalId(),
-          app.getLocalId())
-        )
-        .recover(e -> Future.failedFuture(new InternalException("Error on app update by Id:" + e.getMessage() + ". Sql: " + updateSqlById, e)))
-        .compose(ok -> {
-          this.updateGuid(app);
-          return Future.succeededFuture(app);
-        });
-    }
-
-    if (app.getHandle() == null) {
-      InternalException internalException = new InternalException("The app id or handle is mandatory to update an app");
-      return Future.failedFuture(internalException);
-    }
     return updateAppByHandle(app)
       .compose(rowSet -> {
           if (rowSet.size() != 1) {
             InternalException internalException = new InternalException("No app was updated with the uri (" + app.getHandle() + ") and realm (" + app.getRealm().getHandle() + ")");
             return Future.failedFuture(internalException);
           }
-          Long appId = rowSet.iterator().next().getLong(APP_ID_COLUMN);
+        /**
+         * The app may have no id
+         */
+        Long appId = rowSet.iterator().next().getLong(APP_ID_COLUMN);
           app.setLocalId(appId);
           this.updateGuid(app);
           return Future.succeededFuture(app);

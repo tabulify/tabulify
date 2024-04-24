@@ -45,7 +45,7 @@ public class JdbcUpdate extends JdbcQuery {
     List<String> setColStatements = new ArrayList<>();
     for (Map.Entry<JdbcColumn, Object> entry : updatedColValues.entrySet()) {
       JdbcColumn jdbcColumn = entry.getKey();
-      if (this.getDomesticJdbcTable().getPrimaryOrUniqueKeyColumns().contains(jdbcColumn)) {
+      if (this.getDomesticJdbcTable().getPrimaryKeyColumns().contains(jdbcColumn)) {
         return Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " update: column (" + jdbcColumn + ") is a primary key column and should not be updated"));
       }
       tuples.add(entry.getValue());
@@ -62,7 +62,7 @@ public class JdbcUpdate extends JdbcQuery {
     List<String> equalityStatements = new ArrayList<>();
     for (Map.Entry<JdbcColumn, Object> entry : predicateColValues.entrySet()) {
       JdbcColumn jdbcColumn = entry.getKey();
-      if (!this.getDomesticJdbcTable().getPrimaryOrUniqueKeyColumns().contains(jdbcColumn)) {
+      if (!this.getDomesticJdbcTable().getPrimaryKeyColumns().contains(jdbcColumn)) {
         return Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " update: column (" + jdbcColumn + ") is not a declared primary or unique key columns for the table ("+this.getDomesticJdbcTable()+")"));
       }
       tuples.add(entry.getValue());

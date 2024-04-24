@@ -1,23 +1,19 @@
-package net.bytle.tower.eraldy.model.openapi;
+package net.bytle.tower.eraldy.module.app.inputs;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.type.Handle;
 
 import java.net.URI;
-import java.util.Objects;
 
 /**
  * An app is the container for branding elements (such as logo, color)
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class App   {
+public class AppInputProps {
 
 
-  protected Long localId;
-
-  protected AppGuid guid;
 
   protected Handle handle;
 
@@ -35,8 +31,6 @@ public class App   {
 
   protected OrgaUser ownerUser;
 
-  protected Realm realm;
-
   protected URI terms;
 
   /**
@@ -45,39 +39,7 @@ public class App   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public App () {
-  }
-
-  /**
-  * @return localId The app identifier in the realm (without the realm, the id may have duplicate)
-  */
-  @JsonProperty("localId")
-  public Long getLocalId() {
-    return localId;
-  }
-
-  /**
-  * @param localId The app identifier in the realm (without the realm, the id may have duplicate)
-  */
-  @SuppressWarnings("unused")
-  public void setLocalId(Long localId) {
-    this.localId = localId;
-  }
-
-  /**
-  * @return guid The global app id (realm id + local app id)
-  */
-  @JsonProperty("guid")
-  public AppGuid getGuid() {
-    return guid;
-  }
-
-  /**
-  * @param guid The global app id (realm id + local app id)
-  */
-  @SuppressWarnings("unused")
-  public void setGuid(AppGuid guid) {
-    this.guid = guid;
+  public AppInputProps() {
   }
 
   /**
@@ -208,21 +170,6 @@ public class App   {
     this.ownerUser = ownerUser;
   }
 
-  /**
-  * @return realm
-  */
-  @JsonProperty("realm")
-  public Realm getRealm() {
-    return realm;
-  }
-
-  /**
-  * @param realm Set realm
-  */
-  @SuppressWarnings("unused")
-  public void setRealm(Realm realm) {
-    this.realm = realm;
-  }
 
   /**
   * @return terms The location of the terms and conditions document
@@ -240,27 +187,5 @@ public class App   {
     this.terms = terms;
   }
 
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    App app = (App) o;
-    return Objects.equals(guid, app.guid);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(guid);
-  }
-
-  @Override
-  public String toString() {
-    return guid + ", " + handle;
-  }
 
 }
