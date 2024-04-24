@@ -3,16 +3,18 @@ package net.bytle.tower.eraldy.model.openapi;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.type.Color;
 import net.bytle.type.Handle;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
  * An app is the container for branding elements (such as logo, color)
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class App   {
+public class App {
 
 
   protected Long localId;
@@ -31,215 +33,234 @@ public class App   {
 
   protected URI logo;
 
-  protected String primaryColor;
+  protected Color primaryColor;
 
   protected OrgaUser ownerUser;
 
   protected Realm realm;
 
   protected URI terms;
+  private LocalDateTime creationTime;
+  private LocalDateTime modificationTime;
 
   /**
-  * The empty constructor is
-  * needed for the construction of the pojo
-  * with the Jackson library
-  */
+   * The empty constructor is
+   * needed for the construction of the pojo
+   * with the Jackson library
+   */
   @SuppressWarnings("unused")
-  public App () {
+  public App() {
   }
 
   /**
-  * @return localId The app identifier in the realm (without the realm, the id may have duplicate)
-  */
+   * @return localId The app identifier in the realm (without the realm, the id may have duplicate)
+   */
   @JsonProperty("localId")
   public Long getLocalId() {
     return localId;
   }
 
   /**
-  * @param localId The app identifier in the realm (without the realm, the id may have duplicate)
-  */
+   * @param localId The app identifier in the realm (without the realm, the id may have duplicate)
+   */
   @SuppressWarnings("unused")
   public void setLocalId(Long localId) {
     this.localId = localId;
   }
 
   /**
-  * @return guid The global app id (realm id + local app id)
-  */
+   * @return guid The global app id (realm id + local app id)
+   */
   @JsonProperty("guid")
   public AppGuid getGuid() {
     return guid;
   }
 
   /**
-  * @param guid The global app id (realm id + local app id)
-  */
+   * @param guid The global app id (realm id + local app id)
+   */
   @SuppressWarnings("unused")
   public void setGuid(AppGuid guid) {
     this.guid = guid;
   }
 
   /**
-  * @return handle The handle of the app. The handle is unique for all apps on the realm. It follows the DNS name constraint
-  */
+   * @return handle The handle of the app. The handle is unique for all apps on the realm. It follows the DNS name constraint
+   */
   @JsonProperty("handle")
   public Handle getHandle() {
     return handle;
   }
 
   /**
-  * @param handle The handle of the app. The handle is unique for all apps on the realm. It follows the DNS name constraint
-  */
+   * @param handle The handle of the app. The handle is unique for all apps on the realm. It follows the DNS name constraint
+   */
   @SuppressWarnings("unused")
   public void setHandle(Handle handle) {
     this.handle = handle;
   }
 
   /**
-  * @return name The name of the app
-  */
+   * @return name The name of the app
+   */
   @JsonProperty("name")
   public String getName() {
     return name;
   }
 
   /**
-  * @param name The name of the app
-  */
+   * @param name The name of the app
+   */
   @SuppressWarnings("unused")
   public void setName(String name) {
     this.name = name;
   }
 
   /**
-  * @return uri An authentication url identifier It has no query string nor fragment. If you use the member authentication module, this URL should not be empty.
-  */
+   * @return uri An authentication url identifier It has no query string nor fragment. If you use the member authentication module, this URL should not be empty.
+   */
   @JsonProperty("uri")
   public URI getUri() {
     return uri;
   }
 
   /**
-  * @param uri An authentication url identifier It has no query string nor fragment. If you use the member authentication module, this URL should not be empty.
-  */
+   * @param uri An authentication url identifier It has no query string nor fragment. If you use the member authentication module, this URL should not be empty.
+   */
   @SuppressWarnings("unused")
   public void setUri(URI uri) {
     this.uri = uri;
   }
 
   /**
-  * @return home The home URL of the app This is a app branding element that adds an URL to any app communication footer
-  */
+   * @return home The home URL of the app This is a app branding element that adds an URL to any app communication footer
+   */
   @JsonProperty("home")
   public URI getHome() {
     return home;
   }
 
   /**
-  * @param home The home URL of the app This is a app branding element that adds an URL to any app communication footer
-  */
+   * @param home The home URL of the app This is a app branding element that adds an URL to any app communication footer
+   */
   @SuppressWarnings("unused")
   public void setHome(URI home) {
     this.home = home;
   }
 
   /**
-  * @return slogan The slogan of the app
-  */
+   * @return slogan The slogan of the app
+   */
   @JsonProperty("slogan")
   public String getSlogan() {
     return slogan;
   }
 
   /**
-  * @param slogan The slogan of the app
-  */
+   * @param slogan The slogan of the app
+   */
   @SuppressWarnings("unused")
   public void setSlogan(String slogan) {
     this.slogan = slogan;
   }
 
   /**
-  * @return logo The uri of the app logo
-  */
+   * @return logo The uri of the app logo
+   */
   @JsonProperty("logo")
   public URI getLogo() {
     return logo;
   }
 
   /**
-  * @param logo The uri of the app logo
-  */
+   * @param logo The uri of the app logo
+   */
   @SuppressWarnings("unused")
   public void setLogo(URI logo) {
     this.logo = logo;
   }
 
   /**
-  * @return primaryColor The css primary color of the theme (rgb in hexadecimal)
-  */
+   * @return primaryColor The css primary color of the theme (rgb in hexadecimal)
+   */
   @JsonProperty("primaryColor")
-  public String getPrimaryColor() {
+  public Color getPrimaryColor() {
     return primaryColor;
   }
 
   /**
-  * @param primaryColor The css primary color of the theme (rgb in hexadecimal)
-  */
+   * @param primaryColor The css primary color of the theme (rgb in hexadecimal)
+   */
   @SuppressWarnings("unused")
-  public void setPrimaryColor(String primaryColor) {
+  public void setPrimaryColor(Color primaryColor) {
     this.primaryColor = primaryColor;
   }
 
   /**
-  * @return ownerUser
-  */
+   * @return ownerUser
+   */
   @JsonProperty("ownerUser")
   public OrgaUser getOwnerUser() {
     return ownerUser;
   }
 
   /**
-  * @param ownerUser Set ownerUser
-  */
+   * @param ownerUser Set ownerUser
+   */
   @SuppressWarnings("unused")
   public void setOwnerUser(OrgaUser ownerUser) {
     this.ownerUser = ownerUser;
   }
 
   /**
-  * @return realm
-  */
+   * @return realm
+   */
   @JsonProperty("realm")
   public Realm getRealm() {
     return realm;
   }
 
   /**
-  * @param realm Set realm
-  */
+   * @param realm Set realm
+   */
   @SuppressWarnings("unused")
   public void setRealm(Realm realm) {
     this.realm = realm;
   }
 
   /**
-  * @return terms The location of the terms and conditions document
-  */
+   * @return terms The location of the terms and conditions document
+   */
   @JsonProperty("terms")
-  public URI getTerms() {
+  public URI getTermOfServices() {
     return terms;
   }
 
   /**
-  * @param terms The location of the terms and conditions document
-  */
+   * @param terms The location of the terms and conditions document
+   */
   @SuppressWarnings("unused")
   public void setTerms(URI terms) {
     this.terms = terms;
   }
 
+  public void setCreationTime(LocalDateTime localDateTime) {
+    this.creationTime = localDateTime;
+  }
+
+  @JsonProperty("creationTime")
+  public LocalDateTime getCreationTime() {
+    return this.creationTime;
+  }
+
+  public void setModificationTime(LocalDateTime localDateTime) {
+    this.modificationTime = localDateTime;
+  }
+
+  @JsonProperty("modificationTime")
+  public LocalDateTime getModificationTime() {
+    return this.modificationTime;
+  }
 
   @Override
   public boolean equals(Object o) {
@@ -260,7 +281,7 @@ public class App   {
 
   @Override
   public String toString() {
-    return guid + ", " + handle;
+    return guid + ", " + Objects.requireNonNullElse(handle, name);
   }
 
 }

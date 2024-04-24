@@ -2,7 +2,8 @@ package net.bytle.tower.eraldy.module.app.inputs;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.model.openapi.OrgaUser;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
+import net.bytle.type.Color;
 import net.bytle.type.Handle;
 
 import java.net.URI;
@@ -19,7 +20,6 @@ public class AppInputProps {
 
   protected String name;
 
-  protected URI uri;
 
   protected URI home;
 
@@ -27,9 +27,9 @@ public class AppInputProps {
 
   protected URI logo;
 
-  protected String primaryColor;
+  protected Color primaryColor;
 
-  protected OrgaUser ownerUser;
+  protected OrgaUserGuid ownerUserGuid;
 
   protected URI terms;
 
@@ -72,22 +72,6 @@ public class AppInputProps {
   @SuppressWarnings("unused")
   public void setName(String name) {
     this.name = name;
-  }
-
-  /**
-  * @return uri An authentication url identifier It has no query string nor fragment. If you use the member authentication module, this URL should not be empty.
-  */
-  @JsonProperty("uri")
-  public URI getUri() {
-    return uri;
-  }
-
-  /**
-  * @param uri An authentication url identifier It has no query string nor fragment. If you use the member authentication module, this URL should not be empty.
-  */
-  @SuppressWarnings("unused")
-  public void setUri(URI uri) {
-    this.uri = uri;
   }
 
   /**
@@ -142,7 +126,7 @@ public class AppInputProps {
   * @return primaryColor The css primary color of the theme (rgb in hexadecimal)
   */
   @JsonProperty("primaryColor")
-  public String getPrimaryColor() {
+  public Color getPrimaryColor() {
     return primaryColor;
   }
 
@@ -150,24 +134,24 @@ public class AppInputProps {
   * @param primaryColor The css primary color of the theme (rgb in hexadecimal)
   */
   @SuppressWarnings("unused")
-  public void setPrimaryColor(String primaryColor) {
+  public void setPrimaryColor(Color primaryColor) {
     this.primaryColor = primaryColor;
   }
 
   /**
   * @return ownerUser
   */
-  @JsonProperty("ownerUser")
-  public OrgaUser getOwnerUser() {
-    return ownerUser;
+  @JsonProperty("ownerUserGuid")
+  public OrgaUserGuid getOwnerUserGuid() {
+    return ownerUserGuid;
   }
 
   /**
-  * @param ownerUser Set ownerUser
+  * @param ownerUserGuid Set ownerUser
   */
   @SuppressWarnings("unused")
-  public void setOwnerUser(OrgaUser ownerUser) {
-    this.ownerUser = ownerUser;
+  public void setOwnerUserGuid(OrgaUserGuid ownerUserGuid) {
+    this.ownerUserGuid = ownerUserGuid;
   }
 
 

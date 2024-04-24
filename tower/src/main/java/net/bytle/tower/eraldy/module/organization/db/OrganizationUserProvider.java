@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Organization Users are the tenants.
@@ -36,6 +37,7 @@ import java.util.List;
  */
 public class OrganizationUserProvider {
 
+  public static final String GUID_PREFIX = "oru";
   protected static final Logger LOGGER = LoggerFactory.getLogger(OrganizationUserProvider.class);
 
   private final EraldyApiApp apiApp;
@@ -95,12 +97,6 @@ public class OrganizationUserProvider {
 
   }
 
-  /**
-   * This function is called by the user provider to create an Orga User
-   */
-  public Future<OrgaUser> createOrganizationUserObjectFromLocalIdOrNull(Long userLocalId) {
-    return this.jdbcPool.withConnection(sqlConnection -> createOrganizationUserObjectFromLocalIdOrNull(userLocalId, sqlConnection));
-  }
 
   /**
    * The entry to create an orga user from local id
@@ -271,5 +267,28 @@ public class OrganizationUserProvider {
       });
   }
 
+  /**
+   * Utility class to create a minimal orga user from a guid
+   * (used in row reading)
+   *
+   * @param orgaUserGuid - the guid to transform
+   * @param realm - the realm to check that the org is the same
+   */
+  public OrgaUser toOrgaUserFromGuid(OrgaUserGuid orgaUserGuid, Realm realm) {
 
+    OrgaUser newOwner = new OrgaUser();
+    newOwner.setGuid(orgaUserGuid);
+    newOwner.setLocalId(orgaUserGuid.getLocalId());
+    newOwner.setRealm(this.apiApp.getEraldyModel().getRealm());
+    Organization organization = new Organization();
+    organization.setLocalId(orgaUserGuid.getOrganizationId());
+    newOwner.setOrganization(organization);
+    Long realmOrgId = realm.getOrganization().getLocalId();
+    Long ownerOrgId = newOwner.getOrganization().getLocalId();
+    if(!Objects.equals(realmOrgId, ownerOrgId)){
+      throw new InternalException("The realm org id ("+realmOrgId+") is not the same as the owner org id ("+ownerOrgId+")");
+    }
+    return newOwner;
+
+  }
 }

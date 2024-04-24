@@ -7,11 +7,14 @@ import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import java.util.Objects;
 
 /**
- * An orga user guid is the Eraldy Realm id 1
- * and a local id
+ * An orga user guid is:
+ * * a user guid where the realm is the eraldy realm 1
+ * * and an organization
  */
 public class OrgaUserGuid extends UserGuid {
 
+
+  private Long organizationId;
 
   public OrgaUserGuid() {
     super();
@@ -19,12 +22,18 @@ public class OrgaUserGuid extends UserGuid {
 
 
   @Override
-  public void setLocalId(Long localId) {
+  public void setRealmId(Long localId) {
 
-    if (!Objects.equals(localId,EraldyModel.REALM_LOCAL_ID)) {
+    if (!Objects.equals(localId, EraldyModel.REALM_LOCAL_ID)) {
       throw new InternalException("An orga user should have the Eraldy Realm");
     }
-    super.setLocalId(localId);
+    super.setRealmId(localId);
+
+  }
+
+  public void setOrganizationId(Long organizationId) {
+
+    this.organizationId = organizationId;
 
   }
 
@@ -32,6 +41,12 @@ public class OrgaUserGuid extends UserGuid {
   public Long getRealmId() {
 
     return EraldyModel.REALM_LOCAL_ID;
+
+  }
+
+  public Long getOrganizationId() {
+
+    return this.organizationId;
 
   }
 

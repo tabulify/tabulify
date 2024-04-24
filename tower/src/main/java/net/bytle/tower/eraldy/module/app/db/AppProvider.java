@@ -19,8 +19,11 @@ import net.bytle.tower.eraldy.module.app.jackson.JacksonAppGuidDeserializer;
 import net.bytle.tower.eraldy.module.app.jackson.JacksonAppGuidSerializer;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationProvider;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
+import net.bytle.type.Color;
+import net.bytle.type.ColorCastException;
 import net.bytle.type.Handle;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.FailureStatic;
@@ -88,10 +91,10 @@ public class AppProvider {
       .addDeserializer(AppGuid.class, new JacksonAppGuidDeserializer(apiApp))
       .addSerializer(AppGuid.class, new JacksonAppGuidSerializer(apiApp));
 
-    this.appTable = JdbcTable.build(jdbcSchema,APP_TABLE_NAME,AppCols.values())
+    this.appTable = JdbcTable.build(jdbcSchema, APP_TABLE_NAME, AppCols.values())
       .addPrimaryKeyColumn(AppCols.ID)
       .addPrimaryKeyColumn(AppCols.REALM_ID)
-      .addUniqueKeyColumns(AppCols.REALM_ID,AppCols.HANDLE)
+      .addUniqueKeyColumns(AppCols.REALM_ID, AppCols.HANDLE)
       .build();
 
 
@@ -174,49 +177,6 @@ public class AppProvider {
     app.setGuid(appGuid);
   }
 
-  /**
-   * @param app the publication to upsert
-   * @return the realm with the id
-   */
-  public Future<App> upsertApp(App app) {
-
-    if (app.getOwnerUser() == null) {
-      throw new InternalException("The app user is mandatory.");
-    }
-
-    Realm realm = app.getRealm();
-    if (realm == null) {
-      return Future.failedFuture(new InternalError("The realm is mandatory when upsert / inserting a publisher."));
-    }
-
-    if (app.getLocalId() != null) {
-      return updateApp(app);
-    }
-
-    if (app.getHandle() == null) {
-      throw new IllegalArgumentException("The id or uri should be given.");
-    }
-
-    /**
-     * Note: No SQL upsert because
-     * it will advance the identifier sequence
-     * (ie if the row exists, the insert fails
-     * but the identifier sequence has been taken)
-     * See the identifier.md file for more info.
-     */
-    return updateAppByHandle(app)
-      .compose(rowSet -> {
-
-        if (rowSet.size() == 0) {
-          return insertApp(app);
-        }
-
-        Long appId = rowSet.iterator().next().getLong(APP_ID_COLUMN);
-        app.setLocalId(appId);
-        return Future.succeededFuture(app);
-      });
-
-  }
 
   private Future<App> insertApp(App app) {
 
@@ -227,20 +187,74 @@ public class AppProvider {
 
   private Future<App> updateApp(App app, AppInputProps appInputProps) {
 
-    JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.appTable);
+    JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.appTable)
+      .addPredicateColumn(AppCols.ID, app.getGuid().getAppLocalId())
+      .addPredicateColumn(AppCols.REALM_ID, app.getGuid().getRealmId())
+      .addReturningColumn(AppCols.ID);
 
-    return updateAppByHandle(app)
+    String newName = appInputProps.getName();
+    if (newName != null && !Objects.equals(app.getName(), newName)) {
+      app.setName(newName);
+      jdbcUpdate.addUpdatedColumn(AppCols.NAME, app.getName());
+    }
+
+    Handle newHandle = appInputProps.getHandle();
+    if (newHandle != null && !Objects.equals(app.getHandle(), newHandle)) {
+      app.setHandle(newHandle);
+      jdbcUpdate.addUpdatedColumn(AppCols.HANDLE, app.getHandle());
+    }
+
+    URI newLogo = appInputProps.getLogo();
+    if (newLogo != null && !Objects.equals(app.getLogo(), newLogo)) {
+      app.setLogo(newLogo);
+      jdbcUpdate.addUpdatedColumn(AppCols.LOGO, app.getLogo());
+    }
+
+    URI newTerms = appInputProps.getTerms();
+    if (newTerms != null && !Objects.equals(app.getTermOfServices(), newTerms)) {
+      app.setLogo(newTerms);
+      jdbcUpdate.addUpdatedColumn(AppCols.TERM_OF_SERVICE, app.getTermOfServices());
+    }
+
+    URI newHome = appInputProps.getHome();
+    if (newHome != null && !Objects.equals(app.getHome(), newHome)) {
+      app.setHome(newHome);
+      jdbcUpdate.addUpdatedColumn(AppCols.HOME, app.getHome());
+    }
+
+    String newSlogan = appInputProps.getSlogan();
+    if (newSlogan != null && !Objects.equals(app.getSlogan(), newSlogan)) {
+      app.setSlogan(newSlogan);
+      jdbcUpdate.addUpdatedColumn(AppCols.SLOGAN, app.getSlogan());
+    }
+
+    Color newPrimaryColor = appInputProps.getPrimaryColor();
+    if (newPrimaryColor != null && !Objects.equals(app.getPrimaryColor(), newPrimaryColor)) {
+      app.setPrimaryColor(newPrimaryColor);
+      jdbcUpdate.addUpdatedColumn(AppCols.PRIMARY_COLOR, app.getPrimaryColor().getValue());
+    }
+
+    OrgaUserGuid newOwnerUserGuid = appInputProps.getOwnerUserGuid();
+    if (newOwnerUserGuid != null && !Objects.equals(app.getOwnerUser().getGuid(), newOwnerUserGuid)) {
+      OrgaUser newOwner = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(newOwnerUserGuid, app.getRealm());
+      app.setOwnerUser(newOwner);
+      jdbcUpdate.addUpdatedColumn(AppCols.OWNER_ID, app.getOwnerUser().getGuid().getLocalId());
+      jdbcUpdate.addUpdatedColumn(AppCols.ORGA_ID, app.getOwnerUser().getGuid().getOrganizationId());
+    }
+
+    if (!jdbcUpdate.hasNoColumnToUpdate()) {
+      return Future.succeededFuture(app);
+    }
+
+    app.setModificationTime(DateTimeService.getNowInUtc());
+    jdbcUpdate.addUpdatedColumn(AppCols.MODIFICATION_TIME, app.getModificationTime());
+
+    return jdbcUpdate.execute()
       .compose(rowSet -> {
           if (rowSet.size() != 1) {
-            InternalException internalException = new InternalException("No app was updated with the uri (" + app.getHandle() + ") and realm (" + app.getRealm().getHandle() + ")");
+            InternalException internalException = new InternalException("No app was updated with the guid (" + app.getGuid() + ")");
             return Future.failedFuture(internalException);
           }
-        /**
-         * The app may have no id
-         */
-        Long appId = rowSet.iterator().next().getLong(APP_ID_COLUMN);
-          app.setLocalId(appId);
-          this.updateGuid(app);
           return Future.succeededFuture(app);
         }
       );
@@ -487,7 +501,11 @@ public class AppProvider {
     app.setName(appPostBody.getAppName());
     app.setHome(appPostBody.getAppHome());
     app.setLogo(appPostBody.getAppLogo());
-    app.setPrimaryColor(appPostBody.getAppPrimaryColor());
+    try {
+      app.setPrimaryColor(Color.of(appPostBody.getAppPrimaryColor()));
+    } catch (ColorCastException e) {
+      throw new RuntimeException("Bad color value: "+appPostBody.getAppPrimaryColor(), e);
+    }
     app.setTerms(appPostBody.getAppTerms());
     app.setRealm(realm);
 
@@ -511,7 +529,7 @@ public class AppProvider {
         if (organizationUser != null) {
           app.setOwnerUser(organizationUser);
         }
-        return upsertApp(app);
+        throw new RuntimeException("To implement");
       });
 
   }

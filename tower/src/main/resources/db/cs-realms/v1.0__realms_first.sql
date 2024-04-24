@@ -128,7 +128,7 @@ create table IF NOT EXISTS realm_app
   APP_NAME              varchar(50)                 NOT NULL,
   APP_HANDLE            varchar(32)                 NULL,
   APP_HOME              varchar(255)                NULL,
-  APP_URI               varchar(255)                NULL,
+  APP_TOS               varchar(255)                NULL,
   APP_LIST_COUNT        INTEGER                     NULL,
   APP_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   APP_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
@@ -144,7 +144,7 @@ alter table realm_app
   add foreign key (app_realm_id, app_orga_id) REFERENCES realm (realm_id, realm_orga_id) DEFERRABLE INITIALLY IMMEDIATE;
 comment on table realm_app is 'A list of apps for the realm';
 comment on column realm_app.APP_ID is 'The app id';
-comment on column realm_app.APP_URI is 'The uri of the app (unique on the realm). It holds the authentication scope: https://www.rfc-editor.org/rfc/rfc7617#section-2.2)';
+comment on column realm_app.APP_TOS is 'The URI of the term of services';
 comment on column realm_app.APP_OWNER_USER_ID is 'The organizational user used for brand communication by default (user in realm 1 that belongs to the organization of the realm)';
 
 
