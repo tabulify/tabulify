@@ -193,11 +193,26 @@ public class ListProvider {
         newList.setName(name);
         jdbcInsert.addColumn(ListCols.NAME, newList.getName());
 
-        newList.setHandle(listInputProps.getHandle());
-        jdbcInsert.addColumn(ListCols.HANDLE, listInputProps.getHandle());
+        Handle handle = listInputProps.getHandle();
+        if (handle != null) {
+          newList.setHandle(handle);
+          jdbcInsert.addColumn(ListCols.HANDLE, newList.getHandle().getValue());
+        }
+
+        newList.setUserCount(0L);
+        jdbcInsert.addColumn(ListCols.USER_COUNT, newList.getUserCount());
+
+        newList.setUserInCount(0L);
+        jdbcInsert.addColumn(ListCols.USER_IN_COUNT, newList.getUserInCount());
+
+        newList.setMailingCount(0L);
+        jdbcInsert.addColumn(ListCols.MAILING_COUNT, newList.getMailingCount());
 
         newList.setCreationTime(DateTimeService.getNowInUtc());
         jdbcInsert.addColumn(ListCols.CREATION_TIME, newList.getCreationTime());
+
+        URI memberListRegistrationPath = this.apiApp.getEraldyModel().getMemberListRegistrationPath(newList);
+        newList.setRegistrationUrl(memberListRegistrationPath);
 
         return jdbcPool
           .withTransaction(sqlConnection ->
@@ -212,7 +227,7 @@ public class ListProvider {
                 return jdbcInsert.execute(sqlConnection);
               })
               .compose(rowSet -> {
-                Long realmId = newList.getApp().getLocalId();
+                Long realmId = newList.getApp().getRealm().getLocalId();
                 Long listId = newList.getLocalId();
                 final String createListRegistrationPartition =
                   "CREATE TABLE IF NOT EXISTS " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "_" + realmId + "_" + listId + "\n" +

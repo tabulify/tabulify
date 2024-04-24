@@ -50,7 +50,7 @@ public class ListImportFlow extends WebFlowAbs {
   /**
    * If a validation fail with a fatal error
    * (DNS timeout, DNS servfail error, ...)
-   * we retry up to this number (default is 2 for a total of 3 attempts)
+   * we retry up to this number (default is 1 for a total of 2 attempts)
    */
   private final int rowValidationFailureRetryCount;
 
@@ -347,7 +347,7 @@ public class ListImportFlow extends WebFlowAbs {
     this.runtimeDataDirectory = this.apiApp.getRuntimeDataDirectory().resolve("list-import");
     Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
     ConfigAccessor configAccessor = server.getConfigAccessor();
-    this.rowValidationFailureRetryCount = configAccessor.getInteger("list.import.execution.row.validation.retry.count", 2);
+    this.rowValidationFailureRetryCount = configAccessor.getInteger("list.import.execution.row.validation.retry.count", 1);
 
 
     /**

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
-import net.bytle.tower.eraldy.module.user.db.UserProvider;
+import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.HashId;
 import net.bytle.vertx.jackson.JacksonJsonStringSerializer;
@@ -32,7 +32,7 @@ public class JacksonAppGuidSerializer extends JacksonJsonStringSerializer<AppGui
 
   @Override
   public String serialize(AppGuid value) {
-    return Guid.builder(this.hashIds, UserProvider.USR_GUID_PREFIX)
+    return Guid.builder(this.hashIds, AppProvider.APP_GUID_PREFIX)
       .setOrganizationOrRealmId(EraldyModel.REALM_LOCAL_ID)
       .setFirstObjectId(value.getAppLocalId())
       .build()
