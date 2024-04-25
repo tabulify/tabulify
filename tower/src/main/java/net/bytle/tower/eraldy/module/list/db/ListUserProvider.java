@@ -4,9 +4,6 @@ package net.bytle.tower.eraldy.module.list.db;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.json.schema.ValidationException;
-import io.vertx.sqlclient.Pool;
-import io.vertx.sqlclient.Row;
-import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
@@ -20,12 +17,12 @@ import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserGuidDeserialize
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserGuidSerializer;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceDeserializer;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceSerializer;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.list.model.ListUserGuid;
 import net.bytle.tower.eraldy.module.user.db.UserCols;
-import net.bytle.tower.eraldy.module.user.db.UserProvider;
+import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
-import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.db.*;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
@@ -51,23 +48,11 @@ public class ListUserProvider {
   static final String TABLE_NAME = "realm_list_user";
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String LIST_USER_PREFIX = "list_user";
-  public static final String STATUS_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "status_code";
   public static final String LIST_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN;
-  public static final String USER_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
-  public static final String IN_SOURCE_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_source_id";
-  public static final String IN_OPT_IN_ORIGIN_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_origin";
-  public static final String IN_OPT_IN_IP_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_ip";
-  public static final String IN_OPT_IN_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_time";
-
-  public static final String IN_OPT_IN_CONFIRMATION_IP_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_confirmation_ip";
-  public static final String IN_OPT_IN_CONFIRMATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_confirmation_time";
   static final String REALM_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "realm_id";
 
   private final EraldyApiApp apiApp;
-  private static final String CREATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
-  private static final String MODIFICATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
 
-  private final Pool jdbcPool;
   private final ObjectMapper apiMapper;
   private final JdbcTable listUserTable;
 
@@ -75,8 +60,6 @@ public class ListUserProvider {
   public ListUserProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
 
     this.apiApp = apiApp;
-    JdbcClient postgresClient = apiApp.getHttpServer().getServer().getPostgresClient();
-    this.jdbcPool = postgresClient.getPool();
     JacksonMapperManager jacksonMapperManager = apiApp.getHttpServer().getServer().getJacksonMapperManager();
     this.apiMapper = jacksonMapperManager
       .jsonMapperBuilder()
@@ -118,7 +101,7 @@ public class ListUserProvider {
       return;
     }
 
-    assert Objects.equals(listUser.getUser().getRealm(), listUser.getList().getApp().getRealm()): "The realm is not the same on the user and on the list";
+    assert Objects.equals(listUser.getUser().getRealm(), listUser.getList().getApp().getRealm()) : "The realm is not the same on the user and on the list";
 
     ListUserGuid guid = new ListUserGuid();
     guid.setRealmId(listUser.getUser().getRealm().getGuid().getLocalId());
@@ -226,81 +209,72 @@ public class ListUserProvider {
   }
 
 
-  private Future<ListUser> buildListUserFromDatabaseRow(Row row) {
+  private ListUser buildListUserFromDatabaseRow(JdbcRow row) {
 
-    Long realmId = row.getLong(REALM_COLUMN);
+    Long realmId = row.getLong(ListUserCols.REALM_ID);
+    Long listId = row.getLong(ListUserCols.LIST_ID);
+    Long userId = row.getLong(ListUserCols.USER_ID);
 
-    return this.apiApp.getRealmProvider()
-      .getRealmFromLocalId(realmId)
-      .compose(realm -> {
+    ListUser listUser = new ListUser();
 
-        Long listId = row.getLong(LIST_ID_COLUMN);
-        Future<ListObject> publicationFuture = apiApp.getListProvider().getListById(listId, realm);
+    ListObject list = new ListObject();
+    ListGuid listGuid = new ListGuid();
+    listGuid.setRealmId(realmId);
+    listGuid.setLocalId(listId);
+    list.setGuid(listGuid);
+    listUser.setList(list);
 
-        Long userId = row.getLong(USER_ID_COLUMN);
-        Future<User> publisherFuture = apiApp.getUserProvider()
-          .getUserByLocalId(userId, realm);
+    User user = new User();
+    UserGuid userGuid = new UserGuid();
+    userGuid.setRealmId(realmId);
+    userGuid.setLocalId(userId);
+    user.setGuid(userGuid);
+    listUser.setUser(user);
 
-        return Future
-          .all(publicationFuture, publisherFuture)
-          .recover(e -> Future.failedFuture(new InternalException("A future error happened while building a list user from row", e)))
-          .compose(compositeFuture -> {
+    this.updateGuid(listUser);
 
+    // scalar
+    listUser.setStatus(ListUserStatus.fromValue(row.getInteger(ListUserCols.STATUS_CODE)));
+    listUser.setCreationTime(row.getLocalDateTime(ListUserCols.CREATION_TIME));
+    listUser.setModificationTime(row.getLocalDateTime(ListUserCols.MODIFICATION_TIME));
+    listUser.setInSourceId(ListUserSource.fromValue(row.getInteger(ListUserCols.IN_SOURCE_ID)));
+    listUser.setInOptInOrigin(row.getString(ListUserCols.IN_OPT_IN_ORIGIN));
+    listUser.setInOptInIp(row.getString(ListUserCols.IN_OPT_IN_IP));
+    listUser.setInOptInTime(row.getLocalDateTime(ListUserCols.IN_OPT_IN_TIME));
+    listUser.setInOptInConfirmationIp(row.getString(ListUserCols.IN_OPT_IN_CONFIRMATION_IP));
+    listUser.setInOptInConfirmationTime(row.getLocalDateTime(ListUserCols.IN_OPT_IN_CONFIRMATION_TIME));
 
-            ListUser listUser = new ListUser();
-
-            ListObject listObjectResult = compositeFuture.resultAt(0);
-            User userResult = compositeFuture.resultAt(1);
-
-            listUser.setList(listObjectResult);
-            listUser.setUser(userResult);
-            listUser.setStatus(ListUserStatus.fromValue(row.getInteger(STATUS_COLUMN)));
-            listUser.setCreationTime(row.getLocalDateTime(CREATION_TIME_COLUMN));
-            listUser.setModificationTime(row.getLocalDateTime(MODIFICATION_TIME_COLUMN));
-
-            listUser.setInSourceId(ListUserSource.fromValue(row.getInteger(IN_SOURCE_ID_COLUMN)));
-            listUser.setInOptInOrigin(row.getString(IN_OPT_IN_ORIGIN_COLUMN));
-            listUser.setInOptInIp(row.getString(IN_OPT_IN_IP_COLUMN));
-            listUser.setInOptInTime(row.getLocalDateTime(IN_OPT_IN_TIME_COLUMN));
-            listUser.setInOptInConfirmationIp(row.getString(IN_OPT_IN_CONFIRMATION_IP_COLUMN));
-            listUser.setInOptInConfirmationTime(row.getLocalDateTime(IN_OPT_IN_CONFIRMATION_TIME_COLUMN));
-
-            this.updateGuid(listUser);
-
-            return Future.succeededFuture(listUser);
-          });
-      });
+    return listUser;
 
 
   }
 
   public Future<ListUser> getListUserByListAndUser(ListObject listObject, User user) {
-    if (!Objects.equals(listObject.getApp().getRealm().getGuid().getLocalId(), user.getRealm().getGuid().getLocalId())) {
-      throw new InternalException("The realm should be the same between a list and a user for a registration");
+    long listRealmId = listObject.getApp().getRealm().getGuid().getLocalId();
+    long userRealmId = user.getRealm().getGuid().getLocalId();
+    if (!Objects.equals(listRealmId, userRealmId)) {
+      throw new InternalException("The realm should be the same between a list and a user for a listUser");
     }
-    return getListUserByLocalIds(listObject.getGuid().getLocalId(), user.getGuid().getLocalId(), listObject.getApp().getRealm().getGuid().getLocalId());
+    ListUserGuid listUserGuid = new ListUserGuid();
+    listUserGuid.setUserId(user.getGuid().getLocalId());
+    listUserGuid.setListId(listObject.getGuid().getLocalId());
+    listUserGuid.setRealmId(listRealmId);
+    return getListUserByGuid(listUserGuid)
+      .compose(listUser -> {
+        listUser.setUser(user);
+        listUser.setList(listObject);
+        return Future.succeededFuture(listUser);
+      });
   }
 
-  private Future<ListUser> getListUserByLocalIds(Long listId, Long userId, Long realmId) {
-    String sql = "SELECT * " +
-      "FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
-      " WHERE " +
-      REALM_COLUMN + " = $1\n" +
-      "AND " + LIST_ID_COLUMN + " = $2\n " +
-      "and " + USER_ID_COLUMN + " = $3";
+  private Future<ListUser> getListUserByGuid(ListUserGuid listUserGuid) {
 
-    return jdbcPool.preparedQuery(sql)
-      .execute(Tuple.of(
-          realmId,
-          listId,
-          userId
-        )
-      )
-      .recover(e -> Future.failedFuture(TowerFailureException.builder()
-        .setMessage("Unable to retrieve the list user by local ids. Error: " + e.getMessage() + ". Sql: \n" + sql)
-        .setCauseException(e)
-        .build()
-      ))
+
+    return JdbcSelect.from(this.listUserTable)
+      .addEqualityPredicate(ListUserCols.REALM_ID, listUserGuid.getRealmId())
+      .addEqualityPredicate(ListUserCols.LIST_ID, listUserGuid.getListId())
+      .addEqualityPredicate(ListUserCols.USER_ID, listUserGuid.getUserId())
+      .execute()
       .compose(userRows -> {
 
         if (userRows.size() == 0) {
@@ -308,29 +282,25 @@ public class ListUserProvider {
         }
 
         if (userRows.size() > 1) {
-          InternalException internalException = new InternalException("Registration Get: More than one rows (" + userRows.size() + ") returned from the registration ( " + realmId + ", " + listId + ", " + userId);
+          InternalException internalException = new InternalException("Registration Get: More than one rows (" + userRows.size() + ") returned from the registration ( " + listUserGuid+")");
           return Future.failedFuture(internalException);
         }
 
-        Row row = userRows.iterator().next();
-        return buildListUserFromDatabaseRow(row);
+        JdbcRow row = userRows.iterator().next();
+        return Future.succeededFuture(buildListUserFromDatabaseRow(row));
       });
   }
 
   public Future<ListUser> getListUserByGuidHash(String listUserGuid) {
 
-    Guid guidObject;
+    ListUserGuid guidObject;
     try {
-      guidObject = this.getGuidObjectFromHash(listUserGuid);
+      guidObject = this.apiApp.getJackson().getDeserializer(ListUserGuid.class).deserialize(listUserGuid);
     } catch (CastException e) {
       throw ValidationException.create("The listUser guid (" + listUserGuid + ") is not valid", "listUserIdentifier", listUserGuid);
     }
 
-    long realmId = guidObject.getRealmOrOrganizationId();
-    long listId = guidObject.validateRealmAndGetFirstObjectId(realmId);
-    long userId = guidObject.validateAndGetSecondObjectId(realmId);
-
-    return getListUserByLocalIds(listId, userId, realmId);
+    return getListUserByGuid(guidObject);
 
   }
 
@@ -388,10 +358,6 @@ public class ListUserProvider {
       });
   }
 
-
-  private Guid getGuidObjectFromHash(String listUserGuid) throws CastException {
-    return apiApp.createGuidFromHashWithOneRealmIdAndTwoObjectId(ListUserGuid.GUID_PREFIX, listUserGuid);
-  }
 
   public ObjectMapper getApiMapper() {
     return this.apiMapper;
