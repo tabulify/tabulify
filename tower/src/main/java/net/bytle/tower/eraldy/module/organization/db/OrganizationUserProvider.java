@@ -123,35 +123,23 @@ public class OrganizationUserProvider {
           LOGGER.error("Not yet supported: More than one organization for the organization user (user id: " + userLocalId + ")");
         }
         JdbcRow jdbcRow = jdbcRowSet.iterator().next();
-        return this.createOrganizationUserFromDatabaseRow(jdbcRow, null);
+        return Future.succeededFuture(this.createOrganizationUserFromDatabaseRow(jdbcRow, null));
       });
 
   }
 
-  private Future<OrgaUser> createOrganizationUserFromDatabaseRow(JdbcRow jdbcRow, Organization knownOrganization) {
+  private OrgaUser createOrganizationUserFromDatabaseRow(JdbcRow jdbcRow, Organization knownOrganization) {
     OrgaUser orgaUser = new OrgaUser();
+    OrgaUserGuid guid = new OrgaUserGuid();
+    guid.setOrganizationId(jdbcRow.getLong(OrgaUserCols.ORGA_ID));
+    guid.setLocalId(jdbcRow.getLong(OrgaUserCols.USER_ID));
+    orgaUser.setGuid(guid);
     orgaUser.setOrgaRole(OrgaRole.fromRoleIdFailSafe(jdbcRow.getInteger(OrgaUserCols.ROLE_ID)));
-    Future<Organization> futureOrganization;
-    Long orgaId = jdbcRow.getLong(OrgaUserCols.ORGA_ID);
-    if (knownOrganization == null) {
-      futureOrganization = apiApp
-        .getOrganizationProvider()
-        .getByGuid(new OrgaGuid(orgaId));
-    } else {
-      if (!knownOrganization.getGuid().getLocalId().equals(orgaId)) {
-        return Future.failedFuture(new InternalException("Orga id between row (" + orgaId + ") and organization (" + knownOrganization.getGuid() + ") not consistent (ie not the same)"));
-      }
-      futureOrganization = Future.succeededFuture(knownOrganization);
-    }
-
-    return futureOrganization
-      .compose(organization -> {
-        if (organization == null) {
-          return Future.failedFuture(new InternalException("The organization with the identifier (" + orgaId + ") was not found"));
-        }
-        orgaUser.setOrganization(organization);
-        return Future.succeededFuture(orgaUser);
-      });
+    orgaUser.setOrganization(Objects.requireNonNullElseGet(knownOrganization, () -> Organization.createFromAnyId(guid)));
+    orgaUser.setOrgaRole(OrgaRole.fromRoleIdFailSafe(jdbcRow.getInteger(OrgaUserCols.ROLE_ID)));
+    orgaUser.setCreationTime(jdbcRow.getLocalDateTime(OrgaUserCols.CREATION_TIME));
+    orgaUser.setModificationTime(jdbcRow.getLocalDateTime(OrgaUserCols.MODIFICATION_IME));
+    return orgaUser;
   }
 
 
@@ -174,26 +162,15 @@ public class OrganizationUserProvider {
       .execute()
       .recover(err -> Future.failedFuture(new InternalException("Unable to get the org users for the organization (" + organization + "). Message:" + err.getMessage(), err)))
       .compose(rowSet -> {
-        List<Future<OrgaUser>> users = new ArrayList<>();
+
+        List<OrgaUser> users = new ArrayList<>();
         for (JdbcRow row : rowSet) {
-          Future<OrgaUser> organizationUserFromDatabaseRow = this
-            .createOrganizationUserFromDatabaseRow(row, organization)
-            .compose(orgaUser -> {
-              OrgaUser user = this.apiApp.getUserProvider().buildUserFromRow(orgaUser, row, this.apiApp.getEraldyModel().getRealm());
-              return Future.succeededFuture(user);
-            });
-          users.add(organizationUserFromDatabaseRow);
+          OrgaUser organizationUserFromDatabaseRow = this.createOrganizationUserFromDatabaseRow(row, organization);
+          OrgaUser user = this.apiApp.getUserProvider().buildUserFromRow(organizationUserFromDatabaseRow, row, this.apiApp.getEraldyModel().getRealm());
+          users.add(user);
         }
-        // all: stop on the first failure
-        return Future.all(users)
-          .recover(err -> Future.failedFuture(new InternalException("Unable to build the org users for the organization (" + organization + "). Message:" + err.getMessage(), err)))
-          .compose(composite -> {
-            if (composite.failed()) {
-              Throwable cause = composite.cause();
-              return Future.failedFuture(new InternalException("A future failed for the composite get org users for the organization (" + organization + "). Message:" + cause.getMessage(), cause));
-            }
-            return Future.succeededFuture(composite.list());
-          });
+        return Future.succeededFuture(users);
+
       });
 
   }

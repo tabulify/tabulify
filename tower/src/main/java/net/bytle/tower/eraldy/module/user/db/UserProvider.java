@@ -256,8 +256,8 @@ public class UserProvider {
           this.updateGuid(user, userId);
 
         } else {
-          if (user.getGuid().getLocalId() == userId) {
-            return Future.failedFuture("The update id (" + userId + ") is not the same as the user id (" + user.getGuid().getLocalId() + ") for the user (" + user + ")");
+          if (user.getGuid().getLocalId() != userId) {
+            return Future.failedFuture(new InternalException("The update id (" + userId + ") is not the same as the user id (" + user.getGuid().getLocalId() + ") for the user (" + user + ")"));
           }
         }
         return Future.succeededFuture(user);
@@ -599,12 +599,12 @@ public class UserProvider {
 
     }
     return futureGetUser
-      .compose(getUser -> {
+      .compose(user -> {
 
-        if (getUser == null) {
+        if (user == null) {
           return this.insertUserAndTrackEvent(realm, userInputProps, FlowType.SERVER_STARTUP, sqlConnection);
         }
-        return this.updateUser(getUser, userInputProps);
+        return this.updateUser(user, userInputProps);
       });
   }
 

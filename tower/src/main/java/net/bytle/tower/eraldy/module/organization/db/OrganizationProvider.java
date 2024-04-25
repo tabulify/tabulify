@@ -61,10 +61,10 @@ public class OrganizationProvider {
     return jdbcPool.withConnection(sqlConnection -> getByGuid(orgaId, clazz, sqlConnection));
   }
 
-  private <T extends Organization> Future<T> getByGuid(OrgaGuid orgaId, Class<T> clazz, SqlConnection sqlConnection) {
+  private <T extends Organization> Future<T> getByGuid(OrgaGuid orgaGuid, Class<T> clazz, SqlConnection sqlConnection) {
 
     return JdbcSelect.from(this.orgaTable)
-      .addEqualityPredicate(OrganizationCols.ID, orgaId)
+      .addEqualityPredicate(OrganizationCols.ID, orgaGuid.getLocalId())
       .execute(sqlConnection)
       .onFailure(e -> LOGGER.error("Error: " + e.getMessage() + ", while retrieving the orga by id", e))
       .compose(orgRows -> {
@@ -74,7 +74,7 @@ public class OrganizationProvider {
         }
 
         if (orgRows.size() != 1) {
-          return Future.failedFuture(new InternalException("the orga id (" + orgaId + ") returns more than one row"));
+          return Future.failedFuture(new InternalException("the orga id (" + orgaGuid + ") returns more than one row"));
         }
         JdbcRow row = orgRows.iterator().next();
         return this.getOrganizationFromDatabaseRow(row, clazz);

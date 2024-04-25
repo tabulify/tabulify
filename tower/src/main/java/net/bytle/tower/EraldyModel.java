@@ -271,13 +271,14 @@ public class EraldyModel {
 
               /**
                * Realm
-               * We create nep objects
+               * We create the user as it's not yet in the db
                */
               UserInputProps realmOwnerInputProps = new UserInputProps();
               OrgaUser orgaUserOwner = new OrgaUser();
               orgaUserOwner.setGuid(orgaUserGuid);
               orgaUserOwner.setOrgaRole(OrgaRole.OWNER);
               orgaUserOwner.setRealm(this.eraldyRealm);
+              orgaUserOwner.setOrganization(eraldyOrganization);
               return this.apiApp.getRealmProvider()
                 .getsertOnServerStartup(REALM_LOCAL_ID, orgaUserOwner, realmInputProps, sqlConnection)
                 .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy realm", t)))
