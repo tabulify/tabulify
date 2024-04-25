@@ -6,6 +6,8 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.InternalException;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * A utility to create a paginated query.
@@ -42,6 +44,18 @@ public class JdbcPaginatedSelect extends JdbcQuery {
   public Future<JdbcRowSet> execute(SqlConnection sqlConnection) {
 
 
+    JdbcPreparedStatement preparedStatement = this.toPreparedStatement();
+    String preparedSql = preparedStatement.getPreparedSql();
+    List<Object> bindingValues = preparedStatement.getBindingValues();
+    return sqlConnection
+      .preparedQuery(preparedSql)
+      .execute(Tuple.from(bindingValues))
+      .recover(e -> Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " table paginated select Error. Sql Error " + e.getMessage() + "\nValues:" + bindingValues.stream().map(Objects::toString).collect(Collectors.joining(", ")) + "\nSQl: " + preparedSql, e)))
+      .compose(rowSet -> Future.succeededFuture(new JdbcRowSet(rowSet)));
+  }
+
+  @Override
+  public JdbcPreparedStatement toPreparedStatement() {
     String orderByColumnAlias = "rowNumber";
     String orderBySql = "ORDER BY " + this.sqlEngine.toFullColumnName(this.orderedByColumn) + " " + this.orderBySort;
     this.mainSelect.addSelectExpression("ROW_NUMBER() OVER (" + orderBySql + ") " + orderByColumnAlias);
@@ -100,11 +114,7 @@ public class JdbcPaginatedSelect extends JdbcQuery {
       .append(" ")
       .append(this.orderBySort);
 
-    return sqlConnection
-      .preparedQuery(finalSqlQuery.toString())
-      .execute(Tuple.from(bindingValues))
-      .recover(e -> Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " table paginated select Error. Sql Error " + e.getMessage() + "\nSQl: " + finalSqlQuery, e)))
-      .compose(rowSet -> Future.succeededFuture(new JdbcRowSet(rowSet)));
+    return new JdbcPreparedStatement(finalSqlQuery.toString(),bindingValues);
   }
 
 

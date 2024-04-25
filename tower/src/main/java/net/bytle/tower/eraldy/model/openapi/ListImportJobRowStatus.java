@@ -2,6 +2,9 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.api.implementer.flow.ListImportListUserStatus;
+import net.bytle.tower.eraldy.api.implementer.flow.ListImportUserStatus;
+import net.bytle.tower.eraldy.module.list.model.ListUserGuid;
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
 
 import java.util.Objects;
@@ -23,11 +26,11 @@ public class ListImportJobRowStatus   {
 
   protected UserGuid userGuid;
 
-  protected Integer userStatus;
+  protected ListImportUserStatus userStatus;
 
-  protected String listUserGuid;
+  protected ListUserGuid listUserGuid;
 
-  protected Integer listUserStatus;
+  protected ListImportListUserStatus listUserStatus;
 
   /**
   * The empty constructor is
@@ -122,7 +125,7 @@ public class ListImportJobRowStatus   {
   * @return userStatus The status code of the user (0 - nothing done, 1 - user updated, 2 - user created)
   */
   @JsonProperty("userStatus")
-  public Integer getUserStatus() {
+  public ListImportUserStatus getUserStatus() {
     return userStatus;
   }
 
@@ -130,7 +133,7 @@ public class ListImportJobRowStatus   {
   * @param userStatus The status code of the user (0 - nothing done, 1 - user updated, 2 - user created)
   */
   @SuppressWarnings("unused")
-  public void setUserStatus(Integer userStatus) {
+  public void setImportUserStatus(ListImportUserStatus userStatus) {
     this.userStatus = userStatus;
   }
 
@@ -138,7 +141,7 @@ public class ListImportJobRowStatus   {
   * @return listUserGuid The list user guid (may be null if there is an error)
   */
   @JsonProperty("listUserGuid")
-  public String getListUserGuid() {
+  public ListUserGuid getListUserGuid() {
     return listUserGuid;
   }
 
@@ -146,7 +149,7 @@ public class ListImportJobRowStatus   {
   * @param listUserGuid The list user guid (may be null if there is an error)
   */
   @SuppressWarnings("unused")
-  public void setListUserGuid(String listUserGuid) {
+  public void setListUserGuid(ListUserGuid listUserGuid) {
     this.listUserGuid = listUserGuid;
   }
 
@@ -154,7 +157,7 @@ public class ListImportJobRowStatus   {
   * @return listUserStatus The status code of the user in the list (0 - nothing done, 1 - user added)
   */
   @JsonProperty("listUserStatus")
-  public Integer getListUserStatus() {
+  public ListImportListUserStatus getListUserStatus() {
     return listUserStatus;
   }
 
@@ -162,7 +165,7 @@ public class ListImportJobRowStatus   {
   * @param listUserStatus The status code of the user in the list (0 - nothing done, 1 - user added)
   */
   @SuppressWarnings("unused")
-  public void setListUserStatus(Integer listUserStatus) {
+  public void setImportListUserStatus(ListImportListUserStatus listUserStatus) {
     this.listUserStatus = listUserStatus;
   }
 

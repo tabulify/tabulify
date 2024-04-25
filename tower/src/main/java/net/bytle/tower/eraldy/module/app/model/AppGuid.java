@@ -18,7 +18,7 @@ public class AppGuid {
   /**
    * @return The app identifier in the realm (without the realm, the id may have duplicate)
    */
-  public long getAppLocalId() {
+  public long getLocalId() {
 
     return this.localId;
   }

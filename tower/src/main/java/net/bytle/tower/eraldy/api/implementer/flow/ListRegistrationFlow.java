@@ -20,6 +20,7 @@ import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
+import net.bytle.tower.eraldy.module.list.model.ListUserGuid;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
@@ -347,7 +348,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
             .onFailure(ctx::fail)
             .onSuccess(listUser -> {
               String jwtRedirectUri = jwtClaims.getRedirectUri().toString();
-              String registrationConfirmationOperationPath = jwtRedirectUri.replace(REGISTRATION_GUID_PARAM, listUser.getGuid());
+              String listUserGuidHash = this.getApp().getJackson().getSerializer(ListUserGuid.class).serialize(listUser.getGuid());
+              String registrationConfirmationOperationPath = jwtRedirectUri.replace(REGISTRATION_GUID_PARAM, listUserGuidHash);
               UriEnhanced redirectUri;
               try {
                 redirectUri = UriEnhanced.createFromString(registrationConfirmationOperationPath);
@@ -448,7 +450,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
               .buildWithContextFailingTerminal(authContext.getRoutingContext());
             return;
           }
-          String registrationConfirmationOperationPath = redirectUri.getPath().replace(REGISTRATION_GUID_PARAM, listUser.getGuid());
+          String listUserGuidHash = this.getApp().getJackson().getSerializer(ListUserGuid.class).serialize(listUser.getGuid());
+          String registrationConfirmationOperationPath = redirectUri.getPath().replace(REGISTRATION_GUID_PARAM, listUserGuidHash);
           redirectUri.setPath(registrationConfirmationOperationPath);
           oAuthState.setRedirectUri(redirectUri);
           /**

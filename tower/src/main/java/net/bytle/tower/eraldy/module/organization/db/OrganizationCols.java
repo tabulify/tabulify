@@ -10,7 +10,7 @@ public enum OrganizationCols implements JdbcColumn {
   NAME("orga_name"),
   OWNER_ID("orga_owner_user_id"),
   REALM_ID("orga_owner_realm_id"),
-  MODIFICATION_IME("orga_modification_time"),
+  MODIFICATION_TIME("orga_modification_time"),
   CREATION_TIME("orga_creation_time");
 
   private final String columnName;

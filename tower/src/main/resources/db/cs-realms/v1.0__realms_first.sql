@@ -1,13 +1,14 @@
 -- Create orga
+CREATE SEQUENCE organization_sequence START WITH 2;
 create table organization
 (
-  ORGA_ID                BIGSERIAL                   NOT NULL PRIMARY KEY,
+  ORGA_ID                BIGINT                   NOT NULL DEFAULT NEXTVAL('organization_sequence') PRIMARY KEY,
   ORGA_NAME              varchar(255)                NOT NULL,
   ORGA_HANDLE            varchar(32)                 NULL UNIQUE,
   ORGA_OWNER_USER_ID     BIGINT                      NOT NULL UNIQUE,
   ORGA_OWNER_REALM_ID    BIGINT                      NOT NULL CHECK (ORGA_OWNER_REALM_ID = 1),
   ORGA_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  ORGA_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
+  ORGA_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
 comment on table organization is 'An organization is the owner of realms, app and list and has users. They are the customer of our interact app.';
 
@@ -16,7 +17,7 @@ create table organization_role
   ORGA_ROLE_ID                BIGSERIAL                   NOT NULL PRIMARY KEY,
   ORGA_ROLE_NAME              varchar(255)                NOT NULL,
   ORGA_ROLE_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  ORGA_ROLE_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
+  ORGA_ROLE_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
 comment on table organization_role is 'The role for the users (owner, billing, ..). It gives permission to user on the organization level.';
 
@@ -34,10 +35,12 @@ comment on table organization_user is 'The users of the organization';
 comment on column organization_user.ORGA_USER_USER_ID is 'The user id of the realm id 1. It''s not a sequence';
 comment on column organization_user.ORGA_USER_REALM_ID is 'The Eraldy realm (1). The column is here to a foreign key to the realm user table';
 
+CREATE SEQUENCE realm_sequence START WITH 2;
+
 -- a list of all realm
 create table IF NOT EXISTS realm
 (
-  REALM_ID                BIGSERIAL                   NOT NULL PRIMARY KEY,
+  REALM_ID                BIGINT                      NOT NULL DEFAULT NEXTVAL('realm_sequence') PRIMARY KEY,
   REALM_NAME              varchar(50)                 NOT NULL,
   REALM_HANDLE            varchar(32)                 NULL UNIQUE,
   REALM_ORGA_ID           BIGINT                      NOT NULL REFERENCES organization,
@@ -47,7 +50,7 @@ create table IF NOT EXISTS realm
   REALM_APP_COUNT         INTEGER                     NOT NULL DEFAULT 0,
   REALM_LIST_COUNT        INTEGER                     NOT NULL DEFAULT 0,
   REALM_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  REALM_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
+  REALM_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
 comment on table realm is 'The list of realms';
 comment on column realm.REALM_HANDLE is 'A short unique name identifier used as named identifier';
@@ -79,7 +82,7 @@ create table IF NOT EXISTS realm_user
   USER_TIME_ZONE         VARCHAR(32),
   USER_LAST_ACTIVE_TIME  TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   USER_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  USER_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
+  USER_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
 ) PARTITION BY LIST (USER_REALM_ID);
 alter table realm_user
   add primary key (USER_REALM_ID, USER_ID);
@@ -110,7 +113,7 @@ CREATE TABLE realm_sequence
   SEQUENCE_TABLE_NAME        varchar(50)                 NOT NULL,
   SEQUENCE_LAST_ID           bigint                      NOT NULL default 0,
   SEQUENCE_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  SEQUENCE_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
+  SEQUENCE_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
 -- Defer for initial insertion of the first eraldy org, realm and app
 alter table realm_sequence
@@ -134,7 +137,7 @@ create table IF NOT EXISTS realm_app
   APP_PRIMARY_COLOR     varchar(50)                 NULL,
   APP_LIST_COUNT        INTEGER                     NULL,
   APP_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  APP_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
+  APP_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
 alter table realm_app
   add primary key (APP_REALM_ID, APP_ID);
@@ -166,7 +169,7 @@ create table IF NOT EXISTS realm_list
   LIST_USER_IN_COUNT     BIGINT                      NULL,
   LIST_MAILING_COUNT     BIGINT                      NULL,
   LIST_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  LIST_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
+  LIST_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
 alter table realm_list
   add primary key (LIST_REALM_ID, LIST_ID);
@@ -208,7 +211,7 @@ create table IF NOT EXISTS realm_list_user
   LIST_USER_IN_OPT_IN_CONFIRMATION_TIME TIMESTAMP WITHOUT TIME ZONE,
   LIST_USER_OUT_OPT_OUT_TIME            TIMESTAMP WITHOUT TIME ZONE,
   LIST_USER_CREATION_TIME               TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  LIST_USER_MODIFICATION_TIME           TIMESTAMP WITHOUT TIME ZONE NULL,
+  LIST_USER_MODIFICATION_TIME           TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   PRIMARY KEY (LIST_USER_REALM_ID, LIST_USER_LIST_ID, LIST_USER_USER_ID)
 ) PARTITION BY RANGE (LIST_USER_REALM_ID, LIST_USER_LIST_ID);
 alter table realm_list_user
@@ -240,7 +243,7 @@ create table IF NOT EXISTS realm_mailing
   MAILING_ITEM_SUCCESS_COUNT      BIGINT                      NULL,
   MAILING_ITEM_EXECUTION_COUNT    BIGINT                      NULL,
   MAILING_CREATION_TIME           TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  MAILING_MODIFICATION_TIME       TIMESTAMP WITHOUT TIME ZONE NULL
+  MAILING_MODIFICATION_TIME       TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
 
 alter table realm_mailing

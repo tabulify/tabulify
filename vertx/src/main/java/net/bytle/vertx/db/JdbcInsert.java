@@ -13,11 +13,10 @@ public class JdbcInsert extends JdbcQuery {
 
   Map<JdbcColumn, Object> colValues = new HashMap<>();
   private JdbcColumn returningColumn = null;
+  private JdbcOnConflictAction primaryKeyConflictAction;
 
   private JdbcInsert(JdbcTable jdbcTable) {
     super(jdbcTable);
-
-
   }
 
   static public JdbcInsert into(JdbcTable jdbcTable) {
@@ -35,6 +34,18 @@ public class JdbcInsert extends JdbcQuery {
 
   public Future<JdbcRowSet> execute(SqlConnection sqlConnection) {
 
+    JdbcPreparedStatement preparedStatement = this.toPreparedStatement();
+    List<Object> bindingValues = preparedStatement.getBindingValues();
+    String preparedSql = preparedStatement.getPreparedSql();
+    return sqlConnection
+      .preparedQuery(preparedSql)
+      .execute(Tuple.of(bindingValues))
+      .recover(e -> Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " table insertion Error. Sql Error " + e.getMessage() + "\nValues:" + bindingValues.stream().map(Objects::toString).collect(Collectors.joining(", ")) + "\nSQl: " + preparedSql, e)))
+      .compose(rowSet -> Future.succeededFuture(new JdbcRowSet(rowSet)));
+  }
+
+  @Override
+  public JdbcPreparedStatement toPreparedStatement() {
     StringBuilder insertSqlBuilder = new StringBuilder();
     List<Object> bindValues = new ArrayList<>();
     insertSqlBuilder.append("insert into ")
@@ -53,7 +64,7 @@ public class JdbcInsert extends JdbcQuery {
     }
 
     if (bindValues.isEmpty()) {
-      return Future.failedFuture(new InternalException("The insert on the table (" + this.getDomesticJdbcTable() + ") does not have any columns to insert"));
+      throw new InternalException("The insert on the table (" + this.getDomesticJdbcTable() + ") does not have any columns to insert");
     }
 
     insertSqlBuilder.append(String.join(",\n", colsStatement))
@@ -67,17 +78,28 @@ public class JdbcInsert extends JdbcQuery {
         .append(this.returningColumn.getColumnName());
     }
 
+    if(this.primaryKeyConflictAction!=null){
+      insertSqlBuilder.append(" on conflict ");
+      String names = this.getDomesticJdbcTable().getPrimaryKeyColumns().stream().map(JdbcColumn::getColumnName)
+        .collect(Collectors.joining(", "));
+      insertSqlBuilder.append(names)
+        .append(" ")
+        .append(this.primaryKeyConflictAction.getSql());
+    }
+
     String insertSqlString = insertSqlBuilder.toString();
-    return sqlConnection
-      .preparedQuery(insertSqlString)
-      .execute(Tuple.from(bindValues))
-      .recover(e -> Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " table insertion Error. Sql Error " + e.getMessage() + "\nValues:" + bindValues.stream().map(Objects::toString).collect(Collectors.joining(", ")) + "\nSQl: " + insertSqlString, e)))
-      .compose(rowSet -> Future.succeededFuture(new JdbcRowSet(rowSet)));
+    return new JdbcPreparedStatement(insertSqlString, bindValues);
+
   }
 
 
   public JdbcInsert addReturningColumn(JdbcColumn jdbcCol) {
     this.returningColumn = jdbcCol;
+    return this;
+  }
+
+  public JdbcInsert onConflictPrimaryKey(JdbcOnConflictAction jdbcOnConflictAction) {
+    this.primaryKeyConflictAction = jdbcOnConflictAction;
     return this;
   }
 }

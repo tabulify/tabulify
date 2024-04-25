@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -174,7 +175,6 @@ public class RealmProvider {
 
 
     JdbcInsert jdbcInsert = JdbcInsert.into(this.realmTable)
-      .addColumn(RealmCols.CREATION_TIME, DateTimeService.getNowInUtc())
       .addReturningColumn(RealmCols.ID);
 
     Realm realm;
@@ -189,10 +189,17 @@ public class RealmProvider {
         realm = new Realm();
     }
       Handle handle = realmInputProps.getHandle();
+
     if(handle!=null) {
       realm.setHandle(handle);
       jdbcInsert.addColumn(RealmCols.HANDLE, realm.getHandle().getValue());
     }
+
+    LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
+    realm.setCreationTime(nowInUtc);
+    jdbcInsert.addColumn(RealmCols.CREATION_TIME, realm.getCreationTime());
+    realm.setModificationTime(nowInUtc);
+    jdbcInsert.addColumn(RealmCols.MODIFICATION_TIME, realm.getModificationTime());
 
     Organization organization = ownerUser.getOrganization();
     realm.setOrganization(organization);
@@ -390,8 +397,13 @@ public class RealmProvider {
     orgaUserGuid.setOrganizationId(orgaId);
     orgaUserGuid.setLocalId(ownerUserLocalId);
     OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(orgaUserGuid, realm);
-
     realm.setOwnerUser(ownerUser);
+
+    /**
+     * Time
+     */
+    realm.setCreationTime(row.getLocalDateTime(RealmCols.CREATION_TIME));
+    realm.setModificationTime(row.getLocalDateTime(RealmCols.MODIFICATION_TIME));
 
     return realm;
 

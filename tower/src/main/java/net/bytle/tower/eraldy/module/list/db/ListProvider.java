@@ -55,19 +55,13 @@ public class ListProvider {
 
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String LIST_PREFIX = "list";
-  public static final String LIST_APP_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + AppProvider.APP_ID_COLUMN;
   public static final String LIST_ID_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "id";
-  private static final String LIST_REALM_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "realm_id";
   public static final String LIST_GUID_PREFIX = "lis";
   private final EraldyApiApp apiApp;
 
   public static final String LIST_HANDLE_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "handle";
-  public static final String LIST_NAME_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "name";
   private final Pool jdbcPool;
   private final JsonMapper apiMapper;
-  private static final String LIST_USER_COUNT_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "user" + COLUMN_PART_SEP + "count";
-  private static final String LIST_USER_IN_COUNT_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "user" + COLUMN_PART_SEP + "in" + COLUMN_PART_SEP + "count";
-  private static final String LIST_MAILING_COUNT_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "mailing" + COLUMN_PART_SEP + "count";
   private final JdbcTable listTable;
 
 
@@ -100,7 +94,7 @@ public class ListProvider {
    * between guid and (id and realm id)
    *
    * @param listObject - the registration list
-   * @param listId
+   * @param listId the list id
    */
   public void updateGuid(ListObject listObject, Long listId) {
     if (listObject.getGuid() != null) {
@@ -185,7 +179,7 @@ public class ListProvider {
          */
         newList.setApp(app);
         jdbcInsert.addColumn(ListCols.REALM_ID, app.getGuid().getRealmId());
-        jdbcInsert.addColumn(ListCols.APP_ID, app.getGuid().getAppLocalId());
+        jdbcInsert.addColumn(ListCols.APP_ID, app.getGuid().getLocalId());
 
         /**
          * Name
@@ -212,8 +206,11 @@ public class ListProvider {
         newList.setMailingCount(0L);
         jdbcInsert.addColumn(ListCols.MAILING_COUNT, newList.getMailingCount());
 
-        newList.setCreationTime(DateTimeService.getNowInUtc());
+        LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
+        newList.setCreationTime(nowInUtc);
         jdbcInsert.addColumn(ListCols.CREATION_TIME, newList.getCreationTime());
+        newList.setModificationTime(nowInUtc);
+        jdbcInsert.addColumn(ListCols.MODIFICATION_TIME, newList.getModificationTime());
 
         URI memberListRegistrationPath = this.apiApp.getEraldyModel().getMemberListRegistrationPath(newList);
         newList.setRegistrationUrl(memberListRegistrationPath);
@@ -231,8 +228,8 @@ public class ListProvider {
                 return jdbcInsert.execute(sqlConnection);
               })
               .compose(rowSet -> {
-                Long realmId = newList.getGuid().getRealmId();
-                Long listId = newList.getGuid().getLocalId();
+                long realmId = newList.getGuid().getRealmId();
+                long listId = newList.getGuid().getLocalId();
                 final String createListRegistrationPartition =
                   "CREATE TABLE IF NOT EXISTS " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "_" + realmId + "_" + listId + "\n" +
                     "    partition of " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "\n" +
@@ -384,6 +381,11 @@ public class ListProvider {
     listObject.setUserInCount(Objects.requireNonNullElse(row.getLong(ListCols.USER_IN_COUNT), 0L));
     listObject.setMailingCount(Objects.requireNonNullElse(row.getLong(ListCols.MAILING_COUNT), 0L));
 
+    /**
+     * Time
+     */
+    listObject.setCreationTime(row.getLocalDateTime(ListCols.CREATION_TIME));
+    listObject.setModificationTime(row.getLocalDateTime(ListCols.MODIFICATION_TIME));
 
     /**
      * Registration
@@ -472,7 +474,7 @@ public class ListProvider {
   public Future<java.util.List<ListObject>> getListsForApp(App app) {
 
     return JdbcSelect.from(this.listTable)
-      .addEqualityPredicate(ListCols.APP_ID, app.getGuid().getAppLocalId())
+      .addEqualityPredicate(ListCols.APP_ID, app.getGuid().getLocalId())
       .addEqualityPredicate(ListCols.REALM_ID, app.getGuid().getRealmId())
       .execute()
       .compose(listRows -> {

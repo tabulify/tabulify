@@ -18,6 +18,8 @@ import net.bytle.vertx.db.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
+
 import static net.bytle.vertx.db.JdbcSchemaManager.COLUMN_PART_SEP;
 
 public class OrganizationProvider {
@@ -85,9 +87,9 @@ public class OrganizationProvider {
 
     Organization organization = new Organization();
     organization.setCreationTime(row.getLocalDateTime(OrganizationCols.CREATION_TIME));
+    organization.setModificationTime(row.getLocalDateTime(OrganizationCols.MODIFICATION_TIME));
     organization.setHandle(Handle.ofFailSafe(row.getString(OrganizationCols.HANDLE)));
     organization.setName(row.getString(OrganizationCols.NAME));
-    organization.setModificationTime(row.getLocalDateTime(OrganizationCols.MODIFICATION_IME));
     organization.setGuid(new OrgaGuid(row.getLong(OrganizationCols.ID)));
     return Future.succeededFuture(clazz.cast(organization));
 
@@ -116,8 +118,11 @@ public class OrganizationProvider {
     JdbcInsert jdbcInsert = JdbcInsert.into(this.orgaTable);
     Organization organization = new Organization();
 
-    organization.setCreationTime(DateTimeService.getNowInUtc());
+    LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
+    organization.setCreationTime(nowInUtc);
     jdbcInsert.addColumn(OrganizationCols.CREATION_TIME, organization.getCreationTime());
+    organization.setModificationTime(nowInUtc);
+    jdbcInsert.addColumn(OrganizationCols.MODIFICATION_TIME, organization.getModificationTime());
 
     if (organizationGuid != null) {
       organization.setGuid(organizationGuid);

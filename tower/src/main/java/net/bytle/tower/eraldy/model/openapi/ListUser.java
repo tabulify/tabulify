@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.model.openapi;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceDeserializer;
+import net.bytle.tower.eraldy.module.list.model.ListUserGuid;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -14,7 +15,7 @@ import java.util.Objects;
 public class ListUser   {
 
 
-  protected String guid;
+  protected ListUserGuid guid;
 
   protected ListUserStatus status;
 
@@ -53,7 +54,7 @@ public class ListUser   {
   * @return guid The listing guid
   */
   @JsonProperty("guid")
-  public String getGuid() {
+  public ListUserGuid getGuid() {
     return guid;
   }
 
@@ -61,7 +62,7 @@ public class ListUser   {
   * @param guid The listing guid
   */
   @SuppressWarnings("unused")
-  public void setGuid(String guid) {
+  public void setGuid(ListUserGuid guid) {
     this.guid = guid;
   }
 
@@ -285,7 +286,7 @@ public class ListUser   {
 
   @Override
   public String toString() {
-    return guid;
+    return guid.toString();
   }
 
 }

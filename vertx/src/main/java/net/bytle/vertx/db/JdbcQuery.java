@@ -48,4 +48,6 @@ public abstract class JdbcQuery {
 
   public abstract Future<JdbcRowSet> execute(SqlConnection sqlConnection);
 
+
+  public abstract JdbcPreparedStatement toPreparedStatement();
 }

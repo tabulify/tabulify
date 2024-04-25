@@ -117,6 +117,7 @@ public class JdbcSelect extends JdbcQuery {
 
   }
 
+  @Override
   public JdbcPreparedStatement toPreparedStatement() {
     if (predicateColValues.isEmpty()) {
       throw new InternalException(this.getDomesticJdbcTable().getFullName() + " select has no predicates");

@@ -704,9 +704,10 @@ public class UserProvider {
         user.setRealm(realm);
         user.setCreationTime(nowInUtc);
         user.setLastActiveTime(nowInUtc);
-
+        user.setModificationTime(nowInUtc);
         JdbcInsert jdbcInsert = JdbcInsert.into(this.userTable)
           .addColumn(UserCols.CREATION_TIME, user.getCreationTime())
+          .addColumn(UserCols.MODIFICATION_IME, user.getModificationTime())
           .addColumn(UserCols.LAST_ACTIVE_TIME, user.getLastActiveTime());
 
         this.updateGuid(user, seqUserId);

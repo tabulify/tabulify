@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.type.Handle;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -31,6 +32,8 @@ public class Realm {
   protected Integer listCount;
 
   protected Integer listUserInCount;
+  private LocalDateTime creationTime;
+  private LocalDateTime modificationTime;
 
 
   public Realm() {
@@ -215,4 +218,20 @@ public class Realm {
   }
 
 
+  public void setCreationTime(LocalDateTime localDateTime) {
+    this.creationTime = localDateTime;
+  }
+
+  @JsonProperty("creationTime")
+  public LocalDateTime getCreationTime() {
+    return creationTime;
+  }
+  @JsonProperty("modificationTime")
+  public LocalDateTime getModificationTime() {
+    return modificationTime;
+  }
+
+  public void setModificationTime(LocalDateTime modificationTime) {
+    this.modificationTime = modificationTime;
+  }
 }

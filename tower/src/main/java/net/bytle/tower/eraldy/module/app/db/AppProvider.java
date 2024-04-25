@@ -22,6 +22,7 @@ import net.bytle.tower.eraldy.module.app.jackson.JacksonAppGuidDeserializer;
 import net.bytle.tower.eraldy.module.app.jackson.JacksonAppGuidSerializer;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
+import net.bytle.tower.eraldy.module.realm.db.RealmCols;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.type.Color;
@@ -51,8 +52,6 @@ public class AppProvider {
   public static final String APP_GUID_PREFIX = "app";
   public static final String APP_TABLE_NAME = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + APP_COLUMN_PREFIX;
 
-  public static final String APP_ID_COLUMN = APP_COLUMN_PREFIX + COLUMN_PART_SEP + "id";
-
   private final EraldyApiApp apiApp;
   private final Pool jdbcPool;
   private final JsonMapper apiMapper;
@@ -76,6 +75,7 @@ public class AppProvider {
       .addPrimaryKeyColumn(AppCols.ID)
       .addPrimaryKeyColumn(AppCols.REALM_ID)
       .addUniqueKeyColumns(AppCols.REALM_ID, AppCols.HANDLE)
+      .addForeignKeyColumn(AppCols.REALM_ID, RealmCols.ID)
       .build();
 
 
@@ -132,10 +132,11 @@ public class AppProvider {
   }
 
 
+  @SuppressWarnings("unused")
   private Future<App> updateApp(App app, AppInputProps appInputProps) {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.appTable)
-      .addPredicateColumn(AppCols.ID, app.getGuid().getAppLocalId())
+      .addPredicateColumn(AppCols.ID, app.getGuid().getLocalId())
       .addPredicateColumn(AppCols.REALM_ID, app.getGuid().getRealmId())
       .addReturningColumn(AppCols.ID);
 
@@ -387,7 +388,7 @@ public class AppProvider {
   private Future<App> getAppByGuid(AppGuid appGuid, Realm realm, SqlConnection sqlConnection) {
     return JdbcSelect.from(this.appTable)
       .addEqualityPredicate(AppCols.REALM_ID, appGuid.getRealmId())
-      .addEqualityPredicate(AppCols.ID, appGuid.getAppLocalId())
+      .addEqualityPredicate(AppCols.ID, appGuid.getLocalId())
       .execute(sqlConnection)
       .compose(userRows -> {
 
@@ -425,10 +426,16 @@ public class AppProvider {
         App app = new App();
 
         /**
-         * Id
+         * Realm
          */
         app.setRealm(realm);
+
+        /**
+         * Guid
+         */
         this.updateGuid(app, finalAppId);
+        jdbcInsert.addColumn(AppCols.REALM_ID, app.getGuid().getRealmId());
+        jdbcInsert.addColumn(AppCols.ID, app.getGuid().getLocalId());
 
         /**
          * Insertion time

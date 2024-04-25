@@ -16,8 +16,11 @@ import net.bytle.tower.eraldy.mixin.ListItemMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserGuidDeserializer;
+import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserGuidSerializer;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceDeserializer;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceSerializer;
+import net.bytle.tower.eraldy.module.list.model.ListUserGuid;
 import net.bytle.tower.eraldy.module.user.db.UserCols;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.util.Guid;
@@ -25,7 +28,6 @@ import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.db.*;
 import net.bytle.vertx.jackson.JacksonMapperManager;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +52,6 @@ public class ListUserProvider {
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String LIST_USER_PREFIX = "list_user";
   public static final String STATUS_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "status_code";
-  public static final String ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN;
   public static final String LIST_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN;
   public static final String USER_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   public static final String IN_SOURCE_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_source_id";
@@ -60,7 +61,6 @@ public class ListUserProvider {
 
   public static final String IN_OPT_IN_CONFIRMATION_IP_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_confirmation_ip";
   public static final String IN_OPT_IN_CONFIRMATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "in_opt_in_confirmation_time";
-  private static final String GUID_PREFIX = "liu";
   static final String REALM_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "realm_id";
 
   private final EraldyApiApp apiApp;
@@ -89,8 +89,11 @@ public class ListUserProvider {
     /**
      * Register the deserializer
      */
-    jacksonMapperManager.addDeserializer(ListUserSource.class, new JacksonListUserSourceDeserializer());
-    jacksonMapperManager.addSerializer(ListUserSource.class, new JacksonListUserSourceSerializer());
+    jacksonMapperManager
+      .addDeserializer(ListUserSource.class, new JacksonListUserSourceDeserializer())
+      .addSerializer(ListUserSource.class, new JacksonListUserSourceSerializer())
+      .addDeserializer(ListUserGuid.class, new JacksonListUserGuidDeserializer(this.apiApp))
+      .addSerializer(ListUserGuid.class, new JacksonListUserGuidSerializer(this.apiApp));
 
 
     Map<JdbcColumn, JdbcColumn> foreignKeysUserColumn = new HashMap<>();
@@ -114,13 +117,15 @@ public class ListUserProvider {
     if (listUser.getGuid() != null) {
       return;
     }
-    String guid = this.getGuidObjectFromLocalIds(
-        listUser.getList().getApp().getRealm(),
-        listUser.getList().getGuid().getLocalId(),
-        listUser.getUser().getGuid().getLocalId()
-      )
-      .toString();
+
+    assert Objects.equals(listUser.getUser().getRealm(), listUser.getList().getApp().getRealm()): "The realm is not the same on the user and on the list";
+
+    ListUserGuid guid = new ListUserGuid();
+    guid.setRealmId(listUser.getUser().getRealm().getGuid().getLocalId());
+    guid.setListId(listUser.getList().getGuid().getLocalId());
+    guid.setUserId(listUser.getUser().getGuid().getLocalId());
     listUser.setGuid(guid);
+
   }
 
   @SuppressWarnings("unused")
@@ -167,64 +172,57 @@ public class ListUserProvider {
 
   public Future<ListUser> insertListUser(User user, ListObject list, ListUserInputProps listUserInputProps) {
 
-    // on conflict do nothing because the insert can happen twice if the user
-    // click on the url twice
 
-    String sql = "INSERT INTO\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
-      "  " + REALM_COLUMN + ",\n" +
-      "  " + ID_COLUMN + ",\n" +
-      "  " + USER_ID_COLUMN + ",\n" +
-      "  " + IN_SOURCE_ID_COLUMN + ",\n" +
-      "  " + IN_OPT_IN_ORIGIN_COLUMN + ",\n" +
-      "  " + IN_OPT_IN_IP_COLUMN + ",\n" +
-      "  " + IN_OPT_IN_TIME_COLUMN + ",\n" +
-      "  " + IN_OPT_IN_CONFIRMATION_IP_COLUMN + ",\n" +
-      "  " + IN_OPT_IN_CONFIRMATION_TIME_COLUMN + ",\n" +
-      "  " + STATUS_COLUMN + ",\n" +
-      "  " + CREATION_TIME_COLUMN + "\n" +
-      "  )\n" +
-      " values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n" +
-      "ON CONFLICT(" + REALM_COLUMN + "," + ID_COLUMN + "," + USER_ID_COLUMN + ") DO NOTHING";
+    assert Objects.equals(user.getRealm(), list.getApp().getRealm()) : "The user (" + user + ") and list (" + list + ")+ does not have the same realm";
 
-
-    ListUser listUser = buildListUserFromUserListAndInput(user, list, listUserInputProps);
-
-    return jdbcPool
-      .preparedQuery(sql)
-      .execute(Tuple.of(
-        listUser.getList().getApp().getRealm().getGuid().getLocalId(),
-        listUser.getList().getGuid().getLocalId(),
-        listUser.getUser().getGuid().getLocalId(),
-        listUser.getInSourceId().getValue(),
-        listUser.getInOptInOrigin(),
-        listUser.getInOptInIp(),
-        listUser.getInOptInTime(),
-        listUser.getInOptInConfirmationIp(),
-        listUser.getInOptInConfirmationTime(),
-        listUser.getStatus(),
-        DateTimeService.getNowInUtc()
-      ))
-      .onFailure(e -> LOGGER.error("List User Insert Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e))
-      .compose(rows -> Future.succeededFuture(listUser));
-
-  }
-
-
-  @NotNull
-  private ListUser buildListUserFromUserListAndInput(User user, ListObject list, ListUserInputProps listUserInputProps) {
+    JdbcInsert jdbcInsert = JdbcInsert.into(this.listUserTable);
     ListUser listUser = new ListUser();
+
     listUser.setUser(user);
     listUser.setList(list);
-    listUser.setInSourceId(listUserInputProps.getInListUserSource());
-    listUser.setInOptInOrigin(listUserInputProps.getInOptInOrigin());
-    listUser.setInOptInIp(listUserInputProps.getInOptInIp());
-    listUser.setInOptInTime(listUserInputProps.getInOptInTime());
-    listUser.setInOptInConfirmationIp(listUserInputProps.getInOptInConfirmationIp());
-    listUser.setInOptInConfirmationTime(listUserInputProps.getInOptInConfirmationTime());
-    listUser.setStatus(ListUserStatus.OK);
     this.updateGuid(listUser);
-    return listUser;
+
+    jdbcInsert
+      .addColumn(ListUserCols.REALM_ID, listUser.getGuid().getRealmId())
+      .addColumn(ListUserCols.LIST_ID, listUser.getGuid().getListId())
+      .addColumn(ListUserCols.USER_ID, listUser.getGuid().getUserId());
+
+    LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
+    listUser.setModificationTime(nowInUtc);
+    jdbcInsert.addColumn(ListUserCols.MODIFICATION_TIME, listUser.getModificationTime());
+
+    listUser.setCreationTime(nowInUtc);
+    jdbcInsert.addColumn(ListUserCols.CREATION_TIME, listUser.getCreationTime());
+
+    listUser.setInSourceId(listUserInputProps.getInListUserSource());
+    jdbcInsert.addColumn(ListUserCols.IN_SOURCE_ID, listUser.getInSourceId());
+
+    listUser.setInOptInOrigin(listUserInputProps.getInOptInOrigin());
+    jdbcInsert.addColumn(ListUserCols.IN_OPT_IN_ORIGIN, listUser.getInOptInOrigin());
+
+    listUser.setInOptInIp(listUserInputProps.getInOptInIp());
+    jdbcInsert.addColumn(ListUserCols.IN_OPT_IN_IP, listUser.getInOptInIp());
+
+    listUser.setInOptInTime(listUserInputProps.getInOptInTime());
+    jdbcInsert.addColumn(ListUserCols.IN_OPT_IN_TIME, listUser.getInOptInTime());
+
+    listUser.setInOptInConfirmationIp(listUserInputProps.getInOptInConfirmationIp());
+    jdbcInsert.addColumn(ListUserCols.IN_OPT_IN_CONFIRMATION_IP, listUser.getInOptInConfirmationIp());
+
+    listUser.setInOptInConfirmationTime(listUserInputProps.getInOptInConfirmationTime());
+    jdbcInsert.addColumn(ListUserCols.IN_OPT_IN_CONFIRMATION_TIME, listUser.getInOptInConfirmationTime());
+
+    listUser.setStatus(ListUserStatus.OK);
+    jdbcInsert.addColumn(ListUserCols.STATUS_CODE, listUser.getStatus().getCode());
+
+    // on conflict do nothing because the insert can happen twice if the user
+    // click on the confirmation url twice
+    jdbcInsert.onConflictPrimaryKey(JdbcOnConflictAction.DO_NOTHING);
+
+    return jdbcInsert
+      .execute()
+      .compose(rows -> Future.succeededFuture(listUser));
+
   }
 
 
@@ -372,13 +370,13 @@ public class ListUserProvider {
 
           ListUserShort listUserShort = new ListUserShort();
           Long userId = row.getLong(ListUserCols.USER_ID);
-          String guidString = apiApp.createGuidStringFromRealmAndTwoObjectId(GUID_PREFIX, realmId, listId, userId).toString();
+          String guidString = apiApp.createGuidStringFromRealmAndTwoObjectId(ListUserGuid.GUID_PREFIX, realmId, listId, userId).toString();
           listUserShort.setGuid(guidString);
           String userGuid = apiApp.getUserProvider().createUserGuid(realmId, userId).toString();
           listUserShort.setUserGuid(userGuid);
           String subscriberEmail = row.getString(UserCols.EMAIL_ADDRESS);
           listUserShort.setUserEmail(subscriberEmail);
-          LocalDateTime localDateTime = row.getLocalDateTime(ListUserCols.OPT_IN_CONFIRMATION_TIME);
+          LocalDateTime localDateTime = row.getLocalDateTime(ListUserCols.IN_OPT_IN_CONFIRMATION_TIME);
           listUserShort.setConfirmationTime(localDateTime);
           Integer registrationStatus = row.getInteger(ListUserCols.STATUS_CODE);
           listUserShort.setStatus(registrationStatus);
@@ -392,18 +390,7 @@ public class ListUserProvider {
 
 
   private Guid getGuidObjectFromHash(String listUserGuid) throws CastException {
-    return apiApp.createGuidFromHashWithOneRealmIdAndTwoObjectId(GUID_PREFIX, listUserGuid);
-  }
-
-  private Guid getGuidObjectFromLocalIds(Realm realm, Long listId, Long userId) {
-
-    return apiApp.createGuidStringFromRealmAndTwoObjectId(
-      GUID_PREFIX,
-      realm.getGuid().getLocalId(),
-      listId,
-      userId
-    );
-
+    return apiApp.createGuidFromHashWithOneRealmIdAndTwoObjectId(ListUserGuid.GUID_PREFIX, listUserGuid);
   }
 
   public ObjectMapper getApiMapper() {

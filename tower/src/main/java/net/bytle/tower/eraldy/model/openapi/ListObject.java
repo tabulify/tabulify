@@ -41,6 +41,7 @@ public class ListObject   {
 
   protected Long mailingCount;
   private LocalDateTime creationTime;
+  private LocalDateTime modificationTime;
 
   /**
   * The empty constructor is
@@ -257,5 +258,14 @@ public class ListObject   {
 
   public LocalDateTime getCreationTime() {
     return this.creationTime;
+  }
+
+  @JsonProperty("modificationTime")
+  public LocalDateTime getModificationTime() {
+    return modificationTime;
+  }
+
+  public void setModificationTime(LocalDateTime modificationTime) {
+    this.modificationTime = modificationTime;
   }
 }

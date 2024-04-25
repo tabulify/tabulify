@@ -12,6 +12,7 @@ import net.bytle.tower.eraldy.graphql.pojo.input.ListUserInputProps;
 import net.bytle.tower.eraldy.model.openapi.ListUserSource;
 import net.bytle.tower.eraldy.model.openapi.ListUserStatus;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
+import net.bytle.tower.eraldy.module.list.model.ListUserGuid;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
@@ -51,9 +52,9 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
   private String confirmTime;
   private String timeZoneString;
   private UserGuid userGuid;
-  private ListImportListUserStatus listUserStatus = ListImportListUserStatus.NOTHING;
-  private ListImportUserStatus userStatus = ListImportUserStatus.NOTHING;
-  private String listUserGuid;
+  private ListImportListUserStatus importListUserStatus = ListImportListUserStatus.NOTHING;
+  private ListImportUserStatus importUserStatus = ListImportUserStatus.NOTHING;
+  private ListUserGuid listUserGuid;
 
   public ListImportJobRow(ListImportJob listImportJob, int rowId) {
     this.rowId = rowId;
@@ -129,7 +130,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                     userShouldUpdate = true;
                   }
                   if (userShouldUpdate) {
-                    this.userStatus = ListImportUserStatus.UPDATED;
+                    this.importUserStatus = ListImportUserStatus.UPDATED;
                     return userProvider.updateUser(userFromRegistry,userInputProps);
                   }
                 }
@@ -147,7 +148,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                     return Future.failedFuture(new CastException("The timezone (" + timeZoneString + ") is not a valid time zone. Skipped.", e));
                   }
                 }
-                this.userStatus = ListImportUserStatus.CREATED;
+                this.importUserStatus = ListImportUserStatus.CREATED;
                 return userProvider.insertUserAndTrackEvent(list.getApp().getRealm(), userInputProps, FlowType.LIST_IMPORT);
               }
             })
@@ -159,7 +160,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                   getListUserByListAndUser(list, user)
                   .compose(listUser -> {
                     if (listUser != null) {
-                      this.listUserStatus = ListImportListUserStatus.NOTHING;
+                      this.importListUserStatus = ListImportListUserStatus.NOTHING;
                       this.listUserGuid = listUser.getGuid();
                       return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
                     }
@@ -218,7 +219,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                     }
                     return listUserProvider.insertListUser(user, list, listUserInsertionProps)
                       .compose(listRegistrationInserted -> {
-                        this.listUserStatus = ListImportListUserStatus.ADDED;
+                        this.importListUserStatus = ListImportListUserStatus.ADDED;
                         this.listUserGuid = listRegistrationInserted.getGuid();
                         return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
                       });
@@ -263,8 +264,8 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
     jobRowStatus.setListUserGuid(this.listUserGuid);
     jobRowStatus.setStatusCode(this.statusCode);
     jobRowStatus.setRowId(this.rowId);
-    jobRowStatus.setUserStatus(this.userStatus.getCode());
-    jobRowStatus.setListUserStatus(this.listUserStatus.getCode());
+    jobRowStatus.setImportUserStatus(this.importUserStatus);
+    jobRowStatus.setImportListUserStatus(this.importListUserStatus);
 
     String statusMessage = this.statusMessage;
     if (statusCode == EmailAddressValidationStatus.FATAL_ERROR.getStatusCode()) {

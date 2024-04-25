@@ -34,7 +34,7 @@ public class JacksonAppGuidSerializer extends JacksonJsonStringSerializer<AppGui
   public String serialize(AppGuid value) {
     return Guid.builder(this.hashIds, AppProvider.APP_GUID_PREFIX)
       .setOrganizationOrRealmId(EraldyModel.REALM_LOCAL_ID)
-      .setFirstObjectId(value.getAppLocalId())
+      .setFirstObjectId(value.getLocalId())
       .build()
       .toString();
   }
