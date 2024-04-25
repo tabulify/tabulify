@@ -50,7 +50,7 @@ public class JdbcPaginatedSelect extends JdbcQuery {
     return sqlConnection
       .preparedQuery(preparedSql)
       .execute(Tuple.from(bindingValues))
-      .recover(e -> Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " table paginated select Error. Sql Error " + e.getMessage() + "\nValues:" + bindingValues.stream().map(Objects::toString).collect(Collectors.joining(", ")) + "\nSQl: " + preparedSql, e)))
+      .recover(e -> Future.failedFuture(new InternalException(this.getDomesticJdbcTable().getFullName() + " table paginated select Error. Sql Error " + e.getMessage() + "\nValues: " + bindingValues.stream().map(Objects::toString).collect(Collectors.joining(", ")) + "\nSQl: " + preparedSql, e)))
       .compose(rowSet -> Future.succeededFuture(new JdbcRowSet(rowSet)));
   }
 

@@ -12,9 +12,10 @@ create table organization
 );
 comment on table organization is 'An organization is the owner of realms, app and list and has users. They are the customer of our interact app.';
 
+-- no sequence, we insert them
 create table organization_role
 (
-  ORGA_ROLE_ID                SERIAL                      NOT NULL PRIMARY KEY,
+  ORGA_ROLE_ID                INTEGER                     NOT NULL PRIMARY KEY,
   ORGA_ROLE_NAME              varchar(255)                NOT NULL,
   ORGA_ROLE_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   ORGA_ROLE_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL

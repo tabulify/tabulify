@@ -10,6 +10,8 @@ import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.db.JdbcSchemaManager;
 import net.bytle.vertx.db.JdbcTable;
 
+import java.time.LocalDateTime;
+
 /**
  * This class creates and maintain a sequence by realm.
  * <p>
@@ -58,10 +60,11 @@ public class RealmSequenceProvider {
       "where " + TABLE_NAME_COLUMN + " = $2 \n " +
       "and " + REALM_ID_COLUMN + " = $3 " +
       "RETURNING " + LAST_ID_COLUMN;
+    LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
     return sqlConnection
       .preparedQuery(updateSql)
       .execute(Tuple.of(
-        DateTimeService.getNowInUtc(),
+        nowInUtc,
         tableName,
         realmId
       ))
@@ -79,13 +82,15 @@ public class RealmSequenceProvider {
             REALM_ID_COLUMN + ",\n" +
             TABLE_NAME_COLUMN + ",\n" +
             LAST_ID_COLUMN + ",\n" +
-            CREATION_TIME_COLUMN + "\n" +
-            ") values ($1, $2, $3, $4)";
+            CREATION_TIME_COLUMN + ",\n" +
+            MODIFICATION_TIME_COLUMN + "\n" +
+            ") values ($1, $2, $3, $4, $5)";
           Tuple tuple = Tuple.of(
             realmId,
             tableName,
             startId,
-            DateTimeService.getNowInUtc()
+            nowInUtc,
+            nowInUtc
           );
           return sqlConnection.preparedQuery(insertSql)
             .execute(tuple)

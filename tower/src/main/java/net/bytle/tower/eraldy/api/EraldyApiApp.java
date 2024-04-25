@@ -20,6 +20,7 @@ import net.bytle.tower.eraldy.module.mailing.db.mailingitem.MailingItemProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingjob.MailingJobProvider;
 import net.bytle.tower.eraldy.module.mailing.flow.MailingFlow;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationProvider;
+import net.bytle.tower.eraldy.module.organization.db.OrganizationRoleProvider;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationUserProvider;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
@@ -181,7 +182,7 @@ public class EraldyApiApp extends TowerApp {
     this.authProvider = new AuthProvider(this);
     this.listUserProvider = new ListUserProvider(this, realmSchema);
     this.serviceProvider = new ServiceProvider(this);
-    this.organizationRoleProvider = new OrganizationRoleProvider(this);
+    this.organizationRoleProvider = new OrganizationRoleProvider(realmSchema);
     this.hashIds = this.getHttpServer().getServer().getHashId();
     this.authClientProvider = new AuthClientProvider(this);
     this.realmSequenceProvider = new RealmSequenceProvider();

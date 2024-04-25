@@ -79,11 +79,11 @@ public class JdbcInsert extends JdbcQuery {
     }
 
     if(this.primaryKeyConflictAction!=null){
-      insertSqlBuilder.append(" on conflict ");
+      insertSqlBuilder.append(" on conflict (");
       String names = this.getDomesticJdbcTable().getPrimaryKeyColumns().stream().map(JdbcColumn::getColumnName)
         .collect(Collectors.joining(", "));
       insertSqlBuilder.append(names)
-        .append(" ")
+        .append(") ")
         .append(this.primaryKeyConflictAction.getSql());
     }
 

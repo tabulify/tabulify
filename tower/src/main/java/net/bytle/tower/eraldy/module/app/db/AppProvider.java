@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -440,8 +441,11 @@ public class AppProvider {
         /**
          * Insertion time
          */
-        app.setCreationTime(DateTimeService.getNowInUtc());
+        LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
+        app.setCreationTime(nowInUtc);
         jdbcInsert.addColumn(AppCols.CREATION_TIME, app.getCreationTime());
+        app.setModificationTime(nowInUtc);
+        jdbcInsert.addColumn(AppCols.MODIFICATION_TIME, app.getModificationTime());
 
         /**
          * Owner
