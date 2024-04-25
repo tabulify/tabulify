@@ -136,7 +136,7 @@ public class OrganizationUserProvider {
     if (knownOrganization == null) {
       futureOrganization = apiApp
         .getOrganizationProvider()
-        .getById(orgaId);
+        .getById(new OrgaGuid(orgaId));
     } else {
       if (!knownOrganization.getGuid().getLocalId().equals(orgaId)) {
         return Future.failedFuture(new InternalException("Orga id between row (" + orgaId + ") and organization (" + knownOrganization.getGuid() + ") not consistent (ie not the same)"));

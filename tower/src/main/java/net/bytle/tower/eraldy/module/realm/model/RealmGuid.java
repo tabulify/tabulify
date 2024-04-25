@@ -5,9 +5,13 @@ import java.util.Objects;
 public class RealmGuid {
 
 
-  private long localId;
+  private final long localId;
 
-  public RealmGuid() {
+  /**
+   * @param realmId The realm id in the database
+   */
+  public RealmGuid(long realmId) {
+    this.localId = realmId;
   }
 
   /**
@@ -18,12 +22,6 @@ public class RealmGuid {
     return this.localId;
   }
 
-  /**
-   * @param localId The realm id in the database
-   */
-  public void setLocalId(long localId) {
-    this.localId = localId;
-  }
 
   @Override
   public boolean equals(Object o) {
@@ -36,6 +34,11 @@ public class RealmGuid {
   @Override
   public int hashCode() {
     return Objects.hash(localId);
+  }
+
+  @Override
+  public String toString() {
+    return String.valueOf(localId);
   }
 
 }

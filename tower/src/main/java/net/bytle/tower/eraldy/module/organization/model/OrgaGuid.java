@@ -8,17 +8,10 @@ import java.util.Objects;
 public class OrgaGuid  {
 
 
-  private Long localId;
+  private final Long localId;
 
-  public OrgaGuid() {
-    super();
-  }
-
-
-  public void setLocalId(Long localId) {
-
-    this.localId = localId;
-
+  public OrgaGuid(Long orgaId) {
+    this.localId = orgaId;
   }
 
 
@@ -37,5 +30,10 @@ public class OrgaGuid  {
   @Override
   public int hashCode() {
     return Objects.hash(localId);
+  }
+
+  @Override
+  public String toString() {
+    return String.valueOf(localId);
   }
 }

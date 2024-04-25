@@ -40,8 +40,8 @@ public class OrgaUser extends User {
 
   @Override
   public void setGuid(UserGuid guid) {
-    if (guid instanceof OrgaUserGuid) {
-      throw new InternalException("The guid (" + guid + ") is not an orga guid");
+    if (!(guid instanceof OrgaUserGuid)) {
+      throw new InternalException("The guid (" + guid + ") is not an orga user guid");
     }
     super.setGuid(guid);
   }

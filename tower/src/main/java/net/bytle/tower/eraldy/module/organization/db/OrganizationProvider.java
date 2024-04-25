@@ -53,17 +53,17 @@ public class OrganizationProvider {
   }
 
 
-  public Future<Organization> getById(Long orgaId) {
+  public Future<Organization> getById(OrgaGuid orgaId) {
     return getById(orgaId, Organization.class);
   }
 
   @SuppressWarnings("SameParameterValue")
-  private <T extends Organization> Future<T> getById(Long orgaId, Class<T> clazz) {
+  private <T extends Organization> Future<T> getById(OrgaGuid orgaId, Class<T> clazz) {
 
     return jdbcPool.withConnection(sqlConnection -> getById(orgaId, clazz, sqlConnection));
   }
 
-  private <T extends Organization> Future<T> getById(Long orgaId, Class<T> clazz, SqlConnection sqlConnection) {
+  private <T extends Organization> Future<T> getById(OrgaGuid orgaId, Class<T> clazz, SqlConnection sqlConnection) {
 
     return JdbcSelect.from(this.orgaTable)
       .addEqualityPredicate(OrganizationCols.ID, orgaId)
@@ -90,17 +90,10 @@ public class OrganizationProvider {
     organization.setHandle(Handle.ofFailSafe(row.getString(OrganizationCols.HANDLE)));
     organization.setName(row.getString(OrganizationCols.NAME));
     organization.setModificationTime(row.getLocalDateTime(OrganizationCols.MODIFICATION_IME));
-    this.updateGuid(organization,row.getLong(OrganizationCols.ID));
+    organization.setGuid(new OrgaGuid(row.getLong(OrganizationCols.ID)));
     return Future.succeededFuture(clazz.cast(organization));
 
   }
-
-  public void updateGuid(Organization organization, Long orgaId) {
-    OrgaGuid orgaGuid = new OrgaGuid();
-    orgaGuid.setLocalId(orgaId);
-    organization.setGuid(orgaGuid);
-  }
-
 
   public Guid createGuidFromHash(String guid) throws CastException {
     return apiApp.createGuidFromHashWithOneId(GUID_PREFIX, guid);
@@ -109,7 +102,7 @@ public class OrganizationProvider {
   /**
    * Getsert: Get or insert the user
    */
-  public Future<Organization> getsert(Long organizationId, OrganizationInputProps organizationInputProps, SqlConnection sqlConnection) {
+  public Future<Organization> getsert(OrgaGuid organizationId, OrganizationInputProps organizationInputProps, SqlConnection sqlConnection) {
 
     return this.getById(organizationId, sqlConnection)
       .recover(t -> Future.failedFuture(new InternalException("Error while selecting the organization", t)))
@@ -123,7 +116,7 @@ public class OrganizationProvider {
 
   }
 
-  private Future<Organization> insert(Long organizationId, OrganizationInputProps organizationInputProps, SqlConnection sqlConnection) {
+  private Future<Organization> insert(OrgaGuid organizationGuid, OrganizationInputProps organizationInputProps, SqlConnection sqlConnection) {
 
 
     JdbcInsert jdbcInsert = JdbcInsert.into(this.orgaTable);
@@ -132,9 +125,9 @@ public class OrganizationProvider {
     organization.setCreationTime(DateTimeService.getNowInUtc());
     jdbcInsert.addColumn(OrganizationCols.CREATION_TIME, organization.getCreationTime());
 
-    if (organizationId != null) {
-      this.updateGuid(organization,organizationId);
-      jdbcInsert.addColumn(OrganizationCols.ID, organizationId);
+    if (organizationGuid != null) {
+      organization.setGuid(organizationGuid);
+      jdbcInsert.addColumn(OrganizationCols.ID, organization.getGuid().getLocalId());
     }
 
     if (organizationInputProps.getHandle() != null) {
@@ -157,28 +150,27 @@ public class OrganizationProvider {
       .addReturningColumn(OrganizationCols.ID)
       .execute(sqlConnection)
       .compose(orgRows -> {
-        Long orgLocalId = orgRows.iterator().next().getLong(OrganizationCols.ID);
+        long orgLocalId = orgRows.iterator().next().getLong(OrganizationCols.ID);
 
-        if (organizationId != null && !organizationId.equals(orgLocalId)) {
-          return Future.failedFuture(new InternalException("The asked organization id (" + organizationId + ") was not the one inserted (" + orgLocalId + ")"));
+        if (organizationGuid != null && organizationGuid.getLocalId() != orgLocalId) {
+          return Future.failedFuture(new InternalException("The asked organization id (" + organizationGuid + ") was not the one inserted (" + orgLocalId + ")"));
         }
 
-        this.updateGuid(organization, orgLocalId);
+        organization.setGuid(new OrgaGuid(orgLocalId));
 
         return Future.succeededFuture(organization);
       });
   }
 
-  Future<Organization> getById(Long localId, SqlConnection sqlConnection) {
+  Future<Organization> getById(OrgaGuid localId, SqlConnection sqlConnection) {
     return getById(localId, Organization.class, sqlConnection);
   }
 
 
   public Organization toOrganizationFromLocalId(Long orgaId) {
-    OrgaGuid orgaGuid = new OrgaGuid();
-    orgaGuid.setLocalId(orgaId);
     Organization organization = new Organization();
-    organization.setGuid(orgaGuid);
+    organization.setGuid(new OrgaGuid(orgaId));
     return organization;
   }
+
 }

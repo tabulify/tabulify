@@ -27,6 +27,7 @@ import net.bytle.tower.eraldy.module.app.graphql.GraphQLAppGuidCoercing;
 import net.bytle.tower.eraldy.module.list.graphql.ListGraphQLImpl;
 import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
 import net.bytle.tower.eraldy.module.organization.graphql.GraphQLOrgaGuidCoercing;
+import net.bytle.tower.eraldy.module.realm.graphql.RealmGraphQLImpl;
 import net.bytle.tower.eraldy.module.user.graphql.GraphQLUserGuidCoercing;
 import net.bytle.vertx.graphql.GraphQLDef;
 import net.bytle.vertx.graphql.GraphQLLocalDate;
@@ -111,6 +112,7 @@ public class EraldyGraphQL implements GraphQLDef {
      */
     new MailingGraphQLImpl(this, wiringBuilder);
     new ListGraphQLImpl(this, wiringBuilder);
+    new RealmGraphQLImpl(this,wiringBuilder);
     UserGraphQLImpl userImpl = new UserGraphQLImpl(this);
 
     /**

@@ -126,9 +126,12 @@ create table IF NOT EXISTS realm_app
   APP_ORGA_ID           BIGINT                      NOT NULL,
   APP_OWNER_USER_ID     BIGINT                      NOT NULL,
   APP_NAME              varchar(50)                 NOT NULL,
+  APP_SLOGAN            varchar(255)                NULL,
   APP_HANDLE            varchar(32)                 NULL,
   APP_HOME              varchar(255)                NULL,
   APP_TOS               varchar(255)                NULL,
+  APP_LOGO              varchar(255)                NULL,
+  APP_PRIMARY_COLOR     varchar(50)                 NULL,
   APP_LIST_COUNT        INTEGER                     NULL,
   APP_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   APP_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL

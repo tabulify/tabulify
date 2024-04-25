@@ -377,7 +377,6 @@ public class EraldyApiApp extends TowerApp {
   }
 
   public ListUserProvider getListUserProvider() {
-
     return this.listUserProvider;
   }
 

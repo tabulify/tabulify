@@ -12,9 +12,11 @@ import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.organization.inputs.OrgaUserInputProps;
 import net.bytle.tower.eraldy.module.organization.inputs.OrganizationInputProps;
+import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
+import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.type.Handle;
@@ -118,11 +120,15 @@ public class EraldyModel {
      * The realm is used during initial insertion
      * of an organisation user at {@link #mount()}
      * It's updated just after in the {@link #mount()}
+     *
+     * We can't use the providers utility now
+     * as they are initialized later, we create the guids manually then
      */
     Organization organization = new Organization();
-    this.apiApp.getOrganizationProvider().updateGuid(organization,ORGA_LOCAL_ID);
+    organization.setGuid(new OrgaGuid(ORGA_LOCAL_ID));
     this.eraldyRealm = new Realm();
-    this.apiApp.getRealmProvider().updateGuid(this.eraldyRealm,REALM_LOCAL_ID);
+    RealmGuid realmGuid = new RealmGuid(ORGA_LOCAL_ID);
+    this.eraldyRealm.setGuid(realmGuid);
     this.eraldyRealm.setOrganization(organization);
 
   }
@@ -226,18 +232,9 @@ public class EraldyModel {
           /**
            * Owner in GUID
            */
-          OrgaUserGuid eraldyOwnerUserGuid = new OrgaUserGuid();
-          eraldyOwnerUserGuid.setLocalId(OWNER_LOCAL_ID);
-
-
-          OrgaUser realmOwner = new OrgaUser();
           OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
           orgaUserGuid.setLocalId(OWNER_LOCAL_ID);
           orgaUserGuid.setOrganizationId(ORGA_LOCAL_ID);
-          Realm realmForRealmOwner = new Realm();
-          this.apiApp.getRealmProvider().updateGuid(realmForRealmOwner,REALM_LOCAL_ID);
-          realmOwner.setRealm(realmForRealmOwner);
-          realmOwner.setOrgaRole(OrgaRole.OWNER);
 
           /**
            * Create if not exists and get the Eraldy Model
@@ -246,9 +243,9 @@ public class EraldyModel {
           OrganizationInputProps organizationInputProps = new OrganizationInputProps();
           organizationInputProps.setHandle(Handle.ofFailSafe("eraldy"));
           organizationInputProps.setName("Eraldy");
-          organizationInputProps.setOwnerGuid(eraldyOwnerUserGuid);
+          organizationInputProps.setOwnerGuid(orgaUserGuid);
           Future<Organization> futureOrganization = this.apiApp.getOrganizationProvider()
-            .getsert(ORGA_LOCAL_ID, organizationInputProps, sqlConnection);
+            .getsert(this.eraldyRealm.getOrganization().getGuid(), organizationInputProps, sqlConnection);
 
           /**
            * The organization roles
@@ -266,7 +263,6 @@ public class EraldyModel {
               LOGGER.info("Eraldy Organization and roles getserted");
 
               Organization eraldyOrganization = composite.resultAt(0);
-              realmOwner.setOrganization(eraldyOrganization);
 
               /**
                * Realm
@@ -277,16 +273,19 @@ public class EraldyModel {
               RealmInputProps realmInputProps = new RealmInputProps();
               realmInputProps.setHandle(apexDomain.getRealmHandle());
               realmInputProps.setName(apexDomain.getName());
-              realmInputProps.setOwnerUserGuid(eraldyOwnerUserGuid);
+              realmInputProps.setOwnerUserGuid(orgaUserGuid);
 
               /**
                * Realm
                * We create nep objects
                */
               UserInputProps realmOwnerInputProps = new UserInputProps();
-
+              OrgaUser orgaUserOwner = new OrgaUser();
+              orgaUserOwner.setGuid(orgaUserGuid);
+              orgaUserOwner.setOrgaRole(OrgaRole.OWNER);
+              orgaUserOwner.setRealm(this.eraldyRealm);
               return this.apiApp.getRealmProvider()
-                .getsertOnServerStartup(REALM_LOCAL_ID, realmOwner, realmInputProps, sqlConnection)
+                .getsertOnServerStartup(REALM_LOCAL_ID, orgaUserOwner, realmInputProps, sqlConnection)
                 .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy realm", t)))
                 .compose(eraldyRealm -> {
                   LOGGER.info("Eraldy Realm getserted");
