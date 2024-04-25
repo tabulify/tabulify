@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.type.Handle;
 
 import java.net.URI;
@@ -17,7 +18,7 @@ public class ListObject   {
 
   protected Long localId;
 
-  protected String guid;
+  protected ListGuid guid;
 
   protected Handle handle;
 
@@ -50,27 +51,12 @@ public class ListObject   {
   public ListObject () {
   }
 
-  /**
-  * @return localId The list identifier in the realm scope. Without the realm, this id have duplicate.
-  */
-  @JsonProperty("localId")
-  public Long getLocalId() {
-    return localId;
-  }
-
-  /**
-  * @param localId The list identifier in the realm scope. Without the realm, this id have duplicate.
-  */
-  @SuppressWarnings("unused")
-  public void setLocalId(Long localId) {
-    this.localId = localId;
-  }
 
   /**
   * @return guid The global list id where the user can register
   */
   @JsonProperty("guid")
-  public String getGuid() {
+  public ListGuid getGuid() {
     return guid;
   }
 
@@ -78,7 +64,7 @@ public class ListObject   {
   * @param guid The global list id where the user can register
   */
   @SuppressWarnings("unused")
-  public void setGuid(String guid) {
+  public void setGuid(ListGuid guid) {
     this.guid = guid;
   }
 

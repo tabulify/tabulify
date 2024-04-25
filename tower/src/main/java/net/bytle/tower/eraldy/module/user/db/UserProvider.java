@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
-import io.vertx.sqlclient.*;
+import io.vertx.sqlclient.Pool;
+import io.vertx.sqlclient.SqlConnection;
+import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.EraldyModel;
@@ -135,37 +137,6 @@ public class UserProvider {
     return this.jdbcPool.withConnection(sqlConnection -> insertUser(realm, user, sqlConnection));
   }
 
-  @SuppressWarnings("unused")
-  private Future<Boolean> exists(User user) {
-    String sql;
-    Future<RowSet<Row>> futureResponse;
-    JdbcSelect select = JdbcSelect.from(this.userTable)
-      .addEqualityPredicate(UserCols.REALM_ID, user.getRealm().getLocalId());
-    if (user.getLocalId() != null) {
-
-      select
-        .addEqualityPredicate(UserCols.ID, user.getLocalId());
-
-    } else {
-      EmailAddress email = user.getEmailAddress();
-      if (email == null) {
-        String failureMessage = "An id or email should be given to check the existence of a user";
-        InternalException internalException = new InternalException(failureMessage);
-        return Future.failedFuture(internalException);
-      }
-      select
-        .addEqualityPredicate(UserCols.EMAIL_ADDRESS, email.toNormalizedString());
-
-    }
-    return select
-      .execute(rows -> {
-        if (rows.size() == 1) {
-          return Future.succeededFuture(true);
-        } else {
-          return Future.succeededFuture(false);
-        }
-      });
-  }
 
   /**
    *
@@ -177,7 +148,7 @@ public class UserProvider {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.userTable)
       .addUpdatedColumn(UserCols.MODIFICATION_IME, DateTimeService.getNowInUtc())
-      .addPredicateColumn(UserCols.REALM_ID, user.getRealm().getLocalId())
+      .addPredicateColumn(UserCols.REALM_ID, user.getGuid().getRealmId())
       // if update by handle, we need to get the id back
       // and we check that there was an update
       .addReturningColumn(UserCols.ID);
@@ -185,9 +156,9 @@ public class UserProvider {
     /**
      * We allow update via handle for test purpose
      */
-    if (user.getLocalId() != null) {
+    if (user.getGuid() != null) {
 
-      jdbcUpdate.addPredicateColumn(UserCols.ID, user.getLocalId());
+      jdbcUpdate.addPredicateColumn(UserCols.ID, user.getGuid().getLocalId());
 
       EmailAddress newEmailAddress = userInputProps.getEmailAddress();
       if (newEmailAddress != null && !Objects.equals(newEmailAddress.toNormalizedString(), user.getEmailAddress().toNormalizedString())) {
@@ -201,7 +172,7 @@ public class UserProvider {
 
     } else {
 
-      return Future.failedFuture(new InternalException("To update a user, the id or email should be not null"));
+      return Future.failedFuture(new InternalException("To update a user, the guid or email should be not null"));
 
     }
 
@@ -281,11 +252,12 @@ public class UserProvider {
         }
 
         Long userId = rowSet.iterator().next().getLong(UserCols.ID);
-        if (user.getLocalId() == null) {
-          user.setLocalId(userId);
+        if (user.getGuid() == null) {
+          this.updateGuid(user, userId);
+
         } else {
-          if (!user.getLocalId().equals(userId)) {
-            return Future.failedFuture("The update id (" + userId + ") is not the same as the user id (" + user.getLocalId() + ") for the user (" + user + ")");
+          if (user.getGuid().getLocalId() == userId) {
+            return Future.failedFuture("The update id (" + userId + ") is not the same as the user id (" + user.getGuid().getLocalId() + ") for the user (" + user + ")");
           }
         }
         return Future.succeededFuture(user);
@@ -309,7 +281,7 @@ public class UserProvider {
     jdbcPagination.setPageSize(pageSize);
     jdbcPagination.setSearchTerm(searchTerm);
     return JdbcPaginatedSelect.from(this.userTable)
-      .addEqualityPredicate(UserCols.REALM_ID, realm.getLocalId())
+      .addEqualityPredicate(UserCols.REALM_ID, realm.getGuid().getLocalId())
       .setSearchColumn(UserCols.EMAIL_ADDRESS)
       .setPagination(jdbcPagination)
       .addOrderBy(UserCols.CREATION_TIME)
@@ -335,12 +307,11 @@ public class UserProvider {
 
 
     Long userRealmId = row.getLong(UserCols.REALM_ID);
-    if (!realm.getLocalId().equals(userRealmId)) {
+    if (realm.getGuid().getLocalId() != userRealmId) {
       throw new InternalException("User Realm Id and passed realm are not the same");
     }
     user.setRealm(realm);
-    user.setLocalId(row.getLong(UserCols.ID));
-    this.updateGuid(user);
+    this.updateGuid(user, row.getLong(UserCols.ID));
 
 
     user.setEmailAddress(EmailAddress.ofFailSafe(row.getString(UserCols.EMAIL_ADDRESS)));
@@ -389,21 +360,17 @@ public class UserProvider {
   }
 
 
-  public <T extends User> void updateGuid(T user) {
+  public <T extends User> void updateGuid(T user, Long userLocalId) {
     if (user.getGuid() != null) {
       return;
     }
-    user.setGuid(this.getGuidFromUser(user));
-  }
-
-  private UserGuid getGuidFromUser(User user) {
-
     UserGuid userGuid = new UserGuid();
-    userGuid.setRealmId(user.getRealm().getLocalId());
-    userGuid.setLocalId(user.getLocalId());
-    return userGuid;
+    userGuid.setLocalId(userLocalId);
+    userGuid.setRealmId(user.getRealm().getGuid().getLocalId());
+    user.setGuid(userGuid);
 
   }
+
 
   /**
    * @param userId    - the user id
@@ -442,7 +409,7 @@ public class UserProvider {
 
     return JdbcSelect.from(this.userTable)
       .addEqualityPredicate(UserCols.EMAIL_ADDRESS, userEmail.toNormalizedString())
-      .addEqualityPredicate(UserCols.REALM_ID, realm.getLocalId())
+      .addEqualityPredicate(UserCols.REALM_ID, realm.getGuid().getLocalId())
       .execute(sqlConnection, userRows -> this.buildUserFromRowSet(userRows, realm, sqlConnection));
 
   }
@@ -470,8 +437,8 @@ public class UserProvider {
     }
     Future<Realm> futureRealm;
     if (realm != null) {
-      if (!Objects.equals(realm.getLocalId(), guidObject.getRealmId())) {
-        return Future.failedFuture(new InternalException("The user guid (" + guid + ") has a realm (" + guidObject.getRealmId() + " that is not the same than the passed realm (" + realm.getLocalId() + ")"));
+      if (!Objects.equals(realm.getGuid().getLocalId(), guidObject.getRealmId())) {
+        return Future.failedFuture(new InternalException("The user guid (" + guid + ") has a realm (" + guidObject.getRealmId() + " that is not the same than the passed realm (" + realm.getGuid().getLocalId() + ")"));
       }
       futureRealm = Future.succeededFuture(realm);
     } else {
@@ -539,7 +506,7 @@ public class UserProvider {
 
     return JdbcSelect.from(this.userTable)
       .addEqualityPredicate(UserCols.EMAIL_ADDRESS, userEmail.toNormalizedString())
-      .addEqualityPredicate(UserCols.REALM_ID, realm.getLocalId())
+      .addEqualityPredicate(UserCols.REALM_ID, realm.getGuid().getLocalId())
       .addEqualityPredicate(UserCols.PASSWORD, hashedPassword)
       .execute(userRows -> this.buildUserFromRowSet(userRows, realm, sqlConnection));
 
@@ -647,7 +614,7 @@ public class UserProvider {
    * It was created initially to not block during the transaction on server startup to insert
    * Eraldy data.
    * @param userId - the user id
-   * @param realm - the realm if already build
+   * @param realm - the realm
    * @param sqlConnection - the sql connection
    * @return the user or null
    * @param <T> a user extension
@@ -659,7 +626,7 @@ public class UserProvider {
 
     return JdbcSelect.from(this.userTable)
       .addEqualityPredicate(UserCols.ID, userId)
-      .addEqualityPredicate(UserCols.REALM_ID, realm.getLocalId())
+      .addEqualityPredicate(UserCols.REALM_ID, realm.getGuid().getLocalId())
       .execute(sqlConnection, userRow -> this.buildUserFromRowSet(userRow, realm, sqlConnection));
   }
 
@@ -674,7 +641,7 @@ public class UserProvider {
 
     /**
      * We don't know if a user is an organizational user before hands.
-     * Therefore we check based on the realm if the user is an organization user.
+     * Therefore, we check based on the realm if the user is an organization user.
      * <p>
      * We could send to the login app, the type of user that we want
      * but, it would make difficult to see that the user exists
@@ -684,8 +651,8 @@ public class UserProvider {
      * more than a normal user in the code.
      */
     Future<OrgaUser> futureOrgaUser = Future.succeededFuture();
-    if (realm.getLocalId().equals(EraldyModel.REALM_LOCAL_ID)) {
-      futureOrgaUser = this.apiApp.getOrganizationUserProvider().createOrganizationUserObjectFromLocalIdOrNull(userId,sqlConnection);
+    if (realm.getGuid().getLocalId() == EraldyModel.REALM_LOCAL_ID) {
+      futureOrgaUser = this.apiApp.getOrganizationUserProvider().createOrganizationUserObjectFromLocalIdOrNull(userId, sqlConnection);
     }
 
     return futureOrgaUser
@@ -740,12 +707,12 @@ public class UserProvider {
 
         JdbcInsert jdbcInsert = JdbcInsert.into(this.userTable)
           .addColumn(UserCols.CREATION_TIME, user.getCreationTime())
-          .addColumn(UserCols.LAST_ACTIVE_TIME, user.getLastActiveTime())
-          .addColumn(UserCols.REALM_ID, user.getRealm().getLocalId());
+          .addColumn(UserCols.LAST_ACTIVE_TIME, user.getLastActiveTime());
 
-        user.setLocalId(seqUserId);
-        jdbcInsert.addColumn(UserCols.ID, user.getLocalId());
-        this.updateGuid(user);
+        this.updateGuid(user, seqUserId);
+        jdbcInsert.addColumn(UserCols.ID, user.getGuid().getLocalId())
+          .addColumn(UserCols.REALM_ID, user.getGuid().getRealmId());
+
 
         user.setEmailAddress(userInputProps.getEmailAddress());
         jdbcInsert.addColumn(UserCols.EMAIL_ADDRESS, user.getEmailAddress().toNormalizedString());

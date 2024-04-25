@@ -4,12 +4,10 @@ package net.bytle.tower.eraldy.module.realm.db;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.json.schema.ValidationException;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.SqlConnection;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
@@ -20,6 +18,7 @@ import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.app.db.AppProvider;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationCols;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
 import net.bytle.tower.eraldy.module.realm.jackson.JacksonRealmGuidDeserializer;
 import net.bytle.tower.eraldy.module.realm.jackson.JacksonRealmGuidSerializer;
@@ -110,28 +109,15 @@ public class RealmProvider {
    *
    * @param realm - the realm
    */
-  void updateGuid(Realm realm) {
+  public void updateGuid(Realm realm, long realmdId) {
     if (realm.getGuid() != null) {
       return;
     }
     RealmGuid realmGuid = new RealmGuid();
-    realmGuid.setLocalId(realm.getLocalId());
+    realmGuid.setLocalId(realmdId);
     realm.setGuid(realmGuid);
   }
 
-
-  /**
-   * @param realm - the realm to update
-   * @throws CastException     - if the guid is not valid
-   * @throws NotFoundException if the guid is empty
-   */
-  void updateIdFromGuid(Realm realm) throws CastException, NotFoundException {
-    RealmGuid guid = realm.getGuid();
-    if (guid == null) {
-      throw new NotFoundException("The guid is empty");
-    }
-    realm.setLocalId(guid.getLocalId());
-  }
 
 
   public Guid getGuidFromHash(String guid) throws CastException {
@@ -161,7 +147,7 @@ public class RealmProvider {
   @Deprecated
   public Future<Realm> getRealmFromLocalIdOrAutCli(long realmId, RoutingContext routingContext) {
     Realm authRealmClient = this.apiApp.getAuthClientProvider().getRequestingClient(routingContext).getApp().getRealm();
-    if (authRealmClient.getLocalId() == realmId) {
+    if (authRealmClient.getGuid().getLocalId() == realmId) {
       return Future.succeededFuture(authRealmClient);
     }
     return this.getRealmFromLocalId(realmId);
@@ -191,45 +177,6 @@ public class RealmProvider {
 
 
   /**
-   * @param realm - the realm to check
-   * @return true or false
-   */
-  @SuppressWarnings("unused")
-  private Future<Boolean> exists(Realm realm) {
-    String sql;
-    JdbcSelect jdbcSelect = JdbcSelect.from(this.realmTable);
-    if (realm.getLocalId() != null || realm.getGuid() != null) {
-      if (realm.getLocalId() == null) {
-        try {
-          this.updateIdFromGuid(realm);
-        } catch (CastException e) {
-          return Future.failedFuture(ValidationException.create("The Guid is not valid", "guid", realm.getGuid()));
-        } catch (NotFoundException e) {
-          return Future.failedFuture(new InternalException("The Guid was not found (should not happen)"));
-        }
-      }
-      jdbcSelect.addEqualityPredicate(RealmCols.ID, realm.getLocalId());
-    } else {
-      Handle handle = realm.getHandle();
-      if (handle == null) {
-        String failureMessage = "An id, guid or handle should be given to check the existence of a realm";
-        InternalException internalException = new InternalException(failureMessage);
-        return Future.failedFuture(internalException);
-      }
-      jdbcSelect.addEqualityPredicate(RealmCols.HANDLE, handle.getValue());
-    }
-    return jdbcSelect
-      .execute()
-      .compose(rows -> {
-        if (rows.size() == 1) {
-          return Future.succeededFuture(true);
-        } else {
-          return Future.succeededFuture(false);
-        }
-      });
-  }
-
-  /**
    *
    * @param ownerUser - the owner (passed because it may not exist at initial insertion)
    * @param realmInputProps - the input props
@@ -253,8 +200,10 @@ public class RealmProvider {
      * when inserting the fist Eraldy realm with the id 1
      */
     if (askedRealmId != null) {
-      jdbcInsert.addColumn(RealmCols.ID, askedRealmId);
-      realm.setLocalId(askedRealmId);
+      RealmGuid realmGuid = new RealmGuid();
+      realmGuid.setLocalId(askedRealmId);
+      realm.setGuid(realmGuid);
+      jdbcInsert.addColumn(RealmCols.ID, realm.getGuid().getLocalId());
     }
     Handle handle = realmInputProps.getHandle();
     if(handle!=null) {
@@ -264,7 +213,7 @@ public class RealmProvider {
 
     Organization organization = ownerUser.getOrganization();
     realm.setOrganization(organization);
-    jdbcInsert.addColumn(RealmCols.ORGA_ID, realm.getOrganization().getLocalId());
+    jdbcInsert.addColumn(RealmCols.ORGA_ID, realm.getOrganization().getGuid().getLocalId());
 
     realm.setName(realmInputProps.getName());
     jdbcInsert.addColumn(RealmCols.NAME, realm.getName());
@@ -272,12 +221,12 @@ public class RealmProvider {
     /**
      * The user must exist (The db constraint check already that but yeah)
      */
-    Long userId = ownerUser.getLocalId();
-    if (realmInputProps.getOwnerUserGuid() != null && !userId.equals(realmInputProps.getOwnerUserGuid().getLocalId())) {
+    OrgaUserGuid userId = ownerUser.getGuid();
+    if (realmInputProps.getOwnerUserGuid() != null && !userId.equals(realmInputProps.getOwnerUserGuid())) {
       return Future.failedFuture(new InternalException("The organization user and the input user does not have the same value"));
     }
     realm.setOwnerUser(ownerUser);
-    jdbcInsert.addColumn(RealmCols.OWNER_ID, realm.getOwnerUser().getLocalId());
+    jdbcInsert.addColumn(RealmCols.OWNER_ID, realm.getOwnerUser().getGuid().getLocalId());
 
     return jdbcInsert
       .execute(sqlConnection)
@@ -294,8 +243,7 @@ public class RealmProvider {
           }
           return Future.failedFuture(new InternalException(error));
         }
-        realm.setLocalId(realmIdAfterInsertion);
-        this.updateGuid(realm);
+        this.updateGuid(realm,realmIdAfterInsertion);
         return Future.succeededFuture(realm);
       });
   }
@@ -304,7 +252,7 @@ public class RealmProvider {
   private Future<Realm> updateRealm(Realm realm, RealmInputProps realmInputProps) {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.realmTable)
-      .addPredicateColumn(RealmCols.ID, realm.getLocalId())
+      .addPredicateColumn(RealmCols.ID, realm.getGuid().getLocalId())
       .addReturningColumn(RealmCols.ID)
       .addUpdatedColumn(RealmCols.MODIFICATION_TIME, DateTimeService.getNowInUtc());
 
@@ -327,7 +275,7 @@ public class RealmProvider {
           if (rowSet.size() != 1) {
             return Future.failedFuture(
               TowerFailureException.builder()
-                .setMessage("The realm update (" + realm.getLocalId() + ") updated not 1 row but " + rowSet.size())
+                .setMessage("The realm update (" + realm + ") updated not 1 row but " + rowSet.size())
                 .build()
             );
           }
@@ -393,8 +341,8 @@ public class RealmProvider {
   public Future<List<Realm>> getRealmsForOwner(OrgaUser user) {
 
     return JdbcSelect.from(this.realmTable)
-      .addEqualityPredicate(RealmCols.ORGA_ID, user.getOrganization().getLocalId())
-      .addEqualityPredicate(RealmCols.OWNER_ID, user.getLocalId())
+      .addEqualityPredicate(RealmCols.ORGA_ID, user.getGuid().getOrganizationId())
+      .addEqualityPredicate(RealmCols.OWNER_ID, user.getGuid().getLocalId())
       .execute()
       .compose(this::getRealmsFromRows,
         err -> Future.failedFuture(
@@ -426,8 +374,7 @@ public class RealmProvider {
      * Identifiers
      */
     Long realmId = row.getLong(RealmCols.ID);
-    realm.setLocalId(realmId);
-    this.updateGuid(realm);
+    this.updateGuid(realm,realmId);
     realm.setHandle(Handle.ofFailSafe(row.getString(RealmCols.HANDLE)));
 
     /**
@@ -448,19 +395,19 @@ public class RealmProvider {
      * Org
      */
     Long orgaId = row.getLong(RealmCols.ORGA_ID);
-    Organization organization = new Organization();
-    organization.setLocalId(orgaId);
+    Organization organization = this.apiApp.getOrganizationProvider().toOrganizationFromLocalId(orgaId);
     realm.setOrganization(organization);
 
     /**
      * Owner
      */
     Long ownerUserLocalId = row.getLong(RealmCols.OWNER_ID);
-    OrgaUser orgaUser = new OrgaUser();
-    orgaUser.setOrganization(organization);
-    orgaUser.setLocalId(ownerUserLocalId);
-    orgaUser.setRealm(this.apiApp.getEraldyModel().getRealm());
-    realm.setOwnerUser(orgaUser);
+    OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
+    orgaUserGuid.setOrganizationId(orgaId);
+    orgaUserGuid.setLocalId(ownerUserLocalId);
+    OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(orgaUserGuid, realm);
+
+    realm.setOwnerUser(ownerUser);
 
     return realm;
 
@@ -599,6 +546,6 @@ public class RealmProvider {
       return Future.succeededFuture(realm.getOrganization());
     }
     return this.apiApp.getOrganizationProvider()
-      .getById(realm.getOrganization().getLocalId());
+      .getById(realm.getOrganization().getGuid().getLocalId());
   }
 }

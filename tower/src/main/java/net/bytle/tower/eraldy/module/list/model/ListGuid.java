@@ -13,8 +13,10 @@ public class ListGuid {
     return this.realmId;
   }
 
-
-  public long getListLocalId() {
+  /**
+   * @return localId The list identifier in the realm scope. Without the realm, this id has duplicates.
+   */
+  public long getLocalId() {
 
     return this.localId;
   }
@@ -23,6 +25,9 @@ public class ListGuid {
     this.realmId = realmId;
   }
 
+  /**
+   * @param localId The list identifier in the realm scope. Without the realm, this id has duplicates.
+   */
   public void setLocalId(long localId) {
     this.localId = localId;
   }

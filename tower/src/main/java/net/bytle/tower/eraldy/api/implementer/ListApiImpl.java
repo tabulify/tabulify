@@ -25,6 +25,7 @@ import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Casts;
 import net.bytle.type.EmailAddress;
@@ -92,9 +93,20 @@ public class ListApiImpl implements ListApi {
       );
     }
 
+    ListGuid listGuid;
+    try {
+      listGuid = this.apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listIdentifier);
+    } catch (CastException e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The listGuid (" + listIdentifier + ") is not valid")
+          .buildWithContextFailing(routingContext)
+      );
+    }
     Integer finalRowCountToProcess = rowCountToProcess;
     return this.apiApp.getListProvider()
-      .getListByGuidHashIdentifier(listIdentifier)
+      .getListByGuidObject(listGuid)
       .compose(list -> {
         if (list == null) {
           return Future.failedFuture(
@@ -111,7 +123,6 @@ public class ListApiImpl implements ListApi {
         listImportJobStatus.setListGuid(list.getGuid());
         listImportJobStatus.setListUserActionCode(ListImportListUserAction.IN.getActionCode());
         listImportJobStatus.setMaxRowCountToProcess(finalRowCountToProcess);
-        listImportJobStatus.setListGuid(list.getGuid());
         listImportJobStatus.setUploadedFileName(fileBinary.fileName());
         ListImportJob importJob = this.apiApp.getListImportFlow().createJobFromApi(listImportJobStatus, fileBinary);
         String jobId;
@@ -130,9 +141,20 @@ public class ListApiImpl implements ListApi {
 
   @Override
   public Future<ApiResponse<List<ListImportJobStatus>>> listListImportsGet(RoutingContext routingContext, String listIdentifier) {
+    ListGuid listGuid;
+    try {
+      listGuid = this.apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listIdentifier);
+    } catch (CastException e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The listGuid (" + listIdentifier + ") is not valid")
+          .buildWithContextFailing(routingContext)
+      );
+    }
     List<ListImportJobStatus> listImportJobs = this.apiApp
       .getListImportFlow()
-      .getJobsStatuses(listIdentifier);
+      .getJobsStatuses(listGuid);
     return Future.succeededFuture(new ApiResponse<>(listImportJobs));
   }
 
@@ -192,9 +214,20 @@ public class ListApiImpl implements ListApi {
   @Override
   public Future<ApiResponse<List<ListImportJobRowStatus>>> listListImportJobDetailsGet(RoutingContext routingContext, String listIdentifier, String jobIdentifier) {
 
+    ListGuid listGuidHash = null;
+    try {
+      listGuidHash = this.apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listIdentifier);
+    } catch (CastException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .setMessage("The list guid " + listIdentifier + "is not valid")
+        .setCauseException(e)
+        .build()
+      );
+    }
     Path path = this.apiApp
       .getListImportFlow()
-      .getRowStatusFileJobByIdentifier(listIdentifier, jobIdentifier);
+      .getRowStatusFileJobByIdentifier(listGuidHash, jobIdentifier);
 
     routingContext
       .response()
@@ -218,9 +251,21 @@ public class ListApiImpl implements ListApi {
       // not found
     }
 
+    ListGuid listGuid;
+    try {
+      listGuid = this.apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listIdentifier);
+    } catch (CastException e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The listGuid (" + listIdentifier + ") is not valid")
+          .buildWithContextFailing(routingContext)
+      );
+    }
+
     // Processed Job On file system?
     Path path = listImportFlow
-      .getStatusFileJobByIdentifier(listIdentifier, jobIdentifier);
+      .getStatusFileJobByIdentifier(listGuid, jobIdentifier);
     if (!Files.exists(path)) {
       return Future.failedFuture(TowerFailureException.builder()
         .setType(TowerFailureTypeEnum.NOT_FOUND_404)
@@ -336,6 +381,18 @@ public class ListApiImpl implements ListApi {
   public Future<ApiResponse<String>> listUserLetterValidationGet(RoutingContext routingContext, String
     listGuid, String subscriberName, String subscriberEmail, Boolean debug) {
 
+    ListGuid listGuidObject;
+    try {
+      listGuidObject = this.apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listGuid);
+    } catch (CastException e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The listGuid (" + listGuid + ") is not valid")
+          .buildWithContextFailing(routingContext)
+      );
+    }
+
     ListUserPostBody listRegistrationPostBody = new ListUserPostBody();
 
     EmailAddress subscriberAddress;
@@ -353,7 +410,7 @@ public class ListApiImpl implements ListApi {
     Vertx vertx = routingContext.vertx();
     return apiApp
       .getListProvider()
-      .getListByGuidHashIdentifier(listGuid)
+      .getListByGuidObject(listGuidObject)
       .compose(list -> {
 
         if (list == null) {

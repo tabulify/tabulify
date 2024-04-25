@@ -126,7 +126,7 @@ public class Guid {
     }
 
     public builder setRealm(Realm realm) {
-      this.organizationOrRealmId = realm.getLocalId();
+      this.organizationOrRealmId = realm.getGuid().getLocalId();
       return this;
     }
 

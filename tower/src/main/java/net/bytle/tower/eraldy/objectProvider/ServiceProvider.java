@@ -156,8 +156,8 @@ public class ServiceProvider {
         service.getUri(),
         service.getType(),
         this.getDatabaseObject(service),
-        service.getImpersonatedUser() != null ? service.getImpersonatedUser().getLocalId() : null,
-        service.getRealm().getLocalId(),
+        service.getImpersonatedUser() != null ? service.getImpersonatedUser().getGuid().getLocalId() : null,
+        service.getRealm().getGuid().getLocalId(),
         service.getLocalId()
       );
       return jdbcPool
@@ -210,9 +210,9 @@ public class ServiceProvider {
     Tuple parameters = Tuple.of(
       service.getType(),
       this.getDatabaseObject(service),
-      service.getImpersonatedUser() != null ? service.getImpersonatedUser().getLocalId() : null,
+      service.getImpersonatedUser() != null ? service.getImpersonatedUser().getGuid().getLocalId() : null,
       DateTimeService.getNowInUtc(),
-      service.getRealm().getLocalId(),
+      service.getRealm().getGuid().getLocalId(),
       service.getUri()
     );
     return jdbcPool
@@ -245,12 +245,12 @@ public class ServiceProvider {
         .compose(serviceId -> {
           service.setLocalId(serviceId);
           Tuple parameters = Tuple.of(
-            service.getRealm().getLocalId(),
+            service.getRealm().getGuid().getLocalId(),
             service.getLocalId(),
             service.getUri(),
             service.getType(),
             this.getDatabaseObject(service),
-            service.getImpersonatedUser() != null ? service.getImpersonatedUser().getLocalId() : null,
+            service.getImpersonatedUser() != null ? service.getImpersonatedUser().getGuid().getLocalId() : null,
             DateTimeService.getNowInUtc()
           );
           return sqlConnection
@@ -273,7 +273,7 @@ public class ServiceProvider {
           " WHERE \n" +
           REALM_COLUMN + " = $1"
       )
-      .execute(Tuple.of(realm.getLocalId()))
+      .execute(Tuple.of(realm.getGuid().getLocalId()))
       .onFailure(FailureStatic::failFutureWithTrace)
       .compose(serviceRows -> {
 
@@ -351,7 +351,7 @@ public class ServiceProvider {
     if (guid != null) {
       try {
         serviceId = this.getGuidFromHash(guid)
-          .validateRealmAndGetFirstObjectId(realm.getLocalId());
+          .validateRealmAndGetFirstObjectId(realm.getGuid().getLocalId());
       } catch (CastException e) {
         throw ValidationException.create("The service guid is not valid", "srvGuid", guid);
       }
@@ -387,7 +387,7 @@ public class ServiceProvider {
       .preparedQuery(selectSql)
       .execute(Tuple.of(
         serviceUri,
-        realm.getLocalId()
+        realm.getGuid().getLocalId()
       ))
       .onFailure(e -> LOGGER.error("Error in selecting the service by URI. Error" + e.getMessage() + ". Sql\n" + selectSql, e))
       .compose(userRows -> {
@@ -413,7 +413,7 @@ public class ServiceProvider {
       " AND " + ID_COLUMN + " = $2?";
 
     Tuple parameters = Tuple.of(
-      realm.getLocalId(),
+      realm.getGuid().getLocalId(),
       serviceId
     );
     return jdbcPool

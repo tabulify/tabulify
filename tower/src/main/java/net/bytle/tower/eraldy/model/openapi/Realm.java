@@ -15,8 +15,6 @@ import java.util.Objects;
 public class Realm   {
 
 
-  protected Long localId;
-
   protected RealmGuid guid;
 
   protected String name;
@@ -44,21 +42,6 @@ public class Realm   {
   public Realm () {
   }
 
-  /**
-  * @return localId The realm id in the database
-  */
-  @JsonProperty("localId")
-  public Long getLocalId() {
-    return localId;
-  }
-
-  /**
-  * @param localId The realm id in the database
-  */
-  @SuppressWarnings("unused")
-  public void setLocalId(Long localId) {
-    this.localId = localId;
-  }
 
   /**
   * @return guid The public id (derived from the database id)

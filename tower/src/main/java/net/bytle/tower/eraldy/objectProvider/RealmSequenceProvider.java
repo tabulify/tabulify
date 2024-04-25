@@ -49,7 +49,7 @@ public class RealmSequenceProvider {
   @Deprecated
   public Future<Long> getNextIdForTableAndRealm(SqlConnection sqlConnection, Realm realm, String tableName) {
 
-    Long realmId = realm.getLocalId();
+    Long realmId = realm.getGuid().getLocalId();
     // https://vertx.io/docs/vertx-pg-client/java/#_returning_clauses
     String updateSql = "update " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n " +
       "set " +

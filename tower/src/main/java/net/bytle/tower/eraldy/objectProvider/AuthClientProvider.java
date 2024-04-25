@@ -67,7 +67,7 @@ public class AuthClientProvider {
   }
 
   public void updateGuid(AuthClient authClient) {
-    Long localId = authClient.getApp().getRealm().getLocalId();
+    Long localId = authClient.getApp().getRealm().getGuid().getLocalId();
     Guid guid = this.apiApp.createGuidFromRealmAndObjectId(GUID_CLI_PREFIX, localId, authClient.getLocalId());
     authClient.setGuid(guid.toString());
   }

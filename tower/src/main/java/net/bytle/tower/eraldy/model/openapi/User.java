@@ -79,23 +79,6 @@ public class User {
     this.guid = guid;
   }
 
-  /**
-   * @return localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
-   */
-  @com.fasterxml.jackson.annotation.JsonAlias({"id"})
-  @JsonProperty("localId")
-  public Long getLocalId() {
-    return localId;
-  }
-
-  /**
-   * @param localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
-   */
-  @SuppressWarnings("unused")
-  public void setLocalId(Long localId) {
-    this.localId = localId;
-  }
-
 
   /**
    * @return emailAddress The email address of the user

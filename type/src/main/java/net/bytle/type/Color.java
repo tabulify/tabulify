@@ -1,5 +1,7 @@
 package net.bytle.type;
 
+import net.bytle.exception.InternalException;
+
 import java.util.regex.Pattern;
 
 public class Color {
@@ -25,8 +27,20 @@ public class Color {
     this.color = color;
   }
 
-  public static Color of(String appPrimaryColor) throws ColorCastException {
-    return new Color(appPrimaryColor);
+  public static Color of(String primaryColor) throws ColorCastException {
+    return new Color(primaryColor);
+  }
+
+  /**
+   * @param primaryColor - a known good primary color value (ie a literal or a value from a database)
+   * @return a color and fail if the value is not good
+   */
+  public static Color ofFailSafe(String primaryColor) {
+      try {
+          return new Color(primaryColor);
+      } catch (ColorCastException e) {
+          throw new InternalException(e);
+      }
   }
 
   public String getValue() {

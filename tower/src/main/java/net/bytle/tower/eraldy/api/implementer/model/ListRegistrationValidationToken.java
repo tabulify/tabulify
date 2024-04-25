@@ -9,6 +9,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.ListUserPostBody;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.util.Env;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.UriEnhanced;
@@ -41,7 +42,7 @@ public class ListRegistrationValidationToken {
    */
   private URI optInUri;
   private EmailAddress userEmail;
-  private final String listGuid;
+  private final ListGuid listGuid;
 
   public ListRegistrationValidationToken(ListObject listObject) {
     this.listGuid = listObject.getGuid();
@@ -72,7 +73,7 @@ public class ListRegistrationValidationToken {
   }
 
   @JsonProperty("listGuid")
-  public String getListGuid() {
+  public ListGuid getListGuid() {
     return listGuid;
   }
 
@@ -128,6 +129,7 @@ public class ListRegistrationValidationToken {
       this.token.optInUri = listUserPost.getRedirectUri();
       return this;
     }
+
   }
 
 }

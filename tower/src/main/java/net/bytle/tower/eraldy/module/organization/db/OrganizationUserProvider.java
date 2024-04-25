@@ -14,9 +14,11 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.organization.inputs.OrgaUserInputProps;
 import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaUserGuidDeserializer;
 import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaUserGuidSerializer;
+import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.user.db.UserCols;
+import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.db.*;
@@ -82,18 +84,21 @@ public class OrganizationUserProvider {
 
   }
 
-  public Future<OrgaUser> getOrganizationUserByLocalId(Long localId, SqlConnection sqlConnection) {
+  /**
+   * @param userGuid - a user guid and not an orga user guid as it may not exist
+   */
+  public Future<OrgaUser> getOrganizationUserByGuid(UserGuid userGuid, SqlConnection sqlConnection) {
 
     Realm eraldyRealm = this.apiApp.getEraldyModel().getRealm();
     return apiApp.getUserProvider()
-      .getUserByLocalId(localId, eraldyRealm, sqlConnection)
+      .getUserByLocalId(userGuid.getLocalId(), eraldyRealm, sqlConnection)
       .compose(this::checkAndReturnUser);
 
   }
 
-  public Future<OrgaUser> getOrganizationUserByLocalId(Long localId) {
+  public Future<OrgaUser> getOrganizationUserByGuid(OrgaUserGuid orgaUserGuid) {
 
-    return this.jdbcPool.withConnection(sqlConnection -> getOrganizationUserByLocalId(localId, sqlConnection));
+    return this.jdbcPool.withConnection(sqlConnection -> getOrganizationUserByGuid(orgaUserGuid, sqlConnection));
 
   }
 
@@ -133,8 +138,8 @@ public class OrganizationUserProvider {
         .getOrganizationProvider()
         .getById(orgaId);
     } else {
-      if (!knownOrganization.getLocalId().equals(orgaId)) {
-        return Future.failedFuture(new InternalException("Orga id between row (" + orgaId + ") and organization (" + knownOrganization.getLocalId() + ") not consistent (ie not the same)"));
+      if (!knownOrganization.getGuid().getLocalId().equals(orgaId)) {
+        return Future.failedFuture(new InternalException("Orga id between row (" + orgaId + ") and organization (" + knownOrganization.getGuid() + ") not consistent (ie not the same)"));
       }
       futureOrganization = Future.succeededFuture(knownOrganization);
     }
@@ -165,7 +170,7 @@ public class OrganizationUserProvider {
 
     return JdbcSelect.from(this.organizationUserTable)
       .addSelectAllColumnsFromTable(this.apiApp.getUserProvider().getTable())
-      .addEqualityPredicate(OrgaUserCols.ORGA_ID, organization.getLocalId())
+      .addEqualityPredicate(OrgaUserCols.ORGA_ID, organization.getGuid().getLocalId())
       .execute()
       .recover(err -> Future.failedFuture(new InternalException("Unable to get the org users for the organization (" + organization + "). Message:" + err.getMessage(), err)))
       .compose(rowSet -> {
@@ -215,7 +220,7 @@ public class OrganizationUserProvider {
    * the org data
    */
   public Future<OrgaUser> getsertOnServerStartup(Organization organization, User user, OrgaUserInputProps orgaUserInputProps, SqlConnection sqlConnection) {
-    return this.getOrganizationUserByLocalId(user.getLocalId(), sqlConnection)
+    return this.getOrganizationUserByGuid(user.getGuid(), sqlConnection)
       .recover(t -> Future.failedFuture(new InternalException("Error while selecting the eraldy owner realm", t)))
       .compose(organizationUser -> {
         if (organizationUser != null) {
@@ -234,16 +239,16 @@ public class OrganizationUserProvider {
    */
   private Future<OrgaUser> insertOrgaUser(Organization organization, User user, OrgaUserInputProps orgaUserInputProps, SqlConnection sqlConnection) {
 
-    if (!user.getRealm().getLocalId().equals(EraldyModel.REALM_LOCAL_ID)) {
+    if (user.getRealm().getGuid().getLocalId() != EraldyModel.REALM_LOCAL_ID) {
       return Future.failedFuture(new InternalException("This user has not the Eraldy realm. He cannot be an organization user."));
     }
 
-    Long organizationLocalId = organization.getLocalId();
-    if (organizationLocalId == null) {
+    OrgaGuid organizationGuid = organization.getGuid();
+    if (organizationGuid == null) {
       return Future.failedFuture(new InternalException("The organization id should not be null when inserting an organization user"));
     }
-    Long userLocalId = user.getLocalId();
-    if (userLocalId == null) {
+    UserGuid userGuid = user.getGuid();
+    if (userGuid == null) {
       return Future.failedFuture(new InternalException("The user id should not be null when inserting an organization user"));
     }
 
@@ -252,10 +257,10 @@ public class OrganizationUserProvider {
      */
     return JdbcInsert.into(this.organizationUserTable)
       .addColumn(OrgaUserCols.CREATION_TIME, DateTimeService.getNowInUtc())
-      .addColumn(OrgaUserCols.USER_ID, user.getLocalId())
+      .addColumn(OrgaUserCols.USER_ID, userGuid.getLocalId())
       .addColumn(OrgaUserCols.REALM_ID, EraldyModel.REALM_LOCAL_ID)
       .addColumn(OrgaUserCols.ROLE_ID, orgaUserInputProps.getRole().getId())
-      .addColumn(OrgaUserCols.ORGA_ID, organization.getLocalId())
+      .addColumn(OrgaUserCols.ORGA_ID, organizationGuid.getLocalId())
       .execute(sqlConnection)
       .compose(userRows -> {
         /**
@@ -263,7 +268,7 @@ public class OrganizationUserProvider {
          * Transferring the properties of the user to the orga users is too cumbersome
          * and error-prone
          */
-        return this.getOrganizationUserByLocalId(user.getLocalId(), sqlConnection);
+        return this.getOrganizationUserByGuid(userGuid, sqlConnection);
       });
   }
 
@@ -272,21 +277,27 @@ public class OrganizationUserProvider {
    * (used in row reading)
    *
    * @param orgaUserGuid - the guid to transform
-   * @param realm - the realm to check that the org is the same
+   * @param realm - the realm to check that the organizations of the realm and of the user are the same
    */
   public OrgaUser toOrgaUserFromGuid(OrgaUserGuid orgaUserGuid, Realm realm) {
 
     OrgaUser newOwner = new OrgaUser();
     newOwner.setGuid(orgaUserGuid);
-    newOwner.setLocalId(orgaUserGuid.getLocalId());
     newOwner.setRealm(this.apiApp.getEraldyModel().getRealm());
-    Organization organization = new Organization();
-    organization.setLocalId(orgaUserGuid.getOrganizationId());
+
+    /**
+     * Orga
+     */
+    Organization organization = this.apiApp.getOrganizationProvider().toOrganizationFromLocalId(orgaUserGuid.getOrganizationId());
     newOwner.setOrganization(organization);
-    Long realmOrgId = realm.getOrganization().getLocalId();
-    Long ownerOrgId = newOwner.getOrganization().getLocalId();
-    if(!Objects.equals(realmOrgId, ownerOrgId)){
-      throw new InternalException("The realm org id ("+realmOrgId+") is not the same as the owner org id ("+ownerOrgId+")");
+
+    /**
+     * Check
+     */
+    OrgaGuid realmOrgId = realm.getOrganization().getGuid();
+    OrgaGuid ownerOrgId = newOwner.getOrganization().getGuid();
+    if (!Objects.equals(realmOrgId, ownerOrgId)) {
+      throw new InternalException("The realm org id (" + realmOrgId + ") is not the same as the owner org id (" + ownerOrgId + ")");
     }
     return newOwner;
 

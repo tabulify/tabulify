@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
+import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NotFoundException;
@@ -13,6 +14,7 @@ import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.type.EmailAddress;
@@ -36,7 +38,7 @@ public class AuthApiImpl implements AuthApi {
   /**
    * Redirect to the external OAuth authorization end points
    *
-   * @param provider       - the OAuth provider (github, ...)
+   * @param provider       - the OAuth provider (GitHub, ...)
    * @param routingContext - the routing context to write the OAuth state on the session
    * @param listGuid       - the list guid where to register the user (maybe null)
    */
@@ -87,9 +89,20 @@ public class AuthApiImpl implements AuthApi {
     }
 
     listGuid = routingContextWrapper.getRequestQueryParameterAsString(AuthQueryProperty.LIST_GUID.toString());
+    ListGuid listGuidObject;
+    try {
+      listGuidObject = this.apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listGuid);
+    } catch (CastException e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The listGuid (" + listGuid + ") is not valid")
+          .buildWithContextFailing(routingContext)
+      );
+    }
     Future<ListObject> futureList;
     if (listGuid != null) {
-      futureList = this.apiApp.getListProvider().getListByGuidHashIdentifier(listGuid);
+      futureList = this.apiApp.getListProvider().getListByGuidObject(listGuidObject);
     } else {
       futureList = Future.succeededFuture();
     }
@@ -317,7 +330,7 @@ public class AuthApiImpl implements AuthApi {
       .getAuthProvider().getSignedInBaseUserOrFail(routingContext)
       .compose(signedInUser -> apiApp
         .getUserProvider()
-        .updatePassword(signedInUser.getLocalId(), signedInUser.getRealm().getLocalId(), passwordOnly.getPassword())
+        .updatePassword(signedInUser.getGuid().getLocalId(), signedInUser.getRealm().getGuid().getLocalId(), passwordOnly.getPassword())
         .compose(futureUser -> {
           /**
            * Because this is a POST, we can't redirect via HTTP

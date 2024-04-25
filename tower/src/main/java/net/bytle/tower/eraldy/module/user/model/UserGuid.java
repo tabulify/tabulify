@@ -19,16 +19,23 @@ public class UserGuid {
     this.realmId = realmId;
 
   }
+
+  /**
+   * @param localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
+   */
   public void setLocalId(Long localId) {
     assert localId != null : "Local user Id cannot be null";
     this.localId = localId;
   }
 
-  public Long getLocalId() {
+  /**
+   * @return localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
+   */
+  public long getLocalId() {
     return this.localId;
   }
 
-  public Long getRealmId() {
+  public long getRealmId() {
     return this.realmId;
   }
 

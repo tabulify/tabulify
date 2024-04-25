@@ -15,7 +15,9 @@ public class AppGuid {
     return this.realmId;
   }
 
-
+  /**
+   * @return The app identifier in the realm (without the realm, the id may have duplicate)
+   */
   public long getAppLocalId() {
 
     return this.localId;
@@ -25,6 +27,9 @@ public class AppGuid {
     this.realmId = realmId;
   }
 
+  /**
+   * @param localId The app identifier in the realm (without the realm, the id may have duplicate)
+   */
   public void setLocalId(long localId) {
     this.localId = localId;
   }

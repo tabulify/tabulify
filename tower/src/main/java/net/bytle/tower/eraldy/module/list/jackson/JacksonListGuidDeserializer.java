@@ -30,7 +30,7 @@ public class JacksonListGuidDeserializer extends JacksonJsonStringDeserializer<L
     try {
       return deserialize(value);
     } catch (CastException e) {
-      throw new IOException(e);
+      throw new IOException("The list guid value (" + value + ") is not valid. Error: " + e.getMessage(), e);
     }
 
   }
@@ -47,11 +47,11 @@ public class JacksonListGuidDeserializer extends JacksonJsonStringDeserializer<L
       throw new CastException("The list guid (" + value + ") is not valid. Error: " + e.getMessage(), e);
     }
 
-    ListGuid appGuid = new ListGuid();
+    ListGuid listGuid = new ListGuid();
     long realmId = userGuidObject.getRealmOrOrganizationId();
-    appGuid.setRealmId(realmId);
+    listGuid.setRealmId(realmId);
     long localId = userGuidObject.validateRealmAndGetFirstObjectId(realmId);
-    appGuid.setLocalId(localId);
-    return appGuid;
+    listGuid.setLocalId(localId);
+    return listGuid;
   }
 }

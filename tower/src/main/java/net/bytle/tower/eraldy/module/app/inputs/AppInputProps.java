@@ -159,7 +159,7 @@ public class AppInputProps {
   * @return terms The location of the terms and conditions document
   */
   @JsonProperty("terms")
-  public URI getTerms() {
+  public URI getTermsOfServices() {
     return terms;
   }
 

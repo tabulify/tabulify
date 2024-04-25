@@ -15,10 +15,8 @@ import net.bytle.tower.eraldy.mixin.AppPublicMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
-import net.bytle.tower.eraldy.module.app.db.AppProvider;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
-import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.type.Handle;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
@@ -119,7 +117,7 @@ public class AppApiImpl implements AppApi {
       }).compose(realm -> {
         Future<App> futureApp;
         if (finalAppGuid != null) {
-          futureApp = this.apiApp.getAppProvider().getAppById(finalAppGuid.getAppLocalId(), realm);
+          futureApp = this.apiApp.getAppProvider().getAppByGuid(finalAppGuid, realm);
         } else {
             Handle handleIdentifier;
             try {
@@ -161,31 +159,7 @@ public class AppApiImpl implements AppApi {
   @Override
   public Future<ApiResponse<App>> appPost(RoutingContext routingContext, AppPostBody appPostBody) {
 
-    /**
-     * Important to catch it now to show that
-     * is a validation exception and not an internal error.
-     */
-    if (appPostBody.getRealmIdentifier() == null) {
-      throw ValidationException.create("A realm identifier should be given", "realmIdentifier", null);
-    }
-    AppProvider appProvider = apiApp.getAppProvider();
-    AuthProvider authProvider = apiApp.getAuthProvider();
-    return this.apiApp.getRealmProvider()
-      .getRealmFromIdentifier(appPostBody.getRealmIdentifier())
-      .compose(realm -> {
-        if (realm == null) {
-          return Future.failedFuture(
-            TowerFailureException
-              .builder()
-              .setMessage("The realm (" + appPostBody.getRealmIdentifier() + ") was not found")
-              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-              .build()
-          );
-        }
-        return authProvider.checkRealmAuthorization(routingContext, realm, AuthUserScope.APP_CREATE);
-      })
-      .compose(realm -> appProvider.postApp(appPostBody, realm))
-      .compose(app -> Future.succeededFuture(new ApiResponse<>(app).setMapper(appProvider.getApiMapper())));
+    throw new RuntimeException("Moved to graphql");
 
   }
 

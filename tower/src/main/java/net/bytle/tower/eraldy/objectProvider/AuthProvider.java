@@ -113,7 +113,6 @@ public class AuthProvider {
       OrgaGuid orgaGuidObject = this.apiApp.getJackson().getDeserializer(OrgaGuid.class).deserializeFailSafe(organizationGuidString);
       Organization organization = new Organization();
       organization.setGuid(orgaGuidObject);
-      organization.setLocalId(orgaGuidObject.getLocalId());
       organization.setHandle(Handle.ofFailSafe(authUser.getOrganizationHandle()));
       ((OrgaUser) user).setOrganization(organization);
 
@@ -136,7 +135,6 @@ public class AuthProvider {
     realm.setGuid(realmGuid);
 
     long realmId = realmGuid.getLocalId();
-    realm.setLocalId(realmId);
     if (user instanceof OrgaUser && realmId != EraldyModel.REALM_LOCAL_ID) {
       throw new InternalException("An orga user should have the Eraldy realm, not the realm (" + realmId + ")");
     }
@@ -157,7 +155,6 @@ public class AuthProvider {
     }
     try {
       UserGuid guid = this.apiApp.getUserProvider().getGuidFromHash(subject);
-      user.setLocalId(guid.getLocalId());
       user.setGuid(guid);
     } catch (CastException e) {
       throw new InternalException("The user guid is not valid", e);
@@ -266,7 +263,7 @@ public class AuthProvider {
    */
   public Future<Realm> checkRealmAuthorization(RoutingContext routingContext, Realm realm, AuthUserScope authUserScope) {
 
-    return checkRealmAuthorization(routingContext, realm.getLocalId(), authUserScope)
+    return checkRealmAuthorization(routingContext, realm.getGuid().getLocalId(), authUserScope)
       .compose(realmId -> Future.succeededFuture(realm));
 
   }
@@ -500,7 +497,7 @@ public class AuthProvider {
       .compose(realmList -> {
         if (realmList != null) {
           List<Long> realmListLongId = realmList.stream()
-            .map(Realm::getLocalId)
+            .map(r -> r.getGuid().getLocalId())
             .collect(Collectors.toList());
           authUserBuilder.put(REALMS_ID_KEY, realmListLongId);
         }
@@ -635,7 +632,7 @@ public class AuthProvider {
      * We have only Eraldy client, we give the authorization to them
      * As of now, there is no notion of proxy by in the auth client
      */
-    if (!authClient.getApp().getRealm().getLocalId().equals(EraldyModel.REALM_LOCAL_ID)) {
+    if (authClient.getApp().getRealm().getGuid().getLocalId() != EraldyModel.REALM_LOCAL_ID) {
       throw new NotAuthorizedException();
     }
   }

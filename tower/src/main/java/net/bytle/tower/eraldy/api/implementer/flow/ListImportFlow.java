@@ -12,6 +12,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.type.Strings;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
@@ -106,27 +107,27 @@ public class ListImportFlow extends WebFlowAbs {
   }
 
 
-  public Path getRowStatusFileJobByIdentifier(String listIdentifier, String jobIdentifier) {
-
-    return this.getListDirectory(listIdentifier)
+  public Path getRowStatusFileJobByIdentifier(ListGuid listGuid, String jobIdentifier) {
+    return this.getListDirectory(listGuid)
       .resolve(jobIdentifier + "-status-rows.json");
   }
 
-  public Path getStatusFileJobByIdentifier(String listIdentifier, String jobIdentifier) {
+  public Path getStatusFileJobByIdentifier(ListGuid listIdentifier, String jobIdentifier) {
 
     return this.getListDirectory(listIdentifier)
       .resolve(jobIdentifier + FILE_SUFFIX_JOB_STATUS);
   }
 
-  Path getListDirectory(String listGuid) {
+  Path getListDirectory(ListGuid listGuid) {
+    String listGuidHash = this.apiApp.getJackson().getSerializer(ListGuid.class).serialize(listGuid);
     Path listDirectory = this
       .getRuntimeDataDirectory()
-      .resolve(listGuid);
+      .resolve(listGuidHash);
     Fs.createDirectoryIfNotExists(listDirectory);
     return listDirectory;
   }
 
-  public List<ListImportJobStatus> getJobsStatuses(String listGuid) {
+  public List<ListImportJobStatus> getJobsStatuses(ListGuid listGuid) {
 
     /**
      * Actual Jobs
@@ -413,7 +414,7 @@ public class ListImportFlow extends WebFlowAbs {
 
   public String step1AddJobToQueue(ListImportJob importJob) throws TowerFailureException {
 
-    String listGuid = importJob.getStatus().getListGuid();
+    ListGuid listGuid = importJob.getStatus().getListGuid();
     for (ListImportJob listImportJob : importJobQueue) {
       if (listImportJob.getStatus().getListGuid().equals(listGuid)) {
         throw TowerFailureException.builder()

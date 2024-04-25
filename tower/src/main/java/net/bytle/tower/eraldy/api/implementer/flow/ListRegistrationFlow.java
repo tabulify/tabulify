@@ -19,8 +19,8 @@ import net.bytle.tower.eraldy.graphql.pojo.input.ListUserInputProps;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
-import net.bytle.tower.util.Guid;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
 import net.bytle.type.Handle;
@@ -78,7 +78,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param optInIp          - the opt-in-ip
    * @param listUserSource - the flow used to register the user to the list
    */
-  public Future<ListUser> createListUserEntry(RoutingContext ctx, Guid listGuid, User user, LocalDateTime optInTime, String optInIp, ListUserSource listUserSource) {
+  public Future<ListUser> createListUserEntry(RoutingContext ctx, ListGuid listGuid, User user, LocalDateTime optInTime, String optInIp, ListUserSource listUserSource) {
 
     return this.getApp()
       .getListProvider()
@@ -140,8 +140,20 @@ public class ListRegistrationFlow extends WebFlowAbs {
       return Future.failedFuture(IllegalArgumentExceptions.createWithInputNameAndValue("List guid should not be null", "listIdentifier", null));
     }
 
+    ListGuid listGuid;
+    try {
+      listGuid = this.getApp().getJackson().getDeserializer(ListGuid.class).deserialize(listGuidHash);
+    } catch (CastException e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The listGuid (" + listGuidHash + ") is not valid")
+          .buildWithContextFailing(routingContext)
+      );
+    }
+
     return getApp().getListProvider()
-      .getListByGuidHashIdentifier(listGuidHash)
+      .getListByGuidObject(listGuid)
       .compose(listObject -> {
 
         User user = new User();
@@ -303,9 +315,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
       return;
     }
 
-    Guid listGuidObject;
+    ListGuid listGuidObject;
     try {
-      listGuidObject = this.getApp().getListProvider().getGuidObject(listGuid);
+      listGuidObject = this.getApp().getJackson().getDeserializer(ListGuid.class).deserialize(listGuid);
     } catch (CastException e) {
       TowerFailureException
         .builder()
@@ -392,9 +404,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
       /**
        * A list in auth context, we register the user
        */
-      Guid listGuidObject;
+      ListGuid listGuidObject;
       try {
-        listGuidObject = this.getApp().getListProvider().getGuidObject(listGuid);
+        listGuidObject = this.getApp().getJackson().getDeserializer(ListGuid.class).deserialize(listGuid);
       } catch (CastException e) {
         TowerFailureException
           .builder()

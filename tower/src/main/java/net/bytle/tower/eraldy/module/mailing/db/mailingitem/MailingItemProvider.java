@@ -77,7 +77,7 @@ public class MailingItemProvider {
           .setOperator(JdbcComparisonOperator.NOT_EQUAL)
           .setOrNull(true)
       )
-      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getEmailRecipientList().getApp().getRealm().getLocalId())
+      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getEmailRecipientList().getApp().getRealm().getGuid().getLocalId())
       .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getLocalId())
       .addLimit(mailingJob.getItemToExecuteCount());
 
@@ -87,11 +87,11 @@ public class MailingItemProvider {
   public Future<List<MailingItem>> getItemsForGraphQL(Mailing mailing, JdbcPagination pagination) {
 
     return JdbcPaginatedSelect.from(mailingItemTable)
-      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getRealm().getLocalId())
+      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getRealm().getGuid().getLocalId())
       .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getLocalId())
       .setSearchColumn(UserCols.EMAIL_ADDRESS)
       .addExtraSelectColumn(UserCols.EMAIL_ADDRESS)
-      .addEqualityPredicate(UserCols.REALM_ID, mailing.getRealm().getLocalId())
+      .addEqualityPredicate(UserCols.REALM_ID, mailing.getRealm().getGuid().getLocalId())
       .addOrderBy(UserCols.EMAIL_ADDRESS, JdbcSort.ASC)
       .setPagination(pagination)
       .execute(jdbcRowSet -> {
@@ -120,7 +120,7 @@ public class MailingItemProvider {
      * Realm
      */
     Realm realm = new Realm();
-    realm.setLocalId(jdbcRow.getLong(MailingItemCols.REALM_ID));
+    this.apiApp.getRealmProvider().updateGuid(realm,jdbcRow.getLong(MailingItemCols.REALM_ID));
 
     /**
      * Mailing
@@ -136,9 +136,8 @@ public class MailingItemProvider {
      * User
      */
     User user = new User();
-    user.setLocalId(jdbcRow.getLong(MailingItemCols.USER_ID));
     user.setRealm(realm);
-    this.apiApp.getUserProvider().updateGuid(user);
+    this.apiApp.getUserProvider().updateGuid(user, jdbcRow.getLong(MailingItemCols.USER_ID));
 
     /**
      * List User
@@ -198,9 +197,9 @@ public class MailingItemProvider {
 
     Guid guid = this.apiApp.createGuidStringFromRealmAndTwoObjectId(
       GUID_PREFIX,
-      mailingItem.getMailing().getRealm().getLocalId(),
+      mailingItem.getMailing().getRealm().getGuid().getLocalId(),
       mailingItem.getMailing().getLocalId(),
-      mailingItem.getListUser().getUser().getLocalId()
+      mailingItem.getListUser().getUser().getGuid().getLocalId()
     );
     mailingItem.setGuid(guid.toString());
 
@@ -222,8 +221,8 @@ public class MailingItemProvider {
 
     return this.apiApp.getRealmProvider()
       .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmOrOrganizationId(), authUserScope, routingContext)
-      .compose(realm -> this.apiApp.getMailingProvider().getByLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm))
-      .compose(mailing -> this.getItemByLocalId(guid.validateAndGetSecondObjectId(mailing.getRealm().getLocalId()), mailing));
+      .compose(realm -> this.apiApp.getMailingProvider().getByLocalId(guid.validateRealmAndGetFirstObjectId(realm.getGuid().getLocalId()), realm))
+      .compose(mailing -> this.getItemByLocalId(guid.validateAndGetSecondObjectId(mailing.getRealm().getGuid().getLocalId()), mailing));
   }
 
   /**
@@ -233,7 +232,7 @@ public class MailingItemProvider {
    */
   private Future<MailingItem> getItemByLocalId(Long userId, Mailing mailing) {
     return JdbcSelect.from(this.mailingItemTable)
-      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getRealm().getLocalId())
+      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getRealm().getGuid().getLocalId())
       .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getLocalId())
       .addEqualityPredicate(MailingItemCols.USER_ID, userId)
       .addSelectColumn(UserCols.EMAIL_ADDRESS)
@@ -260,9 +259,9 @@ public class MailingItemProvider {
   public Future<MailingItem> update(MailingItem mailingItem, MailingItemInputProps mailingItemInputProps) {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.mailingItemTable)
-      .addPredicateColumn(MailingItemCols.REALM_ID, mailingItem.getMailing().getRealm().getLocalId())
+      .addPredicateColumn(MailingItemCols.REALM_ID, mailingItem.getMailing().getRealm().getGuid().getLocalId())
       .addPredicateColumn(MailingItemCols.MAILING_ID, mailingItem.getMailing().getLocalId())
-      .addPredicateColumn(MailingItemCols.USER_ID, mailingItem.getListUser().getUser().getLocalId());
+      .addPredicateColumn(MailingItemCols.USER_ID, mailingItem.getListUser().getUser().getGuid().getLocalId());
 
     MailingItemStatus newStatus = mailingItemInputProps.getStatus();
     if (newStatus != null && newStatus.getCode() > mailingItem.getStatus().getCode()) {

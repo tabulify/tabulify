@@ -116,8 +116,8 @@ public class ListUserProvider {
     }
     String guid = this.getGuidObjectFromLocalIds(
         listUser.getList().getApp().getRealm(),
-        listUser.getList().getLocalId(),
-        listUser.getUser().getLocalId()
+        listUser.getList().getGuid().getLocalId(),
+        listUser.getUser().getGuid().getLocalId()
       )
       .toString();
     listUser.setGuid(guid);
@@ -144,9 +144,9 @@ public class ListUserProvider {
     }
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.listUserTable)
-      .addPredicateColumn(ListUserCols.REALM_ID, listUser.getList().getApp().getRealm().getLocalId())
-      .addPredicateColumn(ListUserCols.LIST_ID, listUser.getList().getLocalId())
-      .addPredicateColumn(ListUserCols.USER_ID, listUser.getUser().getLocalId());
+      .addPredicateColumn(ListUserCols.REALM_ID, listUser.getList().getApp().getRealm().getGuid().getLocalId())
+      .addPredicateColumn(ListUserCols.LIST_ID, listUser.getList().getGuid().getLocalId())
+      .addPredicateColumn(ListUserCols.USER_ID, listUser.getUser().getGuid().getLocalId());
 
 
     LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
@@ -193,9 +193,9 @@ public class ListUserProvider {
     return jdbcPool
       .preparedQuery(sql)
       .execute(Tuple.of(
-        listUser.getList().getApp().getRealm().getLocalId(),
-        listUser.getList().getLocalId(),
-        listUser.getUser().getLocalId(),
+        listUser.getList().getApp().getRealm().getGuid().getLocalId(),
+        listUser.getList().getGuid().getLocalId(),
+        listUser.getUser().getGuid().getLocalId(),
         listUser.getInSourceId().getValue(),
         listUser.getInOptInOrigin(),
         listUser.getInOptInIp(),
@@ -277,10 +277,10 @@ public class ListUserProvider {
   }
 
   public Future<ListUser> getListUserByListAndUser(ListObject listObject, User user) {
-    if (!Objects.equals(listObject.getApp().getRealm().getLocalId(), user.getRealm().getLocalId())) {
+    if (!Objects.equals(listObject.getApp().getRealm().getGuid().getLocalId(), user.getRealm().getGuid().getLocalId())) {
       throw new InternalException("The realm should be the same between a list and a user for a registration");
     }
-    return getListUserByLocalIds(listObject.getLocalId(), user.getLocalId(), listObject.getApp().getRealm().getLocalId());
+    return getListUserByLocalIds(listObject.getGuid().getLocalId(), user.getGuid().getLocalId(), listObject.getApp().getRealm().getGuid().getLocalId());
   }
 
   private Future<ListUser> getListUserByLocalIds(Long listId, Long userId, Long realmId) {
@@ -399,7 +399,7 @@ public class ListUserProvider {
 
     return apiApp.createGuidStringFromRealmAndTwoObjectId(
       GUID_PREFIX,
-      realm.getLocalId(),
+      realm.getGuid().getLocalId(),
       listId,
       userId
     );

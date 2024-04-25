@@ -29,6 +29,7 @@ import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Handle;
+import net.bytle.type.HandleCastException;
 import net.bytle.vertx.*;
 import net.bytle.vertx.db.*;
 import org.slf4j.Logger;
@@ -99,13 +100,16 @@ public class ListProvider {
    * between guid and (id and realm id)
    *
    * @param listObject - the registration list
+   * @param listId
    */
-  private void updateGuid(ListObject listObject) {
+  public void updateGuid(ListObject listObject, Long listId) {
     if (listObject.getGuid() != null) {
       return;
     }
-    String guid = apiApp.createGuidFromRealmAndObjectId(LIST_GUID_PREFIX, listObject.getApp().getRealm(), listObject.getLocalId()).toString();
-    listObject.setGuid(guid);
+    ListGuid listGuid = new ListGuid();
+    listGuid.setLocalId(listId);
+    listGuid.setRealmId(listObject.getGuid().getRealmId());
+    listObject.setGuid(listGuid);
   }
 
   public static OrgaUser getOwnerUser(ListObject list) {
@@ -131,7 +135,7 @@ public class ListProvider {
    * @param listInputProps  - the props
    * @return the realm with the id
    */
-  public Future<ListObject> upsertList(String listHandle, App app, ListInputProps listInputProps) {
+  public Future<ListObject> upsertList(Handle listHandle, App app, ListInputProps listInputProps) {
 
 
     return this.getListByHandle(listHandle, app.getRealm())
@@ -154,7 +158,7 @@ public class ListProvider {
     Future<OrgaUser> futureUser = Future.succeededFuture(app.getOwnerUser());
     if (ownerIdentifier != null) {
       OrganizationUserProvider userProvider = apiApp.getOrganizationUserProvider();
-      futureUser = userProvider.getOrganizationUserByLocalId(ownerIdentifier.getLocalId());
+      futureUser = userProvider.getOrganizationUserByGuid(ownerIdentifier);
     }
 
     return futureUser
@@ -173,15 +177,15 @@ public class ListProvider {
           user = app.getOwnerUser();
         }
         newList.setOwnerUser(user);
-        jdbcInsert.addColumn(ListCols.OWNER_USER_ID, user.getLocalId());
-        jdbcInsert.addColumn(ListCols.ORGA_ID, user.getOrganization().getLocalId());
+        jdbcInsert.addColumn(ListCols.OWNER_USER_ID, user.getGuid().getLocalId());
+        jdbcInsert.addColumn(ListCols.ORGA_ID, user.getGuid().getOrganizationId());
 
         /**
          * Realm and App
          */
         newList.setApp(app);
-        jdbcInsert.addColumn(ListCols.REALM_ID, app.getRealm().getLocalId());
-        jdbcInsert.addColumn(ListCols.APP_ID, app.getLocalId());
+        jdbcInsert.addColumn(ListCols.REALM_ID, app.getGuid().getRealmId());
+        jdbcInsert.addColumn(ListCols.APP_ID, app.getGuid().getAppLocalId());
 
         /**
          * Name
@@ -220,15 +224,15 @@ public class ListProvider {
               .getNextIdForTableAndRealm(sqlConnection, app.getRealm(), this.listTable)
               .compose(nextId -> {
 
-                newList.setLocalId(nextId);
-                jdbcInsert.addColumn(ListCols.ID, nextId);
-                this.updateGuid(newList);
+                this.updateGuid(newList, nextId);
+                jdbcInsert.addColumn(ListCols.ID, newList.getGuid().getLocalId());
+
 
                 return jdbcInsert.execute(sqlConnection);
               })
               .compose(rowSet -> {
-                Long realmId = newList.getApp().getRealm().getLocalId();
-                Long listId = newList.getLocalId();
+                Long realmId = newList.getGuid().getRealmId();
+                Long listId = newList.getGuid().getLocalId();
                 final String createListRegistrationPartition =
                   "CREATE TABLE IF NOT EXISTS " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "_" + realmId + "_" + listId + "\n" +
                     "    partition of " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "\n" +
@@ -249,8 +253,8 @@ public class ListProvider {
   public Future<ListObject> updateList(ListObject listObject, ListInputProps listInputProps) {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.listTable)
-      .addPredicateColumn(ListCols.ID, listObject.getLocalId())
-      .addPredicateColumn(ListCols.REALM_ID, listObject.getApp().getRealm().getLocalId())
+      .addPredicateColumn(ListCols.ID, listObject.getGuid().getLocalId())
+      .addPredicateColumn(ListCols.REALM_ID, listObject.getGuid().getRealmId())
       .addUpdatedColumn(ListCols.MODIFICATION_TIME, DateTimeService.getNowInUtc());
 
     String newName = listInputProps.getName();
@@ -268,13 +272,12 @@ public class ListProvider {
     OrgaUserGuid ownerGuidObject = listInputProps.getOwnerUserGuid();
     if (ownerGuidObject != null && !Objects.equals(ownerGuidObject, listObject.getOwnerUser().getGuid())) {
 
-      long userLocalId = ownerGuidObject.getLocalId();
-      jdbcUpdate.addUpdatedColumn(ListCols.OWNER_USER_ID, userLocalId);
-      // Lazy initialization (GraphQL feature)
-      OrgaUser orgaUser = new OrgaUser();
-      orgaUser.setLocalId(userLocalId);
-      orgaUser.setRealm(this.apiApp.getEraldyModel().getRealm());
+      OrgaUser orgaUser = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(ownerGuidObject, listObject.getApp().getRealm());
       listObject.setOwnerUser(orgaUser);
+
+      jdbcUpdate.addUpdatedColumn(ListCols.OWNER_USER_ID, listObject.getOwnerUser().getGuid().getLocalId());
+      jdbcUpdate.addUpdatedColumn(ListCols.ORGA_ID, listObject.getOwnerUser().getGuid().getOrganizationId());
+
 
     }
 
@@ -306,23 +309,13 @@ public class ListProvider {
   public Future<java.util.List<ListObject>> getListsForRealm(Realm realm) {
 
 
-    String selectListsForRealmSql = "SELECT * FROM " +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
-      " where \n" +
-      LIST_REALM_COLUMN + " = $1";
-    Tuple parameters = Tuple.of(realm.getLocalId());
-    return jdbcPool
-      .preparedQuery(selectListsForRealmSql)
-      .execute(parameters)
-      .onFailure(e -> LOGGER.error("Get lists by realms error with the sql \n " + selectListsForRealmSql, e))
+    return JdbcSelect.from(this.listTable)
+      .addEqualityPredicate(ListCols.REALM_ID, realm.getGuid().getLocalId())
+      .execute()
       .compose(rowSet -> {
 
-        /**
-         * the {@link CompositeFuture#all(java.util.List) all function} does not
-         * take other thing than a raw future
-         */
         List<ListObject> listObjects = new ArrayList<>();
-        for (Row row : rowSet) {
+        for (JdbcRow row : rowSet) {
           ListObject futurePublication = getListFromRow(row, realm, null);
           listObjects.add(futurePublication);
         }
@@ -332,7 +325,7 @@ public class ListProvider {
 
   }
 
-  private ListObject getListFromRow(Row row, Realm realm, App app) {
+  private ListObject getListFromRow(JdbcRow row, Realm realm, App app) {
 
     assert realm != null : "The realm should not be null";
 
@@ -341,47 +334,39 @@ public class ListProvider {
     /**
      * Local Id
      */
-    Long listId = row.getLong(LIST_ID_COLUMN);
-    listObject.setLocalId(listId);
+    Long listId = row.getLong(ListCols.ID);
+    Long realmId = row.getLong(ListCols.REALM_ID);
+    if (realmId != realm.getGuid().getLocalId()) {
+      throw new InternalException("The passed realm (" + realm.getGuid() + ") and the database realm id (" + realmId + " differs");
+    }
+    this.updateGuid(listObject, listId);
+
 
     /**
      * App
      */
-    Long realmId = row.getLong(LIST_REALM_COLUMN);
-    if (!Objects.equals(realmId, realm.getLocalId())) {
-      throw new InternalException("The passed realm (" + realm.getLocalId() + ") and the database realm id (" + realmId + " differs");
-    }
     if (app == null) {
-      app = new App();
-      app.setLocalId(row.getLong(LIST_APP_COLUMN));
+      AppGuid appGuid = new AppGuid();
+      appGuid.setLocalId(row.getLong(ListCols.APP_ID));
+      appGuid.setRealmId(realm.getGuid().getLocalId());
+      app = this.apiApp.getAppProvider().toAppFromGuid(appGuid);
       app.setRealm(realm);
-      this.apiApp.getAppProvider().updateGuid(app);
     }
     listObject.setApp(app);
-
-    /**
-     * Guid
-     */
-    this.updateGuid(listObject);
 
     /**
      * Owner
      * Id + Orga
      */
-    Organization organisation = new Organization();
-    organisation.setLocalId(row.getLong(ListCols.ORGA_ID.getColumnName()));
-    OrgaUser orgaUser = new OrgaUser();
-    orgaUser.setOrganization(organisation);
-    listObject.setOwnerUser(orgaUser);
-    orgaUser.setLocalId(row.getLong(ListCols.OWNER_USER_ID.getColumnName()));
-    orgaUser.setRealm(this.apiApp.getEraldyModel().getRealm());
-    this.apiApp.getUserProvider().updateGuid(orgaUser);
-
+    OrgaUserGuid ownerUserGuid = new OrgaUserGuid();
+    ownerUserGuid.setOrganizationId(row.getLong(ListCols.ORGA_ID));
+    ownerUserGuid.setLocalId(row.getLong(ListCols.OWNER_USER_ID));
+    listObject.setOwnerUser(this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(ownerUserGuid, realm));
 
     /**
      * Handle
      */
-    String handleString = row.getString(LIST_HANDLE_COLUMN);
+    String handleString = row.getString(ListCols.HANDLE);
     if (handleString != null) {
       Handle listHandle = Handle.ofFailSafe(handleString);
       listObject.setHandle(listHandle);
@@ -390,14 +375,14 @@ public class ListProvider {
     /**
      * Scalar
      */
-    listObject.setName(row.getString(LIST_NAME_COLUMN));
+    listObject.setName(row.getString(ListCols.NAME));
 
     /**
      * Analytics
      */
-    listObject.setUserCount(Objects.requireNonNullElse(row.getLong(LIST_USER_COUNT_COLUMN), 0L));
-    listObject.setUserInCount(Objects.requireNonNullElse(row.getLong(LIST_USER_IN_COUNT_COLUMN), 0L));
-    listObject.setMailingCount(Objects.requireNonNullElse(row.getLong(LIST_MAILING_COUNT_COLUMN), 0L));
+    listObject.setUserCount(Objects.requireNonNullElse(row.getLong(ListCols.USER_COUNT), 0L));
+    listObject.setUserInCount(Objects.requireNonNullElse(row.getLong(ListCols.USER_IN_COUNT), 0L));
+    listObject.setMailingCount(Objects.requireNonNullElse(row.getLong(ListCols.MAILING_COUNT), 0L));
 
 
     /**
@@ -411,34 +396,28 @@ public class ListProvider {
 
   public Future<ListObject> getListById(long listId, Realm realm) {
 
-    String sql = "SELECT * " +
-      "FROM \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
-      " WHERE \n" +
-      " " + LIST_ID_COLUMN + " = $1 " +
-      " AND " + LIST_REALM_COLUMN + " = $2";
-    Tuple parameters = Tuple.of(listId, realm.getLocalId());
-    return jdbcPool
-      .preparedQuery(sql)
-      .execute(parameters)
-      .onFailure(e -> LOGGER.error("Get list by Id error with the sql.\n" + sql, e))
+
+    return JdbcSelect.from(this.listTable)
+      .addEqualityPredicate(ListCols.REALM_ID, realm.getGuid().getLocalId())
+      .addEqualityPredicate(ListCols.ID, listId)
+      .execute()
       .compose(userRows -> {
 
         if (userRows.size() == 0) {
           return Future.succeededFuture();
         }
 
-        Row row = userRows.iterator().next();
+        JdbcRow row = userRows.iterator().next();
         return Future.succeededFuture(getListFromRow(row, realm, null));
       });
   }
 
 
-  public Future<ListObject> getListByGuidObject(Guid listGuid) {
+  public Future<ListObject> getListByGuidObject(ListGuid listGuid) {
 
     return this.apiApp.getRealmProvider()
-      .getRealmFromLocalId(listGuid.getRealmOrOrganizationId())
-      .compose(realm -> getListById(listGuid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm));
+      .getRealmFromLocalId(listGuid.getRealmId())
+      .compose(realm -> getListById(listGuid.getLocalId(), realm));
   }
 
   public Future<java.util.List<ListSummary>> getListsSummary(Realm realm) {
@@ -453,7 +432,7 @@ public class ListProvider {
       "where list.list_realm_id = $1\n" +
       "group by list.list_id, list.list_handle, app.app_uri";
     return jdbcPool.preparedQuery(sql)
-      .execute(Tuple.of(realm.getLocalId()))
+      .execute(Tuple.of(realm.getGuid().getLocalId()))
       .recover(err -> FailureStatic.SqlFailFuture("List Summary", sql, err))
       .compose(publicationRows -> {
 
@@ -491,14 +470,11 @@ public class ListProvider {
   }
 
   public Future<java.util.List<ListObject>> getListsForApp(App app) {
-    String sql = "SELECT * FROM " +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
-      " where \n" +
-      " " + LIST_APP_COLUMN + " = $1" +
-      " AND " + LIST_REALM_COLUMN + " = $2";
-    return jdbcPool.preparedQuery(sql)
-      .execute(Tuple.of(app.getLocalId(), app.getRealm().getLocalId()))
-      .onFailure(t -> LOGGER.error("Error getListsForApp with the Sql:\n" + sql, t))
+
+    return JdbcSelect.from(this.listTable)
+      .addEqualityPredicate(ListCols.APP_ID, app.getGuid().getAppLocalId())
+      .addEqualityPredicate(ListCols.REALM_ID, app.getGuid().getRealmId())
+      .execute()
       .compose(listRows -> {
 
         /**
@@ -506,7 +482,7 @@ public class ListProvider {
          * take other thing than a raw future
          */
         java.util.List<ListObject> listObjects = new ArrayList<>();
-        for (Row row : listRows) {
+        for (JdbcRow row : listRows) {
           ListObject futurePublication = getListFromRow(row, app.getRealm(), app);
           listObjects.add(futurePublication);
         }
@@ -518,25 +494,19 @@ public class ListProvider {
     return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(ListProvider.LIST_GUID_PREFIX, listGuid);
   }
 
-  public Future<ListObject> getListByHandle(String listHandle, Realm realm) {
-    String sql = "SELECT * " +
-      "FROM \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
-      " WHERE \n" +
-      " " + LIST_HANDLE_COLUMN + " = $1 " +
-      " AND " + LIST_REALM_COLUMN + " = $2";
-    Tuple parameters = Tuple.of(listHandle, realm.getLocalId());
-    return jdbcPool
-      .preparedQuery(sql)
-      .execute(parameters)
-      .onFailure(e -> LOGGER.error("Get list by handle error with the sql.\n" + sql, e))
+  public Future<ListObject> getListByHandle(Handle listHandle, Realm realm) {
+
+    return JdbcSelect.from(this.listTable)
+      .addEqualityPredicate(ListCols.REALM_ID, realm.getGuid().getLocalId())
+      .addEqualityPredicate(ListCols.HANDLE, listHandle.getValue())
+      .execute()
       .compose(userRows -> {
 
         if (userRows.size() == 0) {
           return Future.succeededFuture();
         }
 
-        Row row = userRows.iterator().next();
+        JdbcRow row = userRows.iterator().next();
         return Future.succeededFuture(getListFromRow(row, realm, null));
       });
   }
@@ -546,14 +516,14 @@ public class ListProvider {
     return this.apiMapper;
   }
 
-  public Future<Void> deleteById(Long listId, Realm realm) {
+  public Future<Void> deleteById(ListGuid listGuid) {
 
     final String deleteSql = "DELETE FROM\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
+      this.listTable.getFullName() + "\n" +
       " WHERE \n" +
-      " " + LIST_ID_COLUMN + " = $1 " +
-      " AND " + LIST_REALM_COLUMN + " = $2";
-    Tuple parameters = Tuple.of(listId, realm.getLocalId());
+      " " + ListCols.ID.getColumnName() + " = $1 " +
+      " AND " + ListCols.REALM_ID.getColumnName() + " = $2";
+    Tuple parameters = Tuple.of(listGuid.getLocalId(), listGuid.getRealmId());
     return jdbcPool
       .preparedQuery(deleteSql)
       .execute(parameters)
@@ -572,24 +542,6 @@ public class ListProvider {
   }
 
 
-  /**
-   * Utility function to return a list via a Guid identifier
-   *
-   * @param listIdentifier - a guid hash
-   */
-  public Future<ListObject> getListByGuidHashIdentifier(String listIdentifier) {
-    Guid listGuid;
-    try {
-      listGuid = this.getGuidObject(listIdentifier);
-    } catch (CastException e) {
-      return Future.failedFuture(TowerFailureException.builder()
-        .setMessage("The list identifier should be a guid. The value (" + listIdentifier + ") is not a valid guid.")
-        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-        .build()
-      );
-    }
-    return this.getListByGuidObject(listGuid);
-  }
 
   /**
    * Retrieve a list identifier in the path, check the scope and return a list
@@ -613,11 +565,11 @@ public class ListProvider {
     String realmIdentifier = routingContextWrapper.getRequestQueryParameterAsString("realmIdentifier");
     ListProvider listProvider = apiApp.getListProvider();
     RealmProvider realmProvider = apiApp.getRealmProvider();
-    Guid listGuid = null;
+    ListGuid listGuid = null;
     Future<Realm> futureRealm;
     try {
-      listGuid = listProvider.getGuidObject(listIdentifier);
-      futureRealm = realmProvider.getRealmFromLocalId(listGuid.getRealmOrOrganizationId());
+      listGuid = this.apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listIdentifier);
+      futureRealm = realmProvider.getRealmFromLocalId(listGuid.getRealmId());
     } catch (CastException e) {
       if (realmIdentifier == null) {
         return Future.failedFuture(TowerFailureException.builder()
@@ -628,24 +580,32 @@ public class ListProvider {
       }
       futureRealm = realmProvider.getRealmFromIdentifier(realmIdentifier);
     }
-    Guid finalListGuid = listGuid;
+    ListGuid finalListGuid = listGuid;
     String finalListIdentifier = listIdentifier;
     return futureRealm
       .compose(realm -> apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, scope))
       .compose(realm -> {
         Future<ListObject> listFuture;
         if (finalListGuid != null) {
-          long listId = finalListGuid.validateRealmAndGetFirstObjectId(realm.getLocalId());
+          long listId = finalListGuid.getLocalId();
           listFuture = listProvider.getListById(listId, realm);
         } else {
-          listFuture = listProvider.getListByHandle(finalListIdentifier, realm);
+          try {
+            listFuture = listProvider.getListByHandle(Handle.of(finalListIdentifier), realm);
+          } catch (HandleCastException e) {
+            return Future.failedFuture(TowerFailureException.builder()
+              .setMessage("The handle value (" + finalListIdentifier + ") is not valid. Error: " + e.getMessage())
+              .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+              .build()
+            );
+          }
         }
         return listFuture;
       });
   }
 
   public Future<Void> deleteByList(ListObject listObject) {
-    return deleteById(listObject.getLocalId(), listObject.getApp().getRealm());
+    return deleteById(listObject.getGuid());
   }
 
 
@@ -671,7 +631,7 @@ public class ListProvider {
             .buildWithContextFailing(routingContext)
           );
         }
-        return this.apiApp.getAppProvider().getAppById(appGuidObject.getAppLocalId(), realm);
+        return this.apiApp.getAppProvider().getAppByGuid(appGuidObject, realm);
       })
       .compose(app -> {
         if (app == null) {
@@ -706,7 +666,7 @@ public class ListProvider {
             .build()
           );
         }
-        return this.getListById(listGuidObject.getListLocalId(), realm);
+        return this.getListById(listGuidObject.getLocalId(), realm);
       })
       .compose(list -> {
         if (list == null) {
@@ -735,7 +695,7 @@ public class ListProvider {
     }
     return this.apiApp.getRealmProvider()
       .getRealmByLocalIdWithAuthorizationCheck(listGuidObject.getRealmId(), authUserScope, routingContext)
-      .compose(realm -> this.getListById(listGuidObject.getListLocalId(), realm));
+      .compose(realm -> this.getListById(listGuidObject.getLocalId(), realm));
 
   }
 
@@ -743,12 +703,12 @@ public class ListProvider {
     if (!(list.getOwnerUser() == null || list.getOwnerUser().getEmailAddress() == null)) {
       return Future.succeededFuture(list.getOwnerUser());
     }
-    Long localId = list.getOwnerUser().getLocalId();
-    if (localId == null) {
+    OrgaUserGuid orgaUserGuid = list.getOwnerUser().getGuid();
+    if (orgaUserGuid == null) {
       return Future.failedFuture(new InternalException("The build of the list did not set the local id on the owner user"));
     }
     return this.apiApp.getOrganizationUserProvider()
-      .getOrganizationUserByLocalId(localId);
+      .getOrganizationUserByGuid(orgaUserGuid);
   }
 
   public Future<App> buildAppAtRequestTimeEventually(ListObject list) {
@@ -759,8 +719,8 @@ public class ListProvider {
     if (!(list.getApp() == null || list.getApp().getName() == null)) {
       return Future.succeededFuture(list.getApp());
     }
-    Long localId = list.getApp().getLocalId();
-    if (localId == null) {
+    AppGuid appGuid = list.getApp().getGuid();
+    if (appGuid == null) {
       return Future.failedFuture(new InternalException("The build of the list did not set the local id of the app"));
     }
     Realm realm = list.getApp().getRealm();
@@ -768,6 +728,6 @@ public class ListProvider {
       return Future.failedFuture(new InternalException("The build of the list did not set the realm of the app"));
     }
     return this.apiApp.getAppProvider()
-      .getAppById(localId, realm);
+      .getAppByGuid(appGuid, realm);
   }
 }

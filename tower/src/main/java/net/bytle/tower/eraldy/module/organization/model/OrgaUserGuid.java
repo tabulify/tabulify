@@ -14,10 +14,11 @@ import java.util.Objects;
 public class OrgaUserGuid extends UserGuid {
 
 
-  private Long organizationId;
+  private long organizationId;
 
   public OrgaUserGuid() {
     super();
+    setRealmId(EraldyModel.REALM_LOCAL_ID);
   }
 
 
@@ -38,13 +39,13 @@ public class OrgaUserGuid extends UserGuid {
   }
 
   @Override
-  public Long getRealmId() {
+  public long getRealmId() {
 
     return EraldyModel.REALM_LOCAL_ID;
 
   }
 
-  public Long getOrganizationId() {
+  public long getOrganizationId() {
 
     return this.organizationId;
 

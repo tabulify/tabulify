@@ -241,7 +241,7 @@ public class MailingGraphQLImpl {
 
     return this.app.getAuthProvider()
       .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmOrOrganizationId(), AuthUserScope.MAILINGS_LIST_GET, routingContext)
-      .compose(realm -> mailingProvider.getMailingsByListWithLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm));
+      .compose(realm -> mailingProvider.getMailingsByListWithLocalId(guid.validateRealmAndGetFirstObjectId(realm.getGuid().getLocalId()), realm));
 
   }
 }

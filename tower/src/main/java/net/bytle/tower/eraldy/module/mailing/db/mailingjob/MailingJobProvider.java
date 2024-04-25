@@ -85,7 +85,7 @@ public class MailingJobProvider {
 
                 return JdbcInsert.into(mailingJobTable)
                   .addColumn(MailingJobCols.ID, mailingJob.getLocalId())
-                  .addColumn(MailingJobCols.REALM_ID, mailingJob.getMailing().getRealm().getLocalId())
+                  .addColumn(MailingJobCols.REALM_ID, mailingJob.getMailing().getRealm().getGuid().getLocalId())
                   .addColumn(MailingJobCols.MAILING_ID, mailingJob.getMailing().getLocalId())
                   .addColumn(MailingJobCols.STATUS_CODE, mailingJob.getStatus().getCode())
                   .addColumn(MailingJobCols.START_TIME, mailingJob.getStartTime())
@@ -102,7 +102,7 @@ public class MailingJobProvider {
       this.apiApp
         .createGuidFromRealmAndObjectId(
           MAILING_JOB_GUID_PREFIX,
-          mailingJob.getMailing().getRealm().getLocalId(),
+          mailingJob.getMailing().getRealm().getGuid().getLocalId(),
           mailingJob.getLocalId()
         )
         .toString()
@@ -122,14 +122,14 @@ public class MailingJobProvider {
       .getRealmByLocalIdWithAuthorizationCheck(mailingGuidObject.getRealmOrOrganizationId(), AuthUserScope.MAILING_JOBS_GET, routingContext)
       .compose(realm -> {
 
-        Long mailingLocalId = mailingGuidObject.validateRealmAndGetFirstObjectId(realm.getLocalId());
+        Long mailingLocalId = mailingGuidObject.validateRealmAndGetFirstObjectId(realm.getGuid().getLocalId());
         Mailing mailing = new Mailing();
         mailing.setRealm(realm);
         mailing.setLocalId(mailingLocalId);
         mailing.setGuid(mailingGuid);
 
         final String sql = "select * from " + this.mailingJobTable.getFullName() + " where " + MailingJobCols.MAILING_ID.getColumnName() + " = $1 and " + MailingJobCols.REALM_ID.getColumnName() + " = $2";
-        Tuple tuple = Tuple.of(mailing.getLocalId(), mailing.getRealm().getLocalId());
+        Tuple tuple = Tuple.of(mailing.getLocalId(), mailing.getRealm().getGuid().getLocalId());
         return this.jdbcPool
           .preparedQuery(sql)
           .execute(tuple)
@@ -162,13 +162,13 @@ public class MailingJobProvider {
       if (!mailingLocalId.equals(mailing.getLocalId())) {
         throw new InternalException("Inconsistency: The mailing local id (" + mailing.getLocalId() + ") is not the same as in the database (" + mailingLocalId + ") for the mailing job (" + mailingJobId + ")");
       }
-      if (!realmLocalId.equals(mailing.getRealm().getLocalId())) {
-        throw new InternalException("Inconsistency: The realm local id (" + mailing.getRealm().getLocalId() + ") is the same as in the database (" + realmLocalId + ") for the mailing job (" + mailingJobId + ")");
+      if (!realmLocalId.equals(mailing.getRealm().getGuid().getLocalId())) {
+        throw new InternalException("Inconsistency: The realm local id (" + mailing.getRealm().getGuid() + ") is the same as in the database (" + realmLocalId + ") for the mailing job (" + mailingJobId + ")");
       }
     } else {
       // Build it
       Realm realm = new Realm();
-      realm.setLocalId(realmLocalId);
+      this.apiApp.getRealmProvider().updateGuid(realm,realmLocalId);
       mailing = new Mailing();
       mailing.setLocalId(mailingLocalId);
       mailing.setRealm(realm);
@@ -204,7 +204,7 @@ public class MailingJobProvider {
 
 
         final String sql = "select * from " + this.mailingJobTable.getFullName() + " where " + MailingJobCols.ID.getColumnName() + " = $1 and " + MailingJobCols.REALM_ID.getColumnName() + " = $2";
-        Tuple tuple = Tuple.of(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm.getLocalId());
+        Tuple tuple = Tuple.of(guid.validateRealmAndGetFirstObjectId(realm.getGuid().getLocalId()), realm.getGuid().getLocalId());
         return this.jdbcPool
           .preparedQuery(sql)
           .execute(tuple)
@@ -271,7 +271,7 @@ public class MailingJobProvider {
     }
 
 
-    jdbcUpdate.addPredicateColumn(MailingJobCols.REALM_ID,mailingJob.getMailing().getRealm().getLocalId());
+    jdbcUpdate.addPredicateColumn(MailingJobCols.REALM_ID,mailingJob.getMailing().getRealm().getGuid().getLocalId());
     jdbcUpdate.addPredicateColumn(MailingJobCols.ID,mailingJob.getLocalId());
 
     return jdbcUpdate.execute(connection)

@@ -79,7 +79,7 @@ public class OrgaUser extends User {
 
   @Override
   public void setRealm(Realm realm) {
-    if (!realm.getLocalId().equals(EraldyModel.REALM_LOCAL_ID)) {
+    if (realm.getGuid().getLocalId()!=EraldyModel.REALM_LOCAL_ID) {
       throw new RuntimeException("The realm of an orga user should be the Eraldy realm");
     }
     super.setRealm(realm);

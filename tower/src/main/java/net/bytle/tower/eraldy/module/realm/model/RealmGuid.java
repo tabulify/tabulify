@@ -10,13 +10,17 @@ public class RealmGuid {
   public RealmGuid() {
   }
 
-
+  /**
+   * @return localId The realm id in the database
+   */
   public long getLocalId() {
 
     return this.localId;
   }
 
-
+  /**
+   * @param localId The realm id in the database
+   */
   public void setLocalId(long localId) {
     this.localId = localId;
   }

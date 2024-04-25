@@ -53,22 +53,6 @@ public class App {
   }
 
   /**
-   * @return localId The app identifier in the realm (without the realm, the id may have duplicate)
-   */
-  @JsonProperty("localId")
-  public Long getLocalId() {
-    return localId;
-  }
-
-  /**
-   * @param localId The app identifier in the realm (without the realm, the id may have duplicate)
-   */
-  @SuppressWarnings("unused")
-  public void setLocalId(Long localId) {
-    this.localId = localId;
-  }
-
-  /**
    * @return guid The global app id (realm id + local app id)
    */
   @JsonProperty("guid")
@@ -116,23 +100,7 @@ public class App {
     this.name = name;
   }
 
-  /**
-   * @return uri An authentication url identifier It has no query string nor fragment. If you use the member authentication module, this URL should not be empty.
-   */
-  @JsonProperty("uri")
-  public URI getUri() {
-    return uri;
-  }
-
-  /**
-   * @param uri An authentication url identifier It has no query string nor fragment. If you use the member authentication module, this URL should not be empty.
-   */
-  @SuppressWarnings("unused")
-  public void setUri(URI uri) {
-    this.uri = uri;
-  }
-
-  /**
+    /**
    * @return home The home URL of the app This is a app branding element that adds an URL to any app communication footer
    */
   @JsonProperty("home")
@@ -231,8 +199,8 @@ public class App {
   /**
    * @return terms The location of the terms and conditions document
    */
-  @JsonProperty("terms")
-  public URI getTermOfServices() {
+  @JsonProperty("tos")
+  public URI getTermsOfServices() {
     return terms;
   }
 
@@ -240,7 +208,7 @@ public class App {
    * @param terms The location of the terms and conditions document
    */
   @SuppressWarnings("unused")
-  public void setTerms(URI terms) {
+  public void setTermsOfServices(URI terms) {
     this.terms = terms;
   }
 

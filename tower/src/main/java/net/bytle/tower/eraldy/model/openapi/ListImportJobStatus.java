@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -15,7 +16,7 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
 
   protected String jobId;
 
-  protected String listGuid;
+  protected ListGuid listGuid;
 
   protected Integer maxRowCountToProcess;
 
@@ -72,7 +73,7 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   * @return listGuid The list guid
   */
   @JsonProperty("listGuid")
-  public String getListGuid() {
+  public ListGuid getListGuid() {
     return listGuid;
   }
 
@@ -80,7 +81,7 @@ public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutur
   * @param listGuid The list guid
   */
   @SuppressWarnings("unused")
-  public void setListGuid(String listGuid) {
+  public void setListGuid(ListGuid listGuid) {
     this.listGuid = listGuid;
   }
 

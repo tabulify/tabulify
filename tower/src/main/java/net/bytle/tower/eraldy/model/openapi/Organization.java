@@ -26,6 +26,7 @@ public class Organization   {
   protected LocalDateTime creationTime;
 
   protected LocalDateTime modificationTime;
+  private OrgaUser ownerUser;
 
   /**
   * The empty constructor is
@@ -50,23 +51,6 @@ public class Organization   {
   @SuppressWarnings("unused")
   public void setGuid(OrgaGuid guid) {
     this.guid = guid;
-  }
-
-  /**
-  * @return localId The organization id in the database
-  */
-  @com.fasterxml.jackson.annotation.JsonAlias({"id"})
-  @JsonProperty("localId")
-  public Long getLocalId() {
-    return localId;
-  }
-
-  /**
-  * @param localId The organization id in the database
-  */
-  @SuppressWarnings("unused")
-  public void setLocalId(Long localId) {
-    this.localId = localId;
   }
 
   /**
@@ -158,4 +142,11 @@ public class Organization   {
     return super.toString();
   }
 
+  public void setOwnerUser(OrgaUser ownerUser) {
+    this.ownerUser = ownerUser;
+  }
+
+  public OrgaUser getOwnerUser() {
+    return ownerUser;
+  }
 }

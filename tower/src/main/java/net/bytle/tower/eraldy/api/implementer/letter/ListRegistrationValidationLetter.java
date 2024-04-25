@@ -167,7 +167,7 @@ public class ListRegistrationValidationLetter {
         .setBrandUrl(publisherApp.getHome() != null ? publisherApp.getHome().toString() : null)
         .setBrandSlogan(publisherApp.getSlogan())
         .setBrandLogoWidth("25px")
-        .setPrimaryColor(publisherApp.getPrimaryColor());
+        .setPrimaryColor(publisherApp.getPrimaryColor().getValue());
       return new ListRegistrationValidationLetter(transactionalTemplate);
 
     }

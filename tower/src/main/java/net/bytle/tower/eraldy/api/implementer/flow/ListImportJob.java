@@ -15,6 +15,7 @@ import net.bytle.fs.Fs;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.vertx.DateTimeService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -484,10 +485,11 @@ public class ListImportJob {
     if (this.list != null) {
       return Future.succeededFuture(this.list);
     }
+    ListGuid listGuid = this.listImportJobStatus.getListGuid();
     return this.listImportFlow.getApp()
       .getListProvider()
-      .getListByGuidHashIdentifier(this.listImportJobStatus.getListGuid())
-      .onFailure(err -> LOGGER.error("Error while getting the list with the guid (" + this.listImportJobStatus.getListGuid() + ") for the job (" + this + ")", err))
+      .getListByGuidObject(listGuid)
+      .onFailure(err -> LOGGER.error("Error while getting the list with the guid (" + listGuid + ") for the job (" + this + ")", err))
       .compose(list -> {
         this.list = list;
         return Future.succeededFuture(list);

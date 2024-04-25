@@ -22,6 +22,7 @@ import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputProps;
 import net.bytle.tower.eraldy.module.mailing.jackson.JacksonMailingStatusDeserializer;
 import net.bytle.tower.eraldy.module.mailing.model.Mailing;
 import net.bytle.tower.eraldy.module.mailing.model.MailingStatus;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.EmailAddress;
 import net.bytle.vertx.DateTimeService;
@@ -104,7 +105,7 @@ public class MailingProvider {
     if (mailing.getGuid() != null) {
       return;
     }
-    String guid = this.getGuidHash(mailing.getRealm().getLocalId(), mailing.getLocalId());
+    String guid = this.getGuidHash(mailing.getRealm().getGuid().getLocalId(), mailing.getLocalId());
     mailing.setGuid(guid);
   }
 
@@ -129,7 +130,7 @@ public class MailingProvider {
           );
         }
         return this.apiApp.getListProvider()
-          .getListById(listGuidObject.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm);
+          .getListById(listGuidObject.validateRealmAndGetFirstObjectId(realm.getGuid().getLocalId()), realm);
       })
       .compose(list -> {
 
@@ -154,7 +155,7 @@ public class MailingProvider {
 
         // realm
         mailing.setRealm(list.getApp().getRealm());
-        jdbcInsert.addColumn(MailingCols.REALM_ID, mailing.getRealm().getLocalId());
+        jdbcInsert.addColumn(MailingCols.REALM_ID, mailing.getRealm().getGuid().getLocalId());
 
         // name
         String name = mailingInputProps.getName();
@@ -166,13 +167,13 @@ public class MailingProvider {
 
         // list
         mailing.setEmailRecipientList(list);
-        jdbcInsert.addColumn(MailingCols.EMAIL_RCPT_LIST_ID, mailing.getEmailRecipientList().getLocalId());
+        jdbcInsert.addColumn(MailingCols.EMAIL_RCPT_LIST_ID, mailing.getEmailRecipientList().getGuid().getLocalId());
 
         // owner
         OrgaUser ownerUser = ListProvider.getOwnerUser(list);
         mailing.setEmailAuthor(ownerUser);
-        jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_USER_ID, ownerUser.getLocalId());
-        jdbcInsert.addColumn(MailingCols.ORGA_ID, ownerUser.getOrganization().getLocalId());
+        jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_USER_ID, ownerUser.getGuid().getLocalId());
+        jdbcInsert.addColumn(MailingCols.ORGA_ID, ownerUser.getGuid().getOrganizationId());
 
         return jdbcPool
           .withTransaction(sqlConnection ->
@@ -203,7 +204,7 @@ public class MailingProvider {
 
     return JdbcSelect
       .from(this.mailingTable)
-      .addEqualityPredicate(MailingCols.REALM_ID, realm.getLocalId())
+      .addEqualityPredicate(MailingCols.REALM_ID, realm.getGuid().getLocalId())
       .addEqualityPredicate(MailingCols.ID, localId)
       .execute()
       .compose(rows -> {
@@ -249,10 +250,13 @@ public class MailingProvider {
      * ie {@link #buildEmailAuthorAtRequestTimeEventually(Mailing)}
      */
     Long orgaId = row.getLong(MailingCols.ORGA_ID);
-    assert Objects.equals(realm.getOrganization().getLocalId(), orgaId);
+    assert Objects.equals(realm.getOrganization().getGuid().getLocalId(), orgaId);
     Long userId = row.getLong(MailingCols.EMAIL_AUTHOR_USER_ID);
     OrgaUser authorUser = new OrgaUser();
-    authorUser.setLocalId(userId);
+    OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
+    orgaUserGuid.setLocalId(userId);
+    orgaUserGuid.setOrganizationId(orgaId);
+    authorUser.setGuid(orgaUserGuid);
     authorUser.setRealm(realm);
     mailing.setEmailAuthor(authorUser);
 
@@ -264,7 +268,7 @@ public class MailingProvider {
      */
     Long listId = row.getLong(MailingCols.EMAIL_RCPT_LIST_ID);
     ListObject recipientList = new ListObject();
-    recipientList.setLocalId(listId);
+    this.apiApp.getListProvider().updateGuid(recipientList, listId);
     App app = new App();
     app.setRealm(realm);
     recipientList.setApp(app);
@@ -300,7 +304,7 @@ public class MailingProvider {
     return JdbcSelect
       .from(this.mailingTable)
       .addEqualityPredicate(MailingCols.EMAIL_RCPT_LIST_ID, listId)
-      .addEqualityPredicate(MailingCols.REALM_ID, realm.getLocalId())
+      .addEqualityPredicate(MailingCols.REALM_ID, realm.getGuid().getLocalId())
       .execute()
       .compose(rows -> {
         List<Mailing> mailingList = new ArrayList<>();
@@ -333,7 +337,7 @@ public class MailingProvider {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.mailingTable)
       .addPredicateColumn(MailingCols.ID,mailing.getLocalId())
-      .addPredicateColumn(MailingCols.REALM_ID, mailing.getRealm().getLocalId());
+      .addPredicateColumn(MailingCols.REALM_ID, mailing.getRealm().getGuid().getLocalId());
 
     /**
      * Patch implementation
@@ -414,8 +418,8 @@ public class MailingProvider {
 
       if(newAuthor!=null){
         mailing.setEmailAuthor(newAuthor);
-        jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_AUTHOR_USER_ID,mailing.getEmailAuthor().getLocalId());
-        jdbcUpdate.addUpdatedColumn(MailingCols.ORGA_ID,mailing.getEmailAuthor().getOrganization().getLocalId());
+        jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_AUTHOR_USER_ID,mailing.getEmailAuthor().getGuid().getLocalId());
+        jdbcUpdate.addUpdatedColumn(MailingCols.ORGA_ID,mailing.getEmailAuthor().getGuid().getOrganizationId());
       }
 
 
@@ -435,7 +439,7 @@ public class MailingProvider {
             // 0 should not happen as we select it beforehand to build the mailing
             return Future.failedFuture(TowerFailureException.builder()
               .setMessage("Update Mailing: No mailing was updated for the tuple (" + Tuple.of(mailing.getLocalId(),
-                mailing.getRealm().getLocalId()).deepToString() + ")")
+                mailing.getRealm().getGuid().getLocalId()).deepToString() + ")")
               .build());
           }
           return Future.succeededFuture(mailing);
@@ -491,7 +495,7 @@ public class MailingProvider {
             .build()
           );
         }
-        long localId = guid.validateRealmAndGetFirstObjectId(realm.getLocalId());
+        long localId = guid.validateRealmAndGetFirstObjectId(realm.getGuid().getLocalId());
         return this.getByLocalId(localId, realm);
       });
   }
@@ -509,7 +513,7 @@ public class MailingProvider {
       return Future.succeededFuture(emailAuthor);
     }
     return this.apiApp.getOrganizationUserProvider()
-      .getOrganizationUserByLocalId(emailAuthor.getLocalId())
+      .getOrganizationUserByGuid(emailAuthor.getGuid())
       .compose(emailAuthorFuture->{
         mailing.setEmailAuthor(emailAuthorFuture);
         return Future.succeededFuture(emailAuthorFuture);
@@ -518,12 +522,11 @@ public class MailingProvider {
 
   public Future<ListObject> getListAtRequestTime(Mailing mailing) {
     ListObject listObject = mailing.getEmailRecipientList();
-    String guid = listObject.getGuid();
-    if (guid != null) {
+    if (listObject.getName() != null) {
       return Future.succeededFuture(listObject);
     }
     return this.apiApp.getListProvider()
-      .getListById(listObject.getLocalId(), listObject.getApp().getRealm());
+      .getListById(listObject.getGuid().getLocalId(), listObject.getApp().getRealm());
   }
 
 
@@ -544,7 +547,7 @@ public class MailingProvider {
           .preparedQuery(this.mailingItemsSqlInsertion)
           .execute(Tuple.of(
             ListUserStatus.OK.getValue(),
-            mailing.getEmailRecipientList().getApp().getRealm().getLocalId(),
+            mailing.getEmailRecipientList().getApp().getRealm().getGuid().getLocalId(),
             mailing.getLocalId()
           ))
           .recover(e -> Future.failedFuture(new InternalException("Mailing Job Rows insertion err error: Sql Error " + e.getMessage(), e)))
@@ -557,7 +560,7 @@ public class MailingProvider {
               .preparedQuery(this.updateItemCountAndStatusToRunningSqlStatement)
               .execute(Tuple.of(
                 processingState.getCode(),
-                mailing.getRealm().getLocalId(),
+                mailing.getRealm().getGuid().getLocalId(),
                 mailing.getLocalId()
               ))
               .recover(err -> Future.failedFuture(TowerFailureException.builder()

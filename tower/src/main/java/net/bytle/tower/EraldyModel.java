@@ -3,8 +3,13 @@ package net.bytle.tower;
 import io.vertx.core.Future;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.model.openapi.ListObject;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
+import net.bytle.tower.eraldy.model.openapi.Organization;
+import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.module.app.inputs.AppInputProps;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.organization.inputs.OrgaUserInputProps;
 import net.bytle.tower.eraldy.module.organization.inputs.OrganizationInputProps;
 import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
@@ -115,9 +120,9 @@ public class EraldyModel {
      * It's updated just after in the {@link #mount()}
      */
     Organization organization = new Organization();
-    organization.setLocalId(ORGA_LOCAL_ID);
+    this.apiApp.getOrganizationProvider().updateGuid(organization,ORGA_LOCAL_ID);
     this.eraldyRealm = new Realm();
-    this.eraldyRealm.setLocalId(REALM_LOCAL_ID);
+    this.apiApp.getRealmProvider().updateGuid(this.eraldyRealm,REALM_LOCAL_ID);
     this.eraldyRealm.setOrganization(organization);
 
   }
@@ -140,14 +145,12 @@ public class EraldyModel {
     LOGGER.info("Get/Inserting the App and client");
 
 
-    App memberApp = new App();
-    memberApp.setLocalId(APP_MEMBER_ID);
-    memberApp.setName("Members");
-    memberApp.setHandle(this.jacksonManager.getDeserializer(Handle.class).deserializeFailSafe("members"));
-    memberApp.setHome(URI.create("https://eraldy.com"));
-    memberApp.setOwnerUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
-    memberApp.setRealm(this.eraldyRealm);
-    return this.apiApp.getAppProvider().getsertOnStartup(memberApp)
+    AppInputProps appInputProps = new AppInputProps();
+    appInputProps.setName("Members");
+    appInputProps.setHandle(Handle.ofFailSafe("members"));
+    appInputProps.setHome(URI.create("https://eraldy.com"));
+
+    return this.apiApp.getAppProvider().getsertOnStartup(appInputProps, this.eraldyRealm, APP_MEMBER_ID)
       .compose(memberAppRes -> {
         /**
          * Create a client for the member App
@@ -161,14 +164,11 @@ public class EraldyModel {
         authClientProvider.addEraldyClient(memberClient);
         LOGGER.info("The client id (" + memberClient.getGuid() + ") for the member app was created");
 
-        App interactApp = new App();
-        interactApp.setLocalId(APP_INTERACT_ID);
+        AppInputProps interactApp = new AppInputProps();
         interactApp.setName("Interact");
         interactApp.setHandle(this.jacksonManager.getDeserializer(Handle.class).deserializeFailSafe("interact"));
         interactApp.setHome(URI.create("https://eraldy.com"));
-        interactApp.setOwnerUser(this.eraldyRealm.getOwnerUser()); // mandatory in the database (not null)
-        interactApp.setRealm(this.eraldyRealm);
-        return this.apiApp.getAppProvider().getsertOnStartup(interactApp);
+        return this.apiApp.getAppProvider().getsertOnStartup(interactApp, this.eraldyRealm, APP_INTERACT_ID);
       })
       .compose(interactAppRes -> {
         AuthClientProvider authClientProvider = this.apiApp.getAuthClientProvider();
@@ -231,9 +231,11 @@ public class EraldyModel {
 
 
           OrgaUser realmOwner = new OrgaUser();
-          realmOwner.setLocalId(OWNER_LOCAL_ID);
+          OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
+          orgaUserGuid.setLocalId(OWNER_LOCAL_ID);
+          orgaUserGuid.setOrganizationId(ORGA_LOCAL_ID);
           Realm realmForRealmOwner = new Realm();
-          realmForRealmOwner.setLocalId(REALM_LOCAL_ID);
+          this.apiApp.getRealmProvider().updateGuid(realmForRealmOwner,REALM_LOCAL_ID);
           realmOwner.setRealm(realmForRealmOwner);
           realmOwner.setOrgaRole(OrgaRole.OWNER);
 
@@ -294,7 +296,7 @@ public class EraldyModel {
 
                   OrgaUser ownerUser = eraldyRealm.getOwnerUser();
                   Future<OrgaUser> futureOwnerUser;
-                  if (ownerUser != null && !ownerUser.getLocalId().equals(OWNER_LOCAL_ID)) {
+                  if (ownerUser != null && ownerUser.getGuid().getLocalId()!=OWNER_LOCAL_ID) {
                     /**
                      * If the user has changed, we take it instead
                      */
@@ -376,8 +378,9 @@ public class EraldyModel {
 
   public URI getMemberListRegistrationPath(ListObject listObject) {
     String appGuidHash = this.jacksonManager.getSerializer(AppGuid.class).serialize(listObject.getApp().getGuid());
+    String listGuidHash = this.jacksonManager.getSerializer(ListGuid.class).serialize(listObject.getGuid());
     try {
-      return getMemberListRegistrationPath(appGuidHash, listObject.getGuid());
+      return getMemberListRegistrationPath(appGuidHash, listGuidHash);
     } catch (URISyntaxException e) {
       throw new InternalException("The URI should have been tested at build time of Eraldy Model", e);
     }

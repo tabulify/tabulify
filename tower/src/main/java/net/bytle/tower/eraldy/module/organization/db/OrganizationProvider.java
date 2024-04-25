@@ -12,6 +12,7 @@ import net.bytle.tower.eraldy.module.organization.inputs.OrganizationInputProps;
 import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaGuidDeserializer;
 import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaGuidSerializer;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Handle;
 import net.bytle.vertx.DateTimeService;
@@ -88,18 +89,15 @@ public class OrganizationProvider {
     organization.setCreationTime(row.getLocalDateTime(OrganizationCols.CREATION_TIME));
     organization.setHandle(Handle.ofFailSafe(row.getString(OrganizationCols.HANDLE)));
     organization.setName(row.getString(OrganizationCols.NAME));
-    organization.setLocalId(row.getLong(OrganizationCols.ID));
     organization.setModificationTime(row.getLocalDateTime(OrganizationCols.MODIFICATION_IME));
-
-    this.updateGuid(organization);
-
+    this.updateGuid(organization,row.getLong(OrganizationCols.ID));
     return Future.succeededFuture(clazz.cast(organization));
 
   }
 
-  private void updateGuid(Organization organization) {
+  public void updateGuid(Organization organization, Long orgaId) {
     OrgaGuid orgaGuid = new OrgaGuid();
-    orgaGuid.setLocalId(organization.getLocalId());
+    orgaGuid.setLocalId(orgaId);
     organization.setGuid(orgaGuid);
   }
 
@@ -135,7 +133,7 @@ public class OrganizationProvider {
     jdbcInsert.addColumn(OrganizationCols.CREATION_TIME, organization.getCreationTime());
 
     if (organizationId != null) {
-      organization.setLocalId(organizationId);
+      this.updateGuid(organization,organizationId);
       jdbcInsert.addColumn(OrganizationCols.ID, organizationId);
     }
 
@@ -147,11 +145,13 @@ public class OrganizationProvider {
     organization.setName(organizationInputProps.getName());
     jdbcInsert.addColumn(OrganizationCols.NAME, organization.getName());
 
-    OrgaUser orgaUser = new OrgaUser();
-    orgaUser.setLocalId(organizationInputProps.getOwnerGuid().getLocalId());
-    orgaUser.setRealm(this.apiApp.getEraldyModel().getRealm());
-    jdbcInsert.addColumn(OrganizationCols.OWNER_ID, orgaUser.getLocalId())
-      .addColumn(OrganizationCols.REALM_ID, orgaUser.getRealm().getLocalId());
+
+    OrgaUserGuid ownerGuid = organizationInputProps.getOwnerGuid();
+    OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(ownerGuid, this.apiApp.getEraldyModel().getRealm());
+    organization.setOwnerUser(ownerUser);
+    jdbcInsert
+      .addColumn(OrganizationCols.OWNER_ID, organization.getOwnerUser().getGuid().getLocalId())
+      .addColumn(OrganizationCols.REALM_ID, organization.getOwnerUser().getGuid().getRealmId());
 
     return jdbcInsert
       .addReturningColumn(OrganizationCols.ID)
@@ -162,8 +162,8 @@ public class OrganizationProvider {
         if (organizationId != null && !organizationId.equals(orgLocalId)) {
           return Future.failedFuture(new InternalException("The asked organization id (" + organizationId + ") was not the one inserted (" + orgLocalId + ")"));
         }
-        organization.setLocalId(orgLocalId);
-        this.updateGuid(organization);
+
+        this.updateGuid(organization, orgLocalId);
 
         return Future.succeededFuture(organization);
       });
@@ -174,4 +174,11 @@ public class OrganizationProvider {
   }
 
 
+  public Organization toOrganizationFromLocalId(Long orgaId) {
+    OrgaGuid orgaGuid = new OrgaGuid();
+    orgaGuid.setLocalId(orgaId);
+    Organization organization = new Organization();
+    organization.setGuid(orgaGuid);
+    return organization;
+  }
 }
