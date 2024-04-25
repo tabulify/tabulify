@@ -3,7 +3,6 @@ package net.bytle.tower.eraldy.module.organization.db;
 import io.vertx.core.Future;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.SqlConnection;
-import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
@@ -13,7 +12,6 @@ import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaGuidDeseria
 import net.bytle.tower.eraldy.module.organization.jackson.JacksonOrgaGuidSerializer;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
-import net.bytle.tower.util.Guid;
 import net.bytle.type.Handle;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.db.*;
@@ -53,17 +51,17 @@ public class OrganizationProvider {
   }
 
 
-  public Future<Organization> getById(OrgaGuid orgaId) {
-    return getById(orgaId, Organization.class);
+  public Future<Organization> getByGuid(OrgaGuid orgaId) {
+    return getByGuid(orgaId, Organization.class);
   }
 
   @SuppressWarnings("SameParameterValue")
-  private <T extends Organization> Future<T> getById(OrgaGuid orgaId, Class<T> clazz) {
+  private <T extends Organization> Future<T> getByGuid(OrgaGuid orgaId, Class<T> clazz) {
 
-    return jdbcPool.withConnection(sqlConnection -> getById(orgaId, clazz, sqlConnection));
+    return jdbcPool.withConnection(sqlConnection -> getByGuid(orgaId, clazz, sqlConnection));
   }
 
-  private <T extends Organization> Future<T> getById(OrgaGuid orgaId, Class<T> clazz, SqlConnection sqlConnection) {
+  private <T extends Organization> Future<T> getByGuid(OrgaGuid orgaId, Class<T> clazz, SqlConnection sqlConnection) {
 
     return JdbcSelect.from(this.orgaTable)
       .addEqualityPredicate(OrganizationCols.ID, orgaId)
@@ -95,16 +93,12 @@ public class OrganizationProvider {
 
   }
 
-  public Guid createGuidFromHash(String guid) throws CastException {
-    return apiApp.createGuidFromHashWithOneId(GUID_PREFIX, guid);
-  }
-
   /**
    * Getsert: Get or insert the user
    */
   public Future<Organization> getsert(OrgaGuid organizationId, OrganizationInputProps organizationInputProps, SqlConnection sqlConnection) {
 
-    return this.getById(organizationId, sqlConnection)
+    return this.getByGuid(organizationId, sqlConnection)
       .recover(t -> Future.failedFuture(new InternalException("Error while selecting the organization", t)))
       .compose(storedOrganization -> {
         if (storedOrganization != null) {
@@ -162,15 +156,9 @@ public class OrganizationProvider {
       });
   }
 
-  Future<Organization> getById(OrgaGuid localId, SqlConnection sqlConnection) {
-    return getById(localId, Organization.class, sqlConnection);
+  Future<Organization> getByGuid(OrgaGuid localId, SqlConnection sqlConnection) {
+    return getByGuid(localId, Organization.class, sqlConnection);
   }
 
-
-  public Organization toOrganizationFromLocalId(Long orgaId) {
-    Organization organization = new Organization();
-    organization.setGuid(new OrgaGuid(orgaId));
-    return organization;
-  }
 
 }

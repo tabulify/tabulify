@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.model.openapi;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.type.Handle;
 
 import java.time.LocalDateTime;
@@ -28,13 +29,24 @@ public class Organization   {
   protected LocalDateTime modificationTime;
   private OrgaUser ownerUser;
 
-  /**
-  * The empty constructor is
-  * needed for the construction of the pojo
-  * with the Jackson library
-  */
-  @SuppressWarnings("unused")
+
   public Organization () {
+
+  }
+
+  public static Organization createFromAnyId(long localId){
+    OrgaGuid orgaGuid = new OrgaGuid(localId);
+    return createFromAnyId(orgaGuid);
+  }
+
+  public static Organization createFromAnyId(OrgaGuid orgaGuid){
+    Organization organization = new Organization();
+    organization.setGuid(orgaGuid);
+    return organization;
+  }
+
+  public static Organization createFromAnyId(OrgaUserGuid orgaUserGuid) {
+    return createFromAnyId(orgaUserGuid.getOrganizationId());
   }
 
   /**

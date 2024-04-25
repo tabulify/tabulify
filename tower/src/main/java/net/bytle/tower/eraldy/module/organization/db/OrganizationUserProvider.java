@@ -136,7 +136,7 @@ public class OrganizationUserProvider {
     if (knownOrganization == null) {
       futureOrganization = apiApp
         .getOrganizationProvider()
-        .getById(new OrgaGuid(orgaId));
+        .getByGuid(new OrgaGuid(orgaId));
     } else {
       if (!knownOrganization.getGuid().getLocalId().equals(orgaId)) {
         return Future.failedFuture(new InternalException("Orga id between row (" + orgaId + ") and organization (" + knownOrganization.getGuid() + ") not consistent (ie not the same)"));
@@ -288,7 +288,7 @@ public class OrganizationUserProvider {
     /**
      * Orga
      */
-    Organization organization = this.apiApp.getOrganizationProvider().toOrganizationFromLocalId(orgaUserGuid.getOrganizationId());
+    Organization organization = Organization.createFromAnyId(orgaUserGuid);
     newOwner.setOrganization(organization);
 
     /**

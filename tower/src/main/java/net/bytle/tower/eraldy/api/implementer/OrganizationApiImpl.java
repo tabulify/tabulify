@@ -14,7 +14,7 @@ import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
-import net.bytle.tower.util.Guid;
+import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
@@ -39,9 +39,9 @@ public class OrganizationApiImpl implements OrganizationApi {
   @Override
   public Future<ApiResponse<List<OrgaUser>>> orgaOrgaUsersGet(RoutingContext routingContext, String orgaIdentifier) {
 
-    Guid guid;
+    OrgaGuid guid;
     try {
-      guid = this.apiApp.getOrganizationProvider().createGuidFromHash(orgaIdentifier);
+      guid = this.apiApp.getJackson().getDeserializer(OrgaGuid.class).deserialize(orgaIdentifier);
     } catch (CastException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
@@ -55,7 +55,7 @@ public class OrganizationApiImpl implements OrganizationApi {
       .checkOrgAuthorization(routingContext,orgaIdentifier, AuthUserScope.ORGA_USERS_GET)
       .compose(v-> this.apiApp
         .getOrganizationProvider()
-        .getById(guid.getRealmOrOrganizationId())
+        .getByGuid(guid)
       )
       .compose(org->{
         if(org==null){

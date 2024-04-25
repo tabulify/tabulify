@@ -26,11 +26,11 @@ public class JacksonRealmGuidDeserializer extends JacksonJsonStringDeserializer<
   public RealmGuid deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
 
     String value = p.getValueAsString();
-      try {
-          return this.deserialize(value);
-      } catch (CastException e) {
-          throw new RuntimeException(e.getMessage(),e);
-      }
+    try {
+      return this.deserialize(value);
+    } catch (CastException e) {
+      throw new RuntimeException(e.getMessage(), e);
+    }
 
   }
 
@@ -44,10 +44,7 @@ public class JacksonRealmGuidDeserializer extends JacksonJsonStringDeserializer<
       throw new CastException("The realm guid (" + value + ") is not valid. Error: " + e.getMessage(), e);
     }
 
-    RealmGuid realmGuid = new RealmGuid();
-    realmGuid.setLocalId(guid.getRealmOrOrganizationId());
-
-    return realmGuid;
+    return new RealmGuid(guid.getRealmOrOrganizationId());
   }
 
 }

@@ -103,23 +103,6 @@ public class RealmProvider {
   }
 
 
-  /**
-   * Compute the guid. This is another function
-   * to be sure that the object id and guid are consistent
-   *
-   * @param realm - the realm
-   */
-  public void updateGuid(Realm realm, long realmdId) {
-    if (realm.getGuid() != null) {
-      return;
-    }
-    RealmGuid realmGuid = new RealmGuid();
-    realmGuid.setLocalId(realmdId);
-    realm.setGuid(realmGuid);
-  }
-
-
-
   public Guid getGuidFromHash(String guid) throws CastException {
     return apiApp.createGuidFromHashWithOneId(REALM_GUID_PREFIX, guid);
   }
@@ -194,18 +177,18 @@ public class RealmProvider {
       .addColumn(RealmCols.CREATION_TIME, DateTimeService.getNowInUtc())
       .addReturningColumn(RealmCols.ID);
 
-    Realm realm = new Realm();
+    Realm realm;
     /**
      * the id may be known as it's the case
      * when inserting the fist Eraldy realm with the id 1
      */
     if (askedRealmId != null) {
-      RealmGuid realmGuid = new RealmGuid();
-      realmGuid.setLocalId(askedRealmId);
-      realm.setGuid(realmGuid);
+      realm = Realm.createFromAnyId(askedRealmId);
       jdbcInsert.addColumn(RealmCols.ID, realm.getGuid().getLocalId());
+    } else {
+        realm = new Realm();
     }
-    Handle handle = realmInputProps.getHandle();
+      Handle handle = realmInputProps.getHandle();
     if(handle!=null) {
       realm.setHandle(handle);
       jdbcInsert.addColumn(RealmCols.HANDLE, realm.getHandle().getValue());
@@ -243,12 +226,13 @@ public class RealmProvider {
           }
           return Future.failedFuture(new InternalException(error));
         }
-        this.updateGuid(realm,realmIdAfterInsertion);
+        realm.setGuid(new RealmGuid(realmIdAfterInsertion));
         return Future.succeededFuture(realm);
       });
   }
 
 
+  @SuppressWarnings("unused")
   private Future<Realm> updateRealm(Realm realm, RealmInputProps realmInputProps) {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.realmTable)
@@ -368,13 +352,13 @@ public class RealmProvider {
 
   public Realm getRealmFromDatabaseRow(JdbcRow row) {
 
-    Realm realm = new Realm();
+
 
     /**
      * Identifiers
      */
     Long realmId = row.getLong(RealmCols.ID);
-    this.updateGuid(realm,realmId);
+    Realm realm = Realm.createFromAnyId(realmId);
     realm.setHandle(Handle.ofFailSafe(row.getString(RealmCols.HANDLE)));
 
     /**
@@ -395,7 +379,7 @@ public class RealmProvider {
      * Org
      */
     Long orgaId = row.getLong(RealmCols.ORGA_ID);
-    Organization organization = this.apiApp.getOrganizationProvider().toOrganizationFromLocalId(orgaId);
+    Organization organization = Organization.createFromAnyId(orgaId);
     realm.setOrganization(organization);
 
     /**
@@ -546,6 +530,6 @@ public class RealmProvider {
       return Future.succeededFuture(realm.getOrganization());
     }
     return this.apiApp.getOrganizationProvider()
-      .getById(realm.getOrganization().getGuid().getLocalId());
+      .getByGuid(realm.getOrganization().getGuid());
   }
 }

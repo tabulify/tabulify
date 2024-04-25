@@ -12,11 +12,9 @@ import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.organization.inputs.OrgaUserInputProps;
 import net.bytle.tower.eraldy.module.organization.inputs.OrganizationInputProps;
-import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
-import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.type.Handle;
@@ -124,12 +122,8 @@ public class EraldyModel {
      * We can't use the providers utility now
      * as they are initialized later, we create the guids manually then
      */
-    Organization organization = new Organization();
-    organization.setGuid(new OrgaGuid(ORGA_LOCAL_ID));
-    this.eraldyRealm = new Realm();
-    RealmGuid realmGuid = new RealmGuid(ORGA_LOCAL_ID);
-    this.eraldyRealm.setGuid(realmGuid);
-    this.eraldyRealm.setOrganization(organization);
+    this.eraldyRealm = Realm.createFromAnyId(ORGA_LOCAL_ID);
+    this.eraldyRealm.setOrganization(Organization.createFromAnyId(ORGA_LOCAL_ID));
 
   }
 
