@@ -19,6 +19,7 @@ import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceDeseriali
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceSerializer;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.list.model.ListUserGuid;
+import net.bytle.tower.eraldy.module.realm.db.RealmCols;
 import net.bytle.tower.eraldy.module.user.db.UserCols;
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import net.bytle.tower.util.Guid;
@@ -91,6 +92,7 @@ public class ListUserProvider {
       .addPrimaryKeyColumn(ListUserCols.USER_ID)
       .addForeignKeyColumns(foreignKeysListColumn)
       .addForeignKeyColumns(foreignKeysUserColumn)
+      .addForeignKeyColumn(ListUserCols.REALM_ID, RealmCols.ID)
       .build();
 
 

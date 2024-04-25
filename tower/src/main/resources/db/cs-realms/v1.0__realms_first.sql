@@ -1,8 +1,8 @@
 -- Create orga
-CREATE SEQUENCE organization_sequence START WITH 2;
+CREATE SEQUENCE seq_organization START WITH 2;
 create table organization
 (
-  ORGA_ID                BIGINT                   NOT NULL DEFAULT NEXTVAL('organization_sequence') PRIMARY KEY,
+  ORGA_ID                BIGINT                      NOT NULL DEFAULT NEXTVAL('seq_organization') PRIMARY KEY,
   ORGA_NAME              varchar(255)                NOT NULL,
   ORGA_HANDLE            varchar(32)                 NULL UNIQUE,
   ORGA_OWNER_USER_ID     BIGINT                      NOT NULL UNIQUE,
@@ -14,7 +14,7 @@ comment on table organization is 'An organization is the owner of realms, app an
 
 create table organization_role
 (
-  ORGA_ROLE_ID                BIGSERIAL                   NOT NULL PRIMARY KEY,
+  ORGA_ROLE_ID                SERIAL                      NOT NULL PRIMARY KEY,
   ORGA_ROLE_NAME              varchar(255)                NOT NULL,
   ORGA_ROLE_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   ORGA_ROLE_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
@@ -35,12 +35,13 @@ comment on table organization_user is 'The users of the organization';
 comment on column organization_user.ORGA_USER_USER_ID is 'The user id of the realm id 1. It''s not a sequence';
 comment on column organization_user.ORGA_USER_REALM_ID is 'The Eraldy realm (1). The column is here to a foreign key to the realm user table';
 
-CREATE SEQUENCE realm_sequence START WITH 2;
+-- seq_realm and not realm_sequence because there is already a realm_sequence table
+CREATE SEQUENCE seq_realm START WITH 2;
 
 -- a list of all realm
 create table IF NOT EXISTS realm
 (
-  REALM_ID                BIGINT                      NOT NULL DEFAULT NEXTVAL('realm_sequence') PRIMARY KEY,
+  REALM_ID                BIGINT                      NOT NULL DEFAULT NEXTVAL('seq_realm') PRIMARY KEY,
   REALM_NAME              varchar(50)                 NOT NULL,
   REALM_HANDLE            varchar(32)                 NULL UNIQUE,
   REALM_ORGA_ID           BIGINT                      NOT NULL REFERENCES organization,
@@ -264,9 +265,9 @@ comment on column realm_mailing.MAILING_EMAIL_PREVIEW is 'The email preview';
 comment on column realm_mailing.MAILING_EMAIL_BODY is 'The email body';
 comment on column realm_mailing.MAILING_EMAIL_AUTHOR_USER_ID is 'The author of the email (An organizational user, the id of the user in the realm 1)';
 comment on column realm_mailing.MAILING_STATUS is 'The status (draft, send, scheduled, ...)';
-comment on column realm_mailing.mailing_job_last_execution_time is 'The last time a job was executed for this mailing';
-comment on column realm_mailing.mailing_job_next_execution_time is 'The next time that a job will execute for this mailing';
-comment on column realm_mailing.mailing_item_count is 'The number of emails (ie users/email/row) for this mailing to send';
-comment on column realm_mailing.mailing_item_success_count is 'The number of email send successfully (ie successful smtp transaction)';
-comment on column realm_mailing.mailing_item_execution_count is 'The number of smtp transfer execution (successful or not)';
-comment on column realm_mailing.mailing_email_language is 'The language of the email (used in assistive technology)';
+comment on column realm_mailing.MAILING_JOB_LAST_EXECUTION_TIME is 'The last time a job was executed for this mailing';
+comment on column realm_mailing.MAILING_JOB_NEXT_EXECUTION_TIME is 'The next time that a job will execute for this mailing';
+comment on column realm_mailing.MAILING_ITEM_COUNT is 'The number of emails (ie users/email/row) for this mailing to send';
+comment on column realm_mailing.MAILING_ITEM_SUCCESS_COUNT is 'The number of email send successfully (ie successful smtp transaction)';
+comment on column realm_mailing.MAILING_ITEM_EXECUTION_COUNT is 'The number of smtp transfer execution (successful or not)';
+comment on column realm_mailing.MAILING_EMAIL_LANGUAGE is 'The language of the email (used in assistive technology)';
