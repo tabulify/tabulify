@@ -119,8 +119,7 @@ public class MailingItemProvider {
     /**
      * Realm
      */
-    Realm realm = new Realm();
-    this.apiApp.getRealmProvider().updateGuid(realm,jdbcRow.getLong(MailingItemCols.REALM_ID));
+    Realm realm = Realm.createFromAnyId(jdbcRow.getLong(MailingItemCols.REALM_ID));
 
     /**
      * Mailing

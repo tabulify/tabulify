@@ -167,8 +167,7 @@ public class MailingJobProvider {
       }
     } else {
       // Build it
-      Realm realm = new Realm();
-      this.apiApp.getRealmProvider().updateGuid(realm,realmLocalId);
+      Realm realm = Realm.createFromAnyId(realmLocalId);
       mailing = new Mailing();
       mailing.setLocalId(mailingLocalId);
       mailing.setRealm(realm);
