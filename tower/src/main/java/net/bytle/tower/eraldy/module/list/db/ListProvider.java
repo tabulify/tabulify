@@ -79,6 +79,7 @@ public class ListProvider {
       .addSerializer(ListGuid.class, new JacksonListGuidSerializer(apiApp))
       .addSerializer(ListImportListUserStatus.class, new JacksonStatusSerializer())
       .addSerializer(ListImportUserAction.class, new JacksonStatusSerializer())
+      .addSerializer(ListUserSource.class, new JacksonStatusSerializer())
     ;
 
     this.apiMapper = server.getJacksonMapperManager()
@@ -441,7 +442,7 @@ public class ListProvider {
 
   public Future<java.util.List<ListSummary>> getListsSummary(Realm realm) {
 
-    String sql = "SELECT list.list_id, list.list_handle, app.app_uri, count(realm_list_user.list_user_user_id) user_count\n" +
+    String sql = "SELECT list.list_id, list.list_handle, app.app_id, app.app_name, count(realm_list_user.list_user_user_id) user_count\n" +
       "FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " list \n" +
       " LEFT JOIN " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + " realm_list_user\n" +
@@ -449,7 +450,7 @@ public class ListProvider {
       " JOIN " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + AppProvider.APP_TABLE_NAME + " app\n" +
       "    on list.list_app_id = app.app_id\n" +
       "where list.list_realm_id = $1\n" +
-      "group by list.list_id, list.list_handle, app.app_uri";
+      "group by list.list_id, list.list_handle, app.app_id, app.app_name";
     return jdbcPool.preparedQuery(sql)
       .execute(Tuple.of(realm.getGuid().getLocalId()))
       .recover(err -> FailureStatic.SqlFailFuture("List Summary", sql, err))
@@ -468,9 +469,9 @@ public class ListProvider {
           String listHandle = row.getString(LIST_HANDLE_COLUMN);
           listSummary.setHandle(listHandle);
 
-          // App Uri
-          String appUri = row.getString("app_uri");
-          listSummary.setAppUri(appUri);
+          // App Name
+          String appName = row.getString("app_name");
+          listSummary.setAppUri(appName);
 
           // Publication Name
           Integer subscriberCount = row.getInteger("subscriber_count");

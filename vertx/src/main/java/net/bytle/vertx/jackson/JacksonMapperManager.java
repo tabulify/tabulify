@@ -17,6 +17,7 @@ import net.bytle.vertx.jackson.deser.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.net.InetAddress;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,7 +67,10 @@ public class JacksonMapperManager extends TowerService {
       .addSerializer(TimeZone.class, new JacksonTimeZoneSerializer())
       .addDeserializer(TimeZone.class, new JacksonTimeZoneDeserializer())
       .addDeserializer(Handle.class, new JacksonHandleDeserializer())
-      .addSerializer(Handle.class, new JacksonHandleSerializer());
+      .addSerializer(Handle.class, new JacksonHandleSerializer())
+      .addDeserializer(InetAddress.class, new JacksonInetAddressDeserializer())
+      .addSerializer(InetAddress.class, new JacksonInetAddressSerializer())
+    ;
 
   }
 

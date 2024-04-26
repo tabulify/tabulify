@@ -29,6 +29,7 @@ import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -106,7 +107,7 @@ public class ListUserProvider {
     assert Objects.equals(listUser.getUser().getRealm(), listUser.getList().getApp().getRealm()) : "The realm is not the same on the user and on the list";
 
     ListUserGuid guid = new ListUserGuid();
-    guid.setRealmId(listUser.getUser().getRealm().getGuid().getLocalId());
+    guid.setRealmId(listUser.getList().getApp().getRealm().getGuid().getLocalId());
     guid.setListId(listUser.getList().getGuid().getLocalId());
     guid.setUserId(listUser.getUser().getGuid().getLocalId());
     listUser.setGuid(guid);
@@ -219,11 +220,16 @@ public class ListUserProvider {
 
     ListUser listUser = new ListUser();
 
+    Realm realm = Realm.createFromAnyId(realmId);
+
     ListObject list = new ListObject();
     ListGuid listGuid = new ListGuid();
     listGuid.setRealmId(realmId);
     listGuid.setLocalId(listId);
     list.setGuid(listGuid);
+    App app = new App();
+    app.setRealm(realm);
+    list.setApp(app);
     listUser.setList(list);
 
     User user = new User();
@@ -231,6 +237,7 @@ public class ListUserProvider {
     userGuid.setRealmId(realmId);
     userGuid.setLocalId(userId);
     user.setGuid(userGuid);
+    user.setRealm(realm);
     listUser.setUser(user);
 
     this.updateGuid(listUser);
@@ -241,9 +248,9 @@ public class ListUserProvider {
     listUser.setModificationTime(row.getLocalDateTime(ListUserCols.MODIFICATION_TIME));
     listUser.setInSourceId(ListUserSource.fromValue(row.getInteger(ListUserCols.IN_SOURCE_ID)));
     listUser.setInOptInOrigin(row.getString(ListUserCols.IN_OPT_IN_ORIGIN));
-    listUser.setInOptInIp(row.getString(ListUserCols.IN_OPT_IN_IP));
+    listUser.setInOptInIp(this.apiApp.getJackson().getDeserializer(InetAddress.class).deserializeFailSafe(row.getString(ListUserCols.IN_OPT_IN_IP)));
     listUser.setInOptInTime(row.getLocalDateTime(ListUserCols.IN_OPT_IN_TIME));
-    listUser.setInOptInConfirmationIp(row.getString(ListUserCols.IN_OPT_IN_CONFIRMATION_IP));
+    listUser.setInOptInConfirmationIp(this.apiApp.getJackson().getDeserializer(InetAddress.class).deserializeFailSafe(row.getString(ListUserCols.IN_OPT_IN_CONFIRMATION_IP)));
     listUser.setInOptInConfirmationTime(row.getLocalDateTime(ListUserCols.IN_OPT_IN_CONFIRMATION_TIME));
 
     return listUser;

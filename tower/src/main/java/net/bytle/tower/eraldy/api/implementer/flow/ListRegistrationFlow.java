@@ -34,7 +34,10 @@ import net.bytle.vertx.flow.WebFlowAbs;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.xbill.DNS.Address;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,7 +82,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param optInIp          - the opt-in-ip
    * @param listUserSource - the flow used to register the user to the list
    */
-  public Future<ListUser> createListUserEntry(RoutingContext ctx, ListGuid listGuid, User user, LocalDateTime optInTime, String optInIp, ListUserSource listUserSource) {
+  public Future<ListUser> createListUserEntry(RoutingContext ctx, ListGuid listGuid, User user, LocalDateTime optInTime, InetAddress optInIp, ListUserSource listUserSource) {
 
     return this.getApp()
       .getListProvider()
@@ -92,7 +95,11 @@ public class ListRegistrationFlow extends WebFlowAbs {
         listUserInputProps.setInOptInIp(optInIp);
         try {
           String realRemoteClient = HttpRequestUtil.getRealRemoteClientIp(ctx.request());
-          listUserInputProps.setInOptInConfirmationIp(realRemoteClient);
+          try {
+            listUserInputProps.setInOptInConfirmationIp(Address.getByAddress(realRemoteClient));
+          } catch (UnknownHostException e) {
+            LOGGER.warn("List registration validation: The remote ip client value (" + realRemoteClient + ") is not valid. Error: " + e.getMessage());
+          }
         } catch (NotFoundException e) {
           LOGGER.warn("List registration validation: The remote ip client could not be found. Error: " + e.getMessage());
         }
@@ -128,9 +135,6 @@ public class ListRegistrationFlow extends WebFlowAbs {
         .buildWithContextFailing(routingContext)
       );
     }
-
-
-
 
 
     /**
@@ -294,12 +298,16 @@ public class ListRegistrationFlow extends WebFlowAbs {
     }
 
     LocalDateTime optInTime = jwtClaims.getIssuedAt().toLocalDateTime();
-    String optInIp;
+    InetAddress optInIp = null;
     try {
-      optInIp = jwtClaims.getOriginClientIp();
+      String optInIpString = jwtClaims.getOriginClientIp();
+      try {
+        optInIp = Address.getByAddress(optInIpString);
+      } catch (UnknownHostException e) {
+        LOGGER.error("The opt-in ip of the Jwt Claims ("+optInIpString+") is not valid. Error: "+e.getMessage(),e);
+      }
     } catch (NullValueException e) {
       LOGGER.error("The opt-in ip of the Jwt Claims is null");
-      optInIp = "";
     }
 
     AuthUser authUser = jwtClaims.toAuthUser();
@@ -328,7 +336,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       return;
     }
 
-    String finalOptInIp = optInIp;
+    InetAddress finalOptInIp = optInIp;
 
     AuthProvider authProvider = getApp().getAuthProvider();
 
@@ -425,13 +433,16 @@ public class ListRegistrationFlow extends WebFlowAbs {
        * A list registration
        */
       LocalDateTime optInTime = LocalDateTime.now();
-      String optInIp;
+      InetAddress optInIp = null;
       try {
-
-        optInIp = HttpRequestUtil.getRealRemoteClientIp(ctx.request());
+        String optInIpString = HttpRequestUtil.getRealRemoteClientIp(ctx.request());
+        try {
+          optInIp = Address.getByAddress(optInIpString);
+        } catch (UnknownHostException e) {
+          LOGGER.warn("Oauth List registration: The remote ip client ("+optInIpString+") is not valid. Error: " + e.getMessage(),e);
+        }
       } catch (NotFoundException e) {
         LOGGER.warn("Oauth List registration: The remote ip client could not be found. Error: " + e.getMessage());
-        optInIp = "";
       }
 
       User user = this.getApp().getAuthProvider().toModelUser(authUser);

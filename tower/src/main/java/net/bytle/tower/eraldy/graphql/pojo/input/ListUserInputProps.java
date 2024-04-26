@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.model.openapi.ListUserSource;
 import net.bytle.tower.eraldy.model.openapi.ListUserStatus;
 
+import java.net.InetAddress;
 import java.time.LocalDateTime;
 
 /**
@@ -22,11 +23,11 @@ public class ListUserInputProps {
 
   protected LocalDateTime inOptInConfirmationTime;
 
-  protected String inOptInConfirmationIp;
+  protected InetAddress inOptInConfirmationIp;
 
   protected LocalDateTime inOptInTime;
 
-  protected String inOptInIp;
+  protected InetAddress inOptInIp;
 
 
 
@@ -115,7 +116,7 @@ public class ListUserInputProps {
   */
   @com.fasterxml.jackson.annotation.JsonAlias({"confirmationIp"})
   @JsonProperty("inOptInConfirmationIp")
-  public String getInOptInConfirmationIp() {
+  public InetAddress getInOptInConfirmationIp() {
     return inOptInConfirmationIp;
   }
 
@@ -123,7 +124,7 @@ public class ListUserInputProps {
   * @param inOptInConfirmationIp The confirmation ip
   */
   @SuppressWarnings("unused")
-  public void setInOptInConfirmationIp(String inOptInConfirmationIp) {
+  public void setInOptInConfirmationIp(InetAddress inOptInConfirmationIp) {
     this.inOptInConfirmationIp = inOptInConfirmationIp;
   }
 
@@ -149,7 +150,7 @@ public class ListUserInputProps {
   */
   @com.fasterxml.jackson.annotation.JsonAlias({"optInIp"})
   @JsonProperty("inOptInIp")
-  public String getInOptInIp() {
+  public InetAddress getInOptInIp() {
     return inOptInIp;
   }
 
@@ -157,7 +158,7 @@ public class ListUserInputProps {
   * @param inOptInIp The opt-in ip
   */
   @SuppressWarnings("unused")
-  public void setInOptInIp(String inOptInIp) {
+  public void setInOptInIp(InetAddress inOptInIp) {
     this.inOptInIp = inOptInIp;
   }
 

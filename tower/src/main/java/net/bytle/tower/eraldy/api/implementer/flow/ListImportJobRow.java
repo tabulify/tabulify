@@ -190,7 +190,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                       } catch (DnsException e) {
                         return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInIp (" + optInIp + ") is not a valid ipv4 or ipv6.");
                       }
-                      listUserInsertionProps.setInOptInIp(optInIpAsDnsIp.getAddress());
+                      listUserInsertionProps.setInOptInIp(optInIpAsDnsIp.getInetAddress());
                     }
                     if (optInTime != null) {
                       LocalDateTime optInTimeAsObject;
@@ -208,7 +208,7 @@ public class ListImportJobRow implements Handler<Promise<ListImportJobRow>> {
                       } catch (DnsException e) {
                         return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmIp (" + confirmIp + ") is not a valid ipv4 or ipv6.");
                       }
-                      listUserInsertionProps.setInOptInConfirmationIp(confirmIpAsDnsIp.getAddress());
+                      listUserInsertionProps.setInOptInConfirmationIp(confirmIpAsDnsIp.getInetAddress());
                     }
                     if (confirmTime != null) {
                       LocalDateTime confirmTimeAsObject;
