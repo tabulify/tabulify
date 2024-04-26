@@ -17,6 +17,7 @@ import net.bytle.tower.eraldy.mixin.*;
 import net.bytle.tower.eraldy.model.manual.Status;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputProps;
 import net.bytle.tower.eraldy.module.mailing.jackson.JacksonMailingStatusDeserializer;
@@ -149,9 +150,12 @@ public class MailingProvider {
         mailing.setStatus(MailingStatus.OPEN);
         jdbcInsert.addColumn(MailingCols.STATUS_CODE, mailing.getStatus().getCode());
 
-        // creation time
-        mailing.setCreationTime(DateTimeService.getNowInUtc());
+        // creation/modification time
+        LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
+        mailing.setCreationTime(nowInUtc);
         jdbcInsert.addColumn(MailingCols.CREATION_TIME, mailing.getCreationTime());
+        mailing.setModificationTime(nowInUtc);
+        jdbcInsert.addColumn(MailingCols.MODIFICATION_TIME, mailing.getModificationTime());
 
         // realm
         mailing.setRealm(list.getApp().getRealm());
@@ -268,7 +272,11 @@ public class MailingProvider {
      */
     Long listId = row.getLong(MailingCols.EMAIL_RCPT_LIST_ID);
     ListObject recipientList = new ListObject();
-    this.apiApp.getListProvider().updateGuid(recipientList, listId);
+    ListGuid listGuid = new ListGuid();
+    listGuid.setRealmId(realm.getGuid().getLocalId());
+    listGuid.setLocalId(listId);
+    recipientList.setGuid(listGuid);
+    // app is also set to pass the realm, used when the list is build by graphql
     App app = new App();
     app.setRealm(realm);
     recipientList.setApp(app);
