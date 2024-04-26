@@ -1,10 +1,12 @@
 package net.bytle.tower.eraldy.module.list.graphql;
 
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLScalarType;
 import graphql.schema.idl.RuntimeWiring;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.App;
@@ -24,7 +26,19 @@ public class ListGraphQLImpl {
 
   public ListGraphQLImpl(EraldyGraphQL eraldyGraphQL, RuntimeWiring.Builder typeWiringBuilder) {
 
-    this.listProvider = eraldyGraphQL.getApp().getListProvider();
+    EraldyApiApp app = eraldyGraphQL.getApp();
+    this.listProvider = app.getListProvider();
+
+    /**
+     * Scalars
+     */
+    final GraphQLScalarType LIST_GUID = GraphQLScalarType
+      .newScalar()
+      .name("ListGuid")
+      .description("The Guid for a list")
+      .coercing(new GraphQLListGuidCoercing(app.getJackson()))
+      .build();
+    typeWiringBuilder.scalar(LIST_GUID);
 
     /**
      * Map type to function

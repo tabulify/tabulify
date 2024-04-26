@@ -23,6 +23,7 @@ import net.bytle.tower.eraldy.module.app.db.AppProvider;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListGuidDeserializer;
+import net.bytle.tower.eraldy.module.list.jackson.JacksonListGuidSerializer;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationUserProvider;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
@@ -71,7 +72,9 @@ public class ListProvider {
     this.jdbcPool = jdbcSchema.getJdbcClient().getPool();
 
     server.getJacksonMapperManager()
-      .addDeserializer(ListGuid.class, new JacksonListGuidDeserializer(apiApp));
+      .addDeserializer(ListGuid.class, new JacksonListGuidDeserializer(apiApp))
+      .addSerializer(ListGuid.class, new JacksonListGuidSerializer(apiApp))
+    ;
 
     this.apiMapper = server.getJacksonMapperManager()
       .jsonMapperBuilder()
@@ -102,7 +105,7 @@ public class ListProvider {
     }
     ListGuid listGuid = new ListGuid();
     listGuid.setLocalId(listId);
-    listGuid.setRealmId(listObject.getGuid().getRealmId());
+    listGuid.setRealmId(listObject.getApp().getGuid().getRealmId());
     listObject.setGuid(listGuid);
   }
 
@@ -212,8 +215,6 @@ public class ListProvider {
         newList.setModificationTime(nowInUtc);
         jdbcInsert.addColumn(ListCols.MODIFICATION_TIME, newList.getModificationTime());
 
-        URI memberListRegistrationPath = this.apiApp.getEraldyModel().getMemberListRegistrationPath(newList);
-        newList.setRegistrationUrl(memberListRegistrationPath);
 
         return jdbcPool
           .withTransaction(sqlConnection ->
@@ -224,6 +225,11 @@ public class ListProvider {
                 this.updateGuid(newList, nextId);
                 jdbcInsert.addColumn(ListCols.ID, newList.getGuid().getLocalId());
 
+                /**
+                 * After the guid as it's needed to create the URL
+                 */
+                URI memberListRegistrationPath = this.apiApp.getEraldyModel().getMemberListRegistrationPath(newList);
+                newList.setRegistrationUrl(memberListRegistrationPath);
 
                 return jdbcInsert.execute(sqlConnection);
               })
