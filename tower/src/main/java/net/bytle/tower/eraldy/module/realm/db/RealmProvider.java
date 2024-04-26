@@ -104,18 +104,8 @@ public class RealmProvider {
   }
 
 
-  public Guid getGuidFromHash(String guid) throws CastException {
-    return apiApp.createGuidFromHashWithOneId(REALM_GUID_PREFIX, guid);
-  }
-
-
   Guid getGuidFromLong(Long realmId) {
     return apiApp.createGuidFromObjectId(REALM_GUID_PREFIX, realmId);
-  }
-
-
-  public boolean isRealmGuidIdentifier(String realmIdentifier) {
-    return realmIdentifier.startsWith(REALM_GUID_PREFIX + Guid.GUID_SEPARATOR);
   }
 
 
@@ -186,11 +176,11 @@ public class RealmProvider {
       realm = Realm.createFromAnyId(askedRealmId);
       jdbcInsert.addColumn(RealmCols.ID, realm.getGuid().getLocalId());
     } else {
-        realm = new Realm();
+      realm = new Realm();
     }
-      Handle handle = realmInputProps.getHandle();
+    Handle handle = realmInputProps.getHandle();
 
-    if(handle!=null) {
+    if (handle != null) {
       realm.setHandle(handle);
       jdbcInsert.addColumn(RealmCols.HANDLE, realm.getHandle().getValue());
     }
@@ -360,7 +350,6 @@ public class RealmProvider {
   public Realm getRealmFromDatabaseRow(JdbcRow row) {
 
 
-
     /**
      * Identifiers
      */
@@ -409,14 +398,9 @@ public class RealmProvider {
 
   }
 
-  private Future<Realm> getRealmFromGuid(String guid) {
-    long realmId;
-    try {
-      realmId = this.getGuidFromHash(guid).getRealmOrOrganizationId();
-    } catch (CastException e) {
-      return Future.failedFuture(e);
-    }
-    return getRealmFromLocalId(realmId);
+  public Future<Realm> getRealmFromGuid(RealmGuid guid) {
+
+    return getRealmFromLocalId(guid.getLocalId());
   }
 
   public Future<List<RealmWithAppUris>> getRealmsWithAppUris() {
@@ -466,18 +450,22 @@ public class RealmProvider {
 
   public Future<Realm> getRealmFromIdentifier(String realmIdentifier) {
 
-    if (this.isRealmGuidIdentifier(realmIdentifier)) {
-      return getRealmFromGuid(realmIdentifier);
+    try {
+      RealmGuid realmGuid = this.apiApp.getJackson().getDeserializer(RealmGuid.class).deserialize(realmIdentifier);
+      return getRealmFromGuid(realmGuid);
+    } catch (CastException e) {
+      //
     }
-      try {
-          return getRealmFromHandle(Handle.of(realmIdentifier));
-      } catch (HandleCastException e) {
-          return Future.failedFuture(TowerFailureException
-            .builder()
-            .setMessage("The realm identifier ("+realmIdentifier+") is not a guid, nor a valid handle. Message: "+e.getMessage())
-            .build()
-          );
-      }
+
+    try {
+      return getRealmFromHandle(Handle.of(realmIdentifier));
+    } catch (HandleCastException e) {
+      return Future.failedFuture(TowerFailureException
+        .builder()
+        .setMessage("The realm identifier (" + realmIdentifier + ") is not a guid, nor a valid handle. Message: " + e.getMessage())
+        .build()
+      );
+    }
 
   }
 
@@ -538,7 +526,7 @@ public class RealmProvider {
   }
 
   public Future<Organization> buildOrganizationAtRequestTimeEventually(Realm realm) {
-    if(realm.getOrganization().getName()!=null){
+    if (realm.getOrganization().getName() != null) {
       return Future.succeededFuture(realm.getOrganization());
     }
     return this.apiApp.getOrganizationProvider()

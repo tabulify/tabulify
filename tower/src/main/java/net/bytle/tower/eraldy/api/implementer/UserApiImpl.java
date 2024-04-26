@@ -117,19 +117,19 @@ public class UserApiImpl implements UserApi {
           .build()
       );
     }
+    User signedInUser = this.apiApp.getAuthProvider().toModelUser(authSignedInUser);
 
-    String realmGuid = authSignedInUser.getRealmGuid();
     return apiApp.getRealmProvider()
-      .getRealmFromIdentifier(realmGuid)
+      .getRealmFromGuid(signedInUser.getRealm().getGuid())
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(TowerFailureException.builder()
-            .setMessage("The realm (" + realmGuid + ") was not found")
+            .setMessage("The realm (" + signedInUser.getRealm().getGuid() + ") was not found")
             .build()
           );
         }
         return apiApp.getUserProvider()
-          .getUserByGuid(authSignedInUser.getSubject(), realm)
+          .getUserByGuid(signedInUser.getGuid(), realm)
           .compose(user -> {
             ApiResponse<User> userApiResponse = new ApiResponse<>(user)
               .setMapper(apiApp.getUserProvider().getApiMapper());

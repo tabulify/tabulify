@@ -545,7 +545,7 @@ public class UserProvider {
     }
 
     if (realm == null) {
-      return Future.failedFuture(new InternalException("With a user email (" + identifier + ") as user identifier, the realm should be provided"));
+      return Future.failedFuture(new InternalException("Without a user guid (" + identifier + ") as user identifier, the realm should be provided"));
     }
     EmailAddress email;
     try {
