@@ -17,6 +17,7 @@ import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.module.app.db.AppProvider;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthQueryProperty;
@@ -113,7 +114,7 @@ public class AuthClientHandler extends TowerService implements Handler<RoutingCo
 
   private AuthClientHandler(Config config) {
     super(config.apiApp.getHttpServer().getServer());
-    this.httpServer= config.apiApp.getHttpServer();
+    this.httpServer = config.apiApp.getHttpServer();
     this.apiApp = config.apiApp;
     this.realmGuidContextKey = config.realmGuidContextKey;
     this.realmHandleContextKey = config.realmHandleContextKey;
@@ -307,8 +308,9 @@ public class AuthClientHandler extends TowerService implements Handler<RoutingCo
                * in the session handler.
                */
               Realm realm = finalAuthClient.getApp().getRealm();
-              context.put(this.realmGuidContextKey, realm.getGuid());
-              context.put(this.realmHandleContextKey, realm.getHandle());
+              String realmGuidHash = this.apiApp.getJackson().getSerializer(RealmGuid.class).serialize(realm.getGuid());
+              context.put(this.realmGuidContextKey, realmGuidHash);
+              context.put(this.realmHandleContextKey, realm.getHandle().getValue());
 
               /**
                * We set the authCli data in a cookie for the member app.

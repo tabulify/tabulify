@@ -344,7 +344,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         }
         futureFinaleAuthSessionUser
           .onFailure(ctx::fail)
-          .onSuccess(finalAuthSessionUser -> createListUserEntry(ctx, listGuidObject, authProvider.toBaseModelUser(finalAuthSessionUser), optInTime, finalOptInIp, ListUserSource.EMAIL)
+          .onSuccess(finalAuthSessionUser -> createListUserEntry(ctx, listGuidObject, authProvider.toModelUser(finalAuthSessionUser), optInTime, finalOptInIp, ListUserSource.EMAIL)
             .onFailure(ctx::fail)
             .onSuccess(listUser -> {
               String jwtRedirectUri = jwtClaims.getRedirectUri().toString();
@@ -434,7 +434,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         optInIp = "";
       }
 
-      User user = this.getApp().getAuthProvider().toBaseModelUser(authUser);
+      User user = this.getApp().getAuthProvider().toModelUser(authUser);
       this.createListUserEntry(ctx, listGuidObject, user, optInTime, optInIp, ListUserSource.OAUTH)
         .onFailure(err -> authContext.getRoutingContext().fail(err))
         .onSuccess(listUser -> {

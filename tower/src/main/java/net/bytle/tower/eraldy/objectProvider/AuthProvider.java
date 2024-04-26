@@ -14,6 +14,7 @@ import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
@@ -66,7 +67,11 @@ public class AuthProvider {
    */
   private OrgaUser getSignedInOrganizationalUserOrThrows(RoutingContext routingContext) throws NotFoundException, NotSignedInOrganizationUser {
     AuthUser authUser = this.getSignedInAuthUser(routingContext);
-    return toModelUser(authUser);
+    User user = toModelUser(authUser);
+    if (user instanceof OrgaUser) {
+      return (OrgaUser) user;
+    }
+    throw new NotSignedInOrganizationUser("The user (" + user + ") is not an organizational user");
   }
 
   /**
@@ -98,28 +103,49 @@ public class AuthProvider {
    * Return a valid model user from an authUser
    * The authUser should be a valid user in the database (not an oauth token)
    */
-  private <T extends User> T toModelUser(AuthUser authUser) throws NotSignedInOrganizationUser {
+  public <T extends User> T toModelUser(AuthUser authUser) {
 
     /**
      * Organization
      */
-    String organizationGuidString = authUser.getOrganizationGuid();
-    T user;
-    if (organizationGuidString != null) {
 
-      //noinspection unchecked
-      user = (T) new OrgaUser();
-
-      OrgaGuid orgaGuidObject = this.apiApp.getJackson().getDeserializer(OrgaGuid.class).deserializeFailSafe(organizationGuidString);
-      Organization organization = new Organization();
-      organization.setGuid(orgaGuidObject);
-      organization.setHandle(Handle.ofFailSafe(authUser.getOrganizationHandle()));
-      ((OrgaUser) user).setOrganization(organization);
-
-    } else {
-      //noinspection unchecked
-      user = (T) new User();
+    String subject = authUser.getSubject();
+    if (subject == null) {
+      throw new InternalException("The subject (user guid) values should not be null");
     }
+    T user;
+    try {
+      OrgaUserGuid guid = this.apiApp.getJackson().getDeserializer(OrgaUserGuid.class).deserialize(subject);
+      //noinspection unchecked
+      user = (T) this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(guid, null);
+    } catch (CastException e) {
+
+      try {
+        UserGuid guid = this.apiApp.getJackson().getDeserializer(UserGuid.class).deserialize(subject);
+        //noinspection unchecked
+        user = (T) new User();
+        user.setGuid(guid);
+
+      } catch (CastException ex) {
+        throw new InternalException("The subject (user guid) is not valid user or orga user guid (" + subject + ")");
+      }
+    }
+
+    String organizationGuidString = authUser.getOrganizationGuid();
+    Organization organization;
+
+
+    /**
+     * Realm Organization
+     */
+    OrgaGuid orgaGuidObject = this.apiApp.getJackson().getDeserializer(OrgaGuid.class).deserializeFailSafe(organizationGuidString);
+    organization = new Organization();
+    organization.setGuid(orgaGuidObject);
+    String organizationHandle = authUser.getOrganizationHandle();
+    if (organizationHandle != null) {
+      organization.setHandle(Handle.ofFailSafe(organizationHandle));
+    }
+
 
     /**
      * Realm / Audience
@@ -127,6 +153,7 @@ public class AuthProvider {
      * First because it's in the user guid
      */
     Realm realm = new Realm();
+    realm.setOrganization(organization);
     String audience = authUser.getAudience();
     if (audience == null) {
       throw new InternalException("The audience/realm guid should not be null for a user");
@@ -134,10 +161,6 @@ public class AuthProvider {
     RealmGuid realmGuid = this.apiApp.getJackson().getDeserializer(RealmGuid.class).deserializeFailSafe(audience);
     realm.setGuid(realmGuid);
 
-    long realmId = realmGuid.getLocalId();
-    if (user instanceof OrgaUser && realmId != EraldyModel.REALM_LOCAL_ID) {
-      throw new InternalException("An orga user should have the Eraldy realm, not the realm (" + realmId + ")");
-    }
     String audienceHandle = authUser.getAudienceHandle();
     if (audienceHandle != null) {
       realm.setHandle(Handle.ofFailSafe(audienceHandle));
@@ -149,16 +172,7 @@ public class AuthProvider {
      */
     EmailAddress subjectEmail = EmailAddress.ofFailSafe(authUser.getSubjectEmail());
     user.setEmailAddress(subjectEmail);
-    String subject = authUser.getSubject();
-    if (subject == null) {
-      throw new InternalException("The subject (user guid) values should not be null");
-    }
-    try {
-      UserGuid guid = this.apiApp.getUserProvider().getGuidFromHash(subject);
-      user.setGuid(guid);
-    } catch (CastException e) {
-      throw new InternalException("The user guid is not valid", e);
-    }
+
 
     /**
      * Other attributes
@@ -181,24 +195,6 @@ public class AuthProvider {
 
   }
 
-  /**
-   * A utility map to transform into a user to calculate
-   * the identifier
-   *
-   * @param authUser - the auth user
-   * @return a user with the ids
-   */
-  public User toBaseModelUser(AuthUser authUser) {
-
-    try {
-      return toModelUser(authUser);
-    } catch (NotSignedInOrganizationUser e) {
-      // the exception is for an organizational user
-      // it should not happen as we ask a model user
-      throw new InternalException("The auth user could not be retrieved as base user", e);
-    }
-
-  }
 
   public Future<User> getSignedInBaseUserOrFail(RoutingContext routingContext) {
     try {
@@ -214,14 +210,10 @@ public class AuthProvider {
   }
 
   private User getSignedInBaseUserOrThrow(RoutingContext routingContext) throws NotFoundException {
+
     AuthUser authUser = this.getSignedInAuthUser(routingContext);
-    try {
-      return toModelUser(authUser);
-    } catch (NotSignedInOrganizationUser e) {
-      // the exception is for an organizational user
-      // it should not happen as we ask a model user
-      throw new InternalException("The auth user could ne be retrieved as base user", e);
-    }
+    return toModelUser(authUser);
+
   }
 
   /**
@@ -407,21 +399,29 @@ public class AuthProvider {
   public <T extends User> AuthUser.Builder toAuthUserBuilder(T user) {
 
     JacksonMapperManager jackson = this.apiApp.getJackson();
+
+    UserGuid guid = user.getGuid();
+    String userGuidHash;
+    if (guid instanceof OrgaUserGuid) {
+      userGuidHash = jackson.getSerializer(OrgaUserGuid.class).serialize((OrgaUserGuid) guid);
+    } else {
+      userGuidHash = jackson.getSerializer(UserGuid.class).serialize(guid);
+    }
+
     AuthUser.Builder authUserBuilder = AuthUser
       .builder()
-      .setSubject(jackson.getSerializer(UserGuid.class).serialize(user.getGuid()))
+      .setSubject(userGuidHash)
       .setSubjectEmail(user.getEmailAddress())
       .setRealmGuid(jackson.getSerializer(RealmGuid.class).serialize(user.getRealm().getGuid()))
       .setRealmHandle(jackson.getSerializer(Handle.class).serialize(user.getRealm().getHandle()));
-    if (user instanceof OrgaUser) {
-      Organization organization = ((OrgaUser) user).getOrganization();
-      // An organization user object is
-      // An Eraldy user with or without an organization
-      if (organization != null) {
-        authUserBuilder.setOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(organization.getGuid()));
-        authUserBuilder.setOrganizationHandle(jackson.getSerializer(Handle.class).serialize(organization.getHandle()));
-      }
-    }
+
+    /**
+     * User Org
+     */
+    Organization organization = user.getRealm().getOrganization();
+    authUserBuilder.setOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(organization.getGuid()));
+    authUserBuilder.setOrganizationHandle(jackson.getSerializer(Handle.class).serialize(organization.getHandle()));
+
     return authUserBuilder;
   }
 

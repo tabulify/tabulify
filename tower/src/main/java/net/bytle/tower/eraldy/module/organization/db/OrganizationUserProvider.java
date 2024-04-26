@@ -254,9 +254,10 @@ public class OrganizationUserProvider {
    * (used in row reading)
    *
    * @param orgaUserGuid - the guid to transform
-   * @param realm - the realm to check that the organizations of the realm and of the user are the same
+   * @param objectRealm - the realm of the objects (app, list, ...), **not from the user** to check that the organizations of the objects realm and of the user are the same
+   *                    The organization of the user and the organization of the user realm may not be equal as an orga user has an eraldy realm
    */
-  public OrgaUser toOrgaUserFromGuid(OrgaUserGuid orgaUserGuid, Realm realm) {
+  public OrgaUser toOrgaUserFromGuid(OrgaUserGuid orgaUserGuid, Realm objectRealm) {
 
     OrgaUser newOwner = new OrgaUser();
     newOwner.setGuid(orgaUserGuid);
@@ -270,11 +271,15 @@ public class OrganizationUserProvider {
 
     /**
      * Check
+     * The object realm is null when we recreate an orga user
+     * for authentication
      */
-    OrgaGuid realmOrgId = realm.getOrganization().getGuid();
-    OrgaGuid ownerOrgId = newOwner.getOrganization().getGuid();
-    if (!Objects.equals(realmOrgId, ownerOrgId)) {
-      throw new InternalException("The realm org id (" + realmOrgId + ") is not the same as the owner org id (" + ownerOrgId + ")");
+    if (objectRealm != null) {
+      OrgaGuid objectRealmOrgId = objectRealm.getOrganization().getGuid();
+      OrgaGuid ownerOrgId = newOwner.getOrganization().getGuid();
+      if (!Objects.equals(objectRealmOrgId, ownerOrgId)) {
+        throw new InternalException("The object realm org id (" + objectRealmOrgId + ") is not the same as the owner org id (" + ownerOrgId + ")");
+      }
     }
     return newOwner;
 
