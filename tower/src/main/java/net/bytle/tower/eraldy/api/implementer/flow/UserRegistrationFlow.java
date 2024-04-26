@@ -9,6 +9,7 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
+import net.bytle.exception.CastException;
 import net.bytle.exception.NotAuthorizedException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.AuthClient;
@@ -313,15 +314,18 @@ public class UserRegistrationFlow extends WebFlowAbs {
       }
 
       AuthUser.Builder authUserBuilder = new AuthUser.Builder(authUser.getClaims());
-      if (
-        this.getApp()
-          .getRealmProvider()
-          .isRealmGuidIdentifier(realmIdentifier)
-      ) {
-        authUserBuilder.setRealmGuid(realmIdentifier);
-      } else {
-        authUserBuilder.setRealmHandle(realmIdentifier);
+      RealmGuid realmGuid;
+      try {
+        realmGuid = this.getApp().getJackson().getDeserializer(RealmGuid.class).deserialize(realmIdentifier);
+      } catch (CastException e) {
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The realm identifier is not a valid realm guid (" + realmIdentifier + ")")
+          .buildWithContextFailingTerminal(authContext.getRoutingContext());
+        return;
       }
+
+      authUserBuilder.setRealmGuid(this.getApp().getJackson().getSerializer(RealmGuid.class).serialize(realmGuid));
       AuthUser finalAuthUser = authUserBuilder.build();
 
       /**
