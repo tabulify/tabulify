@@ -409,7 +409,7 @@ public class MailingProvider {
 
     }
 
-    String newAuthorGuid = mailingInputProps.getEmailAuthorGuid();
+    OrgaUserGuid newAuthorGuid = mailingInputProps.getEmailAuthorGuid();
     Future<OrgaUser> newAuthorFuture = Future.succeededFuture();
     if (newAuthorGuid != null) {
       newAuthorFuture = this.apiApp.getOrganizationUserProvider().getOrganizationUserByIdentifier(newAuthorGuid);

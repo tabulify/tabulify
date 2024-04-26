@@ -75,11 +75,11 @@ public class OrganizationUserProvider {
   }
 
 
-  public Future<OrgaUser> getOrganizationUserByIdentifier(String identifier) {
+  public Future<OrgaUser> getOrganizationUserByIdentifier(OrgaUserGuid identifier) {
 
     Realm eraldyRealm = this.apiApp.getEraldyModel().getRealm();
     return apiApp.getUserProvider()
-      .getUserByIdentifier(identifier, eraldyRealm)
+      .getUserByGuid(identifier, eraldyRealm)
       .compose(this::checkAndReturnUser);
 
   }

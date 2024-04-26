@@ -29,6 +29,7 @@ public class AuthUser {
   private final User user;
 
 
+
   private AuthUser(User user) {
     this.claims = user.principal().mergeIn(user.attributes());
     this.user = user;
@@ -118,8 +119,8 @@ public class AuthUser {
     return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_HANDLE.toString());
   }
 
-  public String getOrganizationHandle() {
-    return claims.getString(AuthUserJwtClaims.CUSTOM_ORG_HANDLE.toString());
+  public String getAudienceOrganizationHandle() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_ORG_HANDLE.toString());
 
   }
 
@@ -156,8 +157,8 @@ public class AuthUser {
   }
 
 
-  public String getOrganizationGuid() {
-    return claims.getString(AuthUserJwtClaims.CUSTOM_ORG_GUID.toString());
+  public String getAudienceOrganizationGuid() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_ORG_GUID.toString());
   }
 
   public String getRealmHandle() {
@@ -176,6 +177,10 @@ public class AuthUser {
     return AuthJwtClaims.createFromAuthUser(this);
   }
 
+  public String getSubjectOrganizationGuid() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_ORG_GUID.toString());
+  }
+
 
   public static class Builder {
 
@@ -186,13 +191,13 @@ public class AuthUser {
         this.claims = Objects.requireNonNullElseGet(claims, JsonObject::new);
     }
 
-    public Builder setOrganizationGuid(String orgGuid) {
-      claims.put(AuthUserJwtClaims.CUSTOM_ORG_GUID.toString(), orgGuid);
+    public Builder setAudienceOrganizationGuid(String orgGuid) {
+      claims.put(AuthUserJwtClaims.CUSTOM_AUDIENCE_ORG_GUID.toString(), orgGuid);
       return this;
     }
 
-    public Builder setOrganizationHandle(String orgHandle) {
-      claims.put(AuthUserJwtClaims.CUSTOM_ORG_HANDLE.toString(), orgHandle);
+    public Builder setAudienceOrganizationHandle(String orgHandle) {
+      claims.put(AuthUserJwtClaims.CUSTOM_AUDIENCE_ORG_HANDLE.toString(), orgHandle);
       return this;
     }
 
@@ -298,6 +303,9 @@ public class AuthUser {
       return this;
     }
 
+    public void setSubjectOrganizationGuid(String orgSubject) {
+      claims.put(AuthUserJwtClaims.CUSTOM_SUBJECT_ORG_GUID.toString(), orgSubject);
+    }
   }
 
 }

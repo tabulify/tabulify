@@ -427,18 +427,13 @@ public class UserProvider {
     return getUserByIdentifier(identifier, realm);
   }
 
-  public <T extends User> Future<T> getUserByGuid(String guid, Realm realm) {
+  public <T extends User> Future<T> getUserByGuid(UserGuid guidObject, Realm realm) {
 
-    UserGuid guidObject;
-    try {
-      guidObject = this.getGuidFromHash(guid);
-    } catch (CastException e) {
-      throw ValidationException.create("The user guid is not valid", "userGuid", guid);
-    }
+
     Future<Realm> futureRealm;
     if (realm != null) {
       if (!Objects.equals(realm.getGuid().getLocalId(), guidObject.getRealmId())) {
-        return Future.failedFuture(new InternalException("The user guid (" + guid + ") has a realm (" + guidObject.getRealmId() + " that is not the same than the passed realm (" + realm.getGuid().getLocalId() + ")"));
+        return Future.failedFuture(new InternalException("The user guid (" + guidObject + ") has a realm (" + guidObject.getRealmId() + " that is not the same than the passed realm (" + realm.getGuid().getLocalId() + ")"));
       }
       futureRealm = Future.succeededFuture(realm);
     } else {
@@ -531,9 +526,6 @@ public class UserProvider {
     return this.apiMapper;
   }
 
-  public boolean isGuid(String identifier) {
-    return identifier.startsWith(USR_GUID_PREFIX + Guid.GUID_SEPARATOR);
-  }
 
   public <T extends User> Future<T> getUserByIdentifier(String identifier, Realm realm) {
 
@@ -545,24 +537,28 @@ public class UserProvider {
       );
     }
 
-    if (this.isGuid(identifier)) {
-      return getUserByGuid(identifier, realm);
-    } else {
-      if (realm == null) {
-        return Future.failedFuture(new InternalException("With a user email (" + identifier + ") as user identifier, the realm should be provided"));
-      }
-      EmailAddress email;
-      try {
-        email = EmailAddress.of(identifier);
-      } catch (EmailCastException e) {
-        return Future.failedFuture(TowerFailureException.builder()
-          .setMessage("The user identifier (" + identifier + ") is not a guid nor an email")
-          .setType(TowerFailureTypeEnum.BAD_STRUCTURE_422)
-          .build()
-        );
-      }
-      return getUserByEmail(email, realm);
+    try {
+      UserGuid userGuid = this.apiApp.getJackson().getDeserializer(UserGuid.class).deserialize(identifier);
+      return getUserByGuid(userGuid, realm);
+    } catch (CastException e) {
+      //
     }
+
+    if (realm == null) {
+      return Future.failedFuture(new InternalException("With a user email (" + identifier + ") as user identifier, the realm should be provided"));
+    }
+    EmailAddress email;
+    try {
+      email = EmailAddress.of(identifier);
+    } catch (EmailCastException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setMessage("The user identifier (" + identifier + ") is not a guid nor an email")
+        .setType(TowerFailureTypeEnum.BAD_STRUCTURE_422)
+        .build()
+      );
+    }
+    return getUserByEmail(email, realm);
+
   }
 
 

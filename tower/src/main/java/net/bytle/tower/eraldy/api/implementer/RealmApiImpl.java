@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.api.implementer;
 
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.RealmApi;
@@ -9,6 +10,7 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
@@ -124,8 +126,20 @@ public class RealmApiImpl implements RealmApi {
 
   @Override
   public Future<ApiResponse<List<net.bytle.tower.eraldy.model.openapi.Realm>>> realmsOwnedByGet(RoutingContext routingContext, String userGuid) {
+    OrgaUserGuid orgaUserGuid;
+    try {
+      orgaUserGuid = this.apiApp.getJackson().getDeserializer(OrgaUserGuid.class).deserialize(userGuid);
+    } catch (CastException e) {
+      return Future.failedFuture(
+        TowerFailureException
+          .builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The user guid value (" + userGuid + ") is not valid")
+          .build()
+      );
+    }
     return apiApp.getOrganizationUserProvider()
-      .getOrganizationUserByIdentifier(userGuid)
+      .getOrganizationUserByIdentifier(orgaUserGuid)
       .compose(user -> this.apiApp.getRealmProvider()
         .getRealmsForOwner(user)
         .compose(realms -> Future.succeededFuture(new ApiResponse<>(new ArrayList<>(realms)))));

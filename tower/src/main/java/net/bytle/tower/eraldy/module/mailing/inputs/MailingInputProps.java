@@ -4,6 +4,7 @@ package net.bytle.tower.eraldy.module.mailing.inputs;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.module.mailing.model.MailingStatus;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 
 import java.time.LocalDateTime;
 
@@ -21,7 +22,7 @@ public class MailingInputProps {
   private String emailSubject;
   private String emailPreview;
   private String emailBody;
-  private String emailAuthorGuid;
+  private OrgaUserGuid emailAuthorGuid;
   private String emailLanguage;
   private LocalDateTime jobNextExecutionTime;
 
@@ -95,12 +96,12 @@ public class MailingInputProps {
   }
 
   @JsonProperty("emailAuthorGuid")
-  public String getEmailAuthorGuid() {
+  public OrgaUserGuid getEmailAuthorGuid() {
     return this.emailAuthorGuid;
   }
 
   @SuppressWarnings("unused")
-  public void setEmailAuthorGuid(String emailAuthorGuid) {
+  public void setEmailAuthorGuid(OrgaUserGuid emailAuthorGuid) {
     this.emailAuthorGuid = emailAuthorGuid;
   }
 

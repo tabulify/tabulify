@@ -403,8 +403,8 @@ public class AnalyticsTracker {
       analyticsUser.setName(authUser.getSubjectName());
       analyticsUser.setRealmGuid(authUser.getRealmGuid());
       analyticsUser.setRealmHandle(authUser.getRealmHandle());
-      analyticsUser.setOrganizationGuid(authUser.getOrganizationGuid());
-      analyticsUser.setOrganizationHandle(authUser.getOrganizationHandle());
+      analyticsUser.setOrganizationGuid(authUser.getAudienceOrganizationGuid());
+      analyticsUser.setOrganizationHandle(authUser.getAudienceOrganizationHandle());
       return this;
     }
   }

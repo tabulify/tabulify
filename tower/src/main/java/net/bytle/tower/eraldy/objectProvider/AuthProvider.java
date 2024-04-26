@@ -101,25 +101,26 @@ public class AuthProvider {
 
   /**
    * Return a valid model user from an authUser
-   * The authUser should be a valid user in the database (not an oauth token)
+   * The authUser should be a valid-logged user (created from the database, not from an oauth token)
    */
   public <T extends User> T toModelUser(AuthUser authUser) {
 
     /**
-     * Organization
+     * Subject (normal user - user id)
      */
-
-    String subject = authUser.getSubject();
-    if (subject == null) {
-      throw new InternalException("The subject (user guid) values should not be null");
-    }
     T user;
-    try {
-      OrgaUserGuid guid = this.apiApp.getJackson().getDeserializer(OrgaUserGuid.class).deserialize(subject);
+    String orgaSubject = authUser.getSubjectOrganizationGuid();
+    if (orgaSubject != null) {
+      OrgaUserGuid guid;
+      try {
+        guid = this.apiApp.getJackson().getDeserializer(OrgaUserGuid.class).deserialize(orgaSubject);
+      } catch (CastException e) {
+        throw new InternalException("The subject (user guid) is not valid orga user guid (" + orgaSubject + ")");
+      }
       //noinspection unchecked
       user = (T) this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(guid, null);
-    } catch (CastException e) {
-
+    } else {
+      String subject = authUser.getSubject();
       try {
         UserGuid guid = this.apiApp.getJackson().getDeserializer(UserGuid.class).deserialize(subject);
         //noinspection unchecked
@@ -127,21 +128,20 @@ public class AuthProvider {
         user.setGuid(guid);
 
       } catch (CastException ex) {
-        throw new InternalException("The subject (user guid) is not valid user or orga user guid (" + subject + ")");
+        throw new InternalException("The subject (user guid) is not valid user guid (" + subject + ")");
       }
     }
-
-    String organizationGuidString = authUser.getOrganizationGuid();
-    Organization organization;
 
 
     /**
      * Realm Organization
      */
+    String organizationGuidString = authUser.getAudienceOrganizationGuid();
+    Organization organization;
     OrgaGuid orgaGuidObject = this.apiApp.getJackson().getDeserializer(OrgaGuid.class).deserializeFailSafe(organizationGuidString);
     organization = new Organization();
     organization.setGuid(orgaGuidObject);
-    String organizationHandle = authUser.getOrganizationHandle();
+    String organizationHandle = authUser.getAudienceOrganizationHandle();
     if (organizationHandle != null) {
       organization.setHandle(Handle.ofFailSafe(organizationHandle));
     }
@@ -400,29 +400,32 @@ public class AuthProvider {
 
     JacksonMapperManager jackson = this.apiApp.getJackson();
 
+    /**
+     * User guids
+     */
     UserGuid guid = user.getGuid();
-    String userGuidHash;
+    AuthUser.Builder authUserBuilder = AuthUser.builder()
+      .setSubject(jackson.getSerializer(UserGuid.class).serialize(guid));
+
     if (guid instanceof OrgaUserGuid) {
-      userGuidHash = jackson.getSerializer(OrgaUserGuid.class).serialize((OrgaUserGuid) guid);
-    } else {
-      userGuidHash = jackson.getSerializer(UserGuid.class).serialize(guid);
+      String userGuidHash = jackson.getSerializer(OrgaUserGuid.class).serialize((OrgaUserGuid) guid);
+      authUserBuilder.setSubjectOrganizationGuid(userGuidHash);
     }
 
-    AuthUser.Builder authUserBuilder = AuthUser
-      .builder()
-      .setSubject(userGuidHash)
-      .setSubjectEmail(user.getEmailAddress())
+
+    authUserBuilder.setSubjectEmail(user.getEmailAddress())
       .setRealmGuid(jackson.getSerializer(RealmGuid.class).serialize(user.getRealm().getGuid()))
       .setRealmHandle(jackson.getSerializer(Handle.class).serialize(user.getRealm().getHandle()));
 
     /**
-     * User Org
+     * Realm Org
      */
     Organization organization = user.getRealm().getOrganization();
-    authUserBuilder.setOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(organization.getGuid()));
-    authUserBuilder.setOrganizationHandle(jackson.getSerializer(Handle.class).serialize(organization.getHandle()));
+    authUserBuilder.setAudienceOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(organization.getGuid()));
+    authUserBuilder.setAudienceOrganizationHandle(jackson.getSerializer(Handle.class).serialize(organization.getHandle()));
 
     return authUserBuilder;
+
   }
 
 
@@ -489,8 +492,8 @@ public class AuthProvider {
       JacksonMapperManager jackson = this.apiApp.getJackson();
       OrgaUser orgaUser = (OrgaUser) user;
       Organization organization = orgaUser.getOrganization();
-      authUserBuilder.setOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(organization.getGuid()));
-      authUserBuilder.setOrganizationHandle(jackson.getSerializer(Handle.class).serialize(organization.getHandle()));
+      authUserBuilder.setAudienceOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(organization.getGuid()));
+      authUserBuilder.setAudienceOrganizationHandle(jackson.getSerializer(Handle.class).serialize(organization.getHandle()));
       futureRealmOwnerList = this.apiApp.getRealmProvider().getRealmsForOwner(orgaUser);
     }
     return futureRealmOwnerList
@@ -562,7 +565,7 @@ public class AuthProvider {
   public Future<Void> checkOrgAuthorization(RoutingContext routingContext, String requestedOrgGuid, AuthUserScope authUserScope) {
     return this.getSignedInAuthUserOrFail(routingContext)
       .compose(signedInUser -> {
-        String signedInUserGroup = signedInUser.getOrganizationGuid();
+        String signedInUserGroup = signedInUser.getAudienceOrganizationGuid();
         if (signedInUserGroup == null) {
           return Future.failedFuture(
             TowerFailureException.builder()

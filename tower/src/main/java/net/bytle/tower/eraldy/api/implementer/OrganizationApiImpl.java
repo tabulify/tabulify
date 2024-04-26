@@ -85,10 +85,19 @@ public class OrganizationApiImpl implements OrganizationApi {
           .buildWithContextFailing(routingContext)
       );
     }
-
+    User user = this.apiApp.getAuthProvider().toModelUser(signedInUser);
+    if(!(user instanceof OrgaUser)){
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
+          .setMessage("The authenticated user (" + signedInUser.getSubject() + "," + signedInUser.getSubjectEmail() + ") is not an organization user")
+          .buildWithContextFailing(routingContext)
+      );
+    }
+    OrgaUser orgaUser = (OrgaUser) user;
     return this.apiApp
       .getOrganizationUserProvider()
-      .getOrganizationUserByIdentifier(signedInUser.getSubject())
+      .getOrganizationUserByIdentifier(orgaUser.getGuid())
       .compose(orgUser -> {
         if (orgUser == null) {
           return Future.failedFuture(
