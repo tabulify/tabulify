@@ -94,6 +94,7 @@ public class JdbcUpdate extends JdbcQuery {
   }
 
   public JdbcUpdate addReturningColumn(JdbcColumn column) {
+    // https://vertx.io/docs/vertx-pg-client/java/#_returning_clauses
     this.returningColumn = column;
     return this;
   }

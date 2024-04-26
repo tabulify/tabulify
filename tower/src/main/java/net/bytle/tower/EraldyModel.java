@@ -9,6 +9,7 @@ import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.module.app.inputs.AppInputProps;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.common.db.RealmSequenceProvider;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.organization.inputs.OrgaUserInputProps;
 import net.bytle.tower.eraldy.module.organization.inputs.OrganizationInputProps;
@@ -138,7 +139,7 @@ public class EraldyModel {
    * This is not a transaction
    * because you can't insert and then update the same record
    * It's then a problem when you insert 2 values
-   * that uses our {@link net.bytle.tower.eraldy.objectProvider.RealmSequenceProvider sequence}
+   * that uses our {@link RealmSequenceProvider sequence}
    * Below we insert 2 apps and the insert should be into 2 differents transactions
    */
   public Future<Void> connectionMount() {

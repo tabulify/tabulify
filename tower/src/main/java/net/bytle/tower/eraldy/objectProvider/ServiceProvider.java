@@ -23,7 +23,9 @@ import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.db.JdbcSchema;
 import net.bytle.vertx.db.JdbcSchemaManager;
+import net.bytle.vertx.db.JdbcTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +41,6 @@ public class ServiceProvider {
   public static final String SMTP = "smtp";
   protected static final Logger LOGGER = LoggerFactory.getLogger(ServiceProvider.class);
 
-  protected static final String TABLE_NAME = "realm_service";
 
   private static final String COL_PREFIX = "service";
 
@@ -60,14 +61,18 @@ public class ServiceProvider {
   private final EraldyApiApp apiApp;
   private final Pool jdbcPool;
   private final ObjectMapper apiMapper;
+  private final JdbcTable tableName;
 
 
-  public ServiceProvider(EraldyApiApp apiApp) {
+  public ServiceProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
 
     this.apiApp = apiApp;
     this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
     this.apiMapper = this.apiApp.getHttpServer().getServer().getJacksonMapperManager().jsonMapperBuilder()
       .addMixIn(Service.class, ServicePublicMixinWithRealm.class)
+      .build();
+
+    this.tableName = JdbcTable.build(jdbcSchema,"realm_service", null)
       .build();
   }
 
@@ -142,7 +147,7 @@ public class ServiceProvider {
 
     if (service.getLocalId() != null) {
       String insertSql = "UPDATE \n" +
-        JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
+         this.tableName.getFullName() + " \n" +
         "set \n" +
         "  " + URI_COLUMN + " = $1,\n" +
         "  " + TYPE_COLUMN + " = $2,\n" +
@@ -196,7 +201,7 @@ public class ServiceProvider {
   private Future<RowSet<Row>> updateByUriAndGetRowSet(Service service) {
 
     String updateSql = "UPDATE \n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " \n" +
+      this.tableName.getFullName() + " \n" +
       "set \n" +
       "  " + TYPE_COLUMN + " = $1,\n" +
       "  " + DATA_COLUMN + " = $2,\n" +
@@ -228,7 +233,7 @@ public class ServiceProvider {
   private Future<Service> insertService(Service service) {
 
     String insertSql = "INSERT INTO\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
+      this.tableName.getFullName() + " (\n" +
       "  " + REALM_COLUMN + ",\n" +
       "  " + ID_COLUMN + ",\n" +
       "  " + URI_COLUMN + ",\n" +
@@ -240,7 +245,7 @@ public class ServiceProvider {
       " values ($1, $2, $3, $4, $5, $6, $7)\n";
 
     return jdbcPool
-      .withTransaction(sqlConnection -> this.apiApp.getRealmSequenceProvider().getNextIdForTableAndRealm(sqlConnection, service.getRealm(), TABLE_NAME)
+      .withTransaction(sqlConnection -> this.apiApp.getRealmSequenceProvider().getNextIdForTableAndRealm(sqlConnection, service.getRealm(), this.tableName)
         .onFailure(error -> LOGGER.error("ServiceProvider: Error on next sequence id" + error.getMessage(), error))
         .compose(serviceId -> {
           service.setLocalId(serviceId);
@@ -269,7 +274,7 @@ public class ServiceProvider {
 
     return jdbcPool
       .preparedQuery(
-        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+        "SELECT * FROM " + this.tableName.getFullName() +
           " WHERE \n" +
           REALM_COLUMN + " = $1"
       )
@@ -309,7 +314,7 @@ public class ServiceProvider {
     }
     Future<Realm> realmFuture = Future.succeededFuture(realm);
     if (realm == null) {
-      Long realmId = row.getLong(TABLE_NAME + COLUMN_PART_SEP + "realm_id");
+      Long realmId = row.getLong(REALM_COLUMN);
       realmFuture = this.apiApp.getRealmProvider()
         .getRealmFromLocalId(realmId);
     }
@@ -379,7 +384,7 @@ public class ServiceProvider {
   private Future<Service> getServiceByUri(String serviceUri, Realm realm) {
 
     String selectSql = "SELECT * FROM " +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+      this.tableName.getFullName() +
       " WHERE\n" +
       " " + URI_COLUMN + " = $1\n" +
       " AND " + REALM_COLUMN + " = $2\n";
@@ -407,7 +412,7 @@ public class ServiceProvider {
 
 
     String sql = "SELECT * FROM " +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
+       this.tableName.getFullName() + "\n" +
       "WHERE \n" +
       " " + REALM_COLUMN + " = $1\n" +
       " AND " + ID_COLUMN + " = $2?";

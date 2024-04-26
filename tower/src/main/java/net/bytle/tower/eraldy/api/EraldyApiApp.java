@@ -13,6 +13,7 @@ import net.bytle.tower.eraldy.auth.RealmSessionHandler;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.module.app.db.AppProvider;
+import net.bytle.tower.eraldy.module.common.db.RealmSequenceProvider;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailing.MailingProvider;
@@ -24,7 +25,10 @@ import net.bytle.tower.eraldy.module.organization.db.OrganizationRoleProvider;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationUserProvider;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
-import net.bytle.tower.eraldy.objectProvider.*;
+import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
+import net.bytle.tower.eraldy.objectProvider.AuthProvider;
+import net.bytle.tower.eraldy.objectProvider.FileProvider;
+import net.bytle.tower.eraldy.objectProvider.ServiceProvider;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
 import net.bytle.tower.util.Env;
 import net.bytle.tower.util.EraldySubRealmModel;
@@ -181,11 +185,11 @@ public class EraldyApiApp extends TowerApp {
     this.listProvider = new ListProvider(this, realmSchema);
     this.authProvider = new AuthProvider(this);
     this.listUserProvider = new ListUserProvider(this, realmSchema);
-    this.serviceProvider = new ServiceProvider(this);
+    this.serviceProvider = new ServiceProvider(this, realmSchema);
     this.organizationRoleProvider = new OrganizationRoleProvider(realmSchema);
     this.hashIds = this.getHttpServer().getServer().getHashId();
     this.authClientProvider = new AuthClientProvider(this);
-    this.realmSequenceProvider = new RealmSequenceProvider();
+    this.realmSequenceProvider = new RealmSequenceProvider(realmSchema);
     this.mailingProvider = new MailingProvider(this, realmSchema);
     this.mailingJobProvider = new MailingJobProvider(this, jobsSchema);
     this.mailingRowProvider = new MailingItemProvider(this, jobsSchema);
@@ -371,11 +375,6 @@ public class EraldyApiApp extends TowerApp {
     return this.organizationProvider;
   }
 
-  public Guid createGuidFromHashWithOneId(String shortPrefix, String guid) throws CastException {
-    return Guid.builder(this.hashIds, shortPrefix)
-      .setCipherText(guid, ONE_ID_TYPE)
-      .build();
-  }
 
   public ListUserProvider getListUserProvider() {
     return this.listUserProvider;

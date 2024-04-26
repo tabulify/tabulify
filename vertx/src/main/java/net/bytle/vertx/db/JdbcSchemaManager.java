@@ -30,8 +30,6 @@ public class JdbcSchemaManager {
   public static final String CREATION_TIME_COLUMN_SUFFIX = "creation_time";
   public static final String MODIFICATION_TIME_COLUMN_SUFFIX = "modification_time";
 
-  @Deprecated
-  public static final String CS_REALM_SCHEMA = "cs_realms";
   private static final Logger LOGGER = LogManager.getLogger(JdbcSchemaManager.class);
   public static final String VERSION_LOG_TABLE = "version_log";
 
