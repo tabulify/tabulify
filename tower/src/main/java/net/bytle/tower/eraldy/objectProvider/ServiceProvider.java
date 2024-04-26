@@ -23,6 +23,7 @@ import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.db.JdbcColumn;
 import net.bytle.vertx.db.JdbcSchema;
 import net.bytle.vertx.db.JdbcSchemaManager;
 import net.bytle.vertx.db.JdbcTable;
@@ -72,10 +73,11 @@ public class ServiceProvider {
       .addMixIn(Service.class, ServicePublicMixinWithRealm.class)
       .build();
 
-    this.tableName = JdbcTable.build(jdbcSchema,"realm_service", null)
+    this.tableName = JdbcTable
+      .build(jdbcSchema, "realm_service", new JdbcColumn[]{})
       .build();
-  }
 
+  }
 
 
   /**
@@ -147,7 +149,7 @@ public class ServiceProvider {
 
     if (service.getLocalId() != null) {
       String insertSql = "UPDATE \n" +
-         this.tableName.getFullName() + " \n" +
+        this.tableName.getFullName() + " \n" +
         "set \n" +
         "  " + URI_COLUMN + " = $1,\n" +
         "  " + TYPE_COLUMN + " = $2,\n" +
@@ -412,7 +414,7 @@ public class ServiceProvider {
 
 
     String sql = "SELECT * FROM " +
-       this.tableName.getFullName() + "\n" +
+      this.tableName.getFullName() + "\n" +
       "WHERE \n" +
       " " + REALM_COLUMN + " = $1\n" +
       " AND " + ID_COLUMN + " = $2?";
