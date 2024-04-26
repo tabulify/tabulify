@@ -50,12 +50,12 @@ public enum UserStatus implements Status {
     return code + " (" + name + ")";
   }
 
-  public Integer getCode() {
+  public int getCode() {
     return this.code;
   }
 
   @Override
-  public Integer getOrder() {
+  public int getOrder() {
     return this.order;
   }
 

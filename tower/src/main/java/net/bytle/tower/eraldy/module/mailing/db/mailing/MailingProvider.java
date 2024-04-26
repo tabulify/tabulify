@@ -276,7 +276,10 @@ public class MailingProvider {
     listGuid.setRealmId(realm.getGuid().getLocalId());
     listGuid.setLocalId(listId);
     recipientList.setGuid(listGuid);
-    // app is also set to pass the realm, used when the list is build by graphql
+    /**
+     * app is also set to pass the realm, used when the list is build by graphql
+     * See {@link MailingGraphQLImpl#getMailingRecipientList(DataFetchingEnvironment)}
+     */
     App app = new App();
     app.setRealm(realm);
     recipientList.setApp(app);
@@ -344,7 +347,7 @@ public class MailingProvider {
     }
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.mailingTable)
-      .addPredicateColumn(MailingCols.ID,mailing.getLocalId())
+      .addPredicateColumn(MailingCols.ID, mailing.getLocalId())
       .addPredicateColumn(MailingCols.REALM_ID, mailing.getRealm().getGuid().getLocalId());
 
     /**
@@ -353,25 +356,25 @@ public class MailingProvider {
     String newName = mailingInputProps.getName();
     if (newName != null) {
       mailing.setName(newName);
-      jdbcUpdate.addUpdatedColumn(MailingCols.NAME,mailing.getName());
+      jdbcUpdate.addUpdatedColumn(MailingCols.NAME, mailing.getName());
     }
 
     String subject = mailingInputProps.getEmailSubject();
     if (subject != null) {
       mailing.setEmailSubject(subject);
-      jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_SUBJECT,mailing.getEmailSubject());
+      jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_SUBJECT, mailing.getEmailSubject());
     }
 
     String emailLanguage = mailingInputProps.getEmailLanguage();
     if (emailLanguage != null) {
       mailing.setEmailLanguage(emailLanguage);
-      jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_LANGUAGE,mailing.getEmailLanguage());
+      jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_LANGUAGE, mailing.getEmailLanguage());
     }
 
     String preview = mailingInputProps.getEmailPreview();
     if (preview != null) {
       mailing.setEmailPreview(preview);
-      jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_PREVIEW,mailing.getEmailPreview());
+      jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_PREVIEW, mailing.getEmailPreview());
     }
 
     String body = mailingInputProps.getEmailBody();
@@ -389,13 +392,13 @@ public class MailingProvider {
         );
       }
       mailing.setEmailBody(jsonArray.toString());
-      jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_BODY,mailing.getEmailBody());
+      jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_BODY, mailing.getEmailBody());
     }
 
     LocalDateTime jobNextExecutionTime = mailingInputProps.getJobNextExecutionTime();
     if (jobNextExecutionTime != null) {
       mailing.setJobNextExecutionTime(jobNextExecutionTime);
-      jdbcUpdate.addUpdatedColumn(MailingCols.NEXT_EXECUTION_TIME,mailing.getJobNextExecutionTime());
+      jdbcUpdate.addUpdatedColumn(MailingCols.NEXT_EXECUTION_TIME, mailing.getJobNextExecutionTime());
     }
 
     // Status at the end (it may be changed by the setting of a schedule time
@@ -413,7 +416,7 @@ public class MailingProvider {
         );
       }
       mailing.setStatus(newStatus);
-      jdbcUpdate.addUpdatedColumn(MailingCols.STATUS_CODE,mailing.getStatus().getCode());
+      jdbcUpdate.addUpdatedColumn(MailingCols.STATUS_CODE, mailing.getStatus().getCode());
 
     }
 
@@ -424,14 +427,14 @@ public class MailingProvider {
     }
     return newAuthorFuture.compose(newAuthor -> {
 
-      if(newAuthor!=null){
+      if (newAuthor != null) {
         mailing.setEmailAuthor(newAuthor);
-        jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_AUTHOR_USER_ID,mailing.getEmailAuthor().getGuid().getLocalId());
-        jdbcUpdate.addUpdatedColumn(MailingCols.ORGA_ID,mailing.getEmailAuthor().getGuid().getOrganizationId());
+        jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_AUTHOR_USER_ID, mailing.getEmailAuthor().getGuid().getLocalId());
+        jdbcUpdate.addUpdatedColumn(MailingCols.ORGA_ID, mailing.getEmailAuthor().getGuid().getOrganizationId());
       }
 
 
-      if(jdbcUpdate.hasNoColumnToUpdate()){
+      if (jdbcUpdate.hasNoColumnToUpdate()) {
         return Future.succeededFuture(mailing);
       }
 
@@ -522,7 +525,7 @@ public class MailingProvider {
     }
     return this.apiApp.getOrganizationUserProvider()
       .getOrganizationUserByGuid(emailAuthor.getGuid())
-      .compose(emailAuthorFuture->{
+      .compose(emailAuthorFuture -> {
         mailing.setEmailAuthor(emailAuthorFuture);
         return Future.succeededFuture(emailAuthorFuture);
       });

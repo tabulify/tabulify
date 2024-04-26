@@ -4,6 +4,7 @@ scalar UserGuid
 scalar OrgaGuid
 scalar RealmGuid
 scalar ListGuid
+scalar ListUserGuid
 scalar EmailAddress
 scalar Handle
 
@@ -116,7 +117,7 @@ type Mailing {
 
 type ListUser {
   """The Guid of the mailing line"""
-  guid: ID!
+  guid: ListUserGuid!
   """The user"""
   user: User!
   """The list"""

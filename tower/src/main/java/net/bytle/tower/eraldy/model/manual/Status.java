@@ -12,13 +12,13 @@ public interface Status {
    * @return status The code status
    */
   @JsonProperty("code")
-  Integer getCode();
+  int getCode();
 
   /**
    * @return status The order
    */
   @JsonProperty("order")
-  Integer getOrder();
+  int getOrder();
 
   /**
    * @return The status name

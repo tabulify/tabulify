@@ -41,6 +41,17 @@ public class ListGraphQLImpl {
     typeWiringBuilder.scalar(LIST_GUID);
 
     /**
+     * Scalars
+     */
+    final GraphQLScalarType LIST_USER_GUID = GraphQLScalarType
+      .newScalar()
+      .name("ListUserGuid")
+      .description("The Guid for the user of list")
+      .coercing(new GraphQLListGuidCoercing(app.getJackson()))
+      .build();
+    typeWiringBuilder.scalar(LIST_USER_GUID);
+
+    /**
      * Map type to function
      */
     typeWiringBuilder

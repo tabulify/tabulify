@@ -12,6 +12,8 @@ import net.bytle.tower.eraldy.graphql.pojo.input.ListUserInputProps;
 import net.bytle.tower.eraldy.model.openapi.ListUserSource;
 import net.bytle.tower.eraldy.model.openapi.ListUserStatus;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
+import net.bytle.tower.eraldy.module.list.model.ListImportListUserAction;
+import net.bytle.tower.eraldy.module.list.model.ListImportListUserStatus;
 import net.bytle.tower.eraldy.module.list.model.ListUserGuid;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;

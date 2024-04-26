@@ -263,6 +263,9 @@ public class ListUserProvider {
     listUserGuid.setRealmId(listRealmId);
     return getListUserByGuid(listUserGuid)
       .compose(listUser -> {
+        if (listUser == null) {
+          return Future.succeededFuture();
+        }
         listUser.setUser(user);
         listUser.setList(listObject);
         return Future.succeededFuture(listUser);
@@ -284,7 +287,7 @@ public class ListUserProvider {
         }
 
         if (userRows.size() > 1) {
-          InternalException internalException = new InternalException("Registration Get: More than one rows (" + userRows.size() + ") returned from the registration ( " + listUserGuid+")");
+          InternalException internalException = new InternalException("Registration Get: More than one rows (" + userRows.size() + ") returned from the registration ( " + listUserGuid + ")");
           return Future.failedFuture(internalException);
         }
 

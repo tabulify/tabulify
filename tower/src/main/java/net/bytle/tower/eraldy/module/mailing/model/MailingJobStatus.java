@@ -65,12 +65,12 @@ public enum MailingJobStatus implements Status {
 
 
   @Override
-  public Integer getCode() {
+  public int getCode() {
     return this.statusCode;
   }
 
   @Override
-  public Integer getOrder() {
+  public int getOrder() {
     return this.statusCode;
   }
 

@@ -16,7 +16,6 @@ import net.bytle.exception.NullValueException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.ListImportFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListImportJob;
-import net.bytle.tower.eraldy.api.implementer.flow.ListImportListUserAction;
 import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationConfirmationLetter;
 import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationValidationLetter;
 import net.bytle.tower.eraldy.api.openapi.interfaces.ListApi;
@@ -26,6 +25,7 @@ import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
+import net.bytle.tower.eraldy.module.list.model.ListImportListUserAction;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Casts;
 import net.bytle.type.EmailAddress;
@@ -214,7 +214,7 @@ public class ListApiImpl implements ListApi {
   @Override
   public Future<ApiResponse<List<ListImportJobRowStatus>>> listListImportJobDetailsGet(RoutingContext routingContext, String listIdentifier, String jobIdentifier) {
 
-    ListGuid listGuidHash = null;
+    ListGuid listGuidHash;
     try {
       listGuidHash = this.apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listIdentifier);
     } catch (CastException e) {

@@ -16,6 +16,7 @@ import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
+import net.bytle.tower.eraldy.module.list.model.ListImportListUserAction;
 import net.bytle.vertx.DateTimeService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

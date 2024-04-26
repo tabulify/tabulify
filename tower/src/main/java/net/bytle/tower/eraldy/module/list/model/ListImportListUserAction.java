@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.api.implementer.flow;
+package net.bytle.tower.eraldy.module.list.model;
 
 import net.bytle.exception.CastException;
 

@@ -1,12 +1,14 @@
 package net.bytle.tower.eraldy.api.implementer.flow;
 
 import net.bytle.exception.CastException;
+import net.bytle.tower.eraldy.model.manual.Status;
+import net.bytle.type.Strings;
 
 /**
  * The action done on the user
  * if it exists
  */
-public enum ListImportUserAction {
+public enum ListImportUserAction implements Status {
 
   /**
    * The properties of the user are not updated
@@ -37,4 +39,23 @@ public enum ListImportUserAction {
     return actionCode;
   }
 
+  @Override
+  public int getCode() {
+    return this.actionCode;
+  }
+
+  @Override
+  public int getOrder() {
+    return this.actionCode;
+  }
+
+  @Override
+  public String getName() {
+    return Strings.createFromString(this.name()).toFirstLetterCapitalCase().toString();
+  }
+
+  @Override
+  public String getDescription() {
+    return this.getName();
+  }
 }

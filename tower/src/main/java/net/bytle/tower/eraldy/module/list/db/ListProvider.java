@@ -13,6 +13,7 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.api.implementer.flow.ListImportUserAction;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.ListItemMixinWithRealm;
@@ -21,10 +22,12 @@ import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.app.db.AppProvider;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.common.jackson.JacksonStatusSerializer;
 import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListGuidDeserializer;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListGuidSerializer;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
+import net.bytle.tower.eraldy.module.list.model.ListImportListUserStatus;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationUserProvider;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
@@ -74,6 +77,8 @@ public class ListProvider {
     server.getJacksonMapperManager()
       .addDeserializer(ListGuid.class, new JacksonListGuidDeserializer(apiApp))
       .addSerializer(ListGuid.class, new JacksonListGuidSerializer(apiApp))
+      .addSerializer(ListImportListUserStatus.class, new JacksonStatusSerializer())
+      .addSerializer(ListImportUserAction.class, new JacksonStatusSerializer())
     ;
 
     this.apiMapper = server.getJacksonMapperManager()
@@ -105,6 +110,8 @@ public class ListProvider {
     }
     ListGuid listGuid = new ListGuid();
     listGuid.setLocalId(listId);
+    // because the app is not on the database row, this function should be deleted
+    // as we may get an error
     listGuid.setRealmId(listObject.getApp().getGuid().getRealmId());
     listObject.setGuid(listGuid);
   }
@@ -361,8 +368,6 @@ public class ListProvider {
     this.updateGuid(listObject, listId);
 
 
-
-
     /**
      * Owner
      * Id + Orga
@@ -554,7 +559,6 @@ public class ListProvider {
         }
       );
   }
-
 
 
   /**

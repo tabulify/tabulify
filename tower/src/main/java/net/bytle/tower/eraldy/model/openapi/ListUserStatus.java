@@ -38,12 +38,12 @@ public enum ListUserStatus implements Status {
   }
 
   @Override
-  public Integer getCode() {
+  public int getCode() {
     return value;
   }
 
   @Override
-  public Integer getOrder() {
+  public int getOrder() {
     return 1;
   }
 
