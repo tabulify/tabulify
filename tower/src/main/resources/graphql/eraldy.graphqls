@@ -3,6 +3,7 @@ scalar AppGuid
 scalar UserGuid
 scalar OrgaGuid
 scalar RealmGuid
+scalar ListGuid
 scalar EmailAddress
 scalar Handle
 
@@ -229,7 +230,7 @@ type App {
 
 type List {
   """The global uid"""
-  guid: ID!
+  guid: ListGuid!
   """A short descriptive name"""
   name: String!
   """A unique name identifier"""
@@ -255,7 +256,7 @@ input ListInput {
   handle: String
   """A title"""
   title: String
-  """The Guid of the owner"""
+  """The Orga Guid of the owner"""
   ownerUserGuid: ID
 }
 
@@ -268,7 +269,7 @@ input MailingInput {
   emailPreview: String
   """The email body"""
   emailBody: String
-  """The email author guid"""
+  """The email author orga guid"""
   emailAuthorGuid: ID
   """The email language"""
   emailLanguage: String

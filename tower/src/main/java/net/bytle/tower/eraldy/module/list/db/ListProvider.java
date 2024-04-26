@@ -342,8 +342,6 @@ public class ListProvider {
     if (realmId != realm.getGuid().getLocalId()) {
       throw new InternalException("The passed realm (" + realm.getGuid() + ") and the database realm id (" + realmId + " differs");
     }
-    this.updateGuid(listObject, listId);
-
 
     /**
      * App
@@ -356,6 +354,14 @@ public class ListProvider {
       app.setRealm(realm);
     }
     listObject.setApp(app);
+
+    /**
+     * After app as it's the realm holder
+     */
+    this.updateGuid(listObject, listId);
+
+
+
 
     /**
      * Owner
