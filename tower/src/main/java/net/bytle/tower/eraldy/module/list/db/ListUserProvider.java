@@ -47,12 +47,6 @@ public class ListUserProvider {
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(ListUserProvider.class);
 
-  static final String TABLE_NAME = "realm_list_user";
-  public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
-  private static final String LIST_USER_PREFIX = "list_user";
-  public static final String LIST_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN;
-  static final String REALM_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "realm_id";
-
   private final EraldyApiApp apiApp;
 
   private final ObjectMapper apiMapper;
@@ -87,7 +81,7 @@ public class ListUserProvider {
     Map<JdbcColumn, JdbcColumn> foreignKeysListColumn = new HashMap<>();
     foreignKeysListColumn.put(ListUserCols.REALM_ID, ListCols.REALM_ID);
     foreignKeysListColumn.put(ListUserCols.LIST_ID, ListCols.ID);
-    this.listUserTable = JdbcTable.build(jdbcSchema, TABLE_NAME, ListUserCols.values())
+    this.listUserTable = JdbcTable.build(jdbcSchema, "realm_list_user", ListUserCols.values())
       .addPrimaryKeyColumn(ListUserCols.REALM_ID)
       .addPrimaryKeyColumn(ListUserCols.LIST_ID)
       .addPrimaryKeyColumn(ListUserCols.USER_ID)
@@ -375,4 +369,7 @@ public class ListUserProvider {
     return this.apiMapper;
   }
 
+  public JdbcTable getListUserTable() {
+    return this.listUserTable;
+  }
 }

@@ -7,7 +7,6 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.sqlclient.Pool;
-import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
@@ -20,7 +19,7 @@ import net.bytle.tower.eraldy.mixin.ListItemMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
-import net.bytle.tower.eraldy.module.app.db.AppProvider;
+import net.bytle.tower.eraldy.module.app.db.AppCols;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.common.jackson.JacksonStatusSerializer;
 import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
@@ -55,15 +54,8 @@ public class ListProvider {
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(ListProvider.class);
 
-  protected static final String TABLE_NAME = "realm_list";
-
-  public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
-  private static final String LIST_PREFIX = "list";
-  public static final String LIST_ID_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "id";
   public static final String LIST_GUID_PREFIX = "lis";
   private final EraldyApiApp apiApp;
-
-  public static final String LIST_HANDLE_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "handle";
   private final Pool jdbcPool;
   private final JsonMapper apiMapper;
   private final JdbcTable listTable;
@@ -243,10 +235,11 @@ public class ListProvider {
               .compose(rowSet -> {
                 long realmId = newList.getGuid().getRealmId();
                 long listId = newList.getGuid().getLocalId();
+                JdbcTable listUserTable = this.apiApp.getListUserProvider().getListUserTable();
                 final String createListRegistrationPartition =
-                  "CREATE TABLE IF NOT EXISTS " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "_" + realmId + "_" + listId + "\n" +
-                    "    partition of " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "\n" +
-                    "        (" + ListUserProvider.REALM_COLUMN + ", " + ListUserProvider.LIST_ID_COLUMN + ")\n" +
+                  "CREATE TABLE IF NOT EXISTS " + listUserTable.getFullName() + "_" + realmId + "_" + listId + "\n" +
+                    "    partition of " + listUserTable.getFullName() + "\n" +
+                    "        (" + ListUserCols.REALM_ID.getColumnName() + ", " + ListUserCols.LIST_ID.getColumnName() + ")\n" +
                     "        FOR VALUES FROM (" + realmId + "," + listId + ") TO (" + realmId + "," + (listId + 1) + " )";
                 return sqlConnection
                   .preparedQuery(createListRegistrationPartition)
@@ -441,39 +434,38 @@ public class ListProvider {
 
   public Future<java.util.List<ListSummary>> getListsSummary(Realm realm) {
 
-    String sql = "SELECT list.list_id, list.list_handle, app.app_id, app.app_name, count(realm_list_user.list_user_user_id) user_count\n" +
-      "FROM " +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " list \n" +
-      " LEFT JOIN " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + " realm_list_user\n" +
-      "    on list.list_id = realm_list_user.list_user_list_id\n" +
-      " JOIN " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + AppProvider.APP_TABLE_NAME + " app\n" +
-      "    on list.list_app_id = app.app_id\n" +
-      "where list.list_realm_id = $1\n" +
-      "group by list.list_id, list.list_handle, app.app_id, app.app_name";
-    return jdbcPool.preparedQuery(sql)
-      .execute(Tuple.of(realm.getGuid().getLocalId()))
-      .recover(err -> FailureStatic.SqlFailFuture("List Summary", sql, err))
+
+    return JdbcSelect.from(this.listTable)
+      .addSelectColumn(ListCols.ID)
+      .addSelectColumn(ListCols.NAME)
+      .addSelectColumn(ListCols.USER_IN_COUNT)
+      .addSelectColumn(AppCols.NAME)
+      .addEqualityPredicate(ListCols.REALM_ID, realm.getGuid().getLocalId())
+      .execute()
       .compose(publicationRows -> {
 
         java.util.List<ListSummary> futurePublications = new ArrayList<>();
-        for (Row row : publicationRows) {
+        for (JdbcRow row : publicationRows) {
           ListSummary listSummary = new ListSummary();
 
           // List Id
-          Long listId = row.getLong(LIST_ID_COLUMN);
-          String listGuid = apiApp.createGuidFromRealmAndObjectId(LIST_GUID_PREFIX, realm, listId).toString();
-          listSummary.setGuid(listGuid);
+          Long listId = row.getLong(ListCols.ID);
+          ListGuid listGuid = new ListGuid();
+          listGuid.setLocalId(listId);
+          listGuid.setRealmId(realm.getGuid().getLocalId());
+          String listGuidHash = this.apiApp.getJackson().getSerializer(ListGuid.class).serialize(listGuid);
+          listSummary.setGuid(listGuidHash);
 
           // List Handle
-          String listHandle = row.getString(LIST_HANDLE_COLUMN);
+          String listHandle = row.getString(ListCols.NAME);
           listSummary.setHandle(listHandle);
 
           // App Name
-          String appName = row.getString("app_name");
+          String appName = row.getString(AppCols.NAME);
           listSummary.setAppUri(appName);
 
           // Publication Name
-          Integer subscriberCount = row.getInteger("subscriber_count");
+          Integer subscriberCount = row.getInteger(ListCols.USER_IN_COUNT);
           listSummary.setSubscriberCount(subscriberCount);
 
           futurePublications.add(listSummary);

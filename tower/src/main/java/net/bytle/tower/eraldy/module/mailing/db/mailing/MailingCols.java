@@ -1,8 +1,5 @@
 package net.bytle.tower.eraldy.module.mailing.db.mailing;
 
-import net.bytle.tower.eraldy.module.list.db.ListProvider;
-import net.bytle.tower.eraldy.module.organization.db.OrganizationProvider;
-import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.vertx.db.JdbcColumn;
 import net.bytle.vertx.db.JdbcSchemaManager;
 
@@ -18,9 +15,9 @@ public enum MailingCols implements JdbcColumn {
   ITEM_COUNT( MAILING_PREFIX + COLUMN_PART_SEP + "item_count"),
   ITEM_SUCCESS_COUNT(MAILING_PREFIX + COLUMN_PART_SEP + "item_success_count"),
   ITEM_EXECUTION_COUNT(MAILING_PREFIX + COLUMN_PART_SEP + "item_execution_count"),
-  ORGA_ID (MAILING_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN),
+  ORGA_ID (MAILING_PREFIX + COLUMN_PART_SEP + "orga_id"),
 
-  EMAIL_AUTHOR_USER_ID (MAILING_PREFIX + COLUMN_PART_SEP + "email_author" + COLUMN_PART_SEP + UserProvider.ID_COLUMN),
+  EMAIL_AUTHOR_USER_ID (MAILING_PREFIX + COLUMN_PART_SEP + "email_author" + COLUMN_PART_SEP + "user_id"),
   ID(MAILING_PREFIX + COLUMN_PART_SEP + "id"),
   NAME(MAILING_PREFIX + COLUMN_PART_SEP + "name"),
   REALM_ID( MAILING_PREFIX + COLUMN_PART_SEP + "realm_id"),
@@ -30,7 +27,7 @@ public enum MailingCols implements JdbcColumn {
   EMAIL_BODY ( MAILING_PREFIX + COLUMN_PART_SEP + "email_body"),
 
   EMAIL_LANGUAGE ( MAILING_PREFIX + COLUMN_PART_SEP + "email_language"),
-  EMAIL_RCPT_LIST_ID(MAILING_PREFIX + COLUMN_PART_SEP + "email_rcpt" + COLUMN_PART_SEP + ListProvider.LIST_ID_COLUMN);
+  EMAIL_RCPT_LIST_ID(MAILING_PREFIX + COLUMN_PART_SEP + "email_rcpt" + COLUMN_PART_SEP + "list_id");
 
   private final String colName;
 
