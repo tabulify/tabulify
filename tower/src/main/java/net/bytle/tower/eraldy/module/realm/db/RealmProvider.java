@@ -201,7 +201,7 @@ public class RealmProvider {
     /**
      * The user must exist (The db constraint check already that but yeah)
      */
-    OrgaUserGuid orgaUserGuid = ownerUser.getOrgaUserGuid();
+    OrgaUserGuid orgaUserGuid = ownerUser.getGuid();
     if (realmInputProps.getOwnerUserGuid() != null && !orgaUserGuid.equals(realmInputProps.getOwnerUserGuid())) {
       return Future.failedFuture(new InternalException("The organization user and the input user does not have the same value"));
     }
@@ -322,8 +322,8 @@ public class RealmProvider {
   public Future<List<Realm>> getRealmsForOwner(OrgaUser user) {
 
     return JdbcSelect.from(this.realmTable)
-      .addEqualityPredicate(RealmCols.ORGA_ID, user.getOrgaUserGuid().getOrganizationId())
-      .addEqualityPredicate(RealmCols.OWNER_ID, user.getOrgaUserGuid().getLocalId())
+      .addEqualityPredicate(RealmCols.ORGA_ID, user.getGuid().getOrganizationId())
+      .addEqualityPredicate(RealmCols.OWNER_ID, user.getGuid().getLocalId())
       .execute()
       .compose(this::getRealmsFromRows,
         err -> Future.failedFuture(

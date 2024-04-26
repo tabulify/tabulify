@@ -97,7 +97,7 @@ public class OrganizationApiImpl implements OrganizationApi {
     OrgaUser orgaUser = (OrgaUser) user;
     return this.apiApp
       .getOrganizationUserProvider()
-      .getOrganizationUserByIdentifier(orgaUser.getOrgaUserGuid())
+      .getOrganizationUserByIdentifier(orgaUser.getGuid())
       .compose(orgUser -> {
         if (orgUser == null) {
           return Future.failedFuture(

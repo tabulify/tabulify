@@ -74,7 +74,6 @@ public class User {
   /**
    * @param guid It is the global identifier * a string representation of realm id + user local id * never changes. It's the public id that: * you can see in the url * send to external application such as Analytics SAAS provider.  The database id (ie realm id + user local id) is not public.
    */
-  @SuppressWarnings("unused")
   public void setGuid(UserGuid guid) {
     this.guid = guid;
   }

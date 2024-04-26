@@ -15,7 +15,6 @@ There is 2 kinds of user
 * The users of an organization (Eraldy realm)
 """
 interface UserI {
-  guid: UserGuid!
   emailAddress: EmailAddress!
   givenName: String
   realm: Realm!
@@ -38,9 +37,7 @@ that belongs to an organization
 """
 type OrganizationUser implements UserI {
   """The user id"""
-  guid: UserGuid!
-  """The orga user global id"""
-  orgaUserGuid: OrgaUserGuid!
+  guid: OrgaUserGuid!
   """The email address"""
   emailAddress: EmailAddress!
   """The given name"""

@@ -1,7 +1,10 @@
 package net.bytle.tower.eraldy.module.organization.model;
 
+import net.bytle.exception.InternalException;
 import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
+
+import java.util.Objects;
 
 /**
  * An orga user guid is:
@@ -12,30 +15,36 @@ import net.bytle.tower.eraldy.module.user.model.UserGuid;
  * when serializing as the serializer may choose the UserGuid serializer
  * and not the OrgaUserGuid
  * They are 2 differents id
+ * By not extending, you can't check the equality (they are the same user)
  */
-public class OrgaUserGuid {
+public class OrgaUserGuid extends UserGuid {
 
 
   private long organizationId;
-  private long localId;
 
   public OrgaUserGuid() {
     super();
+    setRealmId(EraldyModel.REALM_LOCAL_ID);
   }
 
 
-  public void setOrganizationId(long organizationId) {
+  @Override
+  public void setRealmId(Long localId) {
+
+    if (!Objects.equals(localId, EraldyModel.REALM_LOCAL_ID)) {
+      throw new InternalException("An orga user should have the Eraldy Realm");
+    }
+    super.setRealmId(localId);
+
+  }
+
+  public void setOrganizationId(Long organizationId) {
 
     this.organizationId = organizationId;
 
   }
 
-  public void setLocalId(long localId) {
-
-    this.localId = localId;
-
-  }
-
+  @Override
   public long getRealmId() {
 
     return EraldyModel.REALM_LOCAL_ID;
@@ -48,16 +57,5 @@ public class OrgaUserGuid {
 
   }
 
-
-  public UserGuid toUserGuid() {
-    UserGuid userGuid = new UserGuid();
-    userGuid.setRealmId(EraldyModel.REALM_LOCAL_ID);
-    userGuid.setLocalId(this.localId);
-    return userGuid;
-  }
-
-  public long getLocalId() {
-    return this.localId;
-  }
 
 }

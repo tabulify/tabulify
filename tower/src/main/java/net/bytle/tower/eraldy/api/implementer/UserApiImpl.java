@@ -12,6 +12,7 @@ import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.model.openapi.UserPostBody;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
@@ -39,14 +40,18 @@ public class UserApiImpl implements UserApi {
     RealmProvider realmProvider = apiApp.getRealmProvider();
     UserGuid userGuid = null;
     try {
-      userGuid = userProvider.getGuidFromHash(userIdentifier);
+      try {
+        userGuid = this.apiApp.getJackson().getDeserializer(UserGuid.class).deserialize(userIdentifier);
+      } catch (CastException e) {
+        userGuid = this.apiApp.getJackson().getDeserializer(OrgaUserGuid.class).deserialize(userIdentifier);
+      }
       realmFuture = realmProvider.getRealmFromLocalId(userGuid.getRealmId());
     } catch (CastException e) {
       if (realmIdentifier == null) {
         return Future.failedFuture(
           TowerFailureException.builder()
             .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-            .setMessage("When the user identifier is not a guid, a realm identifier should be given")
+            .setMessage("When the user identifier (" + userIdentifier + ") is not a guid, a realm identifier should be given")
             .build()
         );
       }

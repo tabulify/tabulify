@@ -7,7 +7,6 @@ import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingSerializeException;
 import net.bytle.exception.CastException;
-import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +28,7 @@ public class GraphQLOrgaUserGuidCoercing implements Coercing<OrgaUserGuid, Strin
   @Override
   public @Nullable String serialize(@NotNull Object dataFetcherResult, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingSerializeException {
 
-    return this.jacksonMapperManager.getSerializer(AppGuid.class).serialize((AppGuid) dataFetcherResult);
+    return this.jacksonMapperManager.getSerializer(OrgaUserGuid.class).serialize((OrgaUserGuid) dataFetcherResult);
 
   }
 

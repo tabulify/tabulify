@@ -408,7 +408,7 @@ public class AuthProvider {
       .setSubject(jackson.getSerializer(UserGuid.class).serialize(guid));
 
     if (user instanceof OrgaUser) {
-      String userGuidHash = jackson.getSerializer(OrgaUserGuid.class).serialize(((OrgaUser) user).getOrgaUserGuid());
+      String userGuidHash = jackson.getSerializer(OrgaUserGuid.class).serialize(((OrgaUser) user).getGuid());
       authUserBuilder.setSubjectOrganizationGuid(userGuidHash);
     }
 
