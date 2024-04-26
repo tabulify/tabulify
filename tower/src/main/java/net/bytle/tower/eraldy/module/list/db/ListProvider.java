@@ -79,7 +79,6 @@ public class ListProvider {
       .addSerializer(ListGuid.class, new JacksonListGuidSerializer(apiApp))
       .addSerializer(ListImportListUserStatus.class, new JacksonStatusSerializer())
       .addSerializer(ListImportUserAction.class, new JacksonStatusSerializer())
-      .addSerializer(ListUserSource.class, new JacksonStatusSerializer())
     ;
 
     this.apiMapper = server.getJacksonMapperManager()

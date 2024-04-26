@@ -16,7 +16,7 @@ public class JacksonListUserSourceSerializer extends JacksonJsonStringSerializer
 
   @Override
   public String serialize(ListUserSource value) {
-    return value.name();
+    return String.valueOf(value.getCode());
   }
 
 }
