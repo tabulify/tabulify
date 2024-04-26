@@ -8,7 +8,7 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.graphql.pojo.input.ListUserInputProps;
-import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
+import net.bytle.tower.eraldy.mixin.AppPublicMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.ListItemMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
@@ -67,7 +67,7 @@ public class ListUserProvider {
       .jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
-      .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
+      .addMixIn(App.class, AppPublicMixinWithRealm.class)
       .addMixIn(ListObject.class, ListItemMixinWithoutRealm.class)
       .build();
 

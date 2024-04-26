@@ -186,8 +186,8 @@ public class ListApiImpl implements ListApi {
     ListProvider listProvider = this.apiApp.getListProvider();
     return listProvider
       .getListByIdentifierFoundInPathParameterAndVerifyScope(routingContext, AuthUserScope.LIST_GET)
-      .compose(listItemAnalytics -> {
-        if (listItemAnalytics == null) {
+      .compose(listObject -> {
+        if (listObject == null) {
           return Future.failedFuture(
             TowerFailureException
               .builder()
@@ -196,7 +196,7 @@ public class ListApiImpl implements ListApi {
               .build()
           );
         }
-        ApiResponse<ListObject> apiResult = new ApiResponse<>(listItemAnalytics)
+        ApiResponse<ListObject> apiResult = new ApiResponse<>(listObject)
           .setMapper(listProvider.getApiMapper());
         return Future.succeededFuture(apiResult);
       });

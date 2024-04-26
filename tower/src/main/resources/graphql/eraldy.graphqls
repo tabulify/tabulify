@@ -1,6 +1,7 @@
 directive @dateFormat on FIELD_DEFINITION
 scalar AppGuid
 scalar UserGuid
+scalar OrgaUserGuid
 scalar OrgaGuid
 scalar RealmGuid
 scalar ListGuid
@@ -36,8 +37,10 @@ A realm user from the Eraldy Realm
 that belongs to an organization
 """
 type OrganizationUser implements UserI {
-  """The global id"""
+  """The user id"""
   guid: UserGuid!
+  """The orga user global id"""
+  orgaUserGuid: OrgaUserGuid!
   """The email address"""
   emailAddress: EmailAddress!
   """The given name"""

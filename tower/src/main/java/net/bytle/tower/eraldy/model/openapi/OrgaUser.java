@@ -2,11 +2,9 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.exception.InternalException;
 import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
-import net.bytle.tower.eraldy.module.user.model.UserGuid;
 
 import java.util.Objects;
 
@@ -23,6 +21,7 @@ public class OrgaUser extends User {
 
   protected Organization organization;
   private OrgaRole orgaRole;
+  private OrgaUserGuid orgaUserGuid;
 
   /**
    * The empty constructor is
@@ -33,18 +32,12 @@ public class OrgaUser extends User {
   public OrgaUser() {
   }
 
-  @Override
-  public OrgaUserGuid getGuid() {
-    return (OrgaUserGuid) super.getGuid();
+  public void setOrgaUserGuid(OrgaUserGuid orgaUserGuid) {
+    this.orgaUserGuid = orgaUserGuid;
+    this.setGuid(orgaUserGuid.toUserGuid());
   }
 
-  @Override
-  public void setGuid(UserGuid guid) {
-    if (!(guid instanceof OrgaUserGuid)) {
-      throw new InternalException("The guid (" + guid + ") is not an orga user guid");
-    }
-    super.setGuid(guid);
-  }
+
 
   /**
    * @return organization
@@ -104,4 +97,8 @@ public class OrgaUser extends User {
     return this.orgaRole;
   }
 
+  @JsonProperty("orgaUserGuid")
+  public OrgaUserGuid getOrgaUserGuid() {
+    return orgaUserGuid;
+  }
 }

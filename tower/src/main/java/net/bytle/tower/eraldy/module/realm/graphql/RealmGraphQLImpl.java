@@ -8,6 +8,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.module.user.graphql.GraphQLUserGuidCoercing;
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 
@@ -30,6 +31,14 @@ public class RealmGraphQLImpl {
       .coercing(new GraphQLRealmGuidCoercing(this.app.getJackson()))
       .build();
     typeWiringBuilder.scalar(REALM_GUID);
+
+    final GraphQLScalarType USER_GUID = GraphQLScalarType
+      .newScalar()
+      .name("UserGuid")
+      .description("The Guid for a user in the realm")
+      .coercing(new GraphQLUserGuidCoercing(this.app.getJackson()))
+      .build();
+    typeWiringBuilder.scalar(USER_GUID);
 
     /**
      * Map type to function

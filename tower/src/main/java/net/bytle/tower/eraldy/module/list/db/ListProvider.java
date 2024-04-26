@@ -181,8 +181,8 @@ public class ListProvider {
           user = app.getOwnerUser();
         }
         newList.setOwnerUser(user);
-        jdbcInsert.addColumn(ListCols.OWNER_USER_ID, user.getGuid().getLocalId());
-        jdbcInsert.addColumn(ListCols.ORGA_ID, user.getGuid().getOrganizationId());
+        jdbcInsert.addColumn(ListCols.OWNER_USER_ID, user.getOrgaUserGuid().getLocalId());
+        jdbcInsert.addColumn(ListCols.ORGA_ID, user.getOrgaUserGuid().getOrganizationId());
 
         /**
          * Realm and App
@@ -280,13 +280,13 @@ public class ListProvider {
     }
 
     OrgaUserGuid ownerGuidObject = listInputProps.getOwnerUserGuid();
-    if (ownerGuidObject != null && !Objects.equals(ownerGuidObject, listObject.getOwnerUser().getGuid())) {
+    if (ownerGuidObject != null && !Objects.equals(ownerGuidObject, listObject.getOwnerUser().getOrgaUserGuid())) {
 
       OrgaUser orgaUser = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(ownerGuidObject, listObject.getApp().getRealm());
       listObject.setOwnerUser(orgaUser);
 
-      jdbcUpdate.addUpdatedColumn(ListCols.OWNER_USER_ID, listObject.getOwnerUser().getGuid().getLocalId());
-      jdbcUpdate.addUpdatedColumn(ListCols.ORGA_ID, listObject.getOwnerUser().getGuid().getOrganizationId());
+      jdbcUpdate.addUpdatedColumn(ListCols.OWNER_USER_ID, listObject.getOwnerUser().getOrgaUserGuid().getLocalId());
+      jdbcUpdate.addUpdatedColumn(ListCols.ORGA_ID, listObject.getOwnerUser().getOrgaUserGuid().getOrganizationId());
 
 
     }
@@ -721,7 +721,7 @@ public class ListProvider {
     if (!(list.getOwnerUser() == null || list.getOwnerUser().getEmailAddress() == null)) {
       return Future.succeededFuture(list.getOwnerUser());
     }
-    OrgaUserGuid orgaUserGuid = list.getOwnerUser().getGuid();
+    OrgaUserGuid orgaUserGuid = list.getOwnerUser().getOrgaUserGuid();
     if (orgaUserGuid == null) {
       return Future.failedFuture(new InternalException("The build of the list did not set the local id on the owner user"));
     }

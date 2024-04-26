@@ -79,7 +79,7 @@ public class OrganizationUserProvider {
 
     Realm eraldyRealm = this.apiApp.getEraldyModel().getRealm();
     return apiApp.getUserProvider()
-      .getUserByGuid(identifier, eraldyRealm)
+      .getUserByGuid(identifier.toUserGuid(), eraldyRealm)
       .compose(this::checkAndReturnUser);
 
   }
@@ -98,7 +98,7 @@ public class OrganizationUserProvider {
 
   public Future<OrgaUser> getOrganizationUserByGuid(OrgaUserGuid orgaUserGuid) {
 
-    return this.jdbcPool.withConnection(sqlConnection -> getOrganizationUserByGuid(orgaUserGuid, sqlConnection));
+    return this.jdbcPool.withConnection(sqlConnection -> getOrganizationUserByGuid(orgaUserGuid.toUserGuid(), sqlConnection));
 
   }
 
@@ -133,7 +133,7 @@ public class OrganizationUserProvider {
     OrgaUserGuid guid = new OrgaUserGuid();
     guid.setOrganizationId(jdbcRow.getLong(OrgaUserCols.ORGA_ID));
     guid.setLocalId(jdbcRow.getLong(OrgaUserCols.USER_ID));
-    orgaUser.setGuid(guid);
+    orgaUser.setOrgaUserGuid(guid);
     orgaUser.setOrgaRole(OrgaRole.fromRoleIdFailSafe(jdbcRow.getInteger(OrgaUserCols.ROLE_ID)));
     orgaUser.setOrganization(Objects.requireNonNullElseGet(knownOrganization, () -> Organization.createFromAnyId(guid)));
     orgaUser.setOrgaRole(OrgaRole.fromRoleIdFailSafe(jdbcRow.getInteger(OrgaUserCols.ROLE_ID)));
@@ -260,7 +260,7 @@ public class OrganizationUserProvider {
   public OrgaUser toOrgaUserFromGuid(OrgaUserGuid orgaUserGuid, Realm objectRealm) {
 
     OrgaUser newOwner = new OrgaUser();
-    newOwner.setGuid(orgaUserGuid);
+    newOwner.setOrgaUserGuid(orgaUserGuid);
     newOwner.setRealm(this.apiApp.getEraldyModel().getRealm());
 
     /**

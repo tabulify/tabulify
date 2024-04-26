@@ -176,8 +176,8 @@ public class MailingProvider {
         // owner
         OrgaUser ownerUser = ListProvider.getOwnerUser(list);
         mailing.setEmailAuthor(ownerUser);
-        jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_USER_ID, ownerUser.getGuid().getLocalId());
-        jdbcInsert.addColumn(MailingCols.ORGA_ID, ownerUser.getGuid().getOrganizationId());
+        jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_USER_ID, ownerUser.getOrgaUserGuid().getLocalId());
+        jdbcInsert.addColumn(MailingCols.ORGA_ID, ownerUser.getOrgaUserGuid().getOrganizationId());
 
         return jdbcPool
           .withTransaction(sqlConnection ->
@@ -260,7 +260,7 @@ public class MailingProvider {
     OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
     orgaUserGuid.setLocalId(userId);
     orgaUserGuid.setOrganizationId(orgaId);
-    authorUser.setGuid(orgaUserGuid);
+    authorUser.setOrgaUserGuid(orgaUserGuid);
     authorUser.setRealm(realm);
     mailing.setEmailAuthor(authorUser);
 
@@ -429,8 +429,8 @@ public class MailingProvider {
 
       if (newAuthor != null) {
         mailing.setEmailAuthor(newAuthor);
-        jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_AUTHOR_USER_ID, mailing.getEmailAuthor().getGuid().getLocalId());
-        jdbcUpdate.addUpdatedColumn(MailingCols.ORGA_ID, mailing.getEmailAuthor().getGuid().getOrganizationId());
+        jdbcUpdate.addUpdatedColumn(MailingCols.EMAIL_AUTHOR_USER_ID, mailing.getEmailAuthor().getOrgaUserGuid().getLocalId());
+        jdbcUpdate.addUpdatedColumn(MailingCols.ORGA_ID, mailing.getEmailAuthor().getOrgaUserGuid().getOrganizationId());
       }
 
 
@@ -524,7 +524,7 @@ public class MailingProvider {
       return Future.succeededFuture(emailAuthor);
     }
     return this.apiApp.getOrganizationUserProvider()
-      .getOrganizationUserByGuid(emailAuthor.getGuid())
+      .getOrganizationUserByGuid(emailAuthor.getOrgaUserGuid())
       .compose(emailAuthorFuture -> {
         mailing.setEmailAuthor(emailAuthorFuture);
         return Future.succeededFuture(emailAuthorFuture);

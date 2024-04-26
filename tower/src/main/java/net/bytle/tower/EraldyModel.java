@@ -275,7 +275,7 @@ public class EraldyModel {
                */
               UserInputProps realmOwnerInputProps = new UserInputProps();
               OrgaUser orgaUserOwner = new OrgaUser();
-              orgaUserOwner.setGuid(orgaUserGuid);
+              orgaUserOwner.setOrgaUserGuid(orgaUserGuid);
               orgaUserOwner.setOrgaRole(OrgaRole.OWNER);
               orgaUserOwner.setRealm(this.eraldyRealm);
               orgaUserOwner.setOrganization(eraldyOrganization);

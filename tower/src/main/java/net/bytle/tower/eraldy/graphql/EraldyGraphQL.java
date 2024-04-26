@@ -26,9 +26,8 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.app.graphql.GraphQLAppGuidCoercing;
 import net.bytle.tower.eraldy.module.list.graphql.ListGraphQLImpl;
 import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
-import net.bytle.tower.eraldy.module.organization.graphql.GraphQLOrgaGuidCoercing;
+import net.bytle.tower.eraldy.module.organization.graphql.OrgaGraphQLImpl;
 import net.bytle.tower.eraldy.module.realm.graphql.RealmGraphQLImpl;
-import net.bytle.tower.eraldy.module.user.graphql.GraphQLUserGuidCoercing;
 import net.bytle.vertx.graphql.GraphQLDef;
 import net.bytle.vertx.graphql.GraphQLLocalDate;
 import net.bytle.vertx.graphql.scalar.GraphQLEmailCoercing;
@@ -91,20 +90,6 @@ public class EraldyGraphQL implements GraphQLDef {
       .build();
     wiringBuilder.scalar(APP_GUID);
 
-    final GraphQLScalarType USER_GUID = GraphQLScalarType
-      .newScalar()
-      .name("UserGuid")
-      .description("The Guid for a user")
-      .coercing(new GraphQLUserGuidCoercing(this.app.getJackson()))
-      .build();
-    wiringBuilder.scalar(USER_GUID);
-    final GraphQLScalarType ORGA_GUID = GraphQLScalarType
-      .newScalar()
-      .name("OrgaGuid")
-      .description("The Guid for a organization")
-      .coercing(new GraphQLOrgaGuidCoercing(this.app.getJackson()))
-      .build();
-    wiringBuilder.scalar(ORGA_GUID);
 
 
     /**
@@ -113,6 +98,7 @@ public class EraldyGraphQL implements GraphQLDef {
     new MailingGraphQLImpl(this, wiringBuilder);
     new ListGraphQLImpl(this, wiringBuilder);
     new RealmGraphQLImpl(this,wiringBuilder);
+    new OrgaGraphQLImpl(this,wiringBuilder);
     UserGraphQLImpl userImpl = new UserGraphQLImpl(this);
 
     /**
