@@ -1,6 +1,8 @@
 package net.bytle.tower.eraldy.module.mailing.model;
 
-public class MailingJobGuid {
+import net.bytle.vertx.guid.Guid;
+
+public class MailingJobGuid extends Guid {
 
 
   /**
@@ -38,5 +40,10 @@ public class MailingJobGuid {
     this.localId = localId;
   }
 
+  @Override
+  public String toStringLocalIds() {
+    return "realmId=" + realmId +
+      ", mailingJobId=" + localId;
+  }
 
 }

@@ -1,9 +1,10 @@
 package net.bytle.tower.eraldy.module.realm.model;
 
+import net.bytle.vertx.guid.Guid;
+
 import java.util.Objects;
 
-public class RealmGuid {
-
+public class RealmGuid extends Guid {
 
   private final long localId;
 
@@ -36,9 +37,10 @@ public class RealmGuid {
     return Objects.hash(localId);
   }
 
+
   @Override
-  public String toString() {
-    return String.valueOf(localId);
+  public String toStringLocalIds() {
+    return String.valueOf(this.localId);
   }
 
 }

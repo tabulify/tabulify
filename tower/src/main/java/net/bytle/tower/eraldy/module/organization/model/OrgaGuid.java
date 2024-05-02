@@ -1,11 +1,13 @@
 package net.bytle.tower.eraldy.module.organization.model;
 
+import net.bytle.vertx.guid.Guid;
+
 import java.util.Objects;
 
 /**
  * An orga guid
  */
-public class OrgaGuid  {
+public class OrgaGuid extends Guid {
 
 
   /**
@@ -42,9 +44,10 @@ public class OrgaGuid  {
   }
 
   @Override
-  public String toString() {
-    return String.valueOf(localId);
+  public String toStringLocalIds() {
+    return String.valueOf(this.localId);
   }
+
 
   public String getPublicHash() {
     return this.publicHash;

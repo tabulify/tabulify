@@ -1,8 +1,9 @@
 package net.bytle.tower.eraldy.module.list.model;
 
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
+import net.bytle.vertx.guid.Guid;
 
-public class ListUserGuid {
+public class ListUserGuid extends Guid {
 
 
   public static final String GUID_PREFIX = "liu";
@@ -11,6 +12,7 @@ public class ListUserGuid {
   private long listId;
 
   public ListUserGuid() {
+    super();
   }
 
   public long getRealmId(){
@@ -45,7 +47,7 @@ public class ListUserGuid {
   }
 
   @Override
-  public String toString() {
+  public String toStringLocalIds() {
     return "realmId=" + realmId +
       ", userId=" + userId +
       ", listId=" + listId;

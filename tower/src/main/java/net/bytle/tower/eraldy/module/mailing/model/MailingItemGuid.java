@@ -1,6 +1,8 @@
 package net.bytle.tower.eraldy.module.mailing.model;
 
-public class MailingItemGuid {
+import net.bytle.vertx.guid.Guid;
+
+public class MailingItemGuid extends Guid {
 
 
   /**
@@ -51,5 +53,12 @@ public class MailingItemGuid {
 
   public void setUserId(long userId) {
     this.userId = userId;
+  }
+
+  @Override
+  public String toStringLocalIds() {
+    return "realmId=" + realmId +
+      ", userId=" + userId +
+      ", mailingId=" + mailingId;
   }
 }

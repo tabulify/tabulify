@@ -1,8 +1,11 @@
 package net.bytle.tower.eraldy.module.auth.model;
 
+
+import net.bytle.vertx.guid.Guid;
+
 import java.util.Objects;
 
-public class CliGuid {
+public class CliGuid extends Guid {
 
 
   private Long realmId;
@@ -45,5 +48,10 @@ public class CliGuid {
   @Override
   public int hashCode() {
     return Objects.hash(realmId, localId);
+  }
+
+
+  public String toStringLocalIds() {
+    return "`cli`Id=" + localId +", realmId=" + realmId;
   }
 }

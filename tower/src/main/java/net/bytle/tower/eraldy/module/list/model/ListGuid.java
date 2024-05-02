@@ -1,6 +1,8 @@
 package net.bytle.tower.eraldy.module.list.model;
 
-public class ListGuid {
+import net.bytle.vertx.guid.Guid;
+
+public class ListGuid extends Guid {
 
 
   private Long realmId;
@@ -31,4 +33,9 @@ public class ListGuid {
   public void setLocalId(long localId) {
     this.localId = localId;
   }
+
+  public String toStringLocalIds() {
+    return "listId=" + localId +", realmId=" + realmId;
+  }
+
 }

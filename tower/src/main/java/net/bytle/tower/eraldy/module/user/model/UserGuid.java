@@ -1,12 +1,14 @@
 package net.bytle.tower.eraldy.module.user.model;
 
+import net.bytle.vertx.guid.Guid;
+
 import java.util.Objects;
 
 /**
  * A general user
  * If you are modeling an owner, you want to use the {@link net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid}
  */
-public class UserGuid {
+public class UserGuid extends Guid {
 
 
   private long localId;
@@ -53,7 +55,8 @@ public class UserGuid {
   }
 
   @Override
-  public String toString() {
+  public String toStringLocalIds() {
     return "localId=" + localId +", realmId=" + realmId;
   }
+
 }

@@ -8,6 +8,7 @@ import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.app.inputs.AppInputProps;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.auth.db.AuthClientProvider;
+import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 import net.bytle.tower.eraldy.module.common.db.RealmSequenceProvider;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.organization.inputs.OrgaUserInputProps;
@@ -162,7 +163,8 @@ public class EraldyModel {
         AuthClientProvider authClientProvider = this.apiApp.getAuthClientProvider();
         authClientProvider.updateGuid(memberClient, 1L);
         authClientProvider.addEraldyClient(memberClient);
-        LOGGER.info("The client id (" + memberClient.getGuid() + ") for the member app was created");
+        String cliGuidHash = this.apiApp.getJackson().getSerializer(CliGuid.class).serialize(memberClient.getGuid());
+        LOGGER.info("The client id (" + cliGuidHash + ") for the member app was created");
 
         AppInputProps interactApp = new AppInputProps();
         interactApp.setName("Interact");
@@ -181,7 +183,8 @@ public class EraldyModel {
         interactClient.addUri(this.interactAppUri);
         authClientProvider.updateGuid(interactClient,2L);
         authClientProvider.addEraldyClient(interactClient);
-        LOGGER.info("The client id (" + interactClient.getGuid() + ") for the interact app was created");
+        String cliGuidHash = this.apiApp.getJackson().getSerializer(CliGuid.class).serialize(interactClient.getGuid());
+        LOGGER.info("The client id (" + cliGuidHash + ") for the interact app was created");
 
         return Future.succeededFuture();
 

@@ -17,6 +17,7 @@ import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.module.app.db.AppProvider;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.auth.db.AuthClientProvider;
+import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.vertx.*;
@@ -322,8 +323,9 @@ public class AuthClientHandler extends TowerService implements Handler<RoutingCo
                 // client_id is normally send as HTTP headers by client
                 // it's advertised in the URL only from the member app
                 // contains client id, is just a trick to not send this data for all apps
-                // Why? because only the  auth app have this query parameter
-                String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-" + finalAuthClient.getGuid();
+                // Why? because only the auth app have this query parameter
+                String guidHash = this.apiApp.getJackson().getSerializer(CliGuid.class).serialize(finalAuthClient.getGuid());
+                String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-" + guidHash;
                 FrontEndCookie.conf(cookieName, AuthClient.class)
                   .setPath("/") // send back from all pages
                   .setJsonMapper(authClientProvider.getPublicJsonMapper())

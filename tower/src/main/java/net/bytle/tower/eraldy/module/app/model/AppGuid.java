@@ -1,8 +1,10 @@
 package net.bytle.tower.eraldy.module.app.model;
 
+import net.bytle.vertx.guid.Guid;
+
 import java.util.Objects;
 
-public class AppGuid {
+public class AppGuid extends Guid {
 
 
   private Long realmId;
@@ -11,7 +13,7 @@ public class AppGuid {
   public AppGuid() {
   }
 
-  public Long getRealmId(){
+  public Long getRealmId() {
     return this.realmId;
   }
 
@@ -46,5 +48,11 @@ public class AppGuid {
   public int hashCode() {
     return Objects.hash(realmId, localId);
   }
+
+  @Override
+  public String toStringLocalIds() {
+    return "appId=" + localId + ", realmId=" + realmId;
+  }
+
 
 }
