@@ -1,6 +1,6 @@
 package net.bytle.tower.eraldy.module.mailing.model;
 
-public class MailingGuid {
+public class MailingJobGuid {
 
 
   /**
@@ -12,8 +12,7 @@ public class MailingGuid {
    */
   private long localId;
 
-
-  public MailingGuid() {
+  public MailingJobGuid() {
   }
 
   public Long getRealmId(){

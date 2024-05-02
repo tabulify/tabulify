@@ -15,6 +15,7 @@ import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.type.Handle;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.db.*;
+import net.bytle.vertx.guid.GuidDeSer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,9 +48,11 @@ public class OrganizationProvider {
     this.orgaTable = JdbcTable.build(jdbcSchema, TABLE_NAME, OrganizationCols.values())
       .addPrimaryKeyColumn(OrganizationCols.ID)
       .build();
+
+    GuidDeSer orgaGuidDeser = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(GUID_PREFIX,1);
     this.apiApp.getJackson()
-      .addSerializer(OrgaGuid.class, new JacksonOrgaGuidSerializer(apiApp))
-      .addDeserializer(OrgaGuid.class, new JacksonOrgaGuidDeserializer(apiApp));
+      .addSerializer(OrgaGuid.class, new JacksonOrgaGuidSerializer(orgaGuidDeser))
+      .addDeserializer(OrgaGuid.class, new JacksonOrgaGuidDeserializer(orgaGuidDeser));
   }
 
 

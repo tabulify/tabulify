@@ -22,6 +22,7 @@ import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.db.*;
+import net.bytle.vertx.guid.GuidDeSer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,10 +68,11 @@ public class OrganizationUserProvider {
      * while we move to GraphQL
      */
 
+    GuidDeSer orgaUserGuidDeser = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(GUID_PREFIX, 3);
     server
       .getJacksonMapperManager()
-      .addDeserializer(OrgaUserGuid.class, new JacksonOrgaUserGuidDeserializer(apiApp))
-      .addSerializer(OrgaUserGuid.class, new JacksonOrgaUserGuidSerializer(apiApp));
+      .addDeserializer(OrgaUserGuid.class, new JacksonOrgaUserGuidDeserializer(orgaUserGuidDeser))
+      .addSerializer(OrgaUserGuid.class, new JacksonOrgaUserGuidSerializer(orgaUserGuidDeser));
 
   }
 

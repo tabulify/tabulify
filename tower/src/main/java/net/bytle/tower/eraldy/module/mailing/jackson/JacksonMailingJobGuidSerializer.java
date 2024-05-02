@@ -2,24 +2,24 @@ package net.bytle.tower.eraldy.module.mailing.jackson;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import net.bytle.tower.eraldy.module.mailing.model.MailingGuid;
+import net.bytle.tower.eraldy.module.mailing.model.MailingJobGuid;
 import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonJsonStringSerializer;
 
 import java.io.IOException;
 
-public class JacksonMailingGuidSerializer extends JacksonJsonStringSerializer<MailingGuid> {
+public class JacksonMailingJobGuidSerializer extends JacksonJsonStringSerializer<MailingJobGuid> {
 
 
 
   private final GuidDeSer guidDeSer;
-  public JacksonMailingGuidSerializer(GuidDeSer guidDeSer) {
+  public JacksonMailingJobGuidSerializer(GuidDeSer guidDeSer) {
     this.guidDeSer = guidDeSer;
 
   }
 
   @Override
-  public void serialize(MailingGuid value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+  public void serialize(MailingJobGuid value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
 
 
     gen.writeString(serialize(value));
@@ -27,7 +27,7 @@ public class JacksonMailingGuidSerializer extends JacksonJsonStringSerializer<Ma
   }
 
   @Override
-  public String serialize(MailingGuid value) {
+  public String serialize(MailingJobGuid value) {
     return guidDeSer.serialize(value.getRealmId(),value.getLocalId());
 
   }

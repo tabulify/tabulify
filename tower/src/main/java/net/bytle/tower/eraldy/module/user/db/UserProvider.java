@@ -21,7 +21,6 @@ import net.bytle.tower.eraldy.module.user.jackson.JacksonUserStatusDeserializer;
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import net.bytle.tower.eraldy.module.user.model.UserStatus;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
-import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.PasswordHashManager;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
@@ -34,6 +33,7 @@ import net.bytle.vertx.analytics.event.SignUpEvent;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.db.*;
 import net.bytle.vertx.flow.FlowType;
+import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,10 +79,11 @@ public class UserProvider {
 
     JacksonMapperManager jacksonMapperManager = server.getJacksonMapperManager();
 
+    GuidDeSer userGuidDeser = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(USR_GUID_PREFIX,2);
     jacksonMapperManager
       .addDeserializer(UserStatus.class, new JacksonUserStatusDeserializer())
-      .addDeserializer(UserGuid.class, new JacksonUserGuidDeserializer(apiApp))
-      .addSerializer(UserGuid.class, new JacksonUserGuidSerializer(apiApp))
+      .addDeserializer(UserGuid.class, new JacksonUserGuidDeserializer(userGuidDeser))
+      .addSerializer(UserGuid.class, new JacksonUserGuidSerializer(userGuidDeser))
     ;
 
     this.userTable = JdbcTable.build(jdbcSchema, REALM_USER_TABLE_NAME, UserCols.values())
@@ -530,12 +531,6 @@ public class UserProvider {
     return getUserByEmail(email, realm);
 
   }
-
-
-  public Guid createUserGuid(long realmId, Long userId) {
-    return this.apiApp.createGuidFromRealmAndObjectId(USR_GUID_PREFIX, realmId, userId);
-  }
-
 
   /**
    * Get or insert the user. It's used at first to load the initial data of the Eraldy model

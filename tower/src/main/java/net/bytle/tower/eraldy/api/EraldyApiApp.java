@@ -1,7 +1,6 @@
 package net.bytle.tower.eraldy.api;
 
 import io.vertx.core.Future;
-import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
@@ -12,6 +11,8 @@ import net.bytle.tower.eraldy.auth.AuthClientHandler;
 import net.bytle.tower.eraldy.auth.RealmSessionHandler;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.module.app.db.AppProvider;
+import net.bytle.tower.eraldy.module.auth.db.AuthClientProvider;
+import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 import net.bytle.tower.eraldy.module.common.db.RealmSequenceProvider;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
@@ -23,16 +24,13 @@ import net.bytle.tower.eraldy.module.organization.db.OrganizationProvider;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationRoleProvider;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationUserProvider;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
-import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
-import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.eraldy.objectProvider.FileProvider;
 import net.bytle.tower.eraldy.objectProvider.ServiceProvider;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
 import net.bytle.tower.util.Env;
 import net.bytle.tower.util.EraldySubRealmModel;
-import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthNContextManager;
@@ -49,7 +47,6 @@ import org.apache.logging.log4j.Logger;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static net.bytle.tower.util.Guid.*;
 
 /**
  * The api application
@@ -63,7 +60,6 @@ public class EraldyApiApp extends TowerApp {
   private final RealmProvider realmProvider;
   private final ListProvider listProvider;
 
-  private final HashId hashIds;
   private final OrganizationProvider organizationProvider;
   private final ListUserProvider listUserProvider;
   private final ServiceProvider serviceProvider;
@@ -187,7 +183,6 @@ public class EraldyApiApp extends TowerApp {
     this.listUserProvider = new ListUserProvider(this, realmSchema);
     this.serviceProvider = new ServiceProvider(this, realmSchema);
     this.organizationRoleProvider = new OrganizationRoleProvider(realmSchema);
-    this.hashIds = this.getHttpServer().getServer().getHashId();
     this.authClientProvider = new AuthClientProvider(this);
     this.realmSequenceProvider = new RealmSequenceProvider(realmSchema);
     this.mailingProvider = new MailingProvider(this, realmSchema);
@@ -305,7 +300,7 @@ public class EraldyApiApp extends TowerApp {
     return this.getEraldyModel().getMemberAppUri()
       .setPath("/login")
       .addQueryProperty(AuthQueryProperty.REDIRECT_URI, redirectUri.toString())
-      .addQueryProperty(AuthQueryProperty.CLIENT_ID, authClient.getGuid());
+      .addQueryProperty(AuthQueryProperty.CLIENT_ID, this.getJackson().getSerializer(CliGuid.class).serialize(authClient.getGuid()));
   }
 
 
@@ -325,51 +320,6 @@ public class EraldyApiApp extends TowerApp {
     return this.appProvider;
   }
 
-
-  public Guid createGuidFromHashWithOneRealmIdAndOneObjectId(String guidPrefix, String guid) throws CastException {
-    return new builder(this.hashIds, guidPrefix)
-      .setCipherText(guid, REALM_ID_OBJECT_ID_TYPE)
-      .build();
-  }
-
-  public Guid createGuidFromHashWithOneRealmIdAndTwoObjectId(String guidPrefix, String guid) throws CastException {
-    return new builder(this.hashIds, guidPrefix)
-      .setCipherText(guid, REALM_ID_TWO_OBJECT_ID_TYPE)
-      .build();
-  }
-
-  public Guid createGuidFromRealmAndObjectId(String shortPrefix, Realm realm, Long id) {
-
-    return new builder(this.hashIds, shortPrefix)
-      .setRealm(realm)
-      .setFirstObjectId(id)
-      .build();
-  }
-
-  public Guid createGuidFromRealmAndObjectId(String shortPrefix, Long realmId, Long id) {
-
-    return new builder(this.hashIds, shortPrefix)
-      .setOrganizationOrRealmId(realmId)
-      .setFirstObjectId(id)
-      .build();
-  }
-
-  public Guid createGuidFromObjectId(String prefix, Long id) {
-    return Guid.builder(this.hashIds, prefix)
-      .setOrganizationOrRealmId(id)
-      .build();
-
-  }
-
-  public Guid createGuidStringFromRealmAndTwoObjectId(String shortPrefix, Long realmId, Long id1, Long id2) {
-
-    return Guid.builder(this.hashIds, shortPrefix)
-      .setOrganizationOrRealmId(realmId)
-      .setFirstObjectId(id1)
-      .setSecondObjectId(id2)
-      .build();
-
-  }
 
   public OrganizationProvider getOrganizationProvider() {
     return this.organizationProvider;

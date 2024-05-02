@@ -23,9 +23,9 @@ import net.bytle.tower.eraldy.module.realm.db.RealmCols;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.user.db.UserCols;
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
-import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.db.*;
+import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,11 +69,12 @@ public class ListUserProvider {
     /**
      * Register the deserializer
      */
+    GuidDeSer listUserGuid = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(ListUserGuid.GUID_PREFIX,3);
     jacksonMapperManager
       .addDeserializer(ListUserSource.class, new JacksonListUserSourceDeserializer())
       .addSerializer(ListUserSource.class, new JacksonListUserSourceSerializer())
-      .addDeserializer(ListUserGuid.class, new JacksonListUserGuidDeserializer(this.apiApp))
-      .addSerializer(ListUserGuid.class, new JacksonListUserGuidSerializer(this.apiApp));
+      .addDeserializer(ListUserGuid.class, new JacksonListUserGuidDeserializer(listUserGuid))
+      .addSerializer(ListUserGuid.class, new JacksonListUserGuidSerializer(listUserGuid));
 
 
     Map<JdbcColumn, JdbcColumn> foreignKeysUserColumn = new HashMap<>();
@@ -314,15 +315,15 @@ public class ListUserProvider {
 
   public Future<java.util.List<ListUserShort>> getListUsers(String listGuid,
                                                             Long pageId, Long pageSize, String searchTerm) {
-    Guid guid;
+    ListGuid guid;
     try {
-      guid = apiApp.getListProvider().getGuidObject(listGuid);
+      guid = apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listGuid);
     } catch (CastException e) {
       return Future.failedFuture(e);
     }
 
-    long realmId = guid.getRealmOrOrganizationId();
-    long listId = guid.validateRealmAndGetFirstObjectId(realmId);
+    long realmId = guid.getRealmId();
+    long listId = guid.getLocalId();
 
     JdbcPagination pagination = new JdbcPagination();
     pagination.setSearchTerm(searchTerm);
@@ -346,11 +347,12 @@ public class ListUserProvider {
         for (JdbcRow row : registrationRows) {
 
           ListUserShort listUserShort = new ListUserShort();
-          Long userId = row.getLong(ListUserCols.USER_ID);
-          String guidString = apiApp.createGuidStringFromRealmAndTwoObjectId(ListUserGuid.GUID_PREFIX, realmId, listId, userId).toString();
-          listUserShort.setGuid(guidString);
-          String userGuid = apiApp.getUserProvider().createUserGuid(realmId, userId).toString();
-          listUserShort.setUserGuid(userGuid);
+          ListUserGuid listUserGuid = new ListUserGuid();
+          listUserGuid.setUserId(row.getLong(ListUserCols.USER_ID));
+          listUserGuid.setListId(listId);
+          listUserGuid.setRealmId(realmId);
+          listUserShort.setGuid(this.apiApp.getJackson().getSerializer(ListUserGuid.class).serialize(listUserGuid));
+          listUserShort.setUserGuid(this.apiApp.getJackson().getSerializer(UserGuid.class).serialize(listUserGuid.toUserGuid()));
           String subscriberEmail = row.getString(UserCols.EMAIL_ADDRESS);
           listUserShort.setUserEmail(subscriberEmail);
           LocalDateTime localDateTime = row.getLocalDateTime(ListUserCols.IN_OPT_IN_CONFIRMATION_TIME);

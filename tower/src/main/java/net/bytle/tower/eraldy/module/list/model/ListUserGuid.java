@@ -1,5 +1,7 @@
 package net.bytle.tower.eraldy.module.list.model;
 
+import net.bytle.tower.eraldy.module.user.model.UserGuid;
+
 public class ListUserGuid {
 
 
@@ -49,4 +51,10 @@ public class ListUserGuid {
       ", listId=" + listId;
   }
 
+  public UserGuid toUserGuid() {
+    UserGuid userGuid = new UserGuid();
+    userGuid.setRealmId(this.realmId);
+    userGuid.setLocalId(this.userId);
+    return userGuid;
+  }
 }

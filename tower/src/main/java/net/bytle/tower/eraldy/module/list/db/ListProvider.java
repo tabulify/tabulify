@@ -31,11 +31,11 @@ import net.bytle.tower.eraldy.module.organization.db.OrganizationUserProvider;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
-import net.bytle.tower.util.Guid;
 import net.bytle.type.Handle;
 import net.bytle.type.HandleCastException;
 import net.bytle.vertx.*;
 import net.bytle.vertx.db.*;
+import net.bytle.vertx.guid.GuidDeSer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,9 +66,10 @@ public class ListProvider {
     Server server = apiApp.getHttpServer().getServer();
     this.jdbcPool = jdbcSchema.getJdbcClient().getPool();
 
+    GuidDeSer listGuidDeSer = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(LIST_GUID_PREFIX,2);
     server.getJacksonMapperManager()
-      .addDeserializer(ListGuid.class, new JacksonListGuidDeserializer(apiApp))
-      .addSerializer(ListGuid.class, new JacksonListGuidSerializer(apiApp))
+      .addDeserializer(ListGuid.class, new JacksonListGuidDeserializer(listGuidDeSer))
+      .addSerializer(ListGuid.class, new JacksonListGuidSerializer(listGuidDeSer))
       .addSerializer(ListImportListUserStatus.class, new JacksonStatusSerializer())
       .addSerializer(ListImportUserAction.class, new JacksonStatusSerializer())
     ;
@@ -477,9 +478,6 @@ public class ListProvider {
       });
   }
 
-  public Guid getGuidObject(String listGuid) throws CastException {
-    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(ListProvider.LIST_GUID_PREFIX, listGuid);
-  }
 
   public Future<ListObject> getListByHandle(Handle listHandle, Realm realm) {
 

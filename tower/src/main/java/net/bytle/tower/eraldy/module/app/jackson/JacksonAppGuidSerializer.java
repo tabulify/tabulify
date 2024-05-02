@@ -3,11 +3,8 @@ package net.bytle.tower.eraldy.module.app.jackson;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import net.bytle.tower.EraldyModel;
-import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.module.app.db.AppProvider;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
-import net.bytle.tower.util.Guid;
-import net.bytle.vertx.HashId;
+import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonJsonStringSerializer;
 
 import java.io.IOException;
@@ -15,11 +12,10 @@ import java.io.IOException;
 public class JacksonAppGuidSerializer extends JacksonJsonStringSerializer<AppGuid> {
 
 
+  private final GuidDeSer guidDeSer;
 
-  private final HashId hashIds;
-  public JacksonAppGuidSerializer(EraldyApiApp apiApp) {
-    this.hashIds = apiApp.getHttpServer().getServer().getHashId();
-
+  public JacksonAppGuidSerializer(GuidDeSer guidDeSer) {
+    this.guidDeSer = guidDeSer;
   }
 
   @Override
@@ -32,10 +28,6 @@ public class JacksonAppGuidSerializer extends JacksonJsonStringSerializer<AppGui
 
   @Override
   public String serialize(AppGuid value) {
-    return Guid.builder(this.hashIds, AppProvider.APP_GUID_PREFIX)
-      .setOrganizationOrRealmId(EraldyModel.REALM_LOCAL_ID)
-      .setFirstObjectId(value.getLocalId())
-      .build()
-      .toString();
+    return guidDeSer.serialize(EraldyModel.REALM_LOCAL_ID,value.getLocalId());
   }
 }

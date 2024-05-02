@@ -8,6 +8,7 @@ import net.bytle.tower.Log;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AnalyticsApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
+import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
@@ -91,7 +92,8 @@ public class AnalyticsApiImpl implements AnalyticsApi {
       analyticsClient = new AnalyticsEventClient();
       analyticsEvent.setClient(analyticsClient);
     }
-    analyticsClient.setClientGuid(authClient.getGuid());
+    String clientIdHash = this.apiApp.getJackson().getSerializer(CliGuid.class).serialize(authClient.getGuid());
+    analyticsClient.setClientGuid(clientIdHash);
     JacksonMapperManager jackson = this.apiApp.getJackson();
     Realm authRealm = authClient.getApp().getRealm();
     analyticsClient.setAppOrganisationGuid(jackson.getSerializer(OrgaGuid.class).serialize(authRealm.getOrganization().getGuid()));

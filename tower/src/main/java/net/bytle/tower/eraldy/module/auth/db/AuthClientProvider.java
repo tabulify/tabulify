@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.objectProvider;
+package net.bytle.tower.eraldy.module.auth.db;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
@@ -10,8 +10,11 @@ import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.auth.jackson.JacksonCliGuidDeserializer;
+import net.bytle.tower.eraldy.module.auth.jackson.JacksonCliGuidSerializer;
+import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
-import net.bytle.tower.util.Guid;
+import net.bytle.vertx.guid.GuidDeSer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,17 +41,27 @@ public class AuthClientProvider {
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .build();
 
+    GuidDeSer cliDeSer = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(GUID_CLI_PREFIX, 2);
+    this.apiApp.getJackson()
+      .addSerializer(CliGuid.class,new JacksonCliGuidSerializer(cliDeSer))
+      .addDeserializer(CliGuid.class,new JacksonCliGuidDeserializer(cliDeSer));
+
   }
 
   public void addEraldyClient(AuthClient authClient) {
 
-    this.interactAuthClients.put(authClient.getGuid(), authClient);
-    if (authClient.getLocalId() == 2L) {
+    String cliGuidHash = this.apiApp.getJackson().getSerializer(CliGuid.class).serialize(authClient.getGuid());
+    this.interactAuthClients.put(cliGuidHash, authClient);
+    if (authClient.getGuid().getLocalId() == 2L) {
       // The API key root client is a dummy client
       // for now a client of the interact app
       this.apiKeyRootClient = new AuthClient();
       this.apiKeyRootClient.setApp(authClient.getApp());
-      this.apiKeyRootClient.setGuid("cli-root");
+      CliGuid cliGuid = new CliGuid();
+      cliGuid.setLocalId(0);
+      cliGuid.setRealmId(this.apiKeyRootClient.getApp().getRealm().getGuid().getLocalId());
+      this.apiKeyRootClient.setGuid(cliGuid);
+      this.apiKeyRootClient.setName("cli-root");
     }
 
 
@@ -59,6 +72,7 @@ public class AuthClientProvider {
    * @return the auth client, null if not found (to not advertise a failure)
    */
   public Future<AuthClient> getClientFromClientId(String clientId) {
+
     AuthClient authClient = this.interactAuthClients.get(clientId);
     if (authClient != null) {
       return Future.succeededFuture(authClient);
@@ -66,10 +80,12 @@ public class AuthClientProvider {
     return Future.succeededFuture();
   }
 
-  public void updateGuid(AuthClient authClient) {
-    Long localId = authClient.getApp().getRealm().getGuid().getLocalId();
-    Guid guid = this.apiApp.createGuidFromRealmAndObjectId(GUID_CLI_PREFIX, localId, authClient.getLocalId());
-    authClient.setGuid(guid.toString());
+  public void updateGuid(AuthClient authClient, long localId) {
+    long realmGuid = authClient.getApp().getRealm().getGuid().getLocalId();
+    CliGuid cliGuid = new CliGuid();
+    cliGuid.setRealmId(realmGuid);
+    cliGuid.setLocalId(localId);
+    authClient.setGuid(cliGuid);
   }
 
   public AuthClient getRequestingClient(RoutingContext routingContext) {

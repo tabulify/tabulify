@@ -7,6 +7,7 @@ import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.app.inputs.AppInputProps;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.auth.db.AuthClientProvider;
 import net.bytle.tower.eraldy.module.common.db.RealmSequenceProvider;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.organization.inputs.OrgaUserInputProps;
@@ -17,7 +18,6 @@ import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
-import net.bytle.tower.eraldy.objectProvider.AuthClientProvider;
 import net.bytle.type.Handle;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.ConfigAccessor;
@@ -157,11 +157,10 @@ public class EraldyModel {
          * Create a client for the member App
          */
         memberClient = new AuthClient();
-        memberClient.setLocalId(1L);
         memberClient.setApp(memberAppRes);
         memberClient.addUri(this.memberAppUri);
         AuthClientProvider authClientProvider = this.apiApp.getAuthClientProvider();
-        authClientProvider.updateGuid(memberClient);
+        authClientProvider.updateGuid(memberClient, 1L);
         authClientProvider.addEraldyClient(memberClient);
         LOGGER.info("The client id (" + memberClient.getGuid() + ") for the member app was created");
 
@@ -178,10 +177,9 @@ public class EraldyModel {
          * Create a client for the interact App
          */
         AuthClient interactClient = new AuthClient();
-        interactClient.setLocalId(2L);
         interactClient.setApp(interactAppRes);
         interactClient.addUri(this.interactAppUri);
-        authClientProvider.updateGuid(interactClient);
+        authClientProvider.updateGuid(interactClient,2L);
         authClientProvider.addEraldyClient(interactClient);
         LOGGER.info("The client id (" + interactClient.getGuid() + ") for the interact app was created");
 

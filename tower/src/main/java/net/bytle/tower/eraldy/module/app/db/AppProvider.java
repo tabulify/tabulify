@@ -26,6 +26,7 @@ import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.*;
+import net.bytle.vertx.guid.GuidDeSer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,9 +58,10 @@ public class AppProvider {
     this.apiApp = apiApp;
     this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
 
+    GuidDeSer appGuidDeSer = apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(AppProvider.APP_GUID_PREFIX, 2);
     this.apiApp.getHttpServer().getServer().getJacksonMapperManager()
-      .addDeserializer(AppGuid.class, new JacksonAppGuidDeserializer(apiApp))
-      .addSerializer(AppGuid.class, new JacksonAppGuidSerializer(apiApp));
+      .addDeserializer(AppGuid.class, new JacksonAppGuidDeserializer(appGuidDeSer))
+      .addSerializer(AppGuid.class, new JacksonAppGuidSerializer(appGuidDeSer));
 
     this.appTable = JdbcTable.build(jdbcSchema, APP_TABLE_NAME, AppCols.values())
       .addPrimaryKeyColumn(AppCols.ID)

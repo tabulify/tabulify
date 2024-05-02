@@ -28,13 +28,13 @@ import net.bytle.tower.eraldy.module.mailing.model.MailingGuid;
 import net.bytle.tower.eraldy.module.mailing.model.MailingStatus;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
-import net.bytle.tower.util.Guid;
 import net.bytle.type.EmailAddress;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.*;
+import net.bytle.vertx.guid.GuidDeSer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,11 +79,11 @@ public class MailingProvider {
     this.updateItemCountAndStatusToRunningSqlStatement = postgresClient.getSqlStatement("mailing/mailing-update-item-count-and-state.sql");
     this.mailingItemsSqlInsertion = postgresClient.getSqlStatement("mailing/mailing-item-insertion.sql");
 
-
+    GuidDeSer mailingGuidDeser = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(MAILING_GUID_PREFIX,2);
     this.apiApp.getHttpServer().getServer().getJacksonMapperManager()
       .addDeserializer(MailingStatus.class, new JacksonMailingStatusDeserializer())
-      .addSerializer(MailingGuid.class,new JacksonMailingGuidSerializer(this.apiApp))
-      .addDeserializer(MailingGuid.class,new JacksonMailingGuidDeserializer(this.apiApp));
+      .addSerializer(MailingGuid.class,new JacksonMailingGuidSerializer(mailingGuidDeser))
+      .addDeserializer(MailingGuid.class,new JacksonMailingGuidDeserializer(mailingGuidDeser));
 
     this.mailingTable = JdbcTable.build(jdbcSchema, "realm_mailing", MailingCols.values())
       .addPrimaryKeyColumn(MailingCols.ID)
@@ -112,15 +112,15 @@ public class MailingProvider {
 
   public Future<Mailing> insertMailingRequestHandler(String listGuid, MailingInputProps mailingInputProps, RoutingContext routingContext) {
 
-    Guid listGuidObject;
+    ListGuid listGuidObject;
     try {
-      listGuidObject = this.apiApp.getListProvider().getGuidObject(listGuid);
+      listGuidObject = this.apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listGuid);
     } catch (CastException e) {
       return Future.failedFuture(new IllegalArgumentException("The list guid (" + listGuid + ") is not valid", e));
     }
 
     return this.apiApp.getRealmProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(listGuidObject.getRealmOrOrganizationId(), AuthUserScope.MAILING_CREATE, routingContext)
+      .getRealmByLocalIdWithAuthorizationCheck(listGuidObject.getRealmId(), AuthUserScope.MAILING_CREATE, routingContext)
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(TowerFailureException.builder()
@@ -130,7 +130,7 @@ public class MailingProvider {
           );
         }
         return this.apiApp.getListProvider()
-          .getListById(listGuidObject.validateRealmAndGetFirstObjectId(realm.getGuid().getLocalId()), realm);
+          .getListById(listGuidObject.getLocalId(), realm);
       })
       .compose(list -> {
 
@@ -296,10 +296,6 @@ public class MailingProvider {
 
     return mailing;
 
-  }
-
-  public Guid getGuidObject(String mailingIdentifier) throws CastException {
-    return this.apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(MAILING_GUID_PREFIX, mailingIdentifier);
   }
 
   public Future<List<Mailing>> getMailingsByListWithLocalId(ListObject listObject) {
@@ -476,15 +472,15 @@ public class MailingProvider {
   public Future<Mailing> getByGuidRequestHandler(String mailingGuidIdentifier, RoutingContext routingContext, AuthUserScope scope) {
 
 
-    Guid guid;
+    MailingGuid guid;
     try {
-      guid = this.getGuidObject(mailingGuidIdentifier);
+      guid = this.apiApp.getJackson().getDeserializer(MailingGuid.class).deserialize(mailingGuidIdentifier);
     } catch (CastException e) {
       return Future.failedFuture(new IllegalArgumentException("The mailing guid (" + mailingGuidIdentifier + ") is not valid", e));
     }
 
     return this.apiApp.getRealmProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmOrOrganizationId(), scope, routingContext)
+      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmId(), scope, routingContext)
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(TowerFailureException.builder()
@@ -493,8 +489,7 @@ public class MailingProvider {
             .build()
           );
         }
-        long localId = guid.validateRealmAndGetFirstObjectId(realm.getGuid().getLocalId());
-        return this.getByLocalId(localId, realm);
+        return this.getByLocalId(guid.getLocalId(), realm);
       });
   }
 

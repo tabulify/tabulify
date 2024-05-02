@@ -2,10 +2,8 @@ package net.bytle.tower.eraldy.module.list.jackson;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.module.list.model.ListUserGuid;
-import net.bytle.tower.util.Guid;
-import net.bytle.vertx.HashId;
+import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonJsonStringSerializer;
 
 import java.io.IOException;
@@ -13,11 +11,10 @@ import java.io.IOException;
 public class JacksonListUserGuidSerializer extends JacksonJsonStringSerializer<ListUserGuid> {
 
 
+  private final GuidDeSer guidDeSer;
 
-  private final HashId hashIds;
-  public JacksonListUserGuidSerializer(EraldyApiApp apiApp) {
-    this.hashIds = apiApp.getHttpServer().getServer().getHashId();
-
+  public JacksonListUserGuidSerializer(GuidDeSer guidDeSer) {
+    this.guidDeSer = guidDeSer;
   }
 
   @Override
@@ -29,11 +26,10 @@ public class JacksonListUserGuidSerializer extends JacksonJsonStringSerializer<L
 
   @Override
   public String serialize(ListUserGuid value) {
-    return Guid.builder(this.hashIds, ListUserGuid.GUID_PREFIX)
-      .setOrganizationOrRealmId(value.getRealmId())
-      .setFirstObjectId(value.getListId())
-      .setSecondObjectId(value.getUserId())
-      .build()
-      .toString();
+    return guidDeSer.serialize(
+      value.getRealmId(),
+      value.getListId(),
+      value.getUserId()
+    );
   }
 }

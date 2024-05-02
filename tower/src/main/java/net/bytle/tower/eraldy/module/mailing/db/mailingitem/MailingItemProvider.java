@@ -10,17 +10,16 @@ import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.ListUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingItemInputProps;
-import net.bytle.tower.eraldy.module.mailing.model.Mailing;
-import net.bytle.tower.eraldy.module.mailing.model.MailingItem;
-import net.bytle.tower.eraldy.module.mailing.model.MailingItemStatus;
-import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
+import net.bytle.tower.eraldy.module.mailing.jackson.JacksonMailingItemGuidDeserializer;
+import net.bytle.tower.eraldy.module.mailing.jackson.JacksonMailingItemGuidSerializer;
+import net.bytle.tower.eraldy.module.mailing.model.*;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.user.db.UserCols;
-import net.bytle.tower.util.Guid;
 import net.bytle.type.EmailAddress;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.*;
+import net.bytle.vertx.guid.GuidDeSer;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -29,12 +28,6 @@ public class MailingItemProvider {
 
   private final EraldyApiApp apiApp;
   private final JdbcTable mailingItemTable;
-
-
-  /**
-   * mat and not mai because mai is already taken by mailing
-   */
-  private final String GUID_PREFIX = "mat";
 
 
   public MailingItemProvider(EraldyApiApp eraldyApiApp, JdbcSchema jdbcSchema) {
@@ -51,6 +44,15 @@ public class MailingItemProvider {
       .addPrimaryKeyColumn(MailingItemCols.USER_ID)
       .addForeignKeyColumns(mailingUserForeignKeys)
       .build();
+
+    /**
+     * mat and not mai because mai is already taken by mailing
+     */
+    GuidDeSer mailingItemGuidDeSer = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer("mat", 3);
+    this.apiApp.getJackson()
+      .addSerializer(MailingItemGuid.class, new JacksonMailingItemGuidSerializer(mailingItemGuidDeSer))
+      .addDeserializer(MailingItemGuid.class, new JacksonMailingItemGuidDeserializer(mailingItemGuidDeSer));
+
   }
 
   /**
@@ -170,9 +172,8 @@ public class MailingItemProvider {
     Long mailingJobId = jdbcRow.getLong(MailingItemCols.MAILING_JOB_ID);
     if (mailingJobId != null) {
       MailingJob mailingJob = new MailingJob();
-      mailingJob.setLocalId(mailingJobId);
       mailingJob.setMailing(mailing);
-      this.apiApp.getMailingJobProvider().updateGuid(mailingJob);
+      this.apiApp.getMailingJobProvider().updateGuid(mailingJob, mailingJobId);
       mailingItem.setMailingJob(mailingJob);
     }
 
@@ -194,21 +195,21 @@ public class MailingItemProvider {
 
   private void updateGuid(MailingItem mailingItem) {
 
-    Guid guid = this.apiApp.createGuidStringFromRealmAndTwoObjectId(
-      GUID_PREFIX,
-      mailingItem.getMailing().getGuid().getRealmId(),
-      mailingItem.getMailing().getGuid().getLocalId(),
-      mailingItem.getListUser().getUser().getGuid().getLocalId()
-    );
+    MailingItemGuid guid = new MailingItemGuid();
+
+    guid.setRealmId(mailingItem.getMailing().getGuid().getRealmId());
+    guid.setMailingId(mailingItem.getMailing().getGuid().getLocalId());
+    guid.setUserId(mailingItem.getListUser().getUser().getGuid().getLocalId());
+
     mailingItem.setGuid(guid.toString());
 
   }
 
   public Future<MailingItem> getByGuidRequestHandler(String guidHash, RoutingContext routingContext, AuthUserScope authUserScope) {
 
-    Guid guid;
+    MailingItemGuid guid;
     try {
-      guid = this.createGuidFromHash(guidHash);
+      guid = this.apiApp.getJackson().getDeserializer(MailingItemGuid.class).deserialize(guidHash);
     } catch (CastException e) {
       return Future.failedFuture(TowerFailureException.builder()
         .setType(TowerFailureTypeEnum.BAD_STRUCTURE_422)
@@ -219,9 +220,9 @@ public class MailingItemProvider {
     }
 
     return this.apiApp.getRealmProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmOrOrganizationId(), authUserScope, routingContext)
-      .compose(realm -> this.apiApp.getMailingProvider().getByLocalId(guid.validateRealmAndGetFirstObjectId(realm.getGuid().getLocalId()), realm))
-      .compose(mailing -> this.getItemByLocalId(guid.validateAndGetSecondObjectId(mailing.getRealm().getGuid().getLocalId()), mailing));
+      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmId(), authUserScope, routingContext)
+      .compose(realm -> this.apiApp.getMailingProvider().getByLocalId(guid.getMailingId(), realm))
+      .compose(mailing -> this.getItemByUserId(guid.getUserId(), mailing));
   }
 
   /**
@@ -229,7 +230,7 @@ public class MailingItemProvider {
    * @param mailing with a realm
    * @return The mailing item or null
    */
-  private Future<MailingItem> getItemByLocalId(Long userId, Mailing mailing) {
+  private Future<MailingItem> getItemByUserId(Long userId, Mailing mailing) {
     return JdbcSelect.from(this.mailingItemTable)
       .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getGuid().getRealmId())
       .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getGuid().getLocalId())
@@ -251,9 +252,6 @@ public class MailingItemProvider {
       });
   }
 
-  private Guid createGuidFromHash(String guid) throws CastException {
-    return this.apiApp.createGuidFromHashWithOneRealmIdAndTwoObjectId(GUID_PREFIX, guid);
-  }
 
   public Future<MailingItem> update(MailingItem mailingItem, MailingItemInputProps mailingItemInputProps) {
 
@@ -277,7 +275,7 @@ public class MailingItemProvider {
     MailingJob newMailingJob = mailingItemInputProps.getMailingJob();
     if (newMailingJob != null) {
       mailingItem.setMailingJob(newMailingJob);
-      jdbcUpdate.addUpdatedColumn(MailingItemCols.MAILING_JOB_ID, newMailingJob.getLocalId());
+      jdbcUpdate.addUpdatedColumn(MailingItemCols.MAILING_JOB_ID, newMailingJob.getGuid().getLocalId());
     }
 
     LocalDateTime plannedDeliveryTime = mailingItemInputProps.getPlannedDeliveryTime();

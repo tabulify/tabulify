@@ -21,6 +21,7 @@ import net.bytle.tower.eraldy.model.openapi.ListUserPostBody;
 import net.bytle.tower.eraldy.model.openapi.ListUserSource;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.list.model.ListUserGuid;
@@ -195,7 +196,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
          * Add the calling client id
          */
         Map<String, String> clientCallbackQueryProperties = new HashMap<>();
-        clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), authClient.getGuid());
+        String clientIdHash = this.getApp().getJackson().getSerializer(CliGuid.class).serialize(authClient.getGuid());
+        clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), clientIdHash);
 
         BMailTransactionalTemplate letter = getApp()
           .getUserListRegistrationFlow()

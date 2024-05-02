@@ -20,6 +20,7 @@ import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
@@ -119,7 +120,8 @@ public class EmailLoginFlow extends WebFlowAbs {
      * Add the calling client id
      */
     Map<String, String> clientCallbackQueryProperties = new HashMap<>();
-    clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), authClient.getGuid());
+    String clientIdHash = this.getApp().getJackson().getSerializer(CliGuid.class).serialize(authClient.getGuid());
+    clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), clientIdHash);
 
     String realmNameOrHandle = RealmProvider.getNameOrHandle(modelUserToLogin.getRealm());
     BMailTransactionalTemplate letter = getApp()

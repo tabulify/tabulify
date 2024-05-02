@@ -10,7 +10,6 @@ import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
-import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.mixin.ServicePublicMixinWithRealm;
@@ -19,7 +18,6 @@ import net.bytle.tower.eraldy.model.openapi.ServiceSmtp;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.user.db.UserProvider;
-import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.FailureStatic;
@@ -56,7 +54,6 @@ public class ServiceProvider {
   public static final String IMPERSONATED_USER_COLUMN = COL_PREFIX + COLUMN_PART_SEP + IMPERSONATED_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   private static final String CREATION_COLUMN = COL_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private static final String MODIFICATION_COLUMN = COL_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
-  private static final String SRV_GUID_PREFIX = "srv";
 
 
   private final EraldyApiApp apiApp;
@@ -80,21 +77,7 @@ public class ServiceProvider {
   }
 
 
-  /**
-   * This function is apart to be sure that the data are consistent
-   * between the object and the guid
-   */
-  private void computeGuid(Service service) {
-    if (service.getGuid() != null) {
-      return;
-    }
-    String guid = this.getGuidFromService(service).toString();
-    service.setGuid(guid);
-  }
 
-  private Guid getGuidFromService(Service service) {
-    return this.apiApp.createGuidFromRealmAndObjectId(SRV_GUID_PREFIX, service.getRealm(), service.getLocalId());
-  }
 
   /**
    * Utility function to return the unique uri
@@ -343,7 +326,6 @@ public class ServiceProvider {
         }
         service.setData(jsonAppData);
         service.setRealm(realmResult);
-        this.computeGuid(service);
         return Future.succeededFuture(service);
       });
 
@@ -355,20 +337,9 @@ public class ServiceProvider {
     }
 
     Long serviceId = null;
-    if (guid != null) {
-      try {
-        serviceId = this.getGuidFromHash(guid)
-          .validateRealmAndGetFirstObjectId(realm.getGuid().getLocalId());
-      } catch (CastException e) {
-        throw ValidationException.create("The service guid is not valid", "srvGuid", guid);
-      }
-    }
     return getServiceFromIdOrUri(serviceId, uri, realm);
   }
 
-  private Guid getGuidFromHash(String guid) throws CastException {
-    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(SRV_GUID_PREFIX, guid);
-  }
 
   private Future<Service> getServiceFromIdOrUri(Long serviceId, String serviceUri, Realm realm) {
     if (serviceId == null && serviceUri == null) {

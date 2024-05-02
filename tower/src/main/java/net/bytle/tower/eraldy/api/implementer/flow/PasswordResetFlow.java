@@ -17,6 +17,7 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
+import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
@@ -115,7 +116,8 @@ public class PasswordResetFlow extends WebFlowAbs {
          * Add the calling client id
          */
         Map<String, String> clientCallbackQueryProperties = new HashMap<>();
-        clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), authClient.getGuid());
+        String clientIdHash = this.getApp().getJackson().getSerializer(CliGuid.class).serialize(authClient.getGuid());
+        clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), clientIdHash);
 
         BMailTransactionalTemplate letter = this.step2Callback
           .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims, clientCallbackQueryProperties)

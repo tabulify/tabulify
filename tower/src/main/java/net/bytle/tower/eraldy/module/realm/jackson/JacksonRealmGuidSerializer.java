@@ -2,11 +2,8 @@ package net.bytle.tower.eraldy.module.realm.jackson;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
-import net.bytle.tower.util.Guid;
-import net.bytle.vertx.HashId;
+import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonJsonStringSerializer;
 
 import java.io.IOException;
@@ -15,9 +12,9 @@ public class JacksonRealmGuidSerializer extends JacksonJsonStringSerializer<Real
 
 
 
-  private final HashId hashIds;
-  public JacksonRealmGuidSerializer(EraldyApiApp apiApp) {
-    this.hashIds = apiApp.getHttpServer().getServer().getHashId();
+  private final GuidDeSer guidDeSer;
+  public JacksonRealmGuidSerializer(GuidDeSer guidDeSer) {
+    this.guidDeSer = guidDeSer;
 
   }
 
@@ -30,10 +27,8 @@ public class JacksonRealmGuidSerializer extends JacksonJsonStringSerializer<Real
   }
 
   @Override
-  public String serialize(RealmGuid value) {
-    return Guid.builder(this.hashIds, RealmProvider.REALM_GUID_PREFIX)
-      .setOrganizationOrRealmId(value.getLocalId())
-      .build()
-      .toString();
+  public String serialize(RealmGuid realmGuid) {
+    return guidDeSer.serialize(realmGuid.getLocalId());
   }
+
 }

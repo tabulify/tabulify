@@ -3,6 +3,7 @@ package net.bytle.tower;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.model.openapi.App;
+import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 
 import java.net.URI;
 
@@ -16,17 +17,16 @@ import java.net.URI;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthClient {
 
-  private String guid;
+  private CliGuid guid;
   private App app;
-
-  private long localId;
   private URI uri;
+  private String name;
 
   public AuthClient() {
   }
 
   @JsonProperty("guid")
-  public String getGuid() {
+  public CliGuid getGuid() {
     return this.guid;
   }
 
@@ -39,10 +39,6 @@ public class AuthClient {
     this.app = app;
   }
 
-  public void setLocalId(long localId) {
-    this.localId = localId;
-  }
-
   public void addUri(URI uri) {
     this.uri = uri;
   }
@@ -51,11 +47,15 @@ public class AuthClient {
     return this.uri;
   }
 
-  public Long getLocalId() {
-    return this.localId;
-  }
-  public void setGuid(String guid) {
+  public void setGuid(CliGuid guid) {
     this.guid = guid;
   }
 
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public String getName() {
+    return name;
+  }
 }

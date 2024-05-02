@@ -15,6 +15,7 @@ import net.bytle.vertx.collections.WriteThroughCollection;
 import net.bytle.vertx.db.JdbcClient;
 import net.bytle.vertx.db.JdbcPostgres;
 import net.bytle.vertx.future.TowerFutures;
+import net.bytle.vertx.guid.HashId;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

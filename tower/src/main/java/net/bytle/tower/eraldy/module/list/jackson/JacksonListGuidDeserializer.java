@@ -3,23 +3,18 @@ package net.bytle.tower.eraldy.module.list.jackson;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import net.bytle.exception.CastException;
-import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
-import net.bytle.tower.util.Guid;
-import net.bytle.vertx.HashId;
+import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonJsonStringDeserializer;
 
 import java.io.IOException;
 
-import static net.bytle.tower.util.Guid.REALM_ID_OBJECT_ID_TYPE;
-
 public class JacksonListGuidDeserializer extends JacksonJsonStringDeserializer<ListGuid> {
 
-  private final HashId hashIds;
+  private final GuidDeSer guidDeSer;
 
-  public JacksonListGuidDeserializer(EraldyApiApp apiApp) {
-    this.hashIds = apiApp.getHttpServer().getServer().getHashId();
+  public JacksonListGuidDeserializer(GuidDeSer guidDeSer) {
+    this.guidDeSer = guidDeSer;
 
   }
 
@@ -38,19 +33,17 @@ public class JacksonListGuidDeserializer extends JacksonJsonStringDeserializer<L
 
   @Override
   public ListGuid deserialize(String value) throws CastException {
-    Guid userGuidObject;
+    long[] ids;
     try {
-      userGuidObject = new Guid.builder(this.hashIds, ListProvider.LIST_GUID_PREFIX)
-        .setCipherText(value, REALM_ID_OBJECT_ID_TYPE)
-        .build();
+      ids = guidDeSer.deserialize(value);
     } catch (CastException e) {
       throw new CastException("The list guid (" + value + ") is not valid. Error: " + e.getMessage(), e);
     }
 
     ListGuid listGuid = new ListGuid();
-    long realmId = userGuidObject.getRealmOrOrganizationId();
+    long realmId = ids[0];
     listGuid.setRealmId(realmId);
-    long localId = userGuidObject.validateRealmAndGetFirstObjectId(realmId);
+    long localId = ids[1];
     listGuid.setLocalId(localId);
     return listGuid;
   }

@@ -24,6 +24,7 @@ import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.*;
+import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,9 +64,13 @@ public class RealmProvider {
       .addForeignKeyColumn(RealmCols.ORGA_ID, OrganizationCols.ID)
       .build();
 
+    /**
+     * Realm Guid
+     */
+    GuidDeSer realmGuidDeser = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(REALM_GUID_PREFIX,1);
     jacksonMapperManager
-      .addDeserializer(RealmGuid.class, new JacksonRealmGuidDeserializer(apiApp))
-      .addSerializer(RealmGuid.class, new JacksonRealmGuidSerializer(apiApp));
+      .addDeserializer(RealmGuid.class, new JacksonRealmGuidDeserializer(realmGuidDeser))
+      .addSerializer(RealmGuid.class, new JacksonRealmGuidSerializer(realmGuidDeser));
 
   }
 

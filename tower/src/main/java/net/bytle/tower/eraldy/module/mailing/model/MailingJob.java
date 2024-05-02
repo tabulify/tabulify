@@ -11,9 +11,8 @@ public class MailingJob {
 
 
   private MailingJobStatus status;
-  private Long localId;
   private Mailing mailing;
-  private String guid;
+  private MailingJobGuid guid;
   private LocalDateTime startTime;
   private Long itemToExecuteCount;
   private LocalDateTime endTime;
@@ -29,15 +28,11 @@ public class MailingJob {
     this.status = mailingJobStatus;
   }
 
-  public void setLocalId(Long localId) {
-    this.localId = localId;
-  }
-
   public void setMailing(Mailing mailing) {
     this.mailing = mailing;
   }
 
-  public void setGuid(String guid) {
+  public void setGuid(MailingJobGuid guid) {
     this.guid = guid;
   }
 
@@ -50,12 +45,8 @@ public class MailingJob {
     return this.mailing;
   }
 
-  public Long getLocalId() {
-    return this.localId;
-  }
-
   @JsonProperty("guid")
-  public String getGuid() {
+  public MailingJobGuid getGuid() {
     return guid;
   }
 

@@ -1,26 +1,26 @@
-package net.bytle.tower.eraldy.module.app.jackson;
+package net.bytle.tower.eraldy.module.auth.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import net.bytle.exception.CastException;
-import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonJsonStringDeserializer;
 
 import java.io.IOException;
 
-public class JacksonAppGuidDeserializer extends JacksonJsonStringDeserializer<AppGuid> {
+public class JacksonCliGuidDeserializer extends JacksonJsonStringDeserializer<CliGuid> {
 
 
   private final GuidDeSer guidDeSer;
 
-  public JacksonAppGuidDeserializer(GuidDeSer guidDeSer) {
+  public JacksonCliGuidDeserializer(GuidDeSer guidDeSer) {
     this.guidDeSer = guidDeSer;
 
   }
 
   @Override
-  public AppGuid deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+  public CliGuid deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
 
     String value = p.getValueAsString();
     try {
@@ -33,18 +33,18 @@ public class JacksonAppGuidDeserializer extends JacksonJsonStringDeserializer<Ap
 
 
   @Override
-  public AppGuid deserialize(String value) throws CastException {
+  public CliGuid deserialize(String value) throws CastException {
     long[] userGuidObject;
     try {
       userGuidObject = this.guidDeSer.deserialize(value);
     } catch (CastException e) {
-      throw new CastException("The app guid (" + value + ") is not valid. Error: " + e.getMessage(), e);
+      throw new CastException("The cli guid (" + value + ") is not valid. Error: " + e.getMessage(), e);
     }
-    AppGuid appGuid = new AppGuid();
+    CliGuid cliGuid = new CliGuid();
     long realmId = userGuidObject[0];
-    appGuid.setRealmId(realmId);
+    cliGuid.setRealmId(realmId);
     long localId = userGuidObject[1];
-    appGuid.setLocalId(localId);
-    return appGuid;
+    cliGuid.setLocalId(localId);
+    return cliGuid;
   }
 }

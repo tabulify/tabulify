@@ -26,7 +26,6 @@ import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.db.ListUserProvider;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.list.model.ListImportListUserAction;
-import net.bytle.tower.util.Guid;
 import net.bytle.type.Casts;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
@@ -320,9 +319,9 @@ public class ListApiImpl implements ListApi {
     pageId = routingContextWrapper.getRequestQueryParameterAsLong("pageId", 0L);
     pageSize = routingContextWrapper.getRequestQueryParameterAsLong("pageSize", 10L);
     searchTerm = routingContextWrapper.getRequestQueryParameterAsString("searchTerm", null);
-    Guid guid;
+    ListGuid guid;
     try {
-      guid = apiApp.getListProvider().getGuidObject(listIdentifier);
+      guid = apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listIdentifier);
     } catch (CastException e) {
       return Future.failedFuture(TowerFailureException.builder()
         .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
@@ -334,7 +333,7 @@ public class ListApiImpl implements ListApi {
     Long finalPageId = pageId;
     Long finalPageSize = pageSize;
     String finalSearchTerm = searchTerm;
-    long realmId = guid.getRealmOrOrganizationId();
+    long realmId = guid.getRealmId();
     return this.apiApp
       .getAuthProvider()
       .checkRealmAuthorization(routingContext, realmId, AuthUserScope.LIST_GET_USERS)

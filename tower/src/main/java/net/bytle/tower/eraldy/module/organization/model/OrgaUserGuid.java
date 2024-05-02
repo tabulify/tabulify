@@ -20,6 +20,7 @@ import java.util.Objects;
 public class OrgaUserGuid extends UserGuid {
 
 
+
   /**
    * The database id
    */

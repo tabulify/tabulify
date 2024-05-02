@@ -3,23 +3,18 @@ package net.bytle.tower.eraldy.module.realm.jackson;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import net.bytle.exception.CastException;
-import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
-import net.bytle.tower.util.Guid;
-import net.bytle.vertx.HashId;
+import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonJsonStringDeserializer;
 
 import java.io.IOException;
 
-import static net.bytle.tower.util.Guid.ONE_ID_TYPE;
-
 public class JacksonRealmGuidDeserializer extends JacksonJsonStringDeserializer<RealmGuid> {
 
-  private final HashId hashIds;
+  private final GuidDeSer guidDeSer;
 
-  public JacksonRealmGuidDeserializer(EraldyApiApp apiApp) {
-    this.hashIds = apiApp.getHttpServer().getServer().getHashId();
+  public JacksonRealmGuidDeserializer(GuidDeSer guidDeSer) {
+    this.guidDeSer = guidDeSer;
   }
 
   @Override
@@ -35,16 +30,13 @@ public class JacksonRealmGuidDeserializer extends JacksonJsonStringDeserializer<
   }
 
   public RealmGuid deserialize(String value) throws CastException {
-    Guid guid;
+    long[] ids;
     try {
-      guid = new Guid.builder(this.hashIds, RealmProvider.REALM_GUID_PREFIX)
-        .setCipherText(value, ONE_ID_TYPE)
-        .build();
+      ids = guidDeSer.deserialize(value);
     } catch (CastException e) {
       throw new CastException("The realm guid (" + value + ") is not valid. Error: " + e.getMessage(), e);
     }
-
-    return new RealmGuid(guid.getRealmOrOrganizationId());
+    return new RealmGuid(ids[0]);
   }
 
 }
