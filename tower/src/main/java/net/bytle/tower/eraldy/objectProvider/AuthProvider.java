@@ -15,6 +15,7 @@ import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
+import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
@@ -106,6 +107,7 @@ public class AuthProvider {
       user.setGuid(orgaUserGuid);
       user.setRealm(this.apiApp.getEraldyModel().getRealm());
       ((OrgaUser) user).setOrganization(this.apiApp.getEraldyModel().getRealm().getOrganization());
+      ((OrgaUser) user).setOrganizationRole(OrgaRole.OWNER);
       user.setGivenName(authUser.getSubjectGivenName());
       user.setEmailAddress(EmailAddress.ofFailSafe(authUser.getSubjectEmail()));
       return user;

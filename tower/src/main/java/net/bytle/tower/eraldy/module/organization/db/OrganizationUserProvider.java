@@ -127,9 +127,9 @@ public class OrganizationUserProvider {
     guid.setOrganizationId(jdbcRow.getLong(OrgaUserCols.ORGA_ID));
     guid.setLocalId(jdbcRow.getLong(OrgaUserCols.USER_ID));
     orgaUser.setGuid(guid);
-    orgaUser.setOrgaRole(OrgaRole.fromRoleIdFailSafe(jdbcRow.getInteger(OrgaUserCols.ROLE_ID)));
+    orgaUser.setOrganizationRole(OrgaRole.fromRoleIdFailSafe(jdbcRow.getInteger(OrgaUserCols.ROLE_ID)));
     orgaUser.setOrganization(Objects.requireNonNullElseGet(knownOrganization, () -> Organization.createFromAnyId(guid)));
-    orgaUser.setOrgaRole(OrgaRole.fromRoleIdFailSafe(jdbcRow.getInteger(OrgaUserCols.ROLE_ID)));
+    orgaUser.setOrganizationRole(OrgaRole.fromRoleIdFailSafe(jdbcRow.getInteger(OrgaUserCols.ROLE_ID)));
     orgaUser.setCreationTime(jdbcRow.getLocalDateTime(OrgaUserCols.CREATION_TIME));
     orgaUser.setModificationTime(jdbcRow.getLocalDateTime(OrgaUserCols.MODIFICATION_IME));
     return orgaUser;

@@ -166,18 +166,25 @@ user(userGuid:ID!):User
 
 ### Less endpoint than a Rest API
 
-
+Example:
 ```
 /organization/:orgGuid/
 /organization/:orgGuid/users
 ```
-
 just
 ```graphql
 type Query{
   organization(orgGuid:ID!): Organization
 }
 ```
+
+Example:
+```
+/user/me
+/user/me/owned-realm
+```
+
+
 ## Implementation
 
 See GraphQLService.java

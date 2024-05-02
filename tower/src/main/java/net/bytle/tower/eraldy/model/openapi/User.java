@@ -343,7 +343,7 @@ public class User {
 
   @Override
   public String toString() {
-    return guid + ", " + emailAddress;
+    return guid.toStringLocalIds() + ", emailAddress: " + emailAddress;
   }
 
 }

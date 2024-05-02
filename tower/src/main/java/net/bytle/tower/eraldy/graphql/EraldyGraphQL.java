@@ -23,7 +23,7 @@ import net.bytle.tower.eraldy.graphql.implementer.UserGraphQLImpl;
 import net.bytle.tower.eraldy.model.manual.Status;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.eraldy.module.app.graphql.GraphQLAppGuidCoercing;
+import net.bytle.tower.eraldy.module.app.graphql.GraphQLApp;
 import net.bytle.tower.eraldy.module.list.graphql.ListGraphQLImpl;
 import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
 import net.bytle.tower.eraldy.module.organization.graphql.OrgaGraphQLImpl;
@@ -65,44 +65,10 @@ public class EraldyGraphQL implements GraphQLDef {
     RuntimeWiring.Builder wiringBuilder = newRuntimeWiring();
 
     /**
-     * Scalar
+     * Common Scalar
      */
-    final GraphQLScalarType EMAIL = GraphQLScalarType
-      .newScalar()
-      .name("EmailAddress")
-      .description("Email Address")
-      .coercing(new GraphQLEmailCoercing())
-      .build();
-    wiringBuilder.scalar(EMAIL);
-    final GraphQLScalarType HANDLE = GraphQLScalarType
-      .newScalar()
-      .name("Handle")
-      .description("An unique name identifier")
-      .coercing(new GraphQLHandleCoercing())
-      .build();
-    wiringBuilder.scalar(HANDLE);
-    final GraphQLScalarType URI = GraphQLScalarType
-      .newScalar()
-      .name("Uri")
-      .description("An URI")
-      .coercing(new GraphQLHandleCoercing())
-      .build();
-    wiringBuilder.scalar(URI);
-    final GraphQLScalarType TIMEZONE = GraphQLScalarType
-      .newScalar()
-      .name("TimeZone")
-      .description("A timezone")
-      .coercing(new GraphQLHandleCoercing())
-      .build();
-    wiringBuilder.scalar(TIMEZONE);
+    addCommonTypeAsScalar(wiringBuilder);
 
-    final GraphQLScalarType APP_GUID = GraphQLScalarType
-      .newScalar()
-      .name("AppGuid")
-      .description("The guid for an app")
-      .coercing(new GraphQLAppGuidCoercing(this.app.getJackson()))
-      .build();
-    wiringBuilder.scalar(APP_GUID);
 
 
 
@@ -113,6 +79,7 @@ public class EraldyGraphQL implements GraphQLDef {
     new ListGraphQLImpl(this, wiringBuilder);
     new RealmGraphQLImpl(this,wiringBuilder);
     new OrgaGraphQLImpl(this,wiringBuilder);
+    new GraphQLApp(this, wiringBuilder);
     UserGraphQLImpl userImpl = new UserGraphQLImpl(this);
 
     /**
@@ -175,6 +142,37 @@ public class EraldyGraphQL implements GraphQLDef {
         builderWithContext.builder().dataLoaderRegistry(userDataLoaderRegistry);
       })
       .build();
+  }
+
+  private static void addCommonTypeAsScalar(RuntimeWiring.Builder wiringBuilder) {
+    final GraphQLScalarType EMAIL = GraphQLScalarType
+      .newScalar()
+      .name("EmailAddress")
+      .description("Email Address")
+      .coercing(new GraphQLEmailCoercing())
+      .build();
+    wiringBuilder.scalar(EMAIL);
+    final GraphQLScalarType HANDLE = GraphQLScalarType
+      .newScalar()
+      .name("Handle")
+      .description("An unique name identifier")
+      .coercing(new GraphQLHandleCoercing())
+      .build();
+    wiringBuilder.scalar(HANDLE);
+    final GraphQLScalarType URI = GraphQLScalarType
+      .newScalar()
+      .name("Uri")
+      .description("An URI")
+      .coercing(new GraphQLHandleCoercing())
+      .build();
+    wiringBuilder.scalar(URI);
+    final GraphQLScalarType TIMEZONE = GraphQLScalarType
+      .newScalar()
+      .name("TimeZone")
+      .description("A timezone")
+      .coercing(new GraphQLHandleCoercing())
+      .build();
+    wiringBuilder.scalar(TIMEZONE);
   }
 
   /**

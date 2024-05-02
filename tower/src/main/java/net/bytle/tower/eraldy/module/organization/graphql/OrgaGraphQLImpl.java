@@ -85,6 +85,23 @@ public class OrgaGraphQLImpl {
         .build()
     );
 
+    wiringBuilder.type(
+      newTypeWiring("OrganizationUser")
+        .dataFetcher("organization", this::getUserOrganization)
+        .build()
+    );
+  }
+
+  /**
+   * @return the organization of a user
+   */
+  private Future<Organization> getUserOrganization(DataFetchingEnvironment dataFetchingEnvironment) {
+    OrgaUser orgaUser = dataFetchingEnvironment.getSource();
+    if(orgaUser.getOrganization().getName()!=null){
+      return Future.succeededFuture(orgaUser.getOrganization());
+    }
+    return this.apiApp.getOrganizationProvider()
+      .getByGuid(orgaUser.getOrganization().getGuid());
   }
 
   private Future<OrgaUser> getOrganizationUser(DataFetchingEnvironment dataFetchingEnvironment) {

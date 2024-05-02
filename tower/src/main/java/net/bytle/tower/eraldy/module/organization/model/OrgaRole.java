@@ -2,9 +2,7 @@ package net.bytle.tower.eraldy.module.organization.model;
 
 import net.bytle.exception.NotFoundException;
 
-/**
- *
- */
+
 public enum OrgaRole {
 
 
@@ -37,4 +35,6 @@ public enum OrgaRole {
     }
     throw new NotFoundException("The id (" + roleId + ") is not a valid role id");
   }
+
+
 }

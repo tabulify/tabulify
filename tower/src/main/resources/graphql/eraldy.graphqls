@@ -95,8 +95,6 @@ that belongs to an organization
 type OrganizationUser implements UserI {
   """The user id"""
   guid: OrgaUserGuid!
-  """The owned realm"""
-  ownedRealms:[Realm]
   """The email address"""
   emailAddress: EmailAddress!
   """The given name"""
@@ -128,9 +126,11 @@ type OrganizationUser implements UserI {
   """The realm (Eraldy Realm)"""
   realm: Realm!
   """The organization role"""
-  role: String!
+  organizationRole: OrganizationRole!
   """The organization"""
   organization: Organization!
+  """The owned realms"""
+  ownedRealms:[Realm]
 }
 
 
@@ -281,6 +281,13 @@ type Organization {
 }
 
 """
+The Role of a user in a Organization
+"""
+type OrganizationRole {
+  name: String!
+}
+
+"""
 The Realm
 It's equivalent to a domain.
 A realm has:
@@ -428,8 +435,9 @@ type Query {
   mailing(guid: ID!): Mailing
   """A mailing job"""
   mailingJob(guid: ID!): MailingJob
+  """The logged realm user"""
   me: UserI
-  """The logged user if an organization user"""
+  """The logged realm user as organization user"""
   orgaMe: OrganizationUser
   """An organizational user"""
   orgaUser(orgaUserGuid:ID!): OrganizationUser

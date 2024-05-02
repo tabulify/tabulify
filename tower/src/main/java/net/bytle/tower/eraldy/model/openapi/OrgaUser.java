@@ -24,7 +24,7 @@ public class OrgaUser extends User {
 
 
   protected Organization organization;
-  private OrgaRole orgaRole;
+  private OrgaRole organizationRole;
 
   /**
    * The empty constructor is
@@ -47,7 +47,6 @@ public class OrgaUser extends User {
   /**
    * @param organization Set organization
    */
-  @SuppressWarnings("unused")
   public void setOrganization(Organization organization) {
     this.organization = organization;
   }
@@ -82,16 +81,16 @@ public class OrgaUser extends User {
 
   @Override
   public String toString() {
-    return super.toString() + super.toString();
+    return super.toString();
   }
 
-  public void setOrgaRole(OrgaRole role) {
-    this.orgaRole = role;
+  public void setOrganizationRole(OrgaRole role) {
+    this.organizationRole = role;
   }
 
-  @SuppressWarnings("unused")
-  public OrgaRole getOrgaRole() {
-    return this.orgaRole;
+  @JsonProperty("organizationRole")
+  public OrgaRole getOrganizationRole() {
+    return this.organizationRole;
   }
 
   @Override
