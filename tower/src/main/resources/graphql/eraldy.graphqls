@@ -127,6 +127,10 @@ type OrganizationUser implements UserI {
   lastActiveTime: String @dateFormat
   """The realm (Eraldy Realm)"""
   realm: Realm!
+  """The organization role"""
+  role: String!
+  """The organization"""
+  organization: Organization!
 }
 
 

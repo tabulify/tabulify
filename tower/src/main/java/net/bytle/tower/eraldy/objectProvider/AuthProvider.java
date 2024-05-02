@@ -50,6 +50,7 @@ public class AuthProvider {
    * A realms local id set that the user may manage.
    */
   private static final String REALMS_ID_KEY = "realms_id";
+  public static final long ROOT_LOCAL_ID = 0L;
   private final EraldyApiApp apiApp;
 
 
@@ -90,11 +91,29 @@ public class AuthProvider {
    */
   public <T extends User> T toModelUser(AuthUser authUser) {
 
+    String orgaSubject = authUser.getSubjectOrganizationGuid();
+    T user;
+
+    /**
+     * Root edge case
+     */
+    if(orgaSubject!=null && orgaSubject.equals(ApiKeyAuthenticationProvider.ROOT_SUBJECT)){
+      //noinspection unchecked
+      user = (T) new OrgaUser();
+      OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
+      orgaUserGuid.setLocalId(ROOT_LOCAL_ID);
+      orgaUserGuid.setOrganizationId(this.apiApp.getEraldyModel().getRealm().getOrganization().getGuid().getLocalId());
+      user.setGuid(orgaUserGuid);
+      user.setRealm(this.apiApp.getEraldyModel().getRealm());
+      ((OrgaUser) user).setOrganization(this.apiApp.getEraldyModel().getRealm().getOrganization());
+      user.setGivenName(authUser.getSubjectGivenName());
+      user.setEmailAddress(EmailAddress.ofFailSafe(authUser.getSubjectEmail()));
+      return user;
+    }
+
     /**
      * Subject (normal user - user id)
      */
-    T user;
-    String orgaSubject = authUser.getSubjectOrganizationGuid();
     if (orgaSubject != null) {
       OrgaUserGuid guid;
       try {
@@ -113,7 +132,7 @@ public class AuthProvider {
         user.setGuid(guid);
 
       } catch (CastException ex) {
-        throw new InternalException("The subject (user guid) is not valid user guid (" + subject + ")");
+        throw new InternalException("The subject value ("+subject +") is not a valid user guid.");
       }
     }
 

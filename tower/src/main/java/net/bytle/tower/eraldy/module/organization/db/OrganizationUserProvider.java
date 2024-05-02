@@ -77,15 +77,6 @@ public class OrganizationUserProvider {
   }
 
 
-  public Future<OrgaUser> getOrganizationUserByIdentifier(OrgaUserGuid identifier) {
-
-    Realm eraldyRealm = this.apiApp.getEraldyModel().getRealm();
-    return apiApp.getUserProvider()
-      .getUserByGuid(identifier, eraldyRealm)
-      .compose(this::checkAndReturnUser);
-
-  }
-
   /**
    * @param userGuid - a user guid and not an orga user guid as it may not exist
    */

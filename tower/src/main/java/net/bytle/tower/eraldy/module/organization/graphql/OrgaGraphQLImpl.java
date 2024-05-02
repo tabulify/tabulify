@@ -7,6 +7,7 @@ import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.CastException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
@@ -16,6 +17,7 @@ import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
+import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.auth.AuthUser;
@@ -104,7 +106,7 @@ public class OrgaGraphQLImpl {
       .checkOrgAuthorization(routingContext, orgaGuid, AuthUserScope.ORGA_USER_GET)
       .compose(v -> this.apiApp
         .getOrganizationUserProvider()
-        .getOrganizationUserByIdentifier(orgaUserGuidObject)
+        .getOrganizationUserByGuid(orgaUserGuidObject)
         .compose(orgUser -> {
           if (orgUser == null) {
             return Future.failedFuture(
@@ -147,10 +149,18 @@ public class OrgaGraphQLImpl {
           .buildWithContextFailing(routingContext)
       );
     }
+    if (
+      user.getGuid().getLocalId() == AuthProvider.ROOT_LOCAL_ID
+      && user.getGuid().getRealmId()== EraldyModel.REALM_LOCAL_ID
+    ) {
+      // Root is not in the database
+      return Future.succeededFuture((OrgaUser) user);
+    }
+
     OrgaUser orgaUser = (OrgaUser) user;
     return this.apiApp
       .getOrganizationUserProvider()
-      .getOrganizationUserByIdentifier(orgaUser.getGuid())
+      .getOrganizationUserByGuid(orgaUser.getGuid())
       .compose(orgUser -> {
         if (orgUser == null) {
           return Future.failedFuture(

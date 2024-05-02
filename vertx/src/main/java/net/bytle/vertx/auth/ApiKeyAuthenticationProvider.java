@@ -8,6 +8,7 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
 import net.bytle.exception.InternalException;
+import net.bytle.type.EmailAddress;
 import net.bytle.vertx.ConfigAccessor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,7 +27,8 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
 
   public static final String SUPERUSER_TOKEN_CONF = "superuser.token";
   public static final String API_KEY_PROVIDER_ID = "apiKey";
-  public static final RoleBasedAuthorization ROOT_AUTHORIZATION = RoleBasedAuthorization.create("root");
+  public static final String ROOT_SUBJECT = "root";
+  public static final RoleBasedAuthorization ROOT_AUTHORIZATION = RoleBasedAuthorization.create(ROOT_SUBJECT);
   static Logger LOGGER = LogManager.getLogger(ApiKeyAuthenticationProvider.class);
 
   private final String superToken;
@@ -67,7 +69,10 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
 
     if (superToken.equals(token)) {
       User user = AuthUser.builder()
-        .setSubject("root")
+        .setSubject(ROOT_SUBJECT)
+        .setSubjectGivenName("Root")
+        .setSubjectOrganizationGuid(ROOT_SUBJECT)
+        .setSubjectEmail(EmailAddress.ofFailSafe("root@eraldy.com"))
         .addAuthorization(API_KEY_PROVIDER_ID, ROOT_AUTHORIZATION)
         .build()
         .getVertxUser();

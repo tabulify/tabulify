@@ -303,8 +303,9 @@ public class AuthUser {
       return this;
     }
 
-    public void setSubjectOrganizationGuid(String orgSubject) {
+    public Builder setSubjectOrganizationGuid(String orgSubject) {
       claims.put(AuthUserJwtClaims.CUSTOM_SUBJECT_ORG_GUID.toString(), orgSubject);
+      return this;
     }
   }
 

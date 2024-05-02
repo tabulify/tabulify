@@ -164,6 +164,20 @@ user(userGuid:ID!):User
 }
 ```
 
+### Less endpoint than a Rest API
+
+
+```
+/organization/:orgGuid/
+/organization/:orgGuid/users
+```
+
+just
+```graphql
+type Query{
+  organization(orgGuid:ID!): Organization
+}
+```
 ## Implementation
 
 See GraphQLService.java
