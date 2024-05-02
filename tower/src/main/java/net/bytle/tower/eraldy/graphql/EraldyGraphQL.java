@@ -81,6 +81,20 @@ public class EraldyGraphQL implements GraphQLDef {
       .coercing(new GraphQLHandleCoercing())
       .build();
     wiringBuilder.scalar(HANDLE);
+    final GraphQLScalarType URI = GraphQLScalarType
+      .newScalar()
+      .name("Uri")
+      .description("An URI")
+      .coercing(new GraphQLHandleCoercing())
+      .build();
+    wiringBuilder.scalar(URI);
+    final GraphQLScalarType TIMEZONE = GraphQLScalarType
+      .newScalar()
+      .name("TimeZone")
+      .description("A timezone")
+      .coercing(new GraphQLHandleCoercing())
+      .build();
+    wiringBuilder.scalar(TIMEZONE);
 
     final GraphQLScalarType APP_GUID = GraphQLScalarType
       .newScalar()

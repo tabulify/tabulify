@@ -1,29 +1,23 @@
 package net.bytle.tower.eraldy.module.realm.db;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.SqlConnection;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
-import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
-import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
-import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
-import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
-import net.bytle.tower.eraldy.model.openapi.*;
-import net.bytle.tower.eraldy.module.app.db.AppProvider;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationCols;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
+import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
 import net.bytle.tower.eraldy.module.realm.jackson.JacksonRealmGuidDeserializer;
 import net.bytle.tower.eraldy.module.realm.jackson.JacksonRealmGuidSerializer;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
-import net.bytle.tower.util.Guid;
 import net.bytle.type.Handle;
 import net.bytle.type.HandleCastException;
 import net.bytle.vertx.DateTimeService;
@@ -34,13 +28,10 @@ import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Manage the get/upsert of a {@link Realm} object asynchronously
@@ -57,12 +48,7 @@ public class RealmProvider {
 
   private final EraldyApiApp apiApp;
 
-  /**
-   * The json mapper for public realm
-   * to create json without any localId and
-   * double realm information
-   */
-  private final ObjectMapper publicRealmJsonMapper;
+
   private final JdbcTable realmTable;
 
 
@@ -70,14 +56,6 @@ public class RealmProvider {
 
     this.apiApp = apiApp;
     JacksonMapperManager jacksonMapperManager = this.apiApp.getHttpServer().getServer().getJacksonMapperManager();
-    this.publicRealmJsonMapper = jacksonMapperManager
-      .jsonMapperBuilder()
-      .addMixIn(Realm.class, RealmPublicMixin.class)
-      .addMixIn(Realm.class, RealmPublicMixin.class)
-      .addMixIn(Organization.class, OrganizationPublicMixin.class)
-      .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
-      .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
-      .build();
 
     this.realmTable = JdbcTable.build(schema, "realm", RealmCols.values())
       .addPrimaryKeyColumn(RealmCols.ID)
@@ -101,16 +79,6 @@ public class RealmProvider {
       return realm.getName();
     }
     return realm.getHandle().getValue();
-  }
-
-
-  Guid getGuidFromLong(Long realmId) {
-    return apiApp.createGuidFromObjectId(REALM_GUID_PREFIX, realmId);
-  }
-
-
-  public ObjectMapper getPublicJsonMapper() {
-    return this.publicRealmJsonMapper;
   }
 
 
@@ -403,50 +371,6 @@ public class RealmProvider {
     return getRealmFromLocalId(guid.getLocalId());
   }
 
-  public Future<List<RealmWithAppUris>> getRealmsWithAppUris() {
-    String aliasAppUris = "app_uris";
-    String selectRealmSql = "select " +
-      RealmCols.ID.getColumnName() + ",\n" +
-      RealmCols.HANDLE.getColumnName() + ",\n" +
-      "STRING_AGG(app_uri,', ') as " + aliasAppUris + "\n" +
-      "  from \n" +
-      this.realmTable.getSchema().getSchemaName() + "." + AppProvider.APP_TABLE_NAME + " app\n" +
-      "right join " + this.realmTable.getFullName() + " realm\n" +
-      "on app.app_realm_id = realm.realm_id\n" +
-      "group by " + RealmCols.ID.getColumnName() + ", " + RealmCols.HANDLE.getColumnName() + "\n" +
-      "order by " + RealmCols.HANDLE.getColumnName();
-    return this.realmTable.getSchema().getJdbcClient().getPool().preparedQuery(selectRealmSql)
-      .execute()
-      .onFailure(e -> LOGGER.error("select realms error. Error: " + e.getMessage() + ". With the sql:\n" + selectRealmSql, e))
-      .compose(realmRows -> {
-
-        List<RealmWithAppUris> realmsWithDomains = new ArrayList<>();
-        for (Row row : realmRows) {
-
-          RealmWithAppUris realmWithDomains = new RealmWithAppUris();
-          realmsWithDomains.add(realmWithDomains);
-
-          Long realmId = row.getLong(RealmCols.ID.getColumnName());
-          realmWithDomains.setGuid(this.getGuidFromLong(realmId).toString());
-
-          String realmHandle = row.getString(RealmCols.HANDLE.getColumnName());
-          realmWithDomains.setHandle(realmHandle);
-
-          String app_domains = row.getString(aliasAppUris);
-          List<URI> appDomains = new ArrayList<>();
-          if (app_domains != null) {
-            appDomains = Arrays.stream(app_domains
-                .split(", "))
-              .map(URI::create)
-              .collect(Collectors.toList());
-          }
-          realmWithDomains.setAppUris(appDomains);
-
-        }
-        return Future.succeededFuture(realmsWithDomains);
-      });
-  }
-
 
   public Future<Realm> getRealmFromIdentifier(String realmIdentifier) {
 
@@ -519,10 +443,6 @@ public class RealmProvider {
         }
         return futureRealm;
       });
-  }
-
-  public Future<Realm> getRealmAnalyticsFromIdentifier(String realmIdentifier) {
-    return getRealmFromIdentifier(realmIdentifier);
   }
 
   public Future<Organization> buildOrganizationAtRequestTimeEventually(Realm realm) {

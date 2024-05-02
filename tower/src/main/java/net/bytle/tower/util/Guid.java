@@ -2,7 +2,7 @@ package net.bytle.tower.util;
 
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.vertx.HashId;
 
 import java.util.ArrayList;

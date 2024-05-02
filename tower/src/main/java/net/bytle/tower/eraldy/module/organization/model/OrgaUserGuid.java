@@ -20,7 +20,14 @@ import java.util.Objects;
 public class OrgaUserGuid extends UserGuid {
 
 
+  /**
+   * The database id
+   */
   private long organizationId;
+  /**
+   * The hash public representation
+   */
+  private String publicHash;
 
   public OrgaUserGuid() {
     super();
@@ -58,4 +65,16 @@ public class OrgaUserGuid extends UserGuid {
   }
 
 
+  public void setPublicHash(String publicHash) {
+    this.publicHash = publicHash;
+  }
+
+  public OrgaGuid toOrgaGuid() {
+    return new OrgaGuid(this.organizationId);
+  }
+
+  @SuppressWarnings("unused")
+  public String getPublicHash() {
+    return publicHash;
+  }
 }

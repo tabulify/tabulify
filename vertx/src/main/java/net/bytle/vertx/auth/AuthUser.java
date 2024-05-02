@@ -44,7 +44,7 @@ public class AuthUser {
     return new AuthUser.Builder(null);
   }
 
-  public static AuthUser createFromUser(User user) {
+  public static AuthUser createFromVertxUser(User user) {
     return new AuthUser(user);
   }
 

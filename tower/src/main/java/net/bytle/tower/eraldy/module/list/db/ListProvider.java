@@ -30,6 +30,7 @@ import net.bytle.tower.eraldy.module.list.model.ListImportListUserStatus;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationUserProvider;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Handle;
 import net.bytle.type.HandleCastException;
@@ -43,7 +44,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -301,30 +301,6 @@ public class ListProvider {
     return jdbcUpdate.execute()
       .compose(ok -> Future.succeededFuture(listObject));
 
-
-  }
-
-
-  /**
-   * @param realm - the realmId
-   * @return the realm
-   */
-  public Future<java.util.List<ListObject>> getListsForRealm(Realm realm) {
-
-
-    return JdbcSelect.from(this.listTable)
-      .addEqualityPredicate(ListCols.REALM_ID, realm.getGuid().getLocalId())
-      .execute()
-      .compose(rowSet -> {
-
-        List<ListObject> listObjects = new ArrayList<>();
-        for (JdbcRow row : rowSet) {
-          ListObject futurePublication = getListFromRow(row, realm, null);
-          listObjects.add(futurePublication);
-        }
-
-        return Future.succeededFuture(listObjects);
-      });
 
   }
 

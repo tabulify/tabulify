@@ -1,8 +1,6 @@
 package net.bytle.tower.eraldy.module.user.db;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
@@ -13,13 +11,9 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
-import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
-import net.bytle.tower.eraldy.mixin.UserPublicMixinWithRealm;
-import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
-import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.tower.eraldy.module.user.jackson.JacksonUserGuidDeserializer;
 import net.bytle.tower.eraldy.module.user.jackson.JacksonUserGuidSerializer;
@@ -74,10 +68,6 @@ public class UserProvider {
   private final EraldyApiApp apiApp;
   private final Pool jdbcPool;
 
-  /**
-   * Mapper for the API
-   */
-  private final JsonMapper apiMapper;
   private final JdbcTable userTable;
 
 
@@ -94,13 +84,6 @@ public class UserProvider {
       .addDeserializer(UserGuid.class, new JacksonUserGuidDeserializer(apiApp))
       .addSerializer(UserGuid.class, new JacksonUserGuidSerializer(apiApp))
     ;
-
-    this.apiMapper = jacksonMapperManager.jsonMapperBuilder()
-      .addMixIn(User.class, UserPublicMixinWithRealm.class)
-      .addMixIn(Realm.class, RealmPublicMixin.class)
-      .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
-      .build();
-
 
     this.userTable = JdbcTable.build(jdbcSchema, REALM_USER_TABLE_NAME, UserCols.values())
       .addPrimaryKeyColumn(UserCols.ID)
@@ -269,17 +252,11 @@ public class UserProvider {
 
   /**
    * @param realm      - the realmId
-   * @param pageId     - the page identifier
-   * @param pageSize   - the page size
-   * @param searchTerm - the search term (for now works only on email search)
+   * @param jdbcPagination - the pagination
    * @return the realm
    */
-  public Future<List<User>> getUsers(Realm realm, Long pageId, Long pageSize, String searchTerm) {
+  public Future<List<User>> getUsers(Realm realm, JdbcPagination jdbcPagination) {
 
-    JdbcPagination jdbcPagination = new JdbcPagination();
-    jdbcPagination.setPageId(pageId);
-    jdbcPagination.setPageSize(pageSize);
-    jdbcPagination.setSearchTerm(searchTerm);
     return JdbcPaginatedSelect.from(this.userTable)
       .addEqualityPredicate(UserCols.REALM_ID, realm.getGuid().getLocalId())
       .setSearchColumn(UserCols.EMAIL_ADDRESS)
@@ -518,13 +495,6 @@ public class UserProvider {
     return users;
   }
 
-  public UserGuid getGuidFromHash(String userGuid) throws CastException {
-    return apiApp.getHttpServer().getServer().getJacksonMapperManager().getDeserializer(UserGuid.class).deserialize(userGuid);
-  }
-
-  public ObjectMapper getApiMapper() {
-    return this.apiMapper;
-  }
 
 
   public <T extends User> Future<T> getUserByIdentifier(String identifier, Realm realm) {

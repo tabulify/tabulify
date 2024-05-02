@@ -2,7 +2,7 @@ package net.bytle.tower.eraldy.module.user.inputs;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.model.openapi.Organization;
+import net.bytle.tower.eraldy.module.organization.model.Organization;
 
 /**
  * A user in the organization They are the users of the Eraldy realm that are part of an organization. They may own Realms, App, List.

@@ -1,8 +1,6 @@
 package net.bytle.tower.eraldy.module.mailing.db.mailing;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import graphql.schema.DataFetchingEnvironment;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
@@ -13,17 +11,23 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
-import net.bytle.tower.eraldy.mixin.*;
 import net.bytle.tower.eraldy.model.manual.Status;
-import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.model.openapi.App;
+import net.bytle.tower.eraldy.model.openapi.ListObject;
+import net.bytle.tower.eraldy.model.openapi.ListUserStatus;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputProps;
+import net.bytle.tower.eraldy.module.mailing.jackson.JacksonMailingGuidDeserializer;
+import net.bytle.tower.eraldy.module.mailing.jackson.JacksonMailingGuidSerializer;
 import net.bytle.tower.eraldy.module.mailing.jackson.JacksonMailingStatusDeserializer;
 import net.bytle.tower.eraldy.module.mailing.model.Mailing;
+import net.bytle.tower.eraldy.module.mailing.model.MailingGuid;
 import net.bytle.tower.eraldy.module.mailing.model.MailingStatus;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.EmailAddress;
 import net.bytle.vertx.DateTimeService;
@@ -52,12 +56,11 @@ public class MailingProvider {
   static final String MAILING_PREFIX = "mailing";
 
 
-  static final String MAILING_GUID_PREFIX = "mai";
+  public static final String MAILING_GUID_PREFIX = "mai";
   private final EraldyApiApp apiApp;
 
 
   private final Pool jdbcPool;
-  private final JsonMapper apiMapper;
   private final String updateItemCountAndStatusToRunningSqlStatement;
 
   /**
@@ -72,21 +75,15 @@ public class MailingProvider {
     Server server = apiApp.getHttpServer().getServer();
     JdbcClient postgresClient = server.getPostgresClient();
     this.jdbcPool = postgresClient.getPool();
-    this.apiMapper = server.getJacksonMapperManager()
-      .jsonMapperBuilder()
-      .addMixIn(Mailing.class, MailingPublicMixin.class)
-      .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
-      .addMixIn(Realm.class, RealmPublicMixin.class)
-      .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
-      .addMixIn(ListObject.class, ListItemMixinWithoutRealm.class)
-      .build();
 
     this.updateItemCountAndStatusToRunningSqlStatement = postgresClient.getSqlStatement("mailing/mailing-update-item-count-and-state.sql");
     this.mailingItemsSqlInsertion = postgresClient.getSqlStatement("mailing/mailing-item-insertion.sql");
 
 
     this.apiApp.getHttpServer().getServer().getJacksonMapperManager()
-      .addDeserializer(MailingStatus.class, new JacksonMailingStatusDeserializer());
+      .addDeserializer(MailingStatus.class, new JacksonMailingStatusDeserializer())
+      .addSerializer(MailingGuid.class,new JacksonMailingGuidSerializer(this.apiApp))
+      .addDeserializer(MailingGuid.class,new JacksonMailingGuidDeserializer(this.apiApp));
 
     this.mailingTable = JdbcTable.build(jdbcSchema, "realm_mailing", MailingCols.values())
       .addPrimaryKeyColumn(MailingCols.ID)
@@ -102,12 +99,14 @@ public class MailingProvider {
    *
    * @param mailing - the mailing
    */
-  private void updateGuid(Mailing mailing) {
+  private void updateGuid(Mailing mailing, Long localMailingId) {
     if (mailing.getGuid() != null) {
       return;
     }
-    String guid = this.getGuidHash(mailing.getRealm().getGuid().getLocalId(), mailing.getLocalId());
-    mailing.setGuid(guid);
+    MailingGuid mailingGuid = new MailingGuid();
+    mailingGuid.setLocalId(localMailingId);
+    mailingGuid.setRealmId(mailing.getRealm().getGuid().getLocalId());
+    mailing.setGuid(mailingGuid);
   }
 
 
@@ -185,10 +184,8 @@ public class MailingProvider {
               .getNextIdForTableAndRealm(sqlConnection, list.getApp().getRealm(), this.mailingTable)
               .compose(nextId -> {
 
-                // local id
-                mailing.setLocalId(nextId);
                 jdbcInsert.addColumn(MailingCols.ID, nextId);
-                updateGuid(mailing);
+                updateGuid(mailing,nextId);
 
                 return jdbcInsert.execute();
               })
@@ -198,10 +195,6 @@ public class MailingProvider {
 
   }
 
-
-  public ObjectMapper getApiMapper() {
-    return this.apiMapper;
-  }
 
   public Future<Mailing> getByLocalId(Long localId, Realm realm) {
 
@@ -231,10 +224,9 @@ public class MailingProvider {
 
   private Mailing buildFromRow(JdbcRow row, Realm realm) {
     Mailing mailing = new Mailing();
-    mailing.setLocalId(row.getLong(MailingCols.ID));
     mailing.setRealm(realm);
     // realm and id should be first set for guid update
-    this.updateGuid(mailing);
+    this.updateGuid(mailing,row.getLong(MailingCols.ID));
     mailing.setName(row.getString(MailingCols.NAME));
     mailing.setCreationTime(row.getLocalDateTime(MailingCols.CREATION_TIME));
     mailing.setModificationTime(row.getLocalDateTime(MailingCols.MODIFICATION_TIME));
@@ -310,26 +302,22 @@ public class MailingProvider {
     return this.apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(MAILING_GUID_PREFIX, mailingIdentifier);
   }
 
-  public Future<List<Mailing>> getMailingsByListWithLocalId(long listId, Realm realm) {
+  public Future<List<Mailing>> getMailingsByListWithLocalId(ListObject listObject) {
 
     return JdbcSelect
       .from(this.mailingTable)
-      .addEqualityPredicate(MailingCols.EMAIL_RCPT_LIST_ID, listId)
-      .addEqualityPredicate(MailingCols.REALM_ID, realm.getGuid().getLocalId())
+      .addEqualityPredicate(MailingCols.EMAIL_RCPT_LIST_ID, listObject.getGuid().getLocalId())
+      .addEqualityPredicate(MailingCols.REALM_ID, listObject.getGuid().getRealmId())
       .execute()
       .compose(rows -> {
         List<Mailing> mailingList = new ArrayList<>();
         for (JdbcRow row : rows) {
-          Mailing mailing = this.buildFromRow(row, realm);
+          Mailing mailing = this.buildFromRow(row, listObject.getApp().getRealm());
           mailingList.add(mailing);
         }
         return Future.succeededFuture(mailingList);
       });
 
-  }
-
-  private String getGuidHash(Long realmId, Long mailingId) {
-    return apiApp.createGuidFromRealmAndObjectId(MAILING_GUID_PREFIX, realmId, mailingId).toString();
   }
 
   public Future<Mailing> updateMailing(Mailing mailing, MailingInputProps mailingInputProps) {
@@ -347,8 +335,8 @@ public class MailingProvider {
     }
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.mailingTable)
-      .addPredicateColumn(MailingCols.ID, mailing.getLocalId())
-      .addPredicateColumn(MailingCols.REALM_ID, mailing.getRealm().getGuid().getLocalId());
+      .addPredicateColumn(MailingCols.ID, mailing.getGuid().getLocalId())
+      .addPredicateColumn(MailingCols.REALM_ID, mailing.getGuid().getRealmId());
 
     /**
      * Patch implementation
@@ -449,8 +437,7 @@ public class MailingProvider {
             // 1 because we use the RETURNING SQL clause
             // 0 should not happen as we select it beforehand to build the mailing
             return Future.failedFuture(TowerFailureException.builder()
-              .setMessage("Update Mailing: No mailing was updated for the tuple (" + Tuple.of(mailing.getLocalId(),
-                mailing.getRealm().getGuid().getLocalId()).deepToString() + ")")
+              .setMessage("Update Mailing: No mailing was updated for the tuple (" + jdbcUpdate.toPreparedStatement().getBindingValues() + ")")
               .build());
           }
           return Future.succeededFuture(mailing);
@@ -558,8 +545,8 @@ public class MailingProvider {
           .preparedQuery(this.mailingItemsSqlInsertion)
           .execute(Tuple.of(
             ListUserStatus.OK.getValue(),
-            mailing.getEmailRecipientList().getApp().getRealm().getGuid().getLocalId(),
-            mailing.getLocalId()
+            mailing.getGuid().getRealmId(),
+            mailing.getGuid().getLocalId()
           ))
           .recover(e -> Future.failedFuture(new InternalException("Mailing Job Rows insertion err error: Sql Error " + e.getMessage(), e)))
           .compose(v -> {
@@ -571,8 +558,8 @@ public class MailingProvider {
               .preparedQuery(this.updateItemCountAndStatusToRunningSqlStatement)
               .execute(Tuple.of(
                 processingState.getCode(),
-                mailing.getRealm().getGuid().getLocalId(),
-                mailing.getLocalId()
+                mailing.getGuid().getRealmId(),
+                mailing.getGuid().getLocalId()
               ))
               .recover(err -> Future.failedFuture(TowerFailureException.builder()
                 .setMessage("Error on mailing update row count on mailing ( " + mailing + "). Error: " + err.getMessage())

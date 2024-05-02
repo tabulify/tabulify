@@ -20,6 +20,7 @@ import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceSerialize
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.list.model.ListUserGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmCols;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.user.db.UserCols;
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
 import net.bytle.tower.util.Guid;

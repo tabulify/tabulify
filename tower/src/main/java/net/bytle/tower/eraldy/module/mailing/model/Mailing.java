@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
-import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -16,9 +16,7 @@ import java.util.Objects;
 public class Mailing {
 
 
-  protected Long localId;
-
-  protected String guid;
+  protected MailingGuid guid;
 
   protected String name;
 
@@ -53,27 +51,12 @@ public class Mailing {
   public Mailing() {
   }
 
-  /**
-   * @return localId The mailing id in the database
-   */
-  @JsonProperty("localId")
-  public Long getLocalId() {
-    return localId;
-  }
-
-  /**
-   * @param localId The mailing id in the database
-   */
-  @SuppressWarnings("unused")
-  public void setLocalId(Long localId) {
-    this.localId = localId;
-  }
 
   /**
    * @return guid The public id (derived from the database/local id)
    */
   @JsonProperty("guid")
-  public String getGuid() {
+  public MailingGuid getGuid() {
     return guid;
   }
 
@@ -81,7 +64,7 @@ public class Mailing {
    * @param guid The public id (derived from the database/local id)
    */
   @SuppressWarnings("unused")
-  public void setGuid(String guid) {
+  public void setGuid(MailingGuid guid) {
     this.guid = guid;
   }
 

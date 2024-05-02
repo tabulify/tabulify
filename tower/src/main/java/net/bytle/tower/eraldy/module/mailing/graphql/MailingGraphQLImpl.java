@@ -1,11 +1,11 @@
 package net.bytle.tower.eraldy.module.mailing.graphql;
 
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLScalarType;
 import graphql.schema.idl.RuntimeWiring;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.exception.CastException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
@@ -19,7 +19,6 @@ import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputTestEmail;
 import net.bytle.tower.eraldy.module.mailing.model.Mailing;
 import net.bytle.tower.eraldy.module.mailing.model.MailingItem;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
-import net.bytle.tower.util.Guid;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.JdbcPagination;
@@ -42,21 +41,22 @@ public class MailingGraphQLImpl {
     this.mailingJobProvider = this.app.getMailingJobProvider();
 
     /**
+     * Scalars
+     */
+    final GraphQLScalarType MAILING_GUID = GraphQLScalarType
+      .newScalar()
+      .name("MailingGuid")
+      .description("The Guid for a mailing")
+      .coercing(new GraphQLMailingGuidCoercing(app.getJackson()))
+      .build();
+    typeWiringBuilder.scalar(MAILING_GUID);
+
+    /**
      * Map type to function
      */
     typeWiringBuilder.type(
         newTypeWiring("Query")
           .dataFetcher("mailing", this::getMailing)
-          .build()
-      )
-      .type(
-        newTypeWiring("Query")
-          .dataFetcher("mailingsOfList", this::getMailingsOfList)
-          .build()
-      )
-      .type(
-        newTypeWiring("Query")
-          .dataFetcher("mailingJobs", this::getMailingJobs)
           .build()
       )
       .type(
@@ -70,6 +70,11 @@ public class MailingGraphQLImpl {
       .type(
         newTypeWiring("Mailing")
           .dataFetcher("emailAuthor", this::getMailingEmailAuthor)
+          .build()
+      )
+      .type(
+        newTypeWiring("Mailing")
+          .dataFetcher("jobs", this::getMailingJobs)
           .build()
       )
       .type(
@@ -143,9 +148,9 @@ public class MailingGraphQLImpl {
   }
 
   private Future<List<MailingJob>> getMailingJobs(DataFetchingEnvironment dataFetchingEnvironment) {
-    String mailingGuid = dataFetchingEnvironment.getArgument("mailingGuid");
+    Mailing mailing = dataFetchingEnvironment.getSource();
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
-    return mailingJobProvider.getMailingJobsRequestHandler(mailingGuid, routingContext);
+    return mailingJobProvider.getMailingJobsRequestHandler(mailing, routingContext);
   }
 
   private Future<MailingJob> executeMailing(DataFetchingEnvironment dataFetchingEnvironment) {
@@ -228,20 +233,5 @@ public class MailingGraphQLImpl {
     return this.mailingProvider.getListAtRequestTime(mailing);
   }
 
-  public Future<List<Mailing>> getMailingsOfList(DataFetchingEnvironment dataFetchingEnvironment) {
-    String listGuid = dataFetchingEnvironment.getArgument("listGuid");
-    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
 
-    Guid guid;
-    try {
-      guid = this.app.getListProvider().getGuidObject(listGuid);
-    } catch (CastException e) {
-      return Future.failedFuture(new IllegalArgumentException("The list guid (" + listGuid + ") is not valid", e));
-    }
-
-    return this.app.getAuthProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmOrOrganizationId(), AuthUserScope.MAILINGS_LIST_GET, routingContext)
-      .compose(realm -> mailingProvider.getMailingsByListWithLocalId(guid.validateRealmAndGetFirstObjectId(realm.getGuid().getLocalId()), realm));
-
-  }
 }

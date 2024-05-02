@@ -8,13 +8,13 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.ListUser;
-import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingItemInputProps;
 import net.bytle.tower.eraldy.module.mailing.model.Mailing;
 import net.bytle.tower.eraldy.module.mailing.model.MailingItem;
 import net.bytle.tower.eraldy.module.mailing.model.MailingItemStatus;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.user.db.UserCols;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.EmailAddress;
@@ -77,8 +77,8 @@ public class MailingItemProvider {
           .setOperator(JdbcComparisonOperator.NOT_EQUAL)
           .setOrNull(true)
       )
-      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getEmailRecipientList().getApp().getRealm().getGuid().getLocalId())
-      .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getLocalId())
+      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getGuid().getRealmId())
+      .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getGuid().getLocalId())
       .addLimit(mailingJob.getItemToExecuteCount());
 
     return jdbcSelect.execute();
@@ -87,8 +87,8 @@ public class MailingItemProvider {
   public Future<List<MailingItem>> getItemsForGraphQL(Mailing mailing, JdbcPagination pagination) {
 
     return JdbcPaginatedSelect.from(mailingItemTable)
-      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getRealm().getGuid().getLocalId())
-      .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getLocalId())
+      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getGuid().getRealmId())
+      .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getGuid().getLocalId())
       .setSearchColumn(UserCols.EMAIL_ADDRESS)
       .addExtraSelectColumn(UserCols.EMAIL_ADDRESS)
       .addEqualityPredicate(UserCols.REALM_ID, mailing.getRealm().getGuid().getLocalId())
@@ -125,7 +125,7 @@ public class MailingItemProvider {
      * Mailing
      */
     Long mailingId = jdbcRow.getLong(MailingItemCols.MAILING_ID);
-    if (!Objects.equals(mailingId, mailing.getLocalId())) {
+    if (!Objects.equals(mailingId, mailing.getGuid().getLocalId())) {
       throw new InternalException("Bad mailing id");
     }
     mailingItem.setMailing(mailing);
@@ -196,8 +196,8 @@ public class MailingItemProvider {
 
     Guid guid = this.apiApp.createGuidStringFromRealmAndTwoObjectId(
       GUID_PREFIX,
-      mailingItem.getMailing().getRealm().getGuid().getLocalId(),
-      mailingItem.getMailing().getLocalId(),
+      mailingItem.getMailing().getGuid().getRealmId(),
+      mailingItem.getMailing().getGuid().getLocalId(),
       mailingItem.getListUser().getUser().getGuid().getLocalId()
     );
     mailingItem.setGuid(guid.toString());
@@ -231,8 +231,8 @@ public class MailingItemProvider {
    */
   private Future<MailingItem> getItemByLocalId(Long userId, Mailing mailing) {
     return JdbcSelect.from(this.mailingItemTable)
-      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getRealm().getGuid().getLocalId())
-      .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getLocalId())
+      .addEqualityPredicate(MailingItemCols.REALM_ID, mailing.getGuid().getRealmId())
+      .addEqualityPredicate(MailingItemCols.MAILING_ID, mailing.getGuid().getLocalId())
       .addEqualityPredicate(MailingItemCols.USER_ID, userId)
       .addSelectColumn(UserCols.EMAIL_ADDRESS)
       .execute(jdbcRowSet -> {
@@ -258,8 +258,8 @@ public class MailingItemProvider {
   public Future<MailingItem> update(MailingItem mailingItem, MailingItemInputProps mailingItemInputProps) {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.mailingItemTable)
-      .addPredicateColumn(MailingItemCols.REALM_ID, mailingItem.getMailing().getRealm().getGuid().getLocalId())
-      .addPredicateColumn(MailingItemCols.MAILING_ID, mailingItem.getMailing().getLocalId())
+      .addPredicateColumn(MailingItemCols.REALM_ID, mailingItem.getMailing().getGuid().getRealmId())
+      .addPredicateColumn(MailingItemCols.MAILING_ID, mailingItem.getMailing().getGuid().getLocalId())
       .addPredicateColumn(MailingItemCols.USER_ID, mailingItem.getListUser().getUser().getGuid().getLocalId());
 
     MailingItemStatus newStatus = mailingItemInputProps.getStatus();

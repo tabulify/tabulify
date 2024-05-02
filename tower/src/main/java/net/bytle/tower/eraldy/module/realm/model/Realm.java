@@ -1,15 +1,25 @@
-package net.bytle.tower.eraldy.model.openapi;
+package net.bytle.tower.eraldy.module.realm.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
+import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.type.Handle;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * A realm.  It identifies a protection space where the user and their credentials are stored.  * In a marketing level, it represents a brand. When people log in, they see the realm logo. * In a web/dns level, it would be a domain name (and apps would be subdomain) * In a security level, this is the authentication realm. * In an infrastructure level, this is called a tenant.
+ * A realm.
+ * It identifies a protection space where the user and their credentials are stored.
+ * * In a marketing level, it represents a brand. When people log in, they may see the realm logo next to the app logo.
+ * * In a web/dns level, it would be a domain name (and apps would be subdomain)
+ * * In a security level, this is the authentication realm.
+ * * In an infrastructure level, this is called a tenant.
+ * <p>
+ * For a security level, note that the scope of the credentials are
+ * <a href="https://httpwg.org/specs/rfc7617.html#reusing.credentials">URL based</a>
+ *
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Realm {

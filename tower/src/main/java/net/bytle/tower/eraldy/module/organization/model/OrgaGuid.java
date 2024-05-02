@@ -8,7 +8,16 @@ import java.util.Objects;
 public class OrgaGuid  {
 
 
+  /**
+   * The database id
+   */
   private final Long localId;
+
+  /**
+   *
+   * The public hash
+   */
+  private String publicHash;
 
   public OrgaGuid(Long orgaId) {
     this.localId = orgaId;
@@ -36,4 +45,13 @@ public class OrgaGuid  {
   public String toString() {
     return String.valueOf(localId);
   }
+
+  public String getPublicHash() {
+    return this.publicHash;
+  }
+
+  public void setPublicHash(String publicHash) {
+    this.publicHash = publicHash;
+  }
+
 }

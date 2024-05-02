@@ -14,7 +14,9 @@ import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
+import net.bytle.tower.eraldy.module.mailing.model.Mailing;
 
+import java.util.List;
 import java.util.Map;
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
@@ -23,10 +25,11 @@ public class ListGraphQLImpl {
 
 
   private final ListProvider listProvider;
+  private final EraldyApiApp app;
 
   public ListGraphQLImpl(EraldyGraphQL eraldyGraphQL, RuntimeWiring.Builder typeWiringBuilder) {
 
-    EraldyApiApp app = eraldyGraphQL.getApp();
+    this.app = eraldyGraphQL.getApp();
     this.listProvider = app.getListProvider();
 
     /**
@@ -76,6 +79,11 @@ public class ListGraphQLImpl {
           .dataFetcher("app", this::getListApp)
           .build()
       )
+      .type(
+        newTypeWiring("List")
+          .dataFetcher("mailings", this::getListMailing)
+          .build()
+      )
       /**
        * Mutation
        */
@@ -89,6 +97,14 @@ public class ListGraphQLImpl {
           .dataFetcher("listUpdate", this::updateList)
           .build()
       );
+  }
+
+  private Future<List<Mailing>> getListMailing(DataFetchingEnvironment dataFetchingEnvironment) {
+    ListObject listObject = dataFetchingEnvironment.getSource();
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return this.app.getAuthProvider()
+      .checkRealmAuthorization(routingContext, listObject.getApp().getRealm(),AuthUserScope.MAILINGS_LIST_GET)
+      .compose(v->this.app.getMailingProvider().getMailingsByListWithLocalId(listObject));
   }
 
   private Future<App> getListApp(DataFetchingEnvironment dataFetchingEnvironment) {

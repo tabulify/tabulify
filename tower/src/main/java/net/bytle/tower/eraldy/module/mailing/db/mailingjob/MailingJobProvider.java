@@ -3,18 +3,18 @@ package net.bytle.tower.eraldy.module.mailing.db.mailingjob;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.sqlclient.Pool;
-import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
-import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingJobInputProps;
 import net.bytle.tower.eraldy.module.mailing.model.Mailing;
+import net.bytle.tower.eraldy.module.mailing.model.MailingGuid;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
 import net.bytle.tower.eraldy.module.mailing.model.MailingJobStatus;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerFailureException;
@@ -27,7 +27,6 @@ import java.util.List;
 public class MailingJobProvider {
 
 
-
   private static final String MAILING_JOB_GUID_PREFIX = "maj";
   private final EraldyApiApp apiApp;
 
@@ -38,14 +37,12 @@ public class MailingJobProvider {
   public MailingJobProvider(EraldyApiApp eraldyApiApp, JdbcSchema jobsSchema) {
     this.apiApp = eraldyApiApp;
 
-    this.mailingJobTable =  JdbcTable.build(jobsSchema,"realm_mailing_job", MailingJobCols.values())
+    this.mailingJobTable = JdbcTable.build(jobsSchema, "realm_mailing_job", MailingJobCols.values())
       .addPrimaryKeyColumn(MailingJobCols.ID)
       .addPrimaryKeyColumn(MailingJobCols.REALM_ID)
       .build();
 
     this.jdbcPool = jobsSchema.getJdbcClient().getPool();
-
-
 
 
   }
@@ -85,8 +82,8 @@ public class MailingJobProvider {
 
                 return JdbcInsert.into(mailingJobTable)
                   .addColumn(MailingJobCols.ID, mailingJob.getLocalId())
-                  .addColumn(MailingJobCols.REALM_ID, mailingJob.getMailing().getRealm().getGuid().getLocalId())
-                  .addColumn(MailingJobCols.MAILING_ID, mailingJob.getMailing().getLocalId())
+                  .addColumn(MailingJobCols.REALM_ID, mailingJob.getMailing().getGuid().getRealmId())
+                  .addColumn(MailingJobCols.MAILING_ID, mailingJob.getMailing().getGuid().getLocalId())
                   .addColumn(MailingJobCols.STATUS_CODE, mailingJob.getStatus().getCode())
                   .addColumn(MailingJobCols.START_TIME, mailingJob.getStartTime())
                   .addColumn(MailingJobCols.ITEM_TO_EXECUTE_COUNT, mailingJob.getItemToExecuteCount())
@@ -110,40 +107,22 @@ public class MailingJobProvider {
   }
 
 
-  public Future<List<MailingJob>> getMailingJobsRequestHandler(String mailingGuid, RoutingContext routingContext) {
-    Guid mailingGuidObject;
-    try {
-      mailingGuidObject = this.apiApp.getMailingProvider().getGuidObject(mailingGuid);
-    } catch (CastException e) {
-      return Future.failedFuture(new IllegalArgumentException("The mailing guid (" + mailingGuid + ") is not valid", e));
-    }
+  public Future<List<MailingJob>> getMailingJobsRequestHandler(Mailing mailing, RoutingContext routingContext) {
 
     return this.apiApp.getAuthProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(mailingGuidObject.getRealmOrOrganizationId(), AuthUserScope.MAILING_JOBS_GET, routingContext)
-      .compose(realm -> {
-
-        Long mailingLocalId = mailingGuidObject.validateRealmAndGetFirstObjectId(realm.getGuid().getLocalId());
-        Mailing mailing = new Mailing();
-        mailing.setRealm(realm);
-        mailing.setLocalId(mailingLocalId);
-        mailing.setGuid(mailingGuid);
-
-        final String sql = "select * from " + this.mailingJobTable.getFullName() + " where " + MailingJobCols.MAILING_ID.getColumnName() + " = $1 and " + MailingJobCols.REALM_ID.getColumnName() + " = $2";
-        Tuple tuple = Tuple.of(mailing.getLocalId(), mailing.getRealm().getGuid().getLocalId());
-        return this.jdbcPool
-          .preparedQuery(sql)
-          .execute(tuple)
-          .recover(err -> Future.failedFuture(new InternalException("Getting mailing job for the list (" + tuple + ") failed. Error: " + err.getMessage() + ". Sql:\n" + sql, err)))
-          .compose(rows -> {
-            List<MailingJob> mailingList = new ArrayList<>();
-            for (Row row : rows) {
-              JdbcRow rowV = new JdbcRow(row);
-              MailingJob mailingJob = this.buildFromRow(rowV, mailing);
-              mailingList.add(mailingJob);
-            }
-            return Future.succeededFuture(mailingList);
-          });
-      });
+      .checkRealmAuthorization(routingContext, mailing.getRealm(), AuthUserScope.MAILING_JOBS_GET)
+      .compose(v -> JdbcSelect.from(this.mailingJobTable)
+        .addEqualityPredicate(MailingJobCols.MAILING_ID, mailing.getGuid().getLocalId())
+        .addEqualityPredicate(MailingJobCols.REALM_ID, mailing.getGuid().getRealmId())
+        .execute()
+        .compose(rows -> {
+          List<MailingJob> mailingList = new ArrayList<>();
+          for (JdbcRow row : rows) {
+            MailingJob mailingJob = this.buildFromRow(row, mailing);
+            mailingList.add(mailingJob);
+          }
+          return Future.succeededFuture(mailingList);
+        }));
   }
 
 
@@ -159,8 +138,8 @@ public class MailingJobProvider {
     Long mailingLocalId = row.getLong(MailingJobCols.MAILING_ID);
     Long realmLocalId = row.getLong(MailingJobCols.REALM_ID);
     if (mailing != null) {
-      if (!mailingLocalId.equals(mailing.getLocalId())) {
-        throw new InternalException("Inconsistency: The mailing local id (" + mailing.getLocalId() + ") is not the same as in the database (" + mailingLocalId + ") for the mailing job (" + mailingJobId + ")");
+      if (!mailingLocalId.equals(mailing.getGuid().getLocalId())) {
+        throw new InternalException("Inconsistency: The mailing local id (" + mailing.getGuid().getLocalId() + ") is not the same as in the database (" + mailingLocalId + ") for the mailing job (" + mailingJobId + ")");
       }
       if (!realmLocalId.equals(mailing.getRealm().getGuid().getLocalId())) {
         throw new InternalException("Inconsistency: The realm local id (" + mailing.getRealm().getGuid() + ") is the same as in the database (" + realmLocalId + ") for the mailing job (" + mailingJobId + ")");
@@ -169,8 +148,11 @@ public class MailingJobProvider {
       // Build it
       Realm realm = Realm.createFromAnyId(realmLocalId);
       mailing = new Mailing();
-      mailing.setLocalId(mailingLocalId);
       mailing.setRealm(realm);
+      MailingGuid mailingGuid = new MailingGuid();
+      mailingGuid.setLocalId(mailingLocalId);
+      mailingGuid.setRealmId(mailing.getRealm().getGuid().getLocalId());
+      mailing.setGuid(mailingGuid);
     }
     mailingJob.setMailing(mailing);
     this.updateGuid(mailingJob);
@@ -270,11 +252,11 @@ public class MailingJobProvider {
     }
 
 
-    jdbcUpdate.addPredicateColumn(MailingJobCols.REALM_ID,mailingJob.getMailing().getRealm().getGuid().getLocalId());
-    jdbcUpdate.addPredicateColumn(MailingJobCols.ID,mailingJob.getLocalId());
+    jdbcUpdate.addPredicateColumn(MailingJobCols.REALM_ID, mailingJob.getMailing().getRealm().getGuid().getLocalId());
+    jdbcUpdate.addPredicateColumn(MailingJobCols.ID, mailingJob.getLocalId());
 
     return jdbcUpdate.execute(connection)
-      .compose(rowSet->Future.succeededFuture(mailingJob));
+      .compose(rowSet -> Future.succeededFuture(mailingJob));
 
   }
 }

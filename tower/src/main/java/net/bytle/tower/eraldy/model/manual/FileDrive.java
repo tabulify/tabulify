@@ -3,7 +3,7 @@ package net.bytle.tower.eraldy.model.manual;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.model.openapi.App;
-import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 
 import java.util.Objects;
 

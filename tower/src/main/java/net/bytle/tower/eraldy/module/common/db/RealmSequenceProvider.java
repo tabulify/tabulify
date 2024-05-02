@@ -2,7 +2,7 @@ package net.bytle.tower.eraldy.module.common.db;
 
 import io.vertx.core.Future;
 import io.vertx.sqlclient.SqlConnection;
-import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.vertx.DateTimeService;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.db.*;

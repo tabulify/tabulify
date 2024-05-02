@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
-import net.bytle.tower.eraldy.model.openapi.Organization;
+import net.bytle.tower.eraldy.module.organization.model.Organization;
 
 
 /**

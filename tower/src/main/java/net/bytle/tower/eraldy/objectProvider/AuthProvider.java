@@ -9,12 +9,15 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.AuthClient;
 import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationUser;
 import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
-import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.model.openapi.ListObject;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
+import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
+import net.bytle.tower.eraldy.module.organization.model.Organization;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
@@ -57,24 +60,6 @@ public class AuthProvider {
   }
 
   /**
-   * A private utility function that returns the Auth User has organizational user
-   * You want to use {@link #getSignedInOrganizationalUser(RoutingContext)}
-   *
-   * @param routingContext - the routing context
-   * @return the signed organizational user
-   * @throws NotFoundException           - if the user is not found
-   * @throws NotSignedInOrganizationUser - if the user is not an organization user
-   */
-  private OrgaUser getSignedInOrganizationalUserOrThrows(RoutingContext routingContext) throws NotFoundException, NotSignedInOrganizationUser {
-    AuthUser authUser = this.getSignedInAuthUser(routingContext);
-    User user = toModelUser(authUser);
-    if (user instanceof OrgaUser) {
-      return (OrgaUser) user;
-    }
-    throw new NotSignedInOrganizationUser("The user (" + user + ") is not an organizational user");
-  }
-
-  /**
    * @param ctx - the context
    * @return the authenticated user
    * @throws NotFoundException if not found
@@ -94,7 +79,7 @@ public class AuthProvider {
     if (user == null) {
       throw new NotFoundException();
     }
-    return AuthUser.createFromUser(user);
+    return AuthUser.createFromVertxUser(user);
 
 
   }
@@ -213,37 +198,6 @@ public class AuthProvider {
 
     AuthUser authUser = this.getSignedInAuthUser(routingContext);
     return toModelUser(authUser);
-
-  }
-
-  /**
-   * Utility function to get the user as future
-   * (ie fail the context if the user is not present or not the good one)
-   * This function is used mostly in Api implementation interface
-   * to not have to deal with the exception thrown of {@link #getSignedInOrganizationalUserOrThrows(RoutingContext)}
-   *
-   * @param routingContext - the routing context
-   * @return a user or a failed future
-   */
-  public Future<OrgaUser> getSignedInOrganizationalUser(RoutingContext routingContext) {
-    try {
-      return Future.succeededFuture(this.apiApp.getAuthProvider().getSignedInOrganizationalUserOrThrows(routingContext));
-    } catch (NotFoundException e) {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
-          .setMessage("You should be logged in")
-          .buildWithContextFailing(routingContext)
-      );
-    } catch (NotSignedInOrganizationUser e) {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
-          .setMessage("You should be logged as an organizational user")
-          .setCauseException(e)
-          .buildWithContextFailing(routingContext)
-      );
-    }
 
   }
 
@@ -562,7 +516,7 @@ public class AuthProvider {
   }
 
 
-  public Future<Void> checkOrgAuthorization(RoutingContext routingContext, String requestedOrgGuid, AuthUserScope authUserScope) {
+  public Future<Void> checkOrgAuthorization(RoutingContext routingContext, OrgaGuid requestedOrgGuid, AuthUserScope authUserScope) {
     return this.getSignedInAuthUserOrFail(routingContext)
       .compose(signedInUser -> {
         String signedInUserGroup = signedInUser.getAudienceOrganizationGuid();
@@ -574,7 +528,19 @@ public class AuthProvider {
               .build()
           );
         }
-        if (!signedInUserGroup.contains(requestedOrgGuid)) {
+        /**
+         * The public hash should not be null
+         * as this is the identifier that we store in the auth user
+         */
+        String publicHash = requestedOrgGuid.getPublicHash();
+        if (publicHash == null) {
+          publicHash = this.apiApp.getJackson().getSerializer(OrgaGuid.class).serialize(requestedOrgGuid);
+          requestedOrgGuid.setPublicHash(publicHash);
+        }
+        /**
+         * Auth verification
+         */
+        if (!signedInUserGroup.contains(publicHash)) {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)

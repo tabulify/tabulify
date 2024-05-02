@@ -17,6 +17,7 @@ import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.type.Handle;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;

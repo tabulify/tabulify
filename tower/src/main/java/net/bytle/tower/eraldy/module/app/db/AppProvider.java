@@ -1,8 +1,6 @@
 package net.bytle.tower.eraldy.module.app.db;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.sqlclient.Pool;
@@ -11,12 +9,8 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
-import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
-import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.app.inputs.AppInputProps;
 import net.bytle.tower.eraldy.module.app.jackson.JacksonAppGuidDeserializer;
 import net.bytle.tower.eraldy.module.app.jackson.JacksonAppGuidSerializer;
@@ -24,6 +18,7 @@ import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmCols;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.type.Color;
 import net.bytle.type.Handle;
@@ -55,18 +50,12 @@ public class AppProvider {
 
   private final EraldyApiApp apiApp;
   private final Pool jdbcPool;
-  private final JsonMapper apiMapper;
   private final JdbcTable appTable;
 
 
   public AppProvider(EraldyApiApp apiApp, JdbcSchema jdbcSchema) {
     this.apiApp = apiApp;
     this.jdbcPool = apiApp.getHttpServer().getServer().getPostgresClient().getPool();
-    this.apiMapper = apiApp.getHttpServer().getServer().getJacksonMapperManager()
-      .jsonMapperBuilder()
-      .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
-      .addMixIn(Realm.class, RealmPublicMixin.class)
-      .build();
 
     this.apiApp.getHttpServer().getServer().getJacksonMapperManager()
       .addDeserializer(AppGuid.class, new JacksonAppGuidDeserializer(apiApp))
@@ -334,9 +323,6 @@ public class AppProvider {
     return this.jdbcPool.withConnection(sqlConnection -> getAppByGuid(appGuid, realm, sqlConnection));
   }
 
-  public ObjectMapper getApiMapper() {
-    return this.apiMapper;
-  }
 
   /**
    * Getsert: get or insert an app with a local id

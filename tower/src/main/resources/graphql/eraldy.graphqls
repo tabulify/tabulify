@@ -4,10 +4,13 @@ scalar UserGuid
 scalar OrgaUserGuid
 scalar OrgaGuid
 scalar RealmGuid
+scalar MailingGuid
 scalar ListGuid
 scalar ListUserGuid
 scalar EmailAddress
 scalar Handle
+scalar Uri
+scalar TimeZone
 
 """
 There is 2 kinds of user
@@ -15,8 +18,35 @@ There is 2 kinds of user
 * The users of an organization (Eraldy realm)
 """
 interface UserI {
+  """The email address"""
   emailAddress: EmailAddress!
+  """The given name"""
   givenName: String
+  """The family name"""
+  familyName: String
+  """The title"""
+  title: String
+  """The bio"""
+  bio: String
+  """The location"""
+  location: String
+  """The status"""
+  status: Status
+  """The status message"""
+  statusMessage: String
+  """The avatar URL"""
+  avatar: Uri
+  """The website URL"""
+  website: Uri
+  """The timezone"""
+  timeZone: TimeZone
+  """The creation time"""
+  creationTime: String @dateFormat
+  """The modification time"""
+  modificationTime: String @dateFormat
+  """The last active time"""
+  lastActiveTime: String @dateFormat
+  """The realm"""
   realm: Realm!
 }
 
@@ -25,8 +55,35 @@ A realm user
 """
 type User implements UserI {
   guid: UserGuid!
+  """The email address"""
   emailAddress: EmailAddress!
+  """The given name"""
   givenName: String
+  """The family name"""
+  familyName: String
+  """The title"""
+  title: String
+  """The bio"""
+  bio: String
+  """The location"""
+  location: String
+  """The status"""
+  status: Status
+  """The status message"""
+  statusMessage: String
+  """The avatar URL"""
+  avatar: Uri
+  """The website URL"""
+  website: Uri
+  """The timezone"""
+  timeZone: TimeZone
+  """The creation time"""
+  creationTime: String @dateFormat
+  """The modification time"""
+  modificationTime: String @dateFormat
+  """The last active time"""
+  lastActiveTime: String @dateFormat
+  """The realm"""
   realm: Realm!
 }
 
@@ -38,11 +95,37 @@ that belongs to an organization
 type OrganizationUser implements UserI {
   """The user id"""
   guid: OrgaUserGuid!
+  """The owned realm"""
+  ownedRealms:[Realm]
   """The email address"""
   emailAddress: EmailAddress!
   """The given name"""
   givenName: String
-  """The Eraldy realm"""
+  """The family name"""
+  familyName: String
+  """The title"""
+  title: String
+  """The bio"""
+  bio: String
+  """The location"""
+  location: String
+  """The status"""
+  status: Status
+  """The status message"""
+  statusMessage: String
+  """The avatar URL"""
+  avatar: Uri
+  """The website URL"""
+  website: Uri
+  """The timezone"""
+  timeZone: TimeZone
+  """The creation time"""
+  creationTime: String @dateFormat
+  """The modification time"""
+  modificationTime: String @dateFormat
+  """The last active time"""
+  lastActiveTime: String @dateFormat
+  """The realm (Eraldy Realm)"""
   realm: Realm!
 }
 
@@ -79,7 +162,7 @@ A mailing
 """
 type Mailing {
   """The Guid of the mailing"""
-  guid: ID!
+  guid: MailingGuid
   """A short descriptive name"""
   name: String
   """The email document"""
@@ -112,7 +195,8 @@ type Mailing {
   creationTime: String! @dateFormat
   """The modification time"""
   modificationTime: String @dateFormat
-
+  """The jobs of a mailing"""
+  jobs: [MailingJob]
 }
 
 type ListUser {
@@ -186,6 +270,10 @@ type Organization {
   creationTime: String! @dateFormat
   """The modification time"""
   modificationTime: String @dateFormat
+  """Users"""
+  users:[OrganizationUser]
+  """Realms"""
+  realms: [Realm]
 }
 
 """
@@ -211,6 +299,8 @@ type Realm {
   listCount: Int!
   """The organization of the Realm"""
   organization: Organization!
+  """The users"""
+  users(pagination: Pagination): [User]
 }
 
 type App {
@@ -248,6 +338,8 @@ type List {
   mailingCount: Int!
   """The registration page URL for the list"""
   registrationUrl: String!
+  """The mailings of a list"""
+  mailings:[Mailing]
 }
 
 input ListInput {
@@ -259,6 +351,23 @@ input ListInput {
   title: String
   """The Orga Guid of the owner"""
   ownerUserGuid: ID
+}
+
+input UserInput {
+  """The given name"""
+  givenName: String
+  """The family name"""
+  familyName: String
+  """The title"""
+  title: String
+  """The bio"""
+  bio: String
+  """The location"""
+  location: String
+  """The avatar URL"""
+  avatar: Uri
+  """The website URL"""
+  website: Uri
 }
 
 input MailingInput {
@@ -305,18 +414,21 @@ type RateLimit {
 }
 
 type Query {
+  """A organization"""
+  organization(orgaGuid: ID!): Organization
+  """A realm"""
+  realm(realmGuid: ID!): Realm
   """A list"""
   list(listGuid: ID!): List
   """A mailing"""
   mailing(guid: ID!): Mailing
   """A mailing job"""
   mailingJob(guid: ID!): MailingJob
-  """The mailings of a list"""
-  mailingsOfList(listGuid:ID!):[Mailing]
-  """The jobs of a mailing"""
-  mailingJobs(mailingGuid:ID!):[MailingJob]
   me: UserI
-  realmsOfOrganization(orgaGuid: ID!): [Realm]
+  """The logged user if an organization user"""
+  orgaMe: OrganizationUser
+  """An organizational user"""
+  orgaUser(orgaUserGuid:ID!): OrganizationUser
 }
 
 type Mutation {
@@ -334,4 +446,6 @@ type Mutation {
   listCreate(appGuid: ID!, props:ListInput): List
   """Update a list"""
   listUpdate(listGuid: ID!, props:ListInput): List
+  """Update a user"""
+  userUpdate(userGuid:ID!, props:UserInput): User
 }

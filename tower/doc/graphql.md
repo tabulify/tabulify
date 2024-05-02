@@ -143,6 +143,26 @@ How do you do it?
 
 You can always use the same input object without publicly advertising it.
 
+### No need to have multiple API Endpoint for me vs user
+
+When you have a API, you need to query information for the user logged in (ie `me`)
+With Grapqhl, you need to make the distinction once, to return a user.
+Thanks to the source you don't need to create multiple endpoint.
+
+Example:
+* realm owned by me
+* realm owned by user
+
+You just have
+```graphql
+type User {
+  ownedRealms:[Realm]
+}
+type Query {
+userMe:User
+user(userGuid:ID!):User
+}
+```
 
 ## Implementation
 

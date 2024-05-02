@@ -3,7 +3,7 @@ package net.bytle.tower.eraldy.mixin;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 
 
 public abstract class ListItemMixinWithoutRealm {
