@@ -236,6 +236,7 @@ public class Realm {
   public LocalDateTime getCreationTime() {
     return creationTime;
   }
+
   @JsonProperty("modificationTime")
   public LocalDateTime getModificationTime() {
     return modificationTime;

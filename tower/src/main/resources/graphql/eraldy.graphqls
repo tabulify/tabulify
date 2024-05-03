@@ -198,7 +198,7 @@ type Mailing {
   """The creation time"""
   creationTime: String! @dateFormat
   """The modification time"""
-  modificationTime: String @dateFormat
+  modificationTime: String! @dateFormat
   """The jobs of a mailing"""
   jobs: [MailingJob]
 }
@@ -212,6 +212,10 @@ type ListUser {
   list: List!
   """The status"""
   status: Status!
+  """The creation time"""
+  creationTime: String! @dateFormat
+  """The modification time"""
+  modificationTime: String! @dateFormat
 }
 
 """
@@ -312,6 +316,10 @@ type Realm {
   organization: Organization!
   """The users"""
   users(pagination: Pagination): [User]
+  """The creation time"""
+  creationTime: String! @dateFormat
+  """The modification time"""
+  modificationTime: String! @dateFormat
 }
 
 type App {
@@ -328,6 +336,10 @@ type App {
   ownerUser: OrganizationUser!
   """The realm of the App"""
   realm: Realm!
+  """The creation time"""
+  creationTime: String! @dateFormat
+  """The modification time"""
+  modificationTime: String! @dateFormat
 }
 
 type List {
@@ -351,6 +363,10 @@ type List {
   registrationUrl: String!
   """The mailings of a list"""
   mailings:[Mailing]
+  """The creation time"""
+  creationTime: String! @dateFormat
+  """The modification time"""
+  modificationTime: String! @dateFormat
 }
 
 input ListInput {
