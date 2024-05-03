@@ -23,7 +23,7 @@ import net.bytle.tower.eraldy.graphql.implementer.UserGraphQLImpl;
 import net.bytle.tower.eraldy.model.manual.Status;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.eraldy.module.app.graphql.GraphQLApp;
+import net.bytle.tower.eraldy.module.app.graphql.AppGraphQL;
 import net.bytle.tower.eraldy.module.list.graphql.ListGraphQLImpl;
 import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
 import net.bytle.tower.eraldy.module.organization.graphql.OrgaGraphQLImpl;
@@ -80,7 +80,7 @@ public class EraldyGraphQL implements GraphQLDef {
     new ListGraphQLImpl(this, wiringBuilder);
     new RealmGraphQLImpl(this,wiringBuilder);
     new OrgaGraphQLImpl(this,wiringBuilder);
-    new GraphQLApp(this, wiringBuilder);
+    new AppGraphQL(this, wiringBuilder);
     UserGraphQLImpl userImpl = new UserGraphQLImpl(this);
 
     /**

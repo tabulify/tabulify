@@ -30,7 +30,6 @@ public class ApiVertxSupport {
     // we pass the app so that the implementation can use the services attached to the server and http server (jwt, ..)
 
     new AnalyticsApiHandler(new AnalyticsApiImpl(towerApp)).mount(builder);
-    new AppApiHandler(new AppApiImpl(towerApp)).mount(builder);
     new AuthApiHandler(new AuthApiImpl(towerApp)).mount(builder);
     new CampaignApiHandler(new CampaignApiImpl(towerApp)).mount(builder);
     new CspApiHandler(new CspApiImpl(towerApp)).mount(builder);

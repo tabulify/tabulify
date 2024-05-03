@@ -299,6 +299,13 @@ public class AppProvider {
     if (primaryColor != null) {
       app.setPrimaryColor(Color.ofFailSafe(primaryColor));
     }
+
+    /**
+     * Count
+     */
+    Integer listCount = row.getInteger(AppCols.LIST_COUNT,0);
+    app.setListCount(listCount);
+
     return app;
 
 
@@ -486,6 +493,7 @@ public class AppProvider {
       }));
   }
 
+  @SuppressWarnings("unused")
   public Future<App> getAppByIdentifier(String appIdentifier, Realm realm) {
     try {
       AppGuid guid = this.getGuidFromHash(appIdentifier);

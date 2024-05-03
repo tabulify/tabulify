@@ -228,6 +228,25 @@ and not:
   * first get realm
   * then get apps
 
+### Shorted code
+
+With the following rest api endpoint
+```
+/realm/{guid}
+/realm/{guid}/apps
+```
+You need to:
+  * handle and verify the guid
+  * verify the user authorization
+  * verify that the realm exists
+for each endpoint
+
+Because of the hierarchical nature of GraphQL,
+you need to do that only once in the `realm` query.
+
+The `apps` will just use the `realm` (source, parent)
+
+
 ## Implementation
 
 See GraphQLService.java

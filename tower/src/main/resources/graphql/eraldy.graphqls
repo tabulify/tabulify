@@ -339,6 +339,8 @@ type App {
   ownerUser: OrganizationUser!
   """The slogan"""
   slogan: String
+  """The logo"""
+  logo: Uri
   """The home"""
   home: Uri
   """The realm of the App"""
@@ -346,11 +348,15 @@ type App {
   """The terms"""
   terms: Uri
   """The primary color"""
-  color: Color
+  primaryColor: Color
+  """The list count"""
+  listCount: Int!
   """The creation time"""
   creationTime: String! @dateFormat
   """The modification time"""
   modificationTime: String! @dateFormat
+  """The lists of the app"""
+  lists: [List]
 }
 
 type List {
@@ -458,6 +464,8 @@ type Query {
   realm(realmGuid: ID!): Realm
   """A list"""
   list(listGuid: ID!): List
+  """A app"""
+  app(appGuid: ID!): App
   """A mailing"""
   mailing(guid: ID!): Mailing
   """A mailing job"""

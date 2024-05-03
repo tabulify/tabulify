@@ -40,6 +40,7 @@ public class App {
   protected URI terms;
   private LocalDateTime creationTime;
   private LocalDateTime modificationTime;
+  private Integer listCount;
 
   /**
    * The empty constructor is
@@ -248,6 +249,15 @@ public class App {
   @Override
   public String toString() {
     return guid + ", " + Objects.requireNonNullElse(handle, name);
+  }
+
+  public void setListCount(Integer listCount) {
+    this.listCount = listCount;
+  }
+
+  @JsonProperty("listCount")
+  public Integer getListCount() {
+    return listCount;
   }
 
 }
