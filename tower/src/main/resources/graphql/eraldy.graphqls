@@ -320,6 +320,8 @@ type Realm {
   creationTime: String! @dateFormat
   """The modification time"""
   modificationTime: String! @dateFormat
+  """The apps"""
+  apps: [App]
 }
 
 type App {

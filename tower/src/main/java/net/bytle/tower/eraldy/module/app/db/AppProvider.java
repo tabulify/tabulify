@@ -205,7 +205,7 @@ public class AppProvider {
    * @param realm - the realmId
    * @return the realm
    */
-  public Future<List<App>> getApps(Realm realm) {
+  public Future<List<App>> getAppsForRealm(Realm realm) {
 
     return JdbcSelect.from(this.appTable)
       .addEqualityPredicate(AppCols.REALM_ID, realm.getGuid().getLocalId())

@@ -10,6 +10,8 @@ import net.bytle.exception.CastException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
+import net.bytle.tower.eraldy.model.openapi.App;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.organization.model.Organization;
@@ -81,10 +83,46 @@ public class RealmGraphQLImpl {
     typeWiringBuilder
       .type(
         newTypeWiring("Realm")
+          .dataFetcher("ownerUser", this::getRealmOwner)
+          .build()
+      );
+    typeWiringBuilder
+      .type(
+        newTypeWiring("Realm")
+          .dataFetcher("apps", this::getRealmApps)
+          .build()
+      );
+    typeWiringBuilder
+      .type(
+        newTypeWiring("Realm")
           .dataFetcher("users", this::getRealmUsers)
           .build()
       );
 
+  }
+
+  private Future<List<App>> getRealmApps(DataFetchingEnvironment dataFetchingEnvironment) {
+    Realm realm = dataFetchingEnvironment.getSource();
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return this.app.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_APPS_GET)
+      .compose(v -> this.app.getAppProvider().getAppsForRealm(realm))
+      .compose(Future::succeededFuture,
+        err -> Future.failedFuture(
+          TowerFailureException.builder()
+            .setMessage("Unable to get the apps for the realm (" + realm + ")")
+            .setCauseException(err)
+            .buildWithContextFailing(routingContext)
+        )
+      );
+  }
+
+  private Future<OrgaUser> getRealmOwner(DataFetchingEnvironment dataFetchingEnvironment) {
+    Realm realm = dataFetchingEnvironment.getSource();
+    if (realm.getOwnerUser().getEmailAddress() != null) {
+      return Future.succeededFuture(realm.getOwnerUser());
+    }
+    return this.app.getOrganizationUserProvider()
+      .getOrganizationUserByGuid(realm.getOwnerUser().getGuid());
   }
 
   private Future<User> getRealmUserUpdate(DataFetchingEnvironment dataFetchingEnvironment) {

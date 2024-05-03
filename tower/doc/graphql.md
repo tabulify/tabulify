@@ -79,6 +79,7 @@ with a function:
 * Post or patch? Just create and update
 
 ### Incremental Graph Building
+
 No need to build the whole object
 Ie book has an owner if the owner is not requested don't make the request
 
@@ -106,7 +107,7 @@ the sub-object (known as connection) if wired.
 You don't deal with it. You just build from the database row.
 And it's so quieter in your head.
 
-### No blocking between connection
+### Not blocking between connection
 
 Because of the hierarchical nature of the object building,
 if you use a connection, it's scoped to a unique rows.
@@ -183,7 +184,49 @@ Example:
 /user/me
 /user/me/owned-realm
 ```
+```
+/realm/guid
+/realm/guid/apps
+```
 
+### No endpoint confusion (ie endpoint disambiguation)
+
+Where do you find the apps of a realm?
+here:
+```
+/realm/guid/apps
+```
+or here:
+```
+/apps/guidRealm
+```
+
+Just here:
+```graphql
+query Realm {
+  guid,
+  apps {
+    name,
+    guid
+  }
+}
+```
+
+### Federated query
+
+ie
+```graphql
+query Realm {
+  guid,
+  apps {
+    name,
+    guid
+  }
+}
+```
+and not:
+  * first get realm
+  * then get apps
 
 ## Implementation
 

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import graphql.schema.DataFetchingEnvironment;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
@@ -168,31 +167,7 @@ public class AppApiImpl implements AppApi {
   @Override
   public Future<ApiResponse<java.util.List<App>>> appsGet(RoutingContext routingContext, String realmIdentifier) {
 
-    if (realmIdentifier == null) {
-      throw ValidationException.create("A realm identifier should be given", "realmIdentifier", null);
-    }
-
-
-    return this.apiApp.getRealmProvider()
-      .getRealmFromIdentifierNotNull(realmIdentifier)
-      .compose(realm -> this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_APPS_GET))
-      .compose(
-        realm -> apiApp.getAppProvider().getApps(realm),
-        err -> Future.failedFuture(
-          TowerFailureException.builder()
-            .setMessage("Unable to get the realm with the identifier (" + realmIdentifier + ")")
-            .setCauseException(err)
-            .buildWithContextFailing(routingContext)
-        ))
-      .compose(
-        apps -> Future.succeededFuture(new ApiResponse<>(apps).setMapper(this.apiMapper)),
-        err -> Future.failedFuture(
-          TowerFailureException.builder()
-            .setMessage("Unable to get the apps for the realm (" + realmIdentifier + ")")
-            .setCauseException(err)
-            .buildWithContextFailing(routingContext)
-        )
-      );
+    throw new InternalException("Moved to graphQl");
   }
 
 }
