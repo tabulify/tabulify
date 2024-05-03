@@ -6,15 +6,15 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
+import io.vertx.ext.auth.authentication.Credentials;
 import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
 import net.bytle.exception.InternalException;
-import net.bytle.type.EmailAddress;
 import net.bytle.vertx.ConfigAccessor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * An authentication provider for a token / session id.
+ * An authentication provider for a token.
  * <p>
  * It handles token:
  * * in header
@@ -32,6 +32,7 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
   static Logger LOGGER = LogManager.getLogger(ApiKeyAuthenticationProvider.class);
 
   private final String superToken;
+  private User root;
 
   public ApiKeyAuthenticationProvider(ConfigAccessor configAccessor) {
     /**
@@ -42,12 +43,15 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
       throw new InternalException("The super token should not be null. You can set in the configuration with the key (" + SUPERUSER_TOKEN_CONF + ")");
     }
     this.superToken = superToken;
-    LOGGER.info("ApiKey Authentication Provider created with the conf (" + SUPERUSER_TOKEN_CONF + ")");
+
   }
 
+  /**
+   *
+   * Deprecated but still mandatory in the interface
+   */
   @Override
   public void authenticate(JsonObject credentials, Handler<AsyncResult<User>> resultHandler) {
-
     /**
      * If API Token is used
      */
@@ -68,21 +72,25 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     }
 
     if (superToken.equals(token)) {
-      User user = AuthUser.builder()
-        .setSubject(ROOT_SUBJECT)
-        .setSubjectGivenName("Root")
-        .setSubjectOrganizationGuid(ROOT_SUBJECT)
-        .setSubjectEmail(EmailAddress.ofFailSafe("root@eraldy.com"))
-        .addAuthorization(API_KEY_PROVIDER_ID, ROOT_AUTHORIZATION)
-        .build()
-        .getVertxUser();
-      resultHandler.handle(Future.succeededFuture(user));
+      if (this.root == null) {
+        throw new InternalException("The root user is not configured");
+      }
+      resultHandler.handle(Future.succeededFuture(this.root));
       return;
     }
 
     resultHandler.handle(Future.failedFuture("Bad Api Key"));
+  }
+
+  @Override
+  public void authenticate(Credentials credentials, Handler<AsyncResult<User>> resultHandler) {
+
+    JsonObject jsonCredentials = credentials.toJson();
+    this.authenticate(jsonCredentials, resultHandler);
 
   }
+
+
 
 
   public String getSuperToken() {
@@ -100,4 +108,14 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
      */
     return "X-API-KEY";
   }
+
+  /**
+   * @param rootUser - the user that should be logged in with the super token
+   * The root user is app specific, we let the application set it at the end of the mount
+   */
+  public void setRootUser(AuthUser.Builder rootUser) {
+    LOGGER.info("ApiKey Authentication Root user added");
+    this.root = rootUser.addAuthorization(API_KEY_PROVIDER_ID, ROOT_AUTHORIZATION).build().getVertxUser();
+  }
+
 }

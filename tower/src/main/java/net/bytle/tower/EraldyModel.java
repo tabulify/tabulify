@@ -19,11 +19,11 @@ import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
+import net.bytle.type.EmailAddress;
 import net.bytle.type.Handle;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
-import net.bytle.vertx.TowerApexDomain;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -71,6 +71,8 @@ public class EraldyModel {
    */
   private final String uriRegistrationPathTemplate;
   private final JacksonMapperManager jacksonManager;
+  private final OrgaUser orgaUserOwner;
+
 
   Realm eraldyRealm;
   private AuthClient memberClient;
@@ -79,6 +81,37 @@ public class EraldyModel {
   public EraldyModel(EraldyApiApp apiApp) throws ConfigIllegalException {
 
     this.apiApp = apiApp;
+
+    /**
+     * The owner is needed for authentication
+     * We build it first
+     * <p>
+     * The realm is also used during initial insertion
+     * of an organisation user at {@link #mount()}
+     * It's updated just after in the {@link #mount()}
+     *
+     * We can't use the providers utility now
+     * as they are initialized later, we create the guids manually then
+     */
+    this.eraldyRealm = Realm.createFromAnyId(ORGA_LOCAL_ID);
+    this.eraldyRealm.setOrganization(Organization.createFromAnyId(ORGA_LOCAL_ID));
+    OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
+    orgaUserGuid.setLocalId(OWNER_LOCAL_ID);
+    orgaUserGuid.setOrganizationId(ORGA_LOCAL_ID);
+    this.orgaUserOwner = new OrgaUser();
+    orgaUserOwner.setGuid(orgaUserGuid);
+    orgaUserOwner.setGivenName("Nico");
+    orgaUserOwner.setEmailAddress(EmailAddress.ofFailSafe("nico@eraldy.com"));
+    try {
+      orgaUserOwner.setAvatar(new URI("https://2.gravatar.com/avatar/cbc56a3848d90024bdc76629a1cfc1d9"));
+    } catch (URISyntaxException e) {
+      throw new RuntimeException("Owner Avatar uri is not valid", e);
+    }
+    orgaUserOwner.setOrganizationRole(OrgaRole.OWNER);
+    orgaUserOwner.setRealm(this.eraldyRealm);
+    orgaUserOwner.setOrganization(this.eraldyRealm.getOrganization());
+
+
     this.jacksonManager = apiApp.getHttpServer().getServer().getJacksonMapperManager();
     ConfigAccessor configAccessor = apiApp.getHttpServer().getServer().getConfigAccessor();
     String interactUri = configAccessor.getString(INTERACT_APP_URI_CONF, "https://interact." + apiApp.getApexDomain().getUrlAuthority());
@@ -116,16 +149,6 @@ public class EraldyModel {
       throw new ConfigIllegalException("The member registration url value (" + uriRegistrationPathTemplate + ") of the conf (" + MEMBER_REGISTRATION_URL + ") is not a valid URI template", e);
     }
 
-    /**
-     * The realm is used during initial insertion
-     * of an organisation user at {@link #mount()}
-     * It's updated just after in the {@link #mount()}
-     *
-     * We can't use the providers utility now
-     * as they are initialized later, we create the guids manually then
-     */
-    this.eraldyRealm = Realm.createFromAnyId(ORGA_LOCAL_ID);
-    this.eraldyRealm.setOrganization(Organization.createFromAnyId(ORGA_LOCAL_ID));
 
   }
 
@@ -181,7 +204,7 @@ public class EraldyModel {
         AuthClient interactClient = new AuthClient();
         interactClient.setApp(interactAppRes);
         interactClient.addUri(this.interactAppUri);
-        authClientProvider.updateGuid(interactClient,2L);
+        authClientProvider.updateGuid(interactClient, 2L);
         authClientProvider.addEraldyClient(interactClient);
         String cliGuidHash = this.apiApp.getJackson().getSerializer(CliGuid.class).serialize(interactClient.getGuid());
         LOGGER.info("The client id (" + cliGuidHash + ") for the interact app was created");
@@ -225,12 +248,6 @@ public class EraldyModel {
         .execute()
         .compose(ar -> {
 
-          /**
-           * Owner in GUID
-           */
-          OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
-          orgaUserGuid.setLocalId(OWNER_LOCAL_ID);
-          orgaUserGuid.setOrganizationId(ORGA_LOCAL_ID);
 
           /**
            * Create if not exists and get the Eraldy Model
@@ -239,7 +256,7 @@ public class EraldyModel {
           OrganizationInputProps organizationInputProps = new OrganizationInputProps();
           organizationInputProps.setHandle(Handle.ofFailSafe("eraldy"));
           organizationInputProps.setName("Eraldy");
-          organizationInputProps.setOwnerGuid(orgaUserGuid);
+          organizationInputProps.setOwnerGuid(this.orgaUserOwner.getGuid());
           Future<Organization> futureOrganization = this.apiApp.getOrganizationProvider()
             .getsert(this.eraldyRealm.getOrganization().getGuid(), organizationInputProps, sqlConnection);
 
@@ -265,22 +282,17 @@ public class EraldyModel {
                * (Cross, before updating the realm
                * need to be a property of the organizational user)
                */
-              TowerApexDomain apexDomain = apiApp.getApexDomain();
               RealmInputProps realmInputProps = new RealmInputProps();
-              realmInputProps.setHandle(apexDomain.getRealmHandle());
-              realmInputProps.setName(apexDomain.getName());
-              realmInputProps.setOwnerUserGuid(orgaUserGuid);
+              realmInputProps.setHandle(this.eraldyRealm.getHandle());
+              realmInputProps.setName(this.eraldyRealm.getName());
+              realmInputProps.setOwnerUserGuid(this.orgaUserOwner.getGuid());
 
               /**
                * Realm
                * We create the user as it's not yet in the db
                */
               UserInputProps realmOwnerInputProps = new UserInputProps();
-              OrgaUser orgaUserOwner = new OrgaUser();
-              orgaUserOwner.setGuid(orgaUserGuid);
-              orgaUserOwner.setOrganizationRole(OrgaRole.OWNER);
-              orgaUserOwner.setRealm(this.eraldyRealm);
-              orgaUserOwner.setOrganization(eraldyOrganization);
+
               return this.apiApp.getRealmProvider()
                 .getsertOnServerStartup(REALM_LOCAL_ID, orgaUserOwner, realmInputProps, sqlConnection)
                 .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy realm", t)))
@@ -292,7 +304,7 @@ public class EraldyModel {
 
                   OrgaUser ownerUser = eraldyRealm.getOwnerUser();
                   Future<OrgaUser> futureOwnerUser;
-                  if (ownerUser != null && ownerUser.getGuid().getLocalId()!=OWNER_LOCAL_ID) {
+                  if (ownerUser != null && ownerUser.getGuid().getLocalId() != OWNER_LOCAL_ID) {
                     /**
                      * If the user has changed, we take it instead
                      */
@@ -301,13 +313,10 @@ public class EraldyModel {
                     /**
                      * Realm Owner user getsertion
                      */
-                    realmOwnerInputProps.setGivenName(apexDomain.getOwnerName());
-                    realmOwnerInputProps.setEmailAddress(apexDomain.getOwnerEmail());
-                    try {
-                      realmOwnerInputProps.setAvatar(new URI("https://2.gravatar.com/avatar/cbc56a3848d90024bdc76629a1cfc1d9"));
-                    } catch (URISyntaxException e) {
-                      throw new InternalException("The eraldy owner URL is not valid", e);
-                    }
+                    realmOwnerInputProps.setGivenName(this.orgaUserOwner.getGivenName());
+                    realmOwnerInputProps.setEmailAddress(this.orgaUserOwner.getEmailAddress());
+                    realmOwnerInputProps.setAvatar(this.orgaUserOwner.getAvatar());
+
                     futureOwnerUser = apiApp
                       .getUserProvider()
                       .getsertOnServerStartup(eraldyRealm, OWNER_LOCAL_ID, realmOwnerInputProps, sqlConnection)
@@ -348,7 +357,7 @@ public class EraldyModel {
   }
 
   public boolean isRealmLocalId(Long localId) {
-    return Objects.equals(localId, apiApp.getApexDomain().getRealmLocalId());
+    return Objects.equals(localId, this.eraldyRealm.getGuid().getLocalId());
   }
 
 
@@ -382,4 +391,8 @@ public class EraldyModel {
     }
   }
 
+
+  public OrgaUser getOwnerUser() {
+    return this.orgaUserOwner;
+  }
 }

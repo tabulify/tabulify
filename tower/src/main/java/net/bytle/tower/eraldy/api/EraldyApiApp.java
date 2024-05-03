@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.api;
 
 import io.vertx.core.Future;
 import net.bytle.exception.InternalException;
+import net.bytle.exception.NullValueException;
 import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
 import net.bytle.tower.AuthClient;
@@ -10,6 +11,7 @@ import net.bytle.tower.eraldy.api.implementer.flow.*;
 import net.bytle.tower.eraldy.auth.AuthClientHandler;
 import net.bytle.tower.eraldy.auth.RealmSessionHandler;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.app.db.AppProvider;
 import net.bytle.tower.eraldy.module.auth.db.AuthClientProvider;
 import net.bytle.tower.eraldy.module.auth.model.CliGuid;
@@ -31,10 +33,12 @@ import net.bytle.tower.eraldy.objectProvider.ServiceProvider;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
 import net.bytle.tower.util.Env;
 import net.bytle.tower.util.EraldySubRealmModel;
+import net.bytle.type.Handle;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthNContextManager;
 import net.bytle.vertx.auth.AuthQueryProperty;
+import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import net.bytle.vertx.db.JdbcClient;
 import net.bytle.vertx.db.JdbcSchema;
@@ -100,10 +104,15 @@ public class EraldyApiApp extends TowerApp {
 
 
   public EraldyApiApp(HttpServer httpServer) throws ConfigIllegalException {
-    super(httpServer, EraldyDomain.getOrCreate(httpServer));
+    super(httpServer, TowerApexDomain.create(httpServer, "eraldy.com")
+      .setPrefixName("ey")
+      .setHandle(Handle.ofFailSafe("eraldy"))
+      .build()
+    );
 
 
     ConfigAccessor configAccessor = httpServer.getServer().getConfigAccessor();
+
 
     /**
      * Model and app
@@ -386,6 +395,18 @@ public class EraldyApiApp extends TowerApp {
     // Allow Browser cross-origin request in the domain
     BrowserCorsUtil.allowCorsForApexDomain(this.getHttpServer().getRouter(), this);
 
+    /**
+     * Set the root user to api key auth only on dev
+     */
+    if (JavaEnvs.IS_DEV) {
+      try {
+        OrgaUser owner = this.eraldyModel.getOwnerUser();
+        AuthUser.Builder ownerBuilder = this.getAuthProvider().toAuthUserBuilder(owner);
+        this.getHttpServer().getServer().getApiKeyAuthProvider().setRootUser(ownerBuilder);
+      } catch (NullValueException e) {
+        //
+      }
+    }
 
     /**
      * The Eraldy base realm and base apps

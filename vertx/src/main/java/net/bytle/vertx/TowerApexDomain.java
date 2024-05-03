@@ -1,6 +1,5 @@
 package net.bytle.vertx;
 
-import net.bytle.type.EmailAddress;
 import net.bytle.type.Handle;
 
 /**
@@ -11,23 +10,31 @@ import net.bytle.type.Handle;
  * To be exact, the top-level domain name is `com`, we use therefore `apex`
  * The apex name are the 2 firsts label (ie the root, the tld and a label)
  */
-public abstract class TowerApexDomain {
+public class TowerApexDomain {
 
 
   private final String apexNameWithoutPort;
 
   private final String authority;
-  //private final HttpServer httpServer;
+  private final String prefixName;
+  private final Handle handle;
 
 
-  public TowerApexDomain(String apexName, int publicPort) {
-    this.apexNameWithoutPort = apexName;
+  public TowerApexDomain(TowerApexDomain.Builder builder) {
+    this.apexNameWithoutPort = builder.publicHost;
+    int publicPort = builder.httpServer.getPublicPort();
     if (publicPort != 80) {
       this.authority = this.apexNameWithoutPort + ":" + publicPort;
     } else {
       this.authority = this.apexNameWithoutPort;
     }
+    this.prefixName = builder.prefixName;
+    this.handle = builder.handle;
 
+  }
+
+  public static TowerApexDomain.Builder create(HttpServer httpServer, String defaultVhost) {
+    return new TowerApexDomain.Builder(httpServer, defaultVhost);
   }
 
   /**
@@ -35,13 +42,17 @@ public abstract class TowerApexDomain {
    * `cs` for combostrap for instance
    * It's used to add scope to cookie, variable, ...
    */
-  public abstract String getPrefixName();
+  public String getPrefixName(){
+    return this.prefixName;
+  }
 
   /**
    * The name of the domain
    * `combo` for combostrap for instance
    */
-  public abstract String getFileSystemPathName();
+  public String getFileSystemPathName(){
+    return this.handle.getValue();
+  }
 
   /**
    * The authority (ie dns name + optional port)
@@ -69,17 +80,44 @@ public abstract class TowerApexDomain {
     return apexNameWithoutPort;
   }
 
-  public abstract Handle getRealmHandle();
 
-  /**
-   * @return the realm local id
-   */
-  public abstract Long getRealmLocalId();
+  public String getName(){
+    return this.handle.getValue();
+  }
 
-  public abstract String getOwnerName();
 
-  public abstract EmailAddress getOwnerEmail();
+  public static class Builder {
 
-  public abstract String getName();
+    private String publicHost;
+    private final HttpServer httpServer;
+    private final String defaultVhost;
+    private String prefixName;
+    private Handle handle;
+
+    public Builder(HttpServer httpServer, String defaultVhost) {
+      this.httpServer = httpServer;
+      this.defaultVhost = defaultVhost;
+    }
+
+    public TowerApexDomain.Builder setPrefixName(String prefixName) {
+      this.prefixName = prefixName;
+      return this;
+    }
+
+    public TowerApexDomain.Builder setHandle(Handle handle) {
+      this.handle = handle;
+      return this;
+    }
+
+    public TowerApexDomain build() {
+      /**
+       * On dev, the domain is named: eraldy.dev
+       * On prod, the domain is named: eraldy.com
+       */
+      String COMBO_APEX_DOMAIN_CONFIG_KEY = handle.getValue()+".apex.domain";
+      this.publicHost = httpServer.getServer().getConfigAccessor().getString(COMBO_APEX_DOMAIN_CONFIG_KEY, defaultVhost);
+      return new TowerApexDomain(this);
+    }
+  }
 
 }

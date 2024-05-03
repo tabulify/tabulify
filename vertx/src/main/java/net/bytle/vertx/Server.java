@@ -301,10 +301,10 @@ public class Server {
       return this.confPrefix + "." + Server.HOST;
     }
 
-    public builder setFromConfigAccessorWithPort(int portDefault) {
+    public builder setFromConfigAccessorWithPort(int listeningPort) {
       this.listeningHost = configAccessor.getString(getListeningHostKey(), WILDCARD_IPV4_ADDRESS);
       LOGGER.info("The listening host was set to: " + this.listeningHost + " via the conf (" + getListeningHostKey() + ")");
-      this.listeningPort = configAccessor.getInteger(getListeningPortKey(), portDefault);
+      this.listeningPort = configAccessor.getInteger(getListeningPortKey(), listeningPort);
       LOGGER.info("The listening port was set to: " + this.listeningPort + " via the conf (" + getListeningPortKey() + ")");
       this.publicPort = configAccessor.getInteger(getPublicPortKey(), 80);
       LOGGER.info("The public port was set to: " + this.publicPort + " via the conf (" + getPublicPortKey() + ")");
