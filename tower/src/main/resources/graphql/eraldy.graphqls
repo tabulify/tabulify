@@ -314,14 +314,14 @@ type Realm {
   listCount: Int!
   """The organization of the Realm"""
   organization: Organization!
-  """The users"""
-  users(pagination: Pagination): [User]
   """The creation time"""
   creationTime: String! @dateFormat
   """The modification time"""
   modificationTime: String! @dateFormat
   """The apps"""
   apps: [App]
+  """The users"""
+  users(pagination: Pagination): [User]
 }
 
 type App {
