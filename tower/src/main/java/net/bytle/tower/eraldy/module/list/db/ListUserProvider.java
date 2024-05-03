@@ -13,6 +13,7 @@ import net.bytle.tower.eraldy.mixin.ListItemMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.app.model.App;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserGuidDeserializer;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserGuidSerializer;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListUserSourceDeserializer;

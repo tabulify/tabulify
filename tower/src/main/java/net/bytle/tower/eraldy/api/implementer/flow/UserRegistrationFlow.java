@@ -18,8 +18,8 @@ import net.bytle.tower.eraldy.api.implementer.callback.UserRegisterEmailCallback
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthClientScope;
 import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.app.model.App;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;

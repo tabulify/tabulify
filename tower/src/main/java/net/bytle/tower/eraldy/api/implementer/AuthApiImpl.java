@@ -13,7 +13,9 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.module.app.model.App;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
@@ -81,7 +83,8 @@ public class AuthApiImpl implements AuthApi {
     }
 
     AuthClient requestingClient = this.apiApp.getAuthClientProvider().getRequestingClient(routingContext);
-    if (!clientId.equals(requestingClient.getGuid())) {
+    String authClientHash = this.apiApp.getJackson().getSerializer(CliGuid.class).serialize(requestingClient.getGuid());
+    if (!clientId.equals(authClientHash)) {
       return Future.failedFuture(
         TowerFailureException.builder()
           .setMessage("The client id and auth client id are inconsistent.")

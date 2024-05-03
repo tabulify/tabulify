@@ -1,8 +1,8 @@
-package net.bytle.tower.eraldy.model.openapi;
+package net.bytle.tower.eraldy.module.app.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.type.Color;
 import net.bytle.type.Handle;
@@ -16,9 +16,6 @@ import java.util.Objects;
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class App {
-
-
-  protected Long localId;
 
   protected AppGuid guid;
 
@@ -102,7 +99,7 @@ public class App {
   }
 
     /**
-   * @return home The home URL of the app This is a app branding element that adds an URL to any app communication footer
+   * @return home The home URL of the app This is an app branding element that adds an URL to any app communication footer
    */
   @JsonProperty("home")
   public URI getHome() {

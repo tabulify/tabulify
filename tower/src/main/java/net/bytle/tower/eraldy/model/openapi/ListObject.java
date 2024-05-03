@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.bytle.tower.eraldy.module.app.model.App;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.type.Handle;
 

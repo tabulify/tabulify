@@ -11,6 +11,7 @@ scalar EmailAddress
 scalar Handle
 scalar Uri
 scalar TimeZone
+scalar Color
 
 """
 There is 2 kinds of user
@@ -336,8 +337,16 @@ type App {
   This user is shown in AuthN page as support user
   """
   ownerUser: OrganizationUser!
+  """The slogan"""
+  slogan: String
+  """The home"""
+  home: Uri
   """The realm of the App"""
   realm: Realm!
+  """The terms"""
+  terms: Uri
+  """The primary color"""
+  color: Color
   """The creation time"""
   creationTime: String! @dateFormat
   """The modification time"""

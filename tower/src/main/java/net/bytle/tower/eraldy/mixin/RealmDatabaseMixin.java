@@ -2,8 +2,8 @@ package net.bytle.tower.eraldy.mixin;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
+import net.bytle.tower.eraldy.module.app.model.App;
 import net.bytle.tower.eraldy.module.organization.model.Organization;
 
 

@@ -30,6 +30,7 @@ import net.bytle.tower.eraldy.module.organization.graphql.OrgaGraphQLImpl;
 import net.bytle.tower.eraldy.module.realm.graphql.RealmGraphQLImpl;
 import net.bytle.vertx.graphql.GraphQLDef;
 import net.bytle.vertx.graphql.GraphQLLocalDate;
+import net.bytle.vertx.graphql.scalar.GraphQLColorCoercing;
 import net.bytle.vertx.graphql.scalar.GraphQLEmailCoercing;
 import net.bytle.vertx.graphql.scalar.GraphQLHandleCoercing;
 import org.dataloader.DataLoader;
@@ -173,6 +174,13 @@ public class EraldyGraphQL implements GraphQLDef {
       .coercing(new GraphQLHandleCoercing())
       .build();
     wiringBuilder.scalar(TIMEZONE);
+    final GraphQLScalarType COLOR = GraphQLScalarType
+      .newScalar()
+      .name("Color")
+      .description("A color")
+      .coercing(new GraphQLColorCoercing())
+      .build();
+    wiringBuilder.scalar(COLOR);
   }
 
   /**
