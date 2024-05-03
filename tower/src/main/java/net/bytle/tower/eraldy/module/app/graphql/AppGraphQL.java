@@ -10,6 +10,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
+import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.app.model.App;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.vertx.TowerFailureException;
@@ -53,8 +54,21 @@ public class AppGraphQL {
         newTypeWiring("App")
           .dataFetcher("list", this::getAppLists)
           .build()
+      )
+      .type(
+        newTypeWiring("App")
+          .dataFetcher("ownerUser", this::getAppOwner)
+          .build()
       );
 
+  }
+
+  private Future<OrgaUser> getAppOwner(DataFetchingEnvironment dataFetchingEnvironment) {
+    App app = dataFetchingEnvironment.getSource();
+    if(app.getOwnerUser().getEmailAddress()!=null){
+      return Future.succeededFuture(app.getOwnerUser());
+    }
+    return this.app.getOrganizationUserProvider().getOrganizationUserByGuid(app.getOwnerUser().getGuid());
   }
 
   private Future<List<ListObject>> getAppLists(DataFetchingEnvironment dataFetchingEnvironment) {
