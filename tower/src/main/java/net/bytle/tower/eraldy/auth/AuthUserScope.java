@@ -3,8 +3,7 @@ package net.bytle.tower.eraldy.auth;
 public enum AuthUserScope {
 
   ANALYTICS_EVENT_GET("get an analytics event", false),
-  REALM_APPS_GET("get apps", false),
-  REALM_APP_GET("get an app", false),
+  REALM_APPS_GET("list the apps of a realm", false),
   REALM_USER_GET("Get a user", false),
   REALM_USER_UPDATE("update a realm user", false),
   LIST_CREATION("create a list", false),
@@ -19,9 +18,11 @@ public enum AuthUserScope {
   ORGA_USER_GET("get an organizational user", false),
   ORGA_USERS_GET("get organisational users", false),
   APP_CREATE("create an app", false),
+  APP_UPDATE("update an app", false),
+  APP_GET("get an app", false),
+  APP_LISTS_GET("get the lists of an app", false),
   LIST_IMPORT("import a list", false),
 
-  APP_LISTS_GET("get the lists of an app", false),
   REALM_LISTS_GET("get the lists of a realm", false),
   MAILING_GET("get a mailing", false),
   MAILINGS_LIST_GET("get the mailings for a list", false),

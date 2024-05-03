@@ -124,8 +124,8 @@ public class AppProvider {
   }
 
 
-  @SuppressWarnings("unused")
-  private Future<App> updateApp(App app, AppInputProps appInputProps) {
+
+  public Future<App> updateApp(App app, AppInputProps appInputProps) {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.appTable)
       .addPredicateColumn(AppCols.ID, app.getGuid().getLocalId())
@@ -397,13 +397,14 @@ public class AppProvider {
       });
   }
 
+
   /**
    * @param appInputProps - the app to insert (realm is mandatory)
    * @param realm - the realm
    * @param askedLocalId - the asked local id (used only at initial Eraldy data insertion)
    * @return the app given with an id and a guid
    */
-  private Future<App> insertApp(AppInputProps appInputProps, Realm realm, Long askedLocalId) {
+  public Future<App> insertApp(AppInputProps appInputProps, Realm realm, Long askedLocalId) {
 
     return this.jdbcPool.withTransaction(sqlConnection -> this.apiApp.getRealmSequenceProvider()
       .getNextIdForTableAndRealm(sqlConnection, realm, this.appTable)

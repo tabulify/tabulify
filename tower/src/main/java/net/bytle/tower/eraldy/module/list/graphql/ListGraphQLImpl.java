@@ -137,9 +137,9 @@ public class ListGraphQLImpl {
     String listGuid = dataFetchingEnvironment.getArgument("listGuid");
     Map<String, Object> listPropsMap = dataFetchingEnvironment.getArgument("props");
     // Type safe (if null, the value was not passed)
-    ListInputProps mailingInputProps = new JsonObject(listPropsMap).mapTo(ListInputProps.class);
+    ListInputProps listInputProps = new JsonObject(listPropsMap).mapTo(ListInputProps.class);
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
-    return listProvider.updateListRequestHandler(listGuid, mailingInputProps, routingContext);
+    return listProvider.updateListRequestHandler(listGuid, listInputProps, routingContext);
   }
 
 

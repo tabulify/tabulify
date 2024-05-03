@@ -396,6 +396,24 @@ input ListInput {
   """The Orga Guid of the owner"""
   ownerUserGuid: ID
 }
+input AppInput {
+  """A short descriptive name"""
+  name: String
+  """A unique handle"""
+  handle: String
+  """A slogan"""
+  slogan: String
+  """The Orga Guid of the owner"""
+  ownerUserGuid: ID
+  """The home URL"""
+  home: String
+  """The terms URL"""
+  terms: String
+  """The logo URL"""
+  logo: String
+  """The primary color"""
+  primaryColor: String
+}
 
 input UserInput {
   """The given name"""
@@ -495,4 +513,8 @@ type Mutation {
   listUpdate(listGuid: ID!, props:ListInput): List
   """Update a user"""
   userUpdate(userGuid:ID!, props:UserInput): User
+  """Update a app"""
+  appUpdate(appGuid: ID!, props:AppInput): App
+  """Create a app"""
+  appCreate(realmGuid: ID!, props:AppInput): App
 }
