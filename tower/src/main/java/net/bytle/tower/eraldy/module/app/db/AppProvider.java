@@ -143,25 +143,25 @@ public class AppProvider {
     Handle newHandle = appInputProps.getHandle();
     if (newHandle != null && !Objects.equals(app.getHandle(), newHandle)) {
       app.setHandle(newHandle);
-      jdbcUpdate.addUpdatedColumn(AppCols.HANDLE, app.getHandle());
+      jdbcUpdate.addUpdatedColumn(AppCols.HANDLE, app.getHandle().getValue());
     }
 
     URL newLogo = appInputProps.getLogo();
     if (newLogo != null && !Objects.equals(app.getLogo(), newLogo)) {
       app.setLogo(newLogo);
-      jdbcUpdate.addUpdatedColumn(AppCols.LOGO, app.getLogo());
+      jdbcUpdate.addUpdatedColumn(AppCols.LOGO, app.getLogo().toString());
     }
 
     URL newTerms = appInputProps.getTermsOfServices();
     if (newTerms != null && !Objects.equals(app.getTermsOfServices(), newTerms)) {
-      app.setLogo(newTerms);
-      jdbcUpdate.addUpdatedColumn(AppCols.TERM_OF_SERVICE, app.getTermsOfServices());
+      app.setTermsOfServices(newTerms);
+      jdbcUpdate.addUpdatedColumn(AppCols.TERM_OF_SERVICE, app.getTermsOfServices().toString());
     }
 
     URL newHome = appInputProps.getHome();
     if (newHome != null && !Objects.equals(app.getHome(), newHome)) {
       app.setHome(newHome);
-      jdbcUpdate.addUpdatedColumn(AppCols.HOME, app.getHome());
+      jdbcUpdate.addUpdatedColumn(AppCols.HOME, app.getHome().toString());
     }
 
     String newSlogan = appInputProps.getSlogan();

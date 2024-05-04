@@ -400,19 +400,19 @@ input AppInput {
   """A short descriptive name"""
   name: String
   """A unique handle"""
-  handle: String
+  handle: Handle
   """A slogan"""
   slogan: String
   """The Orga Guid of the owner"""
-  ownerUserGuid: ID
+  ownerUserGuid: OrgaUserGuid
   """The home URL"""
-  home: String
+  home: Url
   """The terms URL"""
-  terms: String
+  terms: Url
   """The logo URL"""
-  logo: String
+  logo: Url
   """The primary color"""
-  primaryColor: String
+  primaryColor: Color
 }
 
 input UserInput {

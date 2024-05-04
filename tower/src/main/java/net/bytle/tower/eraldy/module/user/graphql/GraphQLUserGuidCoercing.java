@@ -5,6 +5,7 @@ import graphql.execution.CoercedVariables;
 import graphql.language.Value;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
+import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import net.bytle.exception.CastException;
 import net.bytle.tower.eraldy.module.user.model.UserGuid;
@@ -34,11 +35,20 @@ public class GraphQLUserGuidCoercing implements Coercing<UserGuid, String> {
 
   @Override
   public @Nullable UserGuid parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
+    return this.parseInput(input);
+  }
+
+  @Override
+  public @Nullable UserGuid parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
+    return this.parseInput(input);
+  }
+
+  private UserGuid parseInput(Object input) {
     String string = input.toString();
     try {
       return this.jacksonMapperManager.getDeserializer(UserGuid.class).deserialize(string);
     } catch (CastException e) {
-      throw new CoercingParseLiteralException("The value (" + string + ") is not a valid user guid", e);
+      throw new CoercingParseLiteralException("The input value (" + string + ") is not a valid user guid. Error: "+e.getMessage(), e);
     }
   }
 

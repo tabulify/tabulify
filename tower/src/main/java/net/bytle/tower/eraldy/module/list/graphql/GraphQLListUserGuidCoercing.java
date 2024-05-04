@@ -5,6 +5,7 @@ import graphql.execution.CoercedVariables;
 import graphql.language.Value;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
+import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import net.bytle.exception.CastException;
 import net.bytle.tower.eraldy.module.list.model.ListUserGuid;
@@ -34,6 +35,15 @@ public class GraphQLListUserGuidCoercing implements Coercing<ListUserGuid, Strin
 
   @Override
   public @Nullable ListUserGuid parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
+    return this.parseInput(input);
+  }
+
+  @Override
+  public @Nullable ListUserGuid parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
+    return this.parseInput(input);
+  }
+
+  private ListUserGuid parseInput(Object input) throws CoercingParseLiteralException{
     String string = input.toString();
     try {
       return this.jacksonMapperManager.getDeserializer(ListUserGuid.class).deserialize(string);

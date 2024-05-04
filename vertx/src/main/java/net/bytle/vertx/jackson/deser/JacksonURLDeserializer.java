@@ -24,6 +24,13 @@ public class JacksonURLDeserializer extends JacksonJsonStringDeserializer<URL> {
 
   @Override
   public URL deserialize(String s) throws CastException {
+    if (s == null) {
+      return null;
+    }
+    // HTML forms
+    if (s.isBlank()) {
+      return null;
+    }
     try {
       return new URL(s);
     } catch (MalformedURLException e) {

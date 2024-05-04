@@ -5,6 +5,7 @@ import graphql.execution.CoercedVariables;
 import graphql.language.Value;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
+import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,10 +25,30 @@ public class GraphQLUrlCoercing implements Coercing<URL, String> {
     return dataFetcherResult.toString();
 
   }
-
+  /**
+   * Parse a literal (ie a string argument)
+   */
   @Override
   public @Nullable URL parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
+    return this.parseInput(input);
+  }
+
+  @Override
+  public @Nullable URL parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
+    return this.parseInput(input);
+  }
+
+  /**
+   * Parse a value (ie a string property in an object argument)
+   */
+  private URL parseInput(Object input) throws CoercingParseLiteralException {
     String string = input.toString();
+    /**
+     * HTML forms
+     */
+    if (string.isBlank()) {
+      return null;
+    }
     try {
       return new URL(string);
     } catch (MalformedURLException e) {

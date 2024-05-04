@@ -5,6 +5,7 @@ import graphql.execution.CoercedVariables;
 import graphql.language.Value;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
+import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import net.bytle.type.Handle;
 import net.bytle.type.HandleCastException;
@@ -33,9 +34,22 @@ public class GraphQLHandleCoercing implements Coercing<Handle, String> {
     return ((Handle) dataFetcherResult).getValue();
 
   }
-
+  /**
+   * Parse a literal (ie a string argument)
+   */
   @Override
   public @Nullable Handle parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
+    return this.parseInput(input);
+  }
+  /**
+   * Parse a value (ie a string property in an object argument)
+   */
+  @Override
+  public @Nullable Handle parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
+    return this.parseInput(input);
+  }
+
+  private Handle parseInput(Object input) throws CoercingParseLiteralException {
     String string = input.toString();
     try {
       return Handle.of(string);
@@ -43,5 +57,6 @@ public class GraphQLHandleCoercing implements Coercing<Handle, String> {
       throw new CoercingParseLiteralException("The value (" + string + ") is not a valid handle. Error: " + e.getMessage(), e);
     }
   }
+
 
 }
