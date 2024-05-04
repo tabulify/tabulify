@@ -18,6 +18,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.net.InetAddress;
+import java.net.URI;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,6 +72,8 @@ public class JacksonMapperManager extends TowerService {
       .addSerializer(Handle.class, new JacksonHandleSerializer())
       .addDeserializer(InetAddress.class, new JacksonInetAddressDeserializer())
       .addSerializer(InetAddress.class, new JacksonInetAddressSerializer())
+      .addDeserializer(URL.class, new JacksonURLDeserializer())
+      .addDeserializer(URI.class, new JacksonURIDeserializer())
     ;
 
   }

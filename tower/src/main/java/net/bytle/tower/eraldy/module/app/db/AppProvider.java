@@ -30,7 +30,9 @@ import net.bytle.vertx.guid.GuidDeSer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -144,19 +146,19 @@ public class AppProvider {
       jdbcUpdate.addUpdatedColumn(AppCols.HANDLE, app.getHandle());
     }
 
-    URI newLogo = appInputProps.getLogo();
+    URL newLogo = appInputProps.getLogo();
     if (newLogo != null && !Objects.equals(app.getLogo(), newLogo)) {
       app.setLogo(newLogo);
       jdbcUpdate.addUpdatedColumn(AppCols.LOGO, app.getLogo());
     }
 
-    URI newTerms = appInputProps.getTermsOfServices();
+    URL newTerms = appInputProps.getTermsOfServices();
     if (newTerms != null && !Objects.equals(app.getTermsOfServices(), newTerms)) {
       app.setLogo(newTerms);
       jdbcUpdate.addUpdatedColumn(AppCols.TERM_OF_SERVICE, app.getTermsOfServices());
     }
 
-    URI newHome = appInputProps.getHome();
+    URL newHome = appInputProps.getHome();
     if (newHome != null && !Objects.equals(app.getHome(), newHome)) {
       app.setHome(newHome);
       jdbcUpdate.addUpdatedColumn(AppCols.HOME, app.getHome());
@@ -182,14 +184,15 @@ public class AppProvider {
       jdbcUpdate.addUpdatedColumn(AppCols.ORGA_ID, app.getOwnerUser().getGuid().getOrganizationId());
     }
 
-    if (!jdbcUpdate.hasNoColumnToUpdate()) {
+    if (jdbcUpdate.hasNoColumnToUpdate()) {
       return Future.succeededFuture(app);
     }
 
     app.setModificationTime(DateTimeService.getNowInUtc());
     jdbcUpdate.addUpdatedColumn(AppCols.MODIFICATION_TIME, app.getModificationTime());
 
-    return jdbcUpdate.execute()
+    return jdbcUpdate
+      .execute()
       .compose(rowSet -> {
           if (rowSet.size() != 1) {
             InternalException internalException = new InternalException("No app was updated with the guid (" + app.getGuid() + ")");
@@ -272,10 +275,23 @@ public class AppProvider {
     String home = row.getString(AppCols.HOME);
     if (home != null) {
       try {
-        app.setHome(java.net.URI.create(home));
-      } catch (IllegalArgumentException e) {
+        app.setHome(new java.net.URL(home));
+      } catch (MalformedURLException e) {
         // should not happen as we are responsible for the insertion
-        throw new InternalException("The home app value is not a valid URI", e);
+        throw new InternalException("The home app value is not a valid URL", e);
+      }
+    }
+
+    /**
+     * Logo URL
+     */
+    String logo = row.getString(AppCols.LOGO);
+    if (logo != null) {
+      try {
+        app.setHome(new java.net.URL(logo));
+      } catch (MalformedURLException e) {
+        // should not happen as we are responsible for the insertion
+        throw new InternalException("The logo app value is not a valid URL", e);
       }
     }
 
@@ -285,8 +301,8 @@ public class AppProvider {
     String terms = row.getString(AppCols.TERM_OF_SERVICE);
     if (terms != null) {
       try {
-        app.setTermsOfServices(java.net.URI.create(terms));
-      } catch (IllegalArgumentException e) {
+        app.setTermsOfServices(new java.net.URL(terms));
+      } catch (MalformedURLException e) {
         // should not happen as we are responsible for the insertion
         throw new InternalException("The terms app value is not a valid URI", e);
       }
@@ -470,19 +486,19 @@ public class AppProvider {
         app.setSlogan(appInputProps.getSlogan());
         jdbcInsert.addColumn(AppCols.SLOGAN, app.getSlogan());
 
-        URI logo = appInputProps.getLogo();
+        URL logo = appInputProps.getLogo();
         if (logo != null) {
           app.setLogo(logo);
           jdbcInsert.addColumn(AppCols.LOGO, app.getLogo().toString());
         }
 
-        URI home = appInputProps.getHome();
+        URL home = appInputProps.getHome();
         if (home != null) {
           app.setHome(home);
           jdbcInsert.addColumn(AppCols.HOME, app.getHome().toString());
         }
 
-        URI terms = appInputProps.getTermsOfServices();
+        URL terms = appInputProps.getTermsOfServices();
         if (terms != null) {
           app.setTermsOfServices(terms);
           jdbcInsert.addColumn(AppCols.TERM_OF_SERVICE, app.getTermsOfServices().toString());

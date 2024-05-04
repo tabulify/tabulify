@@ -30,9 +30,7 @@ import net.bytle.tower.eraldy.module.organization.graphql.OrgaGraphQLImpl;
 import net.bytle.tower.eraldy.module.realm.graphql.RealmGraphQLImpl;
 import net.bytle.vertx.graphql.GraphQLDef;
 import net.bytle.vertx.graphql.GraphQLLocalDate;
-import net.bytle.vertx.graphql.scalar.GraphQLColorCoercing;
-import net.bytle.vertx.graphql.scalar.GraphQLEmailCoercing;
-import net.bytle.vertx.graphql.scalar.GraphQLHandleCoercing;
+import net.bytle.vertx.graphql.scalar.*;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderFactory;
 import org.dataloader.DataLoaderRegistry;
@@ -164,9 +162,16 @@ public class EraldyGraphQL implements GraphQLDef {
       .newScalar()
       .name("Uri")
       .description("An URI")
-      .coercing(new GraphQLHandleCoercing())
+      .coercing(new GraphQLUriCoercing())
       .build();
     wiringBuilder.scalar(URI);
+    final GraphQLScalarType URL = GraphQLScalarType
+      .newScalar()
+      .name("Url")
+      .description("An URL")
+      .coercing(new GraphQLUrlCoercing())
+      .build();
+    wiringBuilder.scalar(URL);
     final GraphQLScalarType TIMEZONE = GraphQLScalarType
       .newScalar()
       .name("TimeZone")

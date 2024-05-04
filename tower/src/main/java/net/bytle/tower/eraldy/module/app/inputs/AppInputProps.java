@@ -6,7 +6,7 @@ import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.type.Color;
 import net.bytle.type.Handle;
 
-import java.net.URI;
+import java.net.URL;
 
 /**
  * An app is the container for branding elements (such as logo, color)
@@ -21,17 +21,17 @@ public class AppInputProps {
   protected String name;
 
 
-  protected URI home;
+  protected URL home;
 
   protected String slogan;
 
-  protected URI logo;
+  protected URL logo;
 
   protected Color primaryColor;
 
   protected OrgaUserGuid ownerUserGuid;
 
-  protected URI terms;
+  protected URL terms;
 
   /**
   * The empty constructor is
@@ -78,7 +78,7 @@ public class AppInputProps {
   * @return home The home URL of the app This is a app branding element that adds an URL to any app communication footer
   */
   @JsonProperty("home")
-  public URI getHome() {
+  public URL getHome() {
     return home;
   }
 
@@ -86,7 +86,7 @@ public class AppInputProps {
   * @param home The home URL of the app This is a app branding element that adds an URL to any app communication footer
   */
   @SuppressWarnings("unused")
-  public void setHome(URI home) {
+  public void setHome(URL home) {
     this.home = home;
   }
 
@@ -110,7 +110,7 @@ public class AppInputProps {
   * @return logo The uri of the app logo
   */
   @JsonProperty("logo")
-  public URI getLogo() {
+  public URL getLogo() {
     return logo;
   }
 
@@ -118,7 +118,7 @@ public class AppInputProps {
   * @param logo The uri of the app logo
   */
   @SuppressWarnings("unused")
-  public void setLogo(URI logo) {
+  public void setLogo(URL logo) {
     this.logo = logo;
   }
 
@@ -159,7 +159,7 @@ public class AppInputProps {
   * @return terms The location of the terms and conditions document
   */
   @JsonProperty("terms")
-  public URI getTermsOfServices() {
+  public URL getTermsOfServices() {
     return terms;
   }
 
@@ -167,7 +167,7 @@ public class AppInputProps {
   * @param terms The location of the terms and conditions document
   */
   @SuppressWarnings("unused")
-  public void setTerms(URI terms) {
+  public void setTerms(URL terms) {
     this.terms = terms;
   }
 

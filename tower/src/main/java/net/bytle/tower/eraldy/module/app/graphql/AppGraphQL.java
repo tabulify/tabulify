@@ -98,17 +98,19 @@ public class AppGraphQL {
     }
     return this.app.getRealmProvider()
       .getRealmFromGuid(realmGuidObject)
-      .compose(realm->{
+      .compose(realm -> {
         if (realm == null) {
-          return Future.failedFuture(TowerFailureException.builder()
-            .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-            .setMessage("The realm guid (" + realmGuid + ") was not found")
-            .build()
+          return Future.failedFuture(
+            TowerFailureException
+              .builder()
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+              .setMessage("The realm guid (" + realmGuid + ") was not found")
+              .build()
           );
         }
-        return this.app.getAuthProvider().checkRealmAuthorization(routingContext, realm,AuthUserScope.APP_CREATE);
+        return this.app.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.APP_CREATE);
       })
-      .compose(realm->this.app.getAppProvider().insertApp(appInputProps, realm, null));
+      .compose(realm -> this.app.getAppProvider().insertApp(appInputProps, realm, null));
   }
 
   private Future<App> updateApp(DataFetchingEnvironment dataFetchingEnvironment) {

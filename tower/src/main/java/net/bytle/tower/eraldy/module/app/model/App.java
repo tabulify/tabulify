@@ -7,7 +7,7 @@ import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.type.Color;
 import net.bytle.type.Handle;
 
-import java.net.URI;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -23,13 +23,11 @@ public class App {
 
   protected String name;
 
-  protected URI uri;
-
-  protected URI home;
+  protected URL home;
 
   protected String slogan;
 
-  protected URI logo;
+  protected URL logo;
 
   protected Color primaryColor;
 
@@ -37,7 +35,7 @@ public class App {
 
   protected Realm realm;
 
-  protected URI terms;
+  protected URL terms;
   private LocalDateTime creationTime;
   private LocalDateTime modificationTime;
   private Integer listCount;
@@ -103,7 +101,7 @@ public class App {
    * @return home The home URL of the app This is an app branding element that adds an URL to any app communication footer
    */
   @JsonProperty("home")
-  public URI getHome() {
+  public URL getHome() {
     return home;
   }
 
@@ -111,7 +109,7 @@ public class App {
    * @param home The home URL of the app This is a app branding element that adds an URL to any app communication footer
    */
   @SuppressWarnings("unused")
-  public void setHome(URI home) {
+  public void setHome(URL home) {
     this.home = home;
   }
 
@@ -135,7 +133,7 @@ public class App {
    * @return logo The uri of the app logo
    */
   @JsonProperty("logo")
-  public URI getLogo() {
+  public URL getLogo() {
     return logo;
   }
 
@@ -143,7 +141,7 @@ public class App {
    * @param logo The uri of the app logo
    */
   @SuppressWarnings("unused")
-  public void setLogo(URI logo) {
+  public void setLogo(URL logo) {
     this.logo = logo;
   }
 
@@ -199,7 +197,7 @@ public class App {
    * @return terms The location of the terms and conditions document
    */
   @JsonProperty("tos")
-  public URI getTermsOfServices() {
+  public URL getTermsOfServices() {
     return terms;
   }
 
@@ -207,7 +205,7 @@ public class App {
    * @param terms The location of the terms and conditions document
    */
   @SuppressWarnings("unused")
-  public void setTermsOfServices(URI terms) {
+  public void setTermsOfServices(URL terms) {
     this.terms = terms;
   }
 

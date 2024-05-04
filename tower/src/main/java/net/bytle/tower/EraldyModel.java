@@ -22,6 +22,7 @@ import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.Handle;
 import net.bytle.type.UriEnhanced;
+import net.bytle.type.Urls;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.jackson.JacksonMapperManager;
@@ -173,7 +174,7 @@ public class EraldyModel {
     AppInputProps appInputProps = new AppInputProps();
     appInputProps.setName("Members");
     appInputProps.setHandle(Handle.ofFailSafe("members"));
-    appInputProps.setHome(URI.create("https://eraldy.com"));
+    appInputProps.setHome(Urls.toUrlFailSafe("https://eraldy.com"));
 
     return this.apiApp.getAppProvider().getsertOnStartup(appInputProps, this.eraldyRealm, APP_MEMBER_ID)
       .compose(memberAppRes -> {
@@ -192,7 +193,7 @@ public class EraldyModel {
         AppInputProps interactApp = new AppInputProps();
         interactApp.setName("Interact");
         interactApp.setHandle(this.jacksonManager.getDeserializer(Handle.class).deserializeFailSafe("interact"));
-        interactApp.setHome(URI.create("https://eraldy.com"));
+        interactApp.setHome(Urls.toUrlFailSafe("https://eraldy.com"));
         return this.apiApp.getAppProvider().getsertOnStartup(interactApp, this.eraldyRealm, APP_INTERACT_ID);
       })
       .compose(interactAppRes -> {

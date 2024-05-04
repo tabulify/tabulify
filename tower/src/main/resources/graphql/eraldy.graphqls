@@ -9,7 +9,7 @@ scalar ListGuid
 scalar ListUserGuid
 scalar EmailAddress
 scalar Handle
-scalar Uri
+scalar Url
 scalar TimeZone
 scalar Color
 
@@ -36,9 +36,9 @@ interface UserI {
   """The status message"""
   statusMessage: String
   """The avatar URL"""
-  avatar: Uri
+  avatar: Url
   """The website URL"""
-  website: Uri
+  website: Url
   """The timezone"""
   timeZone: TimeZone
   """The creation time"""
@@ -73,9 +73,9 @@ type User implements UserI {
   """The status message"""
   statusMessage: String
   """The avatar URL"""
-  avatar: Uri
+  avatar: Url
   """The website URL"""
-  website: Uri
+  website: Url
   """The timezone"""
   timeZone: TimeZone
   """The creation time"""
@@ -113,9 +113,9 @@ type OrganizationUser implements UserI {
   """The status message"""
   statusMessage: String
   """The avatar URL"""
-  avatar: Uri
+  avatar: Url
   """The website URL"""
-  website: Uri
+  website: Url
   """The timezone"""
   timeZone: TimeZone
   """The creation time"""
@@ -340,13 +340,13 @@ type App {
   """The slogan"""
   slogan: String
   """The logo"""
-  logo: Uri
+  logo: Url
   """The home"""
-  home: Uri
+  home: Url
   """The realm of the App"""
   realm: Realm!
   """The terms"""
-  terms: Uri
+  terms: Url
   """The primary color"""
   primaryColor: Color
   """The list count"""
@@ -427,9 +427,9 @@ input UserInput {
   """The location"""
   location: String
   """The avatar URL"""
-  avatar: Uri
+  avatar: Url
   """The website URL"""
-  website: Uri
+  website: Url
 }
 
 input MailingInput {
