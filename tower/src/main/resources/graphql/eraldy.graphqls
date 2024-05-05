@@ -514,7 +514,7 @@ type Mutation {
   """Update a user"""
   userUpdate(userGuid:ID!, props:UserInput): User
   """Update a app"""
-  appUpdate(appGuid: ID!, props:AppInput): App
+  appUpdate(appGuid: AppGuid!, props:AppInput): App
   """Create a app"""
   appCreate(realmGuid: ID!, props:AppInput): App
 }

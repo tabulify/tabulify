@@ -41,9 +41,9 @@ public class Handle {
 
   }
 
-  public static Handle ofFailSafe(String listHandleColumn) {
+  public static Handle ofFailSafe(String handle) {
       try {
-          return new Handle(listHandleColumn);
+          return new Handle(handle);
       } catch (HandleCastException e) {
           throw new RuntimeException(e);
       }

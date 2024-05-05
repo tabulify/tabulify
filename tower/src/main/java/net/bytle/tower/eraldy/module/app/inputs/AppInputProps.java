@@ -33,6 +33,14 @@ public class AppInputProps {
 
   protected URL terms;
 
+  private boolean ownerUserGuidSet = false;
+  private boolean homeSet = false;
+  private boolean handleSet = false;
+  private boolean logoSet = false;
+  private boolean nameSet = false;
+  private boolean termsSet = false;
+  private boolean primaryColorSet = false;
+
   /**
   * The empty constructor is
   * needed for the construction of the pojo
@@ -53,9 +61,10 @@ public class AppInputProps {
   /**
   * @param handle The handle of the app. The handle is unique for all apps on the realm. It follows the DNS name constraint
   */
-  @SuppressWarnings("unused")
+  @JsonProperty("handle")
   public void setHandle(Handle handle) {
     this.handle = handle;
+    this.handleSet = true;
   }
 
   /**
@@ -72,6 +81,7 @@ public class AppInputProps {
   @SuppressWarnings("unused")
   public void setName(String name) {
     this.name = name;
+    this.nameSet = true;
   }
 
   /**
@@ -85,9 +95,10 @@ public class AppInputProps {
   /**
   * @param home The home URL of the app This is a app branding element that adds an URL to any app communication footer
   */
-  @SuppressWarnings("unused")
+  @JsonProperty("home")
   public void setHome(URL home) {
     this.home = home;
+    this.homeSet = true;
   }
 
   /**
@@ -117,9 +128,10 @@ public class AppInputProps {
   /**
   * @param logo The uri of the app logo
   */
-  @SuppressWarnings("unused")
+  @JsonProperty("logo")
   public void setLogo(URL logo) {
     this.logo = logo;
+    this.logoSet = true;
   }
 
   /**
@@ -133,9 +145,10 @@ public class AppInputProps {
   /**
   * @param primaryColor The css primary color of the theme (rgb in hexadecimal)
   */
-  @SuppressWarnings("unused")
+  @JsonProperty("primaryColor")
   public void setPrimaryColor(Color primaryColor) {
     this.primaryColor = primaryColor;
+    this.primaryColorSet = true;
   }
 
   /**
@@ -149,9 +162,10 @@ public class AppInputProps {
   /**
   * @param ownerUserGuid Set ownerUser
   */
-  @SuppressWarnings("unused")
+  @SuppressWarnings("ownerUserGuid")
   public void setOwnerUserGuid(OrgaUserGuid ownerUserGuid) {
     this.ownerUserGuid = ownerUserGuid;
+    this.ownerUserGuidSet = true;
   }
 
 
@@ -169,7 +183,35 @@ public class AppInputProps {
   @SuppressWarnings("unused")
   public void setTerms(URL terms) {
     this.terms = terms;
+    this.termsSet = true;
   }
 
 
+  public boolean isOwnerUserGuidSet() {
+    return ownerUserGuidSet;
+  }
+
+  public boolean isHomeSet() {
+    return homeSet;
+  }
+
+  public boolean isHandleSet() {
+    return handleSet;
+  }
+
+  public boolean isLogoSet() {
+    return logoSet;
+  }
+
+  public boolean isNameSet() {
+    return nameSet;
+  }
+
+  public boolean isTermsSet() {
+    return termsSet;
+  }
+
+  public boolean isPrimaryColorSet() {
+    return primaryColorSet;
+  }
 }

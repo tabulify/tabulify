@@ -126,7 +126,6 @@ public class AppProvider {
   }
 
 
-
   public Future<App> updateApp(App app, AppInputProps appInputProps) {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.appTable)
@@ -135,49 +134,49 @@ public class AppProvider {
       .addReturningColumn(AppCols.ID);
 
     String newName = appInputProps.getName();
-    if (newName != null && !Objects.equals(app.getName(), newName)) {
+    if (appInputProps.isNameSet() && !Objects.equals(app.getName(), newName)) {
       app.setName(newName);
       jdbcUpdate.addUpdatedColumn(AppCols.NAME, app.getName());
     }
 
     Handle newHandle = appInputProps.getHandle();
-    if (newHandle != null && !Objects.equals(app.getHandle(), newHandle)) {
+    if (appInputProps.isHandleSet() && !Objects.equals(app.getHandle(), newHandle)) {
       app.setHandle(newHandle);
       jdbcUpdate.addUpdatedColumn(AppCols.HANDLE, app.getHandle().getValue());
     }
 
     URL newLogo = appInputProps.getLogo();
-    if (newLogo != null && !Objects.equals(app.getLogo(), newLogo)) {
+    if (appInputProps.isLogoSet() && !Objects.equals(app.getLogo(), newLogo)) {
       app.setLogo(newLogo);
       jdbcUpdate.addUpdatedColumn(AppCols.LOGO, app.getLogo().toString());
     }
 
     URL newTerms = appInputProps.getTermsOfServices();
-    if (newTerms != null && !Objects.equals(app.getTermsOfServices(), newTerms)) {
+    if (appInputProps.isTermsSet() && !Objects.equals(app.getTermsOfServices(), newTerms)) {
       app.setTermsOfServices(newTerms);
       jdbcUpdate.addUpdatedColumn(AppCols.TERM_OF_SERVICE, app.getTermsOfServices().toString());
     }
 
     URL newHome = appInputProps.getHome();
-    if (newHome != null && !Objects.equals(app.getHome(), newHome)) {
+    if (appInputProps.isHomeSet() && !Objects.equals(app.getHome(), newHome)) {
       app.setHome(newHome);
       jdbcUpdate.addUpdatedColumn(AppCols.HOME, app.getHome().toString());
     }
 
     String newSlogan = appInputProps.getSlogan();
-    if (newSlogan != null && !Objects.equals(app.getSlogan(), newSlogan)) {
+    if (appInputProps.isHomeSet() && !Objects.equals(app.getSlogan(), newSlogan)) {
       app.setSlogan(newSlogan);
       jdbcUpdate.addUpdatedColumn(AppCols.SLOGAN, app.getSlogan());
     }
 
     Color newPrimaryColor = appInputProps.getPrimaryColor();
-    if (newPrimaryColor != null && !Objects.equals(app.getPrimaryColor(), newPrimaryColor)) {
+    if (appInputProps.isPrimaryColorSet() && !Objects.equals(app.getPrimaryColor(), newPrimaryColor)) {
       app.setPrimaryColor(newPrimaryColor);
       jdbcUpdate.addUpdatedColumn(AppCols.PRIMARY_COLOR, app.getPrimaryColor().getValue());
     }
 
     OrgaUserGuid newOwnerUserGuid = appInputProps.getOwnerUserGuid();
-    if (newOwnerUserGuid != null && !Objects.equals(app.getOwnerUser().getGuid(), newOwnerUserGuid)) {
+    if (appInputProps.isOwnerUserGuidSet() && !Objects.equals(app.getOwnerUser().getGuid(), newOwnerUserGuid)) {
       OrgaUser newOwner = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(newOwnerUserGuid, app.getRealm());
       app.setOwnerUser(newOwner);
       jdbcUpdate.addUpdatedColumn(AppCols.OWNER_ID, app.getOwnerUser().getGuid().getLocalId());
@@ -319,7 +318,7 @@ public class AppProvider {
     /**
      * Count
      */
-    Integer listCount = row.getInteger(AppCols.LIST_COUNT,0);
+    Integer listCount = row.getInteger(AppCols.LIST_COUNT, 0);
     app.setListCount(listCount);
 
     return app;

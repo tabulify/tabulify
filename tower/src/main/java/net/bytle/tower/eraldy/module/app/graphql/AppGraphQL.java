@@ -114,34 +114,24 @@ public class AppGraphQL {
   }
 
   private Future<App> updateApp(DataFetchingEnvironment dataFetchingEnvironment) {
-    String appGuid = dataFetchingEnvironment.getArgument("appGuid");
+    AppGuid appGuid = dataFetchingEnvironment.getArgument("appGuid");
     Map<String, Object> appPropsMap = dataFetchingEnvironment.getArgument("props");
     // Type safe (if null, the value was not passed)
     AppInputProps appInputProps = new JsonObject(appPropsMap).mapTo(AppInputProps.class);
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
-    AppGuid appGuidObject;
-    try {
-      appGuidObject = this.app.getJackson().getDeserializer(AppGuid.class).deserialize(appGuid);
-    } catch (CastException e) {
-      return Future.failedFuture(TowerFailureException.builder()
-        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-        .setMessage("The app guid (" + appGuid + ") is not valid")
-        .build()
-      );
-    }
     return this.app.getRealmProvider()
-      .getRealmFromLocalId(appGuidObject.getRealmId())
+      .getRealmFromLocalId(appGuid.getRealmId())
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(TowerFailureException.builder()
             .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-            .setMessage("The realm of the app guid (" + appGuid + ") was not found")
+            .setMessage("The realm of the app guid (" + appGuid.toStringLocalIds() + ") was not found")
             .build()
           );
         }
         return this.app.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthUserScope.APP_UPDATE);
       })
-      .compose(realm -> this.app.getAppProvider().getAppByGuid(appGuidObject, realm))
+      .compose(realm -> this.app.getAppProvider().getAppByGuid(appGuid, realm))
       .compose(app -> this.app.getAppProvider().updateApp(app, appInputProps));
 
   }
