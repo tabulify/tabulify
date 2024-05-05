@@ -139,13 +139,13 @@ public class ListUserProvider {
 
     LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
     listUser.setModificationTime(nowInUtc);
-    jdbcUpdate.addUpdatedColumn(ListUserCols.MODIFICATION_TIME, listUser.getModificationTime());
+    jdbcUpdate.setUpdatedColumnWithValue(ListUserCols.MODIFICATION_TIME, listUser.getModificationTime());
 
     listUser.setStatus(status);
-    jdbcUpdate.addUpdatedColumn(ListUserCols.STATUS_CODE, listUser.getStatus().getCode());
+    jdbcUpdate.setUpdatedColumnWithValue(ListUserCols.STATUS_CODE, listUser.getStatus().getCode());
 
     listUser.setOutOptOutTime(nowInUtc);
-    jdbcUpdate.addUpdatedColumn(ListUserCols.OUT_OPT_OUT_TIME, listUser.getOutOptOutTime());
+    jdbcUpdate.setUpdatedColumnWithValue(ListUserCols.OUT_OPT_OUT_TIME, listUser.getOutOptOutTime());
 
     return jdbcUpdate
       .execute()

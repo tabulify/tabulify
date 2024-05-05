@@ -263,43 +263,43 @@ public class MailingItemProvider {
     MailingItemStatus newStatus = mailingItemInputProps.getStatus();
     if (newStatus != null && newStatus.getCode() > mailingItem.getStatus().getCode()) {
       mailingItem.setStatus(newStatus);
-      jdbcUpdate.addUpdatedColumn(MailingItemCols.STATUS_CODE, newStatus.getCode());
+      jdbcUpdate.setUpdatedColumnWithValue(MailingItemCols.STATUS_CODE, newStatus.getCode());
     }
 
     String newStatusMessage = mailingItemInputProps.getStatusMessage();
     if (newStatusMessage != null) {
       mailingItem.setStatusMessage(newStatusMessage);
-      jdbcUpdate.addUpdatedColumn(MailingItemCols.STATUS_MESSAGE, newStatusMessage);
+      jdbcUpdate.setUpdatedColumnWithValue(MailingItemCols.STATUS_MESSAGE, newStatusMessage);
     }
 
     MailingJob newMailingJob = mailingItemInputProps.getMailingJob();
     if (newMailingJob != null) {
       mailingItem.setMailingJob(newMailingJob);
-      jdbcUpdate.addUpdatedColumn(MailingItemCols.MAILING_JOB_ID, newMailingJob.getGuid().getLocalId());
+      jdbcUpdate.setUpdatedColumnWithValue(MailingItemCols.MAILING_JOB_ID, newMailingJob.getGuid().getLocalId());
     }
 
     LocalDateTime plannedDeliveryTime = mailingItemInputProps.getPlannedDeliveryTime();
     if (plannedDeliveryTime != null) {
       mailingItem.setPlannedDeliveryTime(plannedDeliveryTime);
-      jdbcUpdate.addUpdatedColumn(MailingItemCols.PLANNED_DELIVERY_TIME, plannedDeliveryTime);
+      jdbcUpdate.setUpdatedColumnWithValue(MailingItemCols.PLANNED_DELIVERY_TIME, plannedDeliveryTime);
     }
 
     Integer failureCount = mailingItemInputProps.getFailureCount();
     if (failureCount != null) {
       mailingItem.setFailureCount(failureCount);
-      jdbcUpdate.addUpdatedColumn(MailingItemCols.FAILURE_COUNT, failureCount);
+      jdbcUpdate.setUpdatedColumnWithValue(MailingItemCols.FAILURE_COUNT, failureCount);
     }
 
     String messageId = mailingItemInputProps.getMessageId();
     if (messageId != null) {
       mailingItem.setEmailMessageId(messageId);
-      jdbcUpdate.addUpdatedColumn(MailingItemCols.EMAIL_MESSAGE_ID, failureCount);
+      jdbcUpdate.setUpdatedColumnWithValue(MailingItemCols.EMAIL_MESSAGE_ID, failureCount);
     }
 
     LocalDateTime deliveryDate = mailingItemInputProps.getDeliveryDate();
     if (deliveryDate != null) {
       mailingItem.setDeliveryDate(deliveryDate);
-      jdbcUpdate.addUpdatedColumn(MailingItemCols.DELIVERY_DATE, deliveryDate);
+      jdbcUpdate.setUpdatedColumnWithValue(MailingItemCols.DELIVERY_DATE, deliveryDate);
     }
 
 

@@ -69,7 +69,7 @@ public class AppGraphQL {
        */
       .type(
         newTypeWiring("App")
-          .dataFetcher("list", this::getAppLists)
+          .dataFetcher("lists", this::getAppLists)
           .build()
       )
       .type(

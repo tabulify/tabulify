@@ -36,8 +36,8 @@ public class RealmSequenceProvider {
 
     LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
     return JdbcUpdate.into(this.seqTable)
-      .addUpdatedColumn(RealmSequenceCols.LAST_ID, RealmSequenceCols.LAST_ID.getColumnName() + " + 1")
-      .addUpdatedColumn(RealmSequenceCols.MODIFICATION_TIME, nowInUtc)
+      .setUpdatedColumnWithExpression(RealmSequenceCols.LAST_ID, RealmSequenceCols.LAST_ID.getColumnName() + " + 1")
+      .setUpdatedColumnWithValue(RealmSequenceCols.MODIFICATION_TIME, nowInUtc)
       .addPredicateColumn(RealmSequenceCols.REALM_ID, realm.getGuid().getLocalId())
       .addPredicateColumn(RealmSequenceCols.TABLE_NAME, tableIdInSequenceTable)
       .addReturningColumn(RealmSequenceCols.LAST_ID)

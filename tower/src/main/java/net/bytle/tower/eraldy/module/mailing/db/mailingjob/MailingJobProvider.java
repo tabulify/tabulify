@@ -225,7 +225,7 @@ public class MailingJobProvider {
      */
     MailingJobStatus newStatus = mailingJobInputProps.getStatus();
     if (newStatus != null && newStatus != mailingJob.getStatus()) {
-      jdbcUpdate.addUpdatedColumn(MailingJobCols.STATUS_CODE, newStatus.getCode());
+      jdbcUpdate.setUpdatedColumnWithValue(MailingJobCols.STATUS_CODE, newStatus.getCode());
       mailingJob.setStatus(newStatus);
     }
 
@@ -234,7 +234,7 @@ public class MailingJobProvider {
      */
     String newStatusMessage = mailingJobInputProps.getStatusMessage();
     if (newStatusMessage != null) {
-      jdbcUpdate.addUpdatedColumn(MailingJobCols.STATUS_MESSAGE, newStatusMessage);
+      jdbcUpdate.setUpdatedColumnWithValue(MailingJobCols.STATUS_MESSAGE, newStatusMessage);
       mailingJob.setStatusMessage(newStatusMessage);
     }
 

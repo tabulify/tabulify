@@ -136,52 +136,52 @@ public class AppProvider {
     String newName = appInputProps.getName();
     if (appInputProps.isNameSet() && !Objects.equals(app.getName(), newName)) {
       app.setName(newName);
-      jdbcUpdate.addUpdatedColumn(AppCols.NAME, app.getName());
+      jdbcUpdate.setUpdatedColumnWithValue(AppCols.NAME, app.getName());
     }
 
     Handle newHandle = appInputProps.getHandle();
     if (appInputProps.isHandleSet() && !Objects.equals(app.getHandle(), newHandle)) {
       app.setHandle(newHandle);
-      jdbcUpdate.addUpdatedColumn(AppCols.HANDLE, app.getHandle().getValue());
+      jdbcUpdate.setUpdatedColumnWithValue(AppCols.HANDLE, app.getHandle().getValue());
     }
 
 
     URL newLogo = appInputProps.getLogo();
     if (appInputProps.isLogoSet() && !Objects.equals(app.getLogo(), newLogo)) {
       app.setLogo(newLogo);
-      jdbcUpdate.addUpdatedColumn(AppCols.LOGO, app.getLogo().toString());
+      jdbcUpdate.setUpdatedColumnWithValue(AppCols.LOGO, app.getLogo().toString());
     }
 
     URL newTerms = appInputProps.getTermsOfServices();
     if (appInputProps.isTermsSet() && !Objects.equals(app.getTermsOfServices(), newTerms)) {
       app.setTermsOfServices(newTerms);
-      jdbcUpdate.addUpdatedColumn(AppCols.TERM_OF_SERVICE, app.getTermsOfServices().toString());
+      jdbcUpdate.setUpdatedColumnWithValue(AppCols.TERM_OF_SERVICE, app.getTermsOfServices().toString());
     }
 
     URL newHome = appInputProps.getHome();
     if (appInputProps.isHomeSet() && !Objects.equals(app.getHome(), newHome)) {
       app.setHome(newHome);
-      jdbcUpdate.addUpdatedColumn(AppCols.HOME, app.getHome().toString());
+      jdbcUpdate.setUpdatedColumnWithValue(AppCols.HOME, app.getHome().toString());
     }
 
     String newSlogan = appInputProps.getSlogan();
     if (appInputProps.isSloganSet() && !Objects.equals(app.getSlogan(), newSlogan)) {
       app.setSlogan(newSlogan);
-      jdbcUpdate.addUpdatedColumn(AppCols.SLOGAN, app.getSlogan());
+      jdbcUpdate.setUpdatedColumnWithValue(AppCols.SLOGAN, app.getSlogan());
     }
 
     Color newPrimaryColor = appInputProps.getPrimaryColor();
     if (appInputProps.isPrimaryColorSet() && !Objects.equals(app.getPrimaryColor(), newPrimaryColor)) {
       app.setPrimaryColor(newPrimaryColor);
-      jdbcUpdate.addUpdatedColumn(AppCols.PRIMARY_COLOR, app.getPrimaryColor().getValue());
+      jdbcUpdate.setUpdatedColumnWithValue(AppCols.PRIMARY_COLOR, app.getPrimaryColor().getValue());
     }
 
     OrgaUserGuid newOwnerUserGuid = appInputProps.getOwnerUserGuid();
     if (appInputProps.isOwnerUserGuidSet() && !Objects.equals(app.getOwnerUser().getGuid(), newOwnerUserGuid)) {
       OrgaUser newOwner = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(newOwnerUserGuid, app.getRealm());
       app.setOwnerUser(newOwner);
-      jdbcUpdate.addUpdatedColumn(AppCols.OWNER_ID, app.getOwnerUser().getGuid().getLocalId());
-      jdbcUpdate.addUpdatedColumn(AppCols.ORGA_ID, app.getOwnerUser().getGuid().getOrganizationId());
+      jdbcUpdate.setUpdatedColumnWithValue(AppCols.OWNER_ID, app.getOwnerUser().getGuid().getLocalId());
+      jdbcUpdate.setUpdatedColumnWithValue(AppCols.ORGA_ID, app.getOwnerUser().getGuid().getOrganizationId());
     }
 
     if (jdbcUpdate.hasNoColumnToUpdate()) {
@@ -189,7 +189,7 @@ public class AppProvider {
     }
 
     app.setModificationTime(DateTimeService.getNowInUtc());
-    jdbcUpdate.addUpdatedColumn(AppCols.MODIFICATION_TIME, app.getModificationTime());
+    jdbcUpdate.setUpdatedColumnWithValue(AppCols.MODIFICATION_TIME, app.getModificationTime());
 
     return jdbcUpdate
       .execute()

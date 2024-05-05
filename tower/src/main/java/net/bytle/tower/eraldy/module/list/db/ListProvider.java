@@ -263,17 +263,17 @@ public class ListProvider {
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.listTable)
       .addPredicateColumn(ListCols.ID, listObject.getGuid().getLocalId())
       .addPredicateColumn(ListCols.REALM_ID, listObject.getGuid().getRealmId())
-      .addUpdatedColumn(ListCols.MODIFICATION_TIME, DateTimeService.getNowInUtc());
+      .setUpdatedColumnWithValue(ListCols.MODIFICATION_TIME, DateTimeService.getNowInUtc());
 
     String newName = listInputProps.getName();
     if (newName != null && !listObject.getName().equals(newName)) {
-      jdbcUpdate.addUpdatedColumn(ListCols.NAME, newName);
+      jdbcUpdate.setUpdatedColumnWithValue(ListCols.NAME, newName);
       listObject.setName(newName);
     }
 
     Handle newHandle = listInputProps.getHandle();
     if (newHandle != null && !Objects.equals(listObject.getHandle(), newHandle)) {
-      jdbcUpdate.addUpdatedColumn(ListCols.HANDLE, newHandle);
+      jdbcUpdate.setUpdatedColumnWithValue(ListCols.HANDLE, newHandle);
       listObject.setHandle(newHandle);
     }
 
@@ -283,8 +283,8 @@ public class ListProvider {
       OrgaUser orgaUser = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(ownerGuidObject, listObject.getApp().getRealm());
       listObject.setOwnerUser(orgaUser);
 
-      jdbcUpdate.addUpdatedColumn(ListCols.OWNER_USER_ID, listObject.getOwnerUser().getGuid().getLocalId());
-      jdbcUpdate.addUpdatedColumn(ListCols.ORGA_ID, listObject.getOwnerUser().getGuid().getOrganizationId());
+      jdbcUpdate.setUpdatedColumnWithValue(ListCols.OWNER_USER_ID, listObject.getOwnerUser().getGuid().getLocalId());
+      jdbcUpdate.setUpdatedColumnWithValue(ListCols.ORGA_ID, listObject.getOwnerUser().getGuid().getOrganizationId());
 
 
     }
@@ -295,12 +295,12 @@ public class ListProvider {
     Long newUserCount = listInputProps.getUserCount();
     if (newUserCount != null && newUserCount.equals(listObject.getUserCount())) {
       listObject.setUserCount(newUserCount);
-      jdbcUpdate.addUpdatedColumn(ListCols.USER_COUNT, newUserCount);
+      jdbcUpdate.setUpdatedColumnWithValue(ListCols.USER_COUNT, newUserCount);
     }
     Long newUserInCount = listInputProps.getUserInCount();
     if (newUserInCount != null && newUserInCount.equals(listObject.getUserInCount())) {
       listObject.setUserInCount(newUserInCount);
-      jdbcUpdate.addUpdatedColumn(ListCols.USER_IN_COUNT, newUserInCount);
+      jdbcUpdate.setUpdatedColumnWithValue(ListCols.USER_IN_COUNT, newUserInCount);
     }
 
     return jdbcUpdate.execute()

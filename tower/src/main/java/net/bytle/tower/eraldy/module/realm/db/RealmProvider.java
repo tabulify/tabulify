@@ -208,19 +208,19 @@ public class RealmProvider {
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.realmTable)
       .addPredicateColumn(RealmCols.ID, realm.getGuid().getLocalId())
       .addReturningColumn(RealmCols.ID)
-      .addUpdatedColumn(RealmCols.MODIFICATION_TIME, DateTimeService.getNowInUtc());
+      .setUpdatedColumnWithValue(RealmCols.MODIFICATION_TIME, DateTimeService.getNowInUtc());
 
     Handle newHandle = realmInputProps.getHandle();
     if (newHandle != null && !Objects.equals(newHandle, realm.getHandle())) {
       realm.setHandle(newHandle);
-      jdbcUpdate.addUpdatedColumn(RealmCols.HANDLE, realm.getHandle());
+      jdbcUpdate.setUpdatedColumnWithValue(RealmCols.HANDLE, realm.getHandle());
     }
 
 
     String newName = realmInputProps.getName();
     if (newName != null && !Objects.equals(newName, realm.getName())) {
       realm.setName(newName);
-      jdbcUpdate.addUpdatedColumn(RealmCols.NAME, realm.getName());
+      jdbcUpdate.setUpdatedColumnWithValue(RealmCols.NAME, realm.getName());
     }
 
     return jdbcUpdate
@@ -396,28 +396,6 @@ public class RealmProvider {
       );
     }
 
-  }
-
-  /**
-   * Wrapper around {@link #getRealmFromIdentifier(String)}
-   * and fail if the realm was not found (ie null)
-   *
-   * @param realmIdentifier - the realm identifier
-   * @return the realm
-   */
-  public Future<Realm> getRealmFromIdentifierNotNull(String realmIdentifier) {
-    return this.getRealmFromIdentifier(realmIdentifier)
-      .compose(realm -> {
-        if (realm == null) {
-          return Future.failedFuture(
-            TowerFailureException.builder()
-              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-              .setMessage("The realm identifier (" + realmIdentifier + ") was not found")
-              .build()
-          );
-        }
-        return Future.succeededFuture(realm);
-      });
   }
 
   /**

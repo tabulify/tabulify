@@ -9,13 +9,17 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class JdbcUpdate extends JdbcQuery {
-
-  Map<JdbcColumn, Object> updatedColValues = new HashMap<>();
+  /**
+   * A column and binding value
+   * The value will become a binding value
+   */
+  Map<JdbcColumn, JdbcAssignment> updatedColValues = new HashMap<>();
   Map<JdbcColumn, Object> predicateColValues = new HashMap<>();
   private JdbcColumn returningColumn = null;
 
+
   private JdbcUpdate(JdbcTable jdbcTable) {
-      super(jdbcTable);
+    super(jdbcTable);
 
   }
 
@@ -23,8 +27,13 @@ public class JdbcUpdate extends JdbcQuery {
     return new JdbcUpdate(jdbcTable);
   }
 
-  public JdbcUpdate addUpdatedColumn(JdbcColumn cols, Object value) {
-    this.updatedColValues.put(cols, value);
+  public JdbcUpdate setUpdatedColumnWithValue(JdbcColumn jdbcColumn, Object value) {
+    this.updatedColValues.put(jdbcColumn, JdbcAssignment.createValue(value));
+    return this;
+  }
+
+  public JdbcUpdate setUpdatedColumnWithExpression(JdbcColumn jdbcColumn, String expression) {
+    this.updatedColValues.put(jdbcColumn, JdbcAssignment.createExpression(expression));
     return this;
   }
 
@@ -53,13 +62,18 @@ public class JdbcUpdate extends JdbcQuery {
       .append(" set ")
     ;
     List<String> setColStatements = new ArrayList<>();
-    for (Map.Entry<JdbcColumn, Object> entry : updatedColValues.entrySet()) {
+    for (Map.Entry<JdbcColumn, JdbcAssignment> entry : updatedColValues.entrySet()) {
       JdbcColumn jdbcColumn = entry.getKey();
       if (this.getDomesticJdbcTable().getPrimaryKeyColumns().contains(jdbcColumn)) {
         throw new InternalException(this.getDomesticJdbcTable().getFullName() + " update: column (" + jdbcColumn + ") is a primary key column and should not be updated");
       }
-      bindingValues.add(entry.getValue());
-      setColStatements.add(jdbcColumn.getColumnName() + " = $" + bindingValues.size());
+      JdbcAssignment assignment = entry.getValue();
+      if (assignment.isValue()) {
+        bindingValues.add(assignment.getValue());
+        setColStatements.add(jdbcColumn.getColumnName() + " = $" + bindingValues.size());
+      } else {
+        setColStatements.add(jdbcColumn.getColumnName() + " = " + assignment.getExpression());
+      }
 
     }
     updateSqlBuilder.append(String.join(", ", setColStatements))
@@ -73,20 +87,20 @@ public class JdbcUpdate extends JdbcQuery {
     for (Map.Entry<JdbcColumn, Object> entry : predicateColValues.entrySet()) {
       JdbcColumn jdbcColumn = entry.getKey();
       if (!this.getDomesticJdbcTable().getPrimaryKeyColumns().contains(jdbcColumn)) {
-        throw new InternalException(this.getDomesticJdbcTable().getFullName() + " update: column (" + jdbcColumn + ") is not a declared primary or unique key columns for the table ("+this.getDomesticJdbcTable()+")");
+        throw new InternalException(this.getDomesticJdbcTable().getFullName() + " update: column (" + jdbcColumn + ") is not a declared primary or unique key columns for the table (" + this.getDomesticJdbcTable() + ")");
       }
       bindingValues.add(entry.getValue());
       equalityStatements.add(jdbcColumn.getColumnName() + " = $" + bindingValues.size());
     }
     updateSqlBuilder.append(String.join(" and ", equalityStatements));
 
-    if(this.returningColumn!=null){
+    if (this.returningColumn != null) {
       updateSqlBuilder.append(" returning ")
         .append(this.returningColumn.getColumnName());
     }
 
     String preparedStatement = updateSqlBuilder.toString();
-    return new JdbcPreparedStatement(preparedStatement,bindingValues);
+    return new JdbcPreparedStatement(preparedStatement, bindingValues);
   }
 
   public boolean hasNoColumnToUpdate() {

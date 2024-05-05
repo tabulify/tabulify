@@ -131,7 +131,7 @@ public class UserProvider {
   public <T extends User> Future<T> updateUser(T user, UserInputProps userInputProps) {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.userTable)
-      .addUpdatedColumn(UserCols.MODIFICATION_IME, DateTimeService.getNowInUtc())
+      .setUpdatedColumnWithValue(UserCols.MODIFICATION_IME, DateTimeService.getNowInUtc())
       .addPredicateColumn(UserCols.REALM_ID, user.getGuid().getRealmId())
       // if update by handle, we need to get the id back
       // and we check that there was an update
@@ -147,7 +147,7 @@ public class UserProvider {
       EmailAddress newEmailAddress = userInputProps.getEmailAddress();
       if (newEmailAddress != null && !Objects.equals(newEmailAddress.toNormalizedString(), user.getEmailAddress().toNormalizedString())) {
         user.setEmailAddress(newEmailAddress);
-        jdbcUpdate.addUpdatedColumn(UserCols.EMAIL_ADDRESS, user.getEmailAddress().toNormalizedString());
+        jdbcUpdate.setUpdatedColumnWithValue(UserCols.EMAIL_ADDRESS, user.getEmailAddress().toNormalizedString());
       }
 
     } else if (user.getEmailAddress() != null) {
@@ -163,67 +163,67 @@ public class UserProvider {
     String newFamilyName = userInputProps.getFamilyName();
     if (newFamilyName != null && !Objects.equals(newFamilyName, user.getFamilyName())) {
       user.setFamilyName(newFamilyName);
-      jdbcUpdate.addUpdatedColumn(UserCols.FAMILY_NAME, user.getFamilyName());
+      jdbcUpdate.setUpdatedColumnWithValue(UserCols.FAMILY_NAME, user.getFamilyName());
     }
 
     String newGivenName = userInputProps.getGivenName();
     if (newGivenName != null && !Objects.equals(newGivenName, user.getGivenName())) {
       user.setGivenName(newGivenName);
-      jdbcUpdate.addUpdatedColumn(UserCols.GIVEN_NAME, user.getGivenName());
+      jdbcUpdate.setUpdatedColumnWithValue(UserCols.GIVEN_NAME, user.getGivenName());
     }
 
     UserStatus newStatus = userInputProps.getStatus();
     if (newStatus != null && !Objects.equals(newStatus, user.getStatus())) {
       user.setStatus(newStatus);
-      jdbcUpdate.addUpdatedColumn(UserCols.STATUS_CODE, user.getStatus().getCode());
+      jdbcUpdate.setUpdatedColumnWithValue(UserCols.STATUS_CODE, user.getStatus().getCode());
     }
 
     String statusMessage = userInputProps.getStatusMessage();
     if (statusMessage != null && !Objects.equals(statusMessage, user.getStatusMessage())) {
       user.setStatusMessage(statusMessage);
-      jdbcUpdate.addUpdatedColumn(UserCols.STATUS_MESSAGE, user.getStatusMessage());
+      jdbcUpdate.setUpdatedColumnWithValue(UserCols.STATUS_MESSAGE, user.getStatusMessage());
     }
 
     String newBio = userInputProps.getBio();
     if (newBio != null && !Objects.equals(newBio, user.getBio())) {
       user.setBio(newBio);
-      jdbcUpdate.addUpdatedColumn(UserCols.BIO, user.getBio());
+      jdbcUpdate.setUpdatedColumnWithValue(UserCols.BIO, user.getBio());
     }
 
     String newTitle = userInputProps.getTitle();
     if (newTitle != null && !Objects.equals(newTitle, user.getTitle())) {
       user.setTitle(newTitle);
-      jdbcUpdate.addUpdatedColumn(UserCols.TITLE, user.getTitle());
+      jdbcUpdate.setUpdatedColumnWithValue(UserCols.TITLE, user.getTitle());
     }
 
     TimeZone newTimeZone = userInputProps.getTimeZone();
     if (newTimeZone != null && !Objects.equals(newTimeZone, user.getTimeZone())) {
       user.setTimeZone(newTimeZone);
-      jdbcUpdate.addUpdatedColumn(UserCols.TIME_ZONE, user.getTimeZone().getID());
+      jdbcUpdate.setUpdatedColumnWithValue(UserCols.TIME_ZONE, user.getTimeZone().getID());
     }
 
     String newLocation = userInputProps.getLocation();
     if (newLocation != null && !Objects.equals(newLocation, user.getLocation())) {
       user.setLocation(newLocation);
-      jdbcUpdate.addUpdatedColumn(UserCols.LOCATION, user.getLocation());
+      jdbcUpdate.setUpdatedColumnWithValue(UserCols.LOCATION, user.getLocation());
     }
 
     URI newAvatar = userInputProps.getAvatar();
     if (newAvatar != null && !Objects.equals(newAvatar, user.getAvatar())) {
       user.setAvatar(newAvatar);
-      jdbcUpdate.addUpdatedColumn(UserCols.AVATAR, user.getAvatar());
+      jdbcUpdate.setUpdatedColumnWithValue(UserCols.AVATAR, user.getAvatar());
     }
 
     URI newWebSite = userInputProps.getWebsite();
     if (newWebSite != null && !Objects.equals(newWebSite, user.getWebsite())) {
       user.setWebsite(newWebSite);
-      jdbcUpdate.addUpdatedColumn(UserCols.WEBSITE, user.getWebsite());
+      jdbcUpdate.setUpdatedColumnWithValue(UserCols.WEBSITE, user.getWebsite());
     }
 
     LocalDateTime newLastActiveTime = userInputProps.getLastActiveTime();
     if (newLastActiveTime != null && !Objects.equals(newLastActiveTime, user.getLastActiveTime())) {
       user.setLastActiveTime(newLastActiveTime);
-      jdbcUpdate.addUpdatedColumn(UserCols.LAST_ACTIVE_TIME, user.getLastActiveTime());
+      jdbcUpdate.setUpdatedColumnWithValue(UserCols.LAST_ACTIVE_TIME, user.getLastActiveTime());
     }
 
     return jdbcUpdate

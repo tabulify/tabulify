@@ -356,7 +356,7 @@ type App {
   """The modification time"""
   modificationTime: String! @dateFormat
   """The lists of the app"""
-  lists: [List]
+  lists: [List]!
 }
 
 type List {
