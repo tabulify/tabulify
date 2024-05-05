@@ -145,6 +145,7 @@ public class AppProvider {
       jdbcUpdate.addUpdatedColumn(AppCols.HANDLE, app.getHandle().getValue());
     }
 
+
     URL newLogo = appInputProps.getLogo();
     if (appInputProps.isLogoSet() && !Objects.equals(app.getLogo(), newLogo)) {
       app.setLogo(newLogo);
@@ -164,7 +165,7 @@ public class AppProvider {
     }
 
     String newSlogan = appInputProps.getSlogan();
-    if (appInputProps.isHomeSet() && !Objects.equals(app.getSlogan(), newSlogan)) {
+    if (appInputProps.isSloganSet() && !Objects.equals(app.getSlogan(), newSlogan)) {
       app.setSlogan(newSlogan);
       jdbcUpdate.addUpdatedColumn(AppCols.SLOGAN, app.getSlogan());
     }

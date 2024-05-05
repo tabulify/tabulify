@@ -15,24 +15,27 @@ import java.net.URL;
 public class AppInputProps {
 
 
+  private Handle handle;
 
-  protected Handle handle;
-
-  protected String name;
+  private String name;
 
 
-  protected URL home;
+  private URL home;
 
-  protected String slogan;
+  private String slogan;
 
-  protected URL logo;
+  private URL logo;
 
-  protected Color primaryColor;
+  private Color primaryColor;
 
-  protected OrgaUserGuid ownerUserGuid;
+  private OrgaUserGuid ownerUserGuid;
 
-  protected URL terms;
+  private URL terms;
 
+  /**
+   * Set field are here to check if the
+   * field was set (ie if null is really a null value)
+   */
   private boolean ownerUserGuidSet = false;
   private boolean homeSet = false;
   private boolean handleSet = false;
@@ -40,6 +43,7 @@ public class AppInputProps {
   private boolean nameSet = false;
   private boolean termsSet = false;
   private boolean primaryColorSet = false;
+  private boolean sloganSet = false;
 
   /**
   * The empty constructor is
@@ -115,6 +119,7 @@ public class AppInputProps {
   @SuppressWarnings("unused")
   public void setSlogan(String slogan) {
     this.slogan = slogan;
+    this.sloganSet = true;
   }
 
   /**
@@ -213,5 +218,9 @@ public class AppInputProps {
 
   public boolean isPrimaryColorSet() {
     return primaryColorSet;
+  }
+
+  public boolean isSloganSet() {
+    return sloganSet;
   }
 }
