@@ -57,10 +57,16 @@ public class ApiKeyHandlerRelaxed extends AuthenticationHandlerImpl<Authenticati
           handler.handle(authn);
         }
       });
+      return;
     }
     /**
-     * Return the empty user
+     * Default: Return the actual user or null
      */
+    User user = context.user();
+    if (user != null) {
+      handler.handle(Future.succeededFuture(user));
+      return;
+    }
     handler.handle(Future.succeededFuture());
   }
 }
