@@ -47,6 +47,7 @@ public class AuthGraphQLImpl {
       return Future.failedFuture(
         TowerFailureException.builder()
           .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
+          .setMessage("No realm user is authenticated")
           .buildWithContextFailing(routingContext)
       );
     }
@@ -87,6 +88,7 @@ public class AuthGraphQLImpl {
       return Future.failedFuture(
         TowerFailureException.builder()
           .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
+          .setMessage("No organization user is logged in")
           .buildWithContextFailing(routingContext)
       );
     }

@@ -3,7 +3,6 @@ package net.bytle.vertx.graphql;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.ext.web.Route;
-import io.vertx.ext.web.handler.APIKeyHandler;
 import io.vertx.ext.web.handler.graphql.GraphiQLHandler;
 import io.vertx.ext.web.handler.graphql.GraphiQLHandlerOptions;
 import net.bytle.exception.NullValueException;
@@ -49,8 +48,8 @@ public class GraphQLService extends TowerService {
       } catch (NullValueException e) {
         throw new RuntimeException("ApiKeyAuthProvider is not enabled but required by GraphiQL to authenticate");
       }
-      APIKeyHandler apiKeyHandler = APIKeyHandler.create(authProvider).header(authProvider.getHeader());
-      graphQLRoute.handler(apiKeyHandler);
+//      APIKeyHandler apiKeyHandler = APIKeyHandler.create(authProvider).header(authProvider.getHeader());
+//      graphQLRoute.handler(apiKeyHandler);
 
       /**
        * GraphiQL is disabled by default

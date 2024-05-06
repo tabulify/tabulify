@@ -105,13 +105,17 @@ public class ListGraphQLImpl {
     ListObject listObject = dataFetchingEnvironment.getSource();
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
     return this.app.getAuthProvider()
-      .checkRealmAuthorization(routingContext, listObject.getApp().getRealm(),AuthUserScope.MAILINGS_LIST_GET)
-      .compose(v->this.app.getMailingProvider().getMailingsByListWithLocalId(listObject));
+      .checkRealmAuthorization(routingContext, listObject.getApp().getRealm(), AuthUserScope.MAILINGS_LIST_GET)
+      .compose(v -> this.app.getMailingProvider().getMailingsByListWithLocalId(listObject));
   }
 
   private Future<App> getListApp(DataFetchingEnvironment dataFetchingEnvironment) {
     ListObject list = dataFetchingEnvironment.getSource();
-    return listProvider.buildAppAtRequestTimeEventually(list);
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return this.app
+      .getAuthProvider()
+      .checkRealmAuthorization(routingContext, list.getApp().getRealm(), AuthUserScope.APP_GET)
+      .compose(v -> listProvider.buildAppAtRequestTimeEventually(list));
   }
 
   private Future<OrgaUser> getListOwnerUser(DataFetchingEnvironment dataFetchingEnvironment) {

@@ -98,7 +98,7 @@ public class AuthProvider {
     /**
      * Root edge case
      */
-    if(orgaSubject!=null && orgaSubject.equals(ApiKeyAuthenticationProvider.ROOT_SUBJECT)){
+    if (orgaSubject != null && orgaSubject.equals(ApiKeyAuthenticationProvider.ROOT_SUBJECT)) {
       //noinspection unchecked
       user = (T) new OrgaUser();
       OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
@@ -134,7 +134,7 @@ public class AuthProvider {
         user.setGuid(guid);
 
       } catch (CastException ex) {
-        throw new InternalException("The subject value ("+subject +") is not a valid user guid.");
+        throw new InternalException("The subject value (" + subject + ") is not a valid user guid.");
       }
     }
 
@@ -210,6 +210,7 @@ public class AuthProvider {
         TowerFailureException
           .builder()
           .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
+          .setMessage("No realm user is logged in")
           .build()
       );
     }
@@ -239,22 +240,33 @@ public class AuthProvider {
     if (authUserScope.isPublic()) {
       return Future.succeededFuture(realmId);
     }
-    return this.getSignedInAuthUserOrFail(routingContext)
-      .compose(signedInUser -> {
-        if (ApiKeyAuthenticationProvider.ROOT_AUTHORIZATION.match(signedInUser.getVertxUser())) {
-          return Future.succeededFuture(realmId);
-        }
-        Set<Long> realmGuids = getManagedRealmsId(signedInUser);
-        if (!realmGuids.contains(realmId)) {
-          return Future.failedFuture(
-            TowerFailureException.builder()
-              .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
-              .setMessage("Authenticated User (" + signedInUser + ") has no permission on the requested realm (" + realmId + "). Scope: " + authUserScope)
-              .build()
-          );
-        }
-        return Future.succeededFuture(realmId);
-      });
+    AuthUser signedInUser;
+    try {
+      signedInUser = getSignedInAuthUser(routingContext);
+    } catch (NotFoundException e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
+          .setMessage("Public User cannot " + authUserScope.getHumanActionName())
+          .build()
+      );
+    }
+
+    if (ApiKeyAuthenticationProvider.ROOT_AUTHORIZATION.match(signedInUser.getVertxUser())) {
+      return Future.succeededFuture(realmId);
+    }
+    Set<Long> realmGuids = getManagedRealmsId(signedInUser);
+    if (!realmGuids.contains(realmId)) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
+          .setMessage("Authenticated User (" + signedInUser + ") has no permission on the requested realm (" + realmId + "). Scope: " + authUserScope)
+          .build()
+      );
+    }
+    return Future.succeededFuture(realmId);
+
+
   }
 
   /**
@@ -283,6 +295,7 @@ public class AuthProvider {
       return Future.failedFuture(
         TowerFailureException.builder()
           .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
+          .setMessage("Auth User could not be retrieved. No realm user is logged.")
           .build()
       );
     }
