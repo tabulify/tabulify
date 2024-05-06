@@ -398,6 +398,7 @@ public class AppProvider {
   }
 
   private Future<App> getAppByGuid(AppGuid appGuid, Realm realm, SqlConnection sqlConnection) {
+    assert realm != null : "The realm should not be null";
     return JdbcSelect.from(this.appTable)
       .addEqualityPredicate(AppCols.REALM_ID, appGuid.getRealmId())
       .addEqualityPredicate(AppCols.ID, appGuid.getLocalId())

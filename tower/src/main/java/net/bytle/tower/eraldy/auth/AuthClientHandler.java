@@ -371,7 +371,9 @@ public class AuthClientHandler extends TowerService implements Handler<RoutingCo
                     .buildWithContextFailingTerminal(context);
                   return;
                 }
-                futureRequestApp = appProvider.getAppByGuid(appGuid, null);
+                futureRequestApp = this.apiApp.getRealmProvider()
+                    .getRealmFromLocalId(appGuid.getRealmId())
+                      .compose(requestAppRealm-> appProvider.getAppByGuid(appGuid, requestAppRealm));
               }
               futureRequestApp
                 .onFailure(e -> TowerFailureException

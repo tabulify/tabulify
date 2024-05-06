@@ -264,10 +264,9 @@ public class OrganizationUserProvider {
 
     /**
      * Check
-     * The object realm is null when we recreate an orga user
-     * for authentication
+     * * The object realm is null when we recreate an orga user for authentication
      */
-    if (objectRealm != null) {
+    if (objectRealm != null && objectRealm.getOrganization() != null) {
       OrgaGuid objectRealmOrgId = objectRealm.getOrganization().getGuid();
       OrgaGuid ownerOrgId = newOwner.getOrganization().getGuid();
       if (!Objects.equals(objectRealmOrgId, ownerOrgId)) {
