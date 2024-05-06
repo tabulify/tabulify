@@ -9,6 +9,7 @@ public enum AuthUserScope {
   LIST_CREATION("create a list", false),
   /**
    * To be able to subscribe public user to a list, the list data needs to be public
+   * It opens the door to get all data we want.
    */
   LIST_GET("get a list", true),
   LIST_DELETE("delete a list", false),
