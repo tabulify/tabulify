@@ -49,6 +49,10 @@ public class GraphQLService extends TowerService {
       } catch (NullValueException e) {
         throw new RuntimeException("ApiKeyAuthProvider is not enabled but required by GraphiQL to authenticate");
       }
+      /**
+       * The relaxed api key handler
+       * because we may want to test in dev an anonymous user.
+       */
       ApiKeyHandlerRelaxed apiKeyHandler = new ApiKeyHandlerRelaxed(authProvider).header(authProvider.getHeader());
       graphQLRoute.handler(apiKeyHandler);
 
