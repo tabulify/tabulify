@@ -6,14 +6,12 @@ import graphql.schema.idl.RuntimeWiring;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.exception.CastException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.app.model.App;
 import net.bytle.tower.eraldy.module.common.graphql.EraldyGraphQL;
-import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.tower.eraldy.module.realm.inputs.UserInputProps;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
@@ -71,8 +69,13 @@ public class RealmGraphQLImpl {
           .build()
       )
       .type(
+        newTypeWiring("Query")
+          .dataFetcher("user", this::getRealmUser)
+          .build()
+      )
+      .type(
         newTypeWiring("Mutation")
-          .dataFetcher("userUpdate", this::getRealmUserUpdate)
+          .dataFetcher("userUpdate", this::updateRealmUser)
           .build()
       );
 
@@ -103,6 +106,38 @@ public class RealmGraphQLImpl {
 
   }
 
+  private Future<User> getRealmUser(DataFetchingEnvironment dataFetchingEnvironment) {
+    UserGuid userGuid = dataFetchingEnvironment.getArgument("userGuid");
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return this.app
+      .getRealmProvider()
+      .getRealmFromLocalId(userGuid.getRealmId())
+      .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
+      .compose(realm -> {
+        if (realm == null) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+              .setMessage("The realm of the user (" + userGuid + ") was not found")
+              .build()
+          );
+        }
+        return this.app.getUserProvider()
+          .getUserByGuid(userGuid, realm)
+          .compose(user -> {
+            if (user == null) {
+              return Future.failedFuture(
+                TowerFailureException.builder()
+                  .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+                  .setMessage("The user (" + userGuid + ") was not found")
+                  .build()
+              );
+            }
+            return Future.succeededFuture(user);
+          });
+      });
+  }
+
   private Future<List<App>> getRealmApps(DataFetchingEnvironment dataFetchingEnvironment) {
     Realm realm = dataFetchingEnvironment.getSource();
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
@@ -127,30 +162,16 @@ public class RealmGraphQLImpl {
       .getOrganizationUserByGuid(realm.getOwnerUser().getGuid());
   }
 
-  private Future<User> getRealmUserUpdate(DataFetchingEnvironment dataFetchingEnvironment) {
-    String userGuid = dataFetchingEnvironment.getArgument("userGuid");
+  private Future<User> updateRealmUser(DataFetchingEnvironment dataFetchingEnvironment) {
+    UserGuid userGuid = dataFetchingEnvironment.getArgument("userGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
     Map<String, Object> userInputPropsMap = dataFetchingEnvironment.getArgument("props");
     // Type safe (if null, the value was not passed)
     UserInputProps userInputProps = new JsonObject(userInputPropsMap).mapTo(UserInputProps.class);
-    UserGuid userGuidObject;
-    try {
-      userGuidObject = this.app.getJackson().getDeserializer(UserGuid.class).deserialize(userGuid);
-    } catch (CastException e) {
-      try {
-        userGuidObject = this.app.getJackson().getDeserializer(OrgaUserGuid.class).deserialize(userGuid);
-      } catch (CastException ex) {
-        return Future.failedFuture(TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-          .setMessage("The user guid (" + userGuid + ") is not a valid user guid")
-          .build()
-        );
-      }
-    }
-    UserGuid finalUserGuidObject = userGuidObject;
+
     return this.app.getAuthProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(userGuidObject.getRealmId(), AuthUserScope.REALM_USER_UPDATE, routingContext)
-      .compose(realm -> this.app.getUserProvider().getUserByGuid(finalUserGuidObject, realm))
+      .getRealmByLocalIdWithAuthorizationCheck(userGuid.getRealmId(), AuthUserScope.REALM_USER_UPDATE, routingContext)
+      .compose(realm -> this.app.getUserProvider().getUserByGuid(userGuid, realm))
       .compose(user -> {
         if (user == null) {
           return Future.failedFuture(TowerFailureException.builder()
@@ -165,21 +186,11 @@ public class RealmGraphQLImpl {
   }
 
   private Future<Realm> getRealm(DataFetchingEnvironment dataFetchingEnvironment) {
-    String realmGuid = dataFetchingEnvironment.getArgument("realmGuid");
+    RealmGuid realmGuid = dataFetchingEnvironment.getArgument("realmGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
-    RealmGuid realmGuidObject;
-    try {
-      realmGuidObject = this.app.getJackson().getDeserializer(RealmGuid.class).deserialize(realmGuid);
-    } catch (CastException e) {
-      return Future.failedFuture(TowerFailureException.builder()
-        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-        .setMessage("The realm guid (" + realmGuid + ") is not valid")
-        .build()
-      );
-    }
     return this.app
       .getRealmProvider()
-      .getRealmFromGuid(realmGuidObject)
+      .getRealmFromGuid(realmGuid)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(realm -> {
         if (realm == null) {

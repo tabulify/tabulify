@@ -480,10 +480,12 @@ type RateLimit {
 type Query {
   """A organization"""
   organization(orgaGuid: OrgaGuid!): Organization
+  """An organizational user"""
+  orgaUser(orgaUserGuid:OrgaUserGuid!): OrganizationUser
   """A realm"""
   realm(realmGuid: RealmGuid!): Realm
-  """A user"""
-  user(userGuid: UserGuid!): Realm
+  """A realm user"""
+  user(userGuid: UserGuid!): User
   """A list"""
   list(listGuid: ListGuid!): List
   """A app"""
@@ -496,8 +498,6 @@ type Query {
   authMe: User
   """The logged realm user as an organizational user"""
   authMeOrga: OrganizationUser
-  """An organizational user"""
-  orgaUser(orgaUserGuid:OrgaUserGuid!): OrganizationUser
 }
 
 type Mutation {
