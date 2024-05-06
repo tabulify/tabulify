@@ -36,7 +36,9 @@ public class JacksonRealmGuidDeserializer extends JacksonJsonStringDeserializer<
     } catch (CastException e) {
       throw new CastException("The realm guid (" + value + ") is not valid. Error: " + e.getMessage(), e);
     }
-    return new RealmGuid(ids[0]);
+    RealmGuid realmGuid = new RealmGuid(ids[0]);
+    realmGuid.setHash(value);
+    return realmGuid;
   }
 
 }

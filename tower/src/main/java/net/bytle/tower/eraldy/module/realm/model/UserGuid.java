@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.module.user.model;
+package net.bytle.tower.eraldy.module.realm.model;
 
 import net.bytle.vertx.guid.Guid;
 

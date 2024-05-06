@@ -1,7 +1,5 @@
 package net.bytle.vertx.guid;
 
-import net.bytle.exception.InternalException;
-
 /**
  * A guid is a string identifier
  * Example: usr-xxmnmnsd
@@ -9,11 +7,17 @@ import net.bytle.exception.InternalException;
 public abstract class Guid {
 
 
+  private String hash;
+
   @Override
   public String toString() {
 
-    // A guid is serialized through Jackson as we hash it with a secret
-    throw new InternalException("To serialize a guid, you should use Jackson");
+    String hash = this.getHashOrNull();
+    if (hash == null) {
+      // A guid is serialized through Jackson as we hash it with a secret
+      return toStringLocalIds();
+    }
+    return hash;
 
   }
 
@@ -23,5 +27,19 @@ public abstract class Guid {
    */
   public abstract String toStringLocalIds();
 
+  /**
+   * When receiving a request, building the guid at request time, it's easier to set it
+   * to use it after wards if there is any error.
+   * @return the hash if present or null
+   * If null, uses {@link net.bytle.vertx.jackson.JacksonMapperManager#getSerializer(Class) Jackson}
+   * (as we hash it with a secret, it's not in the Pojo)
+   */
+  public String getHashOrNull(){
+    return this.hash;
+  }
+
+  public void setHash(String hash){
+    this.hash = hash;
+  }
 
 }

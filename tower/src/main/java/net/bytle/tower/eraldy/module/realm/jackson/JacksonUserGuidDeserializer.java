@@ -1,9 +1,9 @@
-package net.bytle.tower.eraldy.module.user.jackson;
+package net.bytle.tower.eraldy.module.realm.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import net.bytle.exception.CastException;
-import net.bytle.tower.eraldy.module.user.model.UserGuid;
+import net.bytle.tower.eraldy.module.realm.model.UserGuid;
 import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonJsonStringDeserializer;
 

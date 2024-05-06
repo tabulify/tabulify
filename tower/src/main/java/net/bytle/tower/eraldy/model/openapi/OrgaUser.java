@@ -8,7 +8,7 @@ import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
-import net.bytle.tower.eraldy.module.user.model.UserGuid;
+import net.bytle.tower.eraldy.module.realm.model.UserGuid;
 
 import java.util.Objects;
 

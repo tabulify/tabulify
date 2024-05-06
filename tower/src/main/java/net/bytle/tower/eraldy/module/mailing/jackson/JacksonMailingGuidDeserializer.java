@@ -46,6 +46,7 @@ public class JacksonMailingGuidDeserializer extends JacksonJsonStringDeserialize
     mailingGuid.setRealmId(realmId);
     long localId = ids[1];
     mailingGuid.setLocalId(localId);
+    mailingGuid.setHash(value);
     return mailingGuid;
   }
 }

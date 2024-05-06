@@ -5,6 +5,8 @@ scalar OrgaUserGuid
 scalar OrgaGuid
 scalar RealmGuid
 scalar MailingGuid
+scalar MailingItemGuid
+scalar MailingJobGuid
 scalar ListGuid
 scalar ListUserGuid
 scalar EmailAddress
@@ -153,7 +155,7 @@ type Status {
 Pagination parameters
 """
 input Pagination {
-  """The Id of the page requested"""
+  """The Id of the page requested (starting at 1)"""
   pageId: Int
   """The size of the pages"""
   pageSize: Int
@@ -224,7 +226,7 @@ A mailing order line
 """
 type MailingItem {
   """The Guid of the mailing line"""
-  guid: ID!
+  guid: MailingItemGuid!
   """The mailing"""
   mailing: Mailing!
   """The user"""
@@ -320,9 +322,9 @@ type Realm {
   """The modification time"""
   modificationTime: String! @dateFormat
   """The apps"""
-  apps: [App]
+  apps: [App]!
   """The users"""
-  users(pagination: Pagination): [User]
+  users(pagination: Pagination): [User]!
 }
 
 type App {
@@ -377,7 +379,7 @@ type List {
   """The number of mailing for the list"""
   mailingCount: Int!
   """The registration page URL for the list"""
-  registrationUrl: String!
+  registrationUrl: Url!
   """The mailings of a list"""
   mailings:[Mailing]
   """The creation time"""
@@ -390,11 +392,11 @@ input ListInput {
   """A short descriptive name"""
   name: String
   """A unique handle"""
-  handle: String
+  handle: Handle
   """A title"""
   title: String
   """The Orga Guid of the owner"""
-  ownerUserGuid: ID
+  ownerUserGuid: OrgaUserGuid
 }
 input AppInput {
   """A short descriptive name"""
@@ -436,13 +438,13 @@ input MailingInput {
   """A short descriptive name"""
   name: String
   """The email subject"""
-  emailSubject: String
+  emailSubject: EmailAddress
   """The email preview"""
   emailPreview: String
   """The email body"""
   emailBody: String
   """The email author orga guid"""
-  emailAuthorGuid: ID
+  emailAuthorGuid: OrgaUserGuid
   """The email language"""
   emailLanguage: String
   """The status"""
@@ -477,44 +479,46 @@ type RateLimit {
 
 type Query {
   """A organization"""
-  organization(orgaGuid: ID!): Organization
+  organization(orgaGuid: OrgaGuid!): Organization
   """A realm"""
-  realm(realmGuid: ID!): Realm
+  realm(realmGuid: RealmGuid!): Realm
+  """A user"""
+  user(userGuid: UserGuid!): Realm
   """A list"""
-  list(listGuid: ID!): List
+  list(listGuid: ListGuid!): List
   """A app"""
-  app(appGuid: ID!): App
+  app(appGuid: AppGuid!): App
   """A mailing"""
-  mailing(guid: ID!): Mailing
+  mailing(mailingGuid: MailingGuid!): Mailing
   """A mailing job"""
-  mailingJob(guid: ID!): MailingJob
+  mailingJob(mailingJob: MailingJobGuid!): MailingJob
   """The logged realm user"""
-  me: UserI
-  """The logged realm user as organization user"""
-  orgaMe: OrganizationUser
+  authMe: User
+  """The logged realm user as an organizational user"""
+  authMeOrga: OrganizationUser
   """An organizational user"""
-  orgaUser(orgaUserGuid:ID!): OrganizationUser
+  orgaUser(orgaUserGuid:OrgaUserGuid!): OrganizationUser
 }
 
 type Mutation {
   """Update a mailing"""
-  mailingUpdate(guid: ID!, props:MailingInput!): Mailing
+  mailingUpdate(mailingGuid: MailingGuid!, props:MailingInput!): Mailing
   """Create a mailing"""
-  mailingCreate(listGuid: ID!, props:MailingInput): Mailing
+  mailingCreate(listGuid: ListGuid!, props:MailingInput): Mailing
   """Send a test email for the mailing"""
-  mailingSendTestEmail(guid: ID!, props: MailingInputTestEmail!): Boolean
+  mailingSendTestEmail(MailingGuid: MailingGuid!, props: MailingInputTestEmail!): Boolean
   """Execute the mailing"""
-  mailingExecute(guid: ID!): MailingJob
+  mailingExecute(mailingGuid: MailingGuid!): MailingJob
   """Deliver a mailing item"""
-  mailingItemDeliver(guid: ID!): MailingItem
+  mailingItemDeliver(mailingItemGuid: MailingItemGuid!): MailingItem
   """Create a list"""
-  listCreate(appGuid: ID!, props:ListInput): List
+  listCreate(appGuid: AppGuid!, props:ListInput): List
   """Update a list"""
-  listUpdate(listGuid: ID!, props:ListInput): List
+  listUpdate(listGuid: ListGuid!, props:ListInput): List
   """Update a user"""
-  userUpdate(userGuid:ID!, props:UserInput): User
+  userUpdate(userGuid:UserGuid!, props:UserInput): User
   """Update a app"""
   appUpdate(appGuid: AppGuid!, props:AppInput): App
   """Create a app"""
-  appCreate(realmGuid: ID!, props:AppInput): App
+  appCreate(realmGuid: RealmGuid!, props:AppInput): App
 }

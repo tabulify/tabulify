@@ -45,6 +45,7 @@ public class JacksonListGuidDeserializer extends JacksonJsonStringDeserializer<L
     listGuid.setRealmId(realmId);
     long localId = ids[1];
     listGuid.setLocalId(localId);
+    listGuid.setHash(value);
     return listGuid;
   }
 }

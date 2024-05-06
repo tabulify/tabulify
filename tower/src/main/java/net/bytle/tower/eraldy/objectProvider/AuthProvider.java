@@ -18,10 +18,10 @@ import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.organization.model.Organization;
+import net.bytle.tower.eraldy.module.realm.inputs.UserInputProps;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
-import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
-import net.bytle.tower.eraldy.module.user.model.UserGuid;
+import net.bytle.tower.eraldy.module.realm.model.UserGuid;
 import net.bytle.type.EmailAddress;
 import net.bytle.type.EmailCastException;
 import net.bytle.type.Handle;
@@ -553,10 +553,10 @@ public class AuthProvider {
          * The public hash should not be null
          * as this is the identifier that we store in the auth user
          */
-        String publicHash = requestedOrgGuid.getPublicHash();
+        String publicHash = requestedOrgGuid.getHashOrNull();
         if (publicHash == null) {
           publicHash = this.apiApp.getJackson().getSerializer(OrgaGuid.class).serialize(requestedOrgGuid);
-          requestedOrgGuid.setPublicHash(publicHash);
+          requestedOrgGuid.setHash(publicHash);
         }
         /**
          * Auth verification

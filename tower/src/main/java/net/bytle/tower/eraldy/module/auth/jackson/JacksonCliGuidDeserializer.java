@@ -45,6 +45,7 @@ public class JacksonCliGuidDeserializer extends JacksonJsonStringDeserializer<Cl
     cliGuid.setRealmId(realmId);
     long localId = userGuidObject[1];
     cliGuid.setLocalId(localId);
+    cliGuid.setHash(value);
     return cliGuid;
   }
 }

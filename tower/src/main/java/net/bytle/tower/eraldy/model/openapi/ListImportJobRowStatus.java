@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.api.implementer.flow.ListImportUserStatus;
 import net.bytle.tower.eraldy.module.list.model.ListImportListUserStatus;
 import net.bytle.tower.eraldy.module.list.model.ListUserGuid;
-import net.bytle.tower.eraldy.module.user.model.UserGuid;
+import net.bytle.tower.eraldy.module.realm.model.UserGuid;
 
 import java.util.Objects;
 

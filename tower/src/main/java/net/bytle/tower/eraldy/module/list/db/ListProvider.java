@@ -597,20 +597,10 @@ public class ListProvider {
   }
 
 
-  public Future<ListObject> insertListRequestHandler(String appGuid, ListInputProps listInputProps, RoutingContext routingContext) {
+  public Future<ListObject> insertListRequestHandler(AppGuid appGuid, ListInputProps listInputProps, RoutingContext routingContext) {
 
-    AppGuid appGuidObject;
-    try {
-      appGuidObject = this.apiApp.getAppProvider().getGuidFromHash(appGuid);
-    } catch (CastException e) {
-      return Future.failedFuture(TowerFailureException.builder()
-        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-        .setMessage("The app guid (" + appGuid + ") is not valid")
-        .buildWithContextFailing(routingContext)
-      );
-    }
     return this.apiApp.getRealmProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(appGuidObject.getRealmId(), AuthUserScope.LIST_CREATION, routingContext)
+      .getRealmByLocalIdWithAuthorizationCheck(appGuid.getRealmId(), AuthUserScope.LIST_CREATION, routingContext)
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(TowerFailureException.builder()
@@ -619,7 +609,7 @@ public class ListProvider {
             .buildWithContextFailing(routingContext)
           );
         }
-        return this.apiApp.getAppProvider().getAppByGuid(appGuidObject, realm);
+        return this.apiApp.getAppProvider().getAppByGuid(appGuid, realm);
       })
       .compose(app -> {
         if (app == null) {
@@ -633,20 +623,11 @@ public class ListProvider {
       });
   }
 
-  public Future<ListObject> updateListRequestHandler(String listGuid, ListInputProps listInputProps, RoutingContext routingContext) {
+  public Future<ListObject> updateListRequestHandler(ListGuid listGuid, ListInputProps listInputProps, RoutingContext routingContext) {
 
-    ListGuid listGuidObject;
-    try {
-      listGuidObject = this.apiApp.getHttpServer().getServer().getJacksonMapperManager().getDeserializer(ListGuid.class).deserialize(listGuid);
-    } catch (CastException e) {
-      return Future.failedFuture(TowerFailureException.builder()
-        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-        .setMessage("The list guid (" + listGuid + ") is not valid")
-        .build()
-      );
-    }
+
     ListProvider listProvider = this.apiApp.getListProvider();
-    return this.apiApp.getRealmProvider().getRealmByLocalIdWithAuthorizationCheck(listGuidObject.getRealmId(), AuthUserScope.LIST_PATCH, routingContext)
+    return this.apiApp.getRealmProvider().getRealmByLocalIdWithAuthorizationCheck(listGuid.getRealmId(), AuthUserScope.LIST_PATCH, routingContext)
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(TowerFailureException.builder()
@@ -654,7 +635,7 @@ public class ListProvider {
             .build()
           );
         }
-        return this.getListById(listGuidObject.getLocalId(), realm);
+        return this.getListById(listGuid.getLocalId(), realm);
       })
       .compose(list -> {
         if (list == null) {
@@ -670,20 +651,11 @@ public class ListProvider {
       });
   }
 
-  public Future<ListObject> getByGuidRequestHandler(String listGuid, RoutingContext routingContext, AuthUserScope authUserScope) {
-    ListGuid listGuidObject;
-    try {
-      listGuidObject = this.apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listGuid);
-    } catch (CastException e) {
-      return Future.failedFuture(TowerFailureException.builder()
-        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-        .setMessage("The list guid (" + listGuid + ") is not valid")
-        .build()
-      );
-    }
+  public Future<ListObject> getByGuidRequestHandler(ListGuid listGuid, RoutingContext routingContext, AuthUserScope authUserScope) {
+
     return this.apiApp.getRealmProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(listGuidObject.getRealmId(), authUserScope, routingContext)
-      .compose(realm -> this.getListById(listGuidObject.getLocalId(), realm));
+      .getRealmByLocalIdWithAuthorizationCheck(listGuid.getRealmId(), authUserScope, routingContext)
+      .compose(realm -> this.getListById(listGuid.getLocalId(), realm));
 
   }
 

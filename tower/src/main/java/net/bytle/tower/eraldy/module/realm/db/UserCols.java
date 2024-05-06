@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.module.user.db;
+package net.bytle.tower.eraldy.module.realm.db;
 
 import net.bytle.vertx.db.JdbcColumn;
 

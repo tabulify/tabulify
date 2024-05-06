@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.module.mailing.db.mailingitem;
 
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
@@ -13,11 +12,9 @@ import net.bytle.tower.eraldy.module.mailing.inputs.MailingItemInputProps;
 import net.bytle.tower.eraldy.module.mailing.jackson.JacksonMailingItemGuidDeserializer;
 import net.bytle.tower.eraldy.module.mailing.jackson.JacksonMailingItemGuidSerializer;
 import net.bytle.tower.eraldy.module.mailing.model.*;
+import net.bytle.tower.eraldy.module.realm.db.UserCols;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
-import net.bytle.tower.eraldy.module.user.db.UserCols;
 import net.bytle.type.EmailAddress;
-import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.*;
 import net.bytle.vertx.guid.GuidDeSer;
 
@@ -205,19 +202,9 @@ public class MailingItemProvider {
 
   }
 
-  public Future<MailingItem> getByGuidRequestHandler(String guidHash, RoutingContext routingContext, AuthUserScope authUserScope) {
+  public Future<MailingItem> getByGuidRequestHandler(MailingItemGuid guid, RoutingContext routingContext, AuthUserScope authUserScope) {
 
-    MailingItemGuid guid;
-    try {
-      guid = this.apiApp.getJackson().getDeserializer(MailingItemGuid.class).deserialize(guidHash);
-    } catch (CastException e) {
-      return Future.failedFuture(TowerFailureException.builder()
-        .setType(TowerFailureTypeEnum.BAD_STRUCTURE_422)
-        .setMessage("The guid (" + guidHash + ") is not a valid mailing item guid")
-        .setCauseException(e)
-        .build()
-      );
-    }
+
 
     return this.apiApp.getRealmProvider()
       .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmId(), authUserScope, routingContext)

@@ -1,8 +1,8 @@
-package net.bytle.tower.eraldy.module.user.inputs;
+package net.bytle.tower.eraldy.module.realm.inputs;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.module.user.model.UserStatus;
+import net.bytle.tower.eraldy.module.realm.model.UserStatus;
 import net.bytle.type.EmailAddress;
 
 import java.net.URI;

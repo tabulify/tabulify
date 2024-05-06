@@ -5,7 +5,6 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
-import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
@@ -170,20 +169,14 @@ public class MailingJobProvider {
     return mailingJob;
   }
 
-  public Future<MailingJob> getMailingJobRequestHandler(String mailingJobGuid, RoutingContext routingContext) {
-    MailingJobGuid guid;
-    try {
-      guid = this.apiApp.getJackson().getDeserializer(MailingJobGuid.class).deserialize(mailingJobGuid);
-    } catch (CastException e) {
-      return Future.failedFuture(new IllegalArgumentException("The mailing job guid (" + mailingJobGuid + ") is not valid", e));
-    }
+  public Future<MailingJob> getMailingJobRequestHandler(MailingJobGuid mailingJobGuid, RoutingContext routingContext) {
 
     return this.apiApp.getAuthProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmId(), AuthUserScope.MAILING_JOBS_GET, routingContext)
+      .getRealmByLocalIdWithAuthorizationCheck(mailingJobGuid.getRealmId(), AuthUserScope.MAILING_JOBS_GET, routingContext)
       .compose(realm -> {
 
         final String sql = "select * from " + this.mailingJobTable.getFullName() + " where " + MailingJobCols.ID.getColumnName() + " = $1 and " + MailingJobCols.REALM_ID.getColumnName() + " = $2";
-        Tuple tuple = Tuple.of(guid.getRealmId(), realm.getGuid().getLocalId());
+        Tuple tuple = Tuple.of(mailingJobGuid.getRealmId(), realm.getGuid().getLocalId());
         return this.jdbcPool
           .preparedQuery(sql)
           .execute(tuple)

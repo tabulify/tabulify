@@ -7,7 +7,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Tuple;
-import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
@@ -110,17 +109,11 @@ public class MailingProvider {
   }
 
 
-  public Future<Mailing> insertMailingRequestHandler(String listGuid, MailingInputProps mailingInputProps, RoutingContext routingContext) {
+  public Future<Mailing> insertMailingRequestHandler(ListGuid listGuid, MailingInputProps mailingInputProps, RoutingContext routingContext) {
 
-    ListGuid listGuidObject;
-    try {
-      listGuidObject = this.apiApp.getJackson().getDeserializer(ListGuid.class).deserialize(listGuid);
-    } catch (CastException e) {
-      return Future.failedFuture(new IllegalArgumentException("The list guid (" + listGuid + ") is not valid", e));
-    }
 
     return this.apiApp.getRealmProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(listGuidObject.getRealmId(), AuthUserScope.MAILING_CREATE, routingContext)
+      .getRealmByLocalIdWithAuthorizationCheck(listGuid.getRealmId(), AuthUserScope.MAILING_CREATE, routingContext)
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(TowerFailureException.builder()
@@ -130,7 +123,7 @@ public class MailingProvider {
           );
         }
         return this.apiApp.getListProvider()
-          .getListById(listGuidObject.getLocalId(), realm);
+          .getListById(listGuid.getLocalId(), realm);
       })
       .compose(list -> {
 
@@ -446,7 +439,7 @@ public class MailingProvider {
    *
    * @return the same mailing
    */
-  public Future<Mailing> updateMailingRequestHandler(String mailingGuidIdentifier, MailingInputProps mailingInputProps, RoutingContext routingContext) {
+  public Future<Mailing> updateMailingRequestHandler(MailingGuid mailingGuidIdentifier, MailingInputProps mailingInputProps, RoutingContext routingContext) {
 
 
     return this.getByGuidRequestHandler(mailingGuidIdentifier, routingContext, AuthUserScope.MAILING_UPDATE)
@@ -469,18 +462,10 @@ public class MailingProvider {
    * A request handler that returns a mailing by guid or null if not found
    * (used in the rest and graphql api)
    */
-  public Future<Mailing> getByGuidRequestHandler(String mailingGuidIdentifier, RoutingContext routingContext, AuthUserScope scope) {
-
-
-    MailingGuid guid;
-    try {
-      guid = this.apiApp.getJackson().getDeserializer(MailingGuid.class).deserialize(mailingGuidIdentifier);
-    } catch (CastException e) {
-      return Future.failedFuture(new IllegalArgumentException("The mailing guid (" + mailingGuidIdentifier + ") is not valid", e));
-    }
+  public Future<Mailing> getByGuidRequestHandler(MailingGuid mailingGuidIdentifier, RoutingContext routingContext, AuthUserScope scope) {
 
     return this.apiApp.getRealmProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(guid.getRealmId(), scope, routingContext)
+      .getRealmByLocalIdWithAuthorizationCheck(mailingGuidIdentifier.getRealmId(), scope, routingContext)
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(TowerFailureException.builder()
@@ -489,7 +474,7 @@ public class MailingProvider {
             .build()
           );
         }
-        return this.getByLocalId(guid.getLocalId(), realm);
+        return this.getByLocalId(mailingGuidIdentifier.getLocalId(), realm);
       });
   }
 

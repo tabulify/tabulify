@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.module.user.db;
+package net.bytle.tower.eraldy.module.realm.db;
 
 
 import io.vertx.core.Future;
@@ -13,13 +13,13 @@ import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.realm.inputs.UserInputProps;
+import net.bytle.tower.eraldy.module.realm.jackson.JacksonUserGuidDeserializer;
+import net.bytle.tower.eraldy.module.realm.jackson.JacksonUserGuidSerializer;
+import net.bytle.tower.eraldy.module.realm.jackson.JacksonUserStatusDeserializer;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
-import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
-import net.bytle.tower.eraldy.module.user.jackson.JacksonUserGuidDeserializer;
-import net.bytle.tower.eraldy.module.user.jackson.JacksonUserGuidSerializer;
-import net.bytle.tower.eraldy.module.user.jackson.JacksonUserStatusDeserializer;
-import net.bytle.tower.eraldy.module.user.model.UserGuid;
-import net.bytle.tower.eraldy.module.user.model.UserStatus;
+import net.bytle.tower.eraldy.module.realm.model.UserGuid;
+import net.bytle.tower.eraldy.module.realm.model.UserStatus;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.util.PasswordHashManager;
 import net.bytle.type.EmailAddress;

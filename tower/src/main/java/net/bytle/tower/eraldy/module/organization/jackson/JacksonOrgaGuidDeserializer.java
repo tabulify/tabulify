@@ -38,7 +38,7 @@ public class JacksonOrgaGuidDeserializer extends JacksonJsonStringDeserializer<O
     }
 
     OrgaGuid orgaGuidObject = new OrgaGuid(ids[0]);
-    orgaGuidObject.setPublicHash(value);
+    orgaGuidObject.setHash(value);
     return orgaGuidObject;
 
   }

@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.module.user.graphql;
+package net.bytle.tower.eraldy.module.mailing.graphql;
 
 import graphql.GraphQLContext;
 import graphql.execution.CoercedVariables;
@@ -8,18 +8,18 @@ import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import net.bytle.exception.CastException;
-import net.bytle.tower.eraldy.module.user.model.UserGuid;
+import net.bytle.tower.eraldy.module.mailing.model.MailingJobGuid;
 import net.bytle.vertx.jackson.JacksonMapperManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
-public class GraphQLUserGuidCoercing implements Coercing<UserGuid, String> {
+public class GraphQLMailingJobGuidCoercing implements Coercing<MailingJobGuid, String> {
 
   private final JacksonMapperManager jacksonMapperManager;
 
-  public GraphQLUserGuidCoercing(JacksonMapperManager jacksonMapperManager) {
+  public GraphQLMailingJobGuidCoercing(JacksonMapperManager jacksonMapperManager) {
     this.jacksonMapperManager = jacksonMapperManager;
   }
 
@@ -29,26 +29,26 @@ public class GraphQLUserGuidCoercing implements Coercing<UserGuid, String> {
   @Override
   public @Nullable String serialize(@NotNull Object dataFetcherResult, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingSerializeException {
 
-    return this.jacksonMapperManager.getSerializer(UserGuid.class).serialize((UserGuid) dataFetcherResult);
+    return this.jacksonMapperManager.getSerializer(MailingJobGuid.class).serialize((MailingJobGuid) dataFetcherResult);
 
   }
 
   @Override
-  public @Nullable UserGuid parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
+  public @Nullable MailingJobGuid parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
     return this.parseInput(input);
   }
 
   @Override
-  public @Nullable UserGuid parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
+  public @Nullable MailingJobGuid parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
     return this.parseInput(input);
   }
 
-  private UserGuid parseInput(Object input) {
+  private MailingJobGuid parseInput(Object input) throws CoercingParseLiteralException{
     String string = input.toString();
     try {
-      return this.jacksonMapperManager.getDeserializer(UserGuid.class).deserialize(string);
+      return this.jacksonMapperManager.getDeserializer(MailingJobGuid.class).deserialize(string);
     } catch (CastException e) {
-      throw new CoercingParseLiteralException("The input value (" + string + ") is not a valid user guid. Error: "+e.getMessage(), e);
+      throw new CoercingParseLiteralException("The value (" + string + ") is not a valid Mailing job guid", e);
     }
   }
 

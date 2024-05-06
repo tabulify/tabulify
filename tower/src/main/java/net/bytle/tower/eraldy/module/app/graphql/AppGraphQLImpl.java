@@ -6,15 +6,14 @@ import graphql.schema.idl.RuntimeWiring;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.exception.CastException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
-import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.app.inputs.AppInputProps;
 import net.bytle.tower.eraldy.module.app.model.App;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.common.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
@@ -24,12 +23,12 @@ import java.util.Map;
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 
-public class AppGraphQL {
+public class AppGraphQLImpl {
 
 
   private final EraldyApiApp app;
 
-  public AppGraphQL(EraldyGraphQL eraldyGraphQL, RuntimeWiring.Builder wiringBuilder) {
+  public AppGraphQLImpl(EraldyGraphQL eraldyGraphQL, RuntimeWiring.Builder wiringBuilder) {
 
     this.app = eraldyGraphQL.getApp();
 
@@ -81,23 +80,13 @@ public class AppGraphQL {
   }
 
   private Future<App> createApp(DataFetchingEnvironment dataFetchingEnvironment) {
-    String realmGuid = dataFetchingEnvironment.getArgument("realmGuid");
+    RealmGuid realmGuid = dataFetchingEnvironment.getArgument("realmGuid");
     Map<String, Object> appPropsMap = dataFetchingEnvironment.getArgument("props");
     // Type safe (if null, the value was not passed)
     AppInputProps appInputProps = new JsonObject(appPropsMap).mapTo(AppInputProps.class);
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
-    RealmGuid realmGuidObject;
-    try {
-      realmGuidObject = this.app.getJackson().getDeserializer(RealmGuid.class).deserialize(realmGuid);
-    } catch (CastException e) {
-      return Future.failedFuture(TowerFailureException.builder()
-        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-        .setMessage("The realm guid (" + realmGuid + ") is not valid")
-        .build()
-      );
-    }
     return this.app.getRealmProvider()
-      .getRealmFromGuid(realmGuidObject)
+      .getRealmFromGuid(realmGuid)
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(
@@ -154,20 +143,9 @@ public class AppGraphQL {
   }
 
   private Future<App> getApp(DataFetchingEnvironment dataFetchingEnvironment) {
-    String appGuidString = dataFetchingEnvironment.getArgument("appGuid");
+    AppGuid appGuid = dataFetchingEnvironment.getArgument("appGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
-    AppGuid appGuid;
-    try {
-      appGuid = this.app.getJackson().getDeserializer(AppGuid.class).deserialize(appGuidString);
-    } catch (CastException e) {
-      return Future.failedFuture(
-        TowerFailureException
-          .builder()
-          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-          .setMessage("The app guid (" + appGuidString + ") is not valid")
-          .buildWithContextFailing(routingContext)
-      );
-    }
+
 
     return this.app.
       getRealmProvider().getRealmFromLocalId(appGuid.getRealmId())
@@ -176,7 +154,7 @@ public class AppGraphQL {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-              .setMessage("The realm of the app (" + appGuidString + ") was not found")
+              .setMessage("The realm of the app (" + appGuid.getHashOrNull() + ") was not found")
               .build()
           );
         }
@@ -187,7 +165,7 @@ public class AppGraphQL {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-              .setMessage("The realm was found but not the app (" + appGuidString + ")")
+              .setMessage("The realm was found but not the app (" + appGuid.getHashOrNull() + ")")
               .build()
           );
         }

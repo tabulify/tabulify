@@ -47,6 +47,7 @@ public class JacksonListUserGuidDeserializer extends JacksonJsonStringDeserializ
     listGuid.setListId(listId);
     long userId = userGuidObject[2];
     listGuid.setUserId(userId);
+    listGuid.setHash(value);
     return listGuid;
   }
 }

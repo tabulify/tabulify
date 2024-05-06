@@ -9,24 +9,26 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.CastException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
-import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.app.model.App;
+import net.bytle.tower.eraldy.module.common.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.organization.model.Organization;
+import net.bytle.tower.eraldy.module.realm.inputs.UserInputProps;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
-import net.bytle.tower.eraldy.module.user.graphql.GraphQLUserGuidCoercing;
-import net.bytle.tower.eraldy.module.user.inputs.UserInputProps;
-import net.bytle.tower.eraldy.module.user.model.UserGuid;
+import net.bytle.tower.eraldy.module.realm.model.UserGuid;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.JdbcPagination;
+import org.dataloader.BatchLoaderEnvironment;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 
@@ -205,5 +207,15 @@ public class RealmGraphQLImpl {
     return this.app.getRealmProvider().buildOrganizationAtRequestTimeEventually(realm);
   }
 
+
+  /**
+   * Minimal example that returns empty users
+   */
+  @SuppressWarnings("unused")
+  public CompletionStage<List<User>> batchLoadUsers(List<String> strings, BatchLoaderEnvironment batchLoaderEnvironment) {
+    // A list of ids and returns a CompletionStage for a list of users
+    Future<List<User>> future = Future.succeededFuture(new ArrayList<>());
+    return future.toCompletionStage();
+  }
 
 }

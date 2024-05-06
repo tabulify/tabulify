@@ -8,12 +8,14 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
-import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.app.model.App;
+import net.bytle.tower.eraldy.module.app.model.AppGuid;
+import net.bytle.tower.eraldy.module.common.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.inputs.ListInputProps;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.mailing.model.Mailing;
 
 import java.util.List;
@@ -118,14 +120,14 @@ public class ListGraphQLImpl {
   }
 
   private Future<ListObject> getList(DataFetchingEnvironment dataFetchingEnvironment) {
-    String listGuid = dataFetchingEnvironment.getArgument("listGuid");
+    ListGuid listGuid = dataFetchingEnvironment.getArgument("listGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
     return listProvider.getByGuidRequestHandler(listGuid, routingContext, AuthUserScope.LIST_GET);
   }
 
 
   public Future<ListObject> createList(DataFetchingEnvironment dataFetchingEnvironment) {
-    String appGuid = dataFetchingEnvironment.getArgument("appGuid");
+    AppGuid appGuid = dataFetchingEnvironment.getArgument("appGuid");
     Map<String, Object> listPropsMap = dataFetchingEnvironment.getArgument("props");
     // Type safe (if null, the value was not passed)
     ListInputProps mailingInputProps = new JsonObject(listPropsMap).mapTo(ListInputProps.class);
@@ -134,7 +136,7 @@ public class ListGraphQLImpl {
   }
 
   public Future<ListObject> updateList(DataFetchingEnvironment dataFetchingEnvironment) {
-    String listGuid = dataFetchingEnvironment.getArgument("listGuid");
+    ListGuid listGuid = dataFetchingEnvironment.getArgument("listGuid");
     Map<String, Object> listPropsMap = dataFetchingEnvironment.getArgument("props");
     // Type safe (if null, the value was not passed)
     ListInputProps listInputProps = new JsonObject(listPropsMap).mapTo(ListInputProps.class);

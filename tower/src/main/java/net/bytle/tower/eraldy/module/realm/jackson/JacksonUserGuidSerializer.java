@@ -1,8 +1,8 @@
-package net.bytle.tower.eraldy.module.user.jackson;
+package net.bytle.tower.eraldy.module.realm.jackson;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import net.bytle.tower.eraldy.module.user.model.UserGuid;
+import net.bytle.tower.eraldy.module.realm.model.UserGuid;
 import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonJsonStringSerializer;
 

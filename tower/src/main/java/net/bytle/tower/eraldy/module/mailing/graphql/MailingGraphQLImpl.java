@@ -8,17 +8,16 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
-import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.common.graphql.EraldyGraphQL;
+import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.mailing.db.mailing.MailingProvider;
 import net.bytle.tower.eraldy.module.mailing.db.mailingjob.MailingJobProvider;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputProps;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputTestEmail;
-import net.bytle.tower.eraldy.module.mailing.model.Mailing;
-import net.bytle.tower.eraldy.module.mailing.model.MailingItem;
-import net.bytle.tower.eraldy.module.mailing.model.MailingJob;
+import net.bytle.tower.eraldy.module.mailing.model.*;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.db.JdbcPagination;
@@ -50,6 +49,20 @@ public class MailingGraphQLImpl {
       .coercing(new GraphQLMailingGuidCoercing(app.getJackson()))
       .build();
     typeWiringBuilder.scalar(MAILING_GUID);
+    final GraphQLScalarType MAILING_JOB_GUID = GraphQLScalarType
+      .newScalar()
+      .name("MailingJobGuid")
+      .description("The Guid for a mailing job")
+      .coercing(new GraphQLMailingJobGuidCoercing(app.getJackson()))
+      .build();
+    typeWiringBuilder.scalar(MAILING_JOB_GUID);
+    final GraphQLScalarType MAILING_ITEM_GUID = GraphQLScalarType
+      .newScalar()
+      .name("MailingItemGuid")
+      .description("The Guid for a mailing item")
+      .coercing(new GraphQLMailingItemGuidCoercing(app.getJackson()))
+      .build();
+    typeWiringBuilder.scalar(MAILING_ITEM_GUID);
 
     /**
      * Map type to function
@@ -118,7 +131,7 @@ public class MailingGraphQLImpl {
   }
 
   private Future<MailingItem> deliverItem(DataFetchingEnvironment dataFetchingEnvironment) {
-    String guid = dataFetchingEnvironment.getArgument("guid");
+    MailingItemGuid guid = dataFetchingEnvironment.getArgument("mailingItemGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
     return this.app.getMailingItemProvider().getByGuidRequestHandler(guid, routingContext, AuthUserScope.MAILING_DELIVER_ITEM)
       .compose(mailingItem -> {
@@ -142,9 +155,9 @@ public class MailingGraphQLImpl {
   }
 
   private Future<MailingJob> getMailingJob(DataFetchingEnvironment dataFetchingEnvironment) {
-    String mailingGuid = dataFetchingEnvironment.getArgument("guid");
+    MailingJobGuid mailingJobGuid = dataFetchingEnvironment.getArgument("mailingJobGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
-    return mailingJobProvider.getMailingJobRequestHandler(mailingGuid, routingContext);
+    return mailingJobProvider.getMailingJobRequestHandler(mailingJobGuid, routingContext);
   }
 
   private Future<List<MailingJob>> getMailingJobs(DataFetchingEnvironment dataFetchingEnvironment) {
@@ -154,7 +167,7 @@ public class MailingGraphQLImpl {
   }
 
   private Future<MailingJob> executeMailing(DataFetchingEnvironment dataFetchingEnvironment) {
-    String guid = dataFetchingEnvironment.getArgument("guid");
+    MailingGuid guid = dataFetchingEnvironment.getArgument("mailingGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
     return mailingProvider.getByGuidRequestHandler(guid, routingContext, AuthUserScope.MAILING_EXECUTE)
       .compose(mailing -> this.app.getMailingFlow()
@@ -165,7 +178,7 @@ public class MailingGraphQLImpl {
    * Send a test mail
    */
   private Future<Boolean> sendTestEmail(DataFetchingEnvironment dataFetchingEnvironment) {
-    String guid = dataFetchingEnvironment.getArgument("guid");
+    MailingGuid guid = dataFetchingEnvironment.getArgument("mailingGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
     Map<String, Object> mappingPropsMap = dataFetchingEnvironment.getArgument("props");
     // Type safe (if null, the value was not passed)
@@ -194,13 +207,13 @@ public class MailingGraphQLImpl {
 
 
   public Future<Mailing> getMailing(DataFetchingEnvironment dataFetchingEnvironment) {
-    String guid = dataFetchingEnvironment.getArgument("guid");
+    MailingGuid guid = dataFetchingEnvironment.getArgument("mailingGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
     return mailingProvider.getByGuidRequestHandler(guid, routingContext, AuthUserScope.MAILING_GET);
   }
 
   public Future<Mailing> updateMailing(DataFetchingEnvironment dataFetchingEnvironment) {
-    String guid = dataFetchingEnvironment.getArgument("guid");
+    MailingGuid guid = dataFetchingEnvironment.getArgument("mailingGuid");
     Map<String, Object> mappingPropsMap = dataFetchingEnvironment.getArgument("props");
     // Type safe (if null, the value was not passed)
     MailingInputProps mailingInputProps = new JsonObject(mappingPropsMap).mapTo(MailingInputProps.class);
@@ -209,7 +222,7 @@ public class MailingGraphQLImpl {
   }
 
   public Future<Mailing> createMailing(DataFetchingEnvironment dataFetchingEnvironment) {
-    String listGuid = dataFetchingEnvironment.getArgument("listGuid");
+    ListGuid listGuid = dataFetchingEnvironment.getArgument("listGuid");
     Map<String, Object> mappingPropsMap = dataFetchingEnvironment.getArgument("props");
     // Type safe (if null, the value was not passed)
     MailingInputProps mailingInputProps = new JsonObject(mappingPropsMap).mapTo(MailingInputProps.class);

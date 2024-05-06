@@ -6,21 +6,16 @@ import graphql.schema.idl.RuntimeWiring;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.CastException;
-import net.bytle.exception.NotFoundException;
-import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
-import net.bytle.tower.eraldy.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
-import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.module.common.graphql.EraldyGraphQL;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
-import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
-import net.bytle.vertx.auth.AuthUser;
 
 import java.util.List;
 
@@ -57,11 +52,6 @@ public class OrgaGraphQLImpl {
     wiringBuilder.type(
       newTypeWiring("Query")
         .dataFetcher("organization", this::getOrganization)
-        .build()
-    );
-    wiringBuilder.type(
-      newTypeWiring("Query")
-        .dataFetcher("orgaMe", this::getOrganizationUserMe)
         .build()
     );
     wiringBuilder.type(
@@ -105,25 +95,16 @@ public class OrgaGraphQLImpl {
   }
 
   private Future<OrgaUser> getOrganizationUser(DataFetchingEnvironment dataFetchingEnvironment) {
-    String orgaUserGuid = dataFetchingEnvironment.getArgument("orgaUserGuid");
+    OrgaUserGuid orgaUserGuid = dataFetchingEnvironment.getArgument("orgaUserGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
-    OrgaUserGuid orgaUserGuidObject;
-    try {
-      orgaUserGuidObject = this.apiApp.getJackson().getDeserializer(OrgaUserGuid.class).deserialize(orgaUserGuid);
-    } catch (CastException e) {
-      return Future.failedFuture(TowerFailureException.builder()
-        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-        .setMessage("The organizational user guid (" + orgaUserGuid + ") is not valid")
-        .build()
-      );
-    }
-    OrgaGuid orgaGuid = orgaUserGuidObject.toOrgaGuid();
+
+    OrgaGuid orgaGuid = orgaUserGuid.toOrgaGuid();
     return this.apiApp
       .getAuthProvider()
       .checkOrgAuthorization(routingContext, orgaGuid, AuthUserScope.ORGA_USER_GET)
       .compose(v -> this.apiApp
         .getOrganizationUserProvider()
-        .getOrganizationUserByGuid(orgaUserGuidObject)
+        .getOrganizationUserByGuid(orgaUserGuid)
         .compose(orgUser -> {
           if (orgUser == null) {
             return Future.failedFuture(
@@ -145,51 +126,7 @@ public class OrgaGraphQLImpl {
       .compose(Future::succeededFuture);
   }
 
-  private Future<OrgaUser> getOrganizationUserMe(DataFetchingEnvironment dataFetchingEnvironment) {
-    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
-    AuthUser signedInUser;
-    try {
-      signedInUser = this.apiApp.getAuthProvider().getSignedInAuthUser(routingContext);
-    } catch (NotFoundException e) {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
-          .buildWithContextFailing(routingContext)
-      );
-    }
-    User user = this.apiApp.getAuthProvider().toModelUser(signedInUser);
-    if (!(user instanceof OrgaUser)) {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
-          .setMessage("The authenticated user (" + signedInUser.getSubject() + "," + signedInUser.getSubjectEmail() + ") is not an organization user")
-          .buildWithContextFailing(routingContext)
-      );
-    }
-    if (
-      user.getGuid().getLocalId() == AuthProvider.ROOT_LOCAL_ID
-      && user.getGuid().getRealmId()== EraldyModel.REALM_LOCAL_ID
-    ) {
-      // Root is not in the database
-      return Future.succeededFuture((OrgaUser) user);
-    }
 
-    OrgaUser orgaUser = (OrgaUser) user;
-    return this.apiApp
-      .getOrganizationUserProvider()
-      .getOrganizationUserByGuid(orgaUser.getGuid())
-      .compose(orgUser -> {
-        if (orgUser == null) {
-          return Future.failedFuture(
-            TowerFailureException.builder()
-              .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
-              .setMessage("The authenticated user (" + signedInUser.getSubject() + "," + signedInUser.getSubjectEmail() + ") is not a member of an organization")
-              .buildWithContextFailing(routingContext)
-          );
-        }
-        return Future.succeededFuture(orgUser);
-      });
-  }
 
   private Future<List<OrgaUser>> getOrganizationUsers(DataFetchingEnvironment dataFetchingEnvironment) {
     Organization organization = dataFetchingEnvironment.getSource();

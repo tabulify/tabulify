@@ -1,7 +1,6 @@
 package net.bytle.tower.eraldy.module.realm.db;
 
 import net.bytle.tower.eraldy.module.organization.db.OrganizationProvider;
-import net.bytle.tower.eraldy.module.user.db.UserProvider;
 import net.bytle.vertx.db.JdbcColumn;
 import net.bytle.vertx.db.JdbcSchemaManager;
 

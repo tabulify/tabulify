@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.graphql;
+package net.bytle.tower.eraldy.module.common.graphql;
 
 import graphql.GraphQL;
 import graphql.TypeResolutionEnvironment;
@@ -19,11 +19,11 @@ import io.vertx.ext.web.handler.graphql.GraphQLHandler;
 import io.vertx.ext.web.handler.graphql.instrumentation.JsonObjectAdapter;
 import io.vertx.ext.web.handler.graphql.instrumentation.VertxFutureAdapter;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.graphql.implementer.UserGraphQLImpl;
 import net.bytle.tower.eraldy.model.manual.Status;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.eraldy.module.app.graphql.AppGraphQL;
+import net.bytle.tower.eraldy.module.app.graphql.AppGraphQLImpl;
+import net.bytle.tower.eraldy.module.auth.graphql.AuthGraphQLImpl;
 import net.bytle.tower.eraldy.module.list.graphql.ListGraphQLImpl;
 import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
 import net.bytle.tower.eraldy.module.organization.graphql.OrgaGraphQLImpl;
@@ -69,17 +69,15 @@ public class EraldyGraphQL implements GraphQLDef {
     addCommonTypeAsScalar(wiringBuilder);
 
 
-
-
     /**
      * Our implementations
      */
     new MailingGraphQLImpl(this, wiringBuilder);
     new ListGraphQLImpl(this, wiringBuilder);
-    new RealmGraphQLImpl(this,wiringBuilder);
+    RealmGraphQLImpl realmGraphQL = new RealmGraphQLImpl(this, wiringBuilder);
     new OrgaGraphQLImpl(this,wiringBuilder);
-    new AppGraphQL(this, wiringBuilder);
-    UserGraphQLImpl userImpl = new UserGraphQLImpl(this);
+    new AppGraphQLImpl(this, wiringBuilder);
+    new AuthGraphQLImpl(this, wiringBuilder);
 
     /**
      * Wiring final object
@@ -136,7 +134,7 @@ public class EraldyGraphQL implements GraphQLDef {
          * userLoader.load(guid);
          * The data loader function `usersBatchLoader` is then called at the end with all guids.
          */
-        DataLoader<String, User> userDataLoader = DataLoaderFactory.newDataLoader(userImpl::batchLoadUsers);
+        DataLoader<String, User> userDataLoader = DataLoaderFactory.newDataLoader(realmGraphQL::batchLoadUsers);
         DataLoaderRegistry userDataLoaderRegistry = new DataLoaderRegistry().register("user", userDataLoader);
         builderWithContext.builder().dataLoaderRegistry(userDataLoaderRegistry);
       })

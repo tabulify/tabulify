@@ -45,6 +45,7 @@ public class JacksonAppGuidDeserializer extends JacksonJsonStringDeserializer<Ap
     appGuid.setRealmId(realmId);
     long localId = userGuidObject[1];
     appGuid.setLocalId(localId);
+    appGuid.setHash(value);
     return appGuid;
   }
 }

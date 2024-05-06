@@ -1,6 +1,6 @@
 package net.bytle.tower.eraldy.module.list.model;
 
-import net.bytle.tower.eraldy.module.user.model.UserGuid;
+import net.bytle.tower.eraldy.module.realm.model.UserGuid;
 import net.bytle.vertx.guid.Guid;
 
 public class ListUserGuid extends Guid {
