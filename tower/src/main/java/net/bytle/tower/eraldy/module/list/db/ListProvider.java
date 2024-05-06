@@ -600,7 +600,7 @@ public class ListProvider {
   public Future<ListObject> insertListRequestHandler(AppGuid appGuid, ListInputProps listInputProps, RoutingContext routingContext) {
 
     return this.apiApp.getRealmProvider()
-      .getRealmByLocalIdWithAuthorizationCheck(appGuid.getRealmId(), AuthUserScope.LIST_CREATION, routingContext)
+      .getRealmByLocalIdWithAuthorizationCheck(appGuid.getRealmId(), AuthUserScope.LIST_CREATE, routingContext)
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(TowerFailureException.builder()
@@ -627,7 +627,7 @@ public class ListProvider {
 
 
     ListProvider listProvider = this.apiApp.getListProvider();
-    return this.apiApp.getRealmProvider().getRealmByLocalIdWithAuthorizationCheck(listGuid.getRealmId(), AuthUserScope.LIST_PATCH, routingContext)
+    return this.apiApp.getRealmProvider().getRealmByLocalIdWithAuthorizationCheck(listGuid.getRealmId(), AuthUserScope.LIST_UPDATE, routingContext)
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(TowerFailureException.builder()

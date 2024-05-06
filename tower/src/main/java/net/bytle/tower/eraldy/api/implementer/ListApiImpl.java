@@ -336,7 +336,7 @@ public class ListApiImpl implements ListApi {
     long realmId = guid.getRealmId();
     return this.apiApp
       .getAuthProvider()
-      .checkRealmAuthorization(routingContext, realmId, AuthUserScope.LIST_GET_USERS)
+      .checkRealmAuthorization(routingContext, realmId, AuthUserScope.LIST_USERS_GET)
       .compose(realmIdRes -> apiApp.getListUserProvider()
         .getListUsers(finalListIdentifier, finalPageId, finalPageSize, finalSearchTerm)
         .compose(subscriptionShorts -> Future.succeededFuture(new ApiResponse<>(subscriptionShorts))));

@@ -133,7 +133,7 @@ public class MailingGraphQLImpl {
   private Future<MailingItem> deliverItem(DataFetchingEnvironment dataFetchingEnvironment) {
     MailingItemGuid guid = dataFetchingEnvironment.getArgument("mailingItemGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
-    return this.app.getMailingItemProvider().getByGuidRequestHandler(guid, routingContext, AuthUserScope.MAILING_DELIVER_ITEM)
+    return this.app.getMailingItemProvider().getByGuidRequestHandler(guid, routingContext, AuthUserScope.MAILING_ITEM_DELIVER)
       .compose(mailingItem -> {
         if (mailingItem == null) {
           return Future.failedFuture(TowerFailureException.builder()
@@ -151,7 +151,10 @@ public class MailingGraphQLImpl {
     Map<String, Object> paginationPropsMap = dataFetchingEnvironment.getArgument("pagination");
     // Type safe (if null, the value was not passed)
     JdbcPagination pagination = new JsonObject(paginationPropsMap).mapTo(JdbcPagination.class);
-    return this.app.getMailingItemProvider().getItemsForGraphQL(mailing, pagination);
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return this.app.getAuthProvider()
+      .checkRealmAuthorization(routingContext, mailing.getRealm(), AuthUserScope.MAILING_ITEMS_GET)
+      .compose(v->this.app.getMailingItemProvider().getItemsForGraphQL(mailing, pagination));
   }
 
   private Future<MailingJob> getMailingJob(DataFetchingEnvironment dataFetchingEnvironment) {
@@ -203,9 +206,6 @@ public class MailingGraphQLImpl {
   }
 
 
-
-
-
   public Future<Mailing> getMailing(DataFetchingEnvironment dataFetchingEnvironment) {
     MailingGuid guid = dataFetchingEnvironment.getArgument("mailingGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
@@ -235,7 +235,10 @@ public class MailingGraphQLImpl {
    */
   public Future<OrgaUser> getMailingEmailAuthor(DataFetchingEnvironment dataFetchingEnvironment) {
     Mailing mailing = dataFetchingEnvironment.getSource();
-    return this.mailingProvider.buildEmailAuthorAtRequestTimeEventually(mailing);
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return this.app.getAuthProvider()
+      .checkRealmAuthorization(routingContext, mailing.getEmailRecipientList().getApp().getRealm(), AuthUserScope.MAILING_AUTHOR_GET)
+      .compose(v->this.mailingProvider.buildEmailAuthorAtRequestTimeEventually(mailing));
   }
 
   /**
@@ -243,7 +246,10 @@ public class MailingGraphQLImpl {
    */
   public Future<ListObject> getMailingRecipientList(DataFetchingEnvironment dataFetchingEnvironment) {
     Mailing mailing = dataFetchingEnvironment.getSource();
-    return this.mailingProvider.getListAtRequestTime(mailing);
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return this.app.getAuthProvider()
+      .checkRealmAuthorization(routingContext, mailing.getEmailRecipientList().getApp().getRealm(), AuthUserScope.MAILING_LIST_GET)
+      .compose(v->this.mailingProvider.getListAtRequestTime(mailing));
   }
 
 

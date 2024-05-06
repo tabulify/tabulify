@@ -127,10 +127,15 @@ public class AppGraphQLImpl {
 
   private Future<OrgaUser> getAppOwner(DataFetchingEnvironment dataFetchingEnvironment) {
     App app = dataFetchingEnvironment.getSource();
-    if (app.getOwnerUser().getEmailAddress() != null) {
-      return Future.succeededFuture(app.getOwnerUser());
-    }
-    return this.app.getOrganizationUserProvider().getOrganizationUserByGuid(app.getOwnerUser().getGuid());
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return this.app.getAuthProvider()
+      .checkRealmAuthorization(routingContext, app.getRealm(), AuthUserScope.APP_OWNER_GET)
+      .compose(v -> {
+        if (app.getOwnerUser().getEmailAddress() != null) {
+          return Future.succeededFuture(app.getOwnerUser());
+        }
+        return this.app.getOrganizationUserProvider().getOrganizationUserByGuid(app.getOwnerUser().getGuid());
+      });
   }
 
   private Future<List<ListObject>> getAppLists(DataFetchingEnvironment dataFetchingEnvironment) {

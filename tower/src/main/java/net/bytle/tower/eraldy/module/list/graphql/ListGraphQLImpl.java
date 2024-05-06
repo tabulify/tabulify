@@ -105,7 +105,7 @@ public class ListGraphQLImpl {
     ListObject listObject = dataFetchingEnvironment.getSource();
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
     return this.app.getAuthProvider()
-      .checkRealmAuthorization(routingContext, listObject.getApp().getRealm(), AuthUserScope.MAILINGS_LIST_GET)
+      .checkRealmAuthorization(routingContext, listObject.getApp().getRealm(), AuthUserScope.LIST_MAILINGS_GET)
       .compose(v -> this.app.getMailingProvider().getMailingsByListWithLocalId(listObject));
   }
 
@@ -114,13 +114,17 @@ public class ListGraphQLImpl {
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
     return this.app
       .getAuthProvider()
-      .checkRealmAuthorization(routingContext, list.getApp().getRealm(), AuthUserScope.APP_GET)
+      .checkRealmAuthorization(routingContext, list.getApp().getRealm(), AuthUserScope.LIST_APP_GET)
       .compose(v -> listProvider.buildAppAtRequestTimeEventually(list));
   }
 
   private Future<OrgaUser> getListOwnerUser(DataFetchingEnvironment dataFetchingEnvironment) {
     ListObject list = dataFetchingEnvironment.getSource();
-    return listProvider.buildListOwnerUserAtRequestTimeEventually(list);
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return this.app
+      .getAuthProvider()
+      .checkRealmAuthorization(routingContext, list.getApp().getRealm(), AuthUserScope.LIST_OWNER_GET)
+      .compose(v -> listProvider.buildListOwnerUserAtRequestTimeEventually(list));
   }
 
   private Future<ListObject> getList(DataFetchingEnvironment dataFetchingEnvironment) {

@@ -122,19 +122,22 @@ public class RealmGraphQLImpl {
               .build()
           );
         }
-        return this.app.getUserProvider()
-          .getUserByGuid(userGuid, realm)
-          .compose(user -> {
-            if (user == null) {
-              return Future.failedFuture(
-                TowerFailureException.builder()
-                  .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-                  .setMessage("The user (" + userGuid + ") was not found")
-                  .build()
-              );
-            }
-            return Future.succeededFuture(user);
-          });
+        return this.app.getAuthProvider()
+          .checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_USER_GET)
+          .compose(v ->
+            this.app.getUserProvider()
+              .getUserByGuid(userGuid, realm)
+              .compose(user -> {
+                if (user == null) {
+                  return Future.failedFuture(
+                    TowerFailureException.builder()
+                      .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+                      .setMessage("The user (" + userGuid + ") was not found")
+                      .build()
+                  );
+                }
+                return Future.succeededFuture(user);
+              }));
       });
   }
 
@@ -158,8 +161,14 @@ public class RealmGraphQLImpl {
     if (realm.getOwnerUser().getEmailAddress() != null) {
       return Future.succeededFuture(realm.getOwnerUser());
     }
-    return this.app.getOrganizationUserProvider()
-      .getOrganizationUserByGuid(realm.getOwnerUser().getGuid());
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return this.app.getAuthProvider()
+      .checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_OWNER_GET)
+      .compose(v -> this
+        .app
+        .getOrganizationUserProvider()
+        .getOrganizationUserByGuid(realm.getOwnerUser().getGuid())
+      );
   }
 
   private Future<User> updateRealmUser(DataFetchingEnvironment dataFetchingEnvironment) {
@@ -201,7 +210,9 @@ public class RealmGraphQLImpl {
               .build()
           );
         }
-        return Future.succeededFuture(realm);
+        return this.app.getAuthProvider()
+          .checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_GET)
+          .compose(Future::succeededFuture);
       });
   }
 
@@ -210,12 +221,18 @@ public class RealmGraphQLImpl {
     Map<String, Object> paginationPropsMap = dataFetchingEnvironment.getArgument("pagination");
     // Type safe (if null, the value was not passed)
     JdbcPagination pagination = new JsonObject(paginationPropsMap).mapTo(JdbcPagination.class);
-    return this.app.getUserProvider().getUsers(realm, pagination);
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return this.app.getAuthProvider()
+      .checkRealmAuthorization(routingContext, realm, AuthUserScope.REALM_USER_GET)
+      .compose(v -> this.app.getUserProvider().getUsers(realm, pagination));
   }
 
   private Future<Organization> getRealmOrganization(DataFetchingEnvironment dataFetchingEnvironment) {
     Realm realm = dataFetchingEnvironment.getSource();
-    return this.app.getRealmProvider().buildOrganizationAtRequestTimeEventually(realm);
+    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
+    return this.app.getAuthProvider()
+      .checkRealmAuthorization(routingContext, realm, AuthUserScope.ORGA_GET)
+      .compose(v -> this.app.getRealmProvider().buildOrganizationAtRequestTimeEventually(realm));
   }
 
 
