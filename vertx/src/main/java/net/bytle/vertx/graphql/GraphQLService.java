@@ -9,6 +9,7 @@ import net.bytle.exception.NullValueException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.vertx.TowerService;
 import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
+import net.bytle.vertx.auth.ApiKeyHandlerRelaxed;
 
 /**
  * A service to implement a GraphQL endpoint
@@ -48,8 +49,8 @@ public class GraphQLService extends TowerService {
       } catch (NullValueException e) {
         throw new RuntimeException("ApiKeyAuthProvider is not enabled but required by GraphiQL to authenticate");
       }
-//      APIKeyHandler apiKeyHandler = APIKeyHandler.create(authProvider).header(authProvider.getHeader());
-//      graphQLRoute.handler(apiKeyHandler);
+      ApiKeyHandlerRelaxed apiKeyHandler = new ApiKeyHandlerRelaxed(authProvider).header(authProvider.getHeader());
+      graphQLRoute.handler(apiKeyHandler);
 
       /**
        * GraphiQL is disabled by default
