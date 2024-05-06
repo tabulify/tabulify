@@ -174,7 +174,7 @@ public class EraldyGraphQL implements GraphQLDef {
       .newScalar()
       .name("TimeZone")
       .description("A timezone")
-      .coercing(new GraphQLHandleCoercing())
+      .coercing(new GraphQLTimeZoneCoercing())
       .build();
     wiringBuilder.scalar(TIMEZONE);
     final GraphQLScalarType COLOR = GraphQLScalarType
