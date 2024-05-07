@@ -22,14 +22,12 @@ comment on table realm is 'The list of realms';
 comment on column realm.REALM_HANDLE is 'A short unique name identifier used as named identifier';
 comment on column realm.REALM_OWNER_ORGA_ID is 'The organization that owns this realm';
 comment on column realm.REALM_OWNER_USER_ID is 'The owner, ie contact identifier (the user id of the eraldy realm, used in reporting for support when people have problem with a connection for instance)';
--- realm orga unique key to be able to create foreign key
-alter table realm
-  add unique (realm_id, REALM_OWNER_ORGA_ID);
+
 
 -- note that user is a reserved word (we could have quote it but we added a prefix)
 create table IF NOT EXISTS realm_user
 (
-  USER_REALM_ID          BIGINT                      NOT NULL references "realm" (REALM_ID),
+  USER_REALM_ID          BIGINT                      NOT NULL,
   USER_ID                BIGINT                      NOT NULL,
   USER_EMAIL_ADDRESS     varchar(255)                NOT NULL,
   USER_PASSWORD          varchar(255),
@@ -47,10 +45,13 @@ create table IF NOT EXISTS realm_user
   USER_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   USER_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
 ) PARTITION BY LIST (USER_REALM_ID);
+-- pk and uk must be non deferrable to add create deferrable foreign key
 alter table realm_user
   add primary key (USER_REALM_ID, USER_ID);
 alter table realm_user
   add unique (USER_REALM_ID, USER_EMAIL_ADDRESS);
+ALTER TABLE realm_user
+  ADD FOREIGN KEY (USER_REALM_ID) REFERENCES realm (REALM_ID) DEFERRABLE INITIALLY IMMEDIATE;
 comment on table realm_user is 'A list of users (a user is an identity in a realm)';
 comment on column realm_user.USER_EMAIL_ADDRESS is 'the user email address';
 comment on column realm_user.USER_STATUS_CODE is 'The status code of the user';
@@ -77,10 +78,11 @@ create table realm_orga
   ORGA_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
 comment on table realm_orga is 'An organization represents one or more users in a realm';
+-- pk and uk must be non deferrable to add create deferrable foreign key
 alter table realm_orga
-  add primary key (ORGA_REALM_ID, ORGA_ID) DEFERRABLE INITIALLY IMMEDIATE;
+  add primary key (ORGA_REALM_ID, ORGA_ID);
 alter table realm_orga
-  add unique (ORGA_REALM_ID, ORGA_HANDLE) DEFERRABLE INITIALLY IMMEDIATE;
+  add unique (ORGA_REALM_ID, ORGA_HANDLE);
 ALTER TABLE realm_orga
   ADD FOREIGN KEY (ORGA_OWNER_REALM_ID, ORGA_OWNER_USER_ID) REFERENCES realm_user DEFERRABLE INITIALLY IMMEDIATE;
 
@@ -93,10 +95,13 @@ create table realm_orga_user
   ORGA_USER_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   ORGA_USER_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
 );
+-- pk and uk must be non deferrable to add create deferrable foreign key
 alter table realm_orga_user
-  add primary key (ORGA_USER_REALM_ID, ORGA_USER_ORGA_ID, ORGA_USER_USER_ID) DEFERRABLE INITIALLY IMMEDIATE;
+  add primary key (ORGA_USER_REALM_ID, ORGA_USER_ORGA_ID, ORGA_USER_USER_ID);
 ALTER TABLE realm_orga_user
-  ADD FOREIGN KEY (ORGA_USER_REALM_ID, ORGA_USER_USER_ID) REFERENCES realm_user DEFERRABLE INITIALLY IMMEDIATE;
+  ADD FOREIGN KEY (ORGA_USER_REALM_ID, ORGA_USER_ORGA_ID) REFERENCES realm_orga (ORGA_REALM_ID, ORGA_ID) DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE realm_orga_user
+  ADD FOREIGN KEY (ORGA_USER_REALM_ID, ORGA_USER_USER_ID) REFERENCES realm_user (USER_REALM_ID, USER_ID) DEFERRABLE INITIALLY IMMEDIATE;
 comment on table realm_orga_user is 'The users of an organization';
 comment on column realm_orga_user.ORGA_USER_USER_ID is 'The user id of the realm.';
 comment on column realm_orga_user.ORGA_USER_REALM_ID is 'The realm';
@@ -151,7 +156,7 @@ alter table realm_app
 alter table realm_app
   add foreign key (APP_OWNER_REALM_ID, APP_OWNER_ORGA_ID) REFERENCES realm_orga (ORGA_REALM_ID, ORGA_ID) DEFERRABLE INITIALLY IMMEDIATE;
 alter table realm_app
-  add foreign key (APP_OWNER_REALM_ID, APP_OWNER_ORGA_ID) REFERENCES realm (realm_id, REALM_OWNER_ORGA_ID) DEFERRABLE INITIALLY IMMEDIATE;
+  add foreign key (APP_REALM_ID) REFERENCES realm (realm_id) DEFERRABLE INITIALLY IMMEDIATE;
 comment on table realm_app is 'A list of apps for the realm';
 comment on column realm_app.APP_ID is 'The app id';
 comment on column realm_app.APP_TOS is 'The URI of the term of services';
@@ -186,6 +191,8 @@ alter table realm_list
   add foreign key (LIST_OWNER_REALM_ID, LIST_OWNER_ORGA_ID, LIST_OWNER_USER_ID) REFERENCES realm_orga_user (ORGA_USER_REALM_ID, ORGA_USER_ORGA_ID, ORGA_USER_USER_ID);
 alter table realm_list
   add foreign key (LIST_OWNER_REALM_ID, LIST_OWNER_ORGA_ID) REFERENCES realm_orga (ORGA_REALM_ID, ORGA_ID);
+alter table realm_list
+  add foreign key (LIST_REALM_ID) REFERENCES realm (realm_id) DEFERRABLE INITIALLY IMMEDIATE;
 
 comment on table realm_list is 'A list of users';
 comment on column realm_list.LIST_HANDLE is 'An unique handle that permits to update the list without knowing the id';
@@ -239,9 +246,10 @@ create table IF NOT EXISTS realm_mailing
   MAILING_EMAIL_SUBJECT           VARCHAR(150)                NULL,
   MAILING_EMAIL_PREVIEW           TEXT                        NULL,
   MAILING_EMAIL_BODY              TEXT                        NULL,
+  MAILING_EMAIL_LANGUAGE          varchar(2), -- not char otherwise we get 2 empty spaces and not null
   MAILING_EMAIL_AUTHOR_USER_ID    BIGINT                      NOT NULL,
-  mailing_email_language          varchar(2), -- not char otherwise we get 2 empty spaces and not null
-  MAILING_ORGA_ID                 BIGINT                      NOT NULL,
+  MAILING_EMAIL_AUTHOR_ORGA_ID    BIGINT                      NOT NULL,
+  MAILING_EMAIL_AUTHOR_REALM_ID   BIGINT                      NOT NULL CHECK (MAILING_EMAIL_AUTHOR_REALM_ID = 1),
   MAILING_STATUS                  INT                         NOT NULL,
   MAILING_JOB_LAST_EXECUTION_TIME TIMESTAMP WITHOUT TIME ZONE NULL,
   MAILING_JOB_NEXT_EXECUTION_TIME TIMESTAMP WITHOUT TIME ZONE NULL,
@@ -257,9 +265,12 @@ alter table realm_mailing
 alter table realm_mailing
   add foreign key (MAILING_REALM_ID, MAILING_EMAIL_RCPT_LIST_ID) REFERENCES realm_list (LIST_REALM_ID, LIST_ID);
 alter table realm_mailing
-  add foreign key (MAILING_ORGA_ID, MAILING_EMAIL_AUTHOR_USER_ID) REFERENCES realm_orga_user (orga_user_orga_id, orga_user_user_id);
+  add foreign key (MAILING_EMAIL_AUTHOR_REALM_ID, MAILING_EMAIL_AUTHOR_ORGA_ID) REFERENCES realm_orga (ORGA_REALM_ID, orga_id);
 alter table realm_mailing
-  add foreign key (MAILING_REALM_ID, MAILING_ORGA_ID) REFERENCES realm (realm_id, REALM_OWNER_ORGA_ID);
+  add foreign key (MAILING_EMAIL_AUTHOR_REALM_ID, MAILING_EMAIL_AUTHOR_ORGA_ID,
+                   MAILING_EMAIL_AUTHOR_USER_ID) REFERENCES realm_orga_user (ORGA_USER_REALM_ID, orga_user_orga_id, orga_user_user_id);
+alter table realm_mailing
+  add foreign key (MAILING_REALM_ID) REFERENCES realm (realm_id);
 comment on table realm_mailing is 'A mailing (the sending of an email to users)';
 comment on column realm_mailing.MAILING_REALM_ID is 'The realm id of the mailing';
 comment on column realm_mailing.MAILING_ID is 'The unique sequential id on the realm';
@@ -268,7 +279,7 @@ comment on column realm_mailing.MAILING_EMAIL_RCPT_LIST_ID is 'The list of recip
 comment on column realm_mailing.MAILING_EMAIL_SUBJECT is 'The email subject';
 comment on column realm_mailing.MAILING_EMAIL_PREVIEW is 'The email preview';
 comment on column realm_mailing.MAILING_EMAIL_BODY is 'The email body';
-comment on column realm_mailing.MAILING_EMAIL_AUTHOR_USER_ID is 'The author of the email (An organizational user, the id of the user in the realm 1)';
+comment on column realm_mailing.MAILING_EMAIL_AUTHOR_USER_ID is 'The author of the email (An eraldy organizational user)';
 comment on column realm_mailing.MAILING_STATUS is 'The status (draft, send, scheduled, ...)';
 comment on column realm_mailing.MAILING_JOB_LAST_EXECUTION_TIME is 'The last time a job was executed for this mailing';
 comment on column realm_mailing.MAILING_JOB_NEXT_EXECUTION_TIME is 'The next time that a job will execute for this mailing';
