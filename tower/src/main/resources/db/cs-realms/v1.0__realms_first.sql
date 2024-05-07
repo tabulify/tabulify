@@ -64,27 +64,24 @@ comment on column realm_user.USER_WEBSITE is 'An URL';
 comment on column realm_user.USER_AVATAR is 'An URL to a avatar';
 comment on column realm_user.USER_LAST_ACTIVE_TIME is 'The last active time (Updated at login time at least)';
 
--- Create orga
-CREATE SEQUENCE seq_organization START WITH 2;
+-- An orga is a customer that represents one or more user in a realm (Tax, Team, ...)
 create table realm_orga
 (
   ORGA_REALM_ID          BIGINT                      NOT NULL,
   ORGA_ID                BIGINT                      NOT NULL,
+  ORGA_OWNER_USER_ID     BIGINT                      NOT NULL UNIQUE,
   ORGA_NAME              varchar(255)                NOT NULL,
   ORGA_HANDLE            varchar(32)                 NULL UNIQUE,
-  ORGA_OWNER_USER_ID     BIGINT                      NOT NULL UNIQUE,
-  ORGA_OWNER_REALM_ID    BIGINT                      NOT NULL CHECK (ORGA_OWNER_REALM_ID = 1),
   ORGA_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   ORGA_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
-comment on table realm_orga is 'An organization represents one or more users in a realm';
+comment on table realm_orga is 'An organization is a customer that represents one or more users in a realm';
 -- pk and uk must be non deferrable to add create deferrable foreign key
 alter table realm_orga
   add primary key (ORGA_REALM_ID, ORGA_ID);
 alter table realm_orga
   add unique (ORGA_REALM_ID, ORGA_HANDLE);
-ALTER TABLE realm_orga
-  ADD FOREIGN KEY (ORGA_OWNER_REALM_ID, ORGA_OWNER_USER_ID) REFERENCES realm_user DEFERRABLE INITIALLY IMMEDIATE;
+comment on column realm_orga.ORGA_OWNER_USER_ID is 'The owner of the orga (The user should be a orga user)';
 
 create table realm_orga_user
 (
@@ -105,6 +102,10 @@ ALTER TABLE realm_orga_user
 comment on table realm_orga_user is 'The users of an organization';
 comment on column realm_orga_user.ORGA_USER_USER_ID is 'The user id of the realm.';
 comment on column realm_orga_user.ORGA_USER_REALM_ID is 'The realm';
+
+-- the orga owner
+ALTER TABLE realm_orga
+  ADD FOREIGN KEY (ORGA_REALM_ID, ORGA_ID, ORGA_OWNER_USER_ID) REFERENCES realm_orga_user (ORGA_USER_REALM_ID, ORGA_USER_ORGA_ID, ORGA_USER_USER_ID) DEFERRABLE INITIALLY IMMEDIATE;
 
 -- Realm Ownership reference
 -- Defer for initial insertion of the first eraldy org, realm and app

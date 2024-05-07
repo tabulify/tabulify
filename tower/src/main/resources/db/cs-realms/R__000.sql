@@ -298,35 +298,7 @@ BEGIN
 END;
 $$;
 
--- Check that the user is in the realm 1 (ie our realm)
-CREATE OR REPLACE FUNCTION realm_check_orga_user_id()
-  RETURNS TRIGGER AS $$
-DECLARE
-  old_search_path TEXT;
-BEGIN
-  select current_setting('search_path') into old_search_path;
-  PERFORM set_config('search_path', TG_TABLE_SCHEMA, true);
 
-  IF EXISTS (
-    SELECT 1
-    FROM realm_user
-    WHERE realm_user.user_id = NEW.ORGA_USER_USER_ID
-      and realm_user.user_realm_id = 1
-  ) THEN
-    PERFORM set_config('search_path', old_search_path, true);
-    RETURN NEW;
-  ELSE
-    PERFORM set_config('search_path', old_search_path, true);
-    RAISE EXCEPTION 'The user id (%) is not a realm user', NEW.realm_orga_user_id;
-  END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE TRIGGER realm_check_orga_user_id
-  BEFORE INSERT OR UPDATE ON organization_user
-  FOR EACH ROW
-EXECUTE FUNCTION realm_check_orga_user_id();
 
 -- create table list partition on realm insertion
 CREATE OR REPLACE TRIGGER create_realm_partitions_on_insert
