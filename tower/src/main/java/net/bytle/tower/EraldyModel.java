@@ -95,6 +95,8 @@ public class EraldyModel {
      * as they are initialized later, we create the guids manually then
      */
     this.eraldyRealm = Realm.createFromAnyId(ORGA_LOCAL_ID);
+    this.eraldyRealm.setName("Eraldy");
+    this.eraldyRealm.setHandle(Handle.ofFailSafe("eraldy"));
 
     /**
      * Orga Owner
