@@ -44,7 +44,7 @@ public class OrganizationUserProvider {
   protected static final Logger LOGGER = LoggerFactory.getLogger(OrganizationUserProvider.class);
 
   private final EraldyApiApp apiApp;
-  private static final String TABLE_NAME = "organization_user";
+  private static final String TABLE_NAME = "realm_orga_user";
   private final Pool jdbcPool;
   private final JdbcTable organizationUserTable;
 

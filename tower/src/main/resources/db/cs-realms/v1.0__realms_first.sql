@@ -1,41 +1,4 @@
--- Create orga
-CREATE SEQUENCE seq_organization START WITH 2;
-create table organization
-(
-  ORGA_ID                BIGINT                      NOT NULL DEFAULT NEXTVAL('seq_organization') PRIMARY KEY,
-  ORGA_NAME              varchar(255)                NOT NULL,
-  ORGA_HANDLE            varchar(32)                 NULL UNIQUE,
-  ORGA_OWNER_USER_ID     BIGINT                      NOT NULL UNIQUE,
-  ORGA_OWNER_REALM_ID    BIGINT                      NOT NULL CHECK (ORGA_OWNER_REALM_ID = 1),
-  ORGA_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  ORGA_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
-);
-comment on table organization is 'An organization is the owner of realms, app and list and has users. They are the customer of our interact app.';
-
--- no sequence, we insert them
-create table organization_role
-(
-  ORGA_ROLE_ID                INTEGER                     NOT NULL PRIMARY KEY,
-  ORGA_ROLE_NAME              varchar(255)                NOT NULL,
-  ORGA_ROLE_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  ORGA_ROLE_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
-);
-comment on table organization_role is 'The role for the users (owner, billing, ..). It gives permission to user on the organization level.';
-
-create table organization_user
-(
-  ORGA_USER_ORGA_ID           BIGINT                      NOT NULL REFERENCES organization (ORGA_ID),
-  ORGA_USER_USER_ID           BIGINT                      NOT NULL,
-  ORGA_USER_REALM_ID          BIGINT                      NOT NULL DEFAULT 1 CHECK (ORGA_USER_REALM_ID = 1),
-  ORGA_USER_ROLE_ID           BIGINT                      NOT NULL REFERENCES organization_role (orga_role_id),
-  ORGA_USER_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  ORGA_USER_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL,
-  CONSTRAINT organization_user_pk PRIMARY KEY (ORGA_USER_ORGA_ID, ORGA_USER_USER_ID)
-);
-comment on table organization_user is 'The users of the organization';
-comment on column organization_user.ORGA_USER_USER_ID is 'The user id of the realm id 1. It''s not a sequence';
-comment on column organization_user.ORGA_USER_REALM_ID is 'The Eraldy realm (1). The column is here to a foreign key to the realm user table';
-
+-- realm 1 is reserved, it's the eraldy realm
 -- seq_realm and not realm_sequence because there is already a realm_sequence table
 CREATE SEQUENCE seq_realm START WITH 2;
 
@@ -45,8 +8,9 @@ create table IF NOT EXISTS realm
   REALM_ID                BIGINT                      NOT NULL DEFAULT NEXTVAL('seq_realm') PRIMARY KEY,
   REALM_NAME              varchar(50)                 NOT NULL,
   REALM_HANDLE            varchar(32)                 NULL UNIQUE,
-  REALM_ORGA_ID           BIGINT                      NOT NULL REFERENCES organization,
+  REALM_OWNER_ORGA_ID     BIGINT                      NOT NULL,
   REALM_OWNER_USER_ID     BIGINT                      NOT NULL,
+  REALM_OWNER_REALM_ID    BIGINT                      NOT NULL CHECK (REALM_OWNER_REALM_ID = 1),
   REALM_USER_COUNT        BIGINT                      NOT NULL DEFAULT 0,
   REALM_USER_IN_COUNT     BIGINT                      NOT NULL DEFAULT 0,
   REALM_APP_COUNT         INTEGER                     NOT NULL DEFAULT 0,
@@ -56,16 +20,13 @@ create table IF NOT EXISTS realm
 );
 comment on table realm is 'The list of realms';
 comment on column realm.REALM_HANDLE is 'A short unique name identifier used as named identifier';
-comment on column realm.REALM_ORGA_ID is 'The organization that owns this realm';
+comment on column realm.REALM_OWNER_ORGA_ID is 'The organization that owns this realm';
 comment on column realm.REALM_OWNER_USER_ID is 'The owner, ie contact identifier (the user id of the eraldy realm, used in reporting for support when people have problem with a connection for instance)';
--- Defer for initial insertion of the first eraldy org, realm and app
-ALTER TABLE realm
-  ADD FOREIGN KEY (REALM_ORGA_ID, REALM_OWNER_USER_ID) REFERENCES organization_user DEFERRABLE INITIALLY IMMEDIATE;
 -- realm orga unique key to be able to create foreign key
 alter table realm
-  add unique (realm_id, realm_orga_id);
+  add unique (realm_id, REALM_OWNER_ORGA_ID);
 
--- note that because user is a reserved word, we use quote it
+-- note that user is a reserved word (we could have quote it but we added a prefix)
 create table IF NOT EXISTS realm_user
 (
   USER_REALM_ID          BIGINT                      NOT NULL references "realm" (REALM_ID),
@@ -102,12 +63,50 @@ comment on column realm_user.USER_WEBSITE is 'An URL';
 comment on column realm_user.USER_AVATAR is 'An URL to a avatar';
 comment on column realm_user.USER_LAST_ACTIVE_TIME is 'The last active time (Updated at login time at least)';
 
--- Constraint
--- Defer for initial insertion of the first eraldy org, realm and app
-ALTER TABLE organization
+-- Create orga
+CREATE SEQUENCE seq_organization START WITH 2;
+create table realm_orga
+(
+  ORGA_REALM_ID          BIGINT                      NOT NULL,
+  ORGA_ID                BIGINT                      NOT NULL,
+  ORGA_NAME              varchar(255)                NOT NULL,
+  ORGA_HANDLE            varchar(32)                 NULL UNIQUE,
+  ORGA_OWNER_USER_ID     BIGINT                      NOT NULL UNIQUE,
+  ORGA_OWNER_REALM_ID    BIGINT                      NOT NULL CHECK (ORGA_OWNER_REALM_ID = 1),
+  ORGA_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  ORGA_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NOT NULL
+);
+comment on table realm_orga is 'An organization represents one or more users in a realm';
+alter table realm_orga
+  add primary key (ORGA_REALM_ID, ORGA_ID) DEFERRABLE INITIALLY IMMEDIATE;
+alter table realm_orga
+  add unique (ORGA_REALM_ID, ORGA_HANDLE) DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE realm_orga
   ADD FOREIGN KEY (ORGA_OWNER_REALM_ID, ORGA_OWNER_USER_ID) REFERENCES realm_user DEFERRABLE INITIALLY IMMEDIATE;
-ALTER TABLE organization_user
+
+create table realm_orga_user
+(
+  ORGA_USER_REALM_ID          BIGINT                      NOT NULL,
+  ORGA_USER_ORGA_ID           BIGINT                      NOT NULL,
+  ORGA_USER_USER_ID           BIGINT                      NOT NULL,
+  ORGA_USER_ROLE_ID           BIGINT                      NOT NULL,
+  ORGA_USER_CREATION_TIME     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  ORGA_USER_MODIFICATION_TIME TIMESTAMP WITHOUT TIME ZONE NULL
+);
+alter table realm_orga_user
+  add primary key (ORGA_USER_REALM_ID, ORGA_USER_ORGA_ID, ORGA_USER_USER_ID) DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE realm_orga_user
   ADD FOREIGN KEY (ORGA_USER_REALM_ID, ORGA_USER_USER_ID) REFERENCES realm_user DEFERRABLE INITIALLY IMMEDIATE;
+comment on table realm_orga_user is 'The users of an organization';
+comment on column realm_orga_user.ORGA_USER_USER_ID is 'The user id of the realm.';
+comment on column realm_orga_user.ORGA_USER_REALM_ID is 'The realm';
+
+-- Realm Ownership reference
+-- Defer for initial insertion of the first eraldy org, realm and app
+ALTER TABLE realm
+  ADD FOREIGN KEY (REALM_OWNER_REALM_ID, REALM_OWNER_ORGA_ID, REALM_OWNER_USER_ID) REFERENCES realm_orga_user (ORGA_USER_REALM_ID, ORGA_USER_ORGA_ID, ORGA_USER_USER_ID) DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE realm
+  ADD FOREIGN KEY (REALM_OWNER_REALM_ID, REALM_OWNER_ORGA_ID) REFERENCES realm_orga (ORGA_REALM_ID, ORGA_ID) DEFERRABLE INITIALLY IMMEDIATE;
 
 CREATE TABLE realm_sequence
 (
@@ -128,7 +127,8 @@ create table IF NOT EXISTS realm_app
 (
   APP_REALM_ID          BIGINT                      NOT NULL references "realm" (REALM_ID),
   APP_ID                BIGINT                      NOT NULL,
-  APP_ORGA_ID           BIGINT                      NOT NULL,
+  APP_OWNER_REALM_ID    BIGINT                      NOT NULL CHECK (APP_OWNER_REALM_ID = 1),
+  APP_OWNER_ORGA_ID     BIGINT                      NOT NULL,
   APP_OWNER_USER_ID     BIGINT                      NOT NULL,
   APP_NAME              varchar(50)                 NOT NULL,
   APP_SLOGAN            varchar(255)                NULL,
@@ -147,21 +147,24 @@ alter table realm_app
   add unique (APP_REALM_ID, APP_HANDLE) DEFERRABLE INITIALLY IMMEDIATE;
 -- Defer for initial insertion of the first eraldy org, realm and app
 alter table realm_app
-  add foreign key (APP_ORGA_ID, APP_OWNER_USER_ID) REFERENCES organization_user (ORGA_USER_ORGA_ID, ORGA_USER_USER_ID) DEFERRABLE INITIALLY IMMEDIATE;
+  add foreign key (APP_OWNER_REALM_ID, APP_OWNER_ORGA_ID, APP_OWNER_USER_ID) REFERENCES realm_orga_user (ORGA_USER_REALM_ID, ORGA_USER_ORGA_ID, ORGA_USER_USER_ID) DEFERRABLE INITIALLY IMMEDIATE;
 alter table realm_app
-  add foreign key (app_realm_id, app_orga_id) REFERENCES realm (realm_id, realm_orga_id) DEFERRABLE INITIALLY IMMEDIATE;
+  add foreign key (APP_OWNER_REALM_ID, APP_OWNER_ORGA_ID) REFERENCES realm_orga (ORGA_REALM_ID, ORGA_ID) DEFERRABLE INITIALLY IMMEDIATE;
+alter table realm_app
+  add foreign key (APP_OWNER_REALM_ID, APP_OWNER_ORGA_ID) REFERENCES realm (realm_id, REALM_OWNER_ORGA_ID) DEFERRABLE INITIALLY IMMEDIATE;
 comment on table realm_app is 'A list of apps for the realm';
 comment on column realm_app.APP_ID is 'The app id';
 comment on column realm_app.APP_TOS is 'The URI of the term of services';
 comment on column realm_app.APP_OWNER_USER_ID is 'The organizational user used for brand communication by default (user in realm 1 that belongs to the organization of the realm)';
 
 
--- A list of list
+-- A list of user
 create table IF NOT EXISTS realm_list
 (
   LIST_REALM_ID          BIGINT                      NOT NULL references "realm" (REALM_ID),
   LIST_ID                BIGINT                      NOT NULL,
-  LIST_ORGA_ID           BIGINT                      NOT NULL,
+  LIST_OWNER_REALM_ID    BIGINT                      NOT NULL CHECK (LIST_OWNER_REALM_ID = 1),
+  LIST_OWNER_ORGA_ID     BIGINT                      NOT NULL,
   LIST_OWNER_USER_ID     BIGINT                      NOT NULL,
   LIST_APP_ID            BIGINT                      NOT NULL,
   LIST_NAME              varchar(50)                 NOT NULL,
@@ -176,18 +179,19 @@ create table IF NOT EXISTS realm_list
 alter table realm_list
   add primary key (LIST_REALM_ID, LIST_ID);
 alter table realm_list
-  add foreign key (LIST_ORGA_ID, LIST_OWNER_USER_ID) REFERENCES organization_user (ORGA_USER_ORGA_ID, ORGA_USER_USER_ID);
-alter table realm_list
   add foreign key (LIST_REALM_ID, LIST_APP_ID) REFERENCES realm_app (APP_REALM_ID, APP_ID);
 alter table realm_list
   add unique (LIST_REALM_ID, LIST_HANDLE);
 alter table realm_list
-  add foreign key (list_realm_id, list_orga_id) REFERENCES realm (realm_id, realm_orga_id);
+  add foreign key (LIST_OWNER_REALM_ID, LIST_OWNER_ORGA_ID, LIST_OWNER_USER_ID) REFERENCES realm_orga_user (ORGA_USER_REALM_ID, ORGA_USER_ORGA_ID, ORGA_USER_USER_ID);
+alter table realm_list
+  add foreign key (LIST_OWNER_REALM_ID, LIST_OWNER_ORGA_ID) REFERENCES realm_orga (ORGA_REALM_ID, ORGA_ID);
 
 comment on table realm_list is 'A list of users';
 comment on column realm_list.LIST_HANDLE is 'An unique handle that permits to update the list without knowing the id';
 comment on column realm_list.LIST_APP_ID is 'The app id (to get the default owner and the design info such as logo, color, ...)';
-comment on column realm_list.LIST_ORGA_ID is 'The organization id (added for foreign constraint on the user, the value should never change)';
+comment on column realm_list.LIST_OWNER_REALM_ID is 'The eraldy realm';
+comment on column realm_list.LIST_OWNER_ORGA_ID is 'The organization id (added for foreign constraint on the user, the value should never change)';
 comment on column realm_list.LIST_OWNER_USER_ID is 'The owner of the list (The organizational user used for brand communication by default (user in realm 1 that belongs to the organization of the realm)';
 comment on column realm_list.list_user_count is 'An analytics - the count of users on the list';
 comment on column realm_list.list_user_in_count is 'An analytics - the count of users that are still in on the list';
@@ -253,9 +257,9 @@ alter table realm_mailing
 alter table realm_mailing
   add foreign key (MAILING_REALM_ID, MAILING_EMAIL_RCPT_LIST_ID) REFERENCES realm_list (LIST_REALM_ID, LIST_ID);
 alter table realm_mailing
-  add foreign key (MAILING_ORGA_ID, MAILING_EMAIL_AUTHOR_USER_ID) REFERENCES organization_user (orga_user_orga_id, orga_user_user_id);
+  add foreign key (MAILING_ORGA_ID, MAILING_EMAIL_AUTHOR_USER_ID) REFERENCES realm_orga_user (orga_user_orga_id, orga_user_user_id);
 alter table realm_mailing
-  add foreign key (MAILING_REALM_ID, MAILING_ORGA_ID) REFERENCES realm (realm_id, realm_orga_id);
+  add foreign key (MAILING_REALM_ID, MAILING_ORGA_ID) REFERENCES realm (realm_id, REALM_OWNER_ORGA_ID);
 comment on table realm_mailing is 'A mailing (the sending of an email to users)';
 comment on column realm_mailing.MAILING_REALM_ID is 'The realm id of the mailing';
 comment on column realm_mailing.MAILING_ID is 'The unique sequential id on the realm';

@@ -27,7 +27,7 @@ public class OrganizationProvider {
 
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(OrganizationProvider.class);
-  public static final String TABLE_NAME = "organization";
+  public static final String TABLE_NAME = "realm_orga";
 
   /**
    * Lower case is important

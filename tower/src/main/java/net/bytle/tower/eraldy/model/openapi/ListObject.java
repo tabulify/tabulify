@@ -11,7 +11,14 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * A list where a user can register.  Example: * Newsletter * Sign up to a waiting list
+ * A list of users, a group of users.
+ * <p>
+ * Example:
+ * Where a user can register.
+ * * Newsletter
+ * * A waiting list
+ * <p>
+ * Can we use it as a user group to manage subscriptions?
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ListObject   {
