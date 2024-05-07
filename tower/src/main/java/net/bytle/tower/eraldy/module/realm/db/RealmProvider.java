@@ -11,6 +11,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationCols;
+import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
@@ -61,7 +62,7 @@ public class RealmProvider {
     this.realmTable = JdbcTable.build(schema, "realm", RealmCols.values())
       .addPrimaryKeyColumn(RealmCols.ID)
       .addUniqueKeyColumn(RealmCols.HANDLE)
-      .addForeignKeyColumn(RealmCols.ORGA_ID, OrganizationCols.ID)
+      .addForeignKeyColumn(RealmCols.OWNER_ORGA_ID, OrganizationCols.ID)
       .build();
 
     /**
@@ -125,16 +126,23 @@ public class RealmProvider {
 
   /**
    *
-   * @param ownerUser - the owner (passed because it may not exist at initial insertion)
    * @param realmInputProps - the input props
    * @param sqlConnection - the connection
    * @param askedRealmId - use for Eraldy Realm only - the asked realm id (ie 1)
    * @return the inserted realm
    */
-  private Future<Realm> insertRealm(OrgaUser ownerUser, RealmInputProps realmInputProps, SqlConnection sqlConnection, Long askedRealmId) {
+  private Future<Realm> insertRealm(RealmInputProps realmInputProps, SqlConnection sqlConnection, Long askedRealmId) {
 
-
-    assert ownerUser != null : "The owner user of the realm cannot be null on realm insertion";
+    /**
+     * Owner orga and owner user orga should be the same
+     */
+    if (!Objects.equals(realmInputProps.getOwnerOrgaGuid(),realmInputProps.getOwnerUserGuid().getOrgaGuid())){
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setMessage("The owner organization ("+realmInputProps.getOwnerOrgaGuid()+") and the owner user organization ("+realmInputProps.getOwnerUserGuid().getOrgaGuid()+") are not the same")
+          .build()
+      );
+    }
 
 
     JdbcInsert jdbcInsert = JdbcInsert.into(this.realmTable)
@@ -164,22 +172,19 @@ public class RealmProvider {
     realm.setModificationTime(nowInUtc);
     jdbcInsert.addColumn(RealmCols.MODIFICATION_TIME, realm.getModificationTime());
 
-    Organization organization = ownerUser.getOrganization();
-    realm.setOrganization(organization);
-    jdbcInsert.addColumn(RealmCols.ORGA_ID, realm.getOrganization().getGuid().getLocalId());
+    Organization organization = Organization.createFromOrgGuid(realmInputProps.getOwnerOrgaGuid());
+    realm.setOwnerOrganization(organization);
+    jdbcInsert.addColumn(RealmCols.OWNER_ORGA_ID, realm.getOwnerOrganization().getGuid().getOrgaId());
+    jdbcInsert.addColumn(RealmCols.OWNER_REALM_ID, realm.getOwnerOrganization().getGuid().getRealmId());
 
     realm.setName(realmInputProps.getName());
     jdbcInsert.addColumn(RealmCols.NAME, realm.getName());
 
-    /**
-     * The user must exist (The db constraint check already that but yeah)
-     */
-    OrgaUserGuid orgaUserGuid = ownerUser.getGuid();
-    if (realmInputProps.getOwnerUserGuid() != null && !orgaUserGuid.equals(realmInputProps.getOwnerUserGuid())) {
-      return Future.failedFuture(new InternalException("The organization user and the input user does not have the same value"));
-    }
-    realm.setOwnerUser(ownerUser);
-    jdbcInsert.addColumn(RealmCols.OWNER_ID, realm.getOwnerUser().getGuid().getLocalId());
+    OrgaUser orgaUser = new OrgaUser();
+    orgaUser.setOrganization(organization);
+    orgaUser.setGuid(realmInputProps.getOwnerUserGuid());
+    realm.setOwnerUser(orgaUser);
+    jdbcInsert.addColumn(RealmCols.OWNER_USER_ID, realm.getOwnerUser().getGuid().getUserId());
 
     return jdbcInsert
       .execute(sqlConnection)
@@ -295,8 +300,8 @@ public class RealmProvider {
   public Future<List<Realm>> getRealmsForOwner(OrgaUser user) {
 
     return JdbcSelect.from(this.realmTable)
-      .addEqualityPredicate(RealmCols.ORGA_ID, user.getGuid().getOrganizationId())
-      .addEqualityPredicate(RealmCols.OWNER_ID, user.getGuid().getLocalId())
+      .addEqualityPredicate(RealmCols.OWNER_ORGA_ID, user.getGuid().getOrganizationId())
+      .addEqualityPredicate(RealmCols.OWNER_USER_ID, user.getGuid().getUserId())
       .execute()
       .compose(this::getRealmsFromRows,
         err -> Future.failedFuture(
@@ -345,19 +350,21 @@ public class RealmProvider {
 
 
     /**
-     * Org
+     * Org Owner
      */
-    Long orgaId = row.getLong(RealmCols.ORGA_ID);
-    Organization organization = Organization.createFromAnyId(orgaId);
-    realm.setOrganization(organization);
+    OrgaGuid orgaOwnerGuid = new OrgaGuid();
+    orgaOwnerGuid.setRealmId(row.getLong(RealmCols.OWNER_REALM_ID));
+    orgaOwnerGuid.setOrgaId(row.getLong(RealmCols.OWNER_ORGA_ID));
+    Organization organization = Organization.createFromOrgGuid(orgaOwnerGuid);
+    realm.setOwnerOrganization(organization);
 
     /**
-     * Owner
+     * User Owner
      */
-    Long ownerUserLocalId = row.getLong(RealmCols.OWNER_ID);
+    Long ownerUserLocalId = row.getLong(RealmCols.OWNER_USER_ID);
     OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
-    orgaUserGuid.setOrganizationId(orgaId);
-    orgaUserGuid.setLocalId(ownerUserLocalId);
+    orgaUserGuid.setOrgaGuid(orgaOwnerGuid);
+    orgaUserGuid.setUserId(ownerUserLocalId);
     OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(orgaUserGuid, realm);
     realm.setOwnerUser(ownerUser);
 
@@ -400,12 +407,11 @@ public class RealmProvider {
 
   /**
    * Getsert: get or insert a realm with a local id or a handle
-   *
    * @param realmInputProps         - the realm to insert
    * @param sqlConnection - the insertion connection to defer constraint on transaction
    * @return the realm inserted
    */
-  public Future<Realm> getsertOnServerStartup(Long realmId, OrgaUser ownerUser, RealmInputProps realmInputProps, SqlConnection sqlConnection) {
+  public Future<Realm> getsertOnServerStartup(Long realmId, RealmInputProps realmInputProps, SqlConnection sqlConnection) {
     Future<Realm> selectRealmFuture;
     if (realmId != null) {
       selectRealmFuture = this.getRealmFromLocalId(realmId, sqlConnection);
@@ -422,17 +428,19 @@ public class RealmProvider {
         if (selectedRealm != null) {
           futureRealm = Future.succeededFuture(selectedRealm);
         } else {
-          futureRealm = this.insertRealm(ownerUser, realmInputProps, sqlConnection, realmId);
+          futureRealm = this.insertRealm( realmInputProps, sqlConnection, realmId);
         }
         return futureRealm;
       });
   }
 
   public Future<Organization> buildOrganizationAtRequestTimeEventually(Realm realm) {
-    if (realm.getOrganization().getName() != null) {
-      return Future.succeededFuture(realm.getOrganization());
+    if (realm.getOwnerOrganization().getName() != null) {
+      return Future.succeededFuture(realm.getOwnerOrganization());
     }
-    return this.apiApp.getOrganizationProvider()
-      .getByGuid(realm.getOrganization().getGuid());
+    return this
+      .apiApp
+      .getOrganizationProvider()
+      .getByGuid(realm.getOwnerOrganization().getGuid(), realm);
   }
 }

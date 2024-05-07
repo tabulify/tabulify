@@ -96,8 +96,8 @@ public class AnalyticsApiImpl implements AnalyticsApi {
     analyticsClient.setClientGuid(clientIdHash);
     JacksonMapperManager jackson = this.apiApp.getJackson();
     Realm authRealm = authClient.getApp().getRealm();
-    analyticsClient.setAppOrganisationGuid(jackson.getSerializer(OrgaGuid.class).serialize(authRealm.getOrganization().getGuid()));
-    analyticsClient.setAppOrganisationHandle(jackson.getSerializer(Handle.class).serialize(authRealm.getOrganization().getHandle()));
+    analyticsClient.setAppOrganisationGuid(jackson.getSerializer(OrgaGuid.class).serialize(authRealm.getOwnerOrganization().getGuid()));
+    analyticsClient.setAppOrganisationHandle(jackson.getSerializer(Handle.class).serialize(authRealm.getOwnerOrganization().getHandle()));
     analyticsClient.setAppRealmGuid(jackson.getSerializer(RealmGuid.class).serialize(authRealm.getGuid()));
     analyticsClient.setAppRealmHandle(jackson.getSerializer(Handle.class).serialize(authRealm.getHandle()));
 

@@ -146,7 +146,7 @@ public class ServiceProvider {
         service.getUri(),
         service.getType(),
         this.getDatabaseObject(service),
-        service.getImpersonatedUser() != null ? service.getImpersonatedUser().getGuid().getLocalId() : null,
+        service.getImpersonatedUser() != null ? service.getImpersonatedUser().getGuid().getUserId() : null,
         service.getRealm().getGuid().getLocalId(),
         service.getLocalId()
       );
@@ -200,7 +200,7 @@ public class ServiceProvider {
     Tuple parameters = Tuple.of(
       service.getType(),
       this.getDatabaseObject(service),
-      service.getImpersonatedUser() != null ? service.getImpersonatedUser().getGuid().getLocalId() : null,
+      service.getImpersonatedUser() != null ? service.getImpersonatedUser().getGuid().getUserId() : null,
       DateTimeService.getNowInUtc(),
       service.getRealm().getGuid().getLocalId(),
       service.getUri()
@@ -240,7 +240,7 @@ public class ServiceProvider {
             service.getUri(),
             service.getType(),
             this.getDatabaseObject(service),
-            service.getImpersonatedUser() != null ? service.getImpersonatedUser().getGuid().getLocalId() : null,
+            service.getImpersonatedUser() != null ? service.getImpersonatedUser().getGuid().getUserId() : null,
             DateTimeService.getNowInUtc()
           );
           return sqlConnection

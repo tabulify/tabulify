@@ -5,7 +5,6 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.idl.RuntimeWiring;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.exception.CastException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
@@ -87,21 +86,21 @@ public class OrgaGraphQLImpl {
    */
   private Future<Organization> getUserOrganization(DataFetchingEnvironment dataFetchingEnvironment) {
     OrgaUser orgaUser = dataFetchingEnvironment.getSource();
-    if(orgaUser.getOrganization().getName()!=null){
+    if (orgaUser.getOrganization().getName() != null) {
       return Future.succeededFuture(orgaUser.getOrganization());
     }
     return this.apiApp.getOrganizationProvider()
-      .getByGuid(orgaUser.getOrganization().getGuid());
+      .getByGuid(orgaUser.getOrganization().getGuid(), orgaUser.getRealm());
   }
 
   private Future<OrgaUser> getOrganizationUser(DataFetchingEnvironment dataFetchingEnvironment) {
     OrgaUserGuid orgaUserGuid = dataFetchingEnvironment.getArgument("orgaUserGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
 
-    OrgaGuid orgaGuid = orgaUserGuid.toOrgaGuid();
+
     return this.apiApp
       .getAuthProvider()
-      .checkOrgAuthorization(routingContext, orgaGuid, AuthUserScope.ORGA_USER_GET)
+      .checkOrgAuthorization(routingContext, orgaUserGuid.getOrgaGuid(), AuthUserScope.ORGA_USER_GET)
       .compose(v -> this.apiApp
         .getOrganizationUserProvider()
         .getOrganizationUserByGuid(orgaUserGuid)
@@ -127,7 +126,6 @@ public class OrgaGraphQLImpl {
   }
 
 
-
   private Future<List<OrgaUser>> getOrganizationUsers(DataFetchingEnvironment dataFetchingEnvironment) {
     Organization organization = dataFetchingEnvironment.getSource();
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
@@ -139,36 +137,40 @@ public class OrgaGraphQLImpl {
   }
 
   private Future<Organization> getOrganization(DataFetchingEnvironment dataFetchingEnvironment) {
-    String orgaGuid = dataFetchingEnvironment.getArgument("orgaGuid");
+    OrgaGuid orgaGuid = dataFetchingEnvironment.getArgument("orgaGuid");
     RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
-    OrgaGuid guid;
-    try {
-      guid = this.apiApp.getJackson().getDeserializer(OrgaGuid.class).deserialize(orgaGuid);
-    } catch (CastException e) {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-          .setMessage("The organization identifier (" + orgaGuid + ") is not an valid guid.")
-          .build()
-      );
-    }
+
     return this.apiApp
-      .getAuthProvider()
-      .checkOrgAuthorization(routingContext, guid, AuthUserScope.ORGA_GET)
-      .compose(v -> this.apiApp
-        .getOrganizationProvider()
-        .getByGuid(guid)
-      )
-      .compose(org -> {
-        if (org == null) {
+      .getRealmProvider()
+      .getRealmFromLocalId(orgaGuid.getRealmId())
+      .compose(realm -> {
+
+        if (realm == null) {
           return Future.failedFuture(
             TowerFailureException.builder()
-              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-              .setMessage("The organization identifier (" + orgaGuid + ") was not found.")
+              .setMessage("The realm was not found for the orga guid (" + orgaGuid + ")")
               .build()
           );
         }
-        return Future.succeededFuture(org);
+
+        return this.apiApp
+          .getAuthProvider()
+          .checkRealmAuthorization(routingContext, realm, AuthUserScope.ORGA_GET)
+          .compose(v -> this.apiApp
+            .getOrganizationProvider()
+            .getByGuid(orgaGuid, realm)
+          )
+          .compose(org -> {
+            if (org == null) {
+              return Future.failedFuture(
+                TowerFailureException.builder()
+                  .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+                  .setMessage("The organization identifier (" + orgaGuid + ") was not found.")
+                  .build()
+              );
+            }
+            return Future.succeededFuture(org);
+          });
       });
   }
 

@@ -13,6 +13,7 @@ import net.bytle.tower.eraldy.module.common.db.RealmSequenceProvider;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.organization.inputs.OrgaUserInputProps;
 import net.bytle.tower.eraldy.module.organization.inputs.OrganizationInputProps;
+import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.organization.model.Organization;
@@ -72,7 +73,6 @@ public class EraldyModel {
    */
   private final String uriRegistrationPathTemplate;
   private final JacksonMapperManager jacksonManager;
-  private final OrgaUser orgaUserOwner;
 
 
   Realm eraldyRealm;
@@ -95,11 +95,24 @@ public class EraldyModel {
      * as they are initialized later, we create the guids manually then
      */
     this.eraldyRealm = Realm.createFromAnyId(ORGA_LOCAL_ID);
-    this.eraldyRealm.setOrganization(Organization.createFromAnyId(ORGA_LOCAL_ID));
+
+    /**
+     * Orga Owner
+     */
+    OrgaGuid orgaGuid = new OrgaGuid();
+    orgaGuid.setRealmId(this.eraldyRealm.getGuid().getLocalId());
+    orgaGuid.setOrgaId(ORGA_LOCAL_ID);
+    this.eraldyRealm.setOwnerOrganization(Organization.createFromOrgGuid(orgaGuid));
+
+
+    /**
+     * User owner
+     */
+    OrgaUser orgaUserOwner = new OrgaUser();
+    this.eraldyRealm.setOwnerUser(orgaUserOwner);
     OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
-    orgaUserGuid.setLocalId(OWNER_LOCAL_ID);
-    orgaUserGuid.setOrganizationId(ORGA_LOCAL_ID);
-    this.orgaUserOwner = new OrgaUser();
+    orgaUserGuid.setUserId(OWNER_LOCAL_ID);
+    orgaUserGuid.setOrgaGuid(orgaGuid);
     orgaUserOwner.setGuid(orgaUserGuid);
     orgaUserOwner.setGivenName("Nico");
     orgaUserOwner.setEmailAddress(EmailAddress.ofFailSafe("nico@eraldy.com"));
@@ -110,7 +123,7 @@ public class EraldyModel {
     }
     orgaUserOwner.setOrganizationRole(OrgaRole.OWNER);
     orgaUserOwner.setRealm(this.eraldyRealm);
-    orgaUserOwner.setOrganization(this.eraldyRealm.getOrganization());
+    orgaUserOwner.setOrganization(this.eraldyRealm.getOwnerOrganization());
 
 
     this.jacksonManager = apiApp.getHttpServer().getServer().getJacksonMapperManager();
@@ -226,7 +239,7 @@ public class EraldyModel {
    */
   public Future<Void> deferredConnectionMount() {
 
-    LOGGER.info("Get/Inserting the Eraldy Organization, Realm and User");
+    LOGGER.info("Get/Inserting the Eraldy Realm, Organization, and User");
 
     return apiApp.getHttpServer().getServer().getPostgresClient()
       .getPool()
@@ -249,63 +262,58 @@ public class EraldyModel {
         .execute()
         .compose(ar -> {
 
+          /**
+           * Realm First
+           * (Cross, before updating the realm
+           * need to be a property of the organizational user)
+           */
+          RealmInputProps realmInputProps = new RealmInputProps();
+          realmInputProps.setHandle(this.eraldyRealm.getHandle());
+          realmInputProps.setName(this.eraldyRealm.getName());
+          realmInputProps.setOwnerUserGuid(this.eraldyRealm.getOwnerUser().getGuid());
+          realmInputProps.setOwnerOrgaGuid(this.eraldyRealm.getOwnerOrganization().getGuid());
 
           /**
-           * Create if not exists and get the Eraldy Model
-           * (ie getsert)
+           * Realm
+           * We create the user as it's not yet in the db
            */
-          OrganizationInputProps organizationInputProps = new OrganizationInputProps();
-          organizationInputProps.setHandle(Handle.ofFailSafe("eraldy"));
-          organizationInputProps.setName("Eraldy");
-          organizationInputProps.setOwnerGuid(this.orgaUserOwner.getGuid());
-          Future<Organization> futureOrganization = this.apiApp.getOrganizationProvider()
-            .getsert(this.eraldyRealm.getOrganization().getGuid(), organizationInputProps, sqlConnection);
+          UserInputProps realmOwnerInputProps = new UserInputProps();
 
-          /**
-           * The organization roles
-           */
-          Future<Void> upsertAllRoles = this.apiApp.getOrganizationRoleProvider().upsertAll(sqlConnection);
+          return this.apiApp.getRealmProvider()
+            .getsertOnServerStartup(REALM_LOCAL_ID, realmInputProps, sqlConnection)
+            .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy realm", t)))
+            .compose(eraldyRealm -> {
+              LOGGER.info("Eraldy Realm getserted");
+              this.eraldyRealm = eraldyRealm;
 
-          /**
-           * Composite of all organization data
-           */
-          return Future.all(
-              futureOrganization,
-              upsertAllRoles
-            )
-            .compose(composite -> {
-              LOGGER.info("Eraldy Organization and roles getserted");
-
-              Organization eraldyOrganization = composite.resultAt(0);
 
               /**
-               * Realm
-               * (Cross, before updating the realm
-               * need to be a property of the organizational user)
+               * Create if not exists and get the Eraldy Model
+               * (ie getsert)
                */
-              RealmInputProps realmInputProps = new RealmInputProps();
-              realmInputProps.setHandle(this.eraldyRealm.getHandle());
-              realmInputProps.setName(this.eraldyRealm.getName());
-              realmInputProps.setOwnerUserGuid(this.orgaUserOwner.getGuid());
+              OrganizationInputProps organizationInputProps = new OrganizationInputProps();
+              organizationInputProps.setHandle(Handle.ofFailSafe("eraldy"));
+              organizationInputProps.setName("Eraldy");
+              organizationInputProps.setOwnerUserGuid(this.eraldyRealm.getOwnerUser().getGuid());
+              organizationInputProps.setOwnerOrgaGuid(this.eraldyRealm.getOwnerOrganization().getGuid());
+              Future<Organization> futureOrganization = this.apiApp.getOrganizationProvider()
+                .getsert(this.eraldyRealm, organizationInputProps, sqlConnection);
+
 
               /**
-               * Realm
-               * We create the user as it's not yet in the db
+               * Composite of all organization data
                */
-              UserInputProps realmOwnerInputProps = new UserInputProps();
+              return futureOrganization
+                .compose(eraldyOrganization -> {
 
-              return this.apiApp.getRealmProvider()
-                .getsertOnServerStartup(REALM_LOCAL_ID, orgaUserOwner, realmInputProps, sqlConnection)
-                .recover(t -> Future.failedFuture(new InternalException("Error while getserting the eraldy realm", t)))
-                .compose(eraldyRealm -> {
-                  LOGGER.info("Eraldy Realm getserted");
-                  this.eraldyRealm = eraldyRealm;
+                  LOGGER.info("Eraldy Organization and roles getserted");
+
                   // orga is build lazily
-                  this.eraldyRealm.setOrganization(eraldyOrganization);
+                  this.eraldyRealm.setOwnerOrganization(eraldyOrganization);
 
                   OrgaUser ownerUser = eraldyRealm.getOwnerUser();
                   Future<OrgaUser> futureOwnerUser;
-                  if (ownerUser != null && ownerUser.getGuid().getLocalId() != OWNER_LOCAL_ID) {
+                  if (ownerUser != null && ownerUser.getGuid().getUserId() != OWNER_LOCAL_ID) {
                     /**
                      * If the user has changed, we take it instead
                      */
@@ -314,9 +322,9 @@ public class EraldyModel {
                     /**
                      * Realm Owner user getsertion
                      */
-                    realmOwnerInputProps.setGivenName(this.orgaUserOwner.getGivenName());
-                    realmOwnerInputProps.setEmailAddress(this.orgaUserOwner.getEmailAddress());
-                    realmOwnerInputProps.setAvatar(this.orgaUserOwner.getAvatar());
+                    realmOwnerInputProps.setGivenName(this.eraldyRealm.getOwnerUser().getGivenName());
+                    realmOwnerInputProps.setEmailAddress(this.eraldyRealm.getOwnerUser().getEmailAddress());
+                    realmOwnerInputProps.setAvatar(this.eraldyRealm.getOwnerUser().getAvatar());
 
                     futureOwnerUser = apiApp
                       .getUserProvider()
@@ -394,6 +402,7 @@ public class EraldyModel {
 
 
   public OrgaUser getOwnerUser() {
-    return this.orgaUserOwner;
+    return this.eraldyRealm.getOwnerUser();
   }
+
 }

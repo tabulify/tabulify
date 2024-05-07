@@ -142,7 +142,7 @@ public class UserProvider {
      */
     if (user.getGuid() != null) {
 
-      jdbcUpdate.addPredicateColumn(UserCols.ID, user.getGuid().getLocalId());
+      jdbcUpdate.addPredicateColumn(UserCols.ID, user.getGuid().getUserId());
 
       EmailAddress newEmailAddress = userInputProps.getEmailAddress();
       if (newEmailAddress != null && !Objects.equals(newEmailAddress.toNormalizedString(), user.getEmailAddress().toNormalizedString())) {
@@ -240,8 +240,8 @@ public class UserProvider {
           this.updateGuid(user, userId);
 
         } else {
-          if (user.getGuid().getLocalId() != userId) {
-            return Future.failedFuture(new InternalException("The update id (" + userId + ") is not the same as the user id (" + user.getGuid().getLocalId() + ") for the user (" + user + ")"));
+          if (user.getGuid().getUserId() != userId) {
+            return Future.failedFuture(new InternalException("The update id (" + userId + ") is not the same as the user id (" + user.getGuid().getUserId() + ") for the user (" + user + ")"));
           }
         }
         return Future.succeededFuture(user);
@@ -343,7 +343,7 @@ public class UserProvider {
       return;
     }
     UserGuid userGuid = new UserGuid();
-    userGuid.setLocalId(userLocalId);
+    userGuid.setUserId(userLocalId);
     userGuid.setRealmId(user.getRealm().getGuid().getLocalId());
     user.setGuid(userGuid);
 
@@ -423,7 +423,7 @@ public class UserProvider {
         if (realmResult == null) {
           return Future.failedFuture(new InternalException("The realm was not found"));
         }
-        return this.getUserByLocalId(guidObject.getLocalId(), realmResult);
+        return this.getUserByLocalId(guidObject.getUserId(), realmResult);
       });
 
 
@@ -672,7 +672,7 @@ public class UserProvider {
           .addColumn(UserCols.LAST_ACTIVE_TIME, user.getLastActiveTime());
 
         this.updateGuid(user, seqUserId);
-        jdbcInsert.addColumn(UserCols.ID, user.getGuid().getLocalId())
+        jdbcInsert.addColumn(UserCols.ID, user.getGuid().getUserId())
           .addColumn(UserCols.REALM_ID, user.getGuid().getRealmId());
 
 

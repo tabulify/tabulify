@@ -29,7 +29,7 @@ public class Realm {
 
   protected String name;
 
-  protected Organization organization;
+  protected Organization ownerOrganization;
 
   protected OrgaUser ownerUser;
 
@@ -93,17 +93,17 @@ public class Realm {
   /**
    * @return organization
    */
-  @JsonProperty("organization")
-  public Organization getOrganization() {
-    return organization;
+  @JsonProperty("ownerOrganization")
+  public Organization getOwnerOrganization() {
+    return ownerOrganization;
   }
 
   /**
-   * @param organization Set organization
+   * @param ownerOrganization Set organization
    */
   @SuppressWarnings("unused")
-  public void setOrganization(Organization organization) {
-    this.organization = organization;
+  public void setOwnerOrganization(Organization ownerOrganization) {
+    this.ownerOrganization = ownerOrganization;
   }
 
   /**

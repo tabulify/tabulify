@@ -11,8 +11,8 @@ import java.util.Objects;
 public class UserGuid extends Guid {
 
 
-  private long localId;
-  private long realmId;
+  private long userId;
+  protected long realmId;
 
   public UserGuid() {
   }
@@ -23,18 +23,18 @@ public class UserGuid extends Guid {
   }
 
   /**
-   * @param localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
+   * @param userId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
    */
-  public void setLocalId(Long localId) {
-    assert localId != null : "Local user Id cannot be null";
-    this.localId = localId;
+  public void setUserId(Long userId) {
+    assert userId != null : "User Id cannot be null";
+    this.userId = userId;
   }
 
   /**
    * @return localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
    */
-  public long getLocalId() {
-    return this.localId;
+  public long getUserId() {
+    return this.userId;
   }
 
   public long getRealmId() {
@@ -46,17 +46,17 @@ public class UserGuid extends Guid {
     if (this == o) return true;
     if (!(o instanceof UserGuid)) return false;
     UserGuid userGuid = (UserGuid) o;
-    return localId == userGuid.localId && realmId == userGuid.realmId;
+    return userId == userGuid.userId && realmId == userGuid.realmId;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(localId, realmId);
+    return Objects.hash(userId, realmId);
   }
 
   @Override
   public String toStringLocalIds() {
-    return "localId=" + localId +", realmId=" + realmId;
+    return "localId=" + userId +", realmId=" + realmId;
   }
 
 }

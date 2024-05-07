@@ -1,24 +1,16 @@
 package net.bytle.tower.eraldy.module.organization.model;
 
-import net.bytle.exception.InternalException;
-import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.module.realm.model.UserGuid;
-
-import java.util.Objects;
 
 /**
  * An orga user guid is:
- * * a user guid where the realm is the eraldy realm 1
- * * and an organization
+ * * a user guid
+ * * in an organization
  * <p>
- * At first, we were extending the UserGuid, but it comes with multiple problem
- * when serializing as the serializer may choose the UserGuid serializer
- * and not the OrgaUserGuid
- * They are 2 differents id
- * By not extending, you can't check the equality (they are the same user)
+ * They are 2 differents guid but for an auth perspective, they are the same.
+ * By not extending, you can't check this equality (they are the same user)
  */
 public class OrgaUserGuid extends UserGuid {
-
 
 
   /**
@@ -28,19 +20,9 @@ public class OrgaUserGuid extends UserGuid {
 
   public OrgaUserGuid() {
     super();
-    setRealmId(EraldyModel.REALM_LOCAL_ID);
   }
 
 
-  @Override
-  public void setRealmId(Long localId) {
-
-    if (!Objects.equals(localId, EraldyModel.REALM_LOCAL_ID)) {
-      throw new InternalException("An orga user should have the Eraldy Realm");
-    }
-    super.setRealmId(localId);
-
-  }
 
   public void setOrganizationId(Long organizationId) {
 
@@ -48,12 +30,6 @@ public class OrgaUserGuid extends UserGuid {
 
   }
 
-  @Override
-  public long getRealmId() {
-
-    return EraldyModel.REALM_LOCAL_ID;
-
-  }
 
   public long getOrganizationId() {
 
@@ -63,10 +39,16 @@ public class OrgaUserGuid extends UserGuid {
 
 
 
-
-  public OrgaGuid toOrgaGuid() {
-    return new OrgaGuid(this.organizationId);
+  public void setOrgaGuid(OrgaGuid orgaOwnerGuid) {
+    this.organizationId = orgaOwnerGuid.getOrgaId();
+    super.setRealmId(orgaOwnerGuid.getRealmId());
   }
 
+  public OrgaGuid getOrgaGuid() {
+    OrgaGuid orgaGuid = new OrgaGuid();
+    orgaGuid.setRealmId(this.getRealmId());
+    orgaGuid.setOrgaId(this.getOrganizationId());
+    return orgaGuid;
+  }
 
 }

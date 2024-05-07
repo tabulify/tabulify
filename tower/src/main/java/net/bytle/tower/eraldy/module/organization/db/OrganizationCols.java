@@ -5,11 +5,11 @@ import net.bytle.vertx.db.JdbcColumn;
 public enum OrganizationCols implements JdbcColumn {
 
 
+  REALM_ID("orga_realm_id"),
   ID("orga_id"),
   HANDLE("orga_handle"),
   NAME("orga_name"),
   OWNER_ID("orga_owner_user_id"),
-  REALM_ID("orga_owner_realm_id"),
   MODIFICATION_TIME("orga_modification_time"),
   CREATION_TIME("orga_creation_time");
 

@@ -168,7 +168,7 @@ public class MailingProvider {
         // owner
         OrgaUser ownerUser = ListProvider.getOwnerUser(list);
         mailing.setEmailAuthor(ownerUser);
-        jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_USER_ID, ownerUser.getGuid().getLocalId());
+        jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_USER_ID, ownerUser.getGuid().getUserId());
         jdbcInsert.addColumn(MailingCols.ORGA_ID, ownerUser.getGuid().getOrganizationId());
 
         return jdbcPool
@@ -239,11 +239,11 @@ public class MailingProvider {
      * ie {@link #buildEmailAuthorAtRequestTimeEventually(Mailing)}
      */
     Long orgaId = row.getLong(MailingCols.ORGA_ID);
-    assert Objects.equals(realm.getOrganization().getGuid().getLocalId(), orgaId);
+    assert Objects.equals(realm.getOwnerOrganization().getGuid().getOrgaId(), orgaId);
     Long userId = row.getLong(MailingCols.EMAIL_AUTHOR_USER_ID);
     OrgaUser authorUser = new OrgaUser();
     OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
-    orgaUserGuid.setLocalId(userId);
+    orgaUserGuid.setUserId(userId);
     orgaUserGuid.setOrganizationId(orgaId);
     authorUser.setGuid(orgaUserGuid);
     authorUser.setRealm(realm);
@@ -406,7 +406,7 @@ public class MailingProvider {
 
       if (newAuthor != null) {
         mailing.setEmailAuthor(newAuthor);
-        jdbcUpdate.setUpdatedColumnWithValue(MailingCols.EMAIL_AUTHOR_USER_ID, mailing.getEmailAuthor().getGuid().getLocalId());
+        jdbcUpdate.setUpdatedColumnWithValue(MailingCols.EMAIL_AUTHOR_USER_ID, mailing.getEmailAuthor().getGuid().getUserId());
         jdbcUpdate.setUpdatedColumnWithValue(MailingCols.ORGA_ID, mailing.getEmailAuthor().getGuid().getOrganizationId());
       }
 

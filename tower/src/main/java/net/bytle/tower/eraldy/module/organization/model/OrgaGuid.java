@@ -11,17 +11,21 @@ public class OrgaGuid extends Guid {
 
 
   /**
+   * The realm id
+   */
+  private Long realmId;
+  /**
    * The database id
    */
-  private final Long localId;
+  private Long orgaId;
 
-  public OrgaGuid(Long orgaId) {
-    this.localId = orgaId;
+  public OrgaGuid() {
+
   }
 
 
-  public Long getLocalId() {
-    return this.localId;
+  public Long getOrgaId() {
+    return this.orgaId;
   }
 
   @Override
@@ -29,19 +33,29 @@ public class OrgaGuid extends Guid {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     OrgaGuid orgaGuid = (OrgaGuid) o;
-    return Objects.equals(localId, orgaGuid.localId);
+    return Objects.equals(orgaId, orgaGuid.orgaId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(localId);
+    return Objects.hash(orgaId);
   }
 
   @Override
   public String toStringLocalIds() {
-    return String.valueOf(this.localId);
+    return "realm id: " + this.realmId + ", orga id: " + this.orgaId;
   }
 
 
+  public Long getRealmId() {
+    return realmId;
+  }
 
+  public void setRealmId(Long realmId) {
+    this.realmId = realmId;
+  }
+
+  public void setOrgaId(Long localId) {
+    this.orgaId = localId;
+  }
 }

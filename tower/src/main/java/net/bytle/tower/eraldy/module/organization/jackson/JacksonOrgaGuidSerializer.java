@@ -26,6 +26,9 @@ public class JacksonOrgaGuidSerializer extends JacksonJsonStringSerializer<OrgaG
 
   @Override
   public String serialize(OrgaGuid orgaGuid) {
-    return guidDeSer.serialize(orgaGuid.getLocalId());
+    return guidDeSer.serialize(
+      orgaGuid.getRealmId(),
+      orgaGuid.getOrgaId()
+    );
   }
 }

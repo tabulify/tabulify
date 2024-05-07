@@ -106,7 +106,7 @@ public class ListUserProvider {
     ListUserGuid guid = new ListUserGuid();
     guid.setRealmId(listUser.getList().getApp().getRealm().getGuid().getLocalId());
     guid.setListId(listUser.getList().getGuid().getLocalId());
-    guid.setUserId(listUser.getUser().getGuid().getLocalId());
+    guid.setUserId(listUser.getUser().getGuid().getUserId());
     listUser.setGuid(guid);
 
   }
@@ -134,7 +134,7 @@ public class ListUserProvider {
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.listUserTable)
       .addPredicateColumn(ListUserCols.REALM_ID, listUser.getList().getApp().getRealm().getGuid().getLocalId())
       .addPredicateColumn(ListUserCols.LIST_ID, listUser.getList().getGuid().getLocalId())
-      .addPredicateColumn(ListUserCols.USER_ID, listUser.getUser().getGuid().getLocalId());
+      .addPredicateColumn(ListUserCols.USER_ID, listUser.getUser().getGuid().getUserId());
 
 
     LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
@@ -232,7 +232,7 @@ public class ListUserProvider {
     User user = new User();
     UserGuid userGuid = new UserGuid();
     userGuid.setRealmId(realmId);
-    userGuid.setLocalId(userId);
+    userGuid.setUserId(userId);
     user.setGuid(userGuid);
     user.setRealm(realm);
     listUser.setUser(user);
@@ -262,7 +262,7 @@ public class ListUserProvider {
       throw new InternalException("The realm should be the same between a list and a user for a listUser");
     }
     ListUserGuid listUserGuid = new ListUserGuid();
-    listUserGuid.setUserId(user.getGuid().getLocalId());
+    listUserGuid.setUserId(user.getGuid().getUserId());
     listUserGuid.setListId(listObject.getGuid().getLocalId());
     listUserGuid.setRealmId(listRealmId);
     return getListUserByGuid(listUserGuid)

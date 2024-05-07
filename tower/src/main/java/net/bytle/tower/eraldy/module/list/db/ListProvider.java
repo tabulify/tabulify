@@ -178,7 +178,7 @@ public class ListProvider {
           user = app.getOwnerUser();
         }
         newList.setOwnerUser(user);
-        jdbcInsert.addColumn(ListCols.OWNER_USER_ID, user.getGuid().getLocalId());
+        jdbcInsert.addColumn(ListCols.OWNER_USER_ID, user.getGuid().getUserId());
         jdbcInsert.addColumn(ListCols.ORGA_ID, user.getGuid().getOrganizationId());
 
         /**
@@ -283,7 +283,7 @@ public class ListProvider {
       OrgaUser orgaUser = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(ownerGuidObject, listObject.getApp().getRealm());
       listObject.setOwnerUser(orgaUser);
 
-      jdbcUpdate.setUpdatedColumnWithValue(ListCols.OWNER_USER_ID, listObject.getOwnerUser().getGuid().getLocalId());
+      jdbcUpdate.setUpdatedColumnWithValue(ListCols.OWNER_USER_ID, listObject.getOwnerUser().getGuid().getUserId());
       jdbcUpdate.setUpdatedColumnWithValue(ListCols.ORGA_ID, listObject.getOwnerUser().getGuid().getOrganizationId());
 
 
@@ -348,7 +348,7 @@ public class ListProvider {
      */
     OrgaUserGuid ownerUserGuid = new OrgaUserGuid();
     ownerUserGuid.setOrganizationId(row.getLong(ListCols.ORGA_ID));
-    ownerUserGuid.setLocalId(row.getLong(ListCols.OWNER_USER_ID));
+    ownerUserGuid.setUserId(row.getLong(ListCols.OWNER_USER_ID));
     listObject.setOwnerUser(this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(ownerUserGuid, realm));
 
     /**

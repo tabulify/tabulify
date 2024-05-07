@@ -180,7 +180,7 @@ public class AppProvider {
     if (appInputProps.isOwnerUserGuidSet() && !Objects.equals(app.getOwnerUser().getGuid(), newOwnerUserGuid)) {
       OrgaUser newOwner = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(newOwnerUserGuid, app.getRealm());
       app.setOwnerUser(newOwner);
-      jdbcUpdate.setUpdatedColumnWithValue(AppCols.OWNER_ID, app.getOwnerUser().getGuid().getLocalId());
+      jdbcUpdate.setUpdatedColumnWithValue(AppCols.OWNER_ID, app.getOwnerUser().getGuid().getUserId());
       jdbcUpdate.setUpdatedColumnWithValue(AppCols.ORGA_ID, app.getOwnerUser().getGuid().getOrganizationId());
     }
 
@@ -243,7 +243,7 @@ public class AppProvider {
      * Owner
      */
     OrgaUserGuid ownerUserGuid = new OrgaUserGuid();
-    ownerUserGuid.setLocalId(row.getLong(AppCols.OWNER_ID));
+    ownerUserGuid.setUserId(row.getLong(AppCols.OWNER_ID));
     ownerUserGuid.setOrganizationId(row.getLong(AppCols.ORGA_ID));
     OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider()
       .toOrgaUserFromGuid(ownerUserGuid, realm);
@@ -469,7 +469,7 @@ public class AppProvider {
         } else {
           app.setOwnerUser(realm.getOwnerUser());
         }
-        jdbcInsert.addColumn(AppCols.OWNER_ID, app.getOwnerUser().getGuid().getLocalId());
+        jdbcInsert.addColumn(AppCols.OWNER_ID, app.getOwnerUser().getGuid().getUserId());
         jdbcInsert.addColumn(AppCols.ORGA_ID, app.getOwnerUser().getGuid().getOrganizationId());
 
         /**

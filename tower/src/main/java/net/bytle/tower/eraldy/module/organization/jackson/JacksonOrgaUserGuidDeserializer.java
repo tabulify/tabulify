@@ -42,7 +42,7 @@ public class JacksonOrgaUserGuidDeserializer extends JacksonJsonStringDeserializ
       throw new CastException("The user guid (" + value + ") is not a organization guid because the realm is not eraldy.");
     }
     OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
-    orgaUserGuid.setLocalId(ids[1]);
+    orgaUserGuid.setUserId(ids[1]);
     orgaUserGuid.setOrganizationId(ids[2]);
     orgaUserGuid.setHash(value);
     return orgaUserGuid;

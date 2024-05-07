@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.module.organization.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
+import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.type.Handle;
 
 import java.time.LocalDateTime;
@@ -26,25 +27,26 @@ public class Organization {
 
   protected LocalDateTime modificationTime;
   private OrgaUser ownerUser;
+  private Realm realm;
 
 
   public Organization() {
 
   }
 
-  public static Organization createFromAnyId(long localId) {
-    OrgaGuid orgaGuid = new OrgaGuid(localId);
-    return createFromAnyId(orgaGuid);
-  }
 
-  public static Organization createFromAnyId(OrgaGuid orgaGuid) {
+
+  public static Organization createFromOrgGuid(OrgaGuid orgaGuid) {
     Organization organization = new Organization();
     organization.setGuid(orgaGuid);
     return organization;
   }
 
-  public static Organization createFromAnyId(OrgaUserGuid orgaUserGuid) {
-    return createFromAnyId(orgaUserGuid.getOrganizationId());
+  public static Organization createFromOrgaUserGuid(OrgaUserGuid orgaUserGuid) {
+    OrgaGuid orgaGuid = new OrgaGuid();
+    orgaGuid.setOrgaId(orgaUserGuid.getOrganizationId());
+    orgaGuid.setRealmId(orgaUserGuid.getRealmId());
+    return createFromOrgGuid(orgaGuid);
   }
 
   /**
@@ -156,5 +158,13 @@ public class Organization {
 
   public OrgaUser getOwnerUser() {
     return ownerUser;
+  }
+
+  public void setRealm(Realm realm) {
+    this.realm = realm;
+  }
+
+  public Realm getRealm() {
+    return realm;
   }
 }

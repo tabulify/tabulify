@@ -30,7 +30,7 @@ public class JacksonOrgaUserGuidSerializer extends JacksonJsonStringSerializer<O
   public String serialize(OrgaUserGuid value) {
     return guidDeSer.serialize(
       EraldyModel.REALM_LOCAL_ID,
-      value.getLocalId(),
+      value.getUserId(),
       value.getOrganizationId()
     );
   }

@@ -37,7 +37,9 @@ public class JacksonOrgaGuidDeserializer extends JacksonJsonStringDeserializer<O
       throw new CastException("The orga guid (" + value + ") is not valid. Error: " + e.getMessage(), e);
     }
 
-    OrgaGuid orgaGuidObject = new OrgaGuid(ids[0]);
+    OrgaGuid orgaGuidObject = new OrgaGuid();
+    orgaGuidObject.setRealmId(ids[0]);
+    orgaGuidObject.setOrgaId(ids[1]);
     orgaGuidObject.setHash(value);
     return orgaGuidObject;
 

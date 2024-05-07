@@ -56,7 +56,7 @@ public class ListUserGuid extends Guid {
   public UserGuid toUserGuid() {
     UserGuid userGuid = new UserGuid();
     userGuid.setRealmId(this.realmId);
-    userGuid.setLocalId(this.userId);
+    userGuid.setUserId(this.userId);
     return userGuid;
   }
 }

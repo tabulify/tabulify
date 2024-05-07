@@ -28,6 +28,6 @@ public class JacksonUserGuidSerializer extends JacksonJsonStringSerializer<UserG
 
   @Override
   public String serialize(UserGuid value) {
-    return this.guidDeSer.serialize(value.getRealmId(), value.getLocalId());
+    return this.guidDeSer.serialize(value.getRealmId(), value.getUserId());
   }
 }

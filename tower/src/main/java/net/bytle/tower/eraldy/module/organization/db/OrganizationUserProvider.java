@@ -84,7 +84,7 @@ public class OrganizationUserProvider {
 
     Realm eraldyRealm = this.apiApp.getEraldyModel().getRealm();
     return apiApp.getUserProvider()
-      .getUserByLocalId(userGuid.getLocalId(), eraldyRealm, sqlConnection)
+      .getUserByLocalId(userGuid.getUserId(), eraldyRealm, sqlConnection)
       .compose(this::checkAndReturnUser);
 
   }
@@ -125,10 +125,10 @@ public class OrganizationUserProvider {
     OrgaUser orgaUser = new OrgaUser();
     OrgaUserGuid guid = new OrgaUserGuid();
     guid.setOrganizationId(jdbcRow.getLong(OrgaUserCols.ORGA_ID));
-    guid.setLocalId(jdbcRow.getLong(OrgaUserCols.USER_ID));
+    guid.setUserId(jdbcRow.getLong(OrgaUserCols.USER_ID));
     orgaUser.setGuid(guid);
     orgaUser.setOrganizationRole(OrgaRole.fromRoleIdFailSafe(jdbcRow.getInteger(OrgaUserCols.ROLE_ID)));
-    orgaUser.setOrganization(Objects.requireNonNullElseGet(knownOrganization, () -> Organization.createFromAnyId(guid)));
+    orgaUser.setOrganization(Objects.requireNonNullElseGet(knownOrganization, () -> Organization.createFromOrgaUserGuid(guid)));
     orgaUser.setOrganizationRole(OrgaRole.fromRoleIdFailSafe(jdbcRow.getInteger(OrgaUserCols.ROLE_ID)));
     orgaUser.setCreationTime(jdbcRow.getLocalDateTime(OrgaUserCols.CREATION_TIME));
     orgaUser.setModificationTime(jdbcRow.getLocalDateTime(OrgaUserCols.MODIFICATION_IME));
@@ -151,7 +151,7 @@ public class OrganizationUserProvider {
 
     return JdbcSelect.from(this.organizationUserTable)
       .addSelectAllColumnsFromTable(this.apiApp.getUserProvider().getTable())
-      .addEqualityPredicate(OrgaUserCols.ORGA_ID, organization.getGuid().getLocalId())
+      .addEqualityPredicate(OrgaUserCols.ORGA_ID, organization.getGuid().getOrgaId())
       .execute()
       .recover(err -> Future.failedFuture(new InternalException("Unable to get the org users for the organization (" + organization + "). Message:" + err.getMessage(), err)))
       .compose(rowSet -> {
@@ -227,10 +227,10 @@ public class OrganizationUserProvider {
      */
     return JdbcInsert.into(this.organizationUserTable)
       .addColumn(OrgaUserCols.CREATION_TIME, DateTimeService.getNowInUtc())
-      .addColumn(OrgaUserCols.USER_ID, userGuid.getLocalId())
+      .addColumn(OrgaUserCols.USER_ID, userGuid.getUserId())
       .addColumn(OrgaUserCols.REALM_ID, EraldyModel.REALM_LOCAL_ID)
       .addColumn(OrgaUserCols.ROLE_ID, orgaUserInputProps.getRole().getId())
-      .addColumn(OrgaUserCols.ORGA_ID, organizationGuid.getLocalId())
+      .addColumn(OrgaUserCols.ORGA_ID, organizationGuid.getOrgaId())
       .execute(sqlConnection)
       .compose(userRows -> {
         /**
@@ -259,15 +259,15 @@ public class OrganizationUserProvider {
     /**
      * Orga
      */
-    Organization organization = Organization.createFromAnyId(orgaUserGuid);
+    Organization organization = Organization.createFromOrgaUserGuid(orgaUserGuid);
     newOwner.setOrganization(organization);
 
     /**
      * Check
      * * The object realm is null when we recreate an orga user for authentication
      */
-    if (objectRealm != null && objectRealm.getOrganization() != null) {
-      OrgaGuid objectRealmOrgId = objectRealm.getOrganization().getGuid();
+    if (objectRealm != null && objectRealm.getOwnerOrganization() != null) {
+      OrgaGuid objectRealmOrgId = objectRealm.getOwnerOrganization().getGuid();
       OrgaGuid ownerOrgId = newOwner.getOrganization().getGuid();
       if (!Objects.equals(objectRealmOrgId, ownerOrgId)) {
         throw new InternalException("The object realm org id (" + objectRealmOrgId + ") is not the same as the owner org id (" + ownerOrgId + ")");

@@ -151,8 +151,8 @@ public class AuthApiImpl implements AuthApi {
           .setAppHandle(jacksonManager.getSerializer(Handle.class).serialize(requestingApp.getHandle()))
           .setRealmIdentifier(jacksonManager.getSerializer(RealmGuid.class).serialize(requestingApp.getRealm().getGuid()))
           .setRealmHandle(jacksonManager.getSerializer(Handle.class).serialize(requestingApp.getRealm().getHandle()))
-          .setOrganisationGuid(jacksonManager.getSerializer(OrgaGuid.class).serialize(requestingApp.getRealm().getOrganization().getGuid()))
-          .setOrganisationHandle(jacksonManager.getSerializer(Handle.class).serialize(requestingApp.getRealm().getOrganization().getHandle()))
+          .setOrganisationGuid(jacksonManager.getSerializer(OrgaGuid.class).serialize(requestingApp.getRealm().getOwnerOrganization().getGuid()))
+          .setOrganisationHandle(jacksonManager.getSerializer(Handle.class).serialize(requestingApp.getRealm().getOwnerOrganization().getHandle()))
           .setRedirectUri(redirectUriEnhanced);
 
         return this.apiApp
@@ -334,7 +334,7 @@ public class AuthApiImpl implements AuthApi {
       .getAuthProvider().getSignedInBaseUserOrFail(routingContext)
       .compose(signedInUser -> apiApp
         .getUserProvider()
-        .updatePassword(signedInUser.getGuid().getLocalId(), signedInUser.getRealm().getGuid().getLocalId(), passwordOnly.getPassword())
+        .updatePassword(signedInUser.getGuid().getUserId(), signedInUser.getRealm().getGuid().getLocalId(), passwordOnly.getPassword())
         .compose(futureUser -> {
           /**
            * Because this is a POST, we can't redirect via HTTP

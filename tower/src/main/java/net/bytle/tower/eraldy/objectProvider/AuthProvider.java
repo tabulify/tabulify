@@ -102,11 +102,11 @@ public class AuthProvider {
       //noinspection unchecked
       user = (T) new OrgaUser();
       OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
-      orgaUserGuid.setLocalId(ROOT_LOCAL_ID);
-      orgaUserGuid.setOrganizationId(this.apiApp.getEraldyModel().getRealm().getOrganization().getGuid().getLocalId());
+      orgaUserGuid.setUserId(ROOT_LOCAL_ID);
+      orgaUserGuid.setOrganizationId(this.apiApp.getEraldyModel().getRealm().getOwnerOrganization().getGuid().getOrgaId());
       user.setGuid(orgaUserGuid);
       user.setRealm(this.apiApp.getEraldyModel().getRealm());
-      ((OrgaUser) user).setOrganization(this.apiApp.getEraldyModel().getRealm().getOrganization());
+      ((OrgaUser) user).setOrganization(this.apiApp.getEraldyModel().getRealm().getOwnerOrganization());
       ((OrgaUser) user).setOrganizationRole(OrgaRole.OWNER);
       user.setGivenName(authUser.getSubjectGivenName());
       user.setEmailAddress(EmailAddress.ofFailSafe(authUser.getSubjectEmail()));
@@ -159,7 +159,7 @@ public class AuthProvider {
      * First because it's in the user guid
      */
     Realm realm = new Realm();
-    realm.setOrganization(organization);
+    realm.setOwnerOrganization(organization);
     String audience = authUser.getAudience();
     if (audience == null) {
       throw new InternalException("The audience/realm guid should not be null for a user");
@@ -408,7 +408,7 @@ public class AuthProvider {
     /**
      * Realm Org
      */
-    Organization organization = user.getRealm().getOrganization();
+    Organization organization = user.getRealm().getOwnerOrganization();
     authUserBuilder.setAudienceOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(organization.getGuid()));
     authUserBuilder.setAudienceOrganizationHandle(jackson.getSerializer(Handle.class).serialize(organization.getHandle()));
 

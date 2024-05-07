@@ -10,10 +10,17 @@ import static net.bytle.vertx.db.JdbcSchemaManager.COLUMN_PART_SEP;
 public enum RealmCols implements JdbcColumn {
 
   ID(TABLE_PREFIX + COLUMN_PART_SEP + "id"),
+  NAME(TABLE_PREFIX + COLUMN_PART_SEP + "name"),
 
   HANDLE(TABLE_PREFIX + COLUMN_PART_SEP + "handle"),
-  ORGA_ID(TABLE_PREFIX + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN),
-  OWNER_ID(TABLE_PREFIX + COLUMN_PART_SEP + "owner" + COLUMN_PART_SEP + UserProvider.ID_COLUMN),
+
+  OWNER_ORGA_ID(TABLE_PREFIX + COLUMN_PART_SEP + "owner" + COLUMN_PART_SEP + OrganizationProvider.ORGA_ID_COLUMN),
+  OWNER_USER_ID(TABLE_PREFIX + COLUMN_PART_SEP + "owner" + COLUMN_PART_SEP + UserProvider.ID_COLUMN),
+  OWNER_REALM_ID(TABLE_PREFIX + COLUMN_PART_SEP + "owner" + COLUMN_PART_SEP + "realm_id"),
+
+  /**
+   * Time Column
+   */
 
   CREATION_TIME(TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX),
   MODIFICATION_TIME(TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX),
@@ -23,7 +30,7 @@ public enum RealmCols implements JdbcColumn {
   USER_IN_COUNT(TABLE_PREFIX + COLUMN_PART_SEP + "user" + COLUMN_PART_SEP + "in" + COLUMN_PART_SEP + "count"),
   LIST_COUNT(TABLE_PREFIX + COLUMN_PART_SEP + "list" + COLUMN_PART_SEP + "count"),
   APP_COUNT(TABLE_PREFIX + COLUMN_PART_SEP + "app" + COLUMN_PART_SEP + "count"),
-  NAME(TABLE_PREFIX + COLUMN_PART_SEP + "name");
+  ;
 
 
   private final String columnName;

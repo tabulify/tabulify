@@ -196,7 +196,7 @@ public class MailingItemProvider {
 
     guid.setRealmId(mailingItem.getMailing().getGuid().getRealmId());
     guid.setMailingId(mailingItem.getMailing().getGuid().getLocalId());
-    guid.setUserId(mailingItem.getListUser().getUser().getGuid().getLocalId());
+    guid.setUserId(mailingItem.getListUser().getUser().getGuid().getUserId());
 
     mailingItem.setGuid(guid.toString());
 
@@ -245,7 +245,7 @@ public class MailingItemProvider {
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.mailingItemTable)
       .addPredicateColumn(MailingItemCols.REALM_ID, mailingItem.getMailing().getGuid().getRealmId())
       .addPredicateColumn(MailingItemCols.MAILING_ID, mailingItem.getMailing().getGuid().getLocalId())
-      .addPredicateColumn(MailingItemCols.USER_ID, mailingItem.getListUser().getUser().getGuid().getLocalId());
+      .addPredicateColumn(MailingItemCols.USER_ID, mailingItem.getListUser().getUser().getGuid().getUserId());
 
     MailingItemStatus newStatus = mailingItemInputProps.getStatus();
     if (newStatus != null && newStatus.getCode() > mailingItem.getStatus().getCode()) {

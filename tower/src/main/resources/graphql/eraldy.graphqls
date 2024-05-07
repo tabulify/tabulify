@@ -269,7 +269,7 @@ type MailingJob {
 
 
 """
-The Organization is the Eraldy client
+An Organization (A group of users representing a company)
 """
 type Organization {
   guid: OrgaGuid!
@@ -283,8 +283,10 @@ type Organization {
   modificationTime: String @dateFormat
   """Users"""
   users:[OrganizationUser]
-  """Realms"""
-  realms: [Realm]
+  """The realm where this organization belongs"""
+  realm: Realm
+  """The realms that this organization owned"""
+  ownedRealms: [Realm]
 }
 
 """
@@ -309,22 +311,24 @@ type Realm {
   handle: Handle
   """The owner of the realm"""
   ownerUser: OrganizationUser!
+  """The organization that owns this Realm"""
+  ownerOrganization: Organization!
   """The number of user in the realm"""
   userCount: Int!
   """The number of app in the realm"""
   appCount: Int!
   """The number of list in the realm"""
   listCount: Int!
-  """The organization of the Realm"""
-  organization: Organization!
   """The creation time"""
   creationTime: String! @dateFormat
   """The modification time"""
   modificationTime: String! @dateFormat
-  """The apps"""
-  apps: [App]!
-  """The users"""
+  """The users of this realm"""
   users(pagination: Pagination): [User]!
+  """The organizations of this realm"""
+  organizations(pagination: Pagination): [Organization]!
+  """The apps of this realm"""
+  apps: [App]!
 }
 
 type App {
