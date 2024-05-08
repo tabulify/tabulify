@@ -106,8 +106,6 @@ public class ListProvider {
     }
     ListGuid listGuid = new ListGuid();
     listGuid.setLocalId(listId);
-    // because the app is not on the database row, this function should be deleted
-    // as we may get an error
     listGuid.setRealmId(listObject.getApp().getGuid().getRealmId());
     listObject.setGuid(listGuid);
   }
@@ -164,17 +162,21 @@ public class ListProvider {
      * Ownership
      */
     OrgaUserGuid ownerIdentifier = listInputProps.getOwnerUserGuid();
-    OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider().toNewOwnerFromGuid(ownerIdentifier);
+    OrgaUser ownerUser;
+    if (ownerIdentifier == null) {
+      ownerUser = app.getOwnerUser();
+    } else {
+      ownerUser = this.apiApp.getOrganizationUserProvider().toNewOwnerFromGuid(ownerIdentifier);
+    }
     newList.setOwnerUser(ownerUser);
     jdbcInsert.addColumn(ListCols.OWNER_USER_ID, ownerUser.getGuid().getUserId());
     jdbcInsert.addColumn(ListCols.OWNER_ORGA_ID, ownerUser.getGuid().getOrganizationId());
     jdbcInsert.addColumn(ListCols.OWNER_REALM_ID, ownerUser.getGuid().getRealmId());
 
     /**
-     * App (And realm)
+     * App
      */
     newList.setApp(app);
-    jdbcInsert.addColumn(ListCols.REALM_ID, app.getGuid().getRealmId());
     jdbcInsert.addColumn(ListCols.APP_ID, app.getGuid().getLocalId());
 
     /**
