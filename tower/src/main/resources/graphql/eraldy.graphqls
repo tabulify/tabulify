@@ -248,7 +248,7 @@ A mailing
 """
 type MailingJob {
   """The Guid of the mailing"""
-  guid: ID!
+  guid: MailingJobGuid!
   """The Mailing"""
   mailing: Mailing!
   """The Status"""
