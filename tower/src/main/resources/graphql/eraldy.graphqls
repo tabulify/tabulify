@@ -508,7 +508,7 @@ type Mutation {
   """Create a mailing"""
   mailingCreate(listGuid: ListGuid!, props:MailingInput): Mailing
   """Send a test email for the mailing"""
-  mailingSendTestEmail(MailingGuid: MailingGuid!, props: MailingInputTestEmail!): Boolean
+  mailingSendTestEmail(mailingGuid: MailingGuid!, props: MailingInputTestEmail!): Boolean
   """Execute the mailing"""
   mailingExecute(mailingGuid: MailingGuid!): MailingJob
   """Deliver a mailing item"""
