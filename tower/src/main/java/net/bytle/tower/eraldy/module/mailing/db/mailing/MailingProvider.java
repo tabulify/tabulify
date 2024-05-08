@@ -42,7 +42,6 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Manage the get/upsert of a {@link Mailing} object asynchronously
@@ -78,11 +77,11 @@ public class MailingProvider {
     this.updateItemCountAndStatusToRunningSqlStatement = postgresClient.getSqlStatement("mailing/mailing-update-item-count-and-state.sql");
     this.mailingItemsSqlInsertion = postgresClient.getSqlStatement("mailing/mailing-item-insertion.sql");
 
-    GuidDeSer mailingGuidDeser = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(MAILING_GUID_PREFIX,2);
+    GuidDeSer mailingGuidDeser = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(MAILING_GUID_PREFIX, 2);
     this.apiApp.getHttpServer().getServer().getJacksonMapperManager()
       .addDeserializer(MailingStatus.class, new JacksonMailingStatusDeserializer())
-      .addSerializer(MailingGuid.class,new JacksonMailingGuidSerializer(mailingGuidDeser))
-      .addDeserializer(MailingGuid.class,new JacksonMailingGuidDeserializer(mailingGuidDeser));
+      .addSerializer(MailingGuid.class, new JacksonMailingGuidSerializer(mailingGuidDeser))
+      .addDeserializer(MailingGuid.class, new JacksonMailingGuidDeserializer(mailingGuidDeser));
 
     this.mailingTable = JdbcTable.build(jdbcSchema, "realm_mailing", MailingCols.values())
       .addPrimaryKeyColumn(MailingCols.ID)
@@ -169,7 +168,7 @@ public class MailingProvider {
         OrgaUser ownerUser = ListProvider.getOwnerUser(list);
         mailing.setEmailAuthor(ownerUser);
         jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_USER_ID, ownerUser.getGuid().getUserId());
-        jdbcInsert.addColumn(MailingCols.ORGA_ID, ownerUser.getGuid().getOrganizationId());
+        jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_ORGA_ID, ownerUser.getGuid().getOrganizationId());
 
         return jdbcPool
           .withTransaction(sqlConnection ->
@@ -178,7 +177,7 @@ public class MailingProvider {
               .compose(nextId -> {
 
                 jdbcInsert.addColumn(MailingCols.ID, nextId);
-                updateGuid(mailing,nextId);
+                updateGuid(mailing, nextId);
 
                 return jdbcInsert.execute();
               })
@@ -219,7 +218,7 @@ public class MailingProvider {
     Mailing mailing = new Mailing();
     mailing.setRealm(realm);
     // realm and id should be first set for guid update
-    this.updateGuid(mailing,row.getLong(MailingCols.ID));
+    this.updateGuid(mailing, row.getLong(MailingCols.ID));
     mailing.setName(row.getString(MailingCols.NAME));
     mailing.setCreationTime(row.getLocalDateTime(MailingCols.CREATION_TIME));
     mailing.setModificationTime(row.getLocalDateTime(MailingCols.MODIFICATION_TIME));
@@ -238,15 +237,12 @@ public class MailingProvider {
      * (In graphQl, by the function that is mapped to the type)
      * ie {@link #buildEmailAuthorAtRequestTimeEventually(Mailing)}
      */
-    Long orgaId = row.getLong(MailingCols.ORGA_ID);
-    assert Objects.equals(realm.getOwnerUser().getOrganization().getGuid().getOrgaId(), orgaId);
-    Long userId = row.getLong(MailingCols.EMAIL_AUTHOR_USER_ID);
-    OrgaUser authorUser = new OrgaUser();
-    OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
-    orgaUserGuid.setUserId(userId);
-    orgaUserGuid.setOrganizationId(orgaId);
-    authorUser.setGuid(orgaUserGuid);
-    authorUser.setRealm(realm);
+    OrgaUserGuid orgaUserGuid = new OrgaUserGuid.Builder()
+      .setUserId(row.getLong(MailingCols.EMAIL_AUTHOR_USER_ID))
+      .setOrgaId(row.getLong(MailingCols.EMAIL_AUTHOR_ORGA_ID))
+      .setRealmId(row.getLong(MailingCols.EMAIL_AUTHOR_REALM_ID))
+      .build();
+    OrgaUser authorUser = this.apiApp.getOrganizationUserProvider().toNewOwnerFromGuid(orgaUserGuid);
     mailing.setEmailAuthor(authorUser);
 
     /**
@@ -407,7 +403,7 @@ public class MailingProvider {
       if (newAuthor != null) {
         mailing.setEmailAuthor(newAuthor);
         jdbcUpdate.setUpdatedColumnWithValue(MailingCols.EMAIL_AUTHOR_USER_ID, mailing.getEmailAuthor().getGuid().getUserId());
-        jdbcUpdate.setUpdatedColumnWithValue(MailingCols.ORGA_ID, mailing.getEmailAuthor().getGuid().getOrganizationId());
+        jdbcUpdate.setUpdatedColumnWithValue(MailingCols.EMAIL_AUTHOR_ORGA_ID, mailing.getEmailAuthor().getGuid().getOrganizationId());
       }
 
 

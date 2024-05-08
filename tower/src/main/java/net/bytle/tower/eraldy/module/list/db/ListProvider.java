@@ -336,10 +336,11 @@ public class ListProvider {
      * Owner
      * Id + Orga
      */
-    OrgaUserGuid ownerUserGuid = new OrgaUserGuid();
-    ownerUserGuid.setOrganizationId(row.getLong(ListCols.OWNER_ORGA_ID));
-    ownerUserGuid.setUserId(row.getLong(ListCols.OWNER_USER_ID));
-    ownerUserGuid.setRealmId(row.getLong(ListCols.OWNER_REALM_ID));
+    OrgaUserGuid ownerUserGuid = new OrgaUserGuid.Builder()
+      .setOrgaId(row.getLong(ListCols.OWNER_ORGA_ID))
+      .setUserId(row.getLong(ListCols.OWNER_USER_ID))
+      .setRealmId(row.getLong(ListCols.OWNER_REALM_ID))
+      .build();
     listObject.setOwnerUser(this.apiApp.getOrganizationUserProvider().toNewUserFromGuid(ownerUserGuid));
 
     /**

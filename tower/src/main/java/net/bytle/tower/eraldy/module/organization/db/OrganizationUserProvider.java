@@ -83,11 +83,11 @@ public class OrganizationUserProvider {
    */
   public Future<OrgaUser> getOrganizationOwnerUserByGuid(UserGuid userGuid, SqlConnection sqlConnection) {
 
-    if(userGuid.getRealmId()!=EraldyModel.REALM_LOCAL_ID){
+    if (userGuid.getRealmId() != EraldyModel.REALM_LOCAL_ID) {
       return Future.failedFuture(
         TowerFailureException
           .builder()
-          .setMessage("The user guid ("+userGuid+") is not an owner guid as it's not in the Eraldy realm")
+          .setMessage("The user guid (" + userGuid + ") is not an owner guid as it's not in the Eraldy realm")
           .build()
       );
     }
@@ -132,9 +132,11 @@ public class OrganizationUserProvider {
 
   private OrgaUser createOrganizationUserFromDatabaseRow(JdbcRow jdbcRow, Organization knownOrganization) {
     OrgaUser orgaUser = new OrgaUser();
-    OrgaUserGuid guid = new OrgaUserGuid();
-    guid.setOrganizationId(jdbcRow.getLong(OrgaUserCols.ORGA_ID));
-    guid.setUserId(jdbcRow.getLong(OrgaUserCols.USER_ID));
+    OrgaUserGuid guid = new OrgaUserGuid.Builder()
+      .setOrgaId(jdbcRow.getLong(OrgaUserCols.ORGA_ID))
+      .setRealmId(jdbcRow.getLong(OrgaUserCols.REALM_ID))
+      .setUserId(jdbcRow.getLong(OrgaUserCols.USER_ID))
+      .build();
     orgaUser.setGuid(guid);
     orgaUser.setOrganizationRole(OrgaRole.fromRoleIdFailSafe(jdbcRow.getInteger(OrgaUserCols.ROLE_ID)));
     orgaUser.setOrganization(Objects.requireNonNullElseGet(knownOrganization, () -> Organization.createFromOrgaUserGuid(guid)));
@@ -258,10 +260,11 @@ public class OrganizationUserProvider {
   public OrgaUser toNewOwnerFromActualOwner(OrgaUserGuid newOrgaUserGuid, OrgaUser actualOrgaUser) {
     // user Organization should be the owner organization
     if (!Objects.equals(actualOrgaUser.getOrganization().getGuid(), newOrgaUserGuid.getOrgaGuid())) {
-      throw new RuntimeException ("The new owner user organization (" + newOrgaUserGuid.getOrgaGuid() + ") is not the same as the actual owner organization (" + actualOrgaUser.getOrganization().getGuid() + ")");
+      throw new RuntimeException("The new owner user organization (" + newOrgaUserGuid.getOrgaGuid() + ") is not the same as the actual owner organization (" + actualOrgaUser.getOrganization().getGuid() + ")");
     }
     return toNewOwnerFromGuid(newOrgaUserGuid);
   }
+
   /**
    * Utility class to create a minimal orga user from a guid
    * (used in row reading)
@@ -279,10 +282,13 @@ public class OrganizationUserProvider {
 
   }
 
+  /**
+   * Owner (ie means user in the Eraldy Realm)
+   */
   public OrgaUser toNewOwnerFromGuid(OrgaUserGuid orgaUserGuid) {
     // an owner should be in the Eraldy realm
-    if(orgaUserGuid.getRealmId()!=EraldyModel.REALM_LOCAL_ID){
-      throw new RuntimeException ("The new owner user (" + orgaUserGuid.getOrgaGuid() + ") is not in the Eraldy realm");
+    if (orgaUserGuid.getRealmId() != EraldyModel.REALM_LOCAL_ID) {
+      throw new RuntimeException("The new owner user (" + orgaUserGuid.getOrgaGuid() + ") is not in the Eraldy realm");
     }
     return toNewUserFromGuid(orgaUserGuid);
   }

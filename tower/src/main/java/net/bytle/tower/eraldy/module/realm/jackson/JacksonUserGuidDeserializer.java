@@ -40,11 +40,9 @@ public class JacksonUserGuidDeserializer extends JacksonJsonStringDeserializer<U
       throw new CastException("The user guid (" + value + ") is not valid. Error: " + e.getMessage(), e);
     }
 
-    UserGuid userGuid = new UserGuid();
-    long realmId = userGuidObject[0];
-    userGuid.setRealmId(realmId);
-    long localId = userGuidObject[1];
-    userGuid.setUserId(localId);
-    return userGuid;
+    return new UserGuid.Builder()
+      .setRealmId(userGuidObject[0])
+      .setUserId(userGuidObject[1])
+      .build();
   }
 }

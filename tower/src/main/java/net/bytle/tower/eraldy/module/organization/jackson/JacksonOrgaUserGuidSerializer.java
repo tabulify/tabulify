@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.module.organization.jackson;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonJsonStringSerializer;
@@ -29,9 +28,9 @@ public class JacksonOrgaUserGuidSerializer extends JacksonJsonStringSerializer<O
   @Override
   public String serialize(OrgaUserGuid value) {
     return guidDeSer.serialize(
-      EraldyModel.REALM_LOCAL_ID,
-      value.getUserId(),
-      value.getOrganizationId()
+      value.getRealmId(),
+      value.getOrganizationId(),
+      value.getUserId()
     );
   }
 }

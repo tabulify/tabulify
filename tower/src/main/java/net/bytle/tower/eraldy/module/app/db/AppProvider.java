@@ -245,10 +245,11 @@ public class AppProvider {
     /**
      * Ownership
      */
-    OrgaUserGuid ownerUserGuid = new OrgaUserGuid();
-    ownerUserGuid.setRealmId(row.getLong(AppCols.OWNER_REALM_ID));
-    ownerUserGuid.setUserId(row.getLong(AppCols.OWNER_USER_ID));
-    ownerUserGuid.setOrganizationId(row.getLong(AppCols.OWNER_ORGA_ID));
+    OrgaUserGuid ownerUserGuid = new OrgaUserGuid.Builder()
+      .setRealmId(row.getLong(AppCols.OWNER_REALM_ID))
+      .setUserId(row.getLong(AppCols.OWNER_USER_ID))
+      .setOrgaId(row.getLong(AppCols.OWNER_ORGA_ID))
+      .build();
     OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider().toNewUserFromGuid(ownerUserGuid);
     app.setOwnerUser(ownerUser);
 

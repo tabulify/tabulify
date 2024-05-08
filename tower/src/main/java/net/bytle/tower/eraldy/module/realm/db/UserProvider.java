@@ -79,7 +79,7 @@ public class UserProvider {
 
     JacksonMapperManager jacksonMapperManager = server.getJacksonMapperManager();
 
-    GuidDeSer userGuidDeser = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(USR_GUID_PREFIX,2);
+    GuidDeSer userGuidDeser = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(USR_GUID_PREFIX, 2);
     jacksonMapperManager
       .addDeserializer(UserStatus.class, new JacksonUserStatusDeserializer())
       .addDeserializer(UserGuid.class, new JacksonUserGuidDeserializer(userGuidDeser))
@@ -342,10 +342,12 @@ public class UserProvider {
     if (user.getGuid() != null) {
       return;
     }
-    UserGuid userGuid = new UserGuid();
-    userGuid.setUserId(userLocalId);
-    userGuid.setRealmId(user.getRealm().getGuid().getLocalId());
-    user.setGuid(userGuid);
+    user.setGuid(
+      new UserGuid.Builder()
+        .setUserId(userLocalId)
+        .setRealmId(user.getRealm().getGuid().getLocalId())
+        .build()
+    );
 
   }
 
@@ -495,7 +497,6 @@ public class UserProvider {
     }
     return users;
   }
-
 
 
   public <T extends User> Future<T> getUserByIdentifier(String identifier, Realm realm) {
@@ -744,7 +745,7 @@ public class UserProvider {
     return this.jdbcPool.withConnection(sqlConnection -> getUserByPassword(userEmail, userPassword, realm, sqlConnection));
   }
 
-  public <T extends User> Future<T>  updateUser(T actualUser, UserInputProps userInputProps) {
+  public <T extends User> Future<T> updateUser(T actualUser, UserInputProps userInputProps) {
     return this.jdbcPool.withConnection(sqlConnection -> updateUser(actualUser, userInputProps, sqlConnection));
   }
 }

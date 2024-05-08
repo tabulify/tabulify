@@ -70,7 +70,7 @@ public class ListUserProvider {
     /**
      * Register the deserializer
      */
-    GuidDeSer listUserGuid = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(ListUserGuid.GUID_PREFIX,3);
+    GuidDeSer listUserGuid = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(ListUserGuid.GUID_PREFIX, 3);
     jacksonMapperManager
       .addDeserializer(ListUserSource.class, new JacksonListUserSourceDeserializer())
       .addSerializer(ListUserSource.class, new JacksonListUserSourceSerializer())
@@ -230,10 +230,12 @@ public class ListUserProvider {
     listUser.setList(list);
 
     User user = new User();
-    UserGuid userGuid = new UserGuid();
-    userGuid.setRealmId(realmId);
-    userGuid.setUserId(userId);
-    user.setGuid(userGuid);
+    user.setGuid(new UserGuid
+      .Builder()
+      .setRealmId(realmId)
+      .setUserId(userId)
+      .build()
+    );
     user.setRealm(realm);
     listUser.setUser(user);
 

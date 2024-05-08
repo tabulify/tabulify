@@ -15,9 +15,10 @@ public enum MailingCols implements JdbcColumn {
   ITEM_COUNT( MAILING_PREFIX + COLUMN_PART_SEP + "item_count"),
   ITEM_SUCCESS_COUNT(MAILING_PREFIX + COLUMN_PART_SEP + "item_success_count"),
   ITEM_EXECUTION_COUNT(MAILING_PREFIX + COLUMN_PART_SEP + "item_execution_count"),
-  ORGA_ID (MAILING_PREFIX + COLUMN_PART_SEP + "orga_id"),
+  EMAIL_AUTHOR_ORGA_ID(MAILING_PREFIX + COLUMN_PART_SEP + "email_author" + COLUMN_PART_SEP + "orga_id"),
 
   EMAIL_AUTHOR_USER_ID (MAILING_PREFIX + COLUMN_PART_SEP + "email_author" + COLUMN_PART_SEP + "user_id"),
+  EMAIL_AUTHOR_REALM_ID(MAILING_PREFIX + COLUMN_PART_SEP + "email_author" + COLUMN_PART_SEP + "realm_id"),
   ID(MAILING_PREFIX + COLUMN_PART_SEP + "id"),
   NAME(MAILING_PREFIX + COLUMN_PART_SEP + "name"),
   REALM_ID( MAILING_PREFIX + COLUMN_PART_SEP + "realm_id"),
@@ -27,7 +28,8 @@ public enum MailingCols implements JdbcColumn {
   EMAIL_BODY ( MAILING_PREFIX + COLUMN_PART_SEP + "email_body"),
 
   EMAIL_LANGUAGE ( MAILING_PREFIX + COLUMN_PART_SEP + "email_language"),
-  EMAIL_RCPT_LIST_ID(MAILING_PREFIX + COLUMN_PART_SEP + "email_rcpt" + COLUMN_PART_SEP + "list_id");
+  EMAIL_RCPT_LIST_ID(MAILING_PREFIX + COLUMN_PART_SEP + "email_rcpt" + COLUMN_PART_SEP + "list_id"),
+  ;
 
   private final String colName;
 

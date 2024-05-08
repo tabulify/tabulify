@@ -113,10 +113,11 @@ public class EraldyModel {
      */
     OrgaUser orgaUserOwner = new OrgaUser();
     this.eraldyRealm.setOwnerUser(orgaUserOwner);
-    OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
-    orgaUserGuid.setUserId(OWNER_LOCAL_ID);
-    orgaUserGuid.setRealmId(ownerOrganization.getGuid().getRealmId());
-    orgaUserGuid.setOrganizationId(ownerOrganization.getGuid().getOrgaId());
+    OrgaUserGuid orgaUserGuid = new OrgaUserGuid.Builder()
+      .setUserId(OWNER_LOCAL_ID)
+      .setRealmId(ownerOrganization.getGuid().getRealmId())
+      .setOrgaId(ownerOrganization.getGuid().getOrgaId())
+      .build();
     orgaUserOwner.setGuid(orgaUserGuid);
     orgaUserOwner.setOrganization(ownerOrganization);
     orgaUserOwner.setGivenName("Nico");

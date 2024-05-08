@@ -3,7 +3,6 @@ package net.bytle.tower.eraldy.module.organization.jackson;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import net.bytle.exception.CastException;
-import net.bytle.tower.EraldyModel;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.vertx.guid.GuidDeSer;
 import net.bytle.vertx.jackson.JacksonJsonStringDeserializer;
@@ -22,11 +21,11 @@ public class JacksonOrgaUserGuidDeserializer extends JacksonJsonStringDeserializ
   public OrgaUserGuid deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
 
     String value = p.getValueAsString();
-      try {
-          return this.deserialize(value);
-      } catch (CastException e) {
-          throw new RuntimeException(e.getMessage(),e);
-      }
+    try {
+      return this.deserialize(value);
+    } catch (CastException e) {
+      throw new RuntimeException(e.getMessage(), e);
+    }
 
   }
 
@@ -37,13 +36,12 @@ public class JacksonOrgaUserGuidDeserializer extends JacksonJsonStringDeserializ
     } catch (CastException e) {
       throw new CastException("The user guid (" + value + ") is not valid. Error: " + e.getMessage(), e);
     }
-    long realmId = ids[0];
-    if (realmId != EraldyModel.REALM_LOCAL_ID) {
-      throw new CastException("The user guid (" + value + ") is not a organization guid because the realm is not eraldy.");
-    }
-    OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
-    orgaUserGuid.setUserId(ids[1]);
-    orgaUserGuid.setOrganizationId(ids[2]);
+
+    OrgaUserGuid orgaUserGuid = new OrgaUserGuid.Builder()
+      .setRealmId(ids[0])
+      .setOrgaId(ids[1])
+      .setUserId(ids[2])
+      .build();
     orgaUserGuid.setHash(value);
     return orgaUserGuid;
   }

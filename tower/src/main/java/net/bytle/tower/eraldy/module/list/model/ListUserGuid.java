@@ -15,7 +15,7 @@ public class ListUserGuid extends Guid {
     super();
   }
 
-  public long getRealmId(){
+  public long getRealmId() {
     return this.realmId;
   }
 
@@ -54,9 +54,9 @@ public class ListUserGuid extends Guid {
   }
 
   public UserGuid toUserGuid() {
-    UserGuid userGuid = new UserGuid();
-    userGuid.setRealmId(this.realmId);
-    userGuid.setUserId(this.userId);
-    return userGuid;
+    return new UserGuid.Builder()
+      .setRealmId(this.realmId)
+      .setUserId(this.userId)
+      .build();
   }
 }
