@@ -30,8 +30,8 @@ public class OAuthState {
   private static final String APP_GUID = "appIdentifier";
   private static final String CLIENT_ID = "clientId";
   private static final String APP_HANDLE = "appHandle";
-  private static final String ORG_GUID = "orgGuid";
-  private static final String ORG_HANDLE = "orgHandle";
+  private static final String OWNER_ORG_GUID = "ownerOrgGuid";
+  private static final String OWNER_ORG_HANDLE = "ownerOrgHandle";
 
   private static final String REDIRECT_URI = "redirectUri";
   private final JsonObject jsonObject;
@@ -117,25 +117,25 @@ public class OAuthState {
   /**
    * @param orgIdentifier - an identifier for the org (used in analytics)
    */
-  public OAuthState setOrganisationGuid(String orgIdentifier) {
-    this.jsonObject.put(ORG_GUID, orgIdentifier);
+  public OAuthState setOrganisationOwnerGuid(String orgIdentifier) {
+    this.jsonObject.put(OWNER_ORG_GUID, orgIdentifier);
     return this;
   }
 
-  public String getOrganisationGuid() {
-    return this.jsonObject.getString(ORG_GUID);
+  public String getOwnerOrganisationGuid() {
+    return this.jsonObject.getString(OWNER_ORG_GUID);
   }
 
   /**
    * @param orgHandle - an identifier handle for the org (used in analytics)
    */
-  public OAuthState setOrganisationHandle(String orgHandle) {
-    this.jsonObject.put(ORG_HANDLE, orgHandle);
+  public OAuthState setOrganisationOwnerHandle(String orgHandle) {
+    this.jsonObject.put(OWNER_ORG_HANDLE, orgHandle);
     return this;
   }
 
-  public String getOrgHandle() {
-    return this.jsonObject.getString(ORG_HANDLE);
+  public String getOwnerOrgHandle() {
+    return this.jsonObject.getString(OWNER_ORG_HANDLE);
   }
 
   /**

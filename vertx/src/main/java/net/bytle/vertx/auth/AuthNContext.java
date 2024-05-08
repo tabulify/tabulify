@@ -313,13 +313,13 @@ public class AuthNContext {
     }
     app.setAppRealmHandle(realmHandle);
 
-    String orgIdentifier = this.oAuthState.getOrganisationGuid();
+    String orgIdentifier = this.oAuthState.getOwnerOrganisationGuid();
     if (orgIdentifier == null) {
       orgIdentifier = this.authUser.getAudienceOwnerOrganizationGuid();
     }
     app.setAppOrganisationGuid(orgIdentifier);
 
-    String orgHandle = this.oAuthState.getOrgHandle();
+    String orgHandle = this.oAuthState.getOwnerOrgHandle();
     if (orgHandle == null) {
       orgHandle = this.authUser.getAudienceOwnerOrganizationHandle();
     }

@@ -50,18 +50,17 @@ public class EraldySubRealmModel {
           organisationUserInputProps.setRole(OrgaRole.OWNER);
           return apiApp
             .getOrganizationUserProvider()
-            .getsertOnServerStartup(eraldyRealm.getOwnerOrganization(), ownerUser, organisationUserInputProps, sqlConnection)
+            .getsertOnServerStartup(eraldyRealm.getOwnerUser().getOrganization(), ownerUser, organisationUserInputProps, sqlConnection)
             .recover(err->Future.failedFuture(new InternalException("Error on user organization getsert",err)))
             .compose(ownerResult -> {
 
               LOGGER.info(REALM_HANDLE+": organisation ownerUser created");
-              ownerResult.setOrganization(eraldyRealm.getOwnerOrganization());
+              ownerResult.setOrganization(eraldyRealm.getOwnerUser().getOrganization());
 
               RealmInputProps realmInputProps = new RealmInputProps();
               realmInputProps.setHandle(REALM_HANDLE);
               realmInputProps.setName(REALM_HANDLE + " Realm");
               realmInputProps.setOwnerUserGuid(ownerResult.getGuid());
-              realmInputProps.setOwnerOrgaGuid(eraldyRealm.getOwnerOrganization().getGuid());
                 return this.apiApp.getRealmProvider()
                   .getsertOnServerStartup(null, realmInputProps, sqlConnection);
               }

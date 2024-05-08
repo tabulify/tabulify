@@ -151,8 +151,8 @@ public class AuthApiImpl implements AuthApi {
           .setAppHandle(jacksonManager.getSerializer(Handle.class).serialize(requestingApp.getHandle()))
           .setRealmIdentifier(jacksonManager.getSerializer(RealmGuid.class).serialize(requestingApp.getRealm().getGuid()))
           .setRealmHandle(jacksonManager.getSerializer(Handle.class).serialize(requestingApp.getRealm().getHandle()))
-          .setOrganisationGuid(jacksonManager.getSerializer(OrgaGuid.class).serialize(requestingApp.getRealm().getOwnerOrganization().getGuid()))
-          .setOrganisationHandle(jacksonManager.getSerializer(Handle.class).serialize(requestingApp.getRealm().getOwnerOrganization().getHandle()))
+          .setOrganisationOwnerGuid(jacksonManager.getSerializer(OrgaGuid.class).serialize(requestingApp.getRealm().getOwnerUser().getOrganization().getGuid()))
+          .setOrganisationOwnerHandle(jacksonManager.getSerializer(Handle.class).serialize(requestingApp.getRealm().getOwnerUser().getOrganization().getHandle()))
           .setRedirectUri(redirectUriEnhanced);
 
         return this.apiApp
