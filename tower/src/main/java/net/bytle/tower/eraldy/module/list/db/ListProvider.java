@@ -110,22 +110,6 @@ public class ListProvider {
     listObject.setGuid(listGuid);
   }
 
-  public static OrgaUser getOwnerUser(ListObject list) {
-    OrgaUser ownerUser = list.getOwnerUser();
-    if (ownerUser != null) {
-      return ownerUser;
-    }
-    ownerUser = list.getApp().getOwnerUser();
-    if (ownerUser != null) {
-      return ownerUser;
-    }
-    ownerUser = list.getApp().getRealm().getOwnerUser();
-    if (ownerUser != null) {
-      return ownerUser;
-    }
-    throw new InternalException("The owner of the list (" + list + ") could not be determined");
-  }
-
 
   /**
    * @param listHandle - the handle to lookup

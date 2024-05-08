@@ -15,7 +15,6 @@ import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.ListUserStatus;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.app.model.App;
-import net.bytle.tower.eraldy.module.list.db.ListProvider;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.mailing.graphql.MailingGraphQLImpl;
 import net.bytle.tower.eraldy.module.mailing.inputs.MailingInputProps;
@@ -164,11 +163,18 @@ public class MailingProvider {
         mailing.setEmailRecipientList(list);
         jdbcInsert.addColumn(MailingCols.EMAIL_RCPT_LIST_ID, mailing.getEmailRecipientList().getGuid().getLocalId());
 
-        // owner
-        OrgaUser ownerUser = ListProvider.getOwnerUser(list);
-        mailing.setEmailAuthor(ownerUser);
-        jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_USER_ID, ownerUser.getGuid().getUserId());
-        jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_ORGA_ID, ownerUser.getGuid().getOrganizationId());
+        // Author
+        OrgaUserGuid emailAuthorGuid = mailingInputProps.getEmailAuthorGuid();
+        OrgaUser emailAuthor;
+        if (emailAuthorGuid == null) {
+          emailAuthor = list.getOwnerUser();
+        } else {
+          emailAuthor = this.apiApp.getOrganizationUserProvider().toNewOwnerFromGuid(emailAuthorGuid);
+        }
+        mailing.setEmailAuthor(emailAuthor);
+        jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_USER_ID, emailAuthor.getGuid().getUserId());
+        jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_ORGA_ID, emailAuthor.getGuid().getOrganizationId());
+        jdbcInsert.addColumn(MailingCols.EMAIL_AUTHOR_REALM_ID, emailAuthor.getGuid().getRealmId());
 
         return jdbcPool
           .withTransaction(sqlConnection ->
