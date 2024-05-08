@@ -152,7 +152,6 @@ public class OrganizationProvider {
     organization.setModificationTime(nowInUtc);
     jdbcInsert.addColumn(OrganizationCols.MODIFICATION_TIME, organization.getModificationTime());
 
-
     if (organizationInputProps.getHandle() != null) {
       organization.setHandle(organizationInputProps.getHandle());
       jdbcInsert.addColumn(OrganizationCols.HANDLE, organization.getHandle().getValue());
@@ -161,7 +160,9 @@ public class OrganizationProvider {
     organization.setName(organizationInputProps.getName());
     jdbcInsert.addColumn(OrganizationCols.NAME, organization.getName());
 
-
+    /**
+     * The owner should be in the same realm as the organization
+     */
     OrgaUserGuid ownerGuid = organizationInputProps.getOwnerUserGuid();
     if (ownerGuid.getRealmId() != realm.getGuid().getLocalId()) {
       return Future.failedFuture(
@@ -170,13 +171,10 @@ public class OrganizationProvider {
           .setMessage("The realm id (" + realm.getGuid().getLocalId() + ") and the owner realm id (" + ownerGuid.getRealmId() + ") are not the same")
           .build()
       );
-
     }
-    OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(ownerGuid, this.apiApp.getEraldyModel().getRealm());
+    OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider().toNewOwnerFromGuid(ownerGuid);
     organization.setOwnerUser(ownerUser);
-    jdbcInsert
-      .addColumn(OrganizationCols.OWNER_ID, organization.getOwnerUser().getGuid().getUserId())
-      .addColumn(OrganizationCols.REALM_ID, organization.getOwnerUser().getGuid().getRealmId());
+    jdbcInsert.addColumn(OrganizationCols.OWNER_ID, organization.getOwnerUser().getGuid().getUserId());
 
     return this.apiApp.getRealmSequenceProvider()
       .getNextIdForTableAndRealm(sqlConnection, realm, this.orgaTable)
@@ -188,7 +186,6 @@ public class OrganizationProvider {
         jdbcInsert.addColumn(OrganizationCols.ID, organization.getGuid().getOrgaId());
         jdbcInsert.addColumn(OrganizationCols.REALM_ID, organization.getGuid().getRealmId());
         return jdbcInsert
-          .addReturningColumn(OrganizationCols.ID)
           .execute(sqlConnection)
           .compose(v -> Future.succeededFuture(organization));
       });

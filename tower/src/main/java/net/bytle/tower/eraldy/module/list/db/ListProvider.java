@@ -31,7 +31,6 @@ import net.bytle.tower.eraldy.module.list.jackson.JacksonListGuidDeserializer;
 import net.bytle.tower.eraldy.module.list.jackson.JacksonListGuidSerializer;
 import net.bytle.tower.eraldy.module.list.model.ListGuid;
 import net.bytle.tower.eraldy.module.list.model.ListImportListUserStatus;
-import net.bytle.tower.eraldy.module.organization.db.OrganizationUserProvider;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
@@ -70,7 +69,7 @@ public class ListProvider {
     Server server = apiApp.getHttpServer().getServer();
     this.jdbcPool = jdbcSchema.getJdbcClient().getPool();
 
-    GuidDeSer listGuidDeSer = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(LIST_GUID_PREFIX,2);
+    GuidDeSer listGuidDeSer = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(LIST_GUID_PREFIX, 2);
     server.getJacksonMapperManager()
       .addDeserializer(ListGuid.class, new JacksonListGuidDeserializer(listGuidDeSer))
       .addSerializer(ListGuid.class, new JacksonListGuidSerializer(listGuidDeSer))
@@ -153,108 +152,99 @@ public class ListProvider {
   private Future<ListObject> insertList(App app, ListInputProps listInputProps) {
 
     /**
-     * User
+     * New list
+     * We create the object before asking for a next id
+     * to not eat a id in the sequence
+     * if there is a problem in the building of the list
+     */
+    JdbcInsert jdbcInsert = JdbcInsert.into(this.listTable);
+    ListObject newList = new ListObject();
+
+    /**
+     * Ownership
      */
     OrgaUserGuid ownerIdentifier = listInputProps.getOwnerUserGuid();
-    Future<OrgaUser> futureUser = Future.succeededFuture(app.getOwnerUser());
-    if (ownerIdentifier != null) {
-      OrganizationUserProvider userProvider = apiApp.getOrganizationUserProvider();
-      futureUser = userProvider.getOrganizationUserByGuid(ownerIdentifier);
+    OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider().toNewOwnerFromGuid(ownerIdentifier);
+    newList.setOwnerUser(ownerUser);
+    jdbcInsert.addColumn(ListCols.OWNER_USER_ID, ownerUser.getGuid().getUserId());
+    jdbcInsert.addColumn(ListCols.OWNER_ORGA_ID, ownerUser.getGuid().getOrganizationId());
+    jdbcInsert.addColumn(ListCols.OWNER_REALM_ID, ownerUser.getGuid().getRealmId());
+
+    /**
+     * App (And realm)
+     */
+    newList.setApp(app);
+    jdbcInsert.addColumn(ListCols.REALM_ID, app.getGuid().getRealmId());
+    jdbcInsert.addColumn(ListCols.APP_ID, app.getGuid().getLocalId());
+
+    /**
+     * Name
+     */
+    String name = listInputProps.getName();
+    if (name == null || name.isBlank()) {
+      name = "List of " + LocalDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_DATE);
+    }
+    newList.setName(name);
+    jdbcInsert.addColumn(ListCols.NAME, newList.getName());
+
+    Handle handle = listInputProps.getHandle();
+    if (handle != null) {
+      newList.setHandle(handle);
+      jdbcInsert.addColumn(ListCols.HANDLE, newList.getHandle().getValue());
     }
 
-    return futureUser
-      .compose(user -> {
+    newList.setUserCount(0L);
+    jdbcInsert.addColumn(ListCols.USER_COUNT, newList.getUserCount());
 
-        JdbcInsert jdbcInsert = JdbcInsert.into(this.listTable);
+    newList.setUserInCount(0L);
+    jdbcInsert.addColumn(ListCols.USER_IN_COUNT, newList.getUserInCount());
 
+    newList.setMailingCount(0L);
+    jdbcInsert.addColumn(ListCols.MAILING_COUNT, newList.getMailingCount());
 
-        // New list
-        ListObject newList = new ListObject();
-
-        /**
-         * Owner
-         */
-        if (user == null) {
-          user = app.getOwnerUser();
-        }
-        newList.setOwnerUser(user);
-        jdbcInsert.addColumn(ListCols.OWNER_USER_ID, user.getGuid().getUserId());
-        jdbcInsert.addColumn(ListCols.ORGA_ID, user.getGuid().getOrganizationId());
-
-        /**
-         * Realm and App
-         */
-        newList.setApp(app);
-        jdbcInsert.addColumn(ListCols.REALM_ID, app.getGuid().getRealmId());
-        jdbcInsert.addColumn(ListCols.APP_ID, app.getGuid().getLocalId());
-
-        /**
-         * Name
-         */
-        String name = listInputProps.getName();
-        if (name == null || name.isBlank()) {
-          name = "List of " + LocalDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_DATE);
-        }
-        newList.setName(name);
-        jdbcInsert.addColumn(ListCols.NAME, newList.getName());
-
-        Handle handle = listInputProps.getHandle();
-        if (handle != null) {
-          newList.setHandle(handle);
-          jdbcInsert.addColumn(ListCols.HANDLE, newList.getHandle().getValue());
-        }
-
-        newList.setUserCount(0L);
-        jdbcInsert.addColumn(ListCols.USER_COUNT, newList.getUserCount());
-
-        newList.setUserInCount(0L);
-        jdbcInsert.addColumn(ListCols.USER_IN_COUNT, newList.getUserInCount());
-
-        newList.setMailingCount(0L);
-        jdbcInsert.addColumn(ListCols.MAILING_COUNT, newList.getMailingCount());
-
-        LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
-        newList.setCreationTime(nowInUtc);
-        jdbcInsert.addColumn(ListCols.CREATION_TIME, newList.getCreationTime());
-        newList.setModificationTime(nowInUtc);
-        jdbcInsert.addColumn(ListCols.MODIFICATION_TIME, newList.getModificationTime());
+    LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
+    newList.setCreationTime(nowInUtc);
+    jdbcInsert.addColumn(ListCols.CREATION_TIME, newList.getCreationTime());
+    newList.setModificationTime(nowInUtc);
+    jdbcInsert.addColumn(ListCols.MODIFICATION_TIME, newList.getModificationTime());
 
 
-        return jdbcPool
-          .withTransaction(sqlConnection ->
-            this.apiApp.getRealmSequenceProvider()
-              .getNextIdForTableAndRealm(sqlConnection, app.getRealm(), this.listTable)
-              .compose(nextId -> {
+    return jdbcPool
+      .withTransaction(sqlConnection ->
+        this.apiApp.getRealmSequenceProvider()
+          .getNextIdForTableAndRealm(sqlConnection, app.getRealm(), this.listTable)
+          .compose(nextId -> {
 
-                this.updateGuid(newList, nextId);
-                jdbcInsert.addColumn(ListCols.ID, newList.getGuid().getLocalId());
+            this.updateGuid(newList, nextId);
+            jdbcInsert.addColumn(ListCols.ID, newList.getGuid().getLocalId());
+            jdbcInsert.addColumn(ListCols.REALM_ID, newList.getGuid().getRealmId());
 
-                /**
-                 * After the guid as it's needed to create the URL
-                 */
-                URI memberListRegistrationPath = this.apiApp.getEraldyModel().getMemberListRegistrationPath(newList);
-                newList.setRegistrationUrl(memberListRegistrationPath);
+            /**
+             * After the guid as it's needed to create the URL
+             */
+            URI memberListRegistrationPath = this.apiApp.getEraldyModel().getMemberListRegistrationPath(newList);
+            newList.setRegistrationUrl(memberListRegistrationPath);
 
-                return jdbcInsert.execute(sqlConnection);
-              })
-              .compose(rowSet -> {
-                long realmId = newList.getGuid().getRealmId();
-                long listId = newList.getGuid().getLocalId();
-                JdbcTable listUserTable = this.apiApp.getListUserProvider().getListUserTable();
-                final String createListRegistrationPartition =
-                  "CREATE TABLE IF NOT EXISTS " + listUserTable.getFullName() + "_" + realmId + "_" + listId + "\n" +
-                    "    partition of " + listUserTable.getFullName() + "\n" +
-                    "        (" + ListUserCols.REALM_ID.getColumnName() + ", " + ListUserCols.LIST_ID.getColumnName() + ")\n" +
-                    "        FOR VALUES FROM (" + realmId + "," + listId + ") TO (" + realmId + "," + (listId + 1) + " )";
-                return sqlConnection
-                  .preparedQuery(createListRegistrationPartition)
-                  .execute()
-                  .onFailure(e -> LOGGER.error("List Registration Partition creation Error: Sql Error " + e.getMessage() + ". With Sql" + createListRegistrationPartition, e));
-              })
-              .onFailure(e -> LOGGER.error("List creation Error: Sql Error " + e.getMessage(), e))
-              .compose(rows -> Future.succeededFuture(newList)));
+            return jdbcInsert.execute(sqlConnection);
+          })
+          .compose(rowSet -> {
+            long realmId = newList.getGuid().getRealmId();
+            long listId = newList.getGuid().getLocalId();
+            JdbcTable listUserTable = this.apiApp.getListUserProvider().getListUserTable();
+            final String createListRegistrationPartition =
+              "CREATE TABLE IF NOT EXISTS " + listUserTable.getFullName() + "_" + realmId + "_" + listId + "\n" +
+                "    partition of " + listUserTable.getFullName() + "\n" +
+                "        (" + ListUserCols.REALM_ID.getColumnName() + ", " + ListUserCols.LIST_ID.getColumnName() + ")\n" +
+                "        FOR VALUES FROM (" + realmId + "," + listId + ") TO (" + realmId + "," + (listId + 1) + " )";
+            return sqlConnection
+              .preparedQuery(createListRegistrationPartition)
+              .execute()
+              .onFailure(e -> LOGGER.error("List Registration Partition creation Error: Sql Error " + e.getMessage() + ". With Sql" + createListRegistrationPartition, e));
+          })
+          .onFailure(e -> LOGGER.error("List creation Error: Sql Error " + e.getMessage(), e))
+          .compose(rows -> Future.succeededFuture(newList)));
 
-      });
+
   }
 
 
@@ -280,12 +270,12 @@ public class ListProvider {
     OrgaUserGuid ownerGuidObject = listInputProps.getOwnerUserGuid();
     if (ownerGuidObject != null && !Objects.equals(ownerGuidObject, listObject.getOwnerUser().getGuid())) {
 
-      OrgaUser orgaUser = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(ownerGuidObject, listObject.getApp().getRealm());
+      OrgaUser orgaUser = this.apiApp.getOrganizationUserProvider().toNewOwnerFromActualOwner(ownerGuidObject, listObject.getOwnerUser());
       listObject.setOwnerUser(orgaUser);
 
+      // We don't update the owner orga id and owner realm id
+      // as we don't support change of organization
       jdbcUpdate.setUpdatedColumnWithValue(ListCols.OWNER_USER_ID, listObject.getOwnerUser().getGuid().getUserId());
-      jdbcUpdate.setUpdatedColumnWithValue(ListCols.ORGA_ID, listObject.getOwnerUser().getGuid().getOrganizationId());
-
 
     }
 
@@ -347,9 +337,10 @@ public class ListProvider {
      * Id + Orga
      */
     OrgaUserGuid ownerUserGuid = new OrgaUserGuid();
-    ownerUserGuid.setOrganizationId(row.getLong(ListCols.ORGA_ID));
+    ownerUserGuid.setOrganizationId(row.getLong(ListCols.OWNER_ORGA_ID));
     ownerUserGuid.setUserId(row.getLong(ListCols.OWNER_USER_ID));
-    listObject.setOwnerUser(this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(ownerUserGuid, realm));
+    ownerUserGuid.setRealmId(row.getLong(ListCols.OWNER_REALM_ID));
+    listObject.setOwnerUser(this.apiApp.getOrganizationUserProvider().toNewUserFromGuid(ownerUserGuid));
 
     /**
      * Handle
@@ -668,7 +659,7 @@ public class ListProvider {
       return Future.failedFuture(new InternalException("The build of the list did not set the local id on the owner user"));
     }
     return this.apiApp.getOrganizationUserProvider()
-      .getOrganizationUserByGuid(orgaUserGuid);
+      .getOwnerOrganizationUserByGuid(orgaUserGuid);
   }
 
   public Future<App> buildAppAtRequestTimeEventually(ListObject list) {

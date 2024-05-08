@@ -15,7 +15,6 @@ import net.bytle.tower.eraldy.model.openapi.ListObject;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
-import net.bytle.tower.eraldy.module.organization.model.OrgaRole;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.tower.eraldy.module.realm.inputs.UserInputProps;
@@ -51,7 +50,6 @@ public class AuthProvider {
    * A realms local id set that the user may manage.
    */
   private static final String REALMS_ID_KEY = "realms_id";
-  public static final long ROOT_LOCAL_ID = 0L;
   private final EraldyApiApp apiApp;
 
 
@@ -95,23 +93,6 @@ public class AuthProvider {
     String orgaSubject = authUser.getSubjectOrganizationGuid();
     T user;
 
-    /**
-     * Root edge case
-     */
-    if (orgaSubject != null && orgaSubject.equals(ApiKeyAuthenticationProvider.ROOT_SUBJECT)) {
-      //noinspection unchecked
-      user = (T) new OrgaUser();
-      OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
-      orgaUserGuid.setUserId(ROOT_LOCAL_ID);
-      orgaUserGuid.setOrganizationId(this.apiApp.getEraldyModel().getRealm().getOwnerOrganization().getGuid().getOrgaId());
-      user.setGuid(orgaUserGuid);
-      user.setRealm(this.apiApp.getEraldyModel().getRealm());
-      ((OrgaUser) user).setOrganization(this.apiApp.getEraldyModel().getRealm().getOwnerOrganization());
-      ((OrgaUser) user).setOrganizationRole(OrgaRole.OWNER);
-      user.setGivenName(authUser.getSubjectGivenName());
-      user.setEmailAddress(EmailAddress.ofFailSafe(authUser.getSubjectEmail()));
-      return user;
-    }
 
     /**
      * Subject (normal user - user id)
@@ -124,7 +105,8 @@ public class AuthProvider {
         throw new InternalException("The subject (user guid) is not valid orga user guid (" + orgaSubject + ")");
       }
       //noinspection unchecked
-      user = (T) this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(guid, null);
+      user = (T) this.apiApp.getOrganizationUserProvider().toNewUserFromGuid(guid);
+
     } else {
       String subject = authUser.getSubject();
       try {
@@ -139,19 +121,6 @@ public class AuthProvider {
     }
 
 
-    /**
-     * Realm Organization
-     */
-    String organizationGuidString = authUser.getAudienceOrganizationGuid();
-    Organization organization;
-    OrgaGuid orgaGuidObject = this.apiApp.getJackson().getDeserializer(OrgaGuid.class).deserializeFailSafe(organizationGuidString);
-    organization = new Organization();
-    organization.setGuid(orgaGuidObject);
-    String organizationHandle = authUser.getAudienceOrganizationHandle();
-    if (organizationHandle != null) {
-      organization.setHandle(Handle.ofFailSafe(organizationHandle));
-    }
-
 
     /**
      * Realm / Audience
@@ -159,7 +128,6 @@ public class AuthProvider {
      * First because it's in the user guid
      */
     Realm realm = new Realm();
-    realm.setOwnerOrganization(organization);
     String audience = authUser.getAudience();
     if (audience == null) {
       throw new InternalException("The audience/realm guid should not be null for a user");
@@ -174,11 +142,22 @@ public class AuthProvider {
     user.setRealm(realm);
 
     /**
+     * Realm Owner User (ie ownership) cannot be created as we don't have the owner guid
+     * We have only the organization with {@link AuthUser#getAudienceOwnerOrganizationGuid()}
+     * and {@link AuthUser#getAudienceOwnerOrganizationHandle()}
+     */
+    String ownerGuidHash = authUser.getAudienceOwnerUserGuid();
+    if (ownerGuidHash == null) {
+      throw new InternalException("The realm owner guid should not be null");
+    }
+    OrgaUserGuid ownerGuid = this.apiApp.getJackson().getDeserializer(OrgaUserGuid.class).deserializeFailSafe(ownerGuidHash);
+    realm.setOwnerUser(this.apiApp.getOrganizationUserProvider().toNewOwnerFromGuid(ownerGuid));
+
+    /**
      * Email (We wrote the email, it should be good)
      */
     EmailAddress subjectEmail = EmailAddress.ofFailSafe(authUser.getSubjectEmail());
     user.setEmailAddress(subjectEmail);
-
 
     /**
      * Other attributes
@@ -406,11 +385,12 @@ public class AuthProvider {
       .setRealmHandle(jackson.getSerializer(Handle.class).serialize(user.getRealm().getHandle()));
 
     /**
-     * Realm Org
+     * Ownership
      */
-    Organization organization = user.getRealm().getOwnerOrganization();
-    authUserBuilder.setAudienceOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(organization.getGuid()));
-    authUserBuilder.setAudienceOrganizationHandle(jackson.getSerializer(Handle.class).serialize(organization.getHandle()));
+    OrgaUser ownerUser = user.getRealm().getOwnerUser();
+    authUserBuilder.setAudienceOwnerOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(ownerUser.getOrganization().getGuid()));
+    authUserBuilder.setAudienceOwnerOrganizationHandle(jackson.getSerializer(Handle.class).serialize(ownerUser.getOrganization().getHandle()));
+    authUserBuilder.setAudienceOwnerUserGuid(jackson.getSerializer(OrgaUserGuid.class).serialize(ownerUser.getGuid()));
 
     return authUserBuilder;
 
@@ -480,8 +460,8 @@ public class AuthProvider {
       JacksonMapperManager jackson = this.apiApp.getJackson();
       OrgaUser orgaUser = (OrgaUser) user;
       Organization organization = orgaUser.getOrganization();
-      authUserBuilder.setAudienceOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(organization.getGuid()));
-      authUserBuilder.setAudienceOrganizationHandle(jackson.getSerializer(Handle.class).serialize(organization.getHandle()));
+      authUserBuilder.setAudienceOwnerOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(organization.getGuid()));
+      authUserBuilder.setAudienceOwnerOrganizationHandle(jackson.getSerializer(Handle.class).serialize(organization.getHandle()));
       futureRealmOwnerList = this.apiApp.getRealmProvider().getRealmsForOwner(orgaUser);
     }
     return futureRealmOwnerList
@@ -553,7 +533,7 @@ public class AuthProvider {
   public Future<Void> checkOrgAuthorization(RoutingContext routingContext, OrgaGuid requestedOrgGuid, AuthUserScope authUserScope) {
     return this.getSignedInAuthUserOrFail(routingContext)
       .compose(signedInUser -> {
-        String signedInUserGroup = signedInUser.getAudienceOrganizationGuid();
+        String signedInUserGroup = signedInUser.getAudienceOwnerOrganizationGuid();
         if (signedInUserGroup == null) {
           return Future.failedFuture(
             TowerFailureException.builder()

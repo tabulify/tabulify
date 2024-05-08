@@ -311,8 +311,6 @@ type Realm {
   handle: Handle
   """The owner of the realm"""
   ownerUser: OrganizationUser!
-  """The organization that owns this Realm"""
-  ownerOrganization: Organization!
   """The number of user in the realm"""
   userCount: Int!
   """The number of app in the realm"""

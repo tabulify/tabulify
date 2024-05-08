@@ -134,7 +134,7 @@ public class AppGraphQLImpl {
         if (app.getOwnerUser().getEmailAddress() != null) {
           return Future.succeededFuture(app.getOwnerUser());
         }
-        return this.app.getOrganizationUserProvider().getOrganizationUserByGuid(app.getOwnerUser().getGuid());
+        return this.app.getOrganizationUserProvider().getOwnerOrganizationUserByGuid(app.getOwnerUser().getGuid());
       });
   }
 

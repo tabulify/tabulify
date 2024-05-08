@@ -131,14 +131,16 @@ public enum AuthUserJwtClaims {
   CUSTOM_SUBJECT_AVATAR("subAvatar"),
   CUSTOM_SUBJECT_FAMILY_NAME("subFamilyName"),
   CUSTOM_SUBJECT_NAME("subName"),
-  CUSTOM_AUDIENCE_ORG_GUID("audienceOrgGuid"),
-  CUSTOM_AUDIENCE_ORG_HANDLE("audienceOrgHandle"),
+  CUSTOM_AUDIENCE_OWNER_ORG_GUID("audienceOwnerOrgGuid"),
+  CUSTOM_AUDIENCE_OWNER_ORG_HANDLE("audienceOwnerOrgHandle"),
+  CUSTOM_AUDIENCE_OWNER_USER_GUID ("audienceOwnerUserGuid"),
   CUSTOM_REDIRECT_URI("redirectUri"),
   /**
    * The orga user guid
    * (if the user belongs to an org)
    */
   CUSTOM_SUBJECT_ORG_GUID("subjOrgGuid");
+
   private final String jwtKey;
 
   AuthUserJwtClaims(String jwtKey) {

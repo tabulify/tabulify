@@ -103,7 +103,7 @@ public class OrgaGraphQLImpl {
       .checkOrgAuthorization(routingContext, orgaUserGuid.getOrgaGuid(), AuthUserScope.ORGA_USER_GET)
       .compose(v -> this.apiApp
         .getOrganizationUserProvider()
-        .getOrganizationUserByGuid(orgaUserGuid)
+        .getOwnerOrganizationUserByGuid(orgaUserGuid)
         .compose(orgUser -> {
           if (orgUser == null) {
             return Future.failedFuture(

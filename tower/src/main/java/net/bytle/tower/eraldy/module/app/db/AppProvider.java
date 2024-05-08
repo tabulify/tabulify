@@ -178,10 +178,13 @@ public class AppProvider {
 
     OrgaUserGuid newOwnerUserGuid = appInputProps.getOwnerUserGuid();
     if (appInputProps.isOwnerUserGuidSet() && !Objects.equals(app.getOwnerUser().getGuid(), newOwnerUserGuid)) {
-      OrgaUser newOwner = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(newOwnerUserGuid, app.getRealm());
+
+      OrgaUser newOwner = this.apiApp.getOrganizationUserProvider().toNewOwnerFromActualOwner(newOwnerUserGuid, app.getOwnerUser());
       app.setOwnerUser(newOwner);
-      jdbcUpdate.setUpdatedColumnWithValue(AppCols.OWNER_ID, app.getOwnerUser().getGuid().getUserId());
-      jdbcUpdate.setUpdatedColumnWithValue(AppCols.ORGA_ID, app.getOwnerUser().getGuid().getOrganizationId());
+      // We don't update the owner orga id and owner realm id
+      // as we don't support change of organization
+      jdbcUpdate.setUpdatedColumnWithValue(AppCols.OWNER_USER_ID, app.getOwnerUser().getGuid().getUserId());
+
     }
 
     if (jdbcUpdate.hasNoColumnToUpdate()) {
@@ -240,13 +243,13 @@ public class AppProvider {
     app.setRealm(realm);
 
     /**
-     * Owner
+     * Ownership
      */
     OrgaUserGuid ownerUserGuid = new OrgaUserGuid();
-    ownerUserGuid.setUserId(row.getLong(AppCols.OWNER_ID));
-    ownerUserGuid.setOrganizationId(row.getLong(AppCols.ORGA_ID));
-    OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider()
-      .toOrgaUserFromGuid(ownerUserGuid, realm);
+    ownerUserGuid.setRealmId(row.getLong(AppCols.OWNER_REALM_ID));
+    ownerUserGuid.setUserId(row.getLong(AppCols.OWNER_USER_ID));
+    ownerUserGuid.setOrganizationId(row.getLong(AppCols.OWNER_ORGA_ID));
+    OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider().toNewUserFromGuid(ownerUserGuid);
     app.setOwnerUser(ownerUser);
 
 
@@ -423,6 +426,74 @@ public class AppProvider {
    */
   public Future<App> insertApp(AppInputProps appInputProps, Realm realm, Long askedLocalId) {
 
+    /**
+     * We build before getting the next id
+     * to not eat an id in the sequence if there is an error
+     * on this part
+     */
+    JdbcInsert jdbcInsert = JdbcInsert.into(this.appTable);
+    App app = new App();
+
+    /**
+     * Realm
+     */
+    app.setRealm(realm);
+
+    /**
+     * Insertion time
+     */
+    LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
+    app.setCreationTime(nowInUtc);
+    jdbcInsert.addColumn(AppCols.CREATION_TIME, app.getCreationTime());
+    app.setModificationTime(nowInUtc);
+    jdbcInsert.addColumn(AppCols.MODIFICATION_TIME, app.getModificationTime());
+
+    /**
+     * Owner
+     */
+    OrgaUserGuid ownerUserGuid = appInputProps.getOwnerUserGuid();
+    if (ownerUserGuid != null) {
+      app.setOwnerUser(this.apiApp.getOrganizationUserProvider().toNewUserFromGuid(ownerUserGuid));
+    } else {
+      app.setOwnerUser(realm.getOwnerUser());
+    }
+    jdbcInsert.addColumn(AppCols.OWNER_USER_ID, app.getOwnerUser().getGuid().getUserId());
+    jdbcInsert.addColumn(AppCols.OWNER_ORGA_ID, app.getOwnerUser().getGuid().getOrganizationId());
+    jdbcInsert.addColumn(AppCols.OWNER_REALM_ID, app.getOwnerUser().getGuid().getRealmId());
+
+    /**
+     * Scalars
+     */
+    app.setName(appInputProps.getName());
+    jdbcInsert.addColumn(AppCols.NAME, app.getName());
+
+    Handle handle = appInputProps.getHandle();
+    if (handle != null) {
+      app.setHandle(handle);
+      jdbcInsert.addColumn(AppCols.HANDLE, app.getHandle().getValue());
+    }
+
+    app.setSlogan(appInputProps.getSlogan());
+    jdbcInsert.addColumn(AppCols.SLOGAN, app.getSlogan());
+
+    URL logo = appInputProps.getLogo();
+    if (logo != null) {
+      app.setLogo(logo);
+      jdbcInsert.addColumn(AppCols.LOGO, app.getLogo().toString());
+    }
+
+    URL home = appInputProps.getHome();
+    if (home != null) {
+      app.setHome(home);
+      jdbcInsert.addColumn(AppCols.HOME, app.getHome().toString());
+    }
+
+    URL terms = appInputProps.getTermsOfServices();
+    if (terms != null) {
+      app.setTermsOfServices(terms);
+      jdbcInsert.addColumn(AppCols.TERM_OF_SERVICE, app.getTermsOfServices().toString());
+    }
+
     return this.jdbcPool.withTransaction(sqlConnection -> this.apiApp.getRealmSequenceProvider()
       .getNextIdForTableAndRealm(sqlConnection, realm, this.appTable)
       .compose(finalAppId -> {
@@ -436,74 +507,12 @@ public class AppProvider {
           return Future.failedFuture("The asked local id (" + askedLocalId + ") is different of the id given (" + finalAppId + "). The insertion order in the Eraldy model is not good.");
         }
 
-        JdbcInsert jdbcInsert = JdbcInsert.into(this.appTable);
-        App app = new App();
-
-        /**
-         * Realm
-         */
-        app.setRealm(realm);
-
         /**
          * Guid
          */
         this.updateGuid(app, finalAppId);
         jdbcInsert.addColumn(AppCols.REALM_ID, app.getGuid().getRealmId());
         jdbcInsert.addColumn(AppCols.ID, app.getGuid().getLocalId());
-
-        /**
-         * Insertion time
-         */
-        LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
-        app.setCreationTime(nowInUtc);
-        jdbcInsert.addColumn(AppCols.CREATION_TIME, app.getCreationTime());
-        app.setModificationTime(nowInUtc);
-        jdbcInsert.addColumn(AppCols.MODIFICATION_TIME, app.getModificationTime());
-
-        /**
-         * Owner
-         */
-        OrgaUserGuid ownerUserGuid = appInputProps.getOwnerUserGuid();
-        if (ownerUserGuid != null) {
-          app.setOwnerUser(this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(ownerUserGuid, realm));
-        } else {
-          app.setOwnerUser(realm.getOwnerUser());
-        }
-        jdbcInsert.addColumn(AppCols.OWNER_ID, app.getOwnerUser().getGuid().getUserId());
-        jdbcInsert.addColumn(AppCols.ORGA_ID, app.getOwnerUser().getGuid().getOrganizationId());
-
-        /**
-         * Scalars
-         */
-        app.setName(appInputProps.getName());
-        jdbcInsert.addColumn(AppCols.NAME, app.getName());
-
-        Handle handle = appInputProps.getHandle();
-        if (handle != null) {
-          app.setHandle(handle);
-          jdbcInsert.addColumn(AppCols.HANDLE, app.getHandle().getValue());
-        }
-
-        app.setSlogan(appInputProps.getSlogan());
-        jdbcInsert.addColumn(AppCols.SLOGAN, app.getSlogan());
-
-        URL logo = appInputProps.getLogo();
-        if (logo != null) {
-          app.setLogo(logo);
-          jdbcInsert.addColumn(AppCols.LOGO, app.getLogo().toString());
-        }
-
-        URL home = appInputProps.getHome();
-        if (home != null) {
-          app.setHome(home);
-          jdbcInsert.addColumn(AppCols.HOME, app.getHome().toString());
-        }
-
-        URL terms = appInputProps.getTermsOfServices();
-        if (terms != null) {
-          app.setTermsOfServices(terms);
-          jdbcInsert.addColumn(AppCols.TERM_OF_SERVICE, app.getTermsOfServices().toString());
-        }
 
         return jdbcInsert
           .execute(sqlConnection)

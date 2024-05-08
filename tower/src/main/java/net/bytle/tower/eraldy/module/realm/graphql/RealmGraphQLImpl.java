@@ -12,7 +12,6 @@ import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.module.app.model.App;
 import net.bytle.tower.eraldy.module.common.graphql.EraldyGraphQL;
-import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.tower.eraldy.module.realm.inputs.UserInputProps;
 import net.bytle.tower.eraldy.module.realm.model.Realm;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
@@ -79,12 +78,6 @@ public class RealmGraphQLImpl {
           .build()
       );
 
-    typeWiringBuilder
-      .type(
-        newTypeWiring("Realm")
-          .dataFetcher("organization", this::getRealmOrganization)
-          .build()
-      );
     typeWiringBuilder
       .type(
         newTypeWiring("Realm")
@@ -167,7 +160,7 @@ public class RealmGraphQLImpl {
       .compose(v -> this
         .app
         .getOrganizationUserProvider()
-        .getOrganizationUserByGuid(realm.getOwnerUser().getGuid())
+        .getOwnerOrganizationUserByGuid(realm.getOwnerUser().getGuid())
       );
   }
 
@@ -227,13 +220,6 @@ public class RealmGraphQLImpl {
       .compose(v -> this.app.getUserProvider().getUsers(realm, pagination));
   }
 
-  private Future<Organization> getRealmOrganization(DataFetchingEnvironment dataFetchingEnvironment) {
-    Realm realm = dataFetchingEnvironment.getSource();
-    RoutingContext routingContext = dataFetchingEnvironment.getGraphQlContext().get(RoutingContext.class);
-    return this.app.getAuthProvider()
-      .checkRealmAuthorization(routingContext, realm, AuthUserScope.ORGA_GET)
-      .compose(v -> this.app.getRealmProvider().buildOrganizationAtRequestTimeEventually(realm));
-  }
 
 
   /**

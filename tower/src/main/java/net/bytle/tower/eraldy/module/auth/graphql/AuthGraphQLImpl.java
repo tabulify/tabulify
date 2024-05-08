@@ -105,7 +105,7 @@ public class AuthGraphQLImpl {
     OrgaUser orgaUser = (OrgaUser) user;
     return this.apiApp
       .getOrganizationUserProvider()
-      .getOrganizationUserByGuid(orgaUser.getGuid())
+      .getOwnerOrganizationUserByGuid(orgaUser.getGuid())
       .compose(orgUser -> {
         if (orgUser == null) {
           return Future.failedFuture(

@@ -119,8 +119,12 @@ public class AuthUser {
     return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_HANDLE.toString());
   }
 
-  public String getAudienceOrganizationHandle() {
-    return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_ORG_HANDLE.toString());
+  public String getAudienceOwnerOrganizationHandle() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_OWNER_ORG_HANDLE.toString());
+
+  }
+  public String getAudienceOwnerUserGuid() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_OWNER_USER_GUID.toString());
 
   }
 
@@ -157,8 +161,8 @@ public class AuthUser {
   }
 
 
-  public String getAudienceOrganizationGuid() {
-    return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_ORG_GUID.toString());
+  public String getAudienceOwnerOrganizationGuid() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_OWNER_ORG_GUID.toString());
   }
 
   public String getRealmHandle() {
@@ -191,13 +195,13 @@ public class AuthUser {
         this.claims = Objects.requireNonNullElseGet(claims, JsonObject::new);
     }
 
-    public Builder setAudienceOrganizationGuid(String orgGuid) {
-      claims.put(AuthUserJwtClaims.CUSTOM_AUDIENCE_ORG_GUID.toString(), orgGuid);
+    public Builder setAudienceOwnerOrganizationGuid(String orgGuid) {
+      claims.put(AuthUserJwtClaims.CUSTOM_AUDIENCE_OWNER_ORG_GUID.toString(), orgGuid);
       return this;
     }
 
-    public Builder setAudienceOrganizationHandle(String orgHandle) {
-      claims.put(AuthUserJwtClaims.CUSTOM_AUDIENCE_ORG_HANDLE.toString(), orgHandle);
+    public Builder setAudienceOwnerOrganizationHandle(String orgHandle) {
+      claims.put(AuthUserJwtClaims.CUSTOM_AUDIENCE_OWNER_ORG_HANDLE.toString(), orgHandle);
       return this;
     }
 
@@ -305,6 +309,11 @@ public class AuthUser {
 
     public Builder setSubjectOrganizationGuid(String orgSubject) {
       claims.put(AuthUserJwtClaims.CUSTOM_SUBJECT_ORG_GUID.toString(), orgSubject);
+      return this;
+    }
+
+    public Builder setAudienceOwnerUserGuid(String ownerGuid) {
+      claims.put(AuthUserJwtClaims.CUSTOM_AUDIENCE_OWNER_USER_GUID.toString(), ownerGuid);
       return this;
     }
   }

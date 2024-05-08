@@ -649,6 +649,67 @@ public class UserProvider {
 
   private Future<User> insertUser(Realm realm, UserInputProps userInputProps, SqlConnection sqlConnection) {
 
+    /**
+     * We build the user
+     * before getting the next id
+     * (if there is an error on this part,
+     * we don't eat a id in the sequence)
+     */
+    LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
+    User user = new User();
+    user.setRealm(realm);
+    user.setCreationTime(nowInUtc);
+    user.setLastActiveTime(nowInUtc);
+    user.setModificationTime(nowInUtc);
+    JdbcInsert jdbcInsert = JdbcInsert.into(this.userTable)
+      .addColumn(UserCols.CREATION_TIME, user.getCreationTime())
+      .addColumn(UserCols.MODIFICATION_IME, user.getModificationTime())
+      .addColumn(UserCols.LAST_ACTIVE_TIME, user.getLastActiveTime());
+
+
+    user.setEmailAddress(userInputProps.getEmailAddress());
+    jdbcInsert.addColumn(UserCols.EMAIL_ADDRESS, user.getEmailAddress().toNormalizedString());
+
+    String givenName = userInputProps.getGivenName();
+    if (givenName == null) {
+      // Given name is mandatory (used everywhere)
+      givenName = user.getEmailAddress().getLocalBox();
+    }
+    user.setGivenName(givenName);
+    jdbcInsert.addColumn(UserCols.GIVEN_NAME, user.getGivenName());
+
+    user.setFamilyName(userInputProps.getFamilyName());
+    jdbcInsert.addColumn(UserCols.FAMILY_NAME, user.getFamilyName());
+
+    user.setStatus(UserStatus.OK);
+    jdbcInsert.addColumn(UserCols.STATUS_CODE, user.getStatus().getCode());
+
+    user.setTitle(userInputProps.getTitle());
+    jdbcInsert.addColumn(UserCols.TITLE, user.getTitle());
+
+    user.setBio(userInputProps.getBio());
+    jdbcInsert.addColumn(UserCols.BIO, user.getBio());
+
+    user.setLocation(userInputProps.getLocation());
+    jdbcInsert.addColumn(UserCols.LOCATION, user.getLocation());
+
+    TimeZone timeZone = userInputProps.getTimeZone();
+    if (timeZone != null) {
+      user.setTimeZone(timeZone);
+      jdbcInsert.addColumn(UserCols.TIME_ZONE, user.getTimeZone().getID());
+    }
+
+    URI avatar = userInputProps.getAvatar();
+    if (avatar != null) {
+      user.setAvatar(avatar);
+      jdbcInsert.addColumn(UserCols.AVATAR, user.getAvatar().toString());
+    }
+
+    URI website = userInputProps.getWebsite();
+    if (website != null) {
+      user.setWebsite(website);
+      jdbcInsert.addColumn(UserCols.WEBSITE, user.getWebsite().toString());
+    }
 
     return this.apiApp.getRealmSequenceProvider()
       .getNextIdForTableAndRealm(sqlConnection, realm, this.userTable)
@@ -660,65 +721,10 @@ public class UserProvider {
       ))
       .compose(seqUserId -> {
 
-        LocalDateTime nowInUtc = DateTimeService.getNowInUtc();
-        User user = new User();
-        user.setRealm(realm);
-        user.setCreationTime(nowInUtc);
-        user.setLastActiveTime(nowInUtc);
-        user.setModificationTime(nowInUtc);
-        JdbcInsert jdbcInsert = JdbcInsert.into(this.userTable)
-          .addColumn(UserCols.CREATION_TIME, user.getCreationTime())
-          .addColumn(UserCols.MODIFICATION_IME, user.getModificationTime())
-          .addColumn(UserCols.LAST_ACTIVE_TIME, user.getLastActiveTime());
-
         this.updateGuid(user, seqUserId);
-        jdbcInsert.addColumn(UserCols.ID, user.getGuid().getUserId())
+        jdbcInsert
+          .addColumn(UserCols.ID, user.getGuid().getUserId())
           .addColumn(UserCols.REALM_ID, user.getGuid().getRealmId());
-
-
-        user.setEmailAddress(userInputProps.getEmailAddress());
-        jdbcInsert.addColumn(UserCols.EMAIL_ADDRESS, user.getEmailAddress().toNormalizedString());
-
-        String givenName = userInputProps.getGivenName();
-        if (givenName == null) {
-          // Given name is mandatory (used everywhere)
-          givenName = user.getEmailAddress().getLocalBox();
-        }
-        user.setGivenName(givenName);
-        jdbcInsert.addColumn(UserCols.GIVEN_NAME, user.getGivenName());
-
-        user.setFamilyName(userInputProps.getFamilyName());
-        jdbcInsert.addColumn(UserCols.FAMILY_NAME, user.getFamilyName());
-
-        user.setStatus(UserStatus.OK);
-        jdbcInsert.addColumn(UserCols.STATUS_CODE, user.getStatus().getCode());
-
-        user.setTitle(userInputProps.getTitle());
-        jdbcInsert.addColumn(UserCols.TITLE, user.getTitle());
-
-        user.setBio(userInputProps.getBio());
-        jdbcInsert.addColumn(UserCols.BIO, user.getBio());
-
-        user.setLocation(userInputProps.getLocation());
-        jdbcInsert.addColumn(UserCols.LOCATION, user.getLocation());
-
-        TimeZone timeZone = userInputProps.getTimeZone();
-        if (timeZone != null) {
-          user.setTimeZone(timeZone);
-          jdbcInsert.addColumn(UserCols.TIME_ZONE, user.getTimeZone().getID());
-        }
-
-        URI avatar = userInputProps.getAvatar();
-        if (avatar != null) {
-          user.setAvatar(avatar);
-          jdbcInsert.addColumn(UserCols.AVATAR, user.getAvatar().toString());
-        }
-
-        URI website = userInputProps.getWebsite();
-        if (website != null) {
-          user.setWebsite(website);
-          jdbcInsert.addColumn(UserCols.WEBSITE, user.getWebsite().toString());
-        }
 
         return jdbcInsert
           .execute(sqlConnection, jdbcRowSet -> Future.succeededFuture(user));

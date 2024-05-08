@@ -22,6 +22,7 @@ import net.bytle.tower.eraldy.module.app.model.App;
 import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
+import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.type.Handle;
@@ -94,8 +95,9 @@ public class EmailLoginFlow extends WebFlowAbs {
       .toAuthUserBuilder(modelUserToLogin)
       .setRealmGuid(jackson.getSerializer(RealmGuid.class).serialize(requestingApp.getRealm().getGuid()))
       .setRealmHandle(jackson.getSerializer(Handle.class).serialize(requestingApp.getRealm().getHandle()))
-      .setAudienceOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(requestingApp.getRealm().getOwnerOrganization().getGuid()))
-      .setAudienceOrganizationHandle(jackson.getSerializer(Handle.class).serialize(requestingApp.getRealm().getOwnerOrganization().getHandle()))
+      .setAudienceOwnerUserGuid(jackson.getSerializer(OrgaUserGuid.class).serialize(requestingApp.getRealm().getOwnerUser().getGuid()))
+      .setAudienceOwnerOrganizationGuid(jackson.getSerializer(OrgaGuid.class).serialize(requestingApp.getRealm().getOwnerUser().getOrganization().getGuid()))
+      .setAudienceOwnerOrganizationHandle(jackson.getSerializer(Handle.class).serialize(requestingApp.getRealm().getOwnerUser().getOrganization().getHandle()))
       .build()
       .toJwtClaims()
       .addRequestClaims(routingContext)

@@ -38,12 +38,6 @@ public class OrgaUserGuid extends UserGuid {
   }
 
 
-
-  public void setOrgaGuid(OrgaGuid orgaOwnerGuid) {
-    this.organizationId = orgaOwnerGuid.getOrgaId();
-    super.setRealmId(orgaOwnerGuid.getRealmId());
-  }
-
   public OrgaGuid getOrgaGuid() {
     OrgaGuid orgaGuid = new OrgaGuid();
     orgaGuid.setRealmId(this.getRealmId());

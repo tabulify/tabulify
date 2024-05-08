@@ -315,13 +315,13 @@ public class AuthNContext {
 
     String orgIdentifier = this.oAuthState.getOrganisationGuid();
     if (orgIdentifier == null) {
-      orgIdentifier = this.authUser.getAudienceOrganizationGuid();
+      orgIdentifier = this.authUser.getAudienceOwnerOrganizationGuid();
     }
     app.setAppOrganisationGuid(orgIdentifier);
 
     String orgHandle = this.oAuthState.getOrgHandle();
     if (orgHandle == null) {
-      orgHandle = this.authUser.getAudienceOrganizationHandle();
+      orgHandle = this.authUser.getAudienceOwnerOrganizationHandle();
     }
     app.setAppOrganisationHandle(orgHandle);
 

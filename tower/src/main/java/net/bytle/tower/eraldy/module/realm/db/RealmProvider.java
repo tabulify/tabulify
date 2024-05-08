@@ -11,9 +11,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
 import net.bytle.tower.eraldy.module.organization.db.OrganizationCols;
-import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
-import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.tower.eraldy.module.realm.inputs.RealmInputProps;
 import net.bytle.tower.eraldy.module.realm.jackson.JacksonRealmGuidDeserializer;
 import net.bytle.tower.eraldy.module.realm.jackson.JacksonRealmGuidSerializer;
@@ -68,7 +66,7 @@ public class RealmProvider {
     /**
      * Realm Guid
      */
-    GuidDeSer realmGuidDeser = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(REALM_GUID_PREFIX,1);
+    GuidDeSer realmGuidDeser = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(REALM_GUID_PREFIX, 1);
     jacksonMapperManager
       .addDeserializer(RealmGuid.class, new JacksonRealmGuidDeserializer(realmGuidDeser))
       .addSerializer(RealmGuid.class, new JacksonRealmGuidSerializer(realmGuidDeser));
@@ -133,17 +131,6 @@ public class RealmProvider {
    */
   private Future<Realm> insertRealm(RealmInputProps realmInputProps, SqlConnection sqlConnection, Long askedRealmId) {
 
-    /**
-     * Owner orga and owner user orga should be the same
-     */
-    if (!Objects.equals(realmInputProps.getOwnerOrgaGuid(),realmInputProps.getOwnerUserGuid().getOrgaGuid())){
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setMessage("The owner organization ("+realmInputProps.getOwnerOrgaGuid()+") and the owner user organization ("+realmInputProps.getOwnerUserGuid().getOrgaGuid()+") are not the same")
-          .build()
-      );
-    }
-
 
     JdbcInsert jdbcInsert = JdbcInsert.into(this.realmTable)
       .addReturningColumn(RealmCols.ID);
@@ -172,19 +159,17 @@ public class RealmProvider {
     realm.setModificationTime(nowInUtc);
     jdbcInsert.addColumn(RealmCols.MODIFICATION_TIME, realm.getModificationTime());
 
-    Organization organization = Organization.createFromOrgGuid(realmInputProps.getOwnerOrgaGuid());
-    realm.setOwnerOrganization(organization);
-    jdbcInsert.addColumn(RealmCols.OWNER_ORGA_ID, realm.getOwnerOrganization().getGuid().getOrgaId());
-    jdbcInsert.addColumn(RealmCols.OWNER_REALM_ID, realm.getOwnerOrganization().getGuid().getRealmId());
-
     realm.setName(realmInputProps.getName());
     jdbcInsert.addColumn(RealmCols.NAME, realm.getName());
 
-    OrgaUser orgaUser = new OrgaUser();
-    orgaUser.setOrganization(organization);
-    orgaUser.setGuid(realmInputProps.getOwnerUserGuid());
+    /**
+     * Ownership
+     */
+    OrgaUser orgaUser = this.apiApp.getOrganizationUserProvider().toNewOwnerFromGuid(realmInputProps.getOwnerUserGuid());
     realm.setOwnerUser(orgaUser);
     jdbcInsert.addColumn(RealmCols.OWNER_USER_ID, realm.getOwnerUser().getGuid().getUserId());
+    jdbcInsert.addColumn(RealmCols.OWNER_ORGA_ID, realm.getOwnerUser().getGuid().getOrganizationId());
+    jdbcInsert.addColumn(RealmCols.OWNER_REALM_ID, realm.getOwnerUser().getGuid().getRealmId());
 
     return jdbcInsert
       .execute(sqlConnection)
@@ -226,6 +211,13 @@ public class RealmProvider {
     if (newName != null && !Objects.equals(newName, realm.getName())) {
       realm.setName(newName);
       jdbcUpdate.setUpdatedColumnWithValue(RealmCols.NAME, realm.getName());
+    }
+
+    OrgaUserGuid newOwnerUserGuid = realmInputProps.getOwnerUserGuid();
+    if (newOwnerUserGuid != null && !Objects.equals(newOwnerUserGuid, realm.getOwnerUser().getGuid())) {
+      OrgaUser newOwner = this.apiApp.getOrganizationUserProvider().toNewOwnerFromActualOwner(newOwnerUserGuid, realm.getOwnerUser());
+      realm.setOwnerUser(newOwner);
+      jdbcUpdate.setUpdatedColumnWithValue(RealmCols.OWNER_USER_ID, realm.getOwnerUser().getGuid().getUserId());
     }
 
     return jdbcUpdate
@@ -350,22 +342,13 @@ public class RealmProvider {
 
 
     /**
-     * Org Owner
-     */
-    OrgaGuid orgaOwnerGuid = new OrgaGuid();
-    orgaOwnerGuid.setRealmId(row.getLong(RealmCols.OWNER_REALM_ID));
-    orgaOwnerGuid.setOrgaId(row.getLong(RealmCols.OWNER_ORGA_ID));
-    Organization organization = Organization.createFromOrgGuid(orgaOwnerGuid);
-    realm.setOwnerOrganization(organization);
-
-    /**
      * User Owner
      */
-    Long ownerUserLocalId = row.getLong(RealmCols.OWNER_USER_ID);
     OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
-    orgaUserGuid.setOrgaGuid(orgaOwnerGuid);
-    orgaUserGuid.setUserId(ownerUserLocalId);
-    OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider().toOrgaUserFromGuid(orgaUserGuid, realm);
+    orgaUserGuid.setRealmId(row.getLong(RealmCols.OWNER_REALM_ID));
+    orgaUserGuid.setOrganizationId(row.getLong(RealmCols.OWNER_ORGA_ID));
+    orgaUserGuid.setUserId(row.getLong(RealmCols.OWNER_USER_ID));
+    OrgaUser ownerUser = this.apiApp.getOrganizationUserProvider().toNewOwnerFromGuid(orgaUserGuid);
     realm.setOwnerUser(ownerUser);
 
     /**
@@ -428,19 +411,10 @@ public class RealmProvider {
         if (selectedRealm != null) {
           futureRealm = Future.succeededFuture(selectedRealm);
         } else {
-          futureRealm = this.insertRealm( realmInputProps, sqlConnection, realmId);
+          futureRealm = this.insertRealm(realmInputProps, sqlConnection, realmId);
         }
         return futureRealm;
       });
   }
 
-  public Future<Organization> buildOrganizationAtRequestTimeEventually(Realm realm) {
-    if (realm.getOwnerOrganization().getName() != null) {
-      return Future.succeededFuture(realm.getOwnerOrganization());
-    }
-    return this
-      .apiApp
-      .getOrganizationProvider()
-      .getByGuid(realm.getOwnerOrganization().getGuid(), realm);
-  }
 }

@@ -239,7 +239,7 @@ public class MailingProvider {
      * ie {@link #buildEmailAuthorAtRequestTimeEventually(Mailing)}
      */
     Long orgaId = row.getLong(MailingCols.ORGA_ID);
-    assert Objects.equals(realm.getOwnerOrganization().getGuid().getOrgaId(), orgaId);
+    assert Objects.equals(realm.getOwnerUser().getOrganization().getGuid().getOrgaId(), orgaId);
     Long userId = row.getLong(MailingCols.EMAIL_AUTHOR_USER_ID);
     OrgaUser authorUser = new OrgaUser();
     OrgaUserGuid orgaUserGuid = new OrgaUserGuid();
@@ -400,7 +400,7 @@ public class MailingProvider {
     OrgaUserGuid newAuthorGuid = mailingInputProps.getEmailAuthorGuid();
     Future<OrgaUser> newAuthorFuture = Future.succeededFuture();
     if (newAuthorGuid != null) {
-      newAuthorFuture = this.apiApp.getOrganizationUserProvider().getOrganizationUserByGuid(newAuthorGuid);
+      newAuthorFuture = this.apiApp.getOrganizationUserProvider().getOwnerOrganizationUserByGuid(newAuthorGuid);
     }
     return newAuthorFuture.compose(newAuthor -> {
 
@@ -491,7 +491,7 @@ public class MailingProvider {
       return Future.succeededFuture(emailAuthor);
     }
     return this.apiApp.getOrganizationUserProvider()
-      .getOrganizationUserByGuid(emailAuthor.getGuid())
+      .getOwnerOrganizationUserByGuid(emailAuthor.getGuid())
       .compose(emailAuthorFuture -> {
         mailing.setEmailAuthor(emailAuthorFuture);
         return Future.succeededFuture(emailAuthorFuture);

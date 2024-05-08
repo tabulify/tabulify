@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.module.organization.inputs;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.type.Handle;
 
@@ -18,7 +17,6 @@ public class OrganizationInputProps {
   protected String name;
 
   protected OrgaUserGuid ownerUserGuid;
-  private OrgaGuid ownerOrgaGuid;
 
   public OrgaUserGuid getOwnerUserGuid() {
     return ownerUserGuid;
@@ -70,11 +68,4 @@ public class OrganizationInputProps {
     this.name = name;
   }
 
-  public void setOwnerOrgaGuid(OrgaGuid orgaGuid) {
-    this.ownerOrgaGuid = orgaGuid;
-  }
-
-  public OrgaGuid getOwnerOrgaGuid() {
-    return ownerOrgaGuid;
-  }
 }

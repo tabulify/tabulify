@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.module.realm.inputs;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
 import net.bytle.type.Handle;
 
@@ -19,7 +18,6 @@ public class RealmInputProps {
   private Long userCount;
   private Long listCount;
   private OrgaUserGuid ownerUserGuid;
-  private OrgaGuid ownerOrgaGuid;
 
 
   /**
@@ -121,11 +119,4 @@ public class RealmInputProps {
     this.ownerUserGuid = ownerUserGuid;
   }
 
-  public OrgaGuid getOwnerOrgaGuid() {
-    return ownerOrgaGuid;
-  }
-
-  public void setOwnerOrgaGuid(OrgaGuid ownerOrgaGuid) {
-    this.ownerOrgaGuid = ownerOrgaGuid;
-  }
 }

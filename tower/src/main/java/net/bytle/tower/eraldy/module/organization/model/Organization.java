@@ -39,6 +39,8 @@ public class Organization {
   public static Organization createFromOrgGuid(OrgaGuid orgaGuid) {
     Organization organization = new Organization();
     organization.setGuid(orgaGuid);
+    Realm realm = Realm.createFromAnyId(orgaGuid.getRealmId());
+    organization.setRealm(realm);
     return organization;
   }
 

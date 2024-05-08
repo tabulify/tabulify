@@ -3,7 +3,6 @@ package net.bytle.tower.eraldy.module.realm.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bytle.tower.eraldy.model.openapi.OrgaUser;
-import net.bytle.tower.eraldy.module.organization.model.Organization;
 import net.bytle.type.Handle;
 
 import java.time.LocalDateTime;
@@ -28,8 +27,6 @@ public class Realm {
   protected RealmGuid guid;
 
   protected String name;
-
-  protected Organization ownerOrganization;
 
   protected OrgaUser ownerUser;
 
@@ -88,22 +85,6 @@ public class Realm {
   @SuppressWarnings("unused")
   public void setName(String name) {
     this.name = name;
-  }
-
-  /**
-   * @return organization
-   */
-  @JsonProperty("ownerOrganization")
-  public Organization getOwnerOrganization() {
-    return ownerOrganization;
-  }
-
-  /**
-   * @param ownerOrganization Set organization
-   */
-  @SuppressWarnings("unused")
-  public void setOwnerOrganization(Organization ownerOrganization) {
-    this.ownerOrganization = ownerOrganization;
   }
 
   /**
