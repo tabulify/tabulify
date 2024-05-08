@@ -495,7 +495,7 @@ type Query {
   """A mailing"""
   mailing(mailingGuid: MailingGuid!): Mailing
   """A mailing job"""
-  mailingJob(mailingJob: MailingJobGuid!): MailingJob
+  mailingJob(mailingJobGuid: MailingJobGuid!): MailingJob
   """The logged realm user"""
   authMe: User
   """The logged realm user as an organizational user"""
