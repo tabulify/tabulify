@@ -41,11 +41,10 @@ public class JacksonMailingJobGuidDeserializer extends JacksonJsonStringDeserial
       throw new CastException("The mailing job guid (" + value + ") is not valid. Error: " + e.getMessage(), e);
     }
 
-    MailingJobGuid mailingJobGuid = new MailingJobGuid();
-    long realmId = ids[0];
-    mailingJobGuid.setRealmId(realmId);
-    long localId = ids[1];
-    mailingJobGuid.setLocalId(localId);
+    MailingJobGuid mailingJobGuid = new MailingJobGuid.Builder()
+      .setRealmId(ids[0])
+      .setJobId(ids[1])
+      .build();
     mailingJobGuid.setHash(value);
     return mailingJobGuid;
   }

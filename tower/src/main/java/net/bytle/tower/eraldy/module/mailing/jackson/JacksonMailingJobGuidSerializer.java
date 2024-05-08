@@ -28,7 +28,7 @@ public class JacksonMailingJobGuidSerializer extends JacksonJsonStringSerializer
 
   @Override
   public String serialize(MailingJobGuid value) {
-    return guidDeSer.serialize(value.getRealmId(),value.getLocalId());
+    return guidDeSer.serialize(value.getRealmId(),value.getJobId());
 
   }
 }

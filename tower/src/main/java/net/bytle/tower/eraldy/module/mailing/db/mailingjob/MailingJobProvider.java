@@ -4,7 +4,6 @@ import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.SqlConnection;
-import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthUserScope;
@@ -42,10 +41,10 @@ public class MailingJobProvider {
 
     this.jdbcPool = jobsSchema.getJdbcClient().getPool();
 
-    GuidDeSer mailingJobGuidDeser = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(MAILING_JOB_GUID_PREFIX,2);
+    GuidDeSer mailingJobGuidDeser = this.apiApp.getHttpServer().getServer().getHashId().getGuidDeSer(MAILING_JOB_GUID_PREFIX, 2);
     this.apiApp.getJackson()
-      .addDeserializer(MailingJobGuid.class,new JacksonMailingJobGuidDeserializer(mailingJobGuidDeser))
-      .addSerializer(MailingJobGuid.class,new JacksonMailingJobGuidSerializer(mailingJobGuidDeser));
+      .addDeserializer(MailingJobGuid.class, new JacksonMailingJobGuidDeserializer(mailingJobGuidDeser))
+      .addSerializer(MailingJobGuid.class, new JacksonMailingJobGuidSerializer(mailingJobGuidDeser));
 
 
   }
@@ -80,10 +79,10 @@ public class MailingJobProvider {
               .getNextIdForTableAndRealm(sqlConnection, mailing.getRealm(), this.mailingJobTable)
               .compose(nextId -> {
 
-                this.updateGuid(mailingJob,nextId);
+                this.updateGuid(mailingJob, nextId);
 
                 return JdbcInsert.into(mailingJobTable)
-                  .addColumn(MailingJobCols.ID, mailingJob.getGuid().getLocalId())
+                  .addColumn(MailingJobCols.ID, mailingJob.getGuid().getJobId())
                   .addColumn(MailingJobCols.REALM_ID, mailingJob.getGuid().getRealmId())
                   .addColumn(MailingJobCols.MAILING_ID, mailingJob.getMailing().getGuid().getLocalId())
                   .addColumn(MailingJobCols.STATUS_CODE, mailingJob.getStatus().getCode())
@@ -98,11 +97,12 @@ public class MailingJobProvider {
 
   public void updateGuid(MailingJob mailingJob, long localId) {
 
-    MailingJobGuid mailingJobGuid = new MailingJobGuid();
-
-    mailingJobGuid.setRealmId(mailingJob.getMailing().getRealm().getGuid().getLocalId());
-    mailingJobGuid.setLocalId(localId);
-    mailingJob.setGuid(mailingJobGuid);
+    mailingJob.setGuid(
+      new MailingJobGuid.Builder()
+        .setRealmId(mailingJob.getMailing().getRealm().getGuid().getLocalId())
+        .setJobId(localId)
+        .build()
+    );
   }
 
 
@@ -153,7 +153,7 @@ public class MailingJobProvider {
       mailing.setGuid(mailingGuid);
     }
     mailingJob.setMailing(mailing);
-    this.updateGuid(mailingJob,mailingJobId);
+    this.updateGuid(mailingJob, mailingJobId);
 
     /**
      * Props
@@ -173,36 +173,32 @@ public class MailingJobProvider {
 
     return this.apiApp.getAuthProvider()
       .getRealmByLocalIdWithAuthorizationCheck(mailingJobGuid.getRealmId(), AuthUserScope.MAILING_JOBS_GET, routingContext)
-      .compose(realm -> {
+      .compose(realm -> JdbcSelect.from(this.mailingJobTable)
+        .addEqualityPredicate(MailingJobCols.ID, mailingJobGuid.getJobId())
+        .addEqualityPredicate(MailingJobCols.REALM_ID, mailingJobGuid.getRealmId())
+        .execute()
+        .recover(err -> Future.failedFuture(new InternalException("Getting the mailing job (" + mailingJobGuid + ") failed. Error: " + err.getMessage(), err)))
+        .compose(rows -> {
 
-        final String sql = "select * from " + this.mailingJobTable.getFullName() + " where " + MailingJobCols.ID.getColumnName() + " = $1 and " + MailingJobCols.REALM_ID.getColumnName() + " = $2";
-        Tuple tuple = Tuple.of(mailingJobGuid.getRealmId(), realm.getGuid().getLocalId());
-        return this.jdbcPool
-          .preparedQuery(sql)
-          .execute(tuple)
-          .recover(err -> Future.failedFuture(new InternalException("Getting the mailing job (" + tuple + ") failed. Error: " + err.getMessage() + ". Sql:\n" + sql, err)))
-          .compose(rowSet -> {
-            JdbcRowSet rows = new JdbcRowSet(rowSet);
-            if (rows.rowCount() == 0) {
-              return Future.failedFuture(TowerFailureException.builder()
-                .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-                .setMessage("The mailing job (" + mailingJobGuid + ") does not exist")
-                .build()
-              );
-            }
+          if (rows.rowCount() == 0) {
+            return Future.failedFuture(TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+              .setMessage("The mailing job (" + mailingJobGuid + ") does not exist")
+              .build()
+            );
+          }
 
-            if (rows.rowCount() != 1) {
-              return Future.failedFuture(TowerFailureException.builder()
-                .setMessage("The mailing job (" + mailingJobGuid + ") has too much rows (" + rows.rowCount() + ")")
-                .build()
-              );
-            }
+          if (rows.rowCount() != 1) {
+            return Future.failedFuture(TowerFailureException.builder()
+              .setMessage("The mailing job (" + mailingJobGuid + ") has too much rows (" + rows.rowCount() + ")")
+              .build()
+            );
+          }
 
-            MailingJob mailingJob = this.buildFromRow(rows.iterator().next(), null);
+          MailingJob mailingJob = this.buildFromRow(rows.iterator().next(), null);
 
-            return Future.succeededFuture(mailingJob);
-          });
-      });
+          return Future.succeededFuture(mailingJob);
+        }));
   }
 
 
@@ -237,7 +233,7 @@ public class MailingJobProvider {
 
 
     jdbcUpdate.addPredicateColumn(MailingJobCols.REALM_ID, mailingJob.getGuid().getRealmId());
-    jdbcUpdate.addPredicateColumn(MailingJobCols.ID, mailingJob.getGuid().getLocalId());
+    jdbcUpdate.addPredicateColumn(MailingJobCols.ID, mailingJob.getGuid().getJobId());
 
     return jdbcUpdate.execute(connection)
       .compose(rowSet -> Future.succeededFuture(mailingJob));

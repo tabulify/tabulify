@@ -1,5 +1,7 @@
 package net.bytle.vertx.guid;
 
+import net.bytle.java.JavaEnvs;
+
 /**
  * A guid is a string identifier
  * Example: usr-xxmnmnsd
@@ -16,6 +18,10 @@ public abstract class Guid {
     if (hash == null) {
       // A guid is serialized through Jackson as we hash it with a secret
       return toStringLocalIds();
+    }
+    if (JavaEnvs.IS_DEV) {
+      // for debug purpose
+      hash += ", " + toStringLocalIds();
     }
     return hash;
 
@@ -34,11 +40,11 @@ public abstract class Guid {
    * If null, uses {@link net.bytle.vertx.jackson.JacksonMapperManager#getSerializer(Class) Jackson}
    * (as we hash it with a secret, it's not in the Pojo)
    */
-  public String getHashOrNull(){
+  public String getHashOrNull() {
     return this.hash;
   }
 
-  public void setHash(String hash){
+  public void setHash(String hash) {
     this.hash = hash;
   }
 

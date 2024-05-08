@@ -262,7 +262,7 @@ public class MailingItemProvider {
     MailingJob newMailingJob = mailingItemInputProps.getMailingJob();
     if (newMailingJob != null) {
       mailingItem.setMailingJob(newMailingJob);
-      jdbcUpdate.setUpdatedColumnWithValue(MailingItemCols.MAILING_JOB_ID, newMailingJob.getGuid().getLocalId());
+      jdbcUpdate.setUpdatedColumnWithValue(MailingItemCols.MAILING_JOB_ID, newMailingJob.getGuid().getJobId());
     }
 
     LocalDateTime plannedDeliveryTime = mailingItemInputProps.getPlannedDeliveryTime();
