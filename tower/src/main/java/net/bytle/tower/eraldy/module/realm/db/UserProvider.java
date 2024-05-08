@@ -123,12 +123,12 @@ public class UserProvider {
 
 
   /**
-   *
-   * @param user      - the actual user
+   * @param user           - the actual user
    * @param userInputProps - the new properties (ony non null are taken into account)
+   * @param sqlConnection - the sql connection
    * @return the user
    */
-  public <T extends User> Future<T> updateUser(T user, UserInputProps userInputProps) {
+  public <T extends User> Future<T> updateUser(T user, UserInputProps userInputProps, SqlConnection sqlConnection) {
 
     JdbcUpdate jdbcUpdate = JdbcUpdate.into(this.userTable)
       .setUpdatedColumnWithValue(UserCols.MODIFICATION_IME, DateTimeService.getNowInUtc())
@@ -227,7 +227,7 @@ public class UserProvider {
     }
 
     return jdbcUpdate
-      .execute()
+      .execute(sqlConnection)
       .compose(rowSet -> {
 
         if (rowSet.size() != 1) {
@@ -565,7 +565,7 @@ public class UserProvider {
         if (user == null) {
           return this.insertUserAndTrackEvent(realm, userInputProps, FlowType.SERVER_STARTUP, sqlConnection);
         }
-        return this.updateUser(user, userInputProps);
+        return this.updateUser(user, userInputProps, sqlConnection);
       });
   }
 
@@ -742,5 +742,9 @@ public class UserProvider {
 
   public <T extends User> Future<T> getUserByPassword(EmailAddress userEmail, String userPassword, Realm realm) {
     return this.jdbcPool.withConnection(sqlConnection -> getUserByPassword(userEmail, userPassword, realm, sqlConnection));
+  }
+
+  public <T extends User> Future<T>  updateUser(T actualUser, UserInputProps userInputProps) {
+    return this.jdbcPool.withConnection(sqlConnection -> updateUser(actualUser, userInputProps, sqlConnection));
   }
 }
