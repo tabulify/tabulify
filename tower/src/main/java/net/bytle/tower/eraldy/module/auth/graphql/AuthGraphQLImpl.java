@@ -48,7 +48,7 @@ public class AuthGraphQLImpl {
         TowerFailureException.builder()
           .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
           .setMessage("No realm user is authenticated")
-          .buildWithContextFailing(routingContext)
+          .build()
       );
     }
     User user = this.apiApp.getAuthProvider().toModelUser(signedInUser);

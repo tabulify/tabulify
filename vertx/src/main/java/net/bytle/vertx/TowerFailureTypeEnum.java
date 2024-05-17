@@ -18,7 +18,7 @@ public enum TowerFailureTypeEnum implements TowerFailureType {
    * Known in HTTP as not authorized
    * If logged in, use {@link #NOT_AUTHORIZED_403}
    */
-  NOT_LOGGED_IN_401(401, "Not logged in", "notLoggedIn"),
+  NOT_LOGGED_IN_401(401, "Not logged in (Requires authentication)", "notLoggedIn"),
 
 
   /**
@@ -35,7 +35,7 @@ public enum TowerFailureTypeEnum implements TowerFailureType {
    * Known in HTTP has forbidden
    * (Send by CSRF check for instance
    */
-  NOT_AUTHORIZED_403(403, "Not authorized, forbidden (user logged in)", "notAuthorized"),
+  NOT_AUTHORIZED_403(403, "Not authorized, forbidden (User is logged in)", "notAuthorized"),
 
   /**
    * see also {@link io.netty.handler.codec.http.HttpResponseStatus#BAD_REQUEST}

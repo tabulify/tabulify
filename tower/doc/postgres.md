@@ -46,6 +46,14 @@ docker run \
     -d \
     postgres:15.1
 ```
+```dos
+docker run ^
+    --name tower ^
+    -e POSTGRES_PASSWORD=welcome ^
+    -p 5433:5432 ^
+    -d ^
+    postgres:15.1
+```
 Note that the default port `5432` is mapped to `5433` to be able to run two different postgres database locally.
 If you want to change it to your needs, the port is in the [tower config file](../.tower.yml)
 

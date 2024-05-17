@@ -34,9 +34,29 @@ Via the [main method](../src/main/java/net/bytle/tower/VerticleApi.java),
 you can start it easily from the idea. Locate the `main` function, right click and start with or without debug.
 
 ## How to run
+
 ### Prerequisites
+#### Conf and Secret
+
+The secret should be set if needed. See:
+  * [.tower](../.tower.yml)
+  * [.tower.secxxx.dist.yml](../.tower.secxxx.dist.yml)
+
+The best way to do it is to start the web server.
+It will fail and tell you what is missing.
+
+#### Database Prerequisite
 
 * Databases: A [postgres instance](postgres.md) should be started.
+
+#### Mail PaperCut
+
+A local smtp server should also be available. On Windows, PaperCut for instance.
+
+#### Install the cert
+
+See [install the certs with mkcert](https.md)
+
 
 
 ### How to run it locally Without debug
@@ -45,13 +65,13 @@ To run your application:
 
 From Idea:
 * Main Class: [verticleAPI](../src/main/java/net/bytle/tower/VerticleApi.java)
-* Working Dir: `D:\code\bytle-mono\tower`
+* Working Dir: `c:\code\java-mono\tower`
 
 From Idea with the main launcher
 * Main Class: [net.bytle.vertx.MainLauncher](../../vertx/src/main/java/net/bytle/vertx/MainLauncher.java)
 * VMOption: `-Denv=development`
 * Program Arguments: `run net.bytle.tower.VerticleApi` [net.bytle.tower.VerticleApi](../src/main/java/net/bytle/tower/VerticleApi.java)
-* Working Dir: `D:\code\bytle-mono\tower` (at the start, it will create a db and download the Ip data)
+* Working Dir: `c:\code\java-mono\tower` (at the start, it will create a db and download the Ip data)
 
 From Gradle:
 ```bash
@@ -61,14 +81,19 @@ From Gradle:
 
 ### Hot Reload
 
-Hot reload will reload for every change in the file with a debounce time.
+There is 2 Hot reload possibilities:
+  * restart completely the server
+  * or build the class that has changed while running. Your ide should reload it.
+
+### Tower Hot Reload
+This hot reload will restart for every change in the file with a debounce time.
 If you don't this behavior, you can also easily restart the server with idea:
 * Shift+F10: will restart in normal mode
 * Shift+F9: will restart in debug mod
 
 Otherwise, you can start with automatic reload
   * From Idea, run with debug:
-     * Main Class: [net.bytle.tower.Main](../src/main/java/net/bytle/tower/Main.java)
+     * Main Class: [net.bytle.tower.Main](../src/main/java/net/bytle/tower/VerticleApi.java)
      * Working Dir: `D:\code\bytle-mono\tower`
   * From Gradle:
 ```bash

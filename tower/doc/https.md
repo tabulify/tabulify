@@ -13,11 +13,11 @@ In prod, the nginx proxy takes care of it.
 They are generated with [mkcert](https://github.com/FiloSottile/mkcert)
 * Install it (Windows)
 ```shello
-choco install mkcert
+winget install -e --id FiloSottile.mkcert
 ```
 * Add the environment variable `CAROOT` to the [cert directory](../../cert/README.md) path each time
 ```shell
-set CAROOT=D:\code\java-mono\cert
+set CAROOT=C:\code\java-mono\cert
 ```
 * Install the Root CA (DOS)
 ```shell

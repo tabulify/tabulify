@@ -59,8 +59,8 @@ public class ApiKeyHandlerRelaxed extends AuthenticationHandlerImpl<Authenticati
       });
       return;
     }
-    /**
-     * Default: Return the actual user or null
+    /*
+      Default: Return the actual user or null
      */
     User user = context.user();
     if (user != null) {
@@ -68,5 +68,6 @@ public class ApiKeyHandlerRelaxed extends AuthenticationHandlerImpl<Authenticati
       return;
     }
     handler.handle(Future.succeededFuture());
+
   }
 }
