@@ -78,6 +78,8 @@ public class Server {
   private final List<TowerService> services = new ArrayList<>();
   private TowerDnsClient dnsClient;
   private WriteThroughCollection writeThroughCollection;
+  private TemplateEngines templateEngines;
+
 
   Server(builder builder) {
 
@@ -261,8 +263,11 @@ public class Server {
     return this.writeThroughCollection;
   }
 
-  public String getAppName() {
-    return this.builder.applicationName;
+  public TemplateEngines getTemplateEngines() {
+    if (this.templateEngines == null) {
+      throw new InternalException("Template engine is not enabled");
+    }
+    return this.templateEngines;
   }
 
 
@@ -289,6 +294,7 @@ public class Server {
     private boolean enableDnsClient = false;
     private ServerHealth serverHealth;
     private boolean enableWriteThroughCollection = false;
+    private boolean enableTemplateEngine = false;
 
     public builder(String applicationName, String confPrefix, Vertx vertx, ConfigAccessor configAccessor) {
       this.applicationName = applicationName;
@@ -436,6 +442,13 @@ public class Server {
         LOGGER.info("Write Through Collection disabled");
       }
 
+      if (this.enableTemplateEngine) {
+        LOGGER.info("Start Instantiation of Template Engine");
+        server.templateEngines = new TemplateEngines(server);
+      } else {
+        LOGGER.info("Template Engine disabled");
+      }
+
       if (this.enableAnalytics) {
         LOGGER.info("Analytics tracker enabled");
         server.analyticsTracker = AnalyticsTracker.createFromServer(server);
@@ -454,8 +467,7 @@ public class Server {
      * Enable a database where all prefix starts with jdbc
      */
     public builder enablePostgresDatabase() {
-      this.enablePostgresDatabase("pg");
-      return this;
+      return this.enablePostgresDatabase("pg");
     }
 
     /**
@@ -556,6 +568,11 @@ public class Server {
 
     public Server.builder enableSmtpClient(String userAgentName) {
       this.smtpClientUserAgentName = userAgentName;
+      return this;
+    }
+
+    public Server.builder enableTemplateEngine() {
+      this.enableTemplateEngine = true;
       return this;
     }
   }

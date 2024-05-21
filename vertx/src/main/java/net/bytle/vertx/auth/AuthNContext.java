@@ -398,17 +398,18 @@ public class AuthNContext {
     /**
      * Redirection to the client
      * (with code and state for third-party client)
-     * Deprecated: we don't store the redirect uri in the session
-     * but on the state. It permits to handle case where the user for instance
+     * We store the redirect uri in the session at registration
+     * to be sure that this is the same device.
+     * Otherwise, we store it in the claims, to handle case where the user for instance
      * switch of browser due to another default browser in the mail app
      */
     Session session = ctx.session();
     String sessionRedirectionUrl = session.remove(OAuthInternalSession.REDIRECT_URI_KEY);
     if (sessionRedirectionUrl == null) {
       throw TowerFailureException.builder()
-        .setMessage("Redirect URI not found")
+        .setMessage("Your session was not found. The redirect uri was null. Are you using the same browser? ")
         .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
-        .setName("Redirect Uri not ")
+        .setName("Session was not found")
         .setMimeToHtml()
         .buildWithContextFailing(ctx);
     }

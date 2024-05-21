@@ -4,7 +4,6 @@ import graphql.schema.DataFetchingEnvironment;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
@@ -406,7 +405,6 @@ public class ListApiImpl implements ListApi {
     }
     listRegistrationPostBody.setUserEmail(subscriberAddress);
 
-    Vertx vertx = routingContext.vertx();
     return apiApp
       .getListProvider()
       .getListByGuidObject(listGuidObject)
@@ -417,7 +415,7 @@ public class ListApiImpl implements ListApi {
           variables.put("title", "The list guid was not found");
           String message = "The list guid (" + listGuid + ") was not found";
           variables.put("message", message);
-          String errorHtml = TemplateEngine.getLocalHtmlEngine(vertx)
+          String errorHtml = this.apiApp.getHttpServer().getServer().getTemplateEngines().getLocalHtmlEngine()
             .compile("Error.html")
             .applyVariables(variables)
             .getResult();

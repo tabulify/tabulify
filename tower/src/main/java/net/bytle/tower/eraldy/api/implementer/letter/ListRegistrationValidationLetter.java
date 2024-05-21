@@ -1,7 +1,6 @@
 package net.bytle.tower.eraldy.api.implementer.letter;
 
 import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
@@ -19,7 +18,6 @@ import net.bytle.type.Booleans;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.JsonToken;
 import net.bytle.vertx.JsonTokenCipher;
-import net.bytle.vertx.TemplateEngine;
 import net.bytle.vertx.TowerApp;
 
 /**
@@ -68,9 +66,9 @@ public class ListRegistrationValidationLetter {
     private ListObject listObject;
 
     public Config(TowerApp towerApp) {
-      Vertx vertx = towerApp.getHttpServer().getServer().getVertx();
+
       this.towerApp = towerApp;
-      net.bytle.template.api.TemplateEngine towerEngine = TemplateEngine.getEmailEngine(vertx);
+      net.bytle.template.api.TemplateEngine towerEngine = towerApp.getHttpServer().getServer().getTemplateEngines().getEmailEngine();
       transactionalTemplate = BMailTransactionalTemplate
         .createFromName(BMailTransactionalTemplate.DEFAULT_TEMPLATE_NAME, towerEngine);
     }

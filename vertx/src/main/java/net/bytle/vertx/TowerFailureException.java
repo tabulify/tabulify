@@ -12,6 +12,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.exception.NotLoggedInException;
 import net.bytle.exception.NullValueException;
 import net.bytle.java.JavaEnvs;
+import net.bytle.template.api.TemplateEngine;
 import net.bytle.type.MediaTypes;
 
 import java.util.HashMap;
@@ -45,7 +46,7 @@ public class TowerFailureException extends Exception {
    * (ie the user clicks on a confirmation link, if the link is expired
    * it gets a meaningful informational page and not a json)
    */
-  public String toHtml(RoutingContext context, boolean withStackTrace) {
+  public String toHtml(RoutingContext context, boolean withStackTrace, TemplateEngine localHtmlEngine) {
 
     Map<String, Object> variables = new HashMap<>();
     variables.put("title", this.builder.name);
@@ -53,7 +54,7 @@ public class TowerFailureException extends Exception {
     if (withStackTrace) {
       variables.put("stacktrace", Exceptions.getStackTraceAsString(this));
     }
-    return TemplateEngine.getLocalHtmlEngine(context.vertx())
+    return localHtmlEngine
       .compile("Error.html")
       .applyVariables(variables)
       .getResult();

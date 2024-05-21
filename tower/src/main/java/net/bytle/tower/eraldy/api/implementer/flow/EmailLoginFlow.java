@@ -23,14 +23,12 @@ import net.bytle.tower.eraldy.module.app.model.AppGuid;
 import net.bytle.tower.eraldy.module.auth.model.CliGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaGuid;
 import net.bytle.tower.eraldy.module.organization.model.OrgaUserGuid;
-import net.bytle.tower.eraldy.module.realm.db.RealmProvider;
 import net.bytle.tower.eraldy.module.realm.model.RealmGuid;
 import net.bytle.type.Handle;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthJwtClaims;
 import net.bytle.vertx.auth.AuthQueryProperty;
-import net.bytle.vertx.auth.OAuthInternalSession;
 import net.bytle.vertx.flow.FlowType;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
@@ -71,7 +69,6 @@ public class EmailLoginFlow extends WebFlowAbs {
     AuthClient authClient = this.getApp().getAuthClientProvider().getRequestingClient(routingContext);
     AuthClientScope loginEmailFlow = AuthClientScope.LOGIN_EMAIL_FLOW;
     try {
-
       this.getApp().getAuthProvider().checkClientAuthorization(authClient, loginEmailFlow);
     } catch (NotAuthorizedException e) {
       return Future.failedFuture(TowerFailureException.builder()
@@ -81,11 +78,7 @@ public class EmailLoginFlow extends WebFlowAbs {
       );
     }
 
-    /**
-     * By making the redirect URI part of the session,
-     * the link can't be used 2 times
-     */
-    OAuthInternalSession.addRedirectUri(routingContext, redirectUri);
+
 
     App requestingApp = this.getApp().getAppProvider().getRequestingApp(routingContext);
 
@@ -104,6 +97,14 @@ public class EmailLoginFlow extends WebFlowAbs {
       .setAppGuid(jackson.getSerializer(AppGuid.class).serialize(requestingApp.getGuid()))
       .setAppHandle(jackson.getSerializer(Handle.class).serialize(requestingApp.getHandle()));
 
+    /**
+     * If the user uses chrome, and it's email client open edge
+     * (default windows), the session will not be available.
+     * Because this is a known registered and validated user,
+     * we store the redirect uri in the claims.
+     * (ie the user does not need to use the same device)
+     */
+    jwtClaims.setRedirectUri(redirectUri.toUri());
 
     /**
      * Recipient
@@ -125,15 +126,19 @@ public class EmailLoginFlow extends WebFlowAbs {
     String clientIdHash = this.getApp().getJackson().getSerializer(CliGuid.class).serialize(authClient.getGuid());
     clientCallbackQueryProperties.put(AuthQueryProperty.CLIENT_ID.toString(), clientIdHash);
 
-    String realmNameOrHandle = RealmProvider.getNameOrHandle(modelUserToLogin.getRealm());
+
+    String realmName = modelUserToLogin.getRealm().getName();
+    String mailSubject = "Login to " + realmName;
+
     BMailTransactionalTemplate letter = getApp()
       .getUserEmailLoginFlow()
       .getStep2Callback()
       .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims, clientCallbackQueryProperties)
       .addIntroParagraph(
-        "I just got a login request to <mark>" + realmNameOrHandle + "</mark> with your email.")
+        "I just got a login request to <mark>" + realmName + "</mark> with your email.")
       .setActionName("Click on this link to login automatically.")
       .setActionDescription("Click on this link to login automatically.")
+      .setTitle(mailSubject)
       .addOutroParagraph(
         "<br>" +
           "<br>Need help, or have any questions? " +
@@ -146,7 +151,7 @@ public class EmailLoginFlow extends WebFlowAbs {
 
         String text = letter.generatePlainText();
 
-        String mailSubject = "Login to " + realmNameOrHandle;
+
         TowerSmtpClientService towerSmtpClientService = this.getApp().getHttpServer().getServer().getSmtpClient();
 
         String recipientEmailAddressInRfcFormat;

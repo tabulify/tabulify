@@ -58,6 +58,7 @@ public class VerticleApi extends AbstractVerticle {
               .enableMapDb()
               .enableTrackerAnalytics()
               .enableDnsClient()
+              .enableTemplateEngine()
               .enableWriteThroughCollection()
               .build();
 

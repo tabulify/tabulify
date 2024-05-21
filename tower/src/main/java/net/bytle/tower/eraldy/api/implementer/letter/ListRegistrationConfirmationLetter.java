@@ -3,7 +3,7 @@ package net.bytle.tower.eraldy.api.implementer.letter;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.template.api.Template;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.vertx.TemplateEngine;
+import net.bytle.vertx.TemplateEngines;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -23,7 +23,7 @@ public class ListRegistrationConfirmationLetter {
    */
   private static final String URI_DEBUG_PARAMETER = "debug";
   /**
-   * The path from the {@link TemplateEngine#TEMPLATES_RESOURCE_ROOT template resources directory}
+   * The path from the {@link TemplateEngines#TEMPLATES_RESOURCE_ROOT template resources directory}
    */
   public static final String TEMPLATE_NAME = "list-registration-confirmation-letter.html";
 

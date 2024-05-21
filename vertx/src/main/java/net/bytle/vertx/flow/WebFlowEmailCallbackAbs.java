@@ -11,7 +11,10 @@ import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NullValueException;
 import net.bytle.type.Booleans;
 import net.bytle.type.UriEnhanced;
-import net.bytle.vertx.*;
+import net.bytle.vertx.JsonToken;
+import net.bytle.vertx.OAuthAccessTokenResponse;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.auth.AuthJwtClaims;
 
 import java.net.MalformedURLException;
@@ -78,7 +81,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
     /**
      * Template
      */
-    net.bytle.template.api.TemplateEngine templateEngine = TemplateEngine.getEmailEngine(webFlow.getApp().getHttpServer().getServer().getVertx());
+    net.bytle.template.api.TemplateEngine templateEngine = this.webFlow.getApp().getHttpServer().getServer().getTemplateEngines().getEmailEngine();
     BMailTransactionalTemplate template = BMailTransactionalTemplate
       .createFromName(BMailTransactionalTemplate.DEFAULT_TEMPLATE_NAME, templateEngine);
 

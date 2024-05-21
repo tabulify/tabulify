@@ -148,7 +148,7 @@ public abstract class TowerApp {
    */
   public Template getTemplate(String templateName) {
     String templateResourcesPath = getApexDomain().getFileSystemPathName() + "/" + this.getAppHandle() + "/" + templateName;
-    return TemplateEngine.getLocalHtmlEngine(this.httpServer.getServer().getVertx())
+    return this.httpServer.getServer().getTemplateEngines().getLocalHtmlEngine()
       .compile(templateResourcesPath);
   }
 

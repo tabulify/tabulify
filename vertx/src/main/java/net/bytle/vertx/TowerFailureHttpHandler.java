@@ -24,10 +24,12 @@ public class TowerFailureHttpHandler implements Handler<RoutingContext> {
 
   public static final String ERROR_NAME = "error";
   private final TowerFailureHandler failureHandler;
+  private final Server server;
 
 
   public TowerFailureHttpHandler(Server server) throws IllegalConfiguration {
     this.failureHandler = server.getFailureHandler();
+    this.server = server;
 
   }
 
@@ -95,7 +97,7 @@ public class TowerFailureHttpHandler implements Handler<RoutingContext> {
     switch (format) {
       case TEXT_HTML:
       default:
-        String html = towerFailureException.toHtml(context,withStackTrace);
+        String html = towerFailureException.toHtml(context, withStackTrace, this.server.getTemplateEngines().getLocalHtmlEngine());
         context
           .response()
           .setStatusCode(statusCode.getStatusCode())

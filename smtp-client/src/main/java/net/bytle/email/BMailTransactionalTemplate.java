@@ -198,20 +198,17 @@ public class BMailTransactionalTemplate {
   }
 
   /**
-   * The heading of the email (the first element h1 in the email)
-   * and the title of the HTML page if the subject is not given
-   * <p>
-   * Not really email friendly
+   * The title of the HTML page if the subject is not given
    *
-   * @param heading the email heading
+   * @param title the email heading
    * @return object for chaining
    */
-  public BMailTransactionalTemplate setHeading(String heading) {
-    this.templateVariable.put("heading", heading);
+  public BMailTransactionalTemplate setTitle(String title) {
+    this.templateVariable.put("title", title);
     return this;
   }
 
-  public BMailTransactionalTemplate addPostscriptum(String postScriptum) {
+  public BMailTransactionalTemplate addPostScriptum(String postScriptum) {
     List<String> postScriptums = Casts.castToListSafe(
       this.templateVariable.computeIfAbsent("ps", k -> new ArrayList<String>()),
       String.class
