@@ -80,12 +80,9 @@ public class AuthGraphQLImpl {
     try {
       signedInUser = this.apiApp.getAuthProvider().getSignedInAuthUser(routingContext);
     } catch (NotFoundException e) {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
-          .setMessage("No organization user is logged in")
-          .buildWithContextFailing(routingContext)
-      );
+      // null. no user and not 401
+      // because this is not an error
+      return Future.succeededFuture();
     }
     User user = this.apiApp.getAuthProvider().toModelUser(signedInUser);
     if (!(user instanceof OrgaUser)) {
