@@ -7,6 +7,7 @@ import net.bytle.type.DnsName;
  * Represents a host with a name and its 2 ip address
  */
 public class DnsHost {
+
   private final DnsHostConfig config;
 
   public DnsHost(DnsHostConfig config) {

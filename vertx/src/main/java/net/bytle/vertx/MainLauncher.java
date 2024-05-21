@@ -50,6 +50,7 @@ public class MainLauncher extends io.vertx.core.Launcher {
       .setMaxWorkerExecuteTimeUnit(TimeUnit.SECONDS); // default nanoseconds
   }
 
+
   @Override
   public void afterStartingVertx(Vertx vertx) {
     super.afterStartingVertx(vertx);

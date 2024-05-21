@@ -44,21 +44,16 @@ public class AuthGraphQLImpl {
     try {
       signedInUser = this.apiApp.getAuthProvider().getSignedInAuthUser(routingContext);
     } catch (NotFoundException e) {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
-          .setMessage("No realm user is authenticated")
-          .build()
-      );
+      return Future.succeededFuture();
     }
     User user = this.apiApp.getAuthProvider().toModelUser(signedInUser);
     return this.apiApp.getRealmProvider()
       .getRealmFromLocalId(user.getGuid().getRealmId())
-      .compose(realm->{
-        if(realm==null){
+      .compose(realm -> {
+        if (realm == null) {
           return Future.failedFuture(
             TowerFailureException.builder()
-              .setMessage("The realm for the user ("+signedInUser.getSubject()+") was not found")
+              .setMessage("The realm for the user (" + signedInUser.getSubject() + ") was not found")
               .buildWithContextFailing(routingContext)
           );
         }

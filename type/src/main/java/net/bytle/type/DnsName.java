@@ -174,4 +174,6 @@ public class DnsName {
   public boolean isApexDomain() {
     return getApexName().equals(this);
   }
+
+
 }

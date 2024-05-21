@@ -22,10 +22,9 @@ public class TowerFailureHandler implements Handler<Throwable> {
     PrometheusMeterRegistry metricsRegistry;
     Counter failureCounterTemp;
 
-      metricsRegistry = server
-        .getMetricsRegistry();
-      failureCounterTemp = metricsRegistry
-        .counter("vertx_failure");
+    metricsRegistry = server.getMetricsRegistry();
+    failureCounterTemp = metricsRegistry
+      .counter("vertx_failure");
 
     failureCounter = failureCounterTemp;
     this.mailProvider = server.getSmtpClient();
@@ -48,8 +47,6 @@ public class TowerFailureHandler implements Handler<Throwable> {
      * For info, note that Log4j may also send email
      * <a href="https://logging.apache.org/log4j/log4j-2.7/manual/appenders.html#SMTPAppender">...</a>
      */
-
-
     /**
      * Log - the stack trace should be logged
      */

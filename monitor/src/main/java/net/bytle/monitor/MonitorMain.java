@@ -9,6 +9,7 @@ import jakarta.mail.MessagingException;
 import net.bytle.email.BMailMimeMessage;
 import net.bytle.ovh.OvhApiClient;
 import net.bytle.vertx.ConfigManager;
+import net.bytle.vertx.MainLauncher;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerSmtpClientService;
 import org.apache.logging.log4j.LogManager;
@@ -25,9 +26,11 @@ public class MonitorMain extends AbstractVerticle {
   public static void main(String[] args) {
 
     LOGGER.info("Monitor main started");
-    Vertx vertx = Vertx.vertx();
-    DeploymentOptions options = new DeploymentOptions().setWorker(true);
-    vertx.deployVerticle(MonitorMain.class, options);
+    DeploymentOptions options = new DeploymentOptions()
+      .setThreadingModel(ThreadingModel.WORKER);
+    MainLauncher mainLauncher = new MainLauncher();
+    mainLauncher.beforeDeployingVerticle(options);
+    mainLauncher.dispatch(new String[]{"run", MonitorMain.class.getName()});
 
   }
 
@@ -47,7 +50,7 @@ public class MonitorMain extends AbstractVerticle {
       .onSuccess(configAccessor -> {
         try {
 
-          Server server = Server.create("monitor", vertx, configAccessor)
+          Server server = Server.create("monitor", "monitor", vertx, configAccessor)
             .enableSmtpClient("eraldy.com")
             .build();
 

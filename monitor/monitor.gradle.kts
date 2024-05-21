@@ -60,7 +60,7 @@ tasks.register(deployTaskName) {
     println("Fly Update Image")
     exec {
       commandLine(
-        "fly",
+        "flyctl",
         "machine",
         "update",
         "683d920b195638",

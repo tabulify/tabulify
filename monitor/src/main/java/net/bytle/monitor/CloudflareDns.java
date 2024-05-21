@@ -52,21 +52,32 @@ public class CloudflareDns {
 
         CloudflareDnsZone.CloudflareDnsZoneConfig result = CloudflareDnsZone.config(this, zoneName);
 
+        Boolean success = jsonBody.getBoolean("success");
+        if (!success) {
+          JsonArray errors = jsonBody.getJsonArray("errors");
+          if (!errors.isEmpty()) {
+            JsonObject error = errors.getJsonObject(0);
+            Integer code = error.getInteger("code");
+            String message = error.getString("message");
+            return Future.failedFuture(new InternalError("CloudFlare Request Error: " + code + " - " + message));
+          }
+
+        }
         JsonArray jsonArray = jsonBody.getJsonArray("result");
-        switch(jsonArray.size()){
+        switch (jsonArray.size()) {
           case 0:
-            return Future.failedFuture(new DnsNotFoundException("No zone with the name (" + zoneName+")"));
+            return Future.failedFuture(new DnsNotFoundException("No zone with the name (" + zoneName + ")"));
           case 1:
             JsonObject tokenJsonData = jsonArray.getJsonObject(0);
             result.setId(tokenJsonData.getString("id"));
             CloudflareDnsZone futureZoneResult = result.build();
-            this.cloudflareDnsZoneMap.put(zoneName,futureZoneResult);
+            this.cloudflareDnsZoneMap.put(zoneName, futureZoneResult);
             return Future.succeededFuture(futureZoneResult);
           default:
-            return Future.failedFuture(new DnsException("Too much zones for the name (" + zoneName+")"));
+            return Future.failedFuture(new DnsException("Too much zones for the name (" + zoneName + ")"));
         }
 
-      }, err-> Future.failedFuture(new DnsException("Error while querying the zone", err)));
+      }, err -> Future.failedFuture(new DnsException("Error while querying the zone", err)));
 
   }
 

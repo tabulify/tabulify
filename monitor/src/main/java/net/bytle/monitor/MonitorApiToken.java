@@ -70,6 +70,12 @@ public class MonitorApiToken {
       .send()
       .compose(response -> {
 
+        List<MonitorReportResult> monitorReportResults = new ArrayList<>();
+        if (response.statusCode() != 200) {
+          monitorReportResults.add(MonitorReportResult.failed("Cloudflare Bad request - " + response.statusCode() + " - the api token may be expired or not good"));
+          return Future.succeededFuture(monitorReportResults);
+        }
+
         String body = response.bodyAsString();
         JsonObject jsonBody;
         try {
@@ -78,7 +84,7 @@ public class MonitorApiToken {
           return Future.failedFuture(new IllegalStateException("Content is not Json\n" + body, e));
         }
 
-        List<MonitorReportResult> monitorReportResults = new ArrayList<>();
+
         JsonArray jsonArray = jsonBody.getJsonArray("result");
         for (int i = 0; i < jsonArray.size(); i++) {
 

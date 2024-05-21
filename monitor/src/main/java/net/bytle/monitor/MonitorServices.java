@@ -44,6 +44,8 @@ public class MonitorServices {
   private final NetClient netClient;
   private final long certificateExpirationDelayBeforeFailure;
   private final HashMap<DnsName, Future<List<MonitorReportResult>>> asyncListResults = new HashMap<>();
+  private final DnsHost eraldyComHost;
+  private final DnsHost membersEraldyComHost;
 
   public MonitorServices(CloudflareDns cloudflareDns, NetClient sslNetClient, ConfigAccessor configAccessor) {
 
@@ -74,6 +76,15 @@ public class MonitorServices {
       monitorBeauHost = dnsClient.configHost("beau.bytle.net")
         .setIpv4("192.99.55.226")
         .setIpv6("2607:5300:201:3100::85b") // 2607:5300:201:3100:0:0:0:85b
+        .build();
+
+      eraldyComHost = dnsClient.configHost("eraldy.com")
+        .setIpv4("66.241.125.178")
+        .setIpv6("2a09:8280:1::36:4fc9:0")
+        .build();
+      membersEraldyComHost = dnsClient.configHost("members.eraldy.com")
+        .setIpv4("66.241.125.170")
+        .setIpv6("2a09:8280:1::36:52ab:0")
         .build();
 
       mailers = new ArrayList<>();
@@ -475,15 +486,26 @@ public class MonitorServices {
     LOGGER.info("  * Check A record");
     // We check the A record and not a CNAME record
     // Why ? gerardnico.github.io hosted domain does not have cname but A and AAAAA records
-    Set<DnsName> httpServices = new HashSet<>(apexDomains);
-    DnsName rixt = gerardNicoDomain.getSubdomain("rixt");
-    httpServices.add(rixt);
-    for (DnsName dnsName : apexDomains) {
-      // the www format
-      httpServices.add(dnsName.getSubdomain("www"));
+    Set<DnsName> httpBeauServices = new HashSet<>(apexDomains);
+    httpBeauServices.remove(eraldyComHost.getDnsName());
+    // the www format of apex domain
+    Set<DnsName> wwwNames = new HashSet<>();
+    for (DnsName dnsName : httpBeauServices) {
+      wwwNames.add(dnsName.getSubdomain("www"));
     }
-    this.checkCloudflareARecord(monitorBeauHost, httpServices, "HTTP A record");
+    httpBeauServices.addAll(wwwNames);
+    httpBeauServices.add(gerardNicoDomain.getSubdomain("rixt"));
+
+    this.checkCloudflareARecord(monitorBeauHost, httpBeauServices, "Beau Domains HTTP A record");
+    HashSet<DnsName> eraldyDnsNames = new HashSet<>();
+    eraldyDnsNames.add(eraldyComHost.getDnsName());
+    eraldyDnsNames.add(eraldyComHost.getDnsName().getSubdomain("www"));
+    this.checkCloudflareARecord(eraldyComHost, eraldyDnsNames, "eraldy.com HTTP A record");
+    this.checkCloudflareARecord(membersEraldyComHost, "members.eraldy.com HTTP A record");
     LOGGER.info("  * Check HTTP Certificates");
+    Set<DnsName> httpServices = new HashSet<>(httpBeauServices);
+    httpServices.add(eraldyComHost.getDnsName());
+    httpServices.add(membersEraldyComHost.getDnsName());
     this.checkHttpsCertificates(httpServices);
 
     LOGGER.info("Monitor Private Network");
@@ -494,6 +516,13 @@ public class MonitorServices {
 
     return this.getMonitorReports();
 
+  }
+
+  private MonitorServices checkCloudflareARecord(DnsHost host, String message) {
+    HashSet<DnsName> hashSetDnsNames = new HashSet<>();
+    hashSetDnsNames.add(host.getDnsName());
+    checkCloudflareARecord(host, hashSetDnsNames, message);
+    return this;
   }
 
   private MonitorServices checkMailersAAAARecord(ArrayList<DnsHost> mailers, DnsName mailersName) {

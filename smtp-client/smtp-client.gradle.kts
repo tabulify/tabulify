@@ -29,7 +29,7 @@ dependencies {
   // JavaxMail is now known as Jakarta and is generally provided by the framework
   // Added by simple email, therefore no version
   // Api because the library returns Mime, ...Email in the jakarta form
-  api("com.sun.mail:jakarta.mail"){
+  api("jakarta.mail:jakarta.mail-api") {
     version {
       strictly(jakartaEmailVersion)
     }

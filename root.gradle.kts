@@ -20,12 +20,13 @@ val slf4jVersion = "2.0.6"
 // email SMTP server
 // https://mvnrepository.com/artifact/com.github.davidmoten/subethasmtp
 val subethaVersion = "6.0.7"
-// should be the same as in SimpleEmail (don't know how to do that)
-val jakartaEmailVersion = "2.0.1"
-// should be the same as in SimpleEmail (don't know how to do that)
+
+// angus and jakarta should be the same as in SimpleEmail (don't know how to do that with gradle)
+// https://github.com/bbottema/simple-java-mail/blob/master/modules/core-module/pom.xml
 // https://eclipse-ee4j.github.io/angus-mail/
-val angusEmailVersion = "2.0.1"
-val simpleEmailVersion = "8.1.3"
+val simpleEmailVersion = "8.10.1"
+val jakartaEmailVersion = "2.1.2"
+val angusEmailVersion = "2.0.2"
 // DnsJava
 val dnsJavaVersion = "3.5.2"
 val antJschVersion = "1.9.2"
