@@ -1,6 +1,6 @@
 # A template file with secret
 # that should be copied to `.tower.secret.yml`
-# and the xxxx values should be replaced by their respectives values
+# and the xxxx values should be replaced by their respective values
 
 # The Mixpanel project token
 eraldy.mixpanel.project.token: 'xxxxx'

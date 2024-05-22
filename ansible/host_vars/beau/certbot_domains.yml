@@ -3,7 +3,7 @@
 ovh_domains: []
 
 # There is a fqdn and a dir
-# because * is not support in file system
+# because * is not supported in file system
 cloudflare_domains:
   gerardnico.com:
     fqdn: '{{ gnico_fqdn }}'
@@ -56,6 +56,7 @@ cloudflare_domains:
   eraldy.com:
     fqdn: '{{ eraldy_fqdn }}'
     dir: '{{ eraldy_fqdn }}'
-  persso.com:
-    fqdn: '{{ persso_fqdn }}'
-    dir: '{{ persso_fqdn }}'
+  api.eraldy.com:
+    fqdn: '{{ eraldy_api_fqdn }}'
+    dir: '{{ eraldy_api_fqdn }}'
+

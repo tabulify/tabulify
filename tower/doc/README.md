@@ -7,8 +7,9 @@ We develop this application with the following technology:
   * `vertx`, see [vertx](vertx.md)
   * `postgres`, see [postgres](postgres.md)
   * `flyway`, see [schema management](schema-flyway.md)
-  * `openApi generator`, see [openApi](openapi.md)
-  * `postman` as http gui client, see [postman](postman.md)
+* `graphQL`, see [graphQL](graphql.md)
+* `openApi`, see [openApi](openapi.md)
+* deployed on a vps
 
 ## Action
 

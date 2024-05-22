@@ -72,12 +72,14 @@ More
 \?
 ```
 
-\q: exit
-\list or \l: list all databases
-\c <db name>: connect to a certain database
-\dt: list all tables in the current database using your search_path
-\dt *.: list all tables in the current database regardless your search_path
-\du: user account
+```bash
+\q            : exit
+\list or \l   : list all databases
+\c <db name>  : connect to a certain database
+\dt           : list all tables in the current database using your search_path
+\dt *         : list all tables in the current database regardless your search_path
+\du           : user account
+```
 
 ## Admin Client
 
@@ -89,8 +91,7 @@ Directory: `/var/lib/pgsql/15/`
 
 ## Configuration
 
-
-Parameters is to edit the file `postgresql.conf`
+Parameters are in the file `postgresql.conf`
 A default copy is installed when the database cluster directory is initialized.
 
 ## Sql Conf script

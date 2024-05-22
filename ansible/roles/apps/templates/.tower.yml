@@ -1,6 +1,6 @@
 ---
 # the number of jdbc connection by pool
-jdbc.pool_size: 5
+jdbc.pool_size: 10
 # cache the compilation of template
 template.cache: true
 

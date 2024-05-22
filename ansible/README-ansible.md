@@ -8,6 +8,10 @@ The current CentOs is EOL on
 Next is a server on docker (to be able to install the needed dependency such as a sqlite version) ?
 Ovh install it on Debian.
 
+## Prerequisites
+
+This [ansible](https://github.com/gerardnico/ansible) repo should be installed and available in the `PATH`
+
 ## Run
 
   * Copy the file [passphrase-dist.sh](passphrase-dist.sh) to `passphrase.sh`
@@ -63,21 +67,28 @@ ansible -i inventories/beau.yml --vault-id passphrase.sh -m debug -a "msg={{ ans
   * [OVH Firewall](https://docs.ovh.com/fr/dedicated/firewall-network/)
   * get public key authentication working before disabling PasswordAuthentication in sshd_config.
 
-## Password Encryption
+## Password Encryption / Secret
 
-Encryption
+Encryption:
+
+* for a string
+
+```dos
+ansible-encrypt the_password_to_encrypt
+```
+
+* for a file
+
+```dos
+type cert.pem | ansible-encrypt
+```
+
+Decryption:
+It needs `bash` to be able to pass multiple line (Dos does not support it)
 ```dos
 ansible-bash
 ```
 then
-```bash
-ansible-vault encrypt_string --vault-id passphrase.sh the_password_to_encrypt
-# for a file
-cat cert.pem | ansible-vault encrypt_string --vault-id passphrase.sh
-```
-
-
-Decryption
 ```bash
 echo '$ANSIBLE_VAULT;...<ansible vault string>' | tr -d ' ' | ansible-vault decrypt --vault-id passphrase.sh && echo
 ```
