@@ -13,7 +13,9 @@ They use:
 SHOW default_transaction_read_only
 ```
 
-[Code](https://github.com/fly-apps/postgres-flex/blob/master/internal/flypg/readonly.go)
+[ReadOnly Code](https://github.com/fly-apps/postgres-flex/blob/master/internal/flypg/readonly.go)
+[Check](https://github.com/fly-apps/postgres-flex/blob/f682f391774e96ded65e9a4bfc4698cfffaac953/internal/flycheck/pg.go#L17)
+[Check Web Server](https://github.com/fly-apps/postgres-flex/blob/master/internal/api/handler.go)
 
 ```golang
 for _, db := range databases {

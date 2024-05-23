@@ -1,0 +1,2 @@
+postgres: postgres -c config_file=/etc/postgresql/postgresql.conf
+postgres_exporter: postgres_exporter --log.level=warn
