@@ -7,11 +7,14 @@ ARG PG_MAJOR_VERSION=16
 # as this is the base image of postgres
 # https://github.com/wal-g/wal-g?tab=readme-ov-file#installing
 # run it
-# docker run --rm -it postgres__wal-g wal-g
+# docker run --env-file secret.env --rm -it debianslim_wal-g
 FROM postgres:${PG_DOCKER_TAG} as wal-g
 
 # Set environment variables
 ENV WAL_G_VERSION v3.0.0
+# https://github.com/wal-g/wal-g?tab=readme-ov-file#compression
+ENV WALG_COMPRESSION_METHOD brotli
+ENV WALG_LIBSODIUM_KEY_TRANSFORM base64
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -41,6 +44,7 @@ RUN mkdir -p /go/src/github.com/wal-g/wal-g &&\
     cp /go/src/github.com/wal-g/wal-g/main/pg/wal-g /usr/local/bin/wal-g && \
     chmod +x /usr/local/bin/wal-g
 
+ENTRYPOINT ["wal-g"]
 
 # Postgres Exporter
 # https://github.com/prometheus-community/postgres_exporter
@@ -95,12 +99,12 @@ RUN mkdir -p /etc/postgresql/ \
     && echo "restore_command = 'wal-g wal-fetch %f %p'" >> /etc/postgresql/postgresql.conf
 
 
-# See environment variables documentation https://github.com/wal-g/wal-g#configuration
-#ENV WALE_S3_PREFIX=s3://bucket/path/to/folder
+# See environment variables documentation \
+# https://github.com/wal-g/wal-g/blob/master/docs/STORAGES.md
+#ENV WALE_S3_PREFIX=s3://bucket-name/path/to/folder
 #ENV AWS_ACCESS_KEY_ID=xxxx
 #ENV AWS_SECRET_ACCESS_KEY=secret
-#ENV AWS_REGION=us-west-2
-#ENV AWS_ENDPOINT=http://s3-like-service:9000
+#ENV AWS_ENDPOINT=s3-like-service:9000
 ENV AWS_S3_FORCE_PATH_STYLE=true
 ENV WALG_COMPRESSION_METHOD brotli
 
