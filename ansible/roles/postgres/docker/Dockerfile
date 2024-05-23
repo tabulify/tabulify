@@ -1,13 +1,14 @@
-ARG PG_VERSION=15.6
-ARG PG_MAJOR_VERSION=15
-
+# https://hub.docker.com/_/postgres
+ARG PG_VERSION=16.3
+ARG PG_DOCKER_TAG=16.3-alpine
+ARG PG_MAJOR_VERSION=16
 
 
 # Postgres Exporter
 # https://github.com/prometheus-community/postgres_exporter
 FROM wrouesnel/postgres_exporter:latest AS postgres_exporter
 
-FROM postgres:${PG_VERSION} as final
+FROM postgres:${PG_DOCKER_TAG} as final
 ENV PGDATA=/data/postgresql
 ENV PGPASSFILE=/data/.pgpass
 ARG VERSION
@@ -21,6 +22,11 @@ COPY --from=wal-g /wal-g /
 RUN apt-get update && apt-get install --no-install-recommends -y \
     postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR \
     postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR-scripts
+
+LABEL app_role=postgres_cluster
+LABEL version=${VERSION}
+LABEL pg-version=${PG_VERSION}
+LABEL pg-manager=repmgr
 
 ENV ARCHIVE_MODE=off
 # When archive_mode is enabled (on or always),
@@ -43,6 +49,11 @@ RUN mkdir -p /etc/postgresql/ \
     && sed -ri "s/^#archive_timeout = 0/archive_timeout = {{.Env.ARCHIVE_TIMEOUT}}/" /etc/postgresql/postgresql.conf.tmpl \
     && sed -ri "s/^#archive_command = ''/archive_command = '\/wal-g wal-push %p'/" /etc/postgresql/postgresql.conf.tmpl \
     && sed -ri "s/^#restore_command = ''/restore_command = '\/wal-g wal-fetch %f %p'/" /etc/postgresql/postgresql.conf.tmpl
+
+# enable the archive mode with archive command
+RUN echo "archive_mode = yes" >> /usr/local/var/pg15/postgresql.conf
+RUN echo "archive_command = 'envdir /etc/wal-g.d/env /usr/local/bin/wal-g wal-push %p'" >> /usr/local/var/pg15/postgresql.conf
+RUN echo "archive_timeout = 60" >> /usr/local/var/pg15/postgresql.conf \
 
 ADD docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod u+x /docker-entrypoint.sh
