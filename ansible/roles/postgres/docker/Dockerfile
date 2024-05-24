@@ -104,7 +104,7 @@ ENV LC_COLLATE=C.UTF-8
 # Deb Package Extension
 COPY --from=pg-safeupdate /tmp/*.deb /tmp
 
-# Installation with PG Package Extension )
+# Installation with PG Package Extension
 RUN apt-get update && apt-get install --no-install-recommends -y \
     postgresql-${PG_MAJOR}-cron \
     postgresql-${PG_MAJOR}-pgvector \
@@ -116,6 +116,10 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     # Needed for anything using libcurl
     ca-certificates \
     && rm -rf /var/lib/apt/lists/* /tmp/* \
+    # Needed for Overmind \
+    tmux \
+    # No apt-get can be used or you need to run apt-get \
+    # to update the repo
     && apt-get clean
 
 
