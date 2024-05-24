@@ -42,12 +42,11 @@ RUN make -j$(nproc)
 RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 
 
-# Use debian:bookworm-slim as the base image
-# as this is the base image of postgres
+
 # https://github.com/wal-g/wal-g?tab=readme-ov-file#installing
 # run it
 # docker run --env-file secret.env --rm -it debianslim_wal-g
-FROM debian:bookworm-slim as wal-g
+FROM postgres:${PG_DOCKER_TAG} as wal-g
 
 # Set environment variables
 ARG WAL_G_VERSION
