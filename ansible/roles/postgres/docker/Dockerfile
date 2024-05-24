@@ -2,6 +2,24 @@
 ARG PG_VERSION=16.3
 ARG PG_DOCKER_TAG=16.3
 ARG PG_MAJOR_VERSION=16
+ARG PG_CRON_RELEASE=1.6.2
+
+####################
+# pg-safeupdate
+####################
+FROM postgres:${PG_DOCKER_TAG} as pg-safeupdate
+ARG pg_safeupdate_release=1.5
+ARG pg_safeupdate_release_checksum
+ADD --checksum=${pg_safeupdate_release_checksum} \
+    "https://github.com/eradman/pg-safeupdate/archive/refs/tags/${pg_safeupdate_release}.tar.gz" \
+    /tmp/pg-safeupdate.tar.gz
+RUN tar -xvf /tmp/pg-safeupdate.tar.gz -C /tmp && \
+    rm -rf /tmp/pg-safeupdate.tar.gz
+WORKDIR /tmp/pg-safeupdate-${pg_safeupdate_release}
+RUN make -j$(nproc)
+# Create debian package
+RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
+
 
 # Use debian:bookworm-slim as the base image
 # as this is the base image of postgres
@@ -41,8 +59,9 @@ RUN mkdir -p /go/src/github.com/wal-g/wal-g &&\
     export USE_LZO=1 && \
     make deps && \
     make pg_build && \
-    cp /go/src/github.com/wal-g/wal-g/main/pg/wal-g /usr/local/bin/wal-g && \
-    chmod +x /usr/local/bin/wal-g
+    cp main/pg/wal-g /usr/local/bin/wal-g && \
+    chmod +x /usr/local/bin/wal-g && \
+    echo $(wal-g --version)
 
 ENTRYPOINT ["wal-g"]
 
@@ -57,10 +76,12 @@ ARG VERSION=1.0.0
 ENV OVERMIND_VERSION 2.2.1
 
 
-# Package (PostGIS, ...)
+# Package Extension (PostGIS, ...)
 RUN apt-get update && apt-get install --no-install-recommends -y \
-    postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR \
-    postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR-scripts \
+    postgresql-${PG_MAJOR}-postgis-${POSTGIS_MAJOR} \
+    postgresql-${PG_MAJOR}-postgis-${POSTGIS_MAJOR}-scripts \
+    postgresql-${PG_MAJOR}-cron \
+    postgresql-${PG_MAJOR}-pgvector \
     bash \
     curl \
     && apt-get clean
@@ -79,8 +100,9 @@ ARG ARCHIVE_MODE=on
 # completed WAL segments are sent to archive storage by setting archive_command or archive_library.
 # Off by default to avoid crushing PostgreSQL production data by mistake
 
-ARG ARCHIVE_TIMEOUT=60
+ARG ARCHIVE_TIMEOUT=3600
 # Archive timeout
+# If the value is specified without units, it is taken as seconds.
 # The archive_command is only invoked for completed WAL segments.
 # With low traffic, the command would never be executed.
 # Archived files that are closed early due to a forced switch
@@ -98,7 +120,8 @@ RUN echo 'Postgres Configuration File' \
     && echo "archive_mode = ${ARCHIVE_MODE}" >> /etc/postgresql/postgresql.conf \
     && echo "archive_timeout = ${ARCHIVE_TIMEOUT}" >> /etc/postgresql/postgresql.conf \
     && echo "archive_command = 'wal-g wal-push %p'" >> /etc/postgresql/postgresql.conf \
-    && echo "restore_command = 'wal-g wal-fetch %f %p'" >> /etc/postgresql/postgresql.conf
+    && echo "restore_command = 'wal-g wal-fetch %f %p'" >> /etc/postgresql/postgresql.conf \
+    && echo "cron.database_name = 'postgres'" >> /etc/postgresql/postgresql.conf
     # logging_collector should be on (default?)
 
 ###################################

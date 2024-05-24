@@ -44,9 +44,8 @@ of [Recovering Using a Continuous Archive Backup](https://www.postgresql.org/doc
 5. Remove any files present in `pg_wal/` these came from the file system backup and are therefore probably obsolete
    rather than current.
 6. If you have unarchived WAL segment files that you saved in step 2, copy (not move) them into `pg_wal/`.
-7. Set recovery configuration
-
-* [settings in postgresql.conf](https://www.postgresql.org/docs/current/runtime-config-wal.html#RUNTIME-CONFIG-WAL-ARCHIVE-RECOVERY)
+7. Set recovery
+   configuration [settings in postgresql.conf](https://www.postgresql.org/docs/current/runtime-config-wal.html#RUNTIME-CONFIG-WAL-ARCHIVE-RECOVERY)
 * create a file `recovery.signal` in the cluster data directory
 * temporarily modify `pg_hba.conf` to prevent ordinary users from connecting until you are sure the recovery was
   successful.
