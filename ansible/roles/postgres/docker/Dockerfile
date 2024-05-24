@@ -104,6 +104,8 @@ COPY --from=pg-safeupdate /tmp/*.deb /tmp
 RUN apt-get update && apt-get install --no-install-recommends -y \
     postgresql-${PG_MAJOR}-cron \
     postgresql-${PG_MAJOR}-pgvector \
+    python3 \
+    postgresql-plpython3-${PG_MAJOR} \
     bash \
     curl \
     /tmp/*.deb \
