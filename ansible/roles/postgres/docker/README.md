@@ -25,7 +25,13 @@ List:
     defined by its foreign keys.
   * Tables similarly receive entrypoints in the Mutation type that enable bulk operations for insert, update, and
     delete.
+* PostGis:
 
+```Dockerfile
+apt-get install --no-install-recommends -y \
+  postgresql-${PG_MAJOR}-postgis-${POSTGIS_MAJOR} \
+  postgresql-${PG_MAJOR}-postgis-${POSTGIS_MAJOR}-scripts
+```
 ## Extension Framework
 
 * https://github.com/pgcentralfoundation/pgrx - framework for developing PostgreSQL extensions in Rust
