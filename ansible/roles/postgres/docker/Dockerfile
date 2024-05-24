@@ -83,7 +83,9 @@ RUN mkdir -p /go/src/github.com/wal-g/wal-g &&\
 
 ENTRYPOINT ["wal-g"]
 
-
+###############################################
+# Postgres Final
+###############################################
 FROM postgres:${PG_DOCKER_TAG} as final
 ENV PGDATA=/data/postgresql
 ENV PGPASSFILE=/data/.pgpass
@@ -123,31 +125,15 @@ LABEL OVERMIND_VERSION=${OVERMIND_VERSION}
 
 ###############################################
 # WAL archiving
-# https://www.postgresql.org/docs/current/continuous-archiving.html#BACKUP-ARCHIVING-WAL
+# See postgres-wal-archiving.md
 ############################################################################################
 ARG ARCHIVE_MODE=on
-# When archive_mode is enabled (on or always),
-# completed WAL segments are sent to archive storage by setting archive_command or archive_library.
-# Off by default to avoid crushing PostgreSQL production data by mistake
-
 ARG ARCHIVE_TIMEOUT=3600
-# Archive timeout
-# If the value is specified without units, it is taken as seconds.
-# The archive_command is only invoked for completed WAL segments.
-# With low traffic, the command would never be executed.
-# Archived files that are closed early due to a forced switch
-# are still the same length as completely full files.
-# Therefore, it is unwise to use a very short archive_timeout — it will bloat your archive storage.
-# Use Streaming replication, instead of archiving, if you want data to be copied off the primary server more quickly than that.
-# https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-ARCHIVE-TIMEOUT
 
-# archive/restore command
-# restore command
-# https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-RESTORE-COMMAND
 # logging_collector should be on (default?)
 RUN echo 'Postgres Configuration File' \
     && mkdir -p /etc/postgresql/ \
-    && cp /usr/local/share/postgresql/postgresql.conf.sample /etc/postgresql/postgresql.conf \
+    && cp /usr/share/postgresql/postgresql.conf.sample /etc/postgresql/postgresql.conf \
     && echo "archive_mode = ${ARCHIVE_MODE}" >> /etc/postgresql/postgresql.conf \
     && echo "archive_timeout = ${ARCHIVE_TIMEOUT}" >> /etc/postgresql/postgresql.conf \
     && echo "archive_command = 'wal-g wal-push %p'" >> /etc/postgresql/postgresql.conf \
@@ -158,8 +144,6 @@ RUN echo 'Postgres Configuration File' \
 # Walg
 ####################################
 COPY --from=wal-g /usr/local/bin/wal-g /usr/local/bin/wal-g
-
-
 # See environment variables documentation \
 # https://github.com/wal-g/wal-g/blob/master/docs/STORAGES.md
 #ENV WALE_S3_PREFIX=s3://bucket-name/path/to/folder
@@ -168,26 +152,29 @@ COPY --from=wal-g /usr/local/bin/wal-g /usr/local/bin/wal-g
 #ENV AWS_ENDPOINT=s3-like-service:9000
 ENV WALG_COMPRESSION_METHOD=brotli
 
-# See environment variables documentation https://github.com/wal-g/wal-g/blob/master/PostgreSQL.md#configuration
+# See environment variables documentation
+# https://github.com/wal-g/wal-g/blob/master/docs/PostgreSQL.md#configuration
 ENV PGHOST=/var/run/postgresql
 ENV PGUSER=postgres
 #ENV PGPASSWORD=secret
-#ENV WALG_PGP_KEY_PATH=/keys/wal-g.pub
 
+####################################
 # Prometheus exporter
 # https://github.com/prometheus-community/postgres_exporter
+####################################
 RUN curl -L https://github.com/prometheus-community/postgres_exporter/releases/download/v${PG_EXPORTER_VERSION}/postgres_exporter-${PG_EXPORTER_VERSION}.linux-amd64.tar.gz -o postgres_exporter.gz && \
     gunzip postgres_exporter.gz && \
     chmod +x postgres_exporter && \
-    mv postgres_exporter /usr/local/bin/ \
+    mv postgres_exporter /usr/local/bin/
 
-## Overmind
+####################################
+# Overmind
+####################################
 RUN curl -L "https://github.com/DarthSim/overmind/releases/download/v${OVERMIND_VERSION}/overmind-v${OVERMIND_VERSION}-linux-amd64.gz" -o overmind.gz && \
     gunzip overmind.gz && \
     chmod +x overmind && \
     mv overmind /usr/local/bin/
 
-WORKDIR /app
 # Procfile should be located in the working directory (or -f path/to/your/Procfile)
-ADD Procfile /app/
+ADD Procfile .
 CMD ["overmind", "start"]

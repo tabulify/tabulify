@@ -74,7 +74,8 @@ where:
 
 ## restore command
 
-The `restore_command` tells PostgreSQL how to retrieve archived WAL file segments.
+The [restore_command](https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-RESTORE-COMMAND)
+tells Postgres how to retrieve archived WAL file segments.
 
 ```ini
 restore_command = 'cp /mnt/server/archivedir/%f %p'
@@ -94,6 +95,25 @@ Note:
 
 ## Conf
 
+### archive_mode
+
+When archive_mode is enabled (on or always),
+completed WAL segments are sent to archive storage
+by setting archive_command or archive_library.
+
+### Archive timeout
+
+If the value is specified without units, it is taken as seconds.
+The archive_command is only invoked for completed WAL segments.
+With low traffic, the command would never be executed.
+Archived files that are closed early due to a forced switch
+are still the same length as completely full files.
+Therefore, it is unwise to use a very short archive_timeout — it will bloat your archive storage.
+Use Streaming replication, instead of archiving, if you want data to be copied off the primary server more quickly than
+that.
+https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-ARCHIVE-TIMEOUT
+
+### logging_collector
 When using an `archive_command` script, it's desirable to enable `logging_collector`.
 Any messages written to stderr from the script will then appear in the database server log, allowing complex
 configurations to be diagnosed easily if they fail.
