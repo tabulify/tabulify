@@ -23,6 +23,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     checkinstall \
     cmake \
+    git \
+    curl \
     postgresql-server-dev-${PG_MAJOR_VERSION}
 
 ####################
@@ -42,11 +44,12 @@ RUN make -j$(nproc)
 RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 
 
-
+###########################################
+# Wal-g building
 # https://github.com/wal-g/wal-g?tab=readme-ov-file#installing
 # run it
 # docker run --env-file secret.env --rm -it debianslim_wal-g
-FROM postgres:${PG_DOCKER_TAG} as wal-g
+FROM pgxs_builder as wal-g
 
 # Set environment variables
 ARG WAL_G_VERSION
@@ -56,12 +59,10 @@ ENV WALG_LIBSODIUM_KEY_TRANSFORM base64
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
-    git \
     golang-go \
     libbrotli-dev \
     liblzo2-dev \
     libsodium-dev \
-    cmake \
     && apt-get clean
 
 # Set Go environment variables
