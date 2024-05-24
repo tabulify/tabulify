@@ -5,6 +5,7 @@ ARG IMAGE_VERSION=1.0.0
 ARG PG_MAJOR_VERSION=16
 ARG PG_VERSION=16.3
 # https://hub.docker.com/_/postgres
+# https://github.com/docker-library/postgres/blob/d08757ccb56ee047efd76c41dbc148e2e2c4f68f/16/bookworm/Dockerfile
 ARG PG_DOCKER_TAG=16.3
 # Build Extensions
 ARG PG_SAFEUPDATE_VERSION=1.5
@@ -89,12 +90,11 @@ ENTRYPOINT ["wal-g"]
 # Postgres Final
 ###############################################
 FROM postgres:${PG_DOCKER_TAG} as final
-ENV PGDATA=/data/postgresql
-ENV PGPASSFILE=/data/.pgpass
 ARG IMAGE_VERSION
 ARG OVERMIND_VERSION
 ARG PG_EXPORTER_VERSION
 ARG PG_VERSION
+ARG PG_MAJOR_VERSION
 
 # Ensure UTF-8
 ENV LANG=en_US.UTF-8
@@ -113,11 +113,11 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     bash \
     curl \
     /tmp/*.deb \
+    # Needed for Overmind \
+    tmux \
     # Needed for anything using libcurl
     ca-certificates \
     && rm -rf /var/lib/apt/lists/* /tmp/* \
-    # Needed for Overmind \
-    tmux \
     # No apt-get can be used or you need to run apt-get \
     # to update the repo
     && apt-get clean
@@ -126,7 +126,9 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 LABEL image-version=${IMAGE_VERSION}
 LABEL pg-version=${PG_VERSION}
 LABEL pg-exporter-version=${PG_EXPORTER_VERSION}
-LABEL OVERMIND_VERSION=${OVERMIND_VERSION}
+LABEL overmind-version=${OVERMIND_VERSION}
+LABEL pg-cron-version=${PG_MAJOR_VERSION}
+LABEL pg-vector-version=${PG_MAJOR_VERSION}
 
 ###############################################
 # WAL archiving
@@ -167,8 +169,8 @@ ENV PGUSER=postgres
 # Prometheus exporter
 # https://github.com/prometheus-community/postgres_exporter
 ####################################
-RUN curl -L https://github.com/prometheus-community/postgres_exporter/releases/download/v${PG_EXPORTER_VERSION}/postgres_exporter-${PG_EXPORTER_VERSION}.linux-amd64.tar.gz -o postgres_exporter.gz && \
-    gunzip postgres_exporter.gz && \
+RUN curl -L https://github.com/prometheus-community/postgres_exporter/releases/download/v${PG_EXPORTER_VERSION}/postgres_exporter-${PG_EXPORTER_VERSION}.linux-amd64.tar.gz -o postgres_exporter.tar.gz && \
+    tar -xzvf postgres_exporter.tar.gz --strip-components=1 --no-anchored postgres_exporter && \
     chmod +x postgres_exporter && \
     mv postgres_exporter /usr/local/bin/
 

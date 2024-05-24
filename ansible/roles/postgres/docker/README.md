@@ -1,42 +1,18 @@
-## Other Docker setup
+# Postgres
 
-### Fly
-
-* [HA setup using repmgr - primary and a standby server](https://github.com/fly-apps/postgres-flex)
-* Old fly Postgress App: [HA setup using solon](https://github.com/fly-apps/postgres-ha) (old as
-  stated [here](https://fly.io/docs/postgres/advanced-guides/high-availability-and-global-replication/))
-
-### Supabase
-
-https://github.com/supabase/postgres/blob/develop/Dockerfile
-
-Fail2ban filter on the [README](https://github.com/supabase/postgres/) with fail2ban filter
-
-## Extension
-
-List:
-
-* International Full Text Search: https://pgroonga.github.io/
-* pgRouting: GeoSpatial routing calculation - https://pgrouting.org/
-* [pg_plan_filter](https://github.com/pgexperts/pg_plan_filter): block execution of statements where query planner's
-  estimate of the total cost exceeds a threshold.
-* [pg_graphql](https://supabase.github.io/pg_graphql/) -
-  * Each table receives an entrypoint in the top level Query type that is a pageable collection with relationships
-    defined by its foreign keys.
-  * Tables similarly receive entrypoints in the Mutation type that enable bulk operations for insert, update, and
-    delete.
-* PostGis:
-
-```Dockerfile
-apt-get install --no-install-recommends -y \
-  postgresql-${PG_MAJOR}-postgis-${POSTGIS_MAJOR} \
-  postgresql-${PG_MAJOR}-postgis-${POSTGIS_MAJOR}-scripts
 ```
-## Extension Framework
+docker run --env-file secret.env --rm -it postgres_final
+```
 
-* https://github.com/pgcentralfoundation/pgrx - framework for developing PostgreSQL extensions in Rust
+* pgdata - /var/lib/postgresql/data
 
-## Checks
+## Init
 
-* UTF-8
+* Database initialization only happens on container startup
+* Run if you start the container with a data directory that is empty.
+
+The (*.sql, *.sql.gz, or *.sh) init scripts
+
+* should be located in the directory `/docker-entrypoint-initdb.d`
+* are executed in sorted name order as defined by the current locale (default to en_US.utf8)
 
