@@ -25,6 +25,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     git \
     curl \
+    # Needed for curl, libcurl (used in make file)
+    ca-certificates \
     postgresql-server-dev-${PG_MAJOR_VERSION}
 
 ####################
@@ -112,7 +114,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     curl \
     /tmp/*.deb \
     # Needed for anything using libcurl
-    # https://github.com/supabase/postgres/issues/573
     ca-certificates \
     && rm -rf /var/lib/apt/lists/* /tmp/* \
     && apt-get clean
