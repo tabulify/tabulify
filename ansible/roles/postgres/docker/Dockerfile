@@ -70,11 +70,10 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 LABEL version=${VERSION}
 LABEL pg-version=${PG_VERSION}
 
-###################################
-# Walg
-####################################
-COPY --from=wal-g /usr/local/bin/wal-g /usr/local/bin/wal-g
-
+###############################################
+# WAL archiving
+# https://www.postgresql.org/docs/current/continuous-archiving.html#BACKUP-ARCHIVING-WAL
+############################################################################################
 ARG ARCHIVE_MODE=on
 # When archive_mode is enabled (on or always),
 # completed WAL segments are sent to archive storage by setting archive_command or archive_library.
@@ -90,13 +89,22 @@ ARG ARCHIVE_TIMEOUT=60
 # Use Streaming replication, instead of archiving, if you want data to be copied off the primary server more quickly than that.
 # https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-ARCHIVE-TIMEOUT
 
-# enable the archive mode with archive command
-RUN mkdir -p /etc/postgresql/ \
+# archive/restore command
+# restore command
+# https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-RESTORE-COMMAND
+RUN echo 'Postgres Configuration File' \
+    && mkdir -p /etc/postgresql/ \
     && cp /usr/local/share/postgresql/postgresql.conf.sample /etc/postgresql/postgresql.conf \
     && echo "archive_mode = ${ARCHIVE_MODE}" >> /etc/postgresql/postgresql.conf \
     && echo "archive_timeout = ${ARCHIVE_TIMEOUT}" >> /etc/postgresql/postgresql.conf \
     && echo "archive_command = 'wal-g wal-push %p'" >> /etc/postgresql/postgresql.conf \
     && echo "restore_command = 'wal-g wal-fetch %f %p'" >> /etc/postgresql/postgresql.conf
+    # logging_collector should be on (default?)
+
+###################################
+# Walg
+####################################
+COPY --from=wal-g /usr/local/bin/wal-g /usr/local/bin/wal-g
 
 
 # See environment variables documentation \
@@ -105,8 +113,7 @@ RUN mkdir -p /etc/postgresql/ \
 #ENV AWS_ACCESS_KEY_ID=xxxx
 #ENV AWS_SECRET_ACCESS_KEY=secret
 #ENV AWS_ENDPOINT=s3-like-service:9000
-ENV AWS_S3_FORCE_PATH_STYLE=true
-ENV WALG_COMPRESSION_METHOD brotli
+ENV WALG_COMPRESSION_METHOD=brotli
 
 # See environment variables documentation https://github.com/wal-g/wal-g/blob/master/PostgreSQL.md#configuration
 ENV PGHOST=/var/run/postgresql
