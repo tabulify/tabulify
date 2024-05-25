@@ -146,9 +146,9 @@ ENV PGTZ 'UTC'
 
 # Conf
 # https://github.com/docker-library/docs/blob/master/postgres/README.md#database-configuration
-# postgres.conf is a template and accepts env so that we can be consistent
-ADD conf/postgres.conf /etc/postgresql/postgres.conf.template
-RUN envsubst < /etc/postgresql/postgres.conf.template > /etc/postgresql/postgres.conf
+# postgresql.conf is a template and accepts env so that we can be consistent
+ADD conf/postgresql.conf /etc/postgresql/postgresql.conf.template
+RUN envsubst < /etc/postgresql/postgresql.conf.template > /etc/postgresql/postgresql.conf
 
 ###################################
 # Walg
