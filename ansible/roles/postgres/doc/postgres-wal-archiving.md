@@ -4,7 +4,7 @@
 
 A restore requires the backup files and one or more WAL segments in order to work correctly.
 
-Note on [Wal archiving](https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-ARCHIVE-COMMAND)
+Note on [Wal archiving](https://www.postgresql.org/docs/current/continuous-archiving.html)
 
 ## WAL
 
