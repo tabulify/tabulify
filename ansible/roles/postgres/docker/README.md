@@ -16,7 +16,8 @@ docker run --env-file secret.env --name postgres -d -p 5434:5432 postgres-final
 The backup location is set via:
 
 ```
-WALG_S3_PREFIX=s3://postgres-dev/nico
+WALG_S3_PREFIX=s3://bucket-name/path
+WALG_S3_PREFIX=s3://postgres-dev/dev-name
 ```
 
 In the container:
@@ -34,4 +35,8 @@ The (*.sql, *.sql.gz, or *.sh) init scripts
 
 * should be located in the directory `/docker-entrypoint-initdb.d`
 * are executed in sorted name order as defined by the current locale (default to en_US.utf8)
+
+## Diagnostic
+
+Log is on at `$PGDATA/log`
 
