@@ -175,6 +175,12 @@ RUN curl -L https://github.com/prometheus-community/postgres_exporter/releases/d
     mv postgres_exporter /usr/local/bin/
 
 ####################################
+# Database Init
+#
+####################################
+ADD docker-entrypoint-initdb.d /docker-entrypoint-initdb.d
+
+####################################
 # Overmind
 ####################################
 RUN curl -L "https://github.com/DarthSim/overmind/releases/download/v${OVERMIND_VERSION}/overmind-v${OVERMIND_VERSION}-linux-amd64.gz" -o overmind.gz && \

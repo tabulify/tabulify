@@ -1,10 +1,29 @@
 # Postgres
 
+Iterative to debug
 ```
 docker run --env-file secret.env --rm -it postgres_final
 ```
 
+```
+docker run --env-file secret.env --name postgres -d -p 5434:5432 postgres-final
+```
+
 * pgdata - /var/lib/postgresql/data
+
+## How to perform a full backup
+
+The backup location is set via:
+
+```
+WALG_S3_PREFIX=s3://postgres-dev/nico
+```
+
+In the container:
+
+```
+wal-g backup-push $PGDATA
+```
 
 ## Init
 

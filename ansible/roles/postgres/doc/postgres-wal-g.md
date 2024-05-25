@@ -4,16 +4,40 @@
 
 [](https://github.com/stephane-klein/playground-postgresql-walg/blob/master/README.md)
 
-* Make base backup
+### Create a container
+
+```sql
+docker
+run --env-file secret.env --name postgres -d -p 5434:5432 postgres-final
+```
+
+### Connect
+
+* Go into the container
+
+```
+docker exec -it postgres bash
+```
+
+* SQL Client: localhost: 5434
+
+### Make base backup
 
 ```bash
 wal-g backup-push -f $PGDATA
 ```
 
-* Check Stats archiver Informations
-
+* Check
+  Stats archiver Informations
 ```bash
 echo "select * from pg_stat_archiver;" | psql -x -U $POSTGRES_USER $POSTGRES_DB -a -q -f -
+```
+
+```sql
+SELECT pg_switch_wal()
+         SHOW archive_mode;
+SHOW
+archive_command;
 ```
 
 ```
@@ -27,16 +51,62 @@ last_failed_time   |
 stats_reset        | 2020-04-01 22:12:19.392116+00
 ```
 
+### Generate Data
+
+```sql
+pgbench
+-U
+$PGUSER
+-
+i
+-
+s
+2
+-
+n
+```
+
+### wal-g backup-list
+
+```sql
+INFO
+: 2024/05/25 09:03:52.466361 List backups from storages: [default]
+backup_name                   modified             wal_file_name            storage_name
+base_000000010000000000000003 2024-05-25T08:49:00Z 000000010000000000000003 default
+base_000000010000000000000006 2024-05-25T08:51:59Z 000000010000000000000006 default
+base_000000010000000000000008 2024-05-25T08:52:15Z 000000010000000000000008 default
+base_000000010000000000000016 2024-05-25T09:02:40Z 000000010000000000000016 default
+```
+
+### wal-g wal-show
+
+wal-g wal-show
+
+```
++-----+------------+-----------------+--------------------------+--------------------------+---------------+----------------+--------+---------------+
+| TLI | PARENT TLI | SWITCHPOINT LSN | START SEGMENT            | END SEGMENT              | SEGMENT RANGE | SEGMENTS COUNT | STATUS | BACKUPS COUNT |
++-----+------------+-----------------+--------------------------+--------------------------+---------------+----------------+--------+---------------+
+|   1 |          0 |             0/0 | 000000010000000000000001 | 000000010000000000000014 |            20 |             20 | OK     |             3 |
++-----+------------+-----------------+--------------------------+--------------------------+---------------+----------------+--------+---------------+
+```
+
+after a full backup
+
+```sql
++-----+------------+-----------------+--------------------------+--------------------------+---------------+----------------+--------+---------------+
+| TLI | PARENT TLI | SWITCHPOINT LSN | START SEGMENT            |
+END SEGMENT              | SEGMENT RANGE | SEGMENTS COUNT | STATUS | BACKUPS COUNT |
++-----+------------+-----------------+--------------------------+--------------------------+---------------+----------------+--------+---------------+
+|   1 |          0 |             0/0 | 000000010000000000000001 | 000000010000000000000016 |            22 |             22 | OK     |             4 |
++-----+------------+-----------------+--------------------------+--------------------------+---------------+----------------+--------+---------------+
+```
+
 * Restore
 
 ```bash
 docker run --rm postgres2 sh -c 'wal-g backup-fetch $PGDATA LATEST; touch $PGDATA/recovery.signal'
 ```
 
-```bash
-fly ssh console
-
-```
 
 ## Check / Verify
 
@@ -74,7 +144,7 @@ wal-g delete retain Full 5 --confirm
 ```bash
 # base backup
 wal-g backup-push /var/lib/postgresql/10/main/
-
+# https://www.postgresql.org/docs/current/pgbench.html
 pgbench -U $PGUSER -i -s $SCALE -n
 # 1600 MB
 pgbench -i -s 1000 userdb
