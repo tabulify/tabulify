@@ -8,7 +8,7 @@
 
 ```sql
 docker
-run --env-file secret.env --name postgres -d -p 5434:5432 postgres-final
+run --env-file secret.env --name postgres -d -p 5434:5432 -v C:\temp\data:/var/lib/postgresql/data postgres-final
 ```
 
 ### Connect

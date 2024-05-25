@@ -137,15 +137,18 @@ LABEL pg-vector-version=${PG_MAJOR_VERSION}
 ARG ARCHIVE_MODE=on
 ARG ARCHIVE_TIMEOUT=3600
 
+
+# https://github.com/docker-library/docs/blob/master/postgres/README.md#database-configuration
 # logging_collector should be on (default?)
 RUN echo 'Postgres Configuration File' \
     && mkdir -p /etc/postgresql/ \
-    && cp /usr/share/postgresql/postgresql.conf.sample /etc/postgresql/postgresql.conf \
-    && echo "archive_mode = ${ARCHIVE_MODE}" >> /etc/postgresql/postgresql.conf \
-    && echo "archive_timeout = ${ARCHIVE_TIMEOUT}" >> /etc/postgresql/postgresql.conf \
-    && echo "archive_command = 'wal-g wal-push %p'" >> /etc/postgresql/postgresql.conf \
-    && echo "restore_command = 'wal-g wal-fetch %f %p'" >> /etc/postgresql/postgresql.conf \
-    && echo "cron.database_name = 'postgres'" >> /etc/postgresql/postgresql.conf
+    && cp /usr/share/postgresql/postgresql.conf.sample ${PGDATA}/postgresql.conf \
+    && echo "archive_mode = ${ARCHIVE_MODE}" >> ${PGDATA}/postgresql.conf \
+    && echo "archive_timeout = ${ARCHIVE_TIMEOUT}" >> ${PGDATA}/postgresql.conf \
+    && echo "archive_command = 'wal-g wal-push %p'" >> ${PGDATA}/postgresql.conf \
+    && echo "restore_command = 'wal-g wal-fetch %f %p'" >> ${PGDATA}/postgresql.conf \
+    && echo "cron.database_name = 'postgres'" >> ${PGDATA}/postgresql.conf \
+    # && timezone = 'UTC'
 
 ###################################
 # Walg
