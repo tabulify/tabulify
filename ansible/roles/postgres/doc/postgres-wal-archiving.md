@@ -2,12 +2,25 @@
 
 ## About
 
+called also:
+
+* continuous archiving
+* online backup
+
 A restore requires:
 
 * a full backup (file system or `pg_backup`)
 * and one or more WAL segments in order to work correctly.
 
 Note on [Wal archiving](https://www.postgresql.org/docs/current/continuous-archiving.html)
+
+## Advantage
+
+* No need of a file system snapshot (just tar or a similar archiving tool.)
+* continuous backup can be achieved simply by continuing to archive the WAL files. This is particularly valuable for
+  large databases or egress cost-effective, where it might not be convenient to take a full backup frequently.
+* point-in-time recovery
+* warm standby system by continuously feeding the WAL files to another machine
 
 ## WAL
 
@@ -20,6 +33,10 @@ Afterwards, a background process writes the changes into the main database clust
 In the event of a crash, the WAL is replayed to make the database consistent.
 
 WAL is conceptually infinite but in practice is broken up into individual 16MB files called segments.
+
+### WAL Name
+
+The segment files are given numeric names that reflect their position in the abstract WAL sequence.
 
 WAL segments follow the naming convention `0000000100000A1E000000FE` where:
 
