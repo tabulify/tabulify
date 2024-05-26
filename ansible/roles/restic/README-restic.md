@@ -1,4 +1,4 @@
-# Backup
+# Restic
 
 
 The backup plan

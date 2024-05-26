@@ -6,16 +6,23 @@
 
 ### Create a container
 
+
 ```bash
+# windows
 docker run --env-file secret.env --name postgres -d -p 5434:5432 -v C:\temp\data:/var/lib/postgresql/data postgres-final
+# git bash
+docker run --env-file secret.env --name postgres2 -d -p 5434:5432 -v C:/temp/data2:/var/lib/postgresql/data postgres-final
 ```
+
 
 ### Connect
 
 * Go into the container
 
-```
+```bash
 docker exec -it postgres bash
+# git bash
+winpty docker exec -it postgres bash
 ```
 
 * SQL Client: localhost: 5434
@@ -26,23 +33,27 @@ docker exec -it postgres bash
 wal-g backup-push -f $PGDATA
 ```
 
-* Check Stats archiver Informations
+### Monitoring
+
+Check Stats archiver Informations
 
 ```bash
 echo "select * from pg_stat_archiver;" | psql -x -U $POSTGRES_USER $POSTGRES_DB -a -q -f -
 ```
 
+[pg_stat_archiver](https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-ARCHIVER-VIEW)
 ```
 -[ RECORD 1 ]------+-----------------------------------------
-archived_count     | 4
-last_archived_wal  | 000000010000000000000003.00000028.backup
+archived_count     | 4    # Number of WAL files that have been successfully archived
+last_archived_wal  | 000000010000000000000003.00000028.backup # Name of the WAL file most recently successfully archived
 last_archived_time | 2020-04-01 22:12:52.273572+00
-failed_count       | 0
-last_failed_wal    |
-last_failed_time   |
+failed_count       | 0    # Number of failed attempts for archiving WAL files
+last_failed_wal    |      # Name of the WAL file of the most recent failed archival operation
+last_failed_time   |      # Time of the most recent failed archival operation
 stats_reset        | 2020-04-01 22:12:19.392116+00
 ```
 
+* switch a wal manually
 ```sql
 SELECT pg_switch_wal()
 ```
@@ -60,9 +71,8 @@ pgbench -U $PGUSER -i -s 2 -n
 
 ### wal-g backup-list
 
-```sql
-INFO
-: 2024/05/25 09:03:52.466361 List backups from storages: [default]
+```bash
+INFO : 2024/05/25 09:03:52.466361 List backups from storages: [default]
 backup_name                   modified             wal_file_name            storage_name
 base_000000010000000000000003 2024-05-25T08:49:00Z 000000010000000000000003 default
 base_000000010000000000000006 2024-05-25T08:51:59Z 000000010000000000000006 default
@@ -106,6 +116,18 @@ https://github.com/wal-g/wal-g/blob/a2c015d8d22289877f548c3ee2a9cbed5695ce33/doc
 wal-g backup-list
 wal-g wal-show
 wal-g wal-verify integrity timeline
+```
+
+## wal deletion
+
+Postgres recycles wal files, so you should see the number of files
+remaining pretty much the same, but the file names should change
+during the time.
+
+## wal-g wal-push
+
+```
+export WALG_PREVENT_WAL_OVERWRITE=1; wal-g wal-push $PGDATA/pg_wal/00000003000000000000000B
 ```
 
 ## Delta

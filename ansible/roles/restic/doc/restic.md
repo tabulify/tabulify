@@ -1,6 +1,7 @@
 # Restic
 
 ## About
+
 `restic` is a backup tool that write immutable file system state:
 * via a snapshot mechanism
 * from several host
@@ -63,18 +64,9 @@ no parent snapshot found, will read all files
 
 ### Backup and restore Stdin
 
-Save and reuse the output of a program
+Don't as the state of the file is unknown for restic
 
-  * [Backup](https://restic.readthedocs.io/en/stable/040_backup.html#reading-data-from-stdin)
-```bash
-set -o pipefail
-mysqldump [...] | restic --stdin --stdin-filename production.sql
-```
-  * [Restore](https://restic.readthedocs.io/en/stable/050_restore.html#printing-files-to-stdout)
-```bash
-restic dump latest production.sql | mysql
-```
-
+[Backup File](https://restic.readthedocs.io/en/stable/040_backup.html#reading-data-from-stdin)
 
 
 ### Restore

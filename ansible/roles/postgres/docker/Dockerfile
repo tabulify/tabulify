@@ -179,8 +179,13 @@ RUN curl -L https://github.com/prometheus-community/postgres_exporter/releases/d
     mv postgres_exporter /usr/local/bin/
 
 ####################################
-# Database Init
-#
+# Database Init Scripts
+# The (*.sql, *.sql.gz, or *.sh) init scripts
+# Executed
+#  * in sorted name order as defined by the current locale (default to en_US.utf8)
+#  * at database initialization only happens on container startup
+#  * ie the data directory is empty
+# https://github.com/docker-library/postgres/blob/d08757ccb56ee047efd76c41dbc148e2e2c4f68f/16/bookworm/docker-entrypoint.sh#L161
 ####################################
 ADD docker-entrypoint-initdb.d /docker-entrypoint-initdb.d
 
@@ -191,6 +196,12 @@ RUN curl -L "https://github.com/DarthSim/overmind/releases/download/v${OVERMIND_
     gunzip overmind.gz && \
     chmod +x overmind && \
     mv overmind /usr/local/bin/
+
+## Entrypoint with recovery capabilities
+ADD bin/pg-admin-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/pg-admin-entrypoint.sh
+ENTRYPOINT ["pg-admin-entrypoint.sh"]
+
 
 # Procfile should be located in the working directory (or -f path/to/your/Procfile)
 ADD Procfile .

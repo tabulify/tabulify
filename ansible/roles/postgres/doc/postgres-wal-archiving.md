@@ -14,6 +14,8 @@ A restore requires:
 
 Note on [Wal archiving](https://www.postgresql.org/docs/current/continuous-archiving.html)
 
+In an abstract sense, a running PostgreSQL system produces an indefinitely long sequence of WAL records.
+
 ## Advantage
 
 * No need of a file system snapshot (just tar or a similar archiving tool.)
@@ -40,7 +42,7 @@ The segment files are given numeric names that reflect their position in the abs
 
 WAL segments follow the naming convention `0000000100000A1E000000FE` where:
 
-* the first 8 hexadecimal digits represent the timeline
+* the first 8 hexadecimal digits represent the [timeline](#timeline)
 * the next 16 digits are the logical sequence number (LSN).
 
 ## Base Backup
@@ -52,6 +54,53 @@ Base backups are copies from your PostgreSQL as is.
 These are needed to apply `PITR` because whenever you recover your database you can choose a base backup to be a
 starting
 point of the recovery.
+
+### How to create bas backup (pg_basebackup
+
+To create a base backup either as regular files or as a tar archive.
+
+* `pg_basebackup`
+* [low leve api](https://www.postgresql.org/docs/current/continuous-archiving.html#BACKUP-LOWLEVEL-BASE-BACKUP)
+
+### Backup history file
+
+To make use of the base backup, you need to keep all the WAL segment files generated during
+and after the file system backup.
+
+To aid you in doing this, the base backup process creates a backup history file
+that is immediately stored into the WAL archive area.
+
+This file is named after the first WAL segment file that you need for the file system backup.
+
+For example, if the starting WAL file is `0000000100001234000055CD` the backup history file will be named something
+like `0000000100001234000055CD.007C9330.backup`.
+(The second part of the file name stands for an exact position within the WAL file, and can ordinarily be ignored.)
+
+The backup history file is just a small text file that contains
+
+* the label string you gave to `pg_basebackup`
+* the starting and ending times
+* WAL segments of the backup.
+
+```txt
+START WAL LOCATION: 0/6000028 (file 000000010000000000000006)
+STOP WAL LOCATION: 0/6000138 (file 000000010000000000000006)
+CHECKPOINT LOCATION: 0/6000060
+BACKUP METHOD: streamed
+BACKUP FROM: primary
+START TIME: 2024-05-26 15:08:55 UTC
+LABEL: 2024-05-26 15:08:54.771982 +0000 UTC m=+0.079869405
+START TIMELINE: 1
+STOP TIME: 2024-05-26 15:08:59 UTC
+STOP TIMELINE: 1
+```
+
+Once you have safely archived the file system backup and the WAL segment files
+used during the backup (as specified in the backup history file),
+all archived WAL segments with names numerically less are no longer needed to recover the file system backup
+and can be deleted.
+However, you should consider keeping several backup sets
+to be absolutely certain that you can recover your data.
 
 ## Data Lost in non-write-heavy
 
@@ -111,6 +160,14 @@ where:
 * `%f` is the file name of the file to archive (Ex: `00000001000000A900000065`)
   The path name is relative to the current working directory, i.e., the cluster's data directory.
 
+It is not necessary to preserve the original relative path (%p) but it is necessary to preserve the file name (%f).
+
+### How to stop archiving temporally
+
+`archive_command` and `archive_library` can be changed with a configuration file reload.
+If you are archiving via shell and wish to temporarily stop archiving, one way to do it is to set archive_command to the
+empty string ('').
+
 ## Restore command
 
 The [restore_command](https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-RESTORE-COMMAND)
@@ -140,22 +197,33 @@ When archive_mode is enabled (on or always),
 completed WAL segments are sent to archive storage
 by setting `archive_command` or `archive_library`.
 
-### Archive timeout
+### Wal segment switch (Archive timeout, pg_switch_wal function)
+
+`archive_timeout` option is used to force a WAL segment switch
+at interval as the `archive_command` is only invoked for completed WAL segments.
+(16Mb default)
 
 If the value is specified without units, it is taken as seconds.
-The `archive_command` is only invoked for completed WAL segments.
+
+You can force a segment switch manually with
+[pg_switch_wal](https://www.postgresql.org/docs/current/functions-admin.html#FUNCTIONS-ADMIN-BACKUP-TABLE)
 
 With low traffic, the command would never be executed.
-Archived files that are closed early due to a forced switch
-are still the same length as completely full files.
-Therefore, it is unwise to use a very short archive_timeout — it will bloat your archive storage.
-Use Streaming replication, instead of archiving, if you want data to be copied off the primary server more quickly than
+
+* Archived files that are archived/closed early due to a forced switch are still the same length as completely full
+  files.
+* It is unwise to use a very short `archive_timeout` — it will bloat your archive storage.
+* Use Streaming replication, instead of archiving, if you want data to be copied off the primary server more quickly
+  than
 that.
+
 https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-ARCHIVE-TIMEOUT
+
 
 ### logging_collector
 
-When using an `archive_command` script, it's desirable to enable `logging_collector`.
+When using an `archive_command` script, it's desirable to enable `logging_collector` (log are
+stored in the `${PGDATA}/log` directory)
 
 Any messages written to stderr from the script will then appear in the database server log, allowing complex
 configurations to be diagnosed easily if they fail.
@@ -176,3 +244,54 @@ https://community.fly.io/t/point-in-time-recovery-for-postgres-flex-using-barman
 Why Barman? Barman has great support for streaming replication
 to store WAL files and also works well with `repmgr`
 
+## The Data Directory (and Back Up)
+
+https://www.postgresql.org/docs/current/continuous-archiving.html#BACKUP-LOWLEVEL-BASE-BACKUP-DATA
+You should omit from the backup the files within the cluster's pg_wal/ subdirectory. This slight adjustment is
+worthwhile because it reduces the risk of mistakes when restoring.
+You might also want to exclude postmaster.pid and postmaster.opts, which record information about the running
+postmaster.
+It is often a good idea to also omit from the backup the files within the cluster's pg_replslot/ directory, so that
+replication slots that exist on the primary do not become part of the backup.
+.... there is more to be omitted
+
+### pg_wal
+
+The `pg_wal/` directory will continue to fill with WAL segment files until the situation is resolved (archive command
+return successfully). (If the file system containing pg_wal/ fills up, PostgreSQL will do a PANIC shutdown.
+No committed transactions will be lost, but the database will remain offline until you free some space.)
+
+### conf files
+
+WAL archiving will not restore changes made to [configuration files](postgres-conf.md)
+since those are edited manually rather than through SQL operations.
+
+## Monitoring
+
+* The `pg_stat_archiver` view always have a single row,
+  containing data about the archiver process of the cluster. (Failure may be not reported)
+  https://www.postgresql.org/docs/current/monitoring-stats.html#PG-STAT-ARCHIVER-VIEW
+
+* `pg_wal/` directory should not contain large numbers of not-yet-archived segment files
+
+## Timeline
+
+Whenever an archive recovery completes, a new timeline is created to identify
+the series of WAL records generated after a recovery.
+
+The timeline ID number is part of WAL segment file names so a new timeline does not overwrite
+the WAL data generated by previous timelines.
+
+For example, in the WAL file name `0000000100001234000055CD`, the leading `00000001` is the timeline ID in hexadecimal.
+
+Every time a new timeline is created, PostgreSQL creates a “timeline history” file that shows which timeline it branched
+off from and when. This history files are just small text files, so it's cheap and appropriate to keep them around
+indefinitely (unlike the segment files which are large).
+
+The default behavior of recovery is to recover to the latest timeline found in the archive.
+(You can specify current or the target timeline ID in recovery_target_timeline.)
+
+## Replication slots
+
+Replication slots provide an automated way to ensure
+that the primary does not remove WAL segments until they have been received by all standbys
