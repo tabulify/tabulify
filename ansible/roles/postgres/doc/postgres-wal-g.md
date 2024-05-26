@@ -6,9 +6,8 @@
 
 ### Create a container
 
-```sql
-docker
-run --env-file secret.env --name postgres -d -p 5434:5432 -v C:\temp\data:/var/lib/postgresql/data postgres-final
+```bash
+docker run --env-file secret.env --name postgres -d -p 5434:5432 -v C:\temp\data:/var/lib/postgresql/data postgres-final
 ```
 
 ### Connect
@@ -27,17 +26,10 @@ docker exec -it postgres bash
 wal-g backup-push -f $PGDATA
 ```
 
-* Check
-  Stats archiver Informations
+* Check Stats archiver Informations
+
 ```bash
 echo "select * from pg_stat_archiver;" | psql -x -U $POSTGRES_USER $POSTGRES_DB -a -q -f -
-```
-
-```sql
-SELECT pg_switch_wal()
-         SHOW archive_mode;
-SHOW
-archive_command;
 ```
 
 ```
@@ -51,19 +43,19 @@ last_failed_time   |
 stats_reset        | 2020-04-01 22:12:19.392116+00
 ```
 
+```sql
+SELECT pg_switch_wal()
+```
+
+```
+SHOW archive_mode;
+SHOW archive_command;
+```
+
 ### Generate Data
 
-```sql
-pgbench
--U
-$PGUSER
--
-i
--
-s
-2
--
-n
+```bash
+pgbench -U $PGUSER -i -s 2 -n
 ```
 
 ### wal-g backup-list
@@ -92,21 +84,19 @@ wal-g wal-show
 
 after a full backup
 
-```sql
+```
 +-----+------------+-----------------+--------------------------+--------------------------+---------------+----------------+--------+---------------+
-| TLI | PARENT TLI | SWITCHPOINT LSN | START SEGMENT            |
-END SEGMENT              | SEGMENT RANGE | SEGMENTS COUNT | STATUS | BACKUPS COUNT |
+| TLI | PARENT TLI | SWITCHPOINT LSN | START SEGMENT            | END SEGMENT              | SEGMENT RANGE | SEGMENTS COUNT | STATUS | BACKUPS COUNT |
 +-----+------------+-----------------+--------------------------+--------------------------+---------------+----------------+--------+---------------+
 |   1 |          0 |             0/0 | 000000010000000000000001 | 000000010000000000000016 |            22 |             22 | OK     |             4 |
 +-----+------------+-----------------+--------------------------+--------------------------+---------------+----------------+--------+---------------+
 ```
 
-* Restore
+### Restore
 
 ```bash
 docker run --rm postgres2 sh -c 'wal-g backup-fetch $PGDATA LATEST; touch $PGDATA/recovery.signal'
 ```
-
 
 ## Check / Verify
 

@@ -11,6 +11,7 @@ ARG PG_DOCKER_TAG=16.3
 ARG PG_SAFEUPDATE_VERSION=1.5
 ARG WAL_G_VERSION=3.0.0
 # Supervisor Version
+# https://github.com/DarthSim/overmind/releases
 ARG OVERMIND_VERSION=2.5.1
 # Postgres exporter
 # https://github.com/prometheus-community/postgres_exporter/releases

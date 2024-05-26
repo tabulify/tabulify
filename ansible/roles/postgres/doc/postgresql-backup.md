@@ -2,54 +2,81 @@
 
 https://www.postgresql.org/docs/15/backup.html
 
-## Base Backup
+## Dump: Backup in PSQL format
 
-[Base backup](https://www.postgresql.org/docs/current/app-pgbasebackup.html): The first backup of a database is always
-a `Full Backup`.
+The whole database in a PSQL file.
 
-Base backups are copies from your PostgreSQL as is.
-These are needed to apply PITR because whenever you recover your database you can choose a base backup to be a starting
-point
-of the recovery and then `barman` will ship the missing WAL files from that point forward.
+Example:
 
-* Delta/Differential Backup: wal/files that have changed since the last full backup.
+* Backup
 
-## Type
+```bash
+pg_dump dbname | gzip  > $PGDATA/dump/dumpfile.sql.gz
+```
 
-### Dump and restore
+* Restore
 
-`pg_dump` and `pg_restore`
-https://www.postgresql.org/docs/15/app-pgrestore.html#APP-PGRESTORE-EXAMPLES
+```bash
+cat $PGDATA/dump/dumpfile.sql.gz | gunzip | psql --set ON_ERROR_STOP=on --single-transaction dbname
+# run analyze (to update the stats)
+```
 
-### Wal
+where:
+
+* `ON_ERROR_STOP` - stop on error
+* `single-transaction` will commit only at the end (to avoid a partially restored dump)
+
+You can also [split](https://www.postgresql.org/docs/current/backup-dump.html#BACKUP-DUMP-LARGE)
+
+## Dump and restore: Backup in custom dump format
+
+Same as gzip with the advantage that tables can be restored selectively `pg_dump` and `pg_restore`
+
+[example](https://www.postgresql.org/docs/15/app-pgrestore.html#APP-PGRESTORE-EXAMPLES)
+[ref](https://www.postgresql.org/docs/current/backup-dump.html#BACKUP-DUMP-LARGE)
+
+### In a single process
+
+* Dump
+
+```bash
+pg_dump -Fc dbname > filename.dump
+```
+
+* Restore in the same database
+
+```bash
+# dropdb dbname
+pg_restore -d dbname filename.dump
+```
+
+* Restore in another database
+
+```bash
+# the database is created from template0 not template1, to ensure it is initially empty.
+createdb -T template0 newdb
+# -C is not used to connect directly to the database to be restored into.
+pg_restore -d newdb db.dump
+```
+
+### In parallel (big database)
+
+```bash
+pg_dump -j parralelNum -F d -f out.dir dbname
+```
+
+```bash
+pg_restore -j
+```
+
+### File system
+
+Don't as the database needs to be shutdown.
+
+### Continuous Archiving and Point-in-Time Recovery (PITR/Wal)
 
 [PITR/Wal](postgres-wal-archiving.md)
-https://www.postgresql.org/docs/current/continuous-archiving.html
 
-## Tool
-
-* [wal-g](postgres-wal-g.md)
-* https://pgbackrest.org/user-guide.html
-* https://github.com/EnterpriseDB/barman (Backup and Recovery Manager) -
-
-### Fly
-
-https://fly.io/docs/flyctl/postgres-barman/
-https://community.fly.io/t/point-in-time-recovery-for-postgres-flex-using-barman/13185
-`fly pg barman create` will create a machine in your Postgres cluster with barman ready to use.
-
-Why Barman? Barman has great support for streaming replication
-to store WAL files and also works well with `repmgr`
-
-### Cron Job
-
-A simple backup scheme using cron keeps the latest monthly, weekly, daily, and
-hourly backups as compressed plain text SQL files. Run the following to
-restore a backup:
-
-```
-gunzip -c /var/lib/postgresql/backups/<name>.daily.sql.gz | psql <name>
-```
 
 ## Backup Script from Postgres
 
