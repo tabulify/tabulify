@@ -9,9 +9,9 @@
 
 ```bash
 # windows
-docker run --env-file secret.env --name postgres -d -p 5434:5432 -v C:\temp\data:/var/lib/postgresql/data postgres-final
+docker run --env-file secret.env --name postgres -d -p 5434:5432 -v C:\temp\data:/data postgres-final
 # git bash
-docker run --env-file secret.env --name postgres2 -d -p 5434:5432 -v C:/temp/data2:/var/lib/postgresql/data postgres-final
+docker run --env-file secret.env --name postgres -d -p 5434:5432 -v C:/temp/data:/data postgres-final
 ```
 
 

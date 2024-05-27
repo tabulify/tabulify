@@ -18,8 +18,8 @@ fi
 
 ## Restic
 ## Only if the repo is set
-if [ -v ${RESTIC_REPOSITORY+x} ]; then
-    if [ -v ${RESTIC_PASSWORD+x} ]; then
+if [[ -n ${RESTIC_REPOSITORY} ]]; then
+    if [[ -n ${RESTIC_PASSWORD+x} ]]; then
       if  ! restic snapshots > /dev/null; then
               echo "Restic Repo not found - Restic init at ${RESTIC_REPOSITORY}"
               restic init

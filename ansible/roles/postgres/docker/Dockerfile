@@ -110,6 +110,10 @@ ENV ROOT_DATA=/data
 # if more saved data are needed
 ENV PGDATA=${ROOT_DATA}/pgdata
 
+# The directory where to dump pg dump backup
+ENV PGDUMPDATA=${ROOT_DATA}/pgdump
+RUN mkdir -p $PGDUMPDATA
+
 # Ensure UTF-8
 ENV LANG=en_US.UTF-8
 ENV LC_CTYPE=C.UTF-8
