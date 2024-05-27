@@ -1,9 +1,9 @@
 #!/bin/bash
 
+
 # A wrapper around the docker entrypoint to recover
 # https://github.com/docker-library/postgres/blob/d08757ccb56ee047efd76c41dbc148e2e2c4f68f/16/bookworm/docker-entrypoint.sh#L161
 RECOVERY_SIGNAL_PATH=$PGDATA/recovery.signal
-
 if [ -f "$RECOVERY_SIGNAL_PATH" ]; then
     echo "Recovering file signal found ($RECOVERY_SIGNAL_PATH)"
     echo "Deleting the actual pgdata directory"
@@ -36,4 +36,4 @@ else
 fi
 
 # Start the passed command ($*)
-/bin/sh -c "$*"
+/bin/bash -c "$*"

@@ -34,3 +34,16 @@ wal-g backup-push $PGDATA
 
 Log is on at `$PGDATA/log`
 
+## Env
+
+When creating the image. See [secxx](secxx.env)
+
+```ini
+# See environment variables documentation \
+# https://github.com/wal-g/wal-g/blob/master/docs/STORAGES.md
+WALE_S3_PREFIX = s3://bucket-name/path/to/folder
+AWS_ACCESS_KEY_ID = xxxx
+AWS_SECRET_ACCESS_KEY = secret
+AWS_ENDPOINT = s3-like-service:9000
+WALG_COMPRESSION_METHOD = brotli
+```

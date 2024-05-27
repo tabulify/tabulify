@@ -4,16 +4,16 @@
 set -o pipefail
 
 # When developing
-# docker cp bin/ctl postgres:/usr/local/bin/
+# docker cp docker/bin/ctl postgres:/usr/local/bin/
 
 CLI_NAME=$(basename "$0") # Name of the cli
 if [[ -z ${DATA_HOME} ]]; then
   echo_err "The DATA_HOME env is mandatory"
 fi
 
-CLI_HOME=${DATA_HOME}/${CLI_NAME}/
-mkdir -p CLI_HOME
+CLI_HOME=${DATA_HOME}/${CLI_NAME}
 CLI_LOG_FILE=${CLI_HOME}/${CLI_NAME}.log
+[ ! -f "$CLI_LOG_FILE" ] && mkdir -p "$CLI_HOME"; touch "$CLI_LOG_FILE"
 
 function finish() {
   printf "\n%s has finished\n" "${CLI_NAME}"
@@ -47,26 +47,33 @@ function print_usage() {
   echo "     * help"
   echo "     * pg - invoke pg_ctl"
   echo "     * psql - invoke psql"
-  echo "     * backup - perform a database pg_dump backup"
+  echo "     * backup-dump - perform a database pg_dump backup"
+  echo "     * backup-dump-ls - list the file in the last file system backup"
   echo ""
 
 }
 
-function backup() {
+function backupDump() {
 
   if [[ -z ${PG_DUMP_DATA} ]]; then
     echo_err "The PG_DUMP_DATA var is unknown"
     exit 1;
   fi;
   mkdir -p "$PG_DUMP_DATA"
-  if [[ -z ${POSTGRES_DB} ]]; then
-    echo_err "The POSTGRES_DB var is unknown"
+  DATABASE_TO_BACKUP=${PGDATABASE}
+  if [ -z "${DATABASE_TO_BACKUP}" ]; then
+    DATABASE_TO_BACKUP=${PGUSER}
+  fi;
+  if [ -z "${DATABASE_TO_BACKUP}" ]; then
+    echo_err "The database to backup could not be determined via PGDATABASE or PGUSER"
     exit 1;
   fi;
-  echo_log "Backing up the database ${POSTGRES_DB}"
-  pg_dump "${POSTGRES_DB}" | gzip  > "$PG_DUMP_DATA"/dumpfile-"${POSTGRES_DB}".sql.gz || exit 1
-  echo_log "Restic Back up of ${PG_DUMP_DATA}"
+  echo_log "Dumping the database (${DATABASE_TO_BACKUP})"
+  pg_dump "${DATABASE_TO_BACKUP}" | gzip  > "$PG_DUMP_DATA"/dumpfile-"${DATABASE_TO_BACKUP}".sql.gz || exit 1
+  echo_log "Done"
+  echo_log "Loading into Restic S3 repo (${PG_DUMP_DATA})"
   restic backup "${PG_DUMP_DATA}" || exit 1
+  echo_log "Restic upload done"
   echo_log "Backup done"
 
 }
@@ -89,7 +96,7 @@ for arg in "$@"; do
 done
 
 if [ -z "$COMMAND" ]; then
-  echo 'No command was given, list chosen.'
+  echo 'No command was given, help chosen.'
   COMMAND='help'
 fi
 
@@ -98,8 +105,11 @@ echo "${CLI_NAME^} ${COMMAND^}"
 echo "-------------------------------------------"
 echo ""
 case ${COMMAND} in
-backup)
-  backup "${OPTIONS[@]}"
+backup-dump)
+  backupDump "${OPTIONS[@]}"
+  ;;
+backup-dump-ls)
+  restic ls latest
   ;;
 pg)
   pg_ctl "${OPTIONS[@]}"

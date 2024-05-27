@@ -93,6 +93,7 @@ ENTRYPOINT ["wal-g"]
 # Postgres Final
 ###############################################
 FROM postgres:${PG_DOCKER_TAG} as final
+# build time variable
 ARG IMAGE_VERSION
 ARG OVERMIND_VERSION
 ARG PG_EXPORTER_VERSION
@@ -168,26 +169,17 @@ ENV TZ 'Etc/UTC'
 # https://github.com/docker-library/docs/blob/master/postgres/README.md#database-configuration
 # postgresql.conf is a template and accepts env so that we can be consistent
 # Don't add secret in their
-ADD conf/postgresql.conf /etc/postgresql/postgresql.conf.template
+ADD docker/postgres/conf/postgresql.conf /etc/postgresql/postgresql.conf.template
 RUN envsubst < /etc/postgresql/postgresql.conf.template > /etc/postgresql/postgresql.conf
+
+# Postgres Local Connection env
+# so that when logged in, we can connect automatically and wal-g also
+ADD docker/bash/.bashrc /root/.bashrc
 
 ###################################
 # Walg
 ####################################
 COPY --from=wal-g /usr/local/bin/wal-g /usr/local/bin/wal-g
-# See environment variables documentation \
-# https://github.com/wal-g/wal-g/blob/master/docs/STORAGES.md
-#ENV WALE_S3_PREFIX=s3://bucket-name/path/to/folder
-#ENV AWS_ACCESS_KEY_ID=xxxx
-#ENV AWS_SECRET_ACCESS_KEY=secret
-#ENV AWS_ENDPOINT=s3-like-service:9000
-ENV WALG_COMPRESSION_METHOD=brotli
-
-# See environment variables documentation
-# https://github.com/wal-g/wal-g/blob/master/docs/PostgreSQL.md#configuration
-ENV PGHOST=/var/run/postgresql
-ENV PGUSER=postgres
-#ENV PGPASSWORD=secret
 
 ####################################
 # Prometheus exporter
@@ -198,7 +190,6 @@ RUN curl -L https://github.com/prometheus-community/postgres_exporter/releases/d
     rm postgres_exporter.tar.gz && \
     chmod +x postgres_exporter && \
     mv postgres_exporter /usr/local/bin/
-
 
 #####################################
 # Restic
@@ -219,9 +210,9 @@ RUN curl -L https://github.com/restic/restic/releases/download/v${RESTIC_VERSION
 #  * ie the data directory is empty
 # https://github.com/docker-library/postgres/blob/d08757ccb56ee047efd76c41dbc148e2e2c4f68f/16/bookworm/docker-entrypoint.sh#L161
 ####################################
-ADD docker/initdb/* /docker-entrypoint-initdb.d
+ADD docker/postgres/initdb/* /docker-entrypoint-initdb.d
 
-ADD bin/* /usr/local/bin/
+ADD docker/bin/* /usr/local/bin/
 RUN chmod +x /usr/local/bin/ctl
 
 ####################################
