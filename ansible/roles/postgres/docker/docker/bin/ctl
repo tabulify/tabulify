@@ -108,11 +108,11 @@ dump-backup)
   echo_log "Restic upload done"
   echo_log "Backup done"
   ;;
-dump-backup-ls)
-  restic ls -l latest "$PG_DUMP_DATA/"
+dump-ls)
+  restic find --long  "${CTL_DUMP_FILE}"
   ;;
 dump-restore)
-  echo_log "Restoring the dump of the database ${CTL_DATABASE}"
+  echo_log "Restoring the database ${CTL_DATABASE} with the dump (${CTL_DUMP_FILE})"
   echo_log "Dropping the database ${CTL_DATABASE} before restoration"
   dropdb "${CTL_DATABASE}" --force -i || exit 1
   echo_log "Done"
@@ -123,6 +123,11 @@ dump-restore)
   gunzip < "${CTL_DUMP_FILE}" | psql --set ON_ERROR_STOP=on --single-transaction "${CTL_DATABASE}" || exit 1
   echo_log "Done"
   echo_log "Restoration done and successful"
+  ;;
+dump-forget)
+  restic forget --keep-hourly 5 --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-yearly 3 || exit 1;
+  restic prune || exit 1;
+  restic check --read-data || exit 1;
   ;;
 pg)
   pg_ctl "${OPTIONS[@]}"
