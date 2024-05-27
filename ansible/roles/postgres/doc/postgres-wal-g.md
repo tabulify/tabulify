@@ -104,15 +104,17 @@ after a full backup
 
 ### Restore /recover
 
+It will restore to the latest (no `PITR` for now)
+
 ```bash
+# in a existing container
+docker exec postgres bash -c 'touch $PGDATA/recovery.signal'
+# before a run
 docker run --rm postgres2 sh -c 'wal-g backup-fetch $PGDATA LATEST; touch $PGDATA/recovery.signal'
+# fly
+fly machine exec [machine-id] bash -c 'touch $PGDATA/recovery.signal'
 ```
 
-on fly
-
-```bash
-fly machine exec [machine-id] <command> [flags]
-```
 
 ### Restore check
 

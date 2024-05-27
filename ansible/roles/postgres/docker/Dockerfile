@@ -16,8 +16,6 @@ ARG OVERMIND_VERSION=2.5.1
 # Postgres exporter
 # https://github.com/prometheus-community/postgres_exporter/releases
 ARG PG_EXPORTER_VERSION=0.15.0
-# https://rclone.org/downloads/
-ARG RCLONE_VERSION=1.66.0
 # https://github.com/restic/restic/releases/
 ARG RESTIC_VERSION=0.16.4
 
@@ -100,19 +98,18 @@ ARG OVERMIND_VERSION
 ARG PG_EXPORTER_VERSION
 ARG PG_VERSION
 ARG PG_MAJOR_VERSION
-ARG RCLONE_VERSION
 ARG RESTIC_VERSION
 
 
-ENV ROOT_DATA=/data
+ENV DATA_HOME=/data
 # PgData is not set in /var/lib/postgresql/data
 # to be able to mount only one volume
 # if more saved data are needed
-ENV PGDATA=${ROOT_DATA}/pgdata
+ENV PGDATA=${DATA_HOME}/pgdata
 
 # The directory where to dump pg dump backup
-ENV PGDUMPDATA=${ROOT_DATA}/pgdump
-RUN mkdir -p $PGDUMPDATA
+ENV PG_DUMP_DATA=${DATA_HOME}/pgdump
+RUN mkdir -p ${PG_DUMP_DATA}
 
 # Ensure UTF-8
 ENV LANG=en_US.UTF-8
@@ -140,8 +137,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     # Needed for anything using libcurl
     ca-certificates \
     && rm -rf /var/lib/apt/lists/* /tmp/* \
-    # No apt-get can be used or you need to run apt-get \
-    # to update the repo
+    # No apt-get can be used from this point or you need to run apt-get update \
+    # to update the repo again
     && apt-get clean
 
 
@@ -159,10 +156,13 @@ LABEL pg-vector-version=${PG_MAJOR_VERSION}
 ARG ARCHIVE_MODE=on
 ARG ARCHIVE_TIMEOUT=3600
 
+# All date are UTC (Os, Database, ...)
 # https://www.postgresql.org/docs/current/libpq-envars.html
-# All date are UTC (Database, ...)
-# TZ is the OS env for postgres
-ENV PGTZ 'UTC'
+# Etc means etcetera
+ENV PGTZ 'Etc/UTC'
+# TZ is the OS env
+# Gnu https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+ENV TZ 'Etc/UTC'
 
 # Conf
 # https://github.com/docker-library/docs/blob/master/postgres/README.md#database-configuration
@@ -199,16 +199,6 @@ RUN curl -L https://github.com/prometheus-community/postgres_exporter/releases/d
     chmod +x postgres_exporter && \
     mv postgres_exporter /usr/local/bin/
 
-######################################
-# Rclone
-# https://rclone.org/install/#linux
-######################################
-RUN curl -L https://downloads.rclone.org/v${RCLONE_VERSION}/rclone-v${RCLONE_VERSION}-linux-amd64.zip -o rclone.zip && \
-    unzip rclone.zip && \
-    rm rclone.zip && \
-    cd rclone-*-linux-amd64 && \
-    chmod +x rclone && \
-    mv rclone /usr/local/bin/
 
 #####################################
 # Restic
@@ -229,7 +219,10 @@ RUN curl -L https://github.com/restic/restic/releases/download/v${RESTIC_VERSION
 #  * ie the data directory is empty
 # https://github.com/docker-library/postgres/blob/d08757ccb56ee047efd76c41dbc148e2e2c4f68f/16/bookworm/docker-entrypoint.sh#L161
 ####################################
-ADD docker-entrypoint-initdb.d /docker-entrypoint-initdb.d
+ADD docker/initdb/* /docker-entrypoint-initdb.d
+
+ADD bin/* /usr/local/bin/
+RUN chmod +x /usr/local/bin/ctl
 
 ####################################
 # Overmind
@@ -239,10 +232,10 @@ RUN curl -L "https://github.com/DarthSim/overmind/releases/download/v${OVERMIND_
     chmod +x overmind && \
     mv overmind /usr/local/bin/
 
-## Entrypoint with recovery capabilities
-ADD bin/pg-admin-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/pg-admin-entrypoint.sh
-ENTRYPOINT ["pg-admin-entrypoint.sh"]
+## Custom Entrypoint
+ADD docker/entrypoint/custom-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/custom-entrypoint.sh
+ENTRYPOINT ["custom-entrypoint.sh"]
 
 
 # Procfile should be located in the working directory (or -f path/to/your/Procfile)

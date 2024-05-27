@@ -6,6 +6,13 @@
 fly launch --dockerfile ./dir/Dockerfile --name app-name --internal-port port --file-secret envFile
 ```
 
+## Bash
+
+Go into a machine (same as [console??](#console--ssh))
+
+```bash
+fly machine -it exec [machine-id] bash
+```
 
 ## Deploy
 

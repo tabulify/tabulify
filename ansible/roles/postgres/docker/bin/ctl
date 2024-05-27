@@ -1,0 +1,118 @@
+#!/bin/bash
+
+# Ensures that the pipeline returns the exit status of the last command to fail
+set -o pipefail
+
+# When developing
+# docker cp bin/ctl postgres:/usr/local/bin/
+
+CLI_NAME=$(basename "$0") # Name of the cli
+if [[ -z ${DATA_HOME} ]]; then
+  echo_err "The DATA_HOME env is mandatory"
+fi
+
+CLI_HOME=${DATA_HOME}/${CLI_NAME}/
+mkdir -p CLI_HOME
+CLI_LOG_FILE=${CLI_HOME}/${CLI_NAME}.log
+
+function finish() {
+  printf "\n%s has finished\n" "${CLI_NAME}"
+}
+trap finish EXIT
+
+# Print the error message $1
+function echo_err() {
+  RED='\033[0;31m'
+  NC='\033[0m' # No Color
+  #(>&2 echo -e "${RED}$1${NC}")
+  echo_log "${RED}$1${NC}"
+}
+
+# Send the message to the log file and the stdout
+function echo_log() {
+
+  MESSAGE=$1
+  echo -e "$MESSAGE" 2>&1 | tee -a "${CLI_LOG_FILE}"
+
+}
+
+function print_usage() {
+
+  echo ""
+  echo "Usage of the cli ${CLI_NAME}"
+  echo ""
+  echo "   ${CLI_NAME} command [--option[=value] ...]"
+  echo ""
+  echo "where command is one of:"
+  echo "     * help"
+  echo "     * pg - invoke pg_ctl"
+  echo "     * psql - invoke psql"
+  echo "     * backup - perform a database pg_dump backup"
+  echo ""
+
+}
+
+function backup() {
+
+  if [[ -z ${PG_DUMP_DATA} ]]; then
+    echo_err "The PG_DUMP_DATA var is unknown"
+    exit 1;
+  fi;
+  mkdir -p "$PG_DUMP_DATA"
+  if [[ -z ${POSTGRES_DB} ]]; then
+    echo_err "The POSTGRES_DB var is unknown"
+    exit 1;
+  fi;
+  echo_log "Backing up the database ${POSTGRES_DB}"
+  pg_dump "${POSTGRES_DB}" | gzip  > "$PG_DUMP_DATA"/dumpfile-"${POSTGRES_DB}".sql.gz || exit 1
+  echo_log "Restic Back up of ${PG_DUMP_DATA}"
+  restic backup "${PG_DUMP_DATA}" || exit 1
+  echo_log "Backup done"
+
+}
+
+declare -a OPTIONS
+# Parsing
+for arg in "$@"; do
+  case "$arg" in
+  --*)
+    OPTIONS+=("$arg")
+    shift
+    ;;
+  *)
+    # Command
+    COMMAND=$1
+    echo "Command ($COMMAND) found"
+    shift
+    ;;
+  esac
+done
+
+if [ -z "$COMMAND" ]; then
+  echo 'No command was given, list chosen.'
+  COMMAND='help'
+fi
+
+echo
+echo "${CLI_NAME^} ${COMMAND^}"
+echo "-------------------------------------------"
+echo ""
+case ${COMMAND} in
+backup)
+  backup "${OPTIONS[@]}"
+  ;;
+pg)
+  pg_ctl "${OPTIONS[@]}"
+  ;;
+psql)
+  psql "${OPTIONS[@]}"
+  ;;
+help)
+  print_usage
+  ;;
+*)
+  echo_err "The command $COMMAND is unknown"
+  print_usage
+  exit 1
+  ;;
+esac

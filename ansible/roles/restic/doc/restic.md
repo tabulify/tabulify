@@ -80,9 +80,13 @@ Don't as the state of the file is unknown for restic
 
 ### Restore
 
-```
+```bash
 mkdir restore
-./restic restore 10fdbace --target restore
+restic restore --target /restore latest
+# via snaphost id
+restic restore --target restore 10fdbace
+# only one file
+restic restore --target / --include=/data/pg_dump/dumpfile.sql latest
 ls restore/
 ```
 
