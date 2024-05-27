@@ -17,7 +17,9 @@ pg_dump dbname | gzip  > $PGDATA/dump/dumpfile.sql.gz
 * Restore
 
 ```bash
-cat $PGDATA/dump/dumpfile.sql.gz | gunzip | psql --set ON_ERROR_STOP=on --single-transaction dbname
+dropdb dbname
+createdb dbname
+gunzip < $PGDATA/dump/dumpfile.sql.gz | psql --set ON_ERROR_STOP=on --single-transaction dbname
 # run analyze (to update the stats)
 ```
 

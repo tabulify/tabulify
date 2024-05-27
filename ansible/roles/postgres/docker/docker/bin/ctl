@@ -53,30 +53,6 @@ function print_usage() {
 
 }
 
-function backupDump() {
-
-  if [[ -z ${PG_DUMP_DATA} ]]; then
-    echo_err "The PG_DUMP_DATA var is unknown"
-    exit 1;
-  fi;
-  mkdir -p "$PG_DUMP_DATA"
-  DATABASE_TO_BACKUP=${PGDATABASE}
-  if [ -z "${DATABASE_TO_BACKUP}" ]; then
-    DATABASE_TO_BACKUP=${PGUSER}
-  fi;
-  if [ -z "${DATABASE_TO_BACKUP}" ]; then
-    echo_err "The database to backup could not be determined via PGDATABASE or PGUSER"
-    exit 1;
-  fi;
-  echo_log "Dumping the database (${DATABASE_TO_BACKUP})"
-  pg_dump "${DATABASE_TO_BACKUP}" | gzip  > "$PG_DUMP_DATA"/dumpfile-"${DATABASE_TO_BACKUP}".sql.gz || exit 1
-  echo_log "Done"
-  echo_log "Loading into Restic S3 repo (${PG_DUMP_DATA})"
-  restic backup "${PG_DUMP_DATA}" || exit 1
-  echo_log "Restic upload done"
-  echo_log "Backup done"
-
-}
 
 declare -a OPTIONS
 # Parsing
@@ -100,16 +76,53 @@ if [ -z "$COMMAND" ]; then
   COMMAND='help'
 fi
 
+## Global Parameters
+CTL_DATABASE=${PGDATABASE}
+if [ -z "${CTL_DATABASE}" ]; then
+  CTL_DATABASE=${PGUSER}
+fi;
+if [ -z "${CTL_DATABASE}" ]; then
+  echo_err "The database could not be determined via PGDATABASE or PGUSER"
+  exit 1;
+fi;
+
+## Dump parameter
+if [[ -z ${PG_DUMP_DATA} ]]; then
+    echo_err "The PG_DUMP_DATA var is unknown"
+    exit 1;
+fi;
+mkdir -p "$PG_DUMP_DATA"
+CTL_DUMP_FILE="$PG_DUMP_DATA"/dumpfile-"${CTL_DATABASE}".sql.gz
+
 echo
 echo "${CLI_NAME^} ${COMMAND^}"
 echo "-------------------------------------------"
 echo ""
 case ${COMMAND} in
-backup-dump)
-  backupDump "${OPTIONS[@]}"
+dump-backup)
+  echo_log "Dumping the database (${CTL_DATABASE})"
+  pg_dump "${CTL_DATABASE}" | gzip  > "${CTL_DUMP_FILE}" || exit 1
+  echo_log "Done"
+  echo_log "Loading into Restic S3 repo (${PG_DUMP_DATA})"
+  restic backup "${PG_DUMP_DATA}" || exit 1
+  echo_log "Restic upload done"
+  echo_log "Backup done"
   ;;
-backup-dump-ls)
-  restic ls latest
+dump-backup-ls)
+  restic ls -l latest "$PG_DUMP_DATA/"
+  ;;
+dump-restore)
+  echo_log "Restoring the dump of the database ${CTL_DATABASE}"
+  echo_log "Dropping the database ${CTL_DATABASE} before restoration"
+  dropdb "${CTL_DATABASE}" --force -i || exit 1
+  echo_log "Done"
+  echo_log "Creating the database ${CTL_DATABASE}"
+  createdb "${CTL_DATABASE}" || exit 1
+  echo_log "Done"
+  echo_log "Executing the Sql dump"
+  gunzip < "${CTL_DUMP_FILE}" | psql --set ON_ERROR_STOP=on --single-transaction "${CTL_DATABASE}" || exit 1
+  echo_log "Done"
+  echo_log "Restoration done and successful"
   ;;
 pg)
   pg_ctl "${OPTIONS[@]}"

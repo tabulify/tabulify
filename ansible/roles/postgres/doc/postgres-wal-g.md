@@ -67,6 +67,7 @@ SHOW archive_command;
 
 ```bash
 pgbench -U $PGUSER -i -s 2 -n
+pgbench -i -s 2 -n
 ```
 
 ### wal-g backup-list
