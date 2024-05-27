@@ -39,22 +39,23 @@ function echo_log() {
 function print_usage() {
 
   echo ""
-  echo "Usage of the cli ${CLI_NAME}"
+  echo "Usage of the cli ${CLI_NAME} against the database (${CTL_DATABASE})"
   echo ""
   echo "   ${CLI_NAME} command [--option[=value] ...]"
   echo ""
   echo "where command is one of:"
   echo "     * help"
-  echo "     * pg - invoke pg_ctl"
-  echo "     * psql - invoke psql"
-  echo "     * backup-dump - perform a database pg_dump backup"
-  echo "     * backup-dump-ls - list the file in the last file system backup"
+  echo "     * dump-backup - perform a database dump and a snapshot"
+  echo "     * dump-ls     - list the dump in the snapshots"
+  echo "     * dump-restore snapshotId - restore the database from a snapshot id"
+  echo "     * dump-prune - forget old snapshots and perform dump integrity checks"
   echo ""
 
 }
 
 
 declare -a OPTIONS
+declare -a ARGS
 # Parsing
 for arg in "$@"; do
   case "$arg" in
@@ -64,8 +65,13 @@ for arg in "$@"; do
     ;;
   *)
     # Command
-    COMMAND=$1
-    echo "Command ($COMMAND) found"
+    if [ -z "$COMMAND" ]; then
+      COMMAND="$arg"
+      echo "Command ($COMMAND) found"
+    else
+      echo "Arg ($arg) found"
+      ARGS+=("$arg")
+    fi
     shift
     ;;
   esac
@@ -112,6 +118,15 @@ dump-ls)
   restic find --long  "${CTL_DUMP_FILE}"
   ;;
 dump-restore)
+  if [ -z "${ARGS[0]}" ]; then
+    echo_err 'The Snapshot Id should be given as first argument'
+    echo_err 'use the dump-ls command to get the available snapshot id'
+    exit 1
+  fi
+  snapshot=${ARGS[0]}
+  echo_log "Restoring the dump (${CTL_DUMP_FILE}) from the snapshot ${snapshot}"
+  restic restore --include "${CTL_DUMP_FILE}" --target / --verify "${snapshot}" || exit 1
+  echo_log "Restoration done"
   echo_log "Restoring the database ${CTL_DATABASE} with the dump (${CTL_DUMP_FILE})"
   echo_log "Dropping the database ${CTL_DATABASE} before restoration"
   dropdb "${CTL_DATABASE}" --force -i || exit 1
@@ -124,7 +139,7 @@ dump-restore)
   echo_log "Done"
   echo_log "Restoration done and successful"
   ;;
-dump-forget)
+dump-prune)
   restic forget --keep-hourly 5 --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-yearly 3 || exit 1;
   restic prune || exit 1;
   restic check --read-data || exit 1;

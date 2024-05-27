@@ -13,6 +13,31 @@ REM on windows
 docker run --env-file secret.env --name postgres -d -p 5434:5432 -v C:\temp\data:/var/lib/postgresql/data postgres-final
 ```
 
+## Dump
+
+### How to perform a dump restore
+
+A dump restore is performed via the [ctl command](docker/bin/ctl)
+
+```bash
+# List the available dump and select a snapshot
+ctl dump-ls
+# perform a restore (the database is deleted!)
+ctl dump-restore snapshotId
+# or for the latest one
+ctl dump-restore snapshotId
+```
+
+### How to perform a dump backup
+
+A dump backup is performed via the [ctl command](docker/bin/ctl)
+
+```bash
+ctl dump-backup
+# prune the repo
+ctl dump-prune
+```
+
 ## How to perform a full backup
 
 The backup location is set via:
@@ -23,7 +48,6 @@ WALG_S3_PREFIX=s3://postgres-dev/dev-name
 ```
 
 In the container:
-
 ```
 wal-g backup-push $PGDATA
 ```
