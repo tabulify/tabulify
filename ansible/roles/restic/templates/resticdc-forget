@@ -28,8 +28,9 @@ else
 fi
 echo -------------------
 echo Restic Check
+echo resticdc check
 echo -------------------
-if ! resticdc check; then # make sure you are alerted if any damages was made to the repo
+if ! resticdc check --read-data-subset=2.5%; then # make sure you are alerted if any damages was made to the repo
   echo "Check failed with the code $?"
   exit 1
 else
@@ -37,5 +38,6 @@ else
   echo "Check succeeded"
   echo " "
 fi
+rm -rf /tmp/restic*
 
 echo "Forget Script succeeded"

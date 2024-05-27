@@ -16,6 +16,10 @@ ARG OVERMIND_VERSION=2.5.1
 # Postgres exporter
 # https://github.com/prometheus-community/postgres_exporter/releases
 ARG PG_EXPORTER_VERSION=0.15.0
+# https://rclone.org/downloads/
+ARG RCLONE_VERSION=1.66.0
+# https://github.com/restic/restic/releases/
+ARG RESTIC_VERSION=0.16.4
 
 # C Extensions use pgxs for the build
 # https://www.postgresql.org/docs/current/extend-pgxs.html
@@ -96,6 +100,15 @@ ARG OVERMIND_VERSION
 ARG PG_EXPORTER_VERSION
 ARG PG_VERSION
 ARG PG_MAJOR_VERSION
+ARG RCLONE_VERSION
+ARG RESTIC_VERSION
+
+
+ENV ROOT_DATA=/data
+# PgData is not set in /var/lib/postgresql/data
+# to be able to mount only one volume
+# if more saved data are needed
+ENV PGDATA=${ROOT_DATA}/pgdata
 
 # Ensure UTF-8
 ENV LANG=en_US.UTF-8
@@ -113,6 +126,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     postgresql-plpython3-${PG_MAJOR} \
     bash \
     curl \
+    unzip \
+    bzip2 \
     /tmp/*.deb \
     # Needed for Overmind \
     tmux \
@@ -148,6 +163,7 @@ ENV PGTZ 'UTC'
 # Conf
 # https://github.com/docker-library/docs/blob/master/postgres/README.md#database-configuration
 # postgresql.conf is a template and accepts env so that we can be consistent
+# Don't add secret in their
 ADD conf/postgresql.conf /etc/postgresql/postgresql.conf.template
 RUN envsubst < /etc/postgresql/postgresql.conf.template > /etc/postgresql/postgresql.conf
 
@@ -175,8 +191,28 @@ ENV PGUSER=postgres
 ####################################
 RUN curl -L https://github.com/prometheus-community/postgres_exporter/releases/download/v${PG_EXPORTER_VERSION}/postgres_exporter-${PG_EXPORTER_VERSION}.linux-amd64.tar.gz -o postgres_exporter.tar.gz && \
     tar -xzvf postgres_exporter.tar.gz --strip-components=1 --no-anchored postgres_exporter && \
+    rm postgres_exporter.tar.gz && \
     chmod +x postgres_exporter && \
     mv postgres_exporter /usr/local/bin/
+
+######################################
+# Rclone
+# https://rclone.org/install/#linux
+######################################
+RUN curl -L https://downloads.rclone.org/v${RCLONE_VERSION}/rclone-v${RCLONE_VERSION}-linux-amd64.zip -o rclone.zip && \
+    unzip rclone.zip && \
+    rm rclone.zip && \
+    cd rclone-*-linux-amd64 && \
+    chmod +x rclone && \
+    mv rclone /usr/local/bin/
+
+#####################################
+# Restic
+#####################################
+RUN curl -L https://github.com/restic/restic/releases/download/v${RESTIC_VERSION}/restic_${RESTIC_VERSION}_linux_amd64.bz2 -o restic.bz2 && \
+    bzip2 -d restic.bz2 && \
+    rm restic.bz2 && \
+    restic generate --bash-completion /etc/bash_completion.d/restic
 
 ####################################
 # Database Init Scripts

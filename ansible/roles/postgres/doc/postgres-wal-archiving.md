@@ -40,10 +40,29 @@ WAL is conceptually infinite but in practice is broken up into individual 16MB f
 
 The segment files are given numeric names that reflect their position in the abstract WAL sequence.
 
-WAL segments follow the naming convention `0000000100000A1E000000FE` where:
+WAL Segment files are given ever-increasing numbers.
+
+They follow the naming convention `0000000100000A1E000000FE` where:
 
 * the first 8 hexadecimal digits represent the [timeline](#timeline)
-* the next 16 digits are the logical sequence number (LSN).
+* the next 16 digits are the [logical sequence number (LSN)](#log-sequence-number-lsn)
+
+### Log Sequence Number (LSN)
+
+Log Sequence Number (LSN) is a byte offset into the WAL, increasing monotonically with each new record.
+
+### wal segment size
+
+Wal file are called segment.
+
+Segment files have a zie of 16 MB
+The size can be changed by altering the `--wal-segsize initdb` option.
+
+### wal structures
+
+Each segment is divided into pages, normally 8 kB each.
+
+The segment size can be changed via the `--with-wal-blocksize` configure option.
 
 ## Base Backup
 
@@ -304,3 +323,86 @@ The default behavior of recovery is to recover to the latest timeline found in t
 
 Replication slots provide an automated way to ensure
 that the primary does not remove WAL segments until they have been received by all standbys
+
+## Backup function
+
+https://www.postgresql.org/docs/current/functions-admin.html#FUNCTIONS-ADMIN-BACKUP
+
+* Return the current write-ahead log write location
+
+```sql
+select *
+from pg_current_wal_lsn();
+```
+
+```
+0/B000000
+```
+
+* Converts a write-ahead log location to the name of the WAL file holding that location
+
+```sql
+select *
+from pg_walfile_name(pg_lsn)
+-- current wal file writed (example: 00000003000000000000000A)
+select *
+from pg_walfile_name(pg_current_wal_lsn())
+-- current write-ahead log flush location
+select *
+from pg_walfile_name(pg_current_wal_flush_lsn())
+-- current write-ahead log insert location
+select *
+from pg_walfile_name(pg_current_wal_insert_lsn())
+```
+
+* Extracts the sequence number and timeline ID from a WAL file name.
+
+```sql
+select * from pg_split_walfile_name('00000003000000000000000A');
+```
+
++--------------+-----------+
+|segment_number|timeline_id|
++--------------+-----------+
+|10 |3 |
++--------------+-----------+
+
+* The last write-ahead log location that has been replayed during recovery.
+
+```sql
+select * from pg_last_wal_replay_lsn ()
+--exaample: 000000030000000000000009
+-- wal file name
+select * from pg_walfile_name(pg_last_wal_replay_lsn ());
+```
+
+* The time stamp of the last transaction replayed during recovery
+
+```sql
+select * from pg_last_xact_replay_timestamp ();
+```
+
++---------------------------------+
+|pg_last_xact_replay_timestamp |
++---------------------------------+
+|2024-05-26 17:11:06.105773 +00:00|
++---------------------------------+
+
+* the name, size, and last modification time (mtime) of each ordinary file in the server's write-ahead log (WAL)
+  directory.
+
+```sql
+select * from pg_ls_waldir ();
+```
+
++------------------------+--------+---------------------------------+
+|name |size |modification |
++------------------------+--------+---------------------------------+
+|00000002.history |41 |2024-05-26 17:16:02.000000 +00:00|
+|00000003.history |83 |2024-05-26 17:16:32.000000 +00:00|
+|00000003000000000000000A|16777216|2024-05-26 19:56:16.000000 +00:00|
+|00000003000000000000000B|16777216|2024-05-26 17:16:03.000000 +00:00|
+|00000003000000000000000C|16777216|2024-05-26 17:16:13.000000 +00:00|
+|00000003000000000000000D|16777216|2024-05-26 17:16:19.000000 +00:00|
+|00000003000000000000000E|16777216|2024-05-26 17:16:28.000000 +00:00|
++------------------------+--------+---------------------------------+

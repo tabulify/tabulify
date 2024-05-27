@@ -35,3 +35,13 @@ for _, db := range databases {
 ## Graphana
 
 https://github.com/fly-apps/postgres-flex/blob/master/grafanadash.example.json
+
+## Database size
+
+* [Object size function](https://www.postgresql.org/docs/current/functions-admin.html#FUNCTIONS-ADMIN-DBOBJECT)
+
+```sql
+select *
+from pg_size_pretty(pg_database_size('dbname'));
+-- pg_table_size, pg_indexes_size, ...
+```

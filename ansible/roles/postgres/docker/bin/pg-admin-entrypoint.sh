@@ -5,13 +5,34 @@
 RECOVERY_SIGNAL_PATH=$PGDATA/recovery.signal
 
 if [ -f "$RECOVERY_SIGNAL_PATH" ]; then
-    echo "Recovering file sign found ($RECOVERY_SIGNAL_PATH)"
+    echo "Recovering file signal found ($RECOVERY_SIGNAL_PATH)"
     echo "Deleting the actual pgdata directory"
     rm -rf "${PGDATA:?}"/* || exit 1
     echo "Fetching the latest backup"
     wal-g backup-fetch "$PGDATA" LATEST || exit 1
     echo "Recreating the recovery signal file"
     touch "$RECOVERY_SIGNAL_PATH" || exit 1
+else
+    echo "No Recovering file signal found ($RECOVERY_SIGNAL_PATH)"
+fi
+
+## Restic
+## Only if the repo is set
+if [ -v ${RESTIC_REPOSITORY+x} ]; then
+    if [ -v ${RESTIC_PASSWORD+x} ]; then
+      if  ! restic snapshots > /dev/null; then
+              echo "Restic Repo not found - Restic init at ${RESTIC_REPOSITORY}"
+              restic init
+              echo "Done at ${RESTIC_REPOSITORY}"
+      else
+        echo "RESTIC Repo already configured";
+      fi
+    else
+      echo "RESTIC_PASSWORD is not set";
+      exit 1;
+    fi
+else
+  echo "No restic repo configured - Ignoring"
 fi
 
 # Start the passed command ($*)

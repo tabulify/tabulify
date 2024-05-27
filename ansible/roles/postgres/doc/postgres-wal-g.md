@@ -102,11 +102,33 @@ after a full backup
 +-----+------------+-----------------+--------------------------+--------------------------+---------------+----------------+--------+---------------+
 ```
 
-### Restore
+### Restore /recover
 
 ```bash
 docker run --rm postgres2 sh -c 'wal-g backup-fetch $PGDATA LATEST; touch $PGDATA/recovery.signal'
 ```
+
+on fly
+
+```bash
+fly machine exec [machine-id] <command> [flags]
+```
+
+### Restore check
+
+* The time stamp of the last transaction replayed during recovery
+
+```sql
+select * from pg_last_xact_replay_timestamp ();
+```
+
++---------------------------------+
+|pg_last_xact_replay_timestamp |
++---------------------------------+
+|2024-05-26 17:11:06.105773 +00:00|
++---------------------------------+
+
+More [Recovery function](https://www.postgresql.org/docs/current/functions-admin.html#FUNCTIONS-RECOVERY-CONTROL)
 
 ## Check / Verify
 

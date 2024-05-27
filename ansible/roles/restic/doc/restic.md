@@ -14,6 +14,15 @@ of changes.
 * can be run by root or by a user with the restic group.
 * can read the whole system
 
+For concept, see [Model](#model)
+
+## Features / Advantage
+
+* ransomware situations
+* provide version history
+* compress and save storage space
+* deduplicate to save disk space
+
 ## Usage
 
 ### Datacadamia
@@ -129,11 +138,18 @@ Run this command regularly to make sure the internal structure of the repository
 
 ### Check Read Data
 
+You’re verifying that the repo gives you
+exactly the data back that you’ve sent to it,
+which is a good thing to very from time to time.
+
+After all, the data could have been corrupted at the service,
+you’ll only discover that when you check it regularly.
+
 Since `--read-data` has to download all pack files in the repository, beware that it might incur higher bandwidth costs
 
 By default, the check command does not verify that the actual pack files on disk
 in the repository are unmodified, because doing so requires reading a copy of every pack file in the repository.
-To tell restic to also verify the integrity of the pack files in the repository, use the --read-data flag:
+To tell restic to also verify the integrity of the pack files in the repository, use the `--read-data` flag:
 ```bash
 restic -r /srv/restic-repo check --read-data
 ```
@@ -223,10 +239,17 @@ to display detailed information, pass:
 
 ## Model
 
+
 ### Repository
 
 All data is stored in a restic repository.
 
+The repo is set via:
+
+* The `-r` option
+* The `RESTIC_REPOSITORY` variable (can be scoped in a script such as [resticdc](../templates/resticdc))
+
+The repo is read with the `RESTIC_PASSWORD`
 Basic layout of a repository::
 
 ```txt
@@ -253,7 +276,8 @@ Basic layout of a repository::
 └── tmp
 ```
 
-* A repository stores data objects which can later be requested based on an ID, known as `Storage ID`.
+* A repository stores [data objects](#pack) which can later be requested based on an ID, known as `Storage ID`.
+* A file is called a [pack](#pack)
 * The `storage ID` is the SHA-256 hash of the content of a file.
 * All files in a repository are only written once and never modified afterward.
 * Only the prune operation removes data from the repository.
@@ -267,7 +291,7 @@ More:
 
 ### Snapshots
 
-The contents of a directory at a specific point in time is called a “snapshot” in restic.
+The contents of a directory at a specific point in time is called a `snapshot` in restic.
 
 The state means the content and metadata like the name and modification time for the file or the directory and its contents.
 
@@ -279,6 +303,10 @@ If nothing has changed, a snapshot is still created to record "this was the curr
 * A snapshot is a JSON document that is stored in a file below the directory snapshots in the repository.
 
 If you want to create a snapshot when data are changed, you need to use filesystem watchers.
+
+```bash
+restic snapshots --json | jq .
+```
 
 [More](https://restic.readthedocs.io/en/stable/100_references.html#snapshots)
 
@@ -303,6 +331,10 @@ https://restic.readthedocs.io/en/stable/040_backup.html#tags-for-backup
 
 A Pack combines one or more Blobs, e.g. in a single file.
 
+A pack is a file in the repo,
+which has a name that’s the hexadecimal representation of 32 byte (SHA2 hash of its content).
+
+So `uint(pack[0])` is the first byte, which can have values between 0 and 255.
 
 ### Blobs
 
