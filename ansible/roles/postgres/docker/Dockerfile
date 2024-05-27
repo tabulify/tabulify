@@ -211,7 +211,9 @@ RUN curl -L https://downloads.rclone.org/v${RCLONE_VERSION}/rclone-v${RCLONE_VER
 #####################################
 RUN curl -L https://github.com/restic/restic/releases/download/v${RESTIC_VERSION}/restic_${RESTIC_VERSION}_linux_amd64.bz2 -o restic.bz2 && \
     bzip2 -d restic.bz2 && \
-    rm restic.bz2 && \
+    chmod +x restic && \
+    mv restic /usr/local/bin/ && \
+    mkdir -p /etc/bash_completion.d && \
     restic generate --bash-completion /etc/bash_completion.d/restic
 
 ####################################
