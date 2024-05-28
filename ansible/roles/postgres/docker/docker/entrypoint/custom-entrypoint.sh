@@ -1,6 +1,20 @@
 #!/bin/bash
 
 
+## Mandatory
+if [ -z "$POSTGRES_USER" ]; then
+  echo "Postgres User is mandatory"
+fi
+
+# Pg Cron Conf
+if [ -n "$PG_CRON_DB" ]; then
+  echo "PG Cron enabled on the database $PG_CRON_DB. Setting the default database name"
+  sed -i "s/cron\.database_name = '.*'/cron\.database_name = '$PG_CRON_DB'/" /etc/postgresql/postgresql.conf
+else
+  echo "PG_CRON_DB env not found. PG Cron not enabled"
+fi;
+
+
 # A wrapper around the docker entrypoint to recover
 # https://github.com/docker-library/postgres/blob/d08757ccb56ee047efd76c41dbc148e2e2c4f68f/16/bookworm/docker-entrypoint.sh#L161
 RECOVERY_SIGNAL_PATH=$PGDATA/recovery.signal
@@ -15,6 +29,8 @@ if [ -f "$RECOVERY_SIGNAL_PATH" ]; then
 else
     echo "No Recovering file signal found ($RECOVERY_SIGNAL_PATH)"
 fi
+
+
 
 ## Restic
 ## Only if the repo is set

@@ -54,6 +54,8 @@ function print_usage() {
   echo "     * dump-ls                                   - list the dump in the snapshots"
   echo "     * db-ls                                     - list the db in the cluster"
   echo "     * dump-prune                                - forget old snapshots and perform dump integrity checks"
+  echo "     * extension-ls                              - list the extensions"
+  echo "     * conf                                      - print the conf file"
   echo ""
 
 }
@@ -103,7 +105,7 @@ if [[ -z ${PG_DUMP_DATA} ]]; then
     exit 1;
 fi;
 mkdir -p "$PG_DUMP_DATA"
-DB_DUMP_FILE="$PG_DUMP_DATA"/dumpfile-"${CTL_DATABASE_NAME}".sql.gz
+DB_DUMP_FILE="$PG_DUMP_DATA"/dumpfile-db-"${CTL_DATABASE_NAME}".sql.gz
 
 echo
 echo "${CLI_NAME^} ${COMMAND^}"
@@ -112,15 +114,34 @@ echo ""
 case ${COMMAND} in
 dump-db-backup)
   echo_log "Dumping the database (${CTL_DATABASE_NAME})"
-  pg_dump "${CTL_DATABASE_NAME}" | gzip  > "${DB_DUMP_FILE}" || exit 1
+  pg_dump "${CTL_DATABASE_NAME}" | gzip  > "${DB_DUMP_FILE}"
   echo_log "Done"
   echo_log "Loading into Restic S3 repo (${PG_DUMP_DATA})"
-  restic backup "${PG_DUMP_DATA}" || exit 1
+  restic backup "${PG_DUMP_DATA}"
+  echo_log "Restic upload done"
+  echo_log "Backup done"
+  ;;
+dump-sc-backup)
+  targetSchemaName=${ARGS[0]}
+  if [ -z "${targetSchemaName}" ]; then
+      targetSchemaName=$DEFAULT_SCHEMA_NAME
+  fi
+  if [ -z "${targetSchemaName}" ]; then
+    echo_err 'No schema defined as first argument and no DEFAULT_SCHEMA_NAME env found'
+    echo_err 'A schema is mandatory for a schema dump'
+    exit 1
+  fi
+  echo_log "Dumping the schema (${targetSchemaName}) from the database (${CTL_DATABASE_NAME})"
+  SC_DUMP_FILE="$PG_DUMP_DATA"/dumpfile-sc-"${targetSchemaName}".sql.gz
+  pg_dump --schema="$targetSchemaName" "${CTL_DATABASE_NAME}" | gzip  > "${SC_DUMP_FILE}"
+  echo_log "Done"
+  echo_log "Loading into Restic S3 repo (${SC_DUMP_FILE})"
+  restic backup "${PG_DUMP_DATA}"
   echo_log "Restic upload done"
   echo_log "Backup done"
   ;;
 dump-ls)
-  restic find --long  "${DB_DUMP_FILE}"
+  restic find --long  "${PG_DUMP_DATA}"
   ;;
 dump-db-restore)
   if [ -z "${ARGS[0]}" ]; then
@@ -135,11 +156,11 @@ dump-db-restore)
   fi
   echo_log "Restoring the dump (${DB_DUMP_FILE}) from the snapshot ${snapshot} into the database (${targetDbName})"
   RESTORE_DIR_BASE=/tmp
-  restic restore --include "${DB_DUMP_FILE}" --target $RESTORE_DIR_BASE --verify "${snapshot}" || exit 1
+  restic restore --include "${DB_DUMP_FILE}" --target $RESTORE_DIR_BASE --verify "${snapshot}"
   echo_log "Restoration done"
   dumpFileToRestore="${RESTORE_DIR_BASE}${DB_DUMP_FILE}"
   echo_log "Restoring the database ${targetDbName} with the dump (${dumpFileToRestore}) into the database (${targetDbName})"
-  RESULT=$(psql -tAc "SELECT 1 FROM pg_database WHERE datname='${targetDbName}'") || exit 1
+  RESULT=$(psql -tAc "SELECT 1 FROM pg_database WHERE datname='${targetDbName}'")
   if [ "$RESULT" == "1" ]; then
     echo_log "The database ${targetDbName} exits and should be dropped before restoration"
     echo_log "Dropping the database ${targetDbName} before restoration"
@@ -150,17 +171,23 @@ dump-db-restore)
   createdb "${targetDbName}" || exit 1
   echo_log "Done"
   echo_log "Executing the Sql dump"
-  gunzip < "${dumpFileToRestore}" | psql --set ON_ERROR_STOP=on --single-transaction "${targetDbName}" || exit 1
+  gunzip < "${dumpFileToRestore}" | psql --set ON_ERROR_STOP=on --single-transaction "${targetDbName}"
   echo_log "Done"
   echo_log "Restoration done and successful"
   ;;
 dump-prune)
-  restic forget --keep-hourly 5 --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-yearly 3 || exit 1;
-  restic prune || exit 1;
-  restic check --read-data || exit 1;
+  restic forget --keep-hourly 5 --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-yearly 3;
+  restic prune;
+  restic check --read-data;
   ;;
 db-ls)
   psql -c "\l"
+  ;;
+extension-ls)
+  psql -c "\dx"
+  ;;
+conf)
+  cat /etc/postgresql/postgresql.conf
   ;;
 pg)
   pg_ctl "${OPTIONS[@]}"
