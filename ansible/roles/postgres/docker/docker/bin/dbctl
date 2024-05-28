@@ -108,6 +108,8 @@ if [[ -z ${PG_DUMP_DATA} ]]; then
 fi;
 mkdir -p "$PG_DUMP_DATA"
 DB_DUMP_FILE="$PG_DUMP_DATA"/dumpfile-db-"${CTL_DATABASE_NAME}".sql.gz
+# RESTORE_DIR_BASE where the files restored are going
+RESTORE_DIR_BASE=/tmp
 
 echo
 echo "${CLI_NAME^} ${COMMAND^}"
@@ -142,6 +144,50 @@ dump-sc-backup)
   echo_log "Restic upload done"
   echo_log "Backup done"
   ;;
+dump-sc-restore)
+
+  if [ -z "${ARGS[0]}" ]; then
+      echo_err 'The Snapshot Id should be given as first argument'
+      echo_err 'use the dump-ls command to get the available snapshot id'
+      exit 1
+    fi
+  snapshot=${ARGS[0]}
+
+  targetSchemaName=${ARGS[1]}
+  if [ -z "${targetSchemaName}" ]; then
+      targetSchemaName=$DEFAULT_SCHEMA_NAME
+  fi
+  if [ -z "${targetSchemaName}" ]; then
+    echo_err 'No schema defined as second argument and no DEFAULT_SCHEMA_NAME env found'
+    echo_err 'A schema is mandatory for a schema restore'
+    exit 1
+  fi
+  scTargetDatabaseName=$CTL_DATABASE_NAME
+  echo_log "Restoring the schema (${targetSchemaName}) against the database (${CTL_DATABASE_NAME})"
+
+  SC_DUMP_FILE="$PG_DUMP_DATA"/dumpfile-sc-"${targetSchemaName}".sql.gz
+  echo_log "Fetching the dump (${SC_DUMP_FILE}) from the snapshot ${snapshot} into the database (${scTargetDatabaseName})"
+  restic restore --include "${SC_DUMP_FILE}" --target $RESTORE_DIR_BASE --verify "${snapshot}"
+  echo_log "Fetching done"
+
+  echo "The schema (${targetSchemaName}) will be deleted with before restoration. Do you want to continue? (y/N)"
+  read -r answer
+  if [ "$answer" != "y" ]; then
+      echo "Exiting..."
+      exit
+  fi
+  psql -c "drop schema if exists ${targetSchemaName}";
+  echo "Schema ${targetSchemaName} dropped"
+  echo "Creating Schema ${targetSchemaName}"
+  psql -c "create schema ${targetSchemaName}"
+  echo "Schema ${targetSchemaName} created"
+
+  scDumpFileToRestore="${RESTORE_DIR_BASE}${SC_DUMP_FILE}"
+  echo_log "Executing the Sql dump ${scDumpFileToRestore}"
+  gunzip < "${scDumpFileToRestore}" | psql --set ON_ERROR_STOP=on --single-transaction "${scTargetDatabaseName}"
+  echo_log "Done"
+  echo_log "Restoration done and successful"
+  ;;
 dump-ls)
   restic find --long  "${PG_DUMP_DATA}"
   ;;
@@ -157,7 +203,6 @@ dump-db-restore)
       targetDbName=$CTL_DATABASE_NAME
   fi
   echo_log "Restoring the dump (${DB_DUMP_FILE}) from the snapshot ${snapshot} into the database (${targetDbName})"
-  RESTORE_DIR_BASE=/tmp
   restic restore --include "${DB_DUMP_FILE}" --target $RESTORE_DIR_BASE --verify "${snapshot}"
   echo_log "Restoration done"
   dumpFileToRestore="${RESTORE_DIR_BASE}${DB_DUMP_FILE}"

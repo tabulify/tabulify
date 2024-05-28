@@ -120,6 +120,8 @@ The database server itself does not require the postgres database to exist,
 but many external utility programs assume it exists.
 https://www.postgresql.org/docs/9.1/creating-cluster.html
 
+## Schema restoration
 
-
-
+We don't use SQL restoration for schema
+because with cascade, drops all objects that depend on the schema.
+And this object may be external.
