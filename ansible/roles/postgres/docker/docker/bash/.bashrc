@@ -27,3 +27,9 @@ alias l='ls $LS_OPTIONS -lA'
 # alias rm='rm -i'
 # alias cp='cp -i'
 # alias mv='mv -i'
+
+function echo_err() {
+  RED='\033[0;31m'
+  NC='\033[0m' # No Color
+  echo -e "${RED}$1${NC}" >&2
+}

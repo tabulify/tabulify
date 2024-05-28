@@ -56,6 +56,7 @@ function print_usage() {
   echo "     * dump-prune                                - forget old snapshots and perform dump integrity checks"
   echo "     * extension-ls                              - list the extensions"
   echo "     * conf                                      - print the conf file"
+  echo "     * job-ls                                    - print the jobs"
   echo ""
 
 }
@@ -194,6 +195,9 @@ pg)
   ;;
 psql)
   psql "${OPTIONS[@]}"
+  ;;
+job-ls)
+  psql -c "select * from cron.job_run_details order by start_time desc limit 5"
   ;;
 help)
   print_usage

@@ -3,11 +3,16 @@
 
 ## Mandatory
 if [ -z "$POSTGRES_USER" ]; then
-  echo "Postgres User is mandatory"
+  echo_err "Postgres User is mandatory"
 fi
 
 # Pg Cron Conf
 if [ -n "$PG_CRON_DB" ]; then
+  if [ "$PG_CRON_DB" != "$POSTGRES_DB" ]; then
+    echo_err "The pg cron env (PG_CRON_DB) should have the value ($POSTGRES_DB), not the value ($PG_CRON_DB)"
+    echo_err "Sorry, we don't support multi-database yet."
+    exit 1;
+  fi;
   echo "PG Cron enabled on the database $PG_CRON_DB. Setting the default database name"
   sed -i "s/cron\.database_name = '.*'/cron\.database_name = '$PG_CRON_DB'/" /etc/postgresql/postgresql.conf
 else
