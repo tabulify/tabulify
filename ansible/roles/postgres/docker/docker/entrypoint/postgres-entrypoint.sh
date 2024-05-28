@@ -63,4 +63,6 @@ fi
 # Start the docker entrypoint
 # https://github.com/docker-library/postgres/blob/d08757ccb56ee047efd76c41dbc148e2e2c4f68f/16/bookworm/docker-entrypoint.sh
 # docker-entrypoint.sh of the postgres image is to bring the same behavior
+# It performs a initdb
+# https://www.postgresql.org/docs/current/creating-cluster.html
 docker-entrypoint.sh "$@"
