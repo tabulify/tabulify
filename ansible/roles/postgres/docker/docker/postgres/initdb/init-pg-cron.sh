@@ -15,4 +15,4 @@ psql -v ON_ERROR_STOP=1 <<-EOSQL
 EOSQL
 
 echo "Creating the dbctl procedure"
-psql -v ON_ERROR_STOP=1 -f /script/dbctl
+psql -v ON_ERROR_STOP=1 -f /script/dbctl.sql

@@ -218,7 +218,7 @@ ADD docker/postgres/initdb/* /docker-entrypoint-initdb.d
 # Bin
 ADD docker/bin/* /usr/local/bin/
 # Scripts
-ADD docker/script/* /script/
+ADD docker/postgres/script/* /script/
 
 # Dbctl
 # The log file should be writable by root and the user running postgres

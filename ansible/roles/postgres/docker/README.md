@@ -74,8 +74,15 @@ WALG_COMPRESSION_METHOD = brotli
 
 ## dbctl
 
-You can't restore from the database
-as it expect a confirmation.
+### Bash script
+
+### Database procedure
+
+You can't restore from the database as it expects a manual confirmation.
+
+```sql
+CALL public.dbctl('dump-ls');
+```
 
 ## process
 
@@ -104,3 +111,15 @@ postgres    78    48  0 14:14 ?        00:00:00 postgres: eraldy eraldy 172.17.0
 root        95     0  0 14:16 pts/2    00:00:00 bash
 root       323    95  0 14:20 pts/2    00:00:00 ps -ef
 ```
+
+## Database: Postgres
+
+After initialization, a database cluster will contain a database named postgres,
+which is meant as a default database for use by utilities, users and third party applications.
+The database server itself does not require the postgres database to exist,
+but many external utility programs assume it exists.
+https://www.postgresql.org/docs/9.1/creating-cluster.html
+
+
+
+

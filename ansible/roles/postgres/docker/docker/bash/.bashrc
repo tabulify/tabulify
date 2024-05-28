@@ -1,16 +1,14 @@
 # ~/.bashrc: executed by bash(1) for non-login shells.
 
-## Mandatory
-if [ -z "$POSTGRES_USER" ]; then
-  echo "Postgres User is mandatory"
-  exit 1;
-fi
-
 ############################
 # Docker/Conf env
 # https://github.com/docker-library/docs/blob/master/postgres/README.md#environment-variables
 ############################
-export POSTGRES_DB="${POSTGRES_DB:-$POSTGRES_USER}"
+# postgres is the default database, is always present
+# and is the default of all extensions as stated here
+# https://www.postgresql.org/docs/9.1/creating-cluster.html
+export POSTGRES_DB="${POSTGRES_DB:-postgres}"
+export POSTGRES_USER="${POSTGRES_USER:-${POSTGRES_DB}}"
 
 ############################
 # Default connection variable for postgres (psql, pg_dump, ...) and wal-g uses them also

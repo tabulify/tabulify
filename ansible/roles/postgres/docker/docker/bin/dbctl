@@ -185,6 +185,11 @@ dump-prune)
 db-ls)
   psql -c "\l"
   ;;
+wal-ls)
+  psql -c "select * from pg_stat_archiver"
+#  psql -c "SELECT pg_switch_wal()"
+  psql -c "SHOW archive_mode; SHOW archive_command"
+  ;;
 extension-ls)
   psql -c "\dx"
   ;;

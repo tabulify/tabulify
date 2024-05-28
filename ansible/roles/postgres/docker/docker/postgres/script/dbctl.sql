@@ -6,7 +6,7 @@ create or replace procedure dbctl(IN arguments text, IN timeout integer DEFAULT 
 as
 $$
   import subprocess
-  # plpy https://www.postgresql.org/docs/16/plpython-database.html
+  # plpy https://www.postgresql.org/docs/current/plpython-util.html
   import plpy
   command = 'dbctl ' + " " + arguments
 
@@ -16,7 +16,9 @@ $$
                             capture_output=True, text=True, timeout=timeout)
     std = result.stdout + "\n" + result.stderr
     if result.returncode != 0:
-      raise RuntimeError("Command " + command + " failed: " + std)
+      # error raise an error
+      # https://www.postgresql.org/docs/current/plpython-util.html
+      plpy.error("Command " + command + " failed: " + std)
     plpy.info(std)
 
   except subprocess.TimeoutExpired as e:
