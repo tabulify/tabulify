@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION plpython_env()
+CREATE OR REPLACE FUNCTION postgres_env()
   RETURNS TEXT
   LANGUAGE plpython3u
 AS

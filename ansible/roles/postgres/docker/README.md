@@ -71,3 +71,36 @@ AWS_SECRET_ACCESS_KEY = secret
 AWS_ENDPOINT = s3-like-service:9000
 WALG_COMPRESSION_METHOD = brotli
 ```
+
+## dbctl
+
+You can't restore from the database
+as it expect a confirmation.
+
+## process
+
+The process that are running in the container and their owner.
+
+```bash
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 14:14 ?        00:00:00 /bin/bash /usr/local/bin/entrypoint.sh overmind start
+root         7     1  0 14:14 ?        00:00:00 overmind start
+root        14     7  0 14:14 ?        00:00:00 tmux -C -L overmind---yqiI2DgpEldIIe3MQsPrQ new -n postgres -s - -P -F %overmind-process #{pane_id} postgres #{pane_pi
+root        20     1  0 14:14 ?        00:00:00 tmux -C -L overmind---yqiI2DgpEldIIe3MQsPrQ new -n postgres -s - -P -F %overmind-process #{pane_id} postgres #{pane_pi
+root        21    20  0 14:14 pts/0    00:00:00 sh /tmp/overmind---yqiI2DgpEldIIe3MQsPrQ/postgres
+root        23    20  0 14:14 pts/1    00:00:00 sh /tmp/overmind---yqiI2DgpEldIIe3MQsPrQ/postgres_exporter
+root        25    21  0 14:14 pts/0    00:00:00 /bin/bash /usr/local/bin/postgres-entrypoint.sh postgres -c config_file=/etc/postgresql/postgresql.conf
+root        27    23  0 14:14 pts/1    00:00:00 postgres_exporter --log.level=warn
+postgres    48    25  0 14:14 pts/0    00:00:00 postgres -c config_file=/etc/postgresql/postgresql.conf
+postgres    69    48  0 14:14 ?        00:00:00 postgres: logger
+postgres    70    48  0 14:14 ?        00:00:00 postgres: checkpointer
+postgres    71    48  0 14:14 ?        00:00:00 postgres: background writer
+postgres    73    48  0 14:14 ?        00:00:00 postgres: walwriter
+postgres    74    48  0 14:14 ?        00:00:00 postgres: autovacuum launcher
+postgres    75    48  0 14:14 ?        00:00:00 postgres: archiver
+postgres    76    48  0 14:14 ?        00:00:00 postgres: pg_cron launcher
+postgres    77    48  0 14:14 ?        00:00:00 postgres: logical replication launcher
+postgres    78    48  0 14:14 ?        00:00:00 postgres: eraldy eraldy 172.17.0.1(47582) idle
+root        95     0  0 14:16 pts/2    00:00:00 bash
+root       323    95  0 14:20 pts/2    00:00:00 ps -ef
+```

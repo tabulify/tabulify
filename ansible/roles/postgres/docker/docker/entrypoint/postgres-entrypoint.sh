@@ -1,13 +1,16 @@
 #!/bin/bash
 
+# This script will:
+# * give the environment to the `postgres` process
+# * configure the extensions and external services for postgres
+#
+# It's a wrapper around the docker entrypoint
+# https://github.com/docker-library/postgres/blob/d08757ccb56ee047efd76c41dbc148e2e2c4f68f/16/bookworm/docker-entrypoint.sh#L161
+#
 
-## Mandatory
-if [ -z "$POSTGRES_USER" ]; then
-  echo "Postgres User is mandatory"
-  exit 1;
-fi
-
-POSTGRES_DB=${POSTGRES_DB:-$POSTGRES_USER}
+# Env
+# .bashrc to bring an environment as if it was in the shell
+. /root/.bashrc
 
 # Pg Cron Conf
 if [ -n "$PG_CRON_DB" ]; then
@@ -22,9 +25,8 @@ else
   echo "PG_CRON_DB env not found. PG Cron not enabled"
 fi;
 
-
-# A wrapper around the docker entrypoint to recover
-# https://github.com/docker-library/postgres/blob/d08757ccb56ee047efd76c41dbc148e2e2c4f68f/16/bookworm/docker-entrypoint.sh#L161
+# Recovery mode via WAL
+# https://www.postgresql.org/docs/current/continuous-archiving.html
 RECOVERY_SIGNAL_PATH=$PGDATA/recovery.signal
 if [ -f "$RECOVERY_SIGNAL_PATH" ]; then
     echo "Recovering file signal found ($RECOVERY_SIGNAL_PATH)"
@@ -37,8 +39,6 @@ if [ -f "$RECOVERY_SIGNAL_PATH" ]; then
 else
     echo "No Recovering file signal found ($RECOVERY_SIGNAL_PATH)"
 fi
-
-
 
 ## Restic
 ## Only if the repo is set
@@ -59,5 +59,8 @@ else
   echo "No restic repo configured - Ignoring"
 fi
 
-# Start the passed command ($*)
-/bin/bash -c "$*"
+## Docker
+# Start the docker entrypoint
+# https://github.com/docker-library/postgres/blob/d08757ccb56ee047efd76c41dbc148e2e2c4f68f/16/bookworm/docker-entrypoint.sh
+# docker-entrypoint.sh of the postgres image is to bring the same behavior
+docker-entrypoint.sh "$@"

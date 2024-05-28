@@ -109,8 +109,11 @@ ENV DATA_HOME=/data
 ENV PGDATA=${DATA_HOME}/pgdata
 
 # The directory where to dump pg dump backup
+# The os user is always postgres
 ENV PG_DUMP_DATA=${DATA_HOME}/pgdump
-RUN mkdir -p ${PG_DUMP_DATA}
+RUN mkdir -p ${PG_DUMP_DATA} && \
+    chown -R postgres ${PG_DUMP_DATA}
+
 
 # Ensure UTF-8
 ENV LANG=en_US.UTF-8
@@ -214,6 +217,8 @@ ADD docker/postgres/initdb/* /docker-entrypoint-initdb.d
 
 # Bin
 ADD docker/bin/* /usr/local/bin/
+# Scripts
+ADD docker/script/* /script/
 
 # Dbctl
 # The log file should be writable by root and the user running postgres
@@ -233,14 +238,11 @@ RUN curl -L "https://github.com/DarthSim/overmind/releases/download/v${OVERMIND_
     mv overmind /usr/local/bin/
 
 
-
-
-## Custom Entrypoint
-ADD docker/entrypoint/custom-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/custom-entrypoint.sh
-ENTRYPOINT ["custom-entrypoint.sh"]
-
-
+## Entrypoint
+ADD docker/entrypoint/* /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh # basic entrypoint
+RUN chmod +x /usr/local/bin/postgres-entrypoint.sh # wrapper around docker-entrypoint.sh
+ENTRYPOINT ["entrypoint.sh"]
 
 
 # Procfile should be located in the working directory (or -f path/to/your/Procfile)

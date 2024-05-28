@@ -1,5 +1,11 @@
 # ~/.bashrc: executed by bash(1) for non-login shells.
 
+## Mandatory
+if [ -z "$POSTGRES_USER" ]; then
+  echo "Postgres User is mandatory"
+  exit 1;
+fi
+
 ############################
 # Docker/Conf env
 # https://github.com/docker-library/docs/blob/master/postgres/README.md#environment-variables
