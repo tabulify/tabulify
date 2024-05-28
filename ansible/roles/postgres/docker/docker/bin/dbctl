@@ -2,9 +2,11 @@
 
 # Ensures that the pipeline returns the exit status of the last command to fail
 set -o pipefail
+# Exit the script if any error
+set -e
 
 # When developing
-# docker cp docker/bin/ctl postgres:/usr/local/bin/
+# docker cp docker/bin/dbctl postgres:/usr/local/bin/
 
 CLI_NAME=$(basename "$0") # Name of the cli
 if [[ -z ${DATA_HOME} ]]; then
@@ -39,16 +41,19 @@ function echo_log() {
 function print_usage() {
 
   echo ""
-  echo "Usage of the cli ${CLI_NAME} against the database (${CTL_DATABASE})"
+  echo "Usage of the cli ${CLI_NAME} against the database (${CTL_DATABASE_NAME})"
   echo ""
   echo "   ${CLI_NAME} command [--option[=value] ...]"
   echo ""
   echo "where command is one of:"
   echo "     * help"
-  echo "     * dump-backup - perform a database dump and a snapshot"
-  echo "     * dump-ls     - list the dump in the snapshots"
-  echo "     * dump-restore snapshotId - restore the database from a snapshot id"
-  echo "     * dump-prune - forget old snapshots and perform dump integrity checks"
+  echo "     * dump-db-backup                            - perform a database dump and a snapshot"
+  echo "     * dump-db-restore snapshotId [targetDbName] - restore the database from a snapshot id eventually to another database"
+  echo "     * dump-sc-backup [schemaName]               - perform a schema dump and a snapshot"
+  echo "     * dump-sc-restore snapshotId [schemaName]   - restore a schema dump from a snapshot id"
+  echo "     * dump-ls                                   - list the dump in the snapshots"
+  echo "     * db-ls                                     - list the db in the cluster"
+  echo "     * dump-prune                                - forget old snapshots and perform dump integrity checks"
   echo ""
 
 }
@@ -83,11 +88,11 @@ if [ -z "$COMMAND" ]; then
 fi
 
 ## Global Parameters
-CTL_DATABASE=${PGDATABASE}
-if [ -z "${CTL_DATABASE}" ]; then
-  CTL_DATABASE=${PGUSER}
+CTL_DATABASE_NAME=${PGDATABASE}
+if [ -z "${CTL_DATABASE_NAME}" ]; then
+  CTL_DATABASE_NAME=${PGUSER}
 fi;
-if [ -z "${CTL_DATABASE}" ]; then
+if [ -z "${CTL_DATABASE_NAME}" ]; then
   echo_err "The database could not be determined via PGDATABASE or PGUSER"
   exit 1;
 fi;
@@ -98,16 +103,16 @@ if [[ -z ${PG_DUMP_DATA} ]]; then
     exit 1;
 fi;
 mkdir -p "$PG_DUMP_DATA"
-CTL_DUMP_FILE="$PG_DUMP_DATA"/dumpfile-"${CTL_DATABASE}".sql.gz
+DB_DUMP_FILE="$PG_DUMP_DATA"/dumpfile-"${CTL_DATABASE_NAME}".sql.gz
 
 echo
 echo "${CLI_NAME^} ${COMMAND^}"
 echo "-------------------------------------------"
 echo ""
 case ${COMMAND} in
-dump-backup)
-  echo_log "Dumping the database (${CTL_DATABASE})"
-  pg_dump "${CTL_DATABASE}" | gzip  > "${CTL_DUMP_FILE}" || exit 1
+dump-db-backup)
+  echo_log "Dumping the database (${CTL_DATABASE_NAME})"
+  pg_dump "${CTL_DATABASE_NAME}" | gzip  > "${DB_DUMP_FILE}" || exit 1
   echo_log "Done"
   echo_log "Loading into Restic S3 repo (${PG_DUMP_DATA})"
   restic backup "${PG_DUMP_DATA}" || exit 1
@@ -115,27 +120,37 @@ dump-backup)
   echo_log "Backup done"
   ;;
 dump-ls)
-  restic find --long  "${CTL_DUMP_FILE}"
+  restic find --long  "${DB_DUMP_FILE}"
   ;;
-dump-restore)
+dump-db-restore)
   if [ -z "${ARGS[0]}" ]; then
     echo_err 'The Snapshot Id should be given as first argument'
     echo_err 'use the dump-ls command to get the available snapshot id'
     exit 1
   fi
   snapshot=${ARGS[0]}
-  echo_log "Restoring the dump (${CTL_DUMP_FILE}) from the snapshot ${snapshot}"
-  restic restore --include "${CTL_DUMP_FILE}" --target / --verify "${snapshot}" || exit 1
+  targetDbName=${ARGS[1]}
+  if [ -z "${targetDbName}" ]; then
+      targetDbName=$CTL_DATABASE_NAME
+  fi
+  echo_log "Restoring the dump (${DB_DUMP_FILE}) from the snapshot ${snapshot} into the database (${targetDbName})"
+  RESTORE_DIR_BASE=/tmp
+  restic restore --include "${DB_DUMP_FILE}" --target $RESTORE_DIR_BASE --verify "${snapshot}" || exit 1
   echo_log "Restoration done"
-  echo_log "Restoring the database ${CTL_DATABASE} with the dump (${CTL_DUMP_FILE})"
-  echo_log "Dropping the database ${CTL_DATABASE} before restoration"
-  dropdb "${CTL_DATABASE}" --force -i || exit 1
-  echo_log "Done"
-  echo_log "Creating the database ${CTL_DATABASE}"
-  createdb "${CTL_DATABASE}" || exit 1
+  dumpFileToRestore="${RESTORE_DIR_BASE}${DB_DUMP_FILE}"
+  echo_log "Restoring the database ${targetDbName} with the dump (${dumpFileToRestore}) into the database (${targetDbName})"
+  RESULT=$(psql -tAc "SELECT 1 FROM pg_database WHERE datname='${targetDbName}'") || exit 1
+  if [ "$RESULT" == "1" ]; then
+    echo_log "The database ${targetDbName} exits and should be dropped before restoration"
+    echo_log "Dropping the database ${targetDbName} before restoration"
+    dropdb "${targetDbName}" --force -i || exit 1
+    echo_log "Done"
+  fi;
+  echo_log "Creating the database ${targetDbName}"
+  createdb "${targetDbName}" || exit 1
   echo_log "Done"
   echo_log "Executing the Sql dump"
-  gunzip < "${CTL_DUMP_FILE}" | psql --set ON_ERROR_STOP=on --single-transaction "${CTL_DATABASE}" || exit 1
+  gunzip < "${dumpFileToRestore}" | psql --set ON_ERROR_STOP=on --single-transaction "${targetDbName}" || exit 1
   echo_log "Done"
   echo_log "Restoration done and successful"
   ;;
@@ -143,6 +158,9 @@ dump-prune)
   restic forget --keep-hourly 5 --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-yearly 3 || exit 1;
   restic prune || exit 1;
   restic check --read-data || exit 1;
+  ;;
+db-ls)
+  psql -c "\l"
   ;;
 pg)
   pg_ctl "${OPTIONS[@]}"

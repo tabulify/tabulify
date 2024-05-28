@@ -213,7 +213,7 @@ RUN curl -L https://github.com/restic/restic/releases/download/v${RESTIC_VERSION
 ADD docker/postgres/initdb/* /docker-entrypoint-initdb.d
 
 ADD docker/bin/* /usr/local/bin/
-RUN chmod +x /usr/local/bin/ctl
+RUN chmod +x /usr/local/bin/dbctl
 
 ####################################
 # Overmind

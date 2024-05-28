@@ -17,25 +17,25 @@ docker run --env-file secret.env --name postgres -d -p 5434:5432 -v C:\temp\data
 
 ### How to perform a dump restore
 
-A dump restore is performed via the [ctl command](docker/bin/ctl)
+A dump restore is performed via the [ctl command](docker/bin/dbctl)
 
 ```bash
 # List the available dump and select a snapshot
-ctl dump-ls
+dbctl dump-ls
 # perform a restore (the database is deleted!)
-ctl dump-restore snapshotId
+dbctl dump-restore snapshotId
 # or for the latest one
-ctl dump-restore snapshotId
+dbctl dump-restore snapshotId
 ```
 
 ### How to perform a dump backup
 
-A dump backup is performed via the [ctl command](docker/bin/ctl)
+A dump backup is performed via the [ctl command](docker/bin/dbctl)
 
 ```bash
-ctl dump-backup
+dbctl dump-backup
 # prune the repo
-ctl dump-prune
+dbctl dump-prune
 ```
 
 ## How to perform a full backup
