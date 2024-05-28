@@ -3,7 +3,7 @@ set -e
 
 ## If not set, return
 if [ -z "$PG_CRON_DB" ]; then
-  echo "PG_CRON_DB env, not configured. Extension not enabled"
+  echo "PG_CRON_DB env, not configured. Pg Cron Extension not enabled"
   exit;
 fi;
 

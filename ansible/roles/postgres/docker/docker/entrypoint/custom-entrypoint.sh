@@ -3,14 +3,17 @@
 
 ## Mandatory
 if [ -z "$POSTGRES_USER" ]; then
-  echo_err "Postgres User is mandatory"
+  echo "Postgres User is mandatory"
+  exit 1;
 fi
+
+POSTGRES_DB=${POSTGRES_DB:-$POSTGRES_USER}
 
 # Pg Cron Conf
 if [ -n "$PG_CRON_DB" ]; then
   if [ "$PG_CRON_DB" != "$POSTGRES_DB" ]; then
-    echo_err "The pg cron env (PG_CRON_DB) should have the value ($POSTGRES_DB), not the value ($PG_CRON_DB)"
-    echo_err "Sorry, we don't support multi-database yet."
+    echo "The pg cron env (PG_CRON_DB) should have the value ($POSTGRES_DB), not the value ($PG_CRON_DB)"
+    echo "Sorry, we don't support multi-database yet."
     exit 1;
   fi;
   echo "PG Cron enabled on the database $PG_CRON_DB. Setting the default database name"

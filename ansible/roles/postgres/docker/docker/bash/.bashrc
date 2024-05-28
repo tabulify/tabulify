@@ -33,3 +33,4 @@ function echo_err() {
   NC='\033[0m' # No Color
   echo -e "${RED}$1${NC}" >&2
 }
+export -f echo_err

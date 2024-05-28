@@ -212,8 +212,17 @@ RUN curl -L https://github.com/restic/restic/releases/download/v${RESTIC_VERSION
 ####################################
 ADD docker/postgres/initdb/* /docker-entrypoint-initdb.d
 
+# Bin
 ADD docker/bin/* /usr/local/bin/
-RUN chmod +x /usr/local/bin/dbctl
+
+# Dbctl
+# The log file should be writable by root and the user running postgres
+ENV DBCTL_HOME=${DATA_HOME}/dbctl
+ENV DBCTL_LOG_FILE=${DBCTL_HOME}/dbctl.log
+RUN chmod +x /usr/local/bin/dbctl && \
+    mkdir -p "$DBCTL_HOME" && \
+    touch "$DBCTL_LOG_FILE" && \
+    chmod a+w "$DBCTL_LOG_FILE"
 
 ####################################
 # Overmind
@@ -223,10 +232,15 @@ RUN curl -L "https://github.com/DarthSim/overmind/releases/download/v${OVERMIND_
     chmod +x overmind && \
     mv overmind /usr/local/bin/
 
+
+
+
 ## Custom Entrypoint
 ADD docker/entrypoint/custom-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/custom-entrypoint.sh
 ENTRYPOINT ["custom-entrypoint.sh"]
+
+
 
 
 # Procfile should be located in the working directory (or -f path/to/your/Procfile)

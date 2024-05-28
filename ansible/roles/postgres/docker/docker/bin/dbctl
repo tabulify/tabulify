@@ -1,21 +1,13 @@
 #!/bin/bash
 
+# When developing
+# docker cp docker/bin/dbctl postgres:/usr/local/bin/
+
 # Ensures that the pipeline returns the exit status of the last command to fail
 set -o pipefail
 # Exit the script if any error
 set -e
 
-# When developing
-# docker cp docker/bin/dbctl postgres:/usr/local/bin/
-
-CLI_NAME=$(basename "$0") # Name of the cli
-if [[ -z ${DATA_HOME} ]]; then
-  echo_err "The DATA_HOME env is mandatory"
-fi
-
-CLI_HOME=${DATA_HOME}/${CLI_NAME}
-CLI_LOG_FILE=${CLI_HOME}/${CLI_NAME}.log
-[ ! -f "$CLI_LOG_FILE" ] && mkdir -p "$CLI_HOME"; touch "$CLI_LOG_FILE"
 
 function finish() {
   printf "\n%s has finished\n" "${CLI_NAME}"
@@ -34,7 +26,7 @@ function echo_err() {
 function echo_log() {
 
   MESSAGE=$1
-  echo -e "$MESSAGE" 2>&1 | tee -a "${CLI_LOG_FILE}"
+  echo -e "$MESSAGE" 2>&1 | tee -a "${DBCTL_LOG_FILE}"
 
 }
 
@@ -61,6 +53,15 @@ function print_usage() {
 
 }
 
+#######################################
+## Main
+#######################################
+
+CLI_NAME=$(basename "$0") # Name of the cli
+if [[ -z ${DBCTL_LOG_FILE} ]]; then
+  echo_err "The DBCTL_LOG_FILE env is mandatory"
+  exit 1
+fi
 
 declare -a OPTIONS
 declare -a ARGS
@@ -91,12 +92,12 @@ if [ -z "$COMMAND" ]; then
 fi
 
 ## Global Parameters
-CTL_DATABASE_NAME=${PGDATABASE}
+CTL_DATABASE_NAME=${POSTGRES_DB}
 if [ -z "${CTL_DATABASE_NAME}" ]; then
-  CTL_DATABASE_NAME=${PGUSER}
+  CTL_DATABASE_NAME=${POSTGRES_USER}
 fi;
 if [ -z "${CTL_DATABASE_NAME}" ]; then
-  echo_err "The database could not be determined via PGDATABASE or PGUSER"
+  echo_err "The database could not be determined via POSTGRES_DB or POSTGRES_USER"
   exit 1;
 fi;
 
