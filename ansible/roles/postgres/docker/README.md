@@ -154,9 +154,21 @@ DBCTL_CHECK_SUBSET=5
 DBCTL_FORGET_POLICY=--keep-hourly 5 --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-yearly 3
 ```
 
+### Support - Restic Repo not found
+
+Be sure to path the good password in the environment variable ie `RESTIC_PASSWORD`.
+
+```bash
+postgres          | Restic Repo not found - Restic init at s3:host/bucket-name
+postgres          | Fatal: create key in repository at s3:host/bucket-name failed: repository master key and config already initialized
+```
 ## Postgres Exporter
 
 http://localhost:9187/metrics
 
 `POSTGRES_EXPORTER_FLAGS` env
 by default: `--log.level=warn`
+
+## Sql Exporter
+
+`SQL_EXPORTER_FLAGS`

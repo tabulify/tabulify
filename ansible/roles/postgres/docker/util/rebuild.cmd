@@ -6,6 +6,6 @@ SET CONTAINER_NAME=postgres
 docker stop %CONTAINER_NAME%
 docker remove %CONTAINER_NAME%
 docker build --target final -t %IMAGE_NAME% %SCRIPT_PATH%\..
-docker run --env-file secret.env --name %CONTAINER_NAME% -d -p 5434:5432 -p 9187:9187 -v C:\temp\data:/data %IMAGE_NAME%
+docker run --env-file %SCRIPT_PATH%\..\secret.env --name %CONTAINER_NAME% -d -p 5434:5432 -p 9187:9187 -v C:\temp\data:/data %IMAGE_NAME%
 docker logs %CONTAINER_NAME%
 

@@ -1,2 +1,3 @@
 postgres: postgres-entrypoint.sh postgres -c config_file=/etc/postgresql/postgresql.conf
 postgres_exporter: postgres-exporter-entrypoint.sh
+sql_exporter: sql-exporter-entrypoint.sh

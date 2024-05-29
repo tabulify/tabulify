@@ -200,6 +200,19 @@ EXPOSE 9187
 ADD docker/entrypoint/postgres-exporter-entrypoint.sh /usr/local/bin
 RUN chmod +x /usr/local/bin/postgres-exporter-entrypoint.sh
 
+####################################
+# Sql exporter
+# https://github.com/burningalchemist/sql_exporter
+# Why? Linked from postgres_exporter
+####################################
+
+EXPOSE 9399
+# The entrypoint
+ADD docker/entrypoint/sql-exporter-entrypoint.sh /usr/local/bin
+RUN chmod +x /usr/local/bin/sql-exporter-entrypoint.sh
+# The conf (conf is copied in the data directory at start)
+ADD docker/sql_exporter/* /sql_exporter
+
 #####################################
 # Restic
 #####################################
