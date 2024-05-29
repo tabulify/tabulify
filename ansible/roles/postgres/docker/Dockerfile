@@ -18,6 +18,8 @@ ARG OVERMIND_VERSION=2.5.1
 ARG PG_EXPORTER_VERSION=0.15.0
 # https://github.com/restic/restic/releases/
 ARG RESTIC_VERSION=0.16.4
+# https://github.com/burningalchemist/sql_exporter/releases/
+ARG SQL_EXPORTER_VERSION=0.14.3
 
 # C Extensions use pgxs for the build
 # https://www.postgresql.org/docs/current/extend-pgxs.html
@@ -100,7 +102,15 @@ ARG PG_EXPORTER_VERSION
 ARG PG_VERSION
 ARG PG_MAJOR_VERSION
 ARG RESTIC_VERSION
+ARG SQL_EXPORTER_VERSION
 
+LABEL image-version=${IMAGE_VERSION}
+LABEL pg-version=${PG_VERSION}
+LABEL pg-exporter-version=${PG_EXPORTER_VERSION}
+LABEL overmind-version=${OVERMIND_VERSION}
+LABEL pg-cron-version=${PG_MAJOR_VERSION}
+LABEL pg-vector-version=${PG_MAJOR_VERSION}
+LABEL sql-exporter-version=${SQL_EXPORTER_VERSION}
 
 ENV DATA_HOME=/data
 # PgData is not set in /var/lib/postgresql/data
@@ -146,12 +156,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && apt-get clean
 
 
-LABEL image-version=${IMAGE_VERSION}
-LABEL pg-version=${PG_VERSION}
-LABEL pg-exporter-version=${PG_EXPORTER_VERSION}
-LABEL overmind-version=${OVERMIND_VERSION}
-LABEL pg-cron-version=${PG_MAJOR_VERSION}
-LABEL pg-vector-version=${PG_MAJOR_VERSION}
+
 
 ###############################################
 # WAL archiving
@@ -205,13 +210,20 @@ RUN chmod +x /usr/local/bin/postgres-exporter-entrypoint.sh
 # https://github.com/burningalchemist/sql_exporter
 # Why? Linked from postgres_exporter
 ####################################
+ADD "https://github.com/burningalchemist/sql_exporter/releases/download/${SQL_EXPORTER_VERSION}/sql_exporter-${SQL_EXPORTER_VERSION}.linux-amd64.tar.gz" \
+    /tmp/sql_exporter.tar.gz
+RUN tar -xzvf /tmp/sql_exporter.tar.gz --strip-components=1 --no-anchored sql_exporter && \
+    rm /tmp/sql_exporter.tar.gz && \
+    chmod +x sql_exporter && \
+    mv sql_exporter /usr/local/bin/
 
 EXPOSE 9399
 # The entrypoint
 ADD docker/entrypoint/sql-exporter-entrypoint.sh /usr/local/bin
 RUN chmod +x /usr/local/bin/sql-exporter-entrypoint.sh
 # The conf (conf is copied in the data directory at start)
-ADD docker/sql_exporter/* /sql_exporter
+# the end / in the target is important to tell that this is a directory
+ADD docker/sql_exporter/* /sql_exporter/
 
 #####################################
 # Restic
@@ -237,6 +249,7 @@ ADD docker/postgres/initdb/* /docker-entrypoint-initdb.d
 # Bin
 ADD docker/bin/* /usr/local/bin/
 # Scripts
+# the end / in the target is important to tell that this is a directory
 ADD docker/postgres/script/* /script/
 
 # Dbctl

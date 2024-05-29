@@ -169,6 +169,12 @@ http://localhost:9187/metrics
 `POSTGRES_EXPORTER_FLAGS` env
 by default: `--log.level=warn`
 
+`POSTGRES_EXPORTER_ENV` env
+by default: `DATA_SOURCE_NAME='sslmode=disable' PG_EXPORTER_DISABLE_SETTINGS_METRICS=true`
+
+User and host are mandatory
+[Data Source Name Doc](https://pkg.go.dev/github.com/lib/pq#hdr-Connection_String_Parameters)
+
 ## Sql Exporter
 
 `SQL_EXPORTER_FLAGS`
