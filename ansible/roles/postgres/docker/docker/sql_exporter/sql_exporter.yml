@@ -21,12 +21,12 @@ target:
   # name: "prices_db"
   # Data source name always has a URI schema that matches the driver name. In some cases (e.g. MySQL)
   # the schema gets dropped or replaced to match the driver expected DSN format.
-  data_source_name: 'postgres:/var/run/postgresql'
+  data_source_name: 'postgres:/var/run/postgresql?application_name=sql_exporter'
 
   # Collectors (referenced by name) to execute on the target.
   # Glob patterns are supported (see <https://pkg.go.dev/path/filepath#Match> for syntax).
   # collectors: [pricing_data_freshness, pricing_*]
-  collectors: [ * ]
+  collectors: [ '*' ]
 
   # In case you need to connect to a backend that only responds to a limited set of commands (e.g. pgbouncer) or
   # a data warehouse you don't want to keep online all the time (due to the extra cost), you might want to disable `ping`
