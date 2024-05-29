@@ -43,8 +43,8 @@ function print_usage() {
   echo "     * db-sql-restore snapshotId [targetDbName]     - restore the sql database from a snapshot id into eventually another database"
   echo "     * db-archive-dump                              - perform a archive dump and a snapshot"
   echo "     * db-archive-restore snapshotId [targetDbName] - restore a database archive dump from a snapshot id into eventually another database"
-  echo "     * dump-ls                                      - list the dump in the snapshots"
-  echo "     * dump-prune                                   - forget old snapshots and perform dump integrity checks"
+  echo "     * dump-ls                                      - list the dump files in the snapshots"
+  echo "     * dump-prune                                   - forget old snapshots and perform dump file integrity checks"
   echo "     * dump-fetch snapshotId path                   - fetch/get a file/dump by path"
   echo "     * db-ls                                        - list the db in the postgres instance (cluster)"
   echo "     * extension-ls                                 - list the extensions"
@@ -76,11 +76,12 @@ function dbSqlRestore(){
   if [ "$RESULT" == "1" ]; then
     echo_log "The database ${targetDbName} exits and should be dropped before restoration"
     echo_log "Dropping the database ${targetDbName} before restoration"
-    dropdb "${targetDbName}" --force -i || exit 1
+    dropdb "${targetDbName}" --force -i
     echo_log "Done"
   fi;
   echo_log "Creating the database ${targetDbName}"
-  createdb "${targetDbName}" || exit 1
+  # load the output of pg_restore into a truly empty database (ie template0)
+  createdb -T template0 "${targetDbName}"
   echo_log "Done"
   echo_log "Executing the Sql dump"
   gunzip < "${dumpFileToRestore}" | psql --set ON_ERROR_STOP=on --single-transaction "${targetDbName}"
@@ -119,33 +120,57 @@ function dbArchiveRestore(){
     echo_log "Done"
   fi;
   echo_log "Creating the database ${targetDbName}"
-  createdb "${targetDbName}"
+  # load the output of pg_restore into a truly empty database (ie template0)
+  createdb -T template0 "${targetDbName}"
   echo_log "Done"
   echo_log "Executing the Archive dump"
-  pg_restore -d "${targetDbName}" "${dumpFileToRestore}"
+
+  # the -d option makes a direct connection with libpq
+  # If the connection does not work, try with psql
+  command="pg_restore -d ${targetDbName} ${dumpFileToRestore}"
+  echo_log "\nExecuting the command:\n$command\n"
+  eval "$command"
+
   echo_log "Done"
   echo_log "Restoration done and successful"
 }
 
 function dbSqlDump(){
   echo_log "Dumping the database (${CTL_DATABASE_NAME})"
-  pg_dump "${CTL_DATABASE_NAME}" | gzip  > "${DB_DUMP_SQL_FILE}"
+
+  command="pg_dump ${CTL_DATABASE_NAME} | gzip  > ${DB_DUMP_SQL_FILE}"
+  echo_log "\nExecuting the command:\n$command\n"
+  eval "$command"
+
   echo_log "Done"
   echo_log "Loading into Restic S3 repo (${PG_DUMP_DATA})"
-  restic backup "${PG_DUMP_DATA}"
+
+  command="restic backup ${PG_DUMP_DATA}"
+  echo_log "\nExecuting the command:\n$command\n"
+  eval "$command"
+
   echo_log "Restic upload done"
   echo_log "Backup done"
+
 }
 
 function dbArchiveDump(){
 
   echo_log "Dumping the database (${CTL_DATABASE_NAME}) at ${DB_DUMP_ARCHIVE_FILE}"
+
   # F means format and c specify the custom format
   # https://www.postgresql.org/docs/current/app-pgdump.html
-  pg_dump --format=c "${CTL_DATABASE_NAME}" > "${DB_DUMP_ARCHIVE_FILE}"
+  command="pg_dump --format=c ${CTL_DATABASE_NAME} > ${DB_DUMP_ARCHIVE_FILE}"
+  echo_log "\nExecuting the command:\n$command\n"
+  eval "$command"
+
   echo_log "Done"
   echo_log "Loading into Restic S3 repo (${PG_DUMP_DATA})"
-  restic backup "${PG_DUMP_DATA}"
+
+  command="restic backup ${PG_DUMP_DATA}"
+  echo_log "\nExecuting the command:\n$command\n"
+  eval "$command"
+
   echo_log "Restic upload done"
   echo_log "Backup done"
 }
@@ -158,12 +183,20 @@ function dbDirDump(){
   if [ -d "${DB_DUMP_ARCHIVE_DIR}" ]; then
       rmdir "${DB_DUMP_ARCHIVE_DIR}"
   fi
+
   # F means format and d specify the directory format
   # https://www.postgresql.org/docs/current/app-pgdump.html
-  pg_dump --format=d "${CTL_DATABASE_NAME}" -f "${DB_DUMP_ARCHIVE_DIR}"
+  command="pg_dump --format=d ${CTL_DATABASE_NAME} -f ${DB_DUMP_ARCHIVE_DIR}"
+  echo_log "\nExecuting the command:\n$command\n"
+  eval "$command"
+
   echo_log "Done"
   echo_log "Loading into Restic S3 repo (${PG_DUMP_DATA})"
-  restic backup "${PG_DUMP_DATA}"
+
+  command="restic backup ${PG_DUMP_DATA}"
+  echo_log "\nExecuting the command:\n$command\n"
+  eval "$command"
+
   echo_log "Restic upload done"
   echo_log "Backup done"
 }
@@ -184,13 +217,42 @@ function dumpFetch(){
   fi
   path=${ARGS[1]}
   echo_log "Fetching the path (${path}) from the snapshot id ${snapshot}"
+
   command="restic restore --include ${path} --target $RESTORE_DIR_BASE --verify ${snapshot}"
   echo_log "\nExecuting the command:\n$command\n"
   eval "$command"
+
   targetDumpFileInRestore="${RESTORE_DIR_BASE}${path}"
   echo_log "Fetch done"
   echo_log "The restored file is available at ${targetDumpFileInRestore}"
 
+}
+
+function dumpPrune(){
+
+  echo_log "Rolling the dump files (forget and prune)"
+  command="restic forget --prune ${DBCTL_FORGET_POLICY:---keep-hourly 5 --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-yearly 3}"
+  echo_log "\nExecuting the command:\n$command\n"
+  eval "$command"
+
+  echo_log "Data check with subset"
+  COUNTER_FILE=".counter"
+  COUNTER_TOTAL=${DBCTL_CHECK_SUBSET:-5}
+  if [ ! -f "$COUNTER_FILE" ]; then
+      echo 0 > "$COUNTER_FILE"
+  fi
+  counter=$(cat "$COUNTER_FILE")
+  counter=$((counter + 1))
+  if [ "$counter" -gt $COUNTER_TOTAL ]; then
+      counter=1
+  fi
+  echo "$counter" > "$COUNTER_FILE"
+
+  command="restic check --read-data-subset=$counter/$COUNTER_TOTAL"
+  echo_log "\nExecuting the command:\n$command\n"
+  eval "$command"
+
+  echo_log "Dump Prune done"
 }
 
 #######################################
@@ -343,9 +405,7 @@ dump-ls)
   restic find --long  "${PG_DUMP_DATA}"
   ;;
 dump-prune)
-  restic forget --keep-hourly 5 --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-yearly 3;
-  restic prune;
-  restic check --read-data;
+  dumpPrune
   ;;
 db-ls)
   psql -c "\l"

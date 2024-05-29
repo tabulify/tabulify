@@ -20,6 +20,10 @@ export PGUSER="${POSTGRES_USER}"
 export PGDATABASE="${POSTGRES_DB}"
 # PGPASSWORD is not required to connect from localhost
 
+# color in diagnostic messages (https://www.postgresql.org/docs/current/app-pgrestore.html)
+# value may be always, auto and never
+export PG_COLOR=always
+
 
 export LS_OPTIONS='--color=auto'
 # eval "$(dircolors)"
