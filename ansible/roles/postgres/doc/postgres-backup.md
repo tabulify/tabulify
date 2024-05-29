@@ -104,3 +104,4 @@ $$ LANGUAGE plpythonu;
 ```sql
 SELECT exec_shell('ls -la');
 ```
+

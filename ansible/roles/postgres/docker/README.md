@@ -125,3 +125,18 @@ https://www.postgresql.org/docs/9.1/creating-cluster.html
 We don't use SQL restoration for schema
 because with cascade, drops all objects that depend on the schema.
 And this object may be external.
+
+There is no guarantee that the results of a specific-schema dump
+can be successfully restored into a clean database.
+
+Why? Because the dump (pg_dump) will not dump any other database dependent objects
+than the selected schema(s).
+
+## Dump Format
+
+* dir: one data file by tables. It will upload only the table changed
+* sql: a sql file
+* archive: one custom archive format
+
+
+
