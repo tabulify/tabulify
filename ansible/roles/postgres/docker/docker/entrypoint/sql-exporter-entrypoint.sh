@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Env
+# .bashrc to bring the connection environments
+. /root/.bashrc
+
 # https://github.com/burningalchemist/sql_exporter
 # Linked from postgres_exporter
 

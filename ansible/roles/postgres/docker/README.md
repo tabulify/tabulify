@@ -178,3 +178,5 @@ User and host are mandatory
 ## Sql Exporter
 
 `SQL_EXPORTER_FLAGS`
+
+[](https://github.com/free/sql_exporter/blob/master/README.md#data-source-names)

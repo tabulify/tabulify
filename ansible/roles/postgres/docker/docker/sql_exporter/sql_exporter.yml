@@ -21,7 +21,7 @@ target:
   # name: "prices_db"
   # Data source name always has a URI schema that matches the driver name. In some cases (e.g. MySQL)
   # the schema gets dropped or replaced to match the driver expected DSN format.
-  data_source_name: 'postgres:/var/run/postgresql?application_name=sql_exporter'
+  data_source_name: 'postgres:?application_name=sql_exporter'
 
   # Collectors (referenced by name) to execute on the target.
   # Glob patterns are supported (see <https://pkg.go.dev/path/filepath#Match> for syntax).
