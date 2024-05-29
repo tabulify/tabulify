@@ -1,16 +1,12 @@
 # Postgres
 
-* Iterative to debug the created docker file
-```
-docker run --env-file secret.env --rm -it postgres_final
-```
 
 * To run with `pgdata` (/var/lib/postgresql/data) on
   the [disk](https://github.com/docker-library/docs/blob/master/postgres/README.md#where-to-store-data)
 
 ```bat
 REM on windows
-docker run --env-file secret.env --name postgres -d -p 5434:5432 -v C:\temp\data:/var/lib/postgresql/data postgres-final
+docker run --env-file secret.env --name postgres -d -p 5434:5432 -p 9187:9187 -v C:\temp\data:/data postgres-final
 ```
 
 ## Dump
@@ -157,3 +153,10 @@ DBCTL_CHECK_SUBSET=5
 ```
 DBCTL_FORGET_POLICY=--keep-hourly 5 --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-yearly 3
 ```
+
+## Postgres Exporter
+
+http://localhost:9187/metrics
+
+`POSTGRES_EXPORTER_FLAGS` env
+by default: `--log.level=warn`

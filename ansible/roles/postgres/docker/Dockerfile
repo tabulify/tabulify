@@ -194,6 +194,12 @@ RUN curl -L https://github.com/prometheus-community/postgres_exporter/releases/d
     chmod +x postgres_exporter && \
     mv postgres_exporter /usr/local/bin/
 
+# The port
+EXPOSE 9187
+# The entrypoint
+ADD docker/entrypoint/postgres-exporter-entrypoint.sh /usr/local/bin
+RUN chmod +x /usr/local/bin/postgres-exporter-entrypoint.sh
+
 #####################################
 # Restic
 #####################################
@@ -228,6 +234,7 @@ RUN chmod +x /usr/local/bin/dbctl && \
     mkdir -p "$DBCTL_HOME" && \
     touch "$DBCTL_LOG_FILE" && \
     chmod a+w "$DBCTL_LOG_FILE"
+
 
 ####################################
 # Overmind

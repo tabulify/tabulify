@@ -236,14 +236,14 @@ function dumpPrune(){
   eval "$command"
 
   echo_log "Data check with subset"
-  COUNTER_FILE=".counter"
+  COUNTER_FILE="$DATA_HOME/dbctl-check-subset-counter"
   COUNTER_TOTAL=${DBCTL_CHECK_SUBSET:-5}
   if [ ! -f "$COUNTER_FILE" ]; then
       echo 0 > "$COUNTER_FILE"
   fi
   counter=$(cat "$COUNTER_FILE")
   counter=$((counter + 1))
-  if [ "$counter" -gt $COUNTER_TOTAL ]; then
+  if [ "$counter" -gt "$COUNTER_TOTAL" ]; then
       counter=1
   fi
   echo "$counter" > "$COUNTER_FILE"
