@@ -83,6 +83,7 @@ function psRestart(){
   fi
   process=${ARGS[0]}
   command="overmind restart ${process}"
+  sleep 5 && overmind restart sql_exporter; cat /proc/1/fd/1 /proc/1/fd/2
   echo_log "\nExecuting the command:\n$command\n"
   eval "$command"
   echo_log "$process restarted"
@@ -277,7 +278,20 @@ function walGRestore(){
   stop_word="recovered"
 
   # read the stdout (fd/1) and stderr (fd/2) of overmind (proc/1)
+  # pb the PID on restart are not the same
+  # https://github.com/tmux/tmux/wiki/Control-Mode/fd5e33023fe7c16cb573b954d05c70e16d225a9a#pane-output
+  # debug the process (e.g. strace, dtrace/dtruss, gdb, lldb, ...)
+  # strace works using the ptrace system call, so if ptrace isn’t allowed
+  # ptrace needs to be allowed via a switch to the docker command
+  # strace -e trace=write -s 1000 -p 1 2>&1 | while ....
+  # ie prints write operation of the process (1000 length) specified by PID (-p 1)
+  # https://unix.stackexchange.com/questions/58550/how-to-view-the-output-of-a-running-process-in-another-bash-session
+  # watch which snoops a given tty, e.g.
+  # watch /dev/pts/0
+  # https://github.com/rapiz1/catp/
   cat /proc/1/fd/1 /proc/1/fd/2 | while IFS= read -r line
+  # https://github.com/DarthSim/overmind/issues/111
+  # cat /proc/20/fd/1 /proc/20/fd/2
   do
       echo "$line"
       if [[ "$line" == *"$stop_word"* ]]; then

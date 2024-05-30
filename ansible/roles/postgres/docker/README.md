@@ -193,6 +193,7 @@ Change the config files at: `/data/sql_exporter`
 overmind restart sql_exporter
 ```
 
+
 ## Dev
 
 When developing,
@@ -221,6 +222,8 @@ You can:
 * Add timestamp: [OVERMIND_SHOW_TIMESTAMPS](https://github.com/DarthSim/overmind?tab=readme-ov-file#show-timestamps)
 
 ### Tmux
+
+https://github.com/tmux/tmux/wiki/Getting-Started
 
 ```
 overmind connect
