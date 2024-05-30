@@ -277,6 +277,7 @@ function walGRestore(){
   overmind log postgres
   stop_word="recovered"
 
+  # 2 options: strace of snoops a tty
   # read the stdout (fd/1) and stderr (fd/2) of overmind (proc/1)
   # pb the PID on restart are not the same
   # https://github.com/tmux/tmux/wiki/Control-Mode/fd5e33023fe7c16cb573b954d05c70e16d225a9a#pane-output
@@ -289,6 +290,7 @@ function walGRestore(){
   # watch which snoops a given tty, e.g.
   # watch /dev/pts/0
   # https://github.com/rapiz1/catp/
+  # if you cat you just delete from the log the long line
   cat /proc/1/fd/1 /proc/1/fd/2 | while IFS= read -r line
   # https://github.com/DarthSim/overmind/issues/111
   # cat /proc/20/fd/1 /proc/20/fd/2
