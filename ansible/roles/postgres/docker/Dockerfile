@@ -273,21 +273,14 @@ RUN apt-get install --no-install-recommends -y \
     postgresql-plpython3-${PG_MAJOR}
 
 ####################################
-# Overmind
+# Supervisor
 ####################################
-RUN curl -L "https://github.com/DarthSim/overmind/releases/download/v${OVERMIND_VERSION}/overmind-v${OVERMIND_VERSION}-linux-amd64.gz" -o overmind.gz && \
-    gunzip overmind.gz && \
-    chmod +x overmind && \
-    mv overmind /usr/local/bin/
 
-# Overmind dep
-RUN apt-get install --no-install-recommends -y tmux
-
-# Procfile should be located in the working directory (or -f path/to/your/Procfile)
-ADD Procfile .
-ADD docker/entrypoint/overmind-entrypoint.sh /usr/local/bin/
+ADD supervisor.conf .
+ADD docker/entrypoint/supervisor-entrypoint.sh /usr/local/bin/
 # wrapper around overmind to allow customization
-RUN chmod +x /usr/local/bin/overmind-entrypoint.sh
+RUN chmod +x /usr/local/bin/supervisor-entrypoint.sh && \
+    apt-get install --no-install-recommends -y supervisor
 
 ################################# \
 # Clean
@@ -298,4 +291,4 @@ RUN rm -rf /var/lib/apt/lists/* /tmp/* \
     && apt-get clean
 
 # CMD
-CMD ["overmind-entrypoint.sh"]
+CMD ["supervisor-entrypoint.sh"]

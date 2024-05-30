@@ -292,6 +292,7 @@ function walGRestore(){
   # https://github.com/rapiz1/catp/
   # if you cat you just delete from the log the long line
   cat /proc/1/fd/1 /proc/1/fd/2 | while IFS= read -r line
+  # you can write to them ls >/proc/1/fd/1
   # https://github.com/DarthSim/overmind/issues/111
   # cat /proc/20/fd/1 /proc/20/fd/2
   do
