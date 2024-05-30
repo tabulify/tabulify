@@ -35,23 +35,56 @@ function print_usage() {
   echo ""
   echo "Usage of the cli ${CLI_NAME} against the database (${CTL_DATABASE_NAME})"
   echo ""
-  echo "   ${CLI_NAME} command [--option[=value] ...]"
+  echo "   ${CLI_NAME} command [--option[=value] ...] arg1 arg2 ..."
   echo ""
   echo "where command is one of:"
   echo "     * help"
-  echo "     * db-sql-dump                                  - perform a sql database dump and a snapshot"
-  echo "     * db-sql-restore snapshotId [targetDbName]     - restore the sql database from a snapshot id into eventually another database"
-  echo "     * db-archive-dump                              - perform a archive dump and a snapshot"
-  echo "     * db-archive-restore snapshotId [targetDbName] - restore a database archive dump from a snapshot id into eventually another database"
-  echo "     * dump-ls                                      - list the dump files in the snapshots"
-  echo "     * dump-prune                                   - forget old snapshots and perform dump file integrity checks"
-  echo "     * dump-fetch snapshotId path                   - fetch/get a file/dump by path"
-  echo "     * db-ls                                        - list the db in the postgres instance (cluster)"
-  echo "     * extension-ls                                 - list the extensions"
-  echo "     * conf                                         - print the conf file"
-  echo "     * job-ls                                       - print the pg_cron jobs"
+  echo "     * db-backup-sql-dump                                  - perform a sql database dump and a snapshot"
+  echo "     * db-backup-sql-restore snapshotId [targetDbName]     - restore the sql database from a snapshot id into eventually another database"
+  echo "     * db-backup-archive-dump                              - perform a database archive dump and a snapshot"
+  echo "     * db-backup-archive-restore snapshotId [targetDbName] - restore a database archive dump from a snapshot id into eventually another database"
+  echo "     * db-ls                            - list the db in the postgres instance (cluster)"
+  echo "     * db-extension-ls                  - list the extensions installed"
+  echo "     * db-conf                          - print the postgres.conf file"
+  echo "     * dump-ls                          - list the dump files in the snapshots"
+  echo "     * dump-prune                       - forget old snapshots with prune policy and perform dump file integrity checks"
+  echo "     * dump-fetch snapshotId path       - fetch/get a file/dump by path"
+  echo "     * ps-ls                            - list the processes running"
+  echo "     * ps-restart processName           - restart a process"
+  echo "     * ps-start processName             - start a process"
+  echo "     * job-ls                           - print the pg_cron jobs"
   echo ""
 
+}
+
+function psLs(){
+  command="overmind ps"
+  echo_log "\nExecuting the command:\n$command\n"
+  eval "$command"
+}
+function psRestart(){
+  if [ -z "${ARGS[0]}" ]; then
+      echo_err 'The process name should be given as first argument'
+      echo_err 'use the ps-ls command to get the available process name'
+      exit 1
+  fi
+  process=${ARGS[0]}
+  command="overmind restart ${process}"
+  echo_log "\nExecuting the command:\n$command\n"
+  eval "$command"
+  echo_log "$process restarted"
+}
+function psStart(){
+  if [ -z "${ARGS[0]}" ]; then
+      echo_err 'The process name should be given as first argument'
+      echo_err 'use the ps-ls command to get the available process name'
+      exit 1
+  fi
+  process=${ARGS[0]}
+  command="overmind start ${process}"
+  echo_log "\nExecuting the command:\n$command\n"
+  eval "$command"
+  echo_log "$process started"
 }
 
 function dbSqlRestore(){
@@ -67,16 +100,22 @@ function dbSqlRestore(){
   if [ -z "${targetDbName}" ]; then
       targetDbName=$CTL_DATABASE_NAME
   fi
+
   echo_log "Restoring the dump (${DB_DUMP_SQL_FILE}) from the snapshot ${snapshot} into the database (${targetDbName})"
-  restic restore --include "${DB_DUMP_SQL_FILE}" --target $RESTORE_DIR_BASE --verify "${snapshot}"
+  command="restic restore --include ${DB_DUMP_SQL_FILE} --target $RESTORE_DIR_BASE --verify ${snapshot}"
+  echo_log "\nExecuting the command:\n$command\n"
+  eval "$command"
   echo_log "Restoration done"
+
   dumpFileToRestore="${RESTORE_DIR_BASE}${DB_DUMP_SQL_FILE}"
   echo_log "Restoring the database ${targetDbName} with the dump (${dumpFileToRestore}) into the database (${targetDbName})"
   RESULT=$(psql -tAc "SELECT 1 FROM pg_database WHERE datname='${targetDbName}'")
   if [ "$RESULT" == "1" ]; then
     echo_log "The database ${targetDbName} exits and should be dropped before restoration"
     echo_log "Dropping the database ${targetDbName} before restoration"
-    dropdb "${targetDbName}" --force -i
+    command="dropdb ${targetDbName} --force -i"
+    echo_log "\nExecuting the command:\n$command\n"
+    eval "$command"
     echo_log "Done"
   fi;
   echo_log "Creating the database ${targetDbName}"
@@ -228,6 +267,22 @@ function dumpFetch(){
 
 }
 
+function walGRestore(){
+
+  overmind stop postgres
+  overmind restart postgres
+  overmind log postgres
+#  stop_word="recovered"
+#
+#  overmind log postgres | while IFS= read -r line
+#  do
+#      echo "$line"
+#      if [[ "$line" == *"$stop_word"* ]]; then
+#          break
+#      fi
+#  done
+
+}
 function dumpPrune(){
 
   echo_log "Rolling the dump files (forget and prune)"
@@ -320,86 +375,23 @@ echo "${CLI_NAME^} ${COMMAND^}"
 echo "-------------------------------------------"
 echo ""
 case ${COMMAND} in
-db-sql-dump)
+db-backup-sql-dump)
   dbSqlDump
   ;;
-db-sql-restore)
+db-backup-sql-restore)
   dbSqlRestore
   ;;
-db-archive-dump)
+db-backup-archive-dump)
   dbArchiveDump
   ;;
-db-archive-restore)
+db-backup-archive-restore)
   dbArchiveRestore
   ;;
-db-dir-dump)
+db-backp-dir-dump)
   dbDirDump
   ;;
 dump-fetch)
   dumpFetch
-  ;;
-dump-sc-backup)
-  targetSchemaName=${ARGS[0]}
-  if [ -z "${targetSchemaName}" ]; then
-      targetSchemaName=$DEFAULT_SCHEMA_NAME
-  fi
-  if [ -z "${targetSchemaName}" ]; then
-    echo_err 'No schema defined as first argument and no DEFAULT_SCHEMA_NAME env found'
-    echo_err 'A schema is mandatory for a schema dump'
-    exit 1
-  fi
-  echo_log "Dumping the schema (${targetSchemaName}) from the database (${CTL_DATABASE_NAME})"
-  SC_DUMP_FILE="$PG_DUMP_DATA"/dumpfile-sc-"${targetSchemaName}".sql.gz
-  pg_dump --schema="$targetSchemaName" "${CTL_DATABASE_NAME}" | gzip  > "${SC_DUMP_FILE}"
-  echo_log "Done"
-  echo_log "Loading into Restic S3 repo (${SC_DUMP_FILE})"
-  restic backup "${PG_DUMP_DATA}"
-  echo_log "Restic upload done"
-  echo_log "Backup done"
-  ;;
-dump-sc-restore)
-
-  if [ -z "${ARGS[0]}" ]; then
-      echo_err 'The Snapshot Id should be given as first argument'
-      echo_err 'use the dump-ls command to get the available snapshot id'
-      exit 1
-    fi
-  snapshot=${ARGS[0]}
-
-  targetSchemaName=${ARGS[1]}
-  if [ -z "${targetSchemaName}" ]; then
-      targetSchemaName=$DEFAULT_SCHEMA_NAME
-  fi
-  if [ -z "${targetSchemaName}" ]; then
-    echo_err 'No schema defined as second argument and no DEFAULT_SCHEMA_NAME env found'
-    echo_err 'A schema is mandatory for a schema restore'
-    exit 1
-  fi
-  scTargetDatabaseName=$CTL_DATABASE_NAME
-  echo_log "Restoring the schema (${targetSchemaName}) against the database (${CTL_DATABASE_NAME})"
-
-  SC_DUMP_FILE="$PG_DUMP_DATA"/dumpfile-sc-"${targetSchemaName}".sql.gz
-  echo_log "Fetching the dump (${SC_DUMP_FILE}) from the snapshot ${snapshot} into the database (${scTargetDatabaseName})"
-  restic restore --include "${SC_DUMP_FILE}" --target $RESTORE_DIR_BASE --verify "${snapshot}"
-  echo_log "Fetching done"
-
-  echo "The schema (${targetSchemaName}) will be deleted with before restoration. Do you want to continue? (y/N)"
-  read -r answer
-  if [ "$answer" != "y" ]; then
-      echo "Exiting..."
-      exit
-  fi
-  psql -c "drop schema if exists ${targetSchemaName}";
-  echo "Schema ${targetSchemaName} dropped"
-  echo "Creating Schema ${targetSchemaName}"
-  psql -c "create schema ${targetSchemaName}"
-  echo "Schema ${targetSchemaName} created"
-
-  scDumpFileToRestore="${RESTORE_DIR_BASE}${SC_DUMP_FILE}"
-  echo_log "Executing the Sql dump ${scDumpFileToRestore}"
-  gunzip < "${scDumpFileToRestore}" | psql --set ON_ERROR_STOP=on --single-transaction "${scTargetDatabaseName}"
-  echo_log "Done"
-  echo_log "Restoration done and successful"
   ;;
 dump-ls)
   restic find --long  "${PG_DUMP_DATA}"
@@ -415,10 +407,19 @@ wal-ls)
 #  psql -c "SELECT pg_switch_wal()"
   psql -c "SHOW archive_mode; SHOW archive_command"
   ;;
-extension-ls)
+db-extension-ls)
   psql -c "\dx"
   ;;
-conf)
+ps-ls)
+  psLs
+  ;;
+ps-restart)
+  psRestart
+  ;;
+ps-start)
+  psStart
+  ;;
+db-conf)
   cat /etc/postgresql/postgresql.conf
   ;;
 pg)

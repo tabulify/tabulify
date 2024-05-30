@@ -1,8 +1,9 @@
 @echo on
 
 SET SCRIPT_PATH=%~dp0
-SET IMAGE_NAME=postgres-final
+SET IMAGE_NAME=packaged-container-postgres
 SET CONTAINER_NAME=postgres
+
 docker stop %CONTAINER_NAME%
 docker remove %CONTAINER_NAME%
 docker build --target final -t %IMAGE_NAME% %SCRIPT_PATH%\..

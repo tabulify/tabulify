@@ -134,6 +134,8 @@ than the selected schema(s).
 * sql: a sql file
 * archive: one custom archive format
 
+## Wal-g
+
 ## Restic
 
 ### Subset Data Check
@@ -164,6 +166,8 @@ postgres          | Fatal: create key in repository at s3:host/bucket-name faile
 ```
 ## Postgres Exporter
 
+The Postgres exporter is `optional` and will not kill the container if shutdown.
+
 http://localhost:9187/metrics
 
 `POSTGRES_EXPORTER_FLAGS` env
@@ -177,6 +181,41 @@ User and host are mandatory
 
 ## Sql Exporter
 
+The SQL exporter is `optional`
+
 `SQL_EXPORTER_FLAGS`
 
 [](https://github.com/free/sql_exporter/blob/master/README.md#data-source-names)
+
+Change the config files at: `/data/sql_exporter`
+
+```bash
+overmind restart sql_exporter
+```
+
+## Dev
+
+When developing,
+
+* copy the [secxx.env](secxx.env) to `secret.env`
+* set your value
+* and use the [rebuild.com](util/rebuild.cmd) to rebuild the image.
+
+## Overmind (Process manager)
+
+```bash
+OVERMIND_ENV='OVERMIND_CAN_DIE=sql_exporter,postgres_exporter'
+```
+
+You can:
+
+* Disable the port: [OVERMIND_NO_PORT](https://github.com/DarthSim/overmind?tab=readme-ov-file#disabling-port)
+* Disable process to
+  run: [OVERMIND_IGNORED_PROCESSES](https://github.com/DarthSim/overmind?tab=readme-ov-file#not-running-the-specified-processes)
+* Scale the
+  process: [OVERMIND_FORMATION](https://github.com/DarthSim/overmind?tab=readme-ov-file#scaling-processes-formation)
+* Set processes to
+  auto-restart : [OVERMIND_AUTO_RESTART](https://github.com/DarthSim/overmind?tab=readme-ov-file#auto-restarting-processes)
+* Change the log color for each
+  process: [OVERMIND_COLORS](https://github.com/DarthSim/overmind?tab=readme-ov-file#specifying-the-colors)
+* Add timestamp: [OVERMIND_SHOW_TIMESTAMPS](https://github.com/DarthSim/overmind?tab=readme-ov-file#show-timestamps)
