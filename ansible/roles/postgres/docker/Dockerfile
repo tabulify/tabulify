@@ -95,7 +95,7 @@ ENTRYPOINT ["wal-g"]
 # Postgres Final
 ###############################################
 FROM postgres:${PG_DOCKER_TAG} as final
-# build time variable
+
 ARG IMAGE_VERSION
 ARG OVERMIND_VERSION
 ARG PG_EXPORTER_VERSION
@@ -115,57 +115,35 @@ LABEL pg-cron-version=${PG_MAJOR_VERSION}
 LABEL pg-vector-version=${PG_MAJOR_VERSION}
 LABEL sql-exporter-version=${SQL_EXPORTER_VERSION}
 
-###############################################
-## The mounted directory
-###############################################
-ENV DATA_HOME=/data
-
-########################
-# Deb Package Extension
-# Safe Update
-########################
-# Before os part as it's installed with a deb package
-COPY --from=pg-safeupdate /tmp/*.deb /tmp
-
 ##############
-# OS
+# Env
 ###############
+## The mounted directory
+ENV DATA_HOME=/data
 
 # Ensure UTF-8
 ENV LANG=en_US.UTF-8
 ENV LC_CTYPE=C.UTF-8
 ENV LC_COLLATE=C.UTF-8
+# TZ is the OS env
+# Gnu https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+ENV TZ 'Etc/UTC'
 
 # Postgres Local Connection env
 # so that when logged in, we can connect automatically and wal-g also
 ADD docker/bash/.bashrc /root/.bashrc
 
-
-# Installation with PG Package Extension
+##############
+# Common Package
+###############
 RUN apt-get update && apt-get install --no-install-recommends -y \
-    postgresql-${PG_MAJOR}-cron \
-    postgresql-${PG_MAJOR}-pgvector \
-    python3 \
-    postgresql-plpython3-${PG_MAJOR} \
     bash \
     curl \
+    ca-certificates \
     unzip \
     bzip2 \
-    /tmp/*.deb \
-    # Needed for Overmind \
-    tmux \
     # Templating with envsubst
-    gettext \
-    # Needed for anything using libcurl
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/* /tmp/* \
-    # No apt-get can be used from this point or you need to run apt-get update \
-    # to update the repo again
-    && apt-get clean
-
-# TZ is the OS env
-# Gnu https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
-ENV TZ 'Etc/UTC'
+    gettext
 
 ###############################################
 # WAL-g, WAL archiving
@@ -283,6 +261,17 @@ ADD docker/postgres/initdb/* /docker-entrypoint-initdb.d
 # the end / in the target is important to tell that this is a directory
 ADD docker/postgres/script/* /script/
 
+# pg-safeupdate extension
+COPY --from=pg-safeupdate /tmp/*.deb /tmp
+RUN apt-get install --no-install-recommends -y /tmp/*.deb
+
+# cron, pgvector, plpython extension
+RUN apt-get install --no-install-recommends -y \
+    postgresql-${PG_MAJOR}-cron \
+    postgresql-${PG_MAJOR}-pgvector \
+    python3 \
+    postgresql-plpython3-${PG_MAJOR}
+
 ####################################
 # Overmind
 ####################################
@@ -291,10 +280,22 @@ RUN curl -L "https://github.com/DarthSim/overmind/releases/download/v${OVERMIND_
     chmod +x overmind && \
     mv overmind /usr/local/bin/
 
+# Overmind dep
+RUN apt-get install --no-install-recommends -y tmux
+
 # Procfile should be located in the working directory (or -f path/to/your/Procfile)
 ADD Procfile .
 ADD docker/entrypoint/overmind-entrypoint.sh /usr/local/bin/
 # wrapper around overmind to allow customization
 RUN chmod +x /usr/local/bin/overmind-entrypoint.sh
+
+################################# \
+# Clean
+#################################
+RUN rm -rf /var/lib/apt/lists/* /tmp/* \
+    # No apt-get can be used from this point or you need to run apt-get update \
+    # to update the repo again
+    && apt-get clean
+
 # CMD
 CMD ["overmind-entrypoint.sh"]

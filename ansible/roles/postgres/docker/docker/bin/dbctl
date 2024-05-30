@@ -274,15 +274,16 @@ function walGRestore(){
   overmind stop postgres
   overmind restart postgres
   overmind log postgres
-#  stop_word="recovered"
-#
-#  overmind log postgres | while IFS= read -r line
-#  do
-#      echo "$line"
-#      if [[ "$line" == *"$stop_word"* ]]; then
-#          break
-#      fi
-#  done
+  stop_word="recovered"
+
+  # read the stdout (fd/1) and stderr (fd/2) of overmind (proc/1)
+  cat /proc/1/fd/1 /proc/1/fd/2 | while IFS= read -r line
+  do
+      echo "$line"
+      if [[ "$line" == *"$stop_word"* ]]; then
+          break
+      fi
+  done
 
 }
 function dumpPrune(){

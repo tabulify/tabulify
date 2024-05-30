@@ -204,7 +204,7 @@ When developing,
 ## Overmind (Process manager)
 
 ```bash
-OVERMIND_ENV='OVERMIND_CAN_DIE=sql_exporter,postgres_exporter'
+OVERMIND_ENV='OVERMIND_CAN_DIE=sql_exporter,postgres_exporter OVERMIND_SHOW_TIMESTAMPS=1'
 ```
 
 You can:
@@ -219,3 +219,37 @@ You can:
 * Change the log color for each
   process: [OVERMIND_COLORS](https://github.com/DarthSim/overmind?tab=readme-ov-file#specifying-the-colors)
 * Add timestamp: [OVERMIND_SHOW_TIMESTAMPS](https://github.com/DarthSim/overmind?tab=readme-ov-file#show-timestamps)
+
+### Tmux
+
+```
+overmind connect
+```
+
+* To quit (ie detach): `Ctl+b` + `d`
+
+In the window list,
+
+* the current window is marked with a `*` after the name,
+* and the last window with a `-`.
+
+![](https://raw.githubusercontent.com/wiki/tmux/tmux/images/tmux_status_line_diagram.png)
+
+Once a tmux client is attached, any keys entered are forwarded to the program running in the active pane of the current
+window.
+
+For keys that control tmux itself, a special key, called the prefix key, must be pressed first.
+The default prefix key is `C-b`, which means the `Ctrl` key and `b`
+
+In tmux, modifier keys are shown by prefixing a key with
+
+* `C-` for the control key,
+* `M-` for the meta key (`Alt` on modern computers)
+* and `S-` for the shift key.
+  These may be combined, so `C-M-x` means pressing the control key, meta key and x together.
+
+Help:
+
+* `C-b` + `?`
+* Screen 1: `C-b` + `1`
+* Screen 2: `C-b` + `1`
