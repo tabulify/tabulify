@@ -62,6 +62,19 @@ function psLs(){
   echo_log "\nExecuting the command:\n$command\n"
   eval "$command"
 }
+function psLog(){
+  if [ -z "${ARGS[0]}" ]; then
+        echo_err 'The process name should be given as first argument'
+        echo_err 'use the ps-ls command to get the available process name'
+        exit 1
+    fi
+    process=${ARGS[0]}
+    command="overmind log ${process}"
+    echo_log "\nExecuting the command:\n$command\n"
+    eval "$command"
+    echo_log "$process log done"
+}
+
 function psRestart(){
   if [ -z "${ARGS[0]}" ]; then
       echo_err 'The process name should be given as first argument'
@@ -74,18 +87,7 @@ function psRestart(){
   eval "$command"
   echo_log "$process restarted"
 }
-function psStart(){
-  if [ -z "${ARGS[0]}" ]; then
-      echo_err 'The process name should be given as first argument'
-      echo_err 'use the ps-ls command to get the available process name'
-      exit 1
-  fi
-  process=${ARGS[0]}
-  command="overmind start ${process}"
-  echo_log "\nExecuting the command:\n$command\n"
-  eval "$command"
-  echo_log "$process started"
-}
+
 
 function dbSqlRestore(){
   if [ -z "${ARGS[0]}" ]; then
@@ -418,6 +420,9 @@ ps-restart)
   ;;
 ps-start)
   psStart
+  ;;
+ps-log)
+  psLog
   ;;
 db-conf)
   cat /etc/postgresql/postgresql.conf
