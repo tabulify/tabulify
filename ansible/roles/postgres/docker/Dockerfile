@@ -1,3 +1,4 @@
+# Declare build-time variables
 
 # version of this file
 ARG IMAGE_VERSION=1.0.0
@@ -20,6 +21,7 @@ ARG PG_EXPORTER_VERSION=0.15.0
 ARG RESTIC_VERSION=0.16.4
 # https://github.com/burningalchemist/sql_exporter/releases/
 ARG SQL_EXPORTER_VERSION=0.14.3
+
 
 # C Extensions use pgxs for the build
 # https://www.postgresql.org/docs/current/extend-pgxs.html
@@ -104,6 +106,7 @@ ARG PG_MAJOR_VERSION
 ARG RESTIC_VERSION
 ARG WALG_VERSION
 ARG SQL_EXPORTER_VERSION
+ARG LOG_HOME
 
 
 LABEL image-version=${IMAGE_VERSION}
@@ -120,6 +123,8 @@ LABEL sql-exporter-version=${SQL_EXPORTER_VERSION}
 ###############
 ## The mounted directory
 ENV DATA_HOME=/data
+# The log home
+ENV LOG_HOME=/var/log
 
 # Ensure UTF-8
 ENV LANG=en_US.UTF-8
@@ -128,6 +133,8 @@ ENV LC_COLLATE=C.UTF-8
 # TZ is the OS env
 # Gnu https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
 ENV TZ 'Etc/UTC'
+
+
 
 # Postgres Local Connection env
 # so that when logged in, we can connect automatically and wal-g also
@@ -205,10 +212,12 @@ RUN curl -L https://github.com/restic/restic/releases/download/v${RESTIC_VERSION
 ##################################
 # The log file should be writable by root and the user running postgres
 ENV DBCTL_HOME=${DATA_HOME}/dbctl
-ENV DBCTL_LOG_FILE=${DBCTL_HOME}/dbctl.log
+ENV DBCTL_LOG_HOME=${LOG_HOME}/dbctl
+ENV DBCTL_LOG_FILE=${DBCTL_LOG_HOME}/dbctl.log
 ADD docker/bin/dbctl /usr/local/bin/
 RUN chmod +x /usr/local/bin/dbctl && \
     mkdir -p "$DBCTL_HOME" && \
+    mkdir -p "$DBCTL_LOG_HOME" && \
     touch "$DBCTL_LOG_FILE" && \
     chmod a+w "$DBCTL_LOG_FILE"
 
@@ -276,7 +285,6 @@ RUN apt-get install --no-install-recommends -y \
 ####################################
 # Supervisor
 ####################################
-# wrapper around overmind to allow customization
 ADD supervisord.conf .
 ADD docker/entrypoint/supervisor-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/supervisor-entrypoint.sh && \
