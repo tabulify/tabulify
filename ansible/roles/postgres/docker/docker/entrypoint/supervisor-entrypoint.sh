@@ -4,8 +4,10 @@
 # .bashrc to bring the connection environments
 . /root/.bashrc
 
-# search supervisord.conf
-# in the current directory
-# or can be passed via `-c /path/to/supervisord.conf`
 
-supervisord
+# we set the `c` to avoid the below warning:
+# UserWarning: Supervisord is running as root and it is searching
+# for its configuration file in default locations (including its current working directory);
+# you probably want to specify a "-c" argument specifying
+# an absolute path to a configuration file for improved security.
+supervisord -c /supervisord.conf

@@ -17,8 +17,6 @@ if [ ! -f "$sql_exporter_path" ]; then
     cp -rf "$source_dir"/* "$target_dir"
 fi
 
-
-
 command="sql_exporter -config.file ${sql_exporter_path} ${SQL_EXPORTER_FLAGS}"
 printf "\nMetrics available at http://localhost:9399/metrics"
 printf "\nExecuting the command:\n%s\n" "$command"

@@ -179,7 +179,8 @@ ADD "https://github.com/burningalchemist/sql_exporter/releases/download/${SQL_EX
 RUN tar -xzvf /tmp/sql_exporter.tar.gz --strip-components=1 --no-anchored sql_exporter && \
     rm /tmp/sql_exporter.tar.gz && \
     chmod +x sql_exporter && \
-    mv sql_exporter /usr/local/bin/
+    mv sql_exporter /usr/local/bin/ && \
+    mkdir -p /var/log/sql-exporter/
 
 EXPOSE 9399
 # The entrypoint
@@ -275,12 +276,13 @@ RUN apt-get install --no-install-recommends -y \
 ####################################
 # Supervisor
 ####################################
-
-ADD supervisor.conf .
-ADD docker/entrypoint/supervisor-entrypoint.sh /usr/local/bin/
 # wrapper around overmind to allow customization
+ADD supervisord.conf .
+ADD docker/entrypoint/supervisor-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/supervisor-entrypoint.sh && \
     apt-get install --no-install-recommends -y supervisor
+
+EXPOSE 9001
 
 ################################# \
 # Clean
