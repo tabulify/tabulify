@@ -2,6 +2,8 @@
 
 ## Local HTTP
 
+To develop locally the docker configuration, the TLS should be local.
+
 `tls: internal` directive
 then [CA can be imported](https://caddyserver.com/docs/automatic-https#local-https)
 

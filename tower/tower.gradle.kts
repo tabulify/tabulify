@@ -48,7 +48,6 @@ flyway {
 }
 
 
-
 val cspRealmsSchema = "cs_realms"
 
 tasks.getByName<org.flywaydb.gradle.task.FlywayCleanTask>("flywayClean") {
@@ -443,6 +442,26 @@ tasks.register<Copy>(javascriptCopyToWebRoot) {
   from("${javascriptProjectDir}/build")
   destinationDir = File("${buildDir}/classes/java/main/webroot")
   //dependsOn(javascriptBuildFrontendTask)
+}
+
+val dockerBuildTaskName = "build-docker"
+tasks.register<Exec>(dockerBuildTaskName) {
+  group = "docker"
+  description = "Builds the Docker image"
+
+  // The build command
+  // docker build -t eraldy:api -f tower\Dockerfile .
+  commandLine("docker", "build", "-t", "eraldy:api", "-f", "$projectDir/Dockerfile", ".")
+
+  // The working directory
+  workingDir = rootProject.projectDir
+
+  // Set up the environment if needed
+  environment("DOCKER_BUILDKIT", "1") // Example of setting an environment variable
+
+  // Standard output and error logging
+  standardOutput = System.out
+  errorOutput = System.err
 }
 
 val deployTaskName = "deploy"

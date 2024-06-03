@@ -2,13 +2,23 @@
 
 
 In dev, https is required for local development
+
+## Why Required
+
+Because it's required by third party or technology even in dev/localhost environment
+
+ie:
   * for cross-site cookie with `sameSite=none`
   * by oauth provider such as Google
+* by proxy authentication. For
+  instance, [Authelia](https://www.authelia.com/integration/prologue/get-started/#prerequisites)
+  * to improve security:
+    * directly by using encrypted communication
+    * indirectly by reducing complexity.
 
-In prod, the nginx proxy takes care of it.
+In prod, the web server proxy takes care of it.
 
-
-## How to use it?
+## How to create and use a local certificate and ROOT ca ?
 
 They are generated with [mkcert](https://github.com/FiloSottile/mkcert)
 * Install it (Windows)

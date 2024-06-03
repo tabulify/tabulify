@@ -7,6 +7,11 @@ Prometheus in docker in order to monitor:
   * the VPS machine
   * and for now a windows laptop
 
+## See also
+
+A compose file such as [Compose](https://github.com/stefanprodan/dockprom/blob/master/docker-compose.yml)
+Monitoring Metrics with Prometheus Alerting.
+
 ## Steps
 
   * Install [Wmi Exporter](https://github.com/martinlindhe/wmi_exporter/releases) on your Windows Laptop

@@ -8,6 +8,7 @@ build/
 *.iml
 .env
 .yarn
+out
 logs
-
+ansible
 fly.toml
