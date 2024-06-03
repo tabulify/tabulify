@@ -23,8 +23,8 @@ plugins {
  * vertx run
  * https://github.com/jponge/vertx-gradle-plugin
  */
-val towerLauncher = "net.bytle.tower.MainLauncher"
-val towerMainVerticle = "net.bytle.tower.MainVerticle"
+val towerLauncher = "net.bytle.vertx.MainLauncher"
+val towerMainVerticle = "net.bytle.tower.VerticleApi"
 // duplicate with the version in the vertx module
 val vertxVersion = rootProject.ext.get("vertxVersion").toString()
 
