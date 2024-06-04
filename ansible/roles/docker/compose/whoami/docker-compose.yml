@@ -9,4 +9,3 @@ services:
       caddy.tls: internal
 networks:
   caddy:
-    external: true

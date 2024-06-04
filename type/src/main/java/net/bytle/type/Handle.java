@@ -6,6 +6,18 @@ import java.util.Objects;
  * A handle is a unique value.
  * If the empty string is passed, the value become null
  * otherwise the uniqueness is broken
+ * <p>
+ * <a href="https://tools.ietf.org/html/rfc1123">RFC 1123 DNS labels</a>
+ * This means the name must:
+ * * contain at most 63 characters
+ * * contain only lowercase alphanumeric characters or '-'
+ * * start with an alphanumeric character
+ * * end with an alphanumeric character
+ * <p>
+ * The only difference between the RFC 1035
+ * and RFC 1123 label standards is that
+ * RFC 1123 labels are allowed to start with a digit, whereas RFC 1035 labels
+ * can start with a lowercase alphabetic character only.
  */
 public class Handle {
 

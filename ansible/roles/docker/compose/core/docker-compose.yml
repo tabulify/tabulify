@@ -1,0 +1,62 @@
+# the core stack
+services:
+  caddy:
+    image: lucaslorentz/caddy-docker-proxy:ci-alpine
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      - CADDY_INGRESS_NETWORKS=caddy
+    networks:
+      - caddy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # this volume is needed to keep the certificates
+      # otherwise, new ones will be re-issued upon restart
+      - caddy_data:/data
+    # important
+    # tell the docker daemon to restart containers on reboot and failures
+    restart: unless-stopped
+    deploy:
+      labels: # Global options
+        caddy.email: you@example.com
+      placement:
+        constraints:
+          - node.role == manager
+      replicas: 1
+      restart_policy:
+        condition: any
+      resources:
+        reservations:
+          cpus: "0.1"
+          memory: 200M
+  portainer:
+    # https://hub.docker.com/r/portainer/portainer-ce/tags
+    image: portainer/portainer-ce:2.20.3-alpine
+    command: -H unix:///var/run/docker.sock --http-enabled
+    restart: always
+    networks:
+      - caddy
+    labels:
+      # A label caddy creates a site block
+      # https://caddyserver.com/docs/caddyfile/concepts
+      caddy_1: portainer.example.com
+      caddy_1.reverse_proxy: "{{upstreams 9000}}"
+      caddy_1.tls: internal
+      caddy_2: portainer-agent.example.com
+      caddy_2.reverse_proxy: "{{upstreams 8000}}"
+      caddy_2.tls: internal
+    ports:
+      - 8000:8000
+      - 9000:9000
+      # 9443 is the HTTPS
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+volumes:
+  portainer_data:
+  caddy_data: { }
+networks:
+  caddy:
+    external: true
+    driver: overlay
