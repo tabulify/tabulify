@@ -1,6 +1,7 @@
 # the core stack
 services:
   caddy:
+    # no bash in Alpine
     image: lucaslorentz/caddy-docker-proxy:ci-alpine
     ports:
       - 80:80
@@ -34,7 +35,7 @@ services:
     # https://hub.docker.com/r/portainer/portainer-ce/tags
     image: portainer/portainer-ce:2.20.3-alpine
     command: -H unix:///var/run/docker.sock --http-enabled
-    restart: always
+    restart: unless-stopped
     networks:
       - caddy
     labels:
