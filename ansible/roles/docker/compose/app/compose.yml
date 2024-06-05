@@ -1,0 +1,10 @@
+services:
+  eraldy-api:
+    image: eraldy/api
+    # build from a URL
+    # ref: https://docs.docker.com/compose/compose-file/build/#attributes
+    build:
+      context: https://github.com/mycompany/example.git#branch_or_tag:subdirectory
+      dockerfile: tower/Dockerfile
+    networks:
+      - caddy
