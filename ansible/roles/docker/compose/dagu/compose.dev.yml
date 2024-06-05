@@ -1,0 +1,5 @@
+services:
+  dagu:
+    labels:
+      caddy: dagu.eraldy.dev
+      caddy.tls: /certs/cert.pem /certs/key.pem

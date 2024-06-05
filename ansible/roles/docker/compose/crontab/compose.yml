@@ -1,0 +1,14 @@
+# https://docs.docker.com/compose/multiple-compose-files/include/
+include:
+  - ../core/compose.yml
+services:
+  crontab:
+    image: alseambusher/crontab-ui:0.3.16
+    # build from a URL
+    # ref: https://docs.docker.com/compose/compose-file/build/#attributes
+    # build: https://github.com/mycompany/example.git#branch_or_tag:subdirectory
+    networks:
+      - caddy
+    labels:
+      caddy: crontab.eraldy.com
+      caddy.reverse_proxy: "{{upstreams 8000}}"

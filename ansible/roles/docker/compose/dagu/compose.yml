@@ -1,0 +1,27 @@
+# https://docs.docker.com/compose/multiple-compose-files/include/
+include:
+  - ../core/compose.yml
+services:
+  dagu-init:
+    image: ghcr.io/dagu-dev/dagu:1.13.0
+    user: root
+    volumes:
+      - dagu:/home/dagu/.dagu
+    command: chown -R dagu /home/dagu/.dagu/
+  dagu:
+    image: ghcr.io/dagu-dev/dagu:1.13.0
+    # build from a URL
+    # ref: https://docs.docker.com/compose/compose-file/build/#attributes
+    # build: https://github.com/mycompany/example.git#branch_or_tag:subdirectory
+    networks:
+      - caddy
+    labels:
+      caddy: dagu.eraldy.com
+      caddy.reverse_proxy: "{{upstreams 8080}}"
+    depends_on:
+      - dagu-init
+    volumes:
+      - dagu:/home/dagu/.dagu
+volumes:
+  dagu:
+
