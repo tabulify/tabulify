@@ -1,0 +1,17 @@
+# https://docs.docker.com/compose/multiple-compose-files/include/
+include:
+  - ../core/compose.yml
+services:
+  yacht:
+    image: selfhostedpro/yacht
+    networks:
+      - caddy
+    labels:
+      caddy: yacht.eraldy.com
+      caddy.reverse_proxy: "{{upstreams 8000}}"
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - yacht:/config
+volumes:
+  yacht:

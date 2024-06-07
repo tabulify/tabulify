@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# When developing
+# docker cp docker/bin/dbctl postgres:/usr/local/bin/
+
+# Ensures that the pipeline returns the exit status of the last command to fail
+set -o pipefail
+# Exit the script if any error
+set -e
+
+
+
+# someone must shell onto the machine
+# and create a bare repository every time you want to add a new project.
+# desc: https://git-scm.com/docs/gitrepository-layout#_description
+cd /srv/git && \
+    mkdir project.git && \
+    cd project.git && \
+    git init --bare

@@ -1,0 +1,5 @@
+services:
+  chronicle:
+    labels:
+      caddy: chronicle.eraldy.dev
+      caddy.tls: /certs/cert.pem /certs/key.pem
