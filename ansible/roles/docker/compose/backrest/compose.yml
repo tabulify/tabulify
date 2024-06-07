@@ -1,0 +1,25 @@
+# https://docs.docker.com/compose/multiple-compose-files/include/
+include:
+  - ../core/compose.yml
+services:
+  backrest:
+    image: garethgeorge/backrest
+    container_name: backrest
+    hostname: backrest.eraldy.com # Use this to set the hostname instead of container ID to the config.json and WebUI.
+    #    volumes:
+    #      - ./backrest/data:/data
+    #      - ./backrest/config:/config
+    #      - ./backrest/cache:/cache
+    #      - /MY-BACKUP-DATA:/userdata # mount your directories to backup somewhere in the filesystem
+    #      - /MY-REPOS:/repos # (optional) mount your restic repositories somewhere in the filesystem.
+    environment:
+      - BACKREST_DATA=/data # path for backrest data. restic binary and the database are placed here.
+      - BACKREST_CONFIG=/config/config.json # path for the backrest config file.
+      - XDG_CACHE_HOME=/cache # path for the restic cache which greatly improves performance.
+    networks:
+      - caddy
+    labels:
+      caddy: backrest.eraldy.com
+      caddy.reverse_proxy: "{{upstreams 9898}}"
+    restart: unless-stopped
+

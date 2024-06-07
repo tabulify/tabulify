@@ -243,6 +243,10 @@ function dbDirDump(){
   echo_log "Backup done"
 }
 
+function dumpLs(){
+  restic find --long  "${PG_DUMP_DATA}"
+}
+
 function dumpFetch(){
 
   if [ -z "${ARGS[0]}" ]; then
@@ -414,7 +418,7 @@ dump-fetch)
   dumpFetch
   ;;
 dump-ls)
-  restic find --long  "${PG_DUMP_DATA}"
+  dumpLs
   ;;
 dump-prune)
   dumpPrune
