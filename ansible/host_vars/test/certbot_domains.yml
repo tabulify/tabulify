@@ -1,8 +1,0 @@
-# Certificate
-# The first name is where the file is stored
-ovh_domains:
-  - '{{ hostname }}'
-  - 'netdata02.bytle.net'
-  - 'prometheus02.bytle.net'
-
-

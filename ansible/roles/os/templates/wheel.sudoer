@@ -1,2 +1,0 @@
-# authorize the wheel users to login without password
-%wheel        ALL=(ALL)       NOPASSWD: ALL

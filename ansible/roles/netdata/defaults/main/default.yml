@@ -1,4 +1,0 @@
-netdata_default_port: 19999
-
-netdata_user: netdata
-netdata_go_conf_dir: /etc/netdata/go.d/

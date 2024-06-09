@@ -1,6 +1,0 @@
-services:
-  backrest:
-    hostname: backrest.eraldy.dev
-    labels:
-      caddy: backrest.eraldy.dev
-      caddy.tls: /certs/cert.pem /certs/key.pem

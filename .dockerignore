@@ -10,5 +10,5 @@ build/
 .yarn
 out
 logs
-ansible
+../infra/ansible
 fly.toml

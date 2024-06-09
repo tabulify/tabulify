@@ -1,9 +1,0 @@
-
-# nexus_link = nexus-latest
-- name: "Create Nexus symlink ({{ nexus_link }})"
-  file:
-    src: "{{ nexus_application_directory }}"
-    dest: "{{ nexus_root }}/{{ nexus_link }}"
-    state: link
-    follow: false
-

@@ -1,9 +1,0 @@
-auth_modules:
-  my_db: # Set this to any name you want
-    type: userpass
-    userpass:
-      username: myusername
-      password: mypassword
-    options:
-      # options become key=value parameters of the DSN
-      sslmode: disable

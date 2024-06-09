@@ -1,3 +1,0 @@
-# All ini file should be in lf eol
-# php.ini all conf
-*.ini eol=lf

@@ -1,9 +1,0 @@
-- name: "User - Create the login user"
-  user:
-    name: '{{ ssh_user_name }}'
-    comment: The SSH user
-    state: present
-    group: 'users'
-    groups:
-      - wheel # The sudo admin group
-    password: "{{ ssh_user_password | password_hash('sha512') }}"

@@ -1,7 +1,0 @@
-# Fqdn Domain
-
-datacadamia_fqdn: 'datacadamia.com'
-
-# application
-netdata_fqdn: 'netdata.bytle.net'
-drill_fqdn: 'drill.bytle.net'

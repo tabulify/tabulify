@@ -1,3 +1,0 @@
-[[metrics]]
-port = 9187
-path = "/metrics" # default for most prometheus exporters

@@ -1,5 +1,0 @@
-services:
-  yacht:
-    labels:
-      caddy: yacht.eraldy.dev
-      caddy.tls: /certs/cert.pem /certs/key.pem

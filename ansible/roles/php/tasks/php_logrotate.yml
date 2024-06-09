@@ -1,8 +1,0 @@
-
-- name: Php LogRotate | Add the su directive to rotate as user
-  template:
-     src: 'templates/php-fpm.logrotate.conf'
-     dest: '/etc/logrotate.d/php-fpm'
-     owner: root
-     group: root
-     mode: 0644

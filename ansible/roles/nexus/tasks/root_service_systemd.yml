@@ -1,9 +1,0 @@
-
-- name: Copy the systemd nexus.service file
-  template:
-    src: nexus.service
-    dest: /etc/systemd/system/nexus.service
-    mode: 0644
-  notify:
-    - 'nexus reload'
-  tags: config

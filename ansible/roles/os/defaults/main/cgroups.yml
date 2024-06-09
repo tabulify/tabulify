@@ -1,3 +1,0 @@
-
-# A group that can takes 50% of the CPU
-cgroup_cpu_50: cpu_50

@@ -1,5 +1,0 @@
-services:
-  dockerui:
-    labels:
-      caddy: dockerui.eraldy.dev
-      caddy.tls: /certs/cert.pem /certs/key.pem

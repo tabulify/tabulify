@@ -1,9 +1,0 @@
----
-
-- name: 'postgres_restart'
-  become: yes
-  systemd:
-    name: 'postgresql-15'
-    enabled: 'yes'
-    daemon_reload: yes
-    state: restarted

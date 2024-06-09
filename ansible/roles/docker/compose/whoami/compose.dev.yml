@@ -1,5 +1,0 @@
-services:
-  whoami:
-    labels:
-      caddy: whoami.eraldy.dev
-      caddy.tls: /certs/cert.pem /certs/key.pem

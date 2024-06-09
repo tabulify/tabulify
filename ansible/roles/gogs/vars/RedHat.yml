@@ -1,4 +1,0 @@
----
-gogs_init_script_path: "{{ gogs_home }}/scripts/init/centos/gogs"
-
-

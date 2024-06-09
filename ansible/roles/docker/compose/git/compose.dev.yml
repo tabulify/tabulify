@@ -1,5 +1,0 @@
-services:
-  git:
-    labels:
-      caddy: git.eraldy.dev
-      caddy.tls: /certs/cert.pem /certs/key.pem

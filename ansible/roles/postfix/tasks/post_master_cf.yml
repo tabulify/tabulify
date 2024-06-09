@@ -1,7 +1,0 @@
-
-
-- name: Postfix | Master cf file
-  notify: restart postfix
-  template:
-    src: master.cf
-    dest: "{{ postfix_conf_master_path }}"

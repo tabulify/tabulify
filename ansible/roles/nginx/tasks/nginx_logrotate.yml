@@ -1,8 +1,0 @@
-
-- name: Ngxin LogRotate | Add the su directive to rotate as nginx
-  template:
-     src: 'templates/nginx.logrotate.conf'
-     dest: '/etc/logrotate.d/nginx'
-     owner: root
-     group: root
-     mode: 0644

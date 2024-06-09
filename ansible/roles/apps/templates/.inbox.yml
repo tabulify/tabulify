@@ -1,7 +1,0 @@
-# The secret configurations
-users:
-  inbox.eraldy.com:
-    dmarc:
-      mailbox:
-        s3.access.key.id: '{{ dmarc_s3_key_id }}'
-        s3.access.key.secret: '{{ dmarc_s3_key_secret }}'

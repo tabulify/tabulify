@@ -1,7 +1,0 @@
-
-
-- name: "Os - Upgrade all packages"
-  ansible.builtin.yum:
-    name: '*'
-    state: latest
-    enablerepo: epel

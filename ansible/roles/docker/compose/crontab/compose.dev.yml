@@ -1,5 +1,0 @@
-services:
-  crontab:
-    labels:
-      caddy: crontab.eraldy.dev
-      caddy.tls: /certs/cert.pem /certs/key.pem
