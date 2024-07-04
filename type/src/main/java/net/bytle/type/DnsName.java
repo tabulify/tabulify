@@ -11,6 +11,9 @@ import java.util.stream.Collectors;
  * DNS Name is a basic type
  * <p>
  * It's used everywhere from URI to Email.
+ * <p>
+ * Used in Kubernetes as
+ * <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names#dns-subdomain-names">name structure</a>
  */
 public class DnsName {
 
@@ -153,6 +156,7 @@ public class DnsName {
     return dmarc + "; rua=" + mailToSchema + this.expectedDmarcEmails.stream().map(EmailAddress::toString).collect(Collectors.joining(ruaDelimiter));
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   public DnsName addExpectedDmarcEmail(EmailAddress mail) {
     this.expectedDmarcEmails.add(mail);
     return this;
