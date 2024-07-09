@@ -2,9 +2,10 @@
 ARG APP_NAME=eraldy-api
 ARG PROJECT_DIR=tower
 ARG PROJECT_NAME=tower
+ARG GRADLE_VERSION=7.5.1-jdk11
 
 # 1st Docker build stage: build the project with Gradle
-FROM gradle:7.5.1-jdk11 as builder
+FROM gradle:${GRADLE_VERSION} as builder
 ARG PROJECT_DIR
 WORKDIR /project
 COPY . /project

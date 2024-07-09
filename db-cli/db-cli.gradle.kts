@@ -208,6 +208,32 @@ val jar = tasks.getByName<Jar>("jar") {
 }
 
 
+val buildDockerImage = "buildDockerImage"
+tasks.register<Exec>(buildDockerImage) {
+  val gradleVersion = gradle.gradleVersion
+  val relativePath = projectDir.relativeTo(rootProject.projectDir)
+  val javaToolchains = project.extensions.getByType(JavaToolchainService::class.java)
+  val launcher = javaToolchains.launcherFor {
+    languageVersion.set(JavaLanguageVersion.of(11)) // Ensure it matches the configured version
+  }.get()
+
+  val javaVersion = launcher.metadata.languageVersion.asInt()
+  val javaVendor = launcher.metadata.vendor
+  val jvmVersion = launcher.metadata.jvmVersion
+  commandLine("echo", "yolo")
+//  commandLine("docker", "build", "--build-arg", "GRADLE_VERSION=$gradleVersion", "-t", project.projectDir, ".")
+
+  doFirst {
+    println("Building Docker image with Gradle version: $gradleVersion at $relativePath")
+    println("  * Gradle version: $gradleVersion")
+    println("  * Project:  $relativePath")
+    println("  * Java Version:  $javaVersion")
+    println("  * Java Version:  $jvmVersion")
+    println("  * Java Vendor:  $javaVendor")
+  }
+
+}
+
 /**
  * The tabli start scripts
  */
