@@ -13,6 +13,26 @@ To run the actual cli, use the [tabcli Gradle Wrapper](tabli.cmd)
 
   * [StartScript](https://docs.gradle.org/current/dsl/org.gradle.jvm.application.tasks.CreateStartScripts.html)
 
+## Docker Image
+
+Build:
+
+```bash
+# Then
+cd ..
+docker build -f db-cli/Dockerfile -t ghcr.io/gerardnico/tabli:1.0.0 .
+# run
+docker run --rm ghcr.io/gerardnico/tabli:1.0.0
+```
+
+Push:
+
+```bash
+# login with a github token
+echo $DOCKER_GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
+docker push ghcr.io/gerardnico/tabli:1.0.0
+```
+
 ## Release / Deploy
 
   * Create the file `~\.gradle\gradle.properties` with:

@@ -1,9 +1,10 @@
 #Gradle version
-ARG GRADLE_IMAGE
-ARG JDK_IMAGE
-ARG PROJECT_DIR
+ARG GRADLE_IMAGE=gradle:7.5.1-jdk11
+ARG JAVA_IMAGE=openjdk:11-jre-slim
+ARG PROJECT_DIR=db-cli
+ARG PROJECT_NAME=tabli
 
-# Use the specified Gradle version to build the application
+# Build
 FROM ${GRADLE_IMAGE} AS builder
 ARG PROJECT_DIR
 WORKDIR /app
@@ -13,18 +14,16 @@ RUN --mount=type=cache,target=/root/.gradle \
     gradle shadowJar --no-daemon
 
 
-# Use a minimal base image for running the application
-FROM ${GRADLE_IMAGE}
-ARG PROJECT_DIR
+# Run
+FROM ${JAVA_IMAGE}
 ARG PROJECT_NAME
-
+ARG PROJECT_DIR
 # Set the working directory inside the container
 WORKDIR /app
 
-ENV PROJECT_ARCHIVE=${PROJECT_NAME}-all.jar
-
 # Copy the JAR file from the builder stage to the current stage
-COPY --from=builder /app/build/libs/*.jar app.jar
+# app.jar to keep it general. We can't use a variable in the entrypoint
+COPY --from=builder /app/${PROJECT_DIR}/build/libs/${PROJECT_NAME}-all.jar app.jar
 
-# Specify the command to run the application
-CMD ["java", "-jar", "app.jar"]
+# Specify the entrypoint to run the application
+ENTRYPOINT ["java", "-jar", "app.jar"]

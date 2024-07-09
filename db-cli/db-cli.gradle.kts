@@ -212,8 +212,8 @@ tasks.register<Exec>(buildDockerImage) {
   val javaVersion = launcher.metadata.languageVersion.asInt()
   val javaVendor = launcher.metadata.vendor
   val jvmVersion = launcher.metadata.jvmVersion
-  commandLine("echo", "yolo")
-//  commandLine("docker", "build", "--build-arg", "GRADLE_VERSION=$gradleVersion", "-t", project.projectDir, ".")
+  commandLine()
+  commandLine("echo", "docker", "build", "--build-arg", "GRADLE_VERSION=$gradleVersion", "-t", project.projectDir, ".")
 
   doFirst {
     println("Building Docker image with Gradle version: $gradleVersion at $relativePath")
@@ -350,7 +350,8 @@ tasks.register("deploy") {
     val backendServerPort: String by project
     val appsUserName: String by project
     val appsUserPwd: String by project
-    val tabulifyUploadDir = "/opt/apps/tabli/shadow" // project.properties.getOrDefault("tabulifyUploadDir", "/opt/apps/tabli/shadow") as String
+    val tabulifyUploadDir =
+      "/opt/apps/tabli/shadow" // project.properties.getOrDefault("tabulifyUploadDir", "/opt/apps/tabli/shadow") as String
 
 
     /**
