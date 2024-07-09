@@ -104,10 +104,10 @@ val releaseFile = tasks.register<Copy>("versionFile") {
  * Doc to create a custom task
  * https://imperceptiblethoughts.com/shadow/custom-tasks/
  *
-
  */
 val tabliShadowJarName = "tabli"
-val tabliShadowJar = tasks.register<ShadowJar>("tabliShadowJar") {
+val tabliShadowJar = tasks.named<ShadowJar>("shadowJar") {
+
   group = tabli
   archiveBaseName.set(tabliShadowJarName)
   mergeServiceFiles()
@@ -123,16 +123,8 @@ val tabliShadowJar = tasks.register<ShadowJar>("tabliShadowJar") {
   // is not to append text file](https://github.com/johnrengelman/shadow/issues/180)
   dependsOn(releaseFile)
 
-  // add the source
-  from(sourceSets.main.get().output)
   // add the release
   from(layout.buildDirectory.file(tabliReleaseFileName))
-
-  // configurations property is specified to inform Shadow which dependencies to merge into the output
-  // runtime = dependency
-  configurations = listOf(project.configurations.runtimeClasspath.get())
-
-
 
 }
 

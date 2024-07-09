@@ -156,6 +156,16 @@ public class Casts {
       }
 
       /**
+       * Character
+       */
+      if (targetClass == Character.class) {
+        if (sourceObject.toString().length() != 1) {
+          throw new CastException("The source object is not a string of length 1 (" + sourceObject + ")");
+        }
+        return targetClass.cast(sourceObject.toString().charAt(0));
+      }
+
+      /**
        * Time
        */
       if (targetClass == java.sql.Time.class) {

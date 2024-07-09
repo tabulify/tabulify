@@ -14,7 +14,14 @@ val jacksonVersion = "2.16.1"
 val guavaVersion = "31.1.2"
 val junit4Version = "4.13.2"
 val junit5Version = "5.10.0"
+
+// Java
 val javaLanguageVersion = 11
+val javaVendor: JvmVendorSpec = JvmVendorSpec.ADOPTOPENJDK
+val javaDockerImage = "openjdk:${javaLanguageVersion}-jre-slim"
+// Gradle Docker Image for the build
+val gradleDockerImage = "gradle:${gradle.gradleVersion}-jdk${javaLanguageVersion}"
+
 val slf4jVersion = "2.0.6"
 
 // email SMTP server
@@ -131,7 +138,7 @@ subprojects {
     // Consistent build
     toolchain {
       languageVersion.set(JavaLanguageVersion.of(javaLanguageVersion))
-      //vendor.set(JvmVendorSpec.AMAZON) // not found in 7.5.1
+      vendor.set(javaVendor)
     }
 
   }
