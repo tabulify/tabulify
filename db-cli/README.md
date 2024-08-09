@@ -20,9 +20,9 @@ Build:
 ```bash
 # Then
 cd ..
-docker build -f db-cli/Dockerfile -t ghcr.io/gerardnico/tabli:1.0.0 .
+docker build -f db-cli/Dockerfile -t ghcr.io/gerardnico/tabli .
 # run
-docker run --rm ghcr.io/gerardnico/tabli:1.0.0
+docker run --rm ghcr.io/gerardnico/tabli
 ```
 
 Push:
@@ -30,7 +30,7 @@ Push:
 ```bash
 # login with a github token
 echo $DOCKER_GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
-docker push ghcr.io/gerardnico/tabli:1.0.0
+docker push ghcr.io/gerardnico/tabli
 ```
 
 ## Release / Deploy

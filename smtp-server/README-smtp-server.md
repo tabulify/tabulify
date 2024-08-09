@@ -3,7 +3,7 @@
 
 ## About
 
-A SMTP server that can receive email message for local and remote delivery. ie that can be used as:
+An SMTP server that can receive email message for local and remote delivery. ie that can be used as:
   * MDA (MX)
   * MTA
 

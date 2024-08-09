@@ -3,6 +3,17 @@
 ## About
 How to set up a dev environment
 
+## Sub Module
+
+[SubModule cloning](https://book.git-scm.com/book/en/v2/Git-Tools-Submodules#_cloning_submodules)
+
+```bash
+# initialize your local configuration file
+git submodule init
+# fetch all the data from that project and check out the appropriate commit listed in your superproject
+git submodule update
+```
+
 ## Version
 
   * Gradle: 5.6.4

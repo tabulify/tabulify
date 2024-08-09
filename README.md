@@ -1,10 +1,14 @@
-# Bytle Parent
+# Java Mono
 
 ## Introduction
 
-This repository contains the Maven POM parent used in the Bytle Maven project in order to orchestrate:
-  * the version of the dependencies
-  * the assembly with profiles
+This repository contains all Java Code.
 
-See [doc](doc/Dev.md)  
+## Clone
+
+```bash
+git clone --recurse-submodules https://github.com/chaconinc/MainProject
+```
+
+See [doc](doc/Dev.md)
 

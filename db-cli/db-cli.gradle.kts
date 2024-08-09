@@ -202,6 +202,14 @@ val jar = tasks.getByName<Jar>("jar") {
 
 val buildDockerImage = "buildDockerImage"
 tasks.register<Exec>(buildDockerImage) {
+
+  group = tabli
+
+  // The dependency are started in the Dockerfile
+  // to build the artifacts
+  //dependsOn(tabliShadowJar)
+  //dependsOn(tabliShadowStartScripts)
+
   val gradleVersion = gradle.gradleVersion
   val relativePath = projectDir.relativeTo(rootProject.projectDir)
   val javaToolchains = project.extensions.getByType(JavaToolchainService::class.java)
@@ -209,10 +217,10 @@ tasks.register<Exec>(buildDockerImage) {
     languageVersion.set(JavaLanguageVersion.of(11)) // Ensure it matches the configured version
   }.get()
 
+
   val javaVersion = launcher.metadata.languageVersion.asInt()
   val javaVendor = launcher.metadata.vendor
   val jvmVersion = launcher.metadata.jvmVersion
-  commandLine()
   commandLine("echo", "docker", "build", "--build-arg", "GRADLE_VERSION=$gradleVersion", "-t", project.projectDir, ".")
 
   doFirst {
@@ -222,6 +230,7 @@ tasks.register<Exec>(buildDockerImage) {
     println("  * Java Version:  $javaVersion")
     println("  * Java Version:  $jvmVersion")
     println("  * Java Vendor:  $javaVendor")
+    println("  * File Name:  ${shadowJarFileName.get()}") // tabli-all.jar
   }
 
 }
@@ -231,10 +240,26 @@ tasks.register<Exec>(buildDockerImage) {
  */
 val tabliStartScripts = tasks.register<CreateStartScripts>("tabliStartScripts") {
   group = tabli
-  outputDir = file("${buildDir}/scripts")
+  outputDir = file("${buildDir}/scripts/non-shadow")
   applicationName = tabliApplicationName
   mainClass.set("net.bytle.db.tabli.Tabli")
   classpath = files(configurations.runtimeClasspath) + files(jar.archiveFileName)
+  // Class Path was too long for Windows, we have changed the template
+  // see the `tasks.withType<CreateStartScripts>` block
+}
+
+// Get the file path of the shadow file
+val shadowJarFileName by extra {
+  tabliShadowJar.map { shadowJarTask ->
+    shadowJarTask.archiveFileName.get()
+  }
+}
+val tabliShadowStartScripts = tasks.register<CreateStartScripts>("tabliShadowStartScripts") {
+  group = tabli
+  outputDir = file("${buildDir}/scripts/shadow")
+  applicationName = tabliApplicationName
+  mainClass.set("net.bytle.db.tabli.Tabli")
+  classpath = files(shadowJarFileName)
   // Class Path was too long for Windows, we have changed the template
   // see the `tasks.withType<CreateStartScripts>` block
 }
