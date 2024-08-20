@@ -9,7 +9,9 @@ public class MonitorNetworkTopology {
 
   public static final String NICO_IP_ADDRESS = "143.176.206.82/32";
 
-  public static final List<String> PRIVATE_IPS = Arrays.asList(BEAU_IP_ADDRESS, NICO_IP_ADDRESS);
+  public static final String KUBE_IP_ADDRESS = "188.245.43.250/32";
+
+  public static final List<String> PRIVATE_IPS = Arrays.asList(BEAU_IP_ADDRESS, NICO_IP_ADDRESS, KUBE_IP_ADDRESS);
 
 
 }

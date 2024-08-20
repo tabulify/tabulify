@@ -88,7 +88,7 @@ public class MonitorApiTokenCloudflare {
       .collect(Collectors.toList());
     for (String inIp: inIps) {
       if (!expectedIpAddress.contains(inIp)) {
-        throw new MonitorException("The ip restricted value (" + inIp + ") is not the expected one " + String.join(", ",expectedIpAddress));
+        throw new MonitorException("The ip restricted value (" + inIp + ") is not one of: " + String.join(", ", expectedIpAddress));
       }
     }
     return inIps;

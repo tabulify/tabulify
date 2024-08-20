@@ -27,7 +27,7 @@ fly secrets import < .monitor.secret.env
 # build the jar
 ..\gradlew assemble
 # update the image
-fly machine update 683d920b195638 --yes --schedule daily --restart no --dockerfile ./Dockerfile
+flyctl machine update 683d920b195638 --yes --schedule daily --restart no --dockerfile ./Dockerfile
 ```
 
 ## Start manually

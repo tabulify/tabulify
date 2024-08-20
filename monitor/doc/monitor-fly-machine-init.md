@@ -5,8 +5,9 @@ TODO ? https://fly.io/docs/machines/guides-examples/terraform-machines/
 ## Before deploying action
 
 * Create the app
-```
-fly apps create --machines --name eraldy-monitor
+
+```bash
+flyctl apps create --machines --name eraldy-monitor
 ```
 
 then minimal File toml to not give the app name and region at the command line
@@ -18,8 +19,8 @@ primary_region = "ams"
 Then allocate IP
 ```bash
 # allocate ip
-fly ips allocate-v4 --shared
-fly ips allocate-v6
+flyctl ips allocate-v4 --shared
+flyctl ips allocate-v6
 ```
 
 Then secret

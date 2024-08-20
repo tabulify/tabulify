@@ -32,6 +32,9 @@ public class MonitorServices {
   private final CloudflareDns cloudflareDns;
 
   private final DnsHost monitorBeauHost;
+  private final DnsHost kubeServer01Host;
+  @SuppressWarnings({"FieldCanBeLocal", "unused"})
+  private final DnsHost kubeAgent01Host;
   private final DnsHost monitorOegHost;
   private final ArrayList<DnsHost> mailers;
   private final Map<DnsName, List<Future<MonitorReportResult>>> asyncResults = new HashMap<>();
@@ -46,6 +49,10 @@ public class MonitorServices {
   private final HashMap<DnsName, Future<List<MonitorReportResult>>> asyncListResults = new HashMap<>();
   private final DnsHost eraldyComHost;
   private final DnsHost membersEraldyComHost;
+  private final DnsName tabulifyDomain;
+  private final DnsName datacadamiaDomain;
+  private final DnsName bytleDomain;
+  private final DnsName combostrapDomain;
 
   public MonitorServices(CloudflareDns cloudflareDns, NetClient sslNetClient, ConfigAccessor configAccessor) {
 
@@ -73,9 +80,18 @@ public class MonitorServices {
      */
     LOGGER.info("Monitor Dns - Creating Hosts");
     try {
+
       monitorBeauHost = dnsClient.configHost("beau.bytle.net")
         .setIpv4("192.99.55.226")
         .setIpv6("2607:5300:201:3100::85b") // 2607:5300:201:3100:0:0:0:85b
+        .build();
+
+      kubeServer01Host = dnsClient.configHost("kube-server-01.eraldy.com")
+        .setIpv4("188.245.43.250")
+        .build();
+
+      kubeAgent01Host = dnsClient.configHost("kube-agent-01.eraldy.com")
+        .setIpv4("49.13.205.210")
         .build();
 
       eraldyComHost = dnsClient.configHost("eraldy.com")
@@ -100,10 +116,10 @@ public class MonitorServices {
       LOGGER.info("Monitor Dns - Creating apex domains");
       eraldyDomain = DnsName.create("eraldy.com");
       gerardNicoDomain = DnsName.create("gerardnico.com");
-      DnsName bytleDomain = DnsName.create("bytle.net");
-      DnsName combostrapDomain = DnsName.create("combostrap.com");
-      DnsName datacadamiaDomain = DnsName.create("datacadamia.com");
-      DnsName tabulifyDomain = DnsName.create("tabulify.com");
+      bytleDomain = DnsName.create("bytle.net");
+      combostrapDomain = DnsName.create("combostrap.com");
+      datacadamiaDomain = DnsName.create("datacadamia.com");
+      tabulifyDomain = DnsName.create("tabulify.com");
       apexDomains = Set.of(
         bytleDomain,
         combostrapDomain,
@@ -176,7 +192,7 @@ public class MonitorServices {
    * <a href="https://support.google.com/mail/answer/81126#ip-practices">...</a> for more 550
    */
 
-  public MonitorServices checkMailersPtr(List<DnsHost> mailers)  {
+  public void checkMailersPtr(List<DnsHost> mailers) {
 
     String checkName = "Check Mailer Host (Ptr)";
     for (DnsHost dnsHost : mailers) {
@@ -245,12 +261,11 @@ public class MonitorServices {
 
         }
       } catch (DnsException e) {
-        this.addFailure(checkName, hostDnsName, "Fatal Dns Exception "+e.getMessage());
+        this.addFailure(checkName, hostDnsName, "Fatal Dns Exception " + e.getMessage());
       }
     }
 
 
-    return this;
   }
 
   private void addSuccess(String checkName, DnsName dnsName, String message) {
@@ -281,7 +296,7 @@ public class MonitorServices {
    * @param thirdDomains - the name of domains that should include the original spf records
    * @param mailersName  - the name where the A and AAAA record name of the mailers are stored
    */
-  public MonitorServices checkSpf(DnsName mainDomain, DnsName mailersName, Set<DnsName> thirdDomains) throws CastException {
+  public void checkSpf(DnsName mainDomain, DnsName mailersName, Set<DnsName> thirdDomains) throws CastException {
 
 
     DnsName spfSubDomainName = mainDomain.getSubdomain("spf");
@@ -315,8 +330,6 @@ public class MonitorServices {
       checkSpfRecordForDomain(expectedIncludeSpfRecord, dnsName, checkName);
     }
 
-    return this;
-
   }
 
   private void checkSpfRecordForDomain(String expectedIncludeSpfRecord, DnsName dnsName, String checkName) {
@@ -346,7 +359,7 @@ public class MonitorServices {
   }
 
 
-  public MonitorServices checkMailersARecord(List<DnsHost> mailers, DnsName mailersName) {
+  public void checkMailersARecord(List<DnsHost> mailers, DnsName mailersName) {
 
     try {
       Set<DnsIp> aIps;
@@ -366,11 +379,10 @@ public class MonitorServices {
     } catch (DnsException e) {
       throw new RuntimeException(e);
     }
-    return this;
 
   }
 
-  public MonitorServices checkMx(Map<String, Integer> mxs, Set<DnsName> domains) {
+  public void checkMx(Map<String, Integer> mxs, Set<DnsName> domains) {
     String mxCheck = "Mx Check";
 
     for (DnsName domain : domains) {
@@ -381,7 +393,7 @@ public class MonitorServices {
         this.addFailure(mxCheck, domain, "A DNS exception has occurred: " + e.getMessage());
         continue;
       } catch (DnsNotFoundException e) {
-        this.addFailure(mxCheck, domain, "The mx records were not found for the domain "+domain);
+        this.addFailure(mxCheck, domain, "The mx records were not found for the domain " + domain);
         continue;
       }
 
@@ -398,7 +410,7 @@ public class MonitorServices {
         Integer actualMxPriority = actualMxs.get(expectedMxHost);
         actualMxs.remove(expectedMxHost);
         if (actualMxPriority == null) {
-          this.addFailure(mxCheck, domain, "The mx (" + expectedMxHost + ") was not found for the domain "+domain);
+          this.addFailure(mxCheck, domain, "The mx (" + expectedMxHost + ") was not found for the domain " + domain);
           continue;
         }
         Integer expectedPriority = expectedMx.getValue();
@@ -412,7 +424,6 @@ public class MonitorServices {
         this.addFailure(mxCheck, domain, "The mx (" + actualMx + ") was not expected and should be deleted.");
       }
     }
-    return this;
   }
 
   /**
@@ -420,7 +431,7 @@ public class MonitorServices {
    * We need then to go through the cloudflare api
    * to get the real value
    */
-  public MonitorServices checkCloudflareARecord(DnsHost host, Set<DnsName> domains, String checkTitle) {
+  public void checkCloudflareARecord(DnsHost host, Set<DnsName> domains, String checkTitle) {
 
 
     for (DnsName dnsName : domains) {
@@ -447,7 +458,6 @@ public class MonitorServices {
       this.addAsyncResult(dnsName, result);
 
     }
-    return this;
   }
 
 
@@ -486,24 +496,44 @@ public class MonitorServices {
     LOGGER.info("  * Check A record");
     // We check the A record and not a CNAME record
     // Why ? gerardnico.github.io hosted domain does not have cname but A and AAAAA records
-    Set<DnsName> httpBeauServices = new HashSet<>(apexDomains);
-    httpBeauServices.remove(eraldyComHost.getDnsName());
+    /**
+     * Beau HTTP Server
+     */
+    Set<DnsName> beauApexDomains = Set.of(
+      bytleDomain,
+      datacadamiaDomain,
+      gerardNicoDomain
+    );
+    Set<DnsName> httpApexWebSite = new HashSet<>(beauApexDomains);
     // the www format of apex domain
     Set<DnsName> wwwNames = new HashSet<>();
-    for (DnsName dnsName : httpBeauServices) {
+    for (DnsName dnsName : httpApexWebSite) {
       wwwNames.add(dnsName.getSubdomain("www"));
     }
-    httpBeauServices.addAll(wwwNames);
-    httpBeauServices.add(gerardNicoDomain.getSubdomain("rixt"));
-
-    this.checkCloudflareARecord(monitorBeauHost, httpBeauServices, "Beau Domains HTTP A record");
+    httpApexWebSite.addAll(wwwNames);
+    httpApexWebSite.add(gerardNicoDomain.getSubdomain("rixt"));
+    this.checkCloudflareARecord(monitorBeauHost, httpApexWebSite, "Beau Domains HTTP A record");
+    /**
+     * Fly
+     */
     HashSet<DnsName> eraldyDnsNames = new HashSet<>();
-    eraldyDnsNames.add(eraldyComHost.getDnsName());
-    eraldyDnsNames.add(eraldyComHost.getDnsName().getSubdomain("www"));
-    this.checkCloudflareARecord(eraldyComHost, eraldyDnsNames, "eraldy.com HTTP A record");
+    eraldyDnsNames.add(eraldyDomain);
+    eraldyDnsNames.add(eraldyDomain.getSubdomain("www"));
+    this.checkCloudflareARecord(eraldyComHost, eraldyDnsNames, "Eraldy.com (fly) HTTP A record");
+    /**
+     * Kube HTTP Server
+     */
+    Set<DnsName> kubeHTTPDomains = Set.of(
+      combostrapDomain,
+      combostrapDomain.getSubdomain("www"),
+      tabulifyDomain,
+      tabulifyDomain.getSubdomain("www"),
+      eraldyComHost.getDnsName().getSubdomain("i").getSubdomain("argocd")
+    );
+    this.checkCloudflareARecord(kubeServer01Host, kubeHTTPDomains, "Kube HTTP A record");
     this.checkCloudflareARecord(membersEraldyComHost, "members.eraldy.com HTTP A record");
     LOGGER.info("  * Check HTTP Certificates");
-    Set<DnsName> httpServices = new HashSet<>(httpBeauServices);
+    Set<DnsName> httpServices = new HashSet<>(httpApexWebSite);
     httpServices.add(eraldyComHost.getDnsName());
     httpServices.add(membersEraldyComHost.getDnsName());
     this.checkHttpsCertificates(httpServices);
@@ -518,14 +548,14 @@ public class MonitorServices {
 
   }
 
-  private MonitorServices checkCloudflareARecord(DnsHost host, String message) {
+  @SuppressWarnings("SameParameterValue")
+  private void checkCloudflareARecord(DnsHost host, String message) {
     HashSet<DnsName> hashSetDnsNames = new HashSet<>();
     hashSetDnsNames.add(host.getDnsName());
     checkCloudflareARecord(host, hashSetDnsNames, message);
-    return this;
   }
 
-  private MonitorServices checkMailersAAAARecord(ArrayList<DnsHost> mailers, DnsName mailersName) {
+  private void checkMailersAAAARecord(ArrayList<DnsHost> mailers, DnsName mailersName) {
     try {
       Set<DnsIp> aIps;
       try {
@@ -544,7 +574,6 @@ public class MonitorServices {
     } catch (DnsException e) {
       throw new RuntimeException(e);
     }
-    return this;
   }
 
   private void checkHttpsCertificates(Set<DnsName> dnsNames) {
@@ -673,7 +702,7 @@ public class MonitorServices {
       for (String selector : domain.getExpectedDkimSelector()) {
         String domainDkimTextRecord;
         try {
-          domainDkimTextRecord = dnsClient.lookupDkimRecord(domain,selector);
+          domainDkimTextRecord = dnsClient.lookupDkimRecord(domain, selector);
         } catch (DnsException e) {
           this.addFailure(checkName, domain, "An exception has occurred: " + e.getMessage());
           continue;
@@ -694,7 +723,7 @@ public class MonitorServices {
     }
   }
 
-  private MonitorServices checkDmarc(Set<DnsName> domains) {
+  private void checkDmarc(Set<DnsName> domains) {
 
     String checkName = "Dmarc check";
     /**
@@ -772,7 +801,6 @@ public class MonitorServices {
       }
     }
 
-    return this;
   }
 
 }
