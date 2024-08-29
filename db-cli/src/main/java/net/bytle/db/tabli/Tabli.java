@@ -190,9 +190,6 @@ public class Tabli {
           System.out.println("Version: dev");
           System.exit(0);
         }
-        if (manifest == null) {
-          throw new InternalException("The manifest was not found, we can find the version informations.");
-        }
         DataPath tabularVersion = tabular.getAndCreateRandomMemoryDataPath()
           .setLogicalName("Version")
           .getOrCreateRelationDef()
@@ -281,7 +278,7 @@ public class Tabli {
          * Process the command
          */
         List<CliCommand> commands = cliParser.getFoundedChildCommands();
-        if (commands.size() == 0) {
+        if (commands.isEmpty()) {
           throw new IllegalArgumentException("A known command must be given");
         } else {
 
@@ -438,44 +435,47 @@ public class Tabli {
             throw e;
           }
 
+          return;
 
-        } else {
-
-          String message = e.getMessage();
-          if (!tabular.isStrict()) {
-            message += "\nTry to run in non-strict mode with the flag " + TabliWords.NOT_STRICT_FLAG;
-          }
-          /**
-           * Catch not planned exception
-           * and illegal argument one
-           */
-          LOGGER_TABLI.severe(message);
-
-          /**
-           * Bad argument, no data selection,
-           * Object exists already
-           * print the usage
-           */
-          if (e instanceof IllegalArgumentException) {
-            CliUsage.print(CliTree.getActiveLeafCommand(rootCommand));
-          }
-
-          /**
-           * In a development mode, we want to see the stack,
-           * we then throw the exception again
-           */
-
-          if (throwFinalException()) {
-            System.out.println(); // layout
-            LOGGER_TABLI.severe("Stack Trace:");
-            throw e;
-          } else {
-            // In non-strict mode, argument exception does not exit with an error status
-            if (!tabular.isStrict() && e instanceof IllegalArgumentException) {
-              System.exit(1);
-            }
-          }
         }
+
+        String message = e.getMessage();
+        if (!tabular.isStrict()) {
+          message += "\nTry to run in non-strict mode with the flag " + TabliWords.NOT_STRICT_FLAG;
+        }
+
+        /**
+         * Catch not planned exception
+         * and illegal argument one
+         */
+        LOGGER_TABLI.severe("Fatal Exception: " + message);
+
+        /**
+         * Bad argument, no data selection,
+         * Object exists already
+         * print the usage
+         */
+        if (e instanceof IllegalArgumentException) {
+          CliUsage.print(CliTree.getActiveLeafCommand(rootCommand));
+        }
+
+        /**
+         * In a development mode, we want to see the stack,
+         * we then throw the exception again
+         */
+        if (throwFinalException()) {
+          System.out.println(); // layout
+          LOGGER_TABLI.severe("Stack Trace:");
+          throw e;
+        }
+
+        /**
+         * Always returns a +1 and let the
+         * calling script or user handle it.
+         */
+        System.exit(1);
+
+
       }
 
     }

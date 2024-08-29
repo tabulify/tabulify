@@ -28,10 +28,10 @@ public class Logs {
   /**
    * Get a log with the name of the parent package
    *
-   * @param clazz
+   * @param clazz - the class were the log comes from
    * @return a log
    */
-  public static Log createFromClazz(Class clazz) {
+  public static Log createFromClazz(Class<?> clazz) {
     String logName = clazz.getPackage().getName();
     Log log = logs.get(logName);
     // Initially Logger.getLogger()

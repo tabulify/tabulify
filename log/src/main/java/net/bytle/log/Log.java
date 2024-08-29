@@ -14,8 +14,8 @@ public class Log extends Logger {
 
   /**
    * Format
-   * https://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html
-   *
+   * <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html">...</a>
+   * <p>
    * Time at sec - level - message
    */
   public static final String DEFAULT_FORMAT = "%1$tH:%1$tM:%1$tS - %4$s - %5$s%n";

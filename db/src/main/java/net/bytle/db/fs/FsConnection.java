@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.*;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A file data store (ie a store that is instantiated with a file system path or a uri)
@@ -61,15 +62,15 @@ public class FsConnection extends NoOpConnection {
       if (uri.startsWith("file:/")) {
         /**
          * There can be only one local file system
-         *
+         * <p>
          * if you try to get a file system with the URI: file:///D:/code/bytle-mono/db-gen/
-         *
+         * <p>
          * you will get
-         *
+         * <p>
          * java.lang.IllegalArgumentException: Path component should be '/'
-         *
+         * <p>
          * Ie in the URI, the path component should only be /
-         *
+         * <p>
          * hence "file:///"
          */
         fileSystem = FileSystems.getDefault();
@@ -100,10 +101,24 @@ public class FsConnection extends NoOpConnection {
     } catch (IOException e) {
       throw new RuntimeException(e);
     } catch (UnsupportedOperationException e) {
-      if (!fileSystem.getClass().getSimpleName().equals("WindowsFileSystem")) {
-        // We trow if it's not window because it's unsupported for windows
-        throw e;
+
+      /**
+       * We may receive the UnsupportedOperationException
+       * <p>
+       * Example Linux
+       * Exception in thread "main" java.lang.UnsupportedOperationException
+       *         at java.base/sun.nio.fs.UnixFileSystem.close(Unknown Source)
+       *         at net.bytle.db.fs.FsConnection.close(FsConnection.java:99)
+       *         at net.bytle.db.Tabular.close(Tabular.java:573)
+       *         at net.bytle.db.tabli.Tabli.main(Tabli.java:481)
+       */
+      Set<String> invalidValues = Set.of("WindowsFileSystem", "LinuxFileSystem");
+      String fileSystemName = fileSystem.getClass().getSimpleName();
+      if (!invalidValues.contains(fileSystemName)) {
+        // We throw
+        throw new UnsupportedOperationException("Error for file system: " + fileSystemName, e);
       }
+
     }
   }
 
@@ -185,7 +200,7 @@ public class FsConnection extends NoOpConnection {
 
     /**
      * DataDef yaml check: Do we have also a yaml property files
-     *
+     * <p>
      * Only for files, not for directory
      */
     if (!(dataPath instanceof FsDirectoryDataPath)) {

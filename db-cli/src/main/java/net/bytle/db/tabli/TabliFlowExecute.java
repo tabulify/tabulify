@@ -7,6 +7,8 @@ import net.bytle.db.flow.engine.Pipeline;
 import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.DataUri;
+import net.bytle.log.Log;
+import net.bytle.log.Logs;
 import net.bytle.type.MediaTypes;
 
 import java.nio.file.Path;
@@ -19,6 +21,8 @@ import static net.bytle.db.tabli.TabliWords.NOT_STRICT_FLAG;
 
 public class TabliFlowExecute {
 
+
+  public static final Log LOGGER = Logs.createFromClazz(TabliFlowExecute.class);
 
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
 
@@ -54,9 +58,9 @@ public class TabliFlowExecute {
         FsDataPath fsDataPath = (FsDataPath) dataPath;
         Path path = fsDataPath.getAbsoluteNioPath();
         try (Pipeline pipeline = Pipeline.createFromYamlPath(tabular, path)) {
-          System.out.println("########");
-          System.out.println("Executing the pipeline "+pipeline.getLogicalName());
-          System.out.println("########");
+          LOGGER.info("########");
+          LOGGER.info("Executing the pipeline " + pipeline.getLogicalName());
+          LOGGER.info("########");
           DataPath feedBack = pipeline
             .execute()
             .getRunsByStepDataPath();

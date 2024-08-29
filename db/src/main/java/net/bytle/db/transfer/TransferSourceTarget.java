@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  * <p>
  * The function has also transfer utility function.
  * <p>
- * The get functions perform also check when they expects
+ * The get functions perform also check when they expect
  * that you are building a statement (For instance {@link #getSourceColumnsInUpdateSetClause()}
  */
 public class TransferSourceTarget {
@@ -405,7 +405,7 @@ public class TransferSourceTarget {
       case NAME:
       case POSITION:
       default:
-        if (source.getOrCreateRelationDef().getColumnDefs().size() == 0) {
+        if (source.getOrCreateRelationDef().getColumnDefs().isEmpty()) {
           throw new RuntimeException("With the mapping column method (" + columnMappingMethod + "), we cannot create a target because the source (" + source + ") has no columns.");
         }
         target.getOrCreateRelationDef().copyDataDef(source);
@@ -609,7 +609,7 @@ public class TransferSourceTarget {
 
     List<ColumnDef> targetUniqueColumns = checkThatTargetHasPrimaryOrUniqueColumns();
     List<ColumnDef> sourceUniqueColumns = this.getSourceUniqueColumnsForTarget();
-    if (sourceUniqueColumns.size() == 0) {
+    if (sourceUniqueColumns.isEmpty()) {
       throw new RuntimeException("No target unique column name was found in the source. At minimal one of the unique columns(" +
         targetUniqueColumns.stream().map(ColumnDef::getColumnName).collect(Collectors.joining(", "))
         + ") of the target (" + target + ") should appear in the source (" + source + ")");
@@ -618,7 +618,7 @@ public class TransferSourceTarget {
 
   private List<ColumnDef> checkThatTargetHasPrimaryOrUniqueColumns() {
     List<ColumnDef> targetUniqueColumns = this.getTargetUniqueColumns();
-    if (targetUniqueColumns.size() == 0) {
+    if (targetUniqueColumns.isEmpty()) {
       throw new RuntimeException("We can't create an update statement because the target table (" + target + ") has no primary key or unique columns.");
     }
     return targetUniqueColumns;
@@ -639,7 +639,7 @@ public class TransferSourceTarget {
       // Without the column not in the target
       .filter(col -> target.getOrCreateRelationDef().hasColumn(col.getColumnName()))
       .collect(Collectors.toList());
-    if (columnsInSet.size() == 0) {
+    if (columnsInSet.isEmpty()) {
       throw new RuntimeException("The source column names (" +
         String.join(", ", sourceUniqueColumns) + ") " +
         "are all unique columns (" +
