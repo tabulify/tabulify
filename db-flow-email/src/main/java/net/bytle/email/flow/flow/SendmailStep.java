@@ -400,7 +400,7 @@ public class SendmailStep extends FilterStepAbs {
              * are not passed to the building of the connection
              * The `to` should be in the URI for now.
              */
-            throw new RuntimeException("A `to` address was not found for the connection (" + connectionRun + "). It's mandatory because the execution runs with the environment (" + environment + ") that is not a production environment, therefore the email are send to the `to` address of the connection. Set the environment to production or give a `to` email property to smtp.");
+            throw new RuntimeException("A `to` address on the connection (" + connectionRun + ") was not found. \nIn a non-prod environment (Env: " + environment + "), the email step send to the `to` address of the connection. \nSet the environment to production or give a `to` email property to them SMTP connection. \nFor the default, set the SMTP_TO env");
           }
           InternetAddress connectionTo = connectionTos.get(0);
           for (InternetAddress internetAddress : toMessagesAddresses) {
@@ -711,21 +711,18 @@ public class SendmailStep extends FilterStepAbs {
     return this;
   }
 
-  private SendmailStep setBcc(List<InternetAddress> internetAddresses) {
+  private void setBcc(List<InternetAddress> internetAddresses) {
     this.bcc = internetAddresses;
-    return this;
   }
 
-  private SendmailStep setCc(List<InternetAddress> internetAddresses) {
+  private void setCc(List<InternetAddress> internetAddresses) {
     this.cc = internetAddresses;
-    return this;
   }
 
 
-  private SendmailStep setLogDataPath(DataPath dataPath) {
+  private void setLogDataPath(DataPath dataPath) {
     this.logDataPath = dataPath;
     this.checkAndOrCreateLogDataPath(dataPath);
-    return this;
   }
 
   private void checkAndOrCreateLogDataPath(DataPath logDataPath) {
@@ -760,34 +757,28 @@ public class SendmailStep extends FilterStepAbs {
     return this;
   }
 
-  private SendmailStep setBodyText(String text) {
+  private void setBodyText(String text) {
     this.txt = text;
-    return this;
   }
 
-  private SendmailStep setBodyHtml(String html) {
+  private void setBodyHtml(String html) {
     this.html = html;
-    return this;
   }
 
-  private SendmailStep setBodyMediaType(List<MediaType> html) {
+  private void setBodyMediaType(List<MediaType> html) {
     this.bodyMediaTypes = html;
-    return this;
   }
 
-  private SendmailStep setSubject(String subject) {
+  private void setSubject(String subject) {
     this.subject = subject;
-    return this;
   }
 
-  private SendmailStep setFrom(InternetAddress internetAddresse) {
+  private void setFrom(InternetAddress internetAddresse) {
     this.from = internetAddresse;
-    return this;
   }
 
-  private SendmailStep setTo(List<InternetAddress> internetAddresses) {
+  private void setTo(List<InternetAddress> internetAddresses) {
     this.to = internetAddresses;
-    return this;
   }
 
 

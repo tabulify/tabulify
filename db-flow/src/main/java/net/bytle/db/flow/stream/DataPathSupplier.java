@@ -8,14 +8,14 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 /**
- * Supplier gives back a set of data path
- *
+ * A supplier gives back a set of data path
+ * <p>
  * The set contains data path that have a relation
- *
+ * <p>
  * Or says in other terms, set should be independent of each other.
- *
+ * <p>
  * If two dependents data paths are separated in two set and if one
- * needs to be create before the other, the flow will get an error
+ * needs to be created before the other, the flow will get an error
  * if the target should be created
  *
  */
@@ -23,8 +23,7 @@ public interface DataPathSupplier extends Supplier<Set<DataPath>>, OperationStep
 
 
   /**
-   * The number of set created
-   * @return
+   * @return The number of set created
    */
   int getSetCount();
 

@@ -352,7 +352,7 @@ public class SqlDataSystem extends DataSystemAbs {
           if (!resultSetReturned) {
             int updateCount = statement.getUpdateCount();
             transferListener.incrementRows(updateCount);
-            SqlLog.LOGGER_DB_JDBC.info(updateCount + " records where moved from (" + source + ") to (" + target + ")");
+            SqlLog.LOGGER_DB_JDBC.info(updateCount + " records were moved from (" + source + ") to (" + target + ")");
           }
         } catch (SQLException e) {
           final String msg = "Error when executing the statement: " + copyStatement;

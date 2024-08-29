@@ -2,7 +2,6 @@ package net.bytle.db.flow.engine;
 
 
 import net.bytle.db.Tabular;
-import net.bytle.db.connection.Connection;
 import net.bytle.db.flow.FlowLog;
 import net.bytle.db.flow.stream.DataPathSupplier;
 import net.bytle.db.json.JsonObject;
@@ -31,8 +30,8 @@ import java.util.stream.Collectors;
 import static net.bytle.db.flow.engine.FlowStepAttribute.OPERATION;
 
 /**
- * A flow starts from one supplier
- * that is started after one event (trigger (manual, script), timer (cron, ..) or data event)
+ * A flow/pipeline starts from one supplier
+ * that is started after one event (trigger (manual, script), timer (cron, ...) or data event)
  * <p>
  * The supplier sends the data to one or more {@link PipelineStep#getDownStreamSteps()}
  * Ie Multiple response of one event can be coded in one play.
@@ -42,9 +41,11 @@ import static net.bytle.db.flow.engine.FlowStepAttribute.OPERATION;
 public class Pipeline implements AutoCloseable {
 
 
-  public static Connection FD;
   private final Tabular tabular;
   private DirectedAcyclicGraph<OperationStep, StepEdge> graph;
+  /**
+   * First step data supplier (ie data path)
+   */
   private DataPathSupplier dataPathSupplier;
 
   /**
@@ -131,7 +132,7 @@ public class Pipeline implements AutoCloseable {
     List<StepProvider> operationsRegistered = StepProvider.installedProviders();
 
 
-    if (pipelineStepList.size() == 0) {
+    if (pipelineStepList.isEmpty()) {
       throw new RuntimeException("The yaml does not have any step. Nothing to do");
     }
 
@@ -240,7 +241,7 @@ public class Pipeline implements AutoCloseable {
       step.setTabular(tabular);
       FlowLog.LOGGER.fine("Step `" + stepName + "` with the operation " + step.getOperationName() + " found");
 
-      if (arguments.size() > 0) {
+      if (!arguments.isEmpty()) {
         step.setArguments(arguments);
       }
 
@@ -308,6 +309,9 @@ public class Pipeline implements AutoCloseable {
     this.hasBeenExecuted = true;
     try {
       this.timer = Timer.createFromUuid().start();
+      /**
+       * The runner type
+       */
       DescendantRunner descendantRunner = createDescendantRunner(dataPathSupplier);
       int run = 0;
       while (dataPathSupplier.hasNext()) {
@@ -324,7 +328,7 @@ public class Pipeline implements AutoCloseable {
       /**
        * If we have accumulators step, run them
        */
-      while (accumulators.size() != 0) {
+      while (!accumulators.isEmpty()) {
         for (Map.Entry<FilterOperationStep, FilterRunnable> entry : accumulators.entrySet()) {
           accumulators.remove(entry.getKey());
           this.runTraverse(entry.getKey(), entry.getValue());
@@ -369,7 +373,7 @@ public class Pipeline implements AutoCloseable {
       .getDataPath()
       .getInsertStream();
 
-    if (runsByStep.size() > 0) {
+    if (!runsByStep.isEmpty()) {
       TopologicalOrderIterator<OperationStep, StepEdge> orderIterator = new TopologicalOrderIterator<>(graph);
       int runCounter = 0;
       while (orderIterator.hasNext()) {
@@ -480,9 +484,9 @@ public class Pipeline implements AutoCloseable {
 
   @Override
   public void close() {
-    if (FD != null) {
-      tabular.dropConnection(FD);
-    }
+//    if (FD != null) {
+//      tabular.dropConnection(FD);
+//    }
   }
 
   public int getRunCount() {
@@ -536,7 +540,7 @@ public class Pipeline implements AutoCloseable {
 
     public void run(Set<DataPath> parentDataPaths) throws ExecutionException, InterruptedException {
 
-      if (descendants.size() > 0) {
+      if (!descendants.isEmpty()) {
         for (FilterOperationStep descendantStep : descendants) {
 
           FilterRunnable filterRunnable;

@@ -14,13 +14,17 @@ RUN --mount=type=cache,target=/root/.gradle \
     gradle shadowJar tabliShadowStartScripts --no-daemon
 
 
-# Run
+# Last
 FROM ${JAVA_IMAGE}
 ARG JAR_NAME
 ARG PROJECT_DIR
 
-# Install Git to be able to do a git pull
-RUN apt-get update && apt-get install -y git
+
+RUN apt-get update \
+    # Install Git to be able to do a git pull
+    && apt-get install -y  git \
+    # Install jq and curl for scripting
+    && apt-get install -y jq curl
 
 # The env name `APP_HOME` is used in the executable script
 ENV APP_HOME=/tabli
@@ -33,6 +37,12 @@ COPY --from=builder /app/${PROJECT_DIR}/build/scripts/shadow/tabli ${APP_HOME}/b
 RUN chmod +x /${APP_HOME}/bin/tabli
 ENV PATH="${APP_HOME}/bin:${PATH}"
 
-# Specify the entrypoint to run the application
-# We can't use a variable in the entrypoint
-ENTRYPOINT ["tabli"]
+# Create a host user `1000` called `me` for convenience when using WSL
+# ie the UID 1000 is assigned to first non-root user
+# Why? The user id created on Linux systems starts from 1000
+# It permits to mount ssh keys and other asset in the home directory
+RUN addgroup --gid 1000 megroup && \
+    adduser --uid 1000 --gid 1000 --shell /bin/bash me
+
+# Specify the default command to run
+CMD ["tabli"]
