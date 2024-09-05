@@ -501,8 +501,7 @@ public class MonitorServices {
      */
     Set<DnsName> beauApexDomains = Set.of(
       bytleDomain,
-      datacadamiaDomain,
-      gerardNicoDomain
+      datacadamiaDomain
     );
     Set<DnsName> httpApexWebSite = new HashSet<>(beauApexDomains);
     // the www format of apex domain
@@ -511,7 +510,6 @@ public class MonitorServices {
       wwwNames.add(dnsName.getSubdomain("www"));
     }
     httpApexWebSite.addAll(wwwNames);
-    httpApexWebSite.add(gerardNicoDomain.getSubdomain("rixt"));
     this.checkCloudflareARecord(monitorBeauHost, httpApexWebSite, "Beau Domains HTTP A record");
     /**
      * Fly
@@ -524,6 +522,8 @@ public class MonitorServices {
      * Kube HTTP Server
      */
     Set<DnsName> kubeHTTPDomains = Set.of(
+      gerardNicoDomain,
+      gerardNicoDomain.getSubdomain("www"),
       combostrapDomain,
       combostrapDomain.getSubdomain("www"),
       tabulifyDomain,
