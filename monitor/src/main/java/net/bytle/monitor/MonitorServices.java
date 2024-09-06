@@ -528,6 +528,7 @@ public class MonitorServices {
       combostrapDomain.getSubdomain("www"),
       tabulifyDomain,
       tabulifyDomain.getSubdomain("www"),
+      // `argocd.i` is mandatory for the webhook push of GitHub
       eraldyComHost.getDnsName().getSubdomain("i").getSubdomain("argocd")
     );
     this.checkCloudflareARecord(kubeServer01Host, kubeHTTPDomains, "Kube HTTP A record");
