@@ -8,6 +8,20 @@ It will check:
 * the status point
 * ...
 
+## Synthetics
+
+They are called `Syntetic Monitoring`
+
+Provider:
+
+* Grafana
+* https://one.newrelic.com/synthetics
+* https://www.checklyhq.com/ (Hobby - Zero fees)
+* https://www.uptimerobot.com/ (not bad)
+* https://www.statuscake.com/ (no)
+* https://www.pingdom.com/
+* https://www.site24x7.com/ (mouais)
+* https://www.uptime.com/ (nope - no free)
 
 ## Deploy
 

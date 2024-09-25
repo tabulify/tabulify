@@ -62,11 +62,13 @@ public class MonitorMain extends AbstractVerticle {
             .build();
 
           LOGGER.info("Monitor Config");
-          TowerSmtpClientService smtpMailProvider = server.getSmtpClient();
+
 
           List<MonitorReport> monitorReports = new ArrayList<>();
           LOGGER.info("Monitor Starting the API Token check");
-          MonitorReport apiTokenReport = MonitorApiToken.create(cloudflareApi, configAccessor).check();
+          MonitorReport apiTokenReport = MonitorApiToken
+            .create(cloudflareApi, configAccessor)
+            .check();
           monitorReports.add(apiTokenReport);
 
           LOGGER.info("Monitor Services Checks");
@@ -106,6 +108,7 @@ public class MonitorMain extends AbstractVerticle {
                 subject += " - " + failures + " failures";
               }
               BMailMimeMessage email = null;
+              TowerSmtpClientService smtpMailProvider = server.getSmtpClient();
               try {
                 email = smtpMailProvider.createBMailMessage()
                   .setTo(mail)
