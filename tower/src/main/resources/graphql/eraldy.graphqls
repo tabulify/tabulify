@@ -16,7 +16,7 @@ scalar TimeZone
 scalar Color
 
 """
-There is 2 kinds of user
+There are 2 kinds of user
 * The users of any realm
 * The users of an organization (Eraldy realm)
 """
