@@ -350,7 +350,7 @@ public class SendmailStep extends FilterStepAbs {
                 try {
                   bMailMimeMessageList.add(mimeMessage.build());
                 } catch (MessagingException e) {
-                  throw new RuntimeException("Error while building the message",e);
+                  throw new RuntimeException("Error while building the message", e);
                 }
               }
             } catch (SelectException e) {
@@ -365,7 +365,7 @@ public class SendmailStep extends FilterStepAbs {
               } catch (MessagingException e) {
                 throw new RuntimeException("Error while sending. " +
                   "Error: " + e.getMessage() +
-                  "\nSmtpServer: " + smtpServer)
+                  "\nSmtpServer: " + smtpServer, e)
                   ;
               }
 
@@ -377,11 +377,11 @@ public class SendmailStep extends FilterStepAbs {
 
       }
 
-      private void sendMail(String logicalName, BMailMimeMessage bMailMimeMessage, InsertStream logInsertStream, BMailSmtpClient smtpServer) throws MessagingException {
+      private void sendMail(String logicalName, BMailMimeMessage bMailMimeMessage, InsertStream logInsertStream, BMailSmtpClient smtpClient) throws MessagingException {
 
         String originalToMessageAddresses = bMailMimeMessage.getToAsAddresses().toString();
         String environment = tabular.getEnvironment();
-        /**
+        /*
          * Modify the `to` email
          */
         if (!environment.equals(ProjectConfigurationFile.PRODUCTION_ENV)) {
@@ -395,7 +395,7 @@ public class SendmailStep extends FilterStepAbs {
           SmtpConnection connectionRun = this.getConnectionRun();
           List<InternetAddress> connectionTos = connectionRun.getDefaultToInternetAddresses();
           if (connectionTos.isEmpty()) {
-            /**
+            /*
              * TODO: This error comes from the fact that the attributes
              * are not passed to the building of the connection
              * The `to` should be in the URI for now.
@@ -422,12 +422,12 @@ public class SendmailStep extends FilterStepAbs {
           bMailMimeMessage.setToInternetAddresses(toMessagesAddresses);
         }
 
-        /**
+        /*
          * Send
          */
-        smtpServer.sendMessage(bMailMimeMessage);
+        smtpClient.sendMessage(bMailMimeMessage);
 
-        /**
+        /*
          * Log
          */
         Date sentDate;
@@ -443,7 +443,7 @@ public class SendmailStep extends FilterStepAbs {
           originalToMessageAddresses,
           bMailMimeMessage.getSubject(),
           bMailMimeMessage.toEml(),
-          smtpServer.toString()
+          smtpClient.toString()
         );
       }
 
@@ -560,7 +560,7 @@ public class SendmailStep extends FilterStepAbs {
             try {
               tos = Casts.castToSameMap(value, String.class, String.class);
             } catch (CastException e) {
-              throw new InternalException("String, string should not result in a cast exception",e);
+              throw new InternalException("String, string should not result in a cast exception", e);
             }
             try {
               this.setTo(BMailAddressStatic.mapToListInternetAddress(tos));
@@ -581,7 +581,7 @@ public class SendmailStep extends FilterStepAbs {
             try {
               froms = Casts.castToSameMap(value, String.class, String.class);
             } catch (CastException e) {
-              throw new InternalException("String, string should not result in a cast exception",e);
+              throw new InternalException("String, string should not result in a cast exception", e);
             }
             try {
               List<InternetAddress> internetAddresses = BMailAddressStatic.mapToListInternetAddress(froms);
@@ -610,7 +610,7 @@ public class SendmailStep extends FilterStepAbs {
             try {
               tos = Casts.castToSameMap(value, String.class, String.class);
             } catch (CastException e) {
-              throw new InternalException("String, string should not result in a cast exception",e);
+              throw new InternalException("String, string should not result in a cast exception", e);
             }
             try {
               this.setCc(BMailAddressStatic.mapToListInternetAddress(tos));
@@ -631,7 +631,7 @@ public class SendmailStep extends FilterStepAbs {
             try {
               tos = Casts.castToSameMap(value, String.class, String.class);
             } catch (CastException e) {
-              throw new InternalException("String, string should not result in a cast exception",e);
+              throw new InternalException("String, string should not result in a cast exception", e);
             }
             try {
               this.setBcc(BMailAddressStatic.mapToListInternetAddress(tos));

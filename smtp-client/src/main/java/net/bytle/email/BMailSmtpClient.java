@@ -89,12 +89,12 @@ public class BMailSmtpClient {
    */
   public Properties getSmtpTransportProperties() {
 
-    /**
+    /*
      * The config properties
      */
     Properties smtpServerProps = new Properties();
 
-    /**
+    /*
      * Mail global config
      */
     if (config.debugLogging) {
@@ -104,7 +104,7 @@ public class BMailSmtpClient {
       smtpServerProps.put(MAIL_PROPERTY_PREFIX + ".debug.auth.password", true);
     }
 
-    /**
+    /*
      * Config by Protocol
      */
     String smtpProtocolConfigurationPrefix;
@@ -114,7 +114,7 @@ public class BMailSmtpClient {
       smtpServerProps.put(MAIL_PROPERTY_PREFIX + ".transport.protocol", BMailSmtpProtocol.SMTPS.toString());
 
       smtpProtocolConfigurationPrefix = MAIL_SMTPS_PROPERTY_PREFIX;
-      /**
+      /*
        * The {@link BMailSmtpConnection} use the {@link Transport#send(Message)} that
        * will use the default transport protocol, which remains "smtp" ie {@link com.sun.mail.smtp.SMTPTransport}
        * To enable SMTP connections over SSL, set the "mail.smtp.ssl.enable" property to "true".
@@ -147,7 +147,7 @@ public class BMailSmtpClient {
       smtpServerProps.put(smtpProtocolConfigurationPrefix + "." + BMailSmtpConnectionAttribute.USER, config.username);
     }
 
-    /**
+    /*
      * May be null for direct SSL/TLS connection
      */
     if (config.startTls != null) {
@@ -176,7 +176,7 @@ public class BMailSmtpClient {
     }
 
 
-    /**
+    /*
      * Envelope: MAIL FROM
      * mail.smtp.from sets the envelope return address.
      * Defaults to msg.getFrom() or InternetAddress.getLocalAddress().

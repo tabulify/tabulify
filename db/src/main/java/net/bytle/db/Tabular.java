@@ -429,6 +429,12 @@ public class Tabular implements AutoCloseable {
       // ok
     }
 
+    String smtpDebug = this.getVariableAsStringOrDefault("SMTP_DEBUG", null);
+    if (smtpDebug != null) {
+      emailUri.addQueryProperty("debug", smtpDebug);
+    }
+
+
     this.addConnection(smtpConnection);
 
   }
@@ -748,7 +754,6 @@ public class Tabular implements AutoCloseable {
       throw new InternalException(e);
     }
   }
-
 
 
   /**

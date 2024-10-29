@@ -122,6 +122,18 @@ public class SmtpConnection extends Connection {
     }
   }
 
+  private Boolean getDebug() {
+
+    try {
+      return getBooleanProperty(BMailSmtpConnectionAttribute.DEBUG.toString());
+    } catch (NoValueException | NoVariableException e) {
+      return false;
+    } catch (CastException e) {
+      throw IllegalArgumentExceptions.createFromMessage("The value for the attribute (" + BMailSmtpConnectionAttribute.DEBUG + ") of the connection (" + this + ") is not valid. Error: " + e.getMessage(), e);
+    }
+
+  }
+
   @Nullable
   private Boolean getBooleanProperty(String propertyKey) throws NoValueException, NoVariableException, CastException {
     String tls = this.uri.getQueryProperty(propertyKey);
@@ -258,6 +270,9 @@ public class SmtpConnection extends Connection {
     if (tls) {
       smtpConfig.setStartTls(BMailStartTls.REQUIRE);
     }
+
+    Boolean debug = this.getDebug();
+    smtpConfig.setDebug(debug);
 
     this.smtpServer = smtpConfig.build();
     return smtpServer;

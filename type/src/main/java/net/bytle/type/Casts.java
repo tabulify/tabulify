@@ -32,7 +32,7 @@ public class Casts {
    */
   public static <T> T cast(Object sourceObject, Class<T> targetClass) throws CastException {
 
-    /**
+    /*
      * Null
      */
     if (sourceObject == null) {

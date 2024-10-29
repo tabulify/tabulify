@@ -26,11 +26,11 @@ public class BMailSmtpConnection implements AutoCloseable {
 
   public BMailSmtpConnection(BMailSmtpClient bMailSmtpClient) throws MessagingException {
 
-    /**
+    /*
      * Session is just a configuration object
      */
     Session smtpSession = bMailSmtpClient.getSession();
-    /**
+    /*
      * Other transport protocol may be implemented
      */
     if (!bMailSmtpClient.isDirectTlsConnection()) {
@@ -39,7 +39,7 @@ public class BMailSmtpConnection implements AutoCloseable {
       transport = (SMTPTransport) smtpSession.getTransport(BMailSmtpProtocol.SMTPS.toString());
     }
     transport.addTransportListener(BMailTransportListener.create());
-    /**
+    /*
      * Ter info: The connect methods permits to change the session parameters
      * {@link Transport#connect(String, int, String, String)}}
      * they should be in the properties

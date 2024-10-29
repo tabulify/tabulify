@@ -29,7 +29,8 @@ public enum BMailSmtpConnectionAttribute implements Attribute {
   CC("The carbon copy addresses", null, null),
   CC_NAMES("The carbon copy names", null, null),
   BCC("The blind carbon copy addresses", null, null),
-  BCC_NAMES("The blind carbon copy names", null, null)
+  BCC_NAMES("The blind carbon copy names", null, null),
+  DEBUG("Show debug information", Boolean.class, false)
   ;
 
 
