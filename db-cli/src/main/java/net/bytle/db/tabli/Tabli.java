@@ -54,12 +54,12 @@ public class Tabli {
       CliUsage.CODE_BLOCK
     );
 
-    /**
+    /*
      Initiate the library of options
      */
     TabliWords.initLibrary(rootCommand);
 
-    /**
+    /*
      The options for all command
      */
     rootCommand.addProperty(TabliWords.CONF_VARIABLES_PATH_PROPERTY)
@@ -97,7 +97,7 @@ public class Tabli {
       .setDescription("A passphrase (master password) to decrypt the encrypted values")
       .setValueName("passphrase");
 
-    /**
+    /*
      * Output options
      */
     String outputGroup = "Output Operation Options";
@@ -129,7 +129,7 @@ public class Tabli {
       .setValueName("path");
 
 
-    /**
+    /*
      * The first command (the module)
      */
     rootCommand.addChildCommand(TabliWords.DATA_COMMAND)
@@ -144,27 +144,28 @@ public class Tabli {
       .setDescription("Start Plays (beta)");
 
 
-    /**
+    /*
      * Parse
      */
+    CliLog.LOGGER.setLevel(Level.FINE);
     CliParser cliParser = rootCommand.parse();
 
 
-    /**
+    /*
      * LogLevel
      */
     Logs.setLevel(Level.SEVERE);
 
-    /**
+    /*
      * Init the context object
      */
     final String passphrase = cliParser.getString(TabliWords.PASSPHRASE_PROPERTY);
-    /**
+    /*
      * Project home
      */
     Path projectFilePath = cliParser.getPath(PROJECT_FILE);
 
-    /**
+    /*
      * Set the connection vault
      * Passphrase first
      */
@@ -178,7 +179,7 @@ public class Tabli {
 
     try (Tabular tabular = Tabular.tabular(passphrase, projectFilePath, commandLineConnectionVault, confPath, executionEnvironment)) {
 
-      /**
+      /*
        * Check for the version
        * https://docs.oracle.com/javase/tutorial/deployment/jar/packageman.html
        */
@@ -265,8 +266,8 @@ public class Tabli {
           LOGGER_TABLI.info("No project was found.");
         }
 
-        /**
-         * Timer
+        /*
+          Timer
          */
         Timer cliTimer = Timer
           .createFromUuid()
@@ -274,8 +275,8 @@ public class Tabli {
 
         List<DataPath> feedbackDataPaths = new ArrayList<>();
 
-        /**
-         * Process the command
+        /*
+          Process the command
          */
         List<CliCommand> commands = cliParser.getFoundedChildCommands();
         if (commands.isEmpty()) {

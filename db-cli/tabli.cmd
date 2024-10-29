@@ -10,7 +10,7 @@ REM The properties are passed via argument
 if ".%*" == "." (
   @call %SCRIPT_PATH%/../gradlew tabli --project-dir %SCRIPT_PATH% -PcurrentDirectory=%cd%
 ) ELSE (
-	@call %SCRIPT_PATH%/../gradlew tabli --project-dir %SCRIPT_PATH% -PcurrentDirectory=%cd% -Parguments="%*"
+	@call %SCRIPT_PATH%/../gradlew tabli --project-dir %SCRIPT_PATH% -PcurrentDirectory=%cd% --args="%*"
 );
 
 if "%OS%"=="Windows_NT" endlocal

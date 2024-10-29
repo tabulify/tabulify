@@ -5,9 +5,8 @@ SCRIPT_PATH=$(dirname "$0")
 # This script call the tabli task defined in the gradle.kts build
 # The properties are passed via argument
 
-
 if [[ ".$*" == "." ]]; then
 	"${SCRIPT_PATH}"/../gradlew tabli --project-dir "${SCRIPT_PATH}" -PcurrentDirectory="${PWD}"
 else
-	"${SCRIPT_PATH}"/../gradlew tabli --project-dir "${SCRIPT_PATH%}" -PcurrentDirectory="${PWD}" -Parguments="$*"
+	"${SCRIPT_PATH}"/../gradlew tabli --project-dir "${SCRIPT_PATH%}" -PcurrentDirectory="${PWD}" --args="$*"
 fi

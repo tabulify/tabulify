@@ -331,6 +331,7 @@ dependencies {
 /**
  * External script called with `tabli.cmd`
  * to be able to develop interactively
+ * Args are passed with the `--args=` option
  */
 tasks.register<JavaExec>("tabli") {
   group = tabli
@@ -338,13 +339,6 @@ tasks.register<JavaExec>("tabli") {
   classpath = sourceSets["main"].runtimeClasspath
   if (project.hasProperty("currentDirectory")) {
     workingDir = File(currentDirectory)
-  }
-  if (project.hasProperty("arguments")) {
-    /**
-     * We split and escape the arguments to not have any file wildcard expansion
-     * (ie star will not become a list of files)
-     */
-    args = arguments.split(" +".toRegex()).map { s -> "\"" + s + "\"" }
   }
 }
 
