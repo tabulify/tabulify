@@ -147,7 +147,6 @@ public class Tabli {
     /*
      * Parse
      */
-    CliLog.LOGGER.setLevel(Level.FINE);
     CliParser cliParser = rootCommand.parse();
 
 

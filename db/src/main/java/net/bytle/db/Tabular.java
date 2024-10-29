@@ -389,7 +389,7 @@ public class Tabular implements AutoCloseable {
       emailUri.addQueryProperty("from", smtpFrom);
     } else {
       try {
-        emailUri.addQueryProperty("from", Oss.getUser() + "@" + Oss.getFqdn());
+        emailUri.addQueryProperty("from", Oss.getUser() + "@" + Oss.getFqdn().toStringWithoutRoot());
       } catch (UnknownHostException e) {
         // oeps
       }

@@ -1,5 +1,8 @@
 package net.bytle.os;
 
+import net.bytle.type.DnsCastException;
+import net.bytle.type.DnsName;
+
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -125,8 +128,17 @@ public class Oss {
 
   }
 
-  public static String getFqdn() throws UnknownHostException {
-    return InetAddress.getLocalHost().getCanonicalHostName();
+  /**
+   *
+   * @return the localhost name
+   * @throws UnknownHostException if any errors
+   */
+  public static DnsName getFqdn() throws UnknownHostException {
+    try {
+      return DnsName.create(InetAddress.getLocalHost().getCanonicalHostName());
+    } catch (DnsCastException e) {
+      throw new UnknownHostException(e.getMessage());
+    }
   }
 
   public static String getUser() {

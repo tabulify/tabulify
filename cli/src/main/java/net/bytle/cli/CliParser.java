@@ -100,15 +100,13 @@ public class CliParser {
 
     LOGGER.fine("Parsing the command (" + this.cliCommand.getName() + ")");
 
-
-    /**
-     * Parsing
+    /*
+      Parsing
      */
     parseArgsArray();
 
-
-    /**
-     * Checks
+    /*
+      Checks
      */
     // Help
     // Help check must be before mandatory check
@@ -145,22 +143,34 @@ public class CliParser {
    */
   private void parseArgsArray() {
 
-    /**
+    /*
      * Local variable
      * above the loop
      */
     // Number of argument found
     int argumentCountFound = 0;
 
+    CliLog.LOGGER.fine("Known Words");
+    for(Map.Entry<String,CliWord> knownWord: knownWords.entrySet()){
+      CliLog.LOGGER.fine("   - Word ("+knownWord.getKey()+")");
+    }
+
     boolean unknownOption = false;
     for (int i = 0; i < args.length; i++) {
 
       String s = args[i];
 
+      CliLog.LOGGER.fine("Processing ("+s+")");
+
       CliWord namedCliWord = getNamedKnownWord(s);
+      if (namedCliWord == null) {
+        LOGGER.fine("No word found for (" + s + ")");
+      } else {
+        LOGGER.fine("Word found: " + namedCliWord);
+      }
 
 
-      /**
+      /*
        * After that an unknown option has been seen,
        * a word can't be a command
        */
@@ -178,7 +188,7 @@ public class CliParser {
             strings.add(args[i]);
           } else {
             if (!this.cliCommand.isModule()) {
-              /**
+              /*
                * In a module parsing, the value of a unknown property
                * may be a name
                * Because it can be the case, we don't throw an error for module parsing
@@ -196,26 +206,26 @@ public class CliParser {
       } else {
 
 
-        /**
+        /*
          * This name is not known as a named word
          * This is then an argument or unknown word
          *
-         * If this a module parse, there is no args but we continue to parse the options
+         * If this a module parse, there is no args, but we continue to parse the options
          * Generally the global options at the command root (ie verbosity)
          * that are available for all commands
          */
         if (!this.cliCommand.isModule()) {
 
-          /**
-           * If this is an option, we should have find it before
+          /*
+           * If this is an option, we should have found it before
            */
           if (s.startsWith(CliParser.PREFIX_SHORT_OPTION)) {
             throw new IllegalArgumentException("The option (" + s + ") is not an known option for the command (" + cliCommand + ").");
           }
-          /**
+          /*
            * This is an end command and this should be an argument
            */
-          if (cliCommand.getArgs().size() > 0) {
+          if (!cliCommand.getArgs().isEmpty()) {
 
             // If we don't have another argument to store the value, we add it to the last one
             if (argumentCountFound + 1 > cliCommand.getArgs().size()) {
@@ -268,9 +278,9 @@ public class CliParser {
     CliWord cliWord = knownWords.get(s);
     CliWord namedCliWord = null;
     if (cliWord != null && cliWord.hasVariableName()) {
-      /**
+      /*
        * Not all cliWord have names
-       * (ie edge case when a value is the same than the name
+       * (ie edge case when a value is the same as the name
        * of an argument)
        */
       namedCliWord = cliWord;
@@ -333,7 +343,7 @@ public class CliParser {
            * Value is for a property, we delete from the name the long option `--`
            * Word can have minus option in their name ie (--log-level)
            */
-          systemPropertyName = cliWord.getId().replace(CliParser.PREFIX_LONG_OPTION,"");
+          systemPropertyName = cliWord.getId().replace(CliParser.PREFIX_LONG_OPTION, "");
         }
         String systemPropertyValue = System.getProperty(systemPropertyName);
         if (systemPropertyValue == null) {

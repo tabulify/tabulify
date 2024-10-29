@@ -29,19 +29,11 @@ public class ConfManager implements AutoCloseable {
     return new ConfManager(confPath);
   }
 
-  /**
-   * @return
-   */
   public Map<String, Object> getConfMap() {
 
     return confMap;
   }
 
-  public Object getConf(String key) {
-
-    return confMap.get(key);
-
-  }
 
   public ConfManager setPath(Path path) {
 
@@ -69,11 +61,11 @@ public class ConfManager implements AutoCloseable {
    */
   private void parseYaml() {
     if (this.path != null) {
-      /**
+      /*
        * Parsing
        */
       if (Files.exists(path)) {
-        /**
+        /*
          * Read the file into the map
          */
         try {
@@ -86,7 +78,7 @@ public class ConfManager implements AutoCloseable {
             }
             count++;
 
-            /**
+            /*
              * Cast
              */
             try {
@@ -118,10 +110,6 @@ public class ConfManager implements AutoCloseable {
     return this;
   }
 
-  public String removeProperty(String key) {
-
-    return String.valueOf(this.getConfMap().remove(key));
-  }
 
   public ConfManager reset() {
     try {
@@ -139,22 +127,22 @@ public class ConfManager implements AutoCloseable {
     try {
 
       if (!Files.exists(path)) {
-        Fs.createFile(path);
+        Fs.createEmptyFile(path);
       }
-      /**
+      /*
        * Snake YML does not permit to add comments
        * We are then writing the yaml text file ourselves
        */
       outputStream = Files.newBufferedWriter(path);
 
-      for (Map.Entry entry : getConfMap().entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).collect(Collectors.toList())) {
+      for (Map.Entry<String, Object> entry : getConfMap().entrySet().stream().sorted(Map.Entry.comparingByKey()).collect(Collectors.toList())) {
 
         // Value
         Object value = entry.getValue();
         if (value instanceof Collection) {
           outputStream.write(entry.getKey() + ":");
           outputStream.newLine();
-          Collection collectionValue = Collection.class.cast(value);
+          Collection<?> collectionValue = (Collection<?>) value;
           for (Object colValue : collectionValue) {
             outputStream.write("  - " + colValue);
             outputStream.newLine();

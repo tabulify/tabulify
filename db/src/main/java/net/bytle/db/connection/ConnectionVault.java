@@ -73,7 +73,7 @@ public class ConnectionVault implements AutoCloseable {
        * and add potentially deleted one in memory.
        */
       Path tempFile = Fs.getTempFilePath("connectionVaultTemp", ".ini");
-      Fs.createFile(tempFile);
+      Fs.createEmptyFile(tempFile);
       Config config = Config.getGlobal();
       config.setLineSeparator("\n");
       Ini ini = new Ini();
@@ -200,7 +200,7 @@ public class ConnectionVault implements AutoCloseable {
 
       LOGGER.info("The connection vault file (" + this.path + ") does not exist. Creating it with the `howtos` datastores");
       /**
-       * Create the vault with the how to connections
+       * Create the vault with the how-to connections
        */
       connections = getHowToConnections()
         .stream()
@@ -212,9 +212,10 @@ public class ConnectionVault implements AutoCloseable {
     } else {
 
       LOGGER.info("Opening the connection vault (" + path.toAbsolutePath() + ")");
-      /**
-       * Connection Vault Read
+      /*
+        Connection Vault Read
        */
+      Fs.createEmptyFileIfNotExist(this.path);
       @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") Ini ini;
       try {
         ini = new Ini(this.path.toFile());
@@ -224,14 +225,14 @@ public class ConnectionVault implements AutoCloseable {
       for (String connectionName : ini.keySet()) {
         Wini.Section iniSection = ini.get(connectionName);
 
-        /**
-         * Url Property search
+        /*
+          Url Property search
          */
 
-        /**
-         *
-         * URI is a variable because it needs
-         * templating and may be encryption feature
+        /*
+
+          URI is a variable because it needs
+          templating and may be encryption feature
          */
         Variable uri = null;
         Set<Variable> variableMap = new SetKeyIndependent<>();

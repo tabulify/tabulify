@@ -33,7 +33,7 @@ public class CsvManagerFs extends FsTextManager {
   public void create(FsDataPath fsDataPath) {
 
     CsvDataPath csvDataPath = (CsvDataPath) fsDataPath;
-    Fs.createFile(csvDataPath.getAbsoluteNioPath());
+    Fs.createEmptyFile(csvDataPath.getAbsoluteNioPath());
     CSVFormat csvFormat = csvDataPath.getCsvFormat();
     if (csvFormat.getRecordSeparator()==null){
       csvFormat = csvFormat.withRecordSeparator(System.lineSeparator());

@@ -75,7 +75,7 @@ public class ProjectConfigurationFile {
 
         String fqdn;
         try {
-          fqdn = Oss.getFqdn();
+          fqdn = Oss.getFqdn().toStringWithoutRoot();
           environment = fqdn;
           environmentObject = environmentMaps.get(fqdn);
         } catch (UnknownHostException e) {

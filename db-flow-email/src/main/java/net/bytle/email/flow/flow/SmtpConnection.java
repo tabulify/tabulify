@@ -81,7 +81,7 @@ public class SmtpConnection extends Connection {
         this.getDefaultFromNameProperty()
       );
     } catch (AddressException | UnsupportedEncodingException e) {
-      throw new RuntimeException("Error on the `from` definition of the smtp connection. Error: " + e.getMessage());
+      throw new RuntimeException("Error on the `from` definition of the smtp connection with the value ("+this.getDefaultFromProperty()+"). Error: " + e.getMessage(),e);
     }
 
     try {
@@ -228,7 +228,7 @@ public class SmtpConnection extends Connection {
       return smtpServer;
     }
 
-    /**
+    /*
      * We build it late because the username and the
      * password may be passed later at build time.
      * Bad yeah.
@@ -283,7 +283,7 @@ public class SmtpConnection extends Connection {
   private String getDefaultFromProperty() {
 
     try {
-      return Oss.getUser() + "@" + Oss.getFqdn();
+      return Oss.getUser() + "@" + Oss.getFqdn().toStringWithoutRoot();
     } catch (UnknownHostException e) {
       return "tabulify@localhost";
     }

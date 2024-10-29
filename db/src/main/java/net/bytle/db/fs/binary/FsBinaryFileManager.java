@@ -46,7 +46,7 @@ public class FsBinaryFileManager implements FsFileManager {
    */
   @Override
   public void create(FsDataPath fsDataPath) {
-    Fs.createFile(fsDataPath.getAbsoluteNioPath());
+    Fs.createEmptyFile(fsDataPath.getAbsoluteNioPath());
   }
 
 

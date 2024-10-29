@@ -276,11 +276,11 @@ public class Fs {
 
 
   /**
-   * Create a file and all sub-directories if needed
-   *
+   * Create a file and all subdirectories if needed
+   * It fails if the file exists
    * @param path the file to create
    */
-  public static void createFile(Path path) {
+  public static void createEmptyFile(Path path) {
     try {
       Path parent = path.getParent();
       Files.createDirectories(parent);
@@ -288,6 +288,19 @@ public class Fs {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * Create an empty file if not exists
+   * @param path the file to create
+   */
+  public static void createEmptyFileIfNotExist(Path path) {
+
+    if (Files.exists(path)) {
+      return;
+    }
+    Fs.createEmptyFile(path);
+
   }
 
   /**
@@ -465,7 +478,7 @@ public class Fs {
    * This function is a wrapper around the function {@link Files#createTempFile(String, String, FileAttribute[])}
    * but delete the file to return only a unique path
    * <p>
-   * If you want to create it, use a create function such as {@link #createFile(Path)}
+   * If you want to create it, use a create function such as {@link #createEmptyFile(Path)}
    *
    * @param prefix the beginning of the file name
    * @param suffix the extension (example .txt) when null '.tmp'
