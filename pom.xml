@@ -19,14 +19,27 @@
 
   <modules>
     <module>tabulify-core</module>
+    <module>tabulify-cli</module>
+    <module>tabulify-flow</module>
+    <module>tabulify-json</module>
   </modules>
 
   <!-- The rest of dependencies management is in core  -->
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>${project.parent.groupId}</groupId>
-        <artifactId>tabulify-vertx</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-flow</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-json</artifactId>
         <version>${project.version}</version>
       </dependency>
       <!-- Graph to create the dag-->

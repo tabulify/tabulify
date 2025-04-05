@@ -102,7 +102,7 @@ public class JsonDataPath extends FsTextDataPath {
         JsonFactory jsonFactory = new JsonFactory();
         Path nioPath = getNioPath();
         if (!Files.exists(nioPath)) {
-          throw new RuntimeException("The file " + nioPath + " does not exist, we can't read it");
+          throw new RuntimeException("The file " + nioPath.toAbsolutePath() + " does not exist, we can't read it");
         }
         if (Fs.getExtension(this.getNioPath()).equalsIgnoreCase("jsonl")) {
           Files.newBufferedReader(nioPath).lines().forEach(s -> parseColumns(jsonFactory, s));

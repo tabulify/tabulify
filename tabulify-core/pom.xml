@@ -46,6 +46,10 @@
       <groupId>com.eraldy</groupId>
       <artifactId>eraldy-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.eraldy</groupId>
+      <artifactId>eraldy-niofs-http</artifactId>
+    </dependency>
 
     <!-- Testing -->
     <dependency>

@@ -3,11 +3,16 @@ package net.bytle.db.uri;
 import net.bytle.db.Tabular;
 import net.bytle.db.connection.Connection;
 import net.bytle.db.fs.FsConnection;
+import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NoPathFoundException;
 import net.bytle.exception.NoPatternFoundException;
+import net.bytle.type.UriEnhanced;
+import net.bytle.type.Uris;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -69,9 +74,9 @@ public class DataUri implements Comparable<DataUri> {
     // URI ?
     URI uri = null;
     try {
-      uri = new URI(spec);
-    } catch (URISyntaxException e) {
-      // not an uri
+      uri = UriEnhanced.createFromString(spec).toUri();
+    } catch (IllegalStructure e) {
+      // not an uri, an URL?
     }
 
     /**

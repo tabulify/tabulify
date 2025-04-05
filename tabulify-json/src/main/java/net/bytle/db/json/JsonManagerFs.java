@@ -16,7 +16,7 @@ public class JsonManagerFs extends FsTextManager {
 
     try {
       Path absolute = fsConnection.getDataSystem().toAbsolutePath(path);
-      return new JsonDataPath(fsConnection, path, MediaTypes.createFromPath(absolute.toAbsolutePath()));
+      return new JsonDataPath(fsConnection, absolute, MediaTypes.createFromPath(absolute));
     } catch (NotAbsoluteException e) {
       throw new InternalException("It should not happen as the path is absolute");
     }

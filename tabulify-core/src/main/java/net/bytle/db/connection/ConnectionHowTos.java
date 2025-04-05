@@ -3,8 +3,10 @@ package net.bytle.db.connection;
 import net.bytle.db.TabularAttributes;
 import net.bytle.db.Tabular;
 import net.bytle.fs.Fs;
+import net.bytle.java.Javas;
 
 import java.nio.file.Files;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
@@ -127,7 +129,7 @@ public class ConnectionHowTos {
        */
       String howToDatabaseName = "howto";
       howToDataStoresSet.add(
-        Connection.createConnectionFromProviderOrDefault(tabular, MYSQL_CONNECTION_NAME, "jdbc:mysql://localhost:3306/"+howToDatabaseName)
+        Connection.createConnectionFromProviderOrDefault(tabular, MYSQL_CONNECTION_NAME, "jdbc:mysql://localhost:3306/" + howToDatabaseName)
           .setDescription("The default mysql data store")
           .addVariable("Driver", "com.mysql.jdbc.Driver")
           .setUser("root")
@@ -176,31 +178,32 @@ public class ConnectionHowTos {
   }
 
   /**
-   * @return the location of the how to files
+   * @return the location of the how-to files
    * This function takes care of the fact that the code may run
    * in a development setting or in a distribution one
    */
   protected static Path getHowToFilesPath(Tabular tabular) {
 
-    /**
+    /*
      * Dev environment
      */
     if (tabular.isDev()) {
-      Path path = tabular.getHomePath()
-        .resolve("db-website")
+      Path path;
+      path = tabular.getHomePath()
+        .resolve("tabulify-website")
         .resolve("src")
         .resolve("doc")
         .resolve(HOW_TO_FILE_CONNECTION_NAME)
         .normalize();
-      if (!Files.exists(path)) {
 
+      if (!Files.exists(path)) {
         throw new RuntimeException("The howtofiles directory path (" + path + ") does not exist for a dev env. Have they moved ?");
-      } else {
-        return path;
       }
+      return path;
+
     }
 
-    /**
+    /*
      * Distribution
      */
     return tabular.getHomePath()
@@ -217,17 +220,18 @@ public class ConnectionHowTos {
    */
   protected static Path getEntitiesRootPath(Tabular tabular) {
 
-    /**
+    /*
      * Dev environment
      */
     if (tabular.isDev()) {
       Path path = tabular.getHomePath()
-        .resolve("db-gen-entities")
-        .resolve("src")
-        .resolve("main")
-        .resolve("resources")
-        .resolve(ENTITY_CONNECTION_NAME)
-        .normalize();
+          .resolve("tabulify-gen-entities")
+          .resolve("src")
+          .resolve("main")
+          .resolve("resources")
+          .resolve(ENTITY_CONNECTION_NAME)
+          .normalize();
+
       if (!Files.exists(path)) {
         throw new RuntimeException("The entity directory path (" + path + ") does not exist for a dev env. Have they moved ?");
       } else {
@@ -256,7 +260,7 @@ public class ConnectionHowTos {
      */
     if (tabular.isDev()) {
       Path path = tabular.getHomePath()
-        .resolve("db-jdbc")
+        .resolve("tabulify-jdbc")
         .resolve("src")
         .resolve("main")
         .resolve("sql")

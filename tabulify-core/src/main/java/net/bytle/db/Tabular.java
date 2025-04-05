@@ -1,6 +1,7 @@
 package net.bytle.db;
 
 import net.bytle.db.connection.Connection;
+import net.bytle.db.connection.ConnectionHowTos;
 import net.bytle.db.connection.ConnectionOrigin;
 import net.bytle.db.connection.ConnectionVault;
 import net.bytle.db.fs.FsConnection;
@@ -15,6 +16,7 @@ import net.bytle.db.uri.DataUri;
 import net.bytle.exception.*;
 import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
+import net.bytle.java.Javas;
 import net.bytle.os.Oss;
 import net.bytle.regexp.Glob;
 import net.bytle.type.*;
@@ -103,6 +105,7 @@ public class Tabular implements AutoCloseable {
    */
   private int exitStatus = 0;
   private Path runningPipelineScript;
+  private Path homePath;
 
 
   public Tabular(String passphrase, Path projectFilePath, Path connectionVaultPath, Path variablePath, String env) {
@@ -849,8 +852,29 @@ public class Tabular implements AutoCloseable {
     return JavaEnvs.isDev(Tabular.class);
   }
 
+  private Path getHomePathDynamic(){
+    try {
+      // in dev
+      return Javas.getBuildDirectory(ConnectionHowTos.class)
+        .getParent()
+        .getParent();
+    } catch (NotDirectoryException e) {
+      // in prod
+      return Javas.getSourceCodePath(JavaEnvs.class)
+        .getParent()
+        .getParent();
+    }
+  }
+  /**
+   * @return the home directory of the installation
+   */
   public Path getHomePath() {
-    return JavaEnvs.HOME_PATH;
+
+    if(this.homePath ==null){
+      this.homePath = this.getHomePathDynamic();
+    }
+    return this.homePath;
+
   }
 
 
