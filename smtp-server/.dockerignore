@@ -1,5 +1,0 @@
-
-**
-# Important otherwise the docker file cannot found the jar
-!build\libs\bytle-smtp-server-all.jar
-!deploy\**
