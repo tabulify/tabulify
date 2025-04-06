@@ -337,7 +337,7 @@ public class FsDataSystem extends DataSystemAbs {
       .startTimer();
     try {
 
-      /**
+      /*
        * Load Operation check
        */
       TransferOperation loadOperation = transferProperties.getOperation();
@@ -346,7 +346,7 @@ public class FsDataSystem extends DataSystemAbs {
       }
       FsLog.LOGGER_DB_FS.info(loadOperation + " data operation on the file (" + fsSource.getNioPath() + ") to the file(" + fsTarget.getNioPath() + ")");
 
-      /**
+      /*
        * Target check
        */
       Path targetNioPath = fsTarget.getAbsoluteNioPath();
@@ -357,7 +357,7 @@ public class FsDataSystem extends DataSystemAbs {
           if (
             transferProperties.getTargetOperations().contains(TransferResourceOperations.CREATE)
           ) {
-            if (target.getOrCreateRelationDef().getColumnDefs().size() == 0 && source.getOrCreateRelationDef().getColumnDefs().size() != 0) {
+            if (target.getOrCreateRelationDef().getColumnDefs().isEmpty() && !source.getOrCreateRelationDef().getColumnDefs().isEmpty()) {
               target.getOrCreateRelationDef()
                 .mergeStructWithoutConstraints(source);
             }
@@ -368,7 +368,7 @@ public class FsDataSystem extends DataSystemAbs {
         }
       }
 
-      /**
+      /*
        * Copy Options
        */
       List<StandardCopyOption> copyOptions = new ArrayList<>();
@@ -383,31 +383,35 @@ public class FsDataSystem extends DataSystemAbs {
       switch (loadOperation) {
         case COPY:
           try {
-            /**
+            /*
              * We try atomic
              */
             Files.copy(fsSource.getAbsoluteNioPath(), targetNioPath, atomicOption.toArray(new StandardCopyOption[0]));
           } catch (AtomicMoveNotSupportedException | UnsupportedOperationException e) {
-            /**
-             * Non atomic then
+            /*
+             * Non-atomic then
              */
             Files.copy(fsSource.getAbsoluteNioPath(), targetNioPath, copyOptions.toArray(new StandardCopyOption[0]));
           }
           break;
         case MOVE:
           try {
-            /**
+            /*
              * We try atomic
              */
             Files.move(fsSource.getAbsoluteNioPath(), fsTarget.getAbsoluteNioPath(), atomicOption.toArray(new StandardCopyOption[0]));
           } catch (AtomicMoveNotSupportedException | UnsupportedOperationException e) {
-            /**
+            /*
              * Non-atomic then
              */
             Files.move(fsSource.getAbsoluteNioPath(), fsTarget.getAbsoluteNioPath(), copyOptions.toArray(new StandardCopyOption[0]));
           }
           break;
         case INSERT:
+          /*
+           * Existing file may have headers in the content at creation
+           * Example: csv
+           */
           Files.write(
             fsTarget.getAbsoluteNioPath(),
             Files.readAllBytes(fsSource.getAbsoluteNioPath()),

@@ -31,7 +31,7 @@ public enum TransferOperation {
 
   /**
    * If the records already exists, update them and insert them otherwise
-   *
+   * <p>
    * It's not a synonym of {@link #MERGE} because a MERGE can also delete records
    */
   UPSERT,
@@ -45,7 +45,7 @@ public enum TransferOperation {
 
   /**
    * Move
-   * * rename operation on the same same system
+   * * rename operation on the same system
    * * or transfer operation
    * * where the target data path will:
    * * have the same structure (columns),
@@ -66,14 +66,14 @@ public enum TransferOperation {
    * Does this transfer operation require
    * to have the same columns (structure) between the source and the target
    *
-   * @return
+   * @return true if the structure should be the same
    */
   boolean requireSameStructureBetweenSourceAndTarget() {
     if (this.equals(COPY) || this.equals(MOVE)) {
       return true;
-    } else {
-      return false;
     }
+    return false;
+
   }
 
 

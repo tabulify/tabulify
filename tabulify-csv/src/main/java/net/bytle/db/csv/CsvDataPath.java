@@ -155,7 +155,7 @@ public class CsvDataPath extends FsTextDataPath {
 
     try {
       return (Character) this.getVariable(CsvDataPathAttribute.QUOTE_CHARACTER).getValueOrDefault();
-    } catch (NoVariableException|NoValueException e) {
+    } catch (NoVariableException | NoValueException e) {
       throw new InternalException("The QUOTE_CHARACTER has already a default and should be added, it should not happen", e);
     }
   }
@@ -212,13 +212,13 @@ public class CsvDataPath extends FsTextDataPath {
   }
 
   /**
-   * @return the header row number
+   * @return the header row number (0, no header)
    */
   public int getHeaderRowId() {
 
     try {
       return (int) this.getVariable(CsvDataPathAttribute.HEADER_ROW_ID).getValueOrDefault();
-    } catch (NoVariableException|NoValueException e) {
+    } catch (NoVariableException | NoValueException e) {
       throw new InternalException("The HEADER_ROW_ID has already a default and should be added, it should not happen", e);
     }
   }
@@ -271,13 +271,28 @@ public class CsvDataPath extends FsTextDataPath {
       }
       if (Files.exists(nioPath)) {
 
+        long lineNumberInTextFile = 0;
         try (
           CSVParser csvParser = CSVParser.parse(nioPath, this.getCharset(), this.getCsvFormat())
         ) {
           Iterator<CSVRecord> recordIterator = csvParser.iterator();
           try {
 
-            CSVRecord headerRecord = safeIterate(recordIterator);
+            /*
+             * Iterate to get:
+             * * the first header row
+             * * or at least the first row
+             */
+            CSVRecord headerRecord = null;
+            if (this.getHeaderRowId() == 0) {
+              headerRecord = safeIterate(recordIterator);
+            } else {
+              while (lineNumberInTextFile < this.getHeaderRowId()) {
+                headerRecord = safeIterate(recordIterator);
+                lineNumberInTextFile++;
+              }
+            }
+
             if (headerRecord == null) {
               return;
             }
@@ -296,6 +311,9 @@ public class CsvDataPath extends FsTextDataPath {
                 // ie select 1 from will return 1
                 String colPrefix = "col";
                 for (int i = 0; i < size; i++) {
+                  /*
+                   * If there is a header
+                   */
                   if (this.getHeaderRowId() > 0) {
                     String columnName = headerRecord.get(i);
 
@@ -306,12 +324,15 @@ public class CsvDataPath extends FsTextDataPath {
                       }
                     }
 
-                    if (columnName.trim().length() == 0) {
+                    if (columnName.trim().isEmpty()) {
                       columnName = colPrefix + (i + 1);
                     }
                     relationDef.addColumn(columnName);
 
                   } else {
+                    /*
+                     * No header
+                     */
                     String columnName = colPrefix + (i + 1);
                     relationDef.addColumn(columnName);
                   }
@@ -421,7 +442,7 @@ public class CsvDataPath extends FsTextDataPath {
 
     try {
       return (boolean) this.getVariable(CsvDataPathAttribute.IGNORE_EMPTY_LINE).getValueOrDefault();
-    } catch (NoVariableException |NoValueException e ) {
+    } catch (NoVariableException | NoValueException e) {
       throw new InternalException("The IGNORE_EMPTY_LINE has already a default and should be added, it should not happen", e);
     }
 

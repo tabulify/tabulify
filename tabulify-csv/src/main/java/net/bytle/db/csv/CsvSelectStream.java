@@ -76,7 +76,7 @@ public class CsvSelectStream extends SelectStreamAbs {
       lineNumberInTextFile++;
       if (currentRecord.size() == 1) {
         // Empty line
-        if (currentRecord.get(0).equals("") && csvDataPath.isIgnoreEmptyLine()) {
+        if (currentRecord.get(0).isEmpty() && csvDataPath.isIgnoreEmptyLine()) {
           return safeIterate();
         } else {
           return true;

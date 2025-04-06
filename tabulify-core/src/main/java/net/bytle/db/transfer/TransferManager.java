@@ -119,13 +119,13 @@ public class TransferManager {
 
     List<List<Object>> streamTransfers = new ArrayList<>();
     for (TransferSourceTarget transferSourceTarget : transferSourceTargets) {
-      /**
+      /*
        * Listeners
        */
       TransferListenerStream transferListenerStream = new TransferListenerStream(transferSourceTarget);
       transferListeners.add(transferListenerStream);
       transferListenerStream.startTimer();
-      /**
+      /*
        * Source / Target Operations
        */
       transferSourceTarget.sourcePreChecks();
@@ -187,7 +187,9 @@ public class TransferManager {
 
 
   /**
-   * Transfer of a data resource from one data source to another
+   * Transfer of a data resource from:
+   * * one data source to another
+   * * row by row
    * <p>
    * There is also a transfer from multiple source to one target
    * when the source generation is dependent called {@link #runDependantTransfer(List)}
@@ -205,7 +207,7 @@ public class TransferManager {
     DataPath targetDataPath = transferSourceTarget.getTargetDataPath();
     TransferProperties transferProperties = transferSourceTarget.getTransferProperties();
 
-    /**
+    /*
      * Check load operation
      * The load operation is important during the
      * check of target structure
@@ -217,7 +219,7 @@ public class TransferManager {
       transferProperties.setOperation(TransferOperation.INSERT);
     }
 
-    /**
+    /*
      * The listener is passed to the consumers and producers threads
      * to ultimately ends in the view thread to report life on the process
      */
@@ -225,8 +227,8 @@ public class TransferManager {
     transferListenerStream.setType(TransferType.SINGLE_CROSS);
     transferListenerStream.startTimer();
 
-    /**
-     * Pre load checks
+    /*
+     * Preload checks
      */
     // Check source
     transferSourceTarget.sourcePreChecks();
@@ -235,7 +237,7 @@ public class TransferManager {
     transferSourceTarget.targetPreOperationsAndCheck(transferListenerStream, true);
 
 
-    /**
+    /*
      * Single thread ?
      */
     int targetWorkerCount = getTransferProperties().getTargetWorkerCount();
@@ -272,12 +274,12 @@ public class TransferManager {
 
     } else {
 
-      /**
+      /*
        * Not every database can make a lot of connection
        * We may use the last connection object for single connection database such as sqlite.
        *
        * Example:
-       *     * their is already a connection through a select for instance
+       *     * there is already a connection through a select for instance
        *     * and that the database does not support multiple connection (such as Sqlite)
        **/
       // One connection is already used in the construction of the database
@@ -534,7 +536,30 @@ public class TransferManager {
       } else {
 
         TransferSourceTarget firstTransferSourceTarget = listTransferSourceTarget.get(0);
-        if (sameDataStore(firstTransferSourceTarget)) {
+
+        /*
+         * MetaMove or Not
+         * ie move done by:
+         * * the data system
+         *    * file (copy/insert/)
+         *    * database (create sql, ...)
+         * * or not (row by row)
+         *
+         * Special CSV Case: when the format has already the header in the content
+         * the meta move on file system cannot be done otherwise the headers will get there 2 times
+         */
+        boolean metaMove = false;
+        boolean headerInContent = firstTransferSourceTarget.getSourceDataPath().getMediaType().getSubType().equals("csv");
+        Boolean targetExist = Tabulars.exists(firstTransferSourceTarget.getTargetDataPath());
+        boolean sameDataStore = sameDataStore(firstTransferSourceTarget);
+        if(sameDataStore && !targetExist){
+          metaMove = true;
+        }
+        if(sameDataStore && targetExist && !headerInContent){
+          metaMove = true;
+        }
+
+        if (metaMove) {
 
           // same provider (fs or jdbc)
           Connection connection = firstTransferSourceTarget.getSourceDataPath().getConnection();
@@ -551,7 +576,8 @@ public class TransferManager {
             transferListeners.add(transferListener);
 
           } catch (UnsupportedOperationException e) {
-            /**
+
+            /*
              * The operation may be not implemented
              *
              * Example: {@link TransferOperation#UPSERT} may be only implemented at the record level
@@ -575,7 +601,7 @@ public class TransferManager {
 
         }
 
-        /**
+        /*
          * Do we need to drop the source
          */
         if (

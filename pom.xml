@@ -23,6 +23,8 @@
     <module>tabulify-flow</module>
     <module>tabulify-json</module>
     <module>tabulify-jdbc</module>
+    <module>tabulify-data-generation</module>
+    <module>tabulify-csv</module>
   </modules>
 
   <!-- The rest of dependencies management is in core  -->
