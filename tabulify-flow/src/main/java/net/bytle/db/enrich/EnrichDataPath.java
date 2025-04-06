@@ -70,7 +70,7 @@ public class EnrichDataPath extends DataPathAbs {
   @Override
   public String getName() {
 
-    return this.wrappedDataPath.getLogicalName() + POSTFIX_ENRICHED;
+    return this.wrappedDataPath.getName() + POSTFIX_ENRICHED;
 
   }
 

@@ -148,8 +148,8 @@ public class DefineStep extends StepAbs implements DataPathSupplier {
     List<List<Object>> records = null;
     for (Map.Entry<String, Object> entryDataResource : dataResource.entrySet()) {
       switch (KeyNormalizer.create(entryDataResource.getKey()).toHyphenCase()) {
-        case "datadefinition":
-        case "datadef":
+        case "data-definition":
+        case "data-def":
           Map<String, Object> dataDef;
           try {
             dataDef = YamlCast.castToSameMap(entryDataResource.getValue(), String.class, Object.class);

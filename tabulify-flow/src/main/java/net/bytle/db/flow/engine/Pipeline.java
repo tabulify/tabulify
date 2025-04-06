@@ -126,7 +126,7 @@ public class Pipeline implements AutoCloseable {
       throw new RuntimeException("The pipeline value is not a map but a " + pipelineObject.getClass().getSimpleName(), e);
     }
 
-    /**
+    /*
      * The known operation
      */
     List<StepProvider> operationsRegistered = StepProvider.installedProviders();
@@ -137,7 +137,7 @@ public class Pipeline implements AutoCloseable {
     }
 
 
-    /**
+    /*
      * Loop through the steps (ie list of maps)
      */
     int stepCounter = 0;
@@ -166,10 +166,17 @@ public class Pipeline implements AutoCloseable {
           throw new IllegalStructure("The attribute (" + key + ") on the step (" + stepName + ") has a null value");
         }
         FlowStepAttribute stepAttribute;
-        try {
-          stepAttribute = Casts.cast(key, FlowStepAttribute.class);
-        } catch (CastException e) {
-          throw IllegalArgumentExceptions.createForStepArgument(key, stepName, FlowStepAttribute.class, e);
+        KeyNormalizer keyNormalized = KeyNormalizer.create(key);
+        if (keyNormalized.equals(KeyNormalizer.create("args"))) {
+          stepAttribute = FlowStepAttribute.ARGUMENTS;
+        } else if (keyNormalized.equals(KeyNormalizer.create("op"))) {
+          stepAttribute = FlowStepAttribute.OPERATION;
+        } else {
+          try {
+            stepAttribute = Casts.cast(key, FlowStepAttribute.class);
+          } catch (CastException e) {
+            throw IllegalArgumentExceptions.createForStepArgument(key, stepName, FlowStepAttribute.class, e);
+          }
         }
         switch (stepAttribute) {
           case NAME:

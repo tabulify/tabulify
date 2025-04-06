@@ -5,12 +5,12 @@ pipeline:
     operation: select
     arguments: # alias for arguments
       data-selector: data/users.csv
-      not-strict: false
+      strict: true
 
   - name: 'LoadUserCsv'
     op: copy
     arguments:
-      targetUri: stg_users@sqlite
+      target-data-uri: stg_users@sqlite
       target-operation: drop
 
 

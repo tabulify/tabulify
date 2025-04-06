@@ -6,7 +6,7 @@ public enum FlowStepAttribute implements AttributeValue {
 
   NAME("The name of the operation"),
   OPERATION("The operation name"),
-  ARGUMENTS("The argument name"),
+  ARGUMENTS("The args property name"),
   DESCRIPTION("A step description"),
   ;
 
@@ -22,6 +22,8 @@ public enum FlowStepAttribute implements AttributeValue {
   public String getDescription() {
     return this.comment;
   }
+
+
 
 
 }
