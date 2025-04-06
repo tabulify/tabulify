@@ -35,6 +35,11 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jgrapht</groupId>
+      <artifactId>jgrapht-io</artifactId>
+      <scope>test</scope>
+    </dependency>
 
 
   </dependencies>

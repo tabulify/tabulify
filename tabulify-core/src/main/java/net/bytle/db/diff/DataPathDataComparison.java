@@ -198,7 +198,7 @@ public class DataPathDataComparison {
      * have the `comp` prefix
      */
     resultDataPath.createRelationDef()
-      .addColumn(KeyNormalizer.createFromEnum(COMP_ID).toSqlCase())  // Add the id of the row
+      .addColumn(KeyNormalizer.create(COMP_ID).toSqlCase())  // Add the id of the row
       .addColumn(Key.toColumnName(COMP_ORIGIN)) // The origin of the data
       .addColumn(Key.toColumnName(COMP_COMMENT))
       .addColumn(Key.toColumnName(COMP_DIFF_ID))

@@ -51,7 +51,7 @@ public class TransferStep extends TargetFilterStepAbs {
   static {
 
     acceptedNames = Arrays.stream(net.bytle.db.transfer.TransferOperation.values())
-      .map(e -> Key.toNormalizedKey(e.toString()))
+      .map(e -> KeyNormalizer.create(e).toCliLongOptionName())
       .collect(Collectors.toSet());
     acceptedNames.add(TRANSFER);
 
@@ -263,7 +263,7 @@ public class TransferStep extends TargetFilterStepAbs {
   @Override
   public Boolean accept(String name) {
 
-    return acceptedNames.contains(Key.toNormalizedKey(name));
+    return acceptedNames.contains(KeyNormalizer.create(name).toCliLongOptionName());
 
   }
 

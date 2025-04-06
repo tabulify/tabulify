@@ -8,6 +8,7 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.type.Casts;
 import net.bytle.type.Key;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MapKeyIndependent;
 import net.bytle.type.yaml.YamlCast;
 
@@ -88,7 +89,7 @@ public abstract class TargetFilterStepAbs extends FilterStepAbs {
       }
     }
     if (targetUri == null) {
-      throw new IllegalStateException("The target data uri argument ("+ Key.toLongOptionName(TARGET_DATA_URI) +") is mandatory for the step (" + this + ") and was not found.");
+      throw new IllegalStateException("The target data uri argument ("+ KeyNormalizer.create(TARGET_DATA_URI).toCliLongOptionName() +") is mandatory for the step (" + this + ") and was not found.");
     }
 
     /**

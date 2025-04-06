@@ -206,7 +206,7 @@ public class Pipeline implements AutoCloseable {
       }
 
       if (operationString == null) {
-        throw new IllegalStructure("We were unable to find the (" + Key.toUriName(OPERATION) + ") argument in the " + stepName + " step (Data: " + stepMap + ")");
+        throw new IllegalStructure("We were unable to find the (" + KeyNormalizer.create(OPERATION).toCliLongOptionName() + ") argument in the " + stepName + " step (Data: " + stepMap + ")");
       }
 
 

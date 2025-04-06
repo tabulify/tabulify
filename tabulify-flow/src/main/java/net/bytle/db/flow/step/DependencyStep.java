@@ -9,6 +9,7 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAttribute;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.type.Key;
+import net.bytle.type.KeyNormalizer;
 
 import java.sql.Types;
 import java.util.*;
@@ -62,11 +63,11 @@ public class DependencyStep extends FilterStepAbs {
       feedback = tabular.getMemoryDataStore().getAndCreateRandomDataPath()
         .setLogicalName("dependencies")
         .getOrCreateRelationDef();
-      feedback.addColumn(Key.toColumnName("Id"), Types.INTEGER);
+      feedback.addColumn(KeyNormalizer.create("Id").toSqlCase(), Types.INTEGER);
 
       feedback
-        .addColumn(Key.toColumnName(DataPathAttribute.DATA_URI))
-        .addColumn(Key.toColumnName("Dependency"));
+        .addColumn(KeyNormalizer.create(DataPathAttribute.DATA_URI).toSqlCase())
+        .addColumn(KeyNormalizer.create("Dependency").toSqlCase());
 
 
       try (
@@ -107,7 +108,7 @@ public class DependencyStep extends FilterStepAbs {
     }
 
     @Override
-    public Set<DataPath> get() throws InterruptedException, ExecutionException {
+    public Set<DataPath> get() {
       return Collections.singleton(feedback.getDataPath());
     }
 

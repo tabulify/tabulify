@@ -9,6 +9,7 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.type.Arrayss;
 import net.bytle.type.Key;
+import net.bytle.type.KeyNormalizer;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -47,17 +48,17 @@ public class StructStep extends FilterStepAbs implements Function<Set<DataPath>,
         .addColumn("data_uri");
     }
     structDataPath.getOrCreateRelationDef()
-      .addColumn(Key.toColumnName(ColumnAttribute.POSITION))
-      .addColumn(Key.toColumnName(ColumnAttribute.NAME))
-      .addColumn(Key.toColumnName(ColumnAttribute.TYPE))
-      .addColumn(Key.toColumnName(ColumnAttribute.PRECISION))
-      .addColumn(Key.toColumnName(ColumnAttribute.SCALE))
+      .addColumn(KeyNormalizer.create(ColumnAttribute.POSITION).toSqlCase())
+      .addColumn(KeyNormalizer.create(ColumnAttribute.NAME).toSqlCase())
+      .addColumn(KeyNormalizer.create(ColumnAttribute.TYPE).toSqlCase())
+      .addColumn(KeyNormalizer.create(ColumnAttribute.PRECISION).toSqlCase())
+      .addColumn(KeyNormalizer.create(ColumnAttribute.SCALE).toSqlCase())
       .addColumn("primary_key")
-      .addColumn(Key.toColumnName(ColumnAttribute.NULLABLE))
-      .addColumn(Key.toColumnName(ColumnAttribute.AUTOINCREMENT))
-      .addColumn(Key.toColumnName(ColumnAttribute.COMMENT));
+      .addColumn(KeyNormalizer.create(ColumnAttribute.NULLABLE).toSqlCase())
+      .addColumn(KeyNormalizer.create(ColumnAttribute.AUTOINCREMENT).toSqlCase())
+      .addColumn(KeyNormalizer.create(ColumnAttribute.COMMENT).toSqlCase());
 
-    if (dataPaths.size() == 0) {
+    if (dataPaths.isEmpty()) {
       return structDataPath;
     }
 
@@ -144,7 +145,7 @@ public class StructStep extends FilterStepAbs implements Function<Set<DataPath>,
     }
 
     @Override
-    public Set<DataPath> get() throws InterruptedException, ExecutionException {
+    public Set<DataPath> get() {
       return Collections.singleton(output);
     }
 

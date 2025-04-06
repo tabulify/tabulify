@@ -11,6 +11,7 @@ import net.bytle.exception.CastException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.Casts;
 import net.bytle.type.Key;
+import net.bytle.type.KeyNormalizer;
 
 import java.sql.Types;
 import java.util.Arrays;
@@ -137,7 +138,7 @@ public class CompareStep extends TargetFilterStepAbs {
                   target
                     .getOrCreateRelationDef()
                     .toColumnsDataPathBy(driverAttribute))
-                .setUniqueColumns(Key.toColumnName(driverAttribute.toString()))
+                .setUniqueColumns(KeyNormalizer.create(driverAttribute).toSqlCase())
                 .compareData();
               break;
             case ATTRIBUTE:
@@ -158,12 +159,12 @@ public class CompareStep extends TargetFilterStepAbs {
             feedbackDataPaths.add(comp.getResultDataPath());
           }
 
-          /**
+          /*
            * We may test after the execution and
            * we creating documentation, we get also an error
            * In dev, no errors if the source and target are not the same
            */
-          if (!comp.areEquals() && !JavaEnvs.IS_DEV) {
+          if (!comp.areEquals() && !JavaEnvs.isDev(CompareStep.class)) {
             tabular.setExitStatus(1);
           }
 

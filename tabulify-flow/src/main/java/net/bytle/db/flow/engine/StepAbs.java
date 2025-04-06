@@ -4,6 +4,7 @@ import net.bytle.db.Tabular;
 import net.bytle.exception.NotFoundException;
 import net.bytle.type.*;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public abstract class StepAbs extends StepProvider implements OperationStep {
@@ -54,15 +55,15 @@ public abstract class StepAbs extends StepProvider implements OperationStep {
     if (operationName == null) {
       throw new IllegalStateException("The `getOperationName` function of the step (" + this.getClass().getSimpleName() + ") should return a command name and not a null value.");
     }
-    return Key.toNormalizedKey(commandName).equals(Key.toNormalizedKey(operationName));
+    return KeyNormalizer.create(commandName).equals(KeyNormalizer.create(operationName));
   }
 
   @Override
   public OperationStep createStep() {
     try {
-      return this.getClass().newInstance();
-    } catch (InstantiationException | IllegalAccessException e) {
-      throw new RuntimeException();
+      return this.getClass().getDeclaredConstructor().newInstance();
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+      throw new RuntimeException(e);
     }
   }
 

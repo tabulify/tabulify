@@ -9,6 +9,7 @@ import net.bytle.db.spi.DataPathAttribute;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.exception.NoValueException;
 import net.bytle.type.Key;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.Variable;
 
 import java.util.*;
@@ -45,12 +46,12 @@ public class InfoStep extends FilterStepAbs implements Function<Set<DataPath>, D
       .getOrCreateRelationDef();
 
     if (dataPaths.size() > 1) {
-      propertiesDataPath.addColumn(Key.toColumnName(DataPathAttribute.DATA_URI));
+      propertiesDataPath.addColumn(KeyNormalizer.create(DataPathAttribute.DATA_URI).toSqlCase());
     }
     propertiesDataPath
-      .addColumn(Key.toColumnName(AttributeProperties.ATTRIBUTE))
-      .addColumn(Key.toColumnName(AttributeProperties.VALUE))
-      .addColumn(Key.toColumnName(AttributeProperties.DESCRIPTION));
+      .addColumn(KeyNormalizer.create(AttributeProperties.ATTRIBUTE).toSqlCase())
+      .addColumn(KeyNormalizer.create(AttributeProperties.VALUE).toSqlCase())
+      .addColumn(KeyNormalizer.create(AttributeProperties.DESCRIPTION).toSqlCase());
 
     List<Variable> variables = dataPaths
       .stream()
