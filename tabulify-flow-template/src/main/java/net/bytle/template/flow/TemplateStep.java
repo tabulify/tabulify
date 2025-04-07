@@ -294,7 +294,7 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
             if (templateDataPath != null) {
               for (DataPathAttribute envVariablesDataPathAttribute : envVariablesDataPathAttributes) {
                 try {
-                  envVariables.put(TEMPLATE_PREFIX + Key.toLongOptionName(envVariablesDataPathAttribute), templateDataPath.getVariable(envVariablesDataPathAttribute));
+                  envVariables.put(TEMPLATE_PREFIX + KeyNormalizer.create(envVariablesDataPathAttribute).toCliLongOptionName(), templateDataPath.getVariable(envVariablesDataPathAttribute));
                 } catch (NoVariableException ex) {
                   // ok
                 }
@@ -328,7 +328,8 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
                     while (variableTableSelectStream.next()) {
                       HashMap<String, Object> record = new HashMap<>();
                       for (ColumnDef columnDef : tableDataPath.getOrCreateRelationDef().getColumnDefs()) {
-                        record.put(columnDef.getColumnName(), variableTableSelectStream.getString(columnDef.getColumnPosition()));
+                        Integer columnPosition = columnDef.getColumnPosition();
+                        record.put(columnDef.getColumnName(), variableTableSelectStream.getString(columnPosition));
                       }
                       records.add(record);
                     }

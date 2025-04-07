@@ -1,5 +1,11 @@
 version: '3'
 
+includes:
+  root:
+    taskfile: ../Taskfile.yml
+    flatten: true
+    dir: ../
+
 tasks:
   pg-start:
     cmds:

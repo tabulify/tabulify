@@ -189,7 +189,7 @@ public class FsTextSelectStream extends SelectStreamAbs {
     if (columnIndex == 1) {
       return record;
     } else {
-      throw new RuntimeException("A text file has only one column. Therefore, you can ask the column (1) not the column (" + columnIndex + ") ");
+      throw new RuntimeException("The file ("+this.getDataPath().getName()+") has been loaded as a text file. Therefore, you can ask only the column (1) not the column (" + columnIndex + "). If the file has a structured format, the plugin should be enabled.");
     }
   }
 

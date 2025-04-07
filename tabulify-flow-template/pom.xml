@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>tabulify-flow-template</artifactId>
+  <name>Tabulify Flow Template Step</name>
+
+  <!-- Parent are used before all for the assembly build steps -->
+  <parent>
+    <groupId>com.tabulify</groupId>
+    <artifactId>tabulify</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+
+  <dependencies>
+
+    <!-- Compile -->
+    <dependency>
+      <groupId>com.eraldy</groupId>
+      <artifactId>eraldy-template</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.eraldy</groupId>
+      <artifactId>eraldy-html</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-flow</artifactId>
+    </dependency>
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-csv</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+
+  </dependencies>
+
+
+</project>
