@@ -1,17 +1,16 @@
 package net.bytle.db.gen.generator;
 
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
+
 import net.bytle.db.gen.GenColumnDef;
 import net.bytle.exception.CastException;
 import net.bytle.exception.NoColumnException;
 import net.bytle.type.Casts;
 import net.bytle.type.Strings;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ScriptableObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -20,22 +19,24 @@ import java.util.*;
 import static net.bytle.db.gen.GenColumnDef.GENERATOR_PROPERTY_KEY;
 
 
-@SuppressWarnings("removal")
 public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements CollectionGenerator<T>, java.util.function.Supplier<T> {
 
   public static final String TYPE = "expression";
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ExpressionGenerator.class);
 
-  private static final ScriptEngine engine;
+
   public static final String EXPRESSION_PROPERTY = "expression";
   public static final String COLUMN_PARENT_PROPERTY = "ColumnParents";
 
+  private static final Context cx;
+
+  private static final ScriptableObject scope;
+
   static {
-    ScriptEngineManager mgr = new ScriptEngineManager();
-    // We need to move to graalJs
-    // https://docs.oracle.com/en/java/javase/11/docs/api/jdk.scripting.nashorn/module-summary.html
-    engine = mgr.getEngineByName("Javascript");
+    //https://rhino.github.io/docs/scopes_and_contexts/
+    cx = Context.enter();
+    scope = cx.initStandardObjects();
   }
 
   private final List<CollectionGenerator<?>> parentCollectionGenerators = new ArrayList<>();
@@ -60,7 +61,6 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
    * Instantiate an expression generator from the columns properties
    * This function is called via recursion by the function {@link GenColumnDef#getOrCreateGenerator(Class)}
    * Don't delete
-   *
    */
   public static <T> ExpressionGenerator<T> createFromProperties(Class<T> tClass, GenColumnDef genColumnDef) {
 
@@ -136,11 +136,13 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
 
     // engine.eval load the script
     // on eval can load a function
-    // and an other can start the function
+    // and another can start the function
     evalScript.append(expression);
 
-    try {
-      Object evalValue = engine.eval(evalScript.toString());
+
+    try (Context cx = Context.enter()) {
+
+      Object evalValue = cx.evaluateString(scope, evalScript.toString(), "<cmd>", 1, null);
       if (evalValue == null) {
         final String msg = "The expression generator for the column (" + this.getColumnDef() + ") has returned a NULL value and it's not expected.\nThe expression was: " + evalScript;
         LOGGER.error(msg);
@@ -149,35 +151,18 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
       this.actualValue = evalValue;
 
       /**
-       * Exception to the above logic
+       * The substring because javascript return always a float for numbers,
+       * then you may get 2020.0 in place of 2020 for instance
        */
-      if (evalValue.getClass() == ScriptObjectMirror.class) {
-        ScriptObjectMirror evalValueMirror = (ScriptObjectMirror) evalValue;
-        if (evalValueMirror.getClassName().equals("Date")) {
-          // https://stackoverflow.com/questions/25385911/nashorn-nativedate-conversion-to-java-util-date
-          // js date returns timestamp in local time so you need to adjust it...
-          long timestampLocalTime = (long) (double) evalValueMirror.callMember("getTime");
-          // java.util.Date constructor utilizes UTC timestamp
-          int timezoneOffsetMinutes = (int) (double) evalValueMirror.callMember("getTimezoneOffset");
-          this.actualValue = new Date(timestampLocalTime + (long) timezoneOffsetMinutes * 60 * 1000);
-        } else {
-          this.actualValue = evalValue;
-        }
-      } else {
-        /**
-         * The substring because javascript return always a float for numbers,
-         * then you may get 2020.0 in place of 2020 for instance
-         */
-        if (this.clazz.equals(String.class)) {
-          String processString = Strings.createFromObjectNullSafe(evalValue).toString();
-          GenColumnDef columnDef = this.getColumnDef();
-          if (columnDef.getPrecision() != null) {
-            if (processString.length() > columnDef.getPrecisionOrMax()) {
-              processString = processString.substring(0, columnDef.getPrecisionOrMax());
-            }
+      if (this.clazz.equals(String.class)) {
+        String processString = Strings.createFromObjectNullSafe(evalValue).toString();
+        GenColumnDef columnDef = this.getColumnDef();
+        if (columnDef.getPrecision() != null) {
+          if (processString.length() > columnDef.getPrecisionOrMax()) {
+            processString = processString.substring(0, columnDef.getPrecisionOrMax());
           }
-          this.actualValue = processString;
         }
+        this.actualValue = processString;
       }
 
       try {
@@ -186,8 +171,6 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
         throw new RuntimeException("The value (" + this.actualValue + ") can not be cast to " + clazz, e);
       }
 
-    } catch (ScriptException e) {
-      throw new RuntimeException(evalScript.toString(), e);
     }
 
   }
@@ -200,7 +183,6 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
     //noinspection unchecked
     return (T) actualValue;
   }
-
 
 
   @Override
