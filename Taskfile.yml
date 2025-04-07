@@ -10,3 +10,21 @@ tasks:
     # -DskipTests and not -Dmaven.test.skip so that test packaging is not skipped
     cmds:
       - mvn package -DskipTests
+  # Run tests slow excluded (by default)
+  test:
+    cmds:
+      # -P for profile name
+      - |
+        mvn test -P default
+  # Run all tests
+  test-all:
+    cmds:
+      # -P for profile name
+      - |
+        mvn test -P all-tests
+  # Run slow tests
+  test-slow:
+    cmds:
+      # -P for profile name
+      - |
+        mvn test -P slow-tests-only
