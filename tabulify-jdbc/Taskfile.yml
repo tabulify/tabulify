@@ -1,7 +1,7 @@
 version: '3'
 
 tasks:
-  pgstart:
+  pg-start:
     cmds:
       - |
         docker run \
@@ -10,3 +10,8 @@ tasks:
             -d \
             --name postgres \
             postgres:9.5
+  pg-stop:
+    cmds:
+      - |
+        docker stop postgres
+
