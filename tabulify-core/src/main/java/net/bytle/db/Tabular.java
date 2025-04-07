@@ -1153,4 +1153,11 @@ public class Tabular implements AutoCloseable {
   public MemoryDataPath createMemoryDataPath(String path) {
     return this.getMemoryDataStore().getDataPath(path);
   }
+
+  @SuppressWarnings("UnusedReturnValue")
+  public Tabular addConnection(String name, Connection connection) {
+    this.connections.put(name, connection);
+    return this;
+  }
+
 }
