@@ -29,6 +29,15 @@
       <artifactId>tabulify-flow</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-data-generation</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>com.eraldy</groupId>
       <artifactId>eraldy-cli</artifactId>
     </dependency>

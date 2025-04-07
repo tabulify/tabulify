@@ -1,0 +1,12 @@
+version: '3'
+
+tasks:
+  pgstart:
+    cmds:
+      - |
+        docker run \
+            -e POSTGRES_PASSWORD=welcome \
+            -p 5432:5432 \
+            -d \
+            --name postgres \
+            postgres:9.5

@@ -45,7 +45,16 @@
       <artifactId>tabulify-flow</artifactId>
       <scope>test</scope>
     </dependency>
-
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-data-generation</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-csv</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 

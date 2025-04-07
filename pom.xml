@@ -45,6 +45,21 @@
         <artifactId>tabulify-json</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-jdbc</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-data-generation</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-csv</artifactId>
+        <version>${project.version}</version>
+      </dependency>
       <!-- from https://jdbc.postgresql.org/download.html-->
       <!-- 42.2.16 is the current version of the driver. This is the driver you should be using.-->
       <!-- It supports PostgreSQL 8.2 or newer and requires Java 6 or newer. It contains support for SSL and the javax.sql package.-->
