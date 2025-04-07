@@ -1546,7 +1546,8 @@ public class SqlDataSystem extends DataSystemAbs {
 
 
   /**
-   * An utility function to quote a SQL identifier
+   * A utility function to quote a SQL identifier
+   * For example: 5f110ee2 is not valid as it starts with a number but "5f110ee2" is
    * <p>
    * {@link DatabaseMetaData#getIdentifierQuoteString()}
    *
@@ -1561,7 +1562,7 @@ public class SqlDataSystem extends DataSystemAbs {
   }
 
   /**
-   * Build the meta data type
+   * Build the metadata type
    */
   public Map<Integer, SqlMetaDataType> getMetaDataTypes() {
 
@@ -1723,12 +1724,12 @@ public class SqlDataSystem extends DataSystemAbs {
       update.append("( ")
         .append(source.getQuery())
         .append(" ) ")
-        .append(source.getLogicalName());
+        .append(createQuotedName(source.getLogicalName()));
     } else {
       update
         .append(source.toSqlStringPath())
         .append(" ")
-        .append(source.getLogicalName());
+        .append(createQuotedName(source.getLogicalName()));
     }
 
     /**
