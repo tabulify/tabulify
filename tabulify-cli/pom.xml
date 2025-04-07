@@ -41,6 +41,10 @@
       <artifactId>tabulify-flow-template</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-xml</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.eraldy</groupId>
       <artifactId>eraldy-cli</artifactId>
     </dependency>

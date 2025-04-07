@@ -26,6 +26,7 @@
     <module>tabulify-data-generation</module>
     <module>tabulify-csv</module>
     <module>tabulify-flow-template</module>
+    <module>tabulify-xml</module>
   </modules>
 
   <!-- The rest of dependencies management is in core  -->
@@ -64,6 +65,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>tabulify-flow-template</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-xml</artifactId>
         <version>${project.version}</version>
       </dependency>
       <!-- from https://jdbc.postgresql.org/download.html-->

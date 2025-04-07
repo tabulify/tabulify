@@ -526,6 +526,6 @@ public class Tabli {
      * or
      * in dev mode
      */
-    return Logs.getLevel().intValue() <= Level.FINE.intValue() || JavaEnvs.IS_DEV;
+    return Logs.getLevel().intValue() <= Level.FINE.intValue() || JavaEnvs.isDev(Tabli.class);
   }
 }
