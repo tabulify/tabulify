@@ -45,9 +45,15 @@
       <artifactId>tabulify-xml</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-sqlite</artifactId>
+    </dependency>
+    <!-- Eraldy -->
+    <dependency>
       <groupId>com.eraldy</groupId>
       <artifactId>eraldy-cli</artifactId>
     </dependency>
+
 
     <!-- Testing -->
     <dependency>
@@ -75,7 +81,50 @@
 
   </dependencies>
 
-
-
+  <build>
+    <plugins>
+      <!-- Fat Jar      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <transformers>
+                <!--  https://maven.apache.org/plugins/maven-shade-plugin/examples/executable-jar.html-->
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <manifestEntries>
+                    <Main-Class>net.bytle.db.tabli.Tabli</Main-Class>
+                    <Build-Number>123</Build-Number>
+                  </manifestEntries>
+                </transformer>
+                <!-- Merge Service file -->
+                <!-- https://maven.apache.org/plugins/maven-shade-plugin/examples/resource-transformers.html#ServicesResourceTransformer  -->
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+              </transformers>
+              <!-- If true, it just does not import net.bytle.niofs.http ??? -->
+              <minimizeJar>false</minimizeJar>
+              <!-- https://stackoverflow.com/questions/34855649/invalid-signature-file-digest-for-manifest-main-attributes-exception-while-tryin -->
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

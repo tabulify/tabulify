@@ -1,0 +1,16 @@
+version: '3'
+
+includes:
+  root:
+    taskfile: ../Taskfile.yml
+    flatten: true
+
+tasks:
+  unjar:
+    cmds:
+      - |
+        cd target;
+        rm -rf un-jar;
+        mkdir un-jar;
+        cd un-jar
+        jar -xf ../tabulify-cli-0.1.0-SNAPSHOT.jar

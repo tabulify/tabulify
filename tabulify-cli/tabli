@@ -1,12 +1,19 @@
 #!/bin/bash
 
+set -TCEeuo pipefail
+
 SCRIPT_PATH=$(dirname "$0")
 
+
+(cd  "$SCRIPT_PATH"; mvn package -DskipTests > /dev/null)
+
+java -jar "$SCRIPT_PATH"/target/tabulify-cli-0.1.0-SNAPSHOT.jar "$*"
+
+# Gradle backup
 # This script call the tabli task defined in the gradle.kts build
 # The properties are passed via argument
-
-if [[ ".$*" == "." ]]; then
-	"${SCRIPT_PATH}"/../gradlew tabli --project-dir "${SCRIPT_PATH}" -PcurrentDirectory="${PWD}"
-else
-	"${SCRIPT_PATH}"/../gradlew tabli --project-dir "${SCRIPT_PATH%}" -PcurrentDirectory="${PWD}" --args="$*"
-fi
+# if [[ ".$*" == "." ]]; then
+#	"${SCRIPT_PATH}"/../gradlew tabli --project-dir "${SCRIPT_PATH}" -PcurrentDirectory="${PWD}"
+# else
+#	"${SCRIPT_PATH}"/../gradlew tabli --project-dir "${SCRIPT_PATH%}" -PcurrentDirectory="${PWD}" --args="$*"
+# fi
