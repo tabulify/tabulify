@@ -55,6 +55,11 @@
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-sqlite</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>tabulify-data-generation</artifactId>
         <version>${project.version}</version>
       </dependency>
