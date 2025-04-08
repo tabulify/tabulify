@@ -27,6 +27,7 @@
     <module>tabulify-csv</module>
     <module>tabulify-flow-template</module>
     <module>tabulify-xml</module>
+    <module>tabulify-sqlite</module>
   </modules>
 
   <!-- The rest of dependencies management is in core  -->

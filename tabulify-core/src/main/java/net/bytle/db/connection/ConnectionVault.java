@@ -179,7 +179,6 @@ public class ConnectionVault implements AutoCloseable {
   }
 
   /**
-   *
    * Load the {@link ConnectionHowTos how-to connections}
    */
   public ConnectionVault loadHowtoConnections() {
@@ -195,7 +194,7 @@ public class ConnectionVault implements AutoCloseable {
   /**
    * Build the connections variable from the connection vault file
    */
-  public ConnectionVault load(Path  path) {
+  public ConnectionVault load(Path path) {
 
 
     LOGGER.info("Opening the connection vault (" + path.toAbsolutePath() + ")");
@@ -301,14 +300,25 @@ public class ConnectionVault implements AutoCloseable {
 
   }
 
-  public ConnectionVault add(Connection connection) {
-
-    assert connections.get(connection.getName()) == null : "The data store (" + connection.getName() + ") exists already and cannot be added";
+  /**
+   * Put (Add or overwrite existing Connection)
+   */
+  public ConnectionVault put(Connection connection) {
     if (connection.getUriAsVariable() == null) {
       throw new RuntimeException("A connection string (url) is mandatory to add a datastore, the data store (" + connection.getName() + ") does not have any.");
     }
     connections.put(connection.getName(), connection);
     return this;
+  }
+
+  /**
+   * Add (Connection should not exist)
+   *
+   */
+  public ConnectionVault add(Connection connection) {
+
+    assert connections.get(connection.getName()) == null : "The data store (" + connection.getName() + ") exists already and cannot be added. Use the put function instead";
+    return put(connection);
   }
 
 
