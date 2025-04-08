@@ -169,7 +169,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    *
    * @param connection the origin connection
    * @return a new reference
-   * Used in the {@link ConnectionVault#init() datastore vault load function} to create a deep copy of the
+   * Used in the {@link ConnectionVault#load() datastore vault load function} to create a deep copy of the
    * internal data stores.
    */
   public static Connection of(Connection connection) {

@@ -4,7 +4,7 @@ includes:
   root:
     taskfile: ../Taskfile.yml
     flatten: true
-    dir: ../
+    # dir: ../ we don't as the dir gives the context of the execution
 
 tasks:
   pg-start:

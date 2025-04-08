@@ -41,7 +41,7 @@ public class ConnectionVault implements AutoCloseable {
    * The in-memory connectionVaultStorage
    * When the init has been done, the value is not null anymore
    */
-  private Map<String, Connection> connections = null;
+  private Map<String, Connection> connections = new HashMap<>();
 
 
   public ConnectionVault(Tabular tabular, Path path) {
@@ -49,6 +49,9 @@ public class ConnectionVault implements AutoCloseable {
     this.tabular = tabular;
     Objects.requireNonNull(path);
     this.path = path;
+    if (Files.exists(path)) {
+      this.load(path);
+    }
 
   }
 
@@ -61,7 +64,7 @@ public class ConnectionVault implements AutoCloseable {
    * Write the changes to the disk
    */
   public void flush() {
-    if (this.connections == null) {
+    if (this.connections.isEmpty()) {
       // Nothing to flush
       return;
     }
@@ -127,21 +130,13 @@ public class ConnectionVault implements AutoCloseable {
 
 
   /**
-   * @return the howto datastores
-   */
-  List<Connection> getHowToConnections() {
-    return ConnectionHowTos.getDataStores(this.tabular);
-  }
-
-
-  /**
    * Remove all connections metadata information that matches one of the globPatterns
    *
    * @param globPatterns one or more glob pattern
    * @return a list of database name removed
    */
+  @SuppressWarnings("UnusedReturnValue")
   public List<Connection> removeConnections(String... globPatterns) {
-    initCheck();
     List<Connection> connectionsToRemove = getConnections(globPatterns);
     for (Connection connectionToRemove : connectionsToRemove) {
       connections.remove(connectionToRemove.getName());
@@ -154,8 +149,9 @@ public class ConnectionVault implements AutoCloseable {
    *
    * @return the deleted connections
    */
+  @SuppressWarnings("UnusedReturnValue")
   public List<Connection> removeAllConnections() {
-    initCheck();
+
     List<Connection> connectionsRemoved = new ArrayList<>(this.connections.values());
     connections = new HashMap<>();
     return connectionsRemoved;
@@ -166,7 +162,6 @@ public class ConnectionVault implements AutoCloseable {
    * @return all databases
    */
   public List<Connection> getConnections() {
-    initCheck();
     return new ArrayList<>(connections.values());
   }
 
@@ -175,7 +170,6 @@ public class ConnectionVault implements AutoCloseable {
    * @return all databases that match this glob patterns
    */
   public List<Connection> getConnections(String... globPatterns) {
-    initCheck();
     return this.connections.values()
       .stream()
       .filter(ds -> Arrays.stream(globPatterns)
@@ -184,46 +178,36 @@ public class ConnectionVault implements AutoCloseable {
       .collect(Collectors.toList());
   }
 
+  /**
+   *
+   * Load the {@link ConnectionHowTos how-to connections}
+   */
+  public ConnectionVault loadHowtoConnections() {
+
+    for (Connection connection : this.tabular.getHowtoConnections().values()) {
+      connections.put(connection.getName(), connection);
+    }
+
+    return this;
+
+  }
 
   /**
    * Build the connections variable from the connection vault file
-   * or if empty build with the {@link ConnectionHowTos}
    */
-  public ConnectionVault init() {
+  public ConnectionVault load(Path  path) {
 
-    if (this.connections != null) {
-      throw new RuntimeException("The connection vault has already been initialized");
+
+    LOGGER.info("Opening the connection vault (" + path.toAbsolutePath() + ")");
+
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") Ini ini;
+    try {
+      ini = new Ini(path.toFile());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
-    this.connections = new HashMap<>();
-
-    if (!Files.exists(this.path) && !this.tabular.isProjectRun()) {
-
-      LOGGER.info("The connection vault file (" + this.path + ") does not exist. Creating it with the `howtos` datastores");
-      /**
-       * Create the vault with the how-to connections
-       */
-      connections = getHowToConnections()
-        .stream()
-        .collect(Collectors.toMap(Connection::getName, Connection::of));
-
-      this.flush();
-      LOGGER.info("The connection vault file (" + this.path + ") was created.");
-
-    } else {
-
-      LOGGER.info("Opening the connection vault (" + path.toAbsolutePath() + ")");
-      /*
-        Connection Vault Read
-       */
-      Fs.createEmptyFileIfNotExist(this.path);
-      @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") Ini ini;
-      try {
-        ini = new Ini(this.path.toFile());
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-      for (String connectionName : ini.keySet()) {
-        Wini.Section iniSection = ini.get(connectionName);
+    for (String connectionName : ini.keySet()) {
+      Wini.Section iniSection = ini.get(connectionName);
 
         /*
           Url Property search
@@ -234,50 +218,50 @@ public class ConnectionVault implements AutoCloseable {
           URI is a variable because it needs
           templating and may be encryption feature
          */
-        Variable uri = null;
-        Set<Variable> variableMap = new SetKeyIndependent<>();
-        for (String propertyName : iniSection.keySet()) {
+      Variable uri = null;
+      Set<Variable> variableMap = new SetKeyIndependent<>();
+      for (String propertyName : iniSection.keySet()) {
 
-          String value = iniSection.get(propertyName);
-          ConnectionAttribute connectionAttribute = null;
-          try {
-            connectionAttribute = Casts.cast(propertyName, ConnectionAttribute.class);
-          } catch (Exception e) {
-            // not a standard attribute
-            // a specific connection attribute then
-          }
-          Variable variable;
-          try {
-            if (connectionAttribute == null) {
-              variable = tabular.getVault().createVariable(propertyName, value);
-            } else {
-              variable = tabular.getVault().createVariable(connectionAttribute, value);
-            }
-            if (connectionAttribute == ConnectionAttribute.URI) {
-              uri = variable;
-            }
-          } catch (Exception e) {
-            throw new RuntimeException("An error has occurred while reading the variable " + propertyName + " for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
-          }
-          variableMap.add(variable);
-
+        String value = iniSection.get(propertyName);
+        ConnectionAttribute connectionAttribute = null;
+        try {
+          connectionAttribute = Casts.cast(propertyName, ConnectionAttribute.class);
+        } catch (Exception e) {
+          // not a standard attribute
+          // a specific connection attribute then
         }
-
-        if (uri == null) {
-          throw new RuntimeException("The uri is a mandatory variable and was not found for the connection (" + connectionName + ") in the connection vault (" + this + ")");
+        Variable variable;
+        try {
+          if (connectionAttribute == null) {
+            variable = tabular.getVault().createVariable(propertyName, value);
+          } else {
+            variable = tabular.getVault().createVariable(connectionAttribute, value);
+          }
+          if (connectionAttribute == ConnectionAttribute.URI) {
+            uri = variable;
+          }
+        } catch (Exception e) {
+          throw new RuntimeException("An error has occurred while reading the variable " + propertyName + " for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
         }
-
-        /**
-         * Create the connection
-         */
-        Connection connection = Connection.createConnectionFromProviderOrDefault(this.tabular, connectionName, (String) uri.getValueOrDefaultOrNull());
-        // variables map should be in the building of the connection
-        // as they may be used for the default values
-        connection.setVariables(variableMap);
-        connections.put(connectionName, connection);
+        variableMap.add(variable);
 
       }
+
+      if (uri == null) {
+        throw new RuntimeException("The uri is a mandatory variable and was not found for the connection (" + connectionName + ") in the connection vault (" + this + ")");
+      }
+
+      /**
+       * Create the connection
+       */
+      Connection connection = Connection.createConnectionFromProviderOrDefault(this.tabular, connectionName, (String) uri.getValueOrDefaultOrNull());
+      // variables map should be in the building of the connection
+      // as they may be used for the default values
+      connection.setVariables(variableMap);
+      connections.put(connectionName, connection);
+
     }
+
     return this;
   }
 
@@ -287,7 +271,7 @@ public class ConnectionVault implements AutoCloseable {
    * @return the removed datastore
    */
   public Connection deleteConnection(String name) {
-    initCheck();
+
     Connection connection = this.connections.remove(name);
     if (connection == null) {
       throw new IllegalStateException("The database (" + name + ") is non existent and therefore cannot be removed.");
@@ -300,7 +284,7 @@ public class ConnectionVault implements AutoCloseable {
   }
 
   public ConnectionVault deleteConnectionIfExists(String name) {
-    initCheck();
+
     if (exists(name)) {
       deleteConnection(name);
     }
@@ -318,7 +302,7 @@ public class ConnectionVault implements AutoCloseable {
   }
 
   public ConnectionVault add(Connection connection) {
-    initCheck();
+
     assert connections.get(connection.getName()) == null : "The data store (" + connection.getName() + ") exists already and cannot be added";
     if (connection.getUriAsVariable() == null) {
       throw new RuntimeException("A connection string (url) is mandatory to add a datastore, the data store (" + connection.getName() + ") does not have any.");
@@ -338,22 +322,9 @@ public class ConnectionVault implements AutoCloseable {
   }
 
   public Connection getConnection(String name) {
-    initCheck();
     return this.connections.get(name);
   }
 
-  /**
-   * The init is done lazily because not every command
-   * needs to get connection
-   * <p>
-   * ie encryption is a good example, if you encrypt with another passphrase
-   * the {@link ConnectionHowTos} will be encrypted with this passphrase ...
-   **/
-  private void initCheck() {
-    if (this.connections == null) {
-      init();
-    }
-  }
 
   @Override
   public String toString() {

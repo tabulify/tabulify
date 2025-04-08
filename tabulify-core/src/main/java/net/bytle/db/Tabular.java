@@ -53,6 +53,7 @@ public class Tabular implements AutoCloseable {
   private final ProjectConfigurationFile projectConfigurationFile;
   final Path variablePathArgument;
   private final Vault vault;
+  private final Map<String, Connection> howtoConnections;
   private TabularVariables tabularVariables;
 
   // The default connection added to a data URI if it does not have it.
@@ -213,6 +214,7 @@ public class Tabular implements AutoCloseable {
 
     }
 
+    this.howtoConnections = ConnectionHowTos.createHowtoConnections(this);
 
   }
 
@@ -852,7 +854,7 @@ public class Tabular implements AutoCloseable {
     return JavaEnvs.isDev(Tabular.class);
   }
 
-  private Path getHomePathDynamic(){
+  private Path getHomePathDynamic() {
     try {
       // in dev
       return Javas.getBuildDirectory(ConnectionHowTos.class)
@@ -865,12 +867,13 @@ public class Tabular implements AutoCloseable {
         .getParent();
     }
   }
+
   /**
    * @return the home directory of the installation
    */
   public Path getHomePath() {
 
-    if(this.homePath ==null){
+    if (this.homePath == null) {
       this.homePath = this.getHomePathDynamic();
     }
     return this.homePath;
@@ -924,7 +927,7 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public Path getConnectionVault() {
+  public Path getConnectionVaultPath() {
     if (this.connectionVaultPath != null) {
       return this.connectionVaultPath;
     } else {
@@ -1160,4 +1163,23 @@ public class Tabular implements AutoCloseable {
     return this;
   }
 
+
+  public Connection getHowtoConnection(String name) {
+
+    return this.howtoConnections.get(name);
+
+  }
+
+  public Map<String, Connection> getHowtoConnections() {
+    return this.howtoConnections;
+  }
+
+  /**
+   * Load the howto connection in this tabular
+   * (used in test mostly)
+   */
+  public Tabular loadHowtoConnections() {
+    this.connections.putAll(this.howtoConnections);
+    return this;
+  }
 }

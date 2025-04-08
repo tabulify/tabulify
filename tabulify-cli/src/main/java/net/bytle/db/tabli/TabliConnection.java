@@ -23,7 +23,7 @@ public class TabliConnection {
 
     childCommand.setDescription("Management of the Datastore Vault",
       "",
-      "(Location: "+tabular.getConnectionVault()+")"
+      "(Location: "+tabular.getConnectionVaultPath()+")"
     );
 
     childCommand.addChildCommand(TabliWords.ADD_COMMAND)

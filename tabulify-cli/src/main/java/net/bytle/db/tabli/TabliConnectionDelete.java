@@ -58,7 +58,7 @@ public class TabliConnectionDelete {
 
       try(
         InsertStream insertStream = feedbackDataPath.getInsertStream();
-        ConnectionVault connectionVault = new ConnectionVault(tabular, tabular.getConnectionVault())
+        ConnectionVault connectionVault = new ConnectionVault(tabular, tabular.getConnectionVaultPath())
       ) {
         for (Connection connection : connections) {
           connectionVault.deleteConnection(connection.getName());

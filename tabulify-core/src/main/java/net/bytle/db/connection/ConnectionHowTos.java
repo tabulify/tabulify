@@ -3,14 +3,12 @@ package net.bytle.db.connection;
 import net.bytle.db.TabularAttributes;
 import net.bytle.db.Tabular;
 import net.bytle.fs.Fs;
-import net.bytle.java.Javas;
 
 import java.nio.file.Files;
-import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,10 +27,6 @@ public class ConnectionHowTos {
    * ALl resources such as howto file, entity, sql should be below this directory
    */
   public static final String DIST_RESOURCE_DIRECTORY = "resource";
-  /**
-   * A cache object
-   */
-  static List<Connection> howtoConnections = null;
 
 
   /**
@@ -84,9 +78,8 @@ public class ConnectionHowTos {
   /**
    * @return the set of howto's datastore
    */
-  static public List<Connection> getDataStores(Tabular tabular) {
+  static public Map<String, Connection> createHowtoConnections(Tabular tabular) {
 
-    if (howtoConnections == null) {
 
       Set<Connection> howToDataStoresSet = new HashSet<>();
 
@@ -165,14 +158,9 @@ public class ConnectionHowTos {
           .setDescription("The location of the Tpc Ds queries")
       );
 
-      howtoConnections = howToDataStoresSet
-        .stream()
-        .sorted()
-        .collect(Collectors.toList());
-    }
-
-
-    return howtoConnections;
+    return howToDataStoresSet
+      .stream()
+      .collect(Collectors.toMap(Connection::getName, Connection::of));
 
 
   }
