@@ -8,6 +8,7 @@ import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.transfer.TransferSourceTarget;
 import net.bytle.exception.InternalException;
+import net.bytle.type.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +22,12 @@ import java.util.stream.Collectors;
 public class SqliteDataSystem extends SqlDataSystem {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SqliteDataSystem.class);
+
+  /*
+   * The driver returns the system tables
+   * This is not the behavior of sqlite3, we make it for now default
+   */
+  private final boolean filterSystemTables = true;
 
 
   public SqliteDataSystem(SqliteConnection sqliteDataStore) {
@@ -191,7 +198,22 @@ public class SqliteDataSystem extends SqlDataSystem {
 
   @Override
   public List<SqlDataPath> getChildrenDataPath(DataPath dataPath) {
-    return super.getChildrenDataPath(dataPath);
+    /**
+     * The sqlite driver returns also
+     * the sys tables such as:
+     * * sqlite_schema
+     * * sqlite_autoindex_xxx_1@sqlite
+     * We filter them out
+     */
+    return super.getChildrenDataPath(dataPath)
+      .stream()
+      .filter(d -> {
+        if (this.filterSystemTables) {
+          return !d.getLogicalName().startsWith("sqlite");
+        }
+        return true;
+      })
+      .collect(Collectors.toList());
   }
 
   @Override
@@ -356,5 +378,19 @@ public class SqliteDataSystem extends SqlDataSystem {
     return statement.toString();
 
 
+  }
+
+  @Override
+  public List<SqlDataPath> select(DataPath dataPath, String globNameOrPath, MediaType mediaType) {
+    return super.select(dataPath, globNameOrPath, mediaType)
+      .stream()
+      .filter(d -> {
+          if (this.filterSystemTables) {
+            return !d.getLogicalName().startsWith("sqlite");
+          }
+          return true;
+        }
+      )
+      .collect(Collectors.toList());
   }
 }
