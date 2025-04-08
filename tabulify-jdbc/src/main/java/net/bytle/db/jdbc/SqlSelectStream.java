@@ -3,6 +3,7 @@ package net.bytle.db.jdbc;
 import net.bytle.db.spi.SelectException;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.SelectStreamAbs;
+import net.bytle.exception.CastException;
 import net.bytle.type.Strings;
 
 import java.sql.*;
@@ -134,6 +135,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
   /**
+   *
    */
   @Override
   public SqlRelationDef getRuntimeRelationDef() {
@@ -147,7 +149,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
         for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
           int columnType = resultSetMetaData.getColumnType(i);
           String columnName = resultSetMetaData.getColumnName(i);
-          /**
+          /*
            * Be sure that we didn't get two column
            * with the same name
            *
@@ -199,7 +201,6 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
   /**
    * Retrieves and removes the head of this data path, or returns null if this queue is empty.
-   *
    */
   @Override
   public boolean next(Integer timeout, TimeUnit timeUnit) {
@@ -234,21 +235,49 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     }
   }
 
+  @SuppressWarnings("DuplicatedCode")
   @Override
   public <T> T getObject(int index, Class<T> clazz) {
+    Object object;
     try {
-      return resultSet.getObject(index, clazz);
+      object = resultSet.getObject(index);
     } catch (SQLException e) {
-      return this.jdbcDataStore.getObject(getObject(index), clazz);
+      throw new RuntimeException(e);
     }
+    try {
+      // Our casting in case the driver has any error
+      // such as the sqlite driver that returns false for empty string
+      return this.getDataPath().getConnection().getObject(object, clazz);
+    } catch (CastException e) {
+      // Casting by the driver for weird objects
+      try {
+        return resultSet.getObject(index, clazz);
+      } catch (SQLException ex) {
+        throw new RuntimeException(ex);
+      }
+    }
+
   }
 
+  @SuppressWarnings("DuplicatedCode")
   @Override
   public <T> T getObject(String columnName, Class<T> clazz) {
+    Object object;
     try {
-      return resultSet.getObject(columnName, clazz);
+      object = resultSet.getObject(columnName);
     } catch (SQLException e) {
-      return this.jdbcDataStore.getObject(getObject(columnName), clazz);
+      throw new RuntimeException(e);
+    }
+    try {
+      // Our casting
+      return this.getDataPath().getConnection().getObject(object, clazz);
+    } catch (CastException e) {
+      // Casting by the driver for weird objects
+      try {
+        return resultSet.getObject(columnName, clazz);
+      } catch (SQLException ex) {
+        throw new RuntimeException(ex);
+      }
     }
   }
 

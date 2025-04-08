@@ -33,7 +33,7 @@ public class SqliteType {
   }
 
   /**
-   * @param connection
+   * @param connection the connection
    * @param description - A datatype string definition in the form:
    *                    * type(precision, scale)
    *                    * type(precision)
