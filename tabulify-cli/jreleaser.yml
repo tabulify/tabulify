@@ -18,17 +18,14 @@ release:
     name: tabulify-cli
 
 distributions:
+  # Single Executable Jar
+  # Doc: https://jreleaser.org/guide/latest/concepts/distributions/single-jar.html
+  # Example: https://jreleaser.org/guide/latest/examples/java/single-jar.html
   fatjar:
-    # Single Executable Jar
-    # Doc: https://jreleaser.org/guide/latest/concepts/distributions/single-jar.html
-    # Example: https://jreleaser.org/guide/latest/examples/java/single-jar.html
     type: SINGLE_JAR
     artifacts:
-      - path: target/{{distributionName}}-{{projectVersion}}.jar
-  tabulify:
-    type: JAVA_BINARY
-    artifacts:
-      - path: target/{{distributionName}}-{{projectVersion}}.jar
+      - path: target/{{distributionName}}-{{projectVersion}}-fatjar.jar
+
 
 packagers:
   brew:

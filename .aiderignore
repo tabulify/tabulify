@@ -1,0 +1,7 @@
+# https://aider.chat/docs/faq.html#can-i-use-aider-in-a-large-mono-repo
+# Ignore everything
+*
+# Allow only Java files
+!*.java
+# Exclude test files
+*Test.java
