@@ -14,3 +14,8 @@ tasks:
         mkdir un-jar;
         cd un-jar
         jar -xf ../tabulify-cli-0.1.0-SNAPSHOT.jar
+  # Show the release config
+  release-config:
+    cmds:
+      - |
+        jreleaser config --git-root-search
