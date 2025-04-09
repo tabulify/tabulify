@@ -19,3 +19,17 @@ tasks:
     cmds:
       - |
         jreleaser config --git-root-search
+  # Download jdks with the jdks maven plugin
+  # Output: ${project.build.directory}/jdks
+  # https://jreleaser.org/guide/latest/tools/jdks-maven.html
+  jdks-setup:
+    cmds:
+      - |
+        mvn jdks:setup-disco -P package > /dev/null
+        echo "Jdks installed in <target/jdks>: "
+        ls target/jdks/
+  # List the configured Jdks
+  jdks-list:
+    cmds:
+      - |
+        mvn jdks:list-disco -P package

@@ -9,6 +9,9 @@
   <artifactId>tabulify-cli</artifactId>
   <name>Tabulify Cli</name>
   <inceptionYear>2020</inceptionYear>
+  <properties>
+    <jreleaser-plugin.version>1.5.1</jreleaser-plugin.version>
+  </properties>
   <url>https://www.tabulify.com</url>
 
   <!-- Parent are used before all for the assembly build steps -->
@@ -126,7 +129,7 @@
       <plugin>
         <groupId>org.jreleaser</groupId>
         <artifactId>jreleaser-maven-plugin</artifactId>
-        <version>1.5.1</version>
+        <version>${jreleaser-plugin.version}</version>
         <configuration>
           <jreleaser>
             <project>
@@ -139,4 +142,50 @@
     </plugins>
   </build>
 
+
+  <profiles>
+    <profile>
+      <id>package</id>
+      <properties>
+        <jreleaser.config.assembly>true</jreleaser.config.assembly>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jreleaser</groupId>
+            <artifactId>jdks-maven-plugin</artifactId>
+            <version>${jreleaser-plugin.version}</version>
+            <configuration>
+              <pkgs>
+                <pkg>
+                  <name>zulu11Linux</name>
+                  <platform>linux-x86_64</platform>
+                  <version>${java.version}</version>
+                </pkg>
+                <pkg>
+                  <name>zulu11Osx</name>
+                  <platform>osx-x86_64</platform>
+                  <version>${java.version}</version>
+                </pkg>
+                <pkg>
+                  <name>zulu11Windows</name>
+                  <platform>windows-x86_64</platform>
+                  <version>${java.version}</version>
+                </pkg>
+              </pkgs>
+            </configuration>
+            <executions>
+              <execution>
+                <id>download-jdks</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>setup-disco</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
