@@ -22,8 +22,8 @@ project:
     - csv
     - data processing
   links:
-    homepage: https://tabulify
-    documentation: https://tabulify
+    homepage: https://www.tabulify.com
+    documentation: https://www.tabulify.com
   languages:
     java:
       groupId: com.tabulify
@@ -33,11 +33,11 @@ project:
       multiProject: true
   stereotype: CLI
 
-
+# Create a github release
 release:
   github:
-    owner: tabulify
-    name: tabulify-cli
+    owner: EraldyHq
+    name: tabulify
 
 # Execute with jreleaser assemble
 assemble:
@@ -46,15 +46,12 @@ assemble:
     # Assembly Name
     tabulify-jlink:
       active: ALWAYS
-      java:
-        version: '11'
       imageName: '{{distributionName}}-{{projectEffectiveVersion}}'
       executable: tabli
       fileSets:
         - input: '.'
           includes:
-            - NOTICE
-            - LICENSE
+            - LICENSE.md
         - input: licenses
           output: licenses
       jdeps:
