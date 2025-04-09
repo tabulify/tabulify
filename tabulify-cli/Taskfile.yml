@@ -29,6 +29,7 @@ tasks:
         echo "Jdks installed in <target/jdks>: "
         ls target/jdks/
   # List the configured Jdks
+  # https://jreleaser.org/guide/latest/tools/jdks-maven.html
   jdks-list:
     cmds:
       - |
