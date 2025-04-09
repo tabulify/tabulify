@@ -8,6 +8,8 @@
 
   <artifactId>tabulify-cli</artifactId>
   <name>Tabulify Cli</name>
+  <inceptionYear>2020</inceptionYear>
+  <url>https://www.tabulify.com</url>
 
   <!-- Parent are used before all for the assembly build steps -->
   <parent>
@@ -83,7 +85,7 @@
 
   <build>
     <plugins>
-      <!-- Fat Jar      -->
+      <!-- Fat Jar -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -96,20 +98,15 @@
             </goals>
             <configuration>
               <transformers>
-                <!--  https://maven.apache.org/plugins/maven-shade-plugin/examples/executable-jar.html-->
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <manifestEntries>
                     <Main-Class>net.bytle.db.tabli.Tabli</Main-Class>
-                    <Build-Number>123</Build-Number>
+                    <Build-Number>${project.version}</Build-Number>
                   </manifestEntries>
                 </transformer>
-                <!-- Merge Service file -->
-                <!-- https://maven.apache.org/plugins/maven-shade-plugin/examples/resource-transformers.html#ServicesResourceTransformer  -->
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
               </transformers>
-              <!-- If true, it just does not import net.bytle.niofs.http ??? -->
               <minimizeJar>false</minimizeJar>
-              <!-- https://stackoverflow.com/questions/34855649/invalid-signature-file-digest-for-manifest-main-attributes-exception-while-tryin -->
               <filters>
                 <filter>
                   <artifact>*:*</artifact>
@@ -123,6 +120,20 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <!-- JReleaser -->
+      <plugin>
+        <groupId>org.jreleaser</groupId>
+        <artifactId>jreleaser-maven-plugin</artifactId>
+        <version>1.5.1</version>
+        <configuration>
+          <jreleaser>
+            <project>
+              <name>tabulify-cli</name>
+              <version>${project.version}</version>
+            </project>
+          </jreleaser>
+        </configuration>
       </plugin>
     </plugins>
   </build>

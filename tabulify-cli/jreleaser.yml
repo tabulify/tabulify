@@ -1,0 +1,52 @@
+project:
+  name: tabulify-cli
+  version: '{{projectVersion}}'
+  description: Tabulify CLI application
+  longDescription: |
+    Tabulify CLI application for data manipulation and analysis.
+  authors:
+    - Tabulify Team
+  license: Apache-2.0
+  java:
+    groupId: com.tabulify
+    artifactId: tabulify-cli
+    mainClass: net.bytle.db.tabli.Tabli
+
+release:
+  github:
+    owner: tabulify
+    name: tabulify-cli
+
+distributions:
+  fatjar:
+    # Single Executable Jar
+    # Doc: https://jreleaser.org/guide/latest/concepts/distributions/single-jar.html
+    # Example: https://jreleaser.org/guide/latest/examples/java/single-jar.html
+    type: SINGLE_JAR
+    artifacts:
+      - path: target/{{distributionName}}-{{projectVersion}}.jar
+  tabulify:
+    type: JAVA_BINARY
+    artifacts:
+      - path: target/{{distributionName}}-{{projectVersion}}.jar
+
+packagers:
+  brew:
+    active: ALWAYS
+    multiPlatform: true
+  chocolatey:
+    active: ALWAYS
+  docker:
+    active: ALWAYS
+    imageNames:
+      - "tabulify/{{distributionName}}:{{tagName}}"
+      - "tabulify/{{distributionName}}:latest"
+  snap:
+    active: ALWAYS
+
+announce:
+  twitter:
+    active: ALWAYS
+  mastodon:
+    active: ALWAYS
+    host: https://fosstodon.org
