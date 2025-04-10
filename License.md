@@ -1,4 +1,4 @@
-# Function Source License, Version 1.1 (Fair Source)
+# Function Source License, Version 1.1 (Fair Source) without Future License
 
 ## Abbreviation
 
