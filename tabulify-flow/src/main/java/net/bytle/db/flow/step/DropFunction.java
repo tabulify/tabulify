@@ -38,7 +38,7 @@ public class DropFunction extends FilterStepAbs implements Function<Set<DataPath
   public Set<DataPath> apply(Set<DataPath> sourceDataPaths) {
 
 
-    if (sourceDataPaths.size() == 0) {
+    if (sourceDataPaths.isEmpty()) {
       DbLoggers.LOGGER_DB_ENGINE.warning("No resources to drop");
       return new HashSet<>();
     }
