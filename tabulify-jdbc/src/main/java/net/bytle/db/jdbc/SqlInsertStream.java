@@ -155,7 +155,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
             if (sourceObject != null) {
               sourceObjectClass = sourceObject.getClass().toString();
             }
-            String message = e + ", SourceObjectClass: " + sourceObjectClass + ", SourceObjectValue:" + sourceObject + ", TargetColumnDataType:" + targetColumnType + " (" + sourceColumn.getDataType().getSqlName() + "), TargetColumn: " + sourceColumn.getFullyQualifiedName();
+            String message = e + ", Source Column: " + sourceColumn.getFullyQualifiedName() + " (Class: " + sourceObjectClass + ", Value:" + sourceObject + "),  TargetColumn: " + targetColumn.getFullyQualifiedName() + " (Type: " + targetColumn.getDataType() + ")";
             throw new RuntimeException(message, e);
 
           }
