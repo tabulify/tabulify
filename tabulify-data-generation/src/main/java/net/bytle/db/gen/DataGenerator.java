@@ -70,7 +70,6 @@ public class DataGenerator implements AutoCloseable {
 
     /**
      * We create another memory data store to have a temporary namespace.
-     *
      * Because during the cross transfer test, we create in the memory datastore
      * table, and we load them.
      * Because the data generation process translate all source paths to {@link #toGenMemDataPath(DataPath) memory data path},
