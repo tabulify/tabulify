@@ -268,7 +268,7 @@ public class Tabular implements AutoCloseable {
   private void loadConnections(Path path, ConnectionOrigin connectionOrigin) {
 
 
-    try (ConnectionVault connectionVault = new ConnectionVault(this, path)) {
+    try (ConnectionVault connectionVault = ConnectionVault.create(this, path, this.vault)) {
       connectionVault
         .getConnections()
         .stream()

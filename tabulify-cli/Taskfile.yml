@@ -54,3 +54,17 @@ tasks:
         # No need to unzip - the dir is till there
         mv ${ASSEMBLY_DIR}/${ASSEMBLY_WORK_DIR}/${ARCHIVE_NAME} ${TABULIFY_HOME}
 
+  pg-start:
+    cmds:
+      - |
+        docker run \
+            -e POSTGRES_PASSWORD=welcome \
+            -p 5432:5432 \
+            --rm \
+            -d \
+            --name postgres \
+            postgres:9.5
+  pg-stop:
+    cmds:
+      - |
+        docker stop postgres

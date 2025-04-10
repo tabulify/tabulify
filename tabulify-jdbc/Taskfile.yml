@@ -14,6 +14,7 @@ tasks:
             -e POSTGRES_PASSWORD=welcome \
             -p 5432:5432 \
             -d \
+            --rm \
             --name postgres \
             postgres:9.5
   pg-stop:

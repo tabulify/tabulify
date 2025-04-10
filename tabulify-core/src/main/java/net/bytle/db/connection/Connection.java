@@ -379,6 +379,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     try {
 
       uri = java.net.URI.create(uriStringValue);
+
     } catch (Exception e) {
       String message = "The uri `" + uriStringValue + "` of the connection (" + variableName + ") is not a valid.";
       if (uriStringValue.startsWith("\"") || uriStringValue.startsWith("'")) {
@@ -719,7 +720,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     try {
       return (ConnectionOrigin) this.getVariable(ConnectionAttribute.ORIGIN).getValueOrDefault();
     } catch (NoValueException | NoVariableException e) {
-      throw new InternalException(e);
+      throw new InternalException("No Origin found", e);
     }
 
   }

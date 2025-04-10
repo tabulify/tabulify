@@ -3,6 +3,7 @@ package net.bytle.db.connection;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.Tabular;
+import net.bytle.db.Vault;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
 import net.bytle.fs.Fs;
@@ -36,6 +37,7 @@ public class ConnectionVault implements AutoCloseable {
 
   private final Path path;
 
+  private final Vault vault;
 
   /**
    * The in-memory connectionVaultStorage
@@ -44,19 +46,37 @@ public class ConnectionVault implements AutoCloseable {
   private Map<String, Connection> connections = new HashMap<>();
 
 
-  public ConnectionVault(Tabular tabular, Path path) {
+  private ConnectionVault(Tabular tabular, Path path, Vault vault) {
 
     this.tabular = tabular;
     Objects.requireNonNull(path);
     this.path = path;
+    Objects.requireNonNull(vault);
+    this.vault = vault;
+
+    // Then load
     if (Files.exists(path)) {
       this.load(path);
     }
 
+
   }
 
+  /**
+   * @param tabular             - the tabular
+   * @param connectionVaultPath - the path
+   * @return a connection vault with the tabular vault
+   */
   public static ConnectionVault create(Tabular tabular, Path connectionVaultPath) {
-    return new ConnectionVault(tabular, connectionVaultPath);
+    return new ConnectionVault(tabular, connectionVaultPath, tabular.getVault());
+  }
+
+  public static ConnectionVault create(Tabular tabular, Path connectionVaultPath, String passphrase) {
+    return new ConnectionVault(tabular, connectionVaultPath, Vault.create(tabular, passphrase));
+  }
+
+  public static ConnectionVault create(Tabular tabular, Path connectionVaultPath, Vault vault) {
+    return new ConnectionVault(tabular, connectionVaultPath, vault);
   }
 
 
@@ -194,7 +214,7 @@ public class ConnectionVault implements AutoCloseable {
   /**
    * Build the connections variable from the connection vault file
    */
-  public ConnectionVault load(Path path) {
+  private void load(Path path) {
 
 
     LOGGER.info("Opening the connection vault (" + path.toAbsolutePath() + ")");
@@ -231,10 +251,11 @@ public class ConnectionVault implements AutoCloseable {
         }
         Variable variable;
         try {
+
           if (connectionAttribute == null) {
-            variable = tabular.getVault().createVariable(propertyName, value);
+            variable = vault.createVariable(propertyName, value);
           } else {
-            variable = tabular.getVault().createVariable(connectionAttribute, value);
+            variable = vault.createVariable(connectionAttribute, value);
           }
           if (connectionAttribute == ConnectionAttribute.URI) {
             uri = variable;
@@ -261,7 +282,6 @@ public class ConnectionVault implements AutoCloseable {
 
     }
 
-    return this;
   }
 
 
@@ -313,7 +333,6 @@ public class ConnectionVault implements AutoCloseable {
 
   /**
    * Add (Connection should not exist)
-   *
    */
   public ConnectionVault add(Connection connection) {
 

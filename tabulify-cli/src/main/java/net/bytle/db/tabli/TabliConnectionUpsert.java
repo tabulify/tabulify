@@ -6,6 +6,7 @@ import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
 import net.bytle.db.Tabular;
 import net.bytle.db.connection.Connection;
+import net.bytle.db.connection.ConnectionOrigin;
 import net.bytle.db.connection.ConnectionVault;
 import net.bytle.db.jdbc.SqlConnectionAttribute;
 import net.bytle.db.spi.DataPath;
@@ -84,14 +85,24 @@ public class TabliConnectionUpsert {
 
     // Main
     Path connectionVaultPath = tabular.getConnectionVaultPath();
-    try (ConnectionVault connectionVault = new ConnectionVault(tabular, connectionVaultPath)) {
+    try (ConnectionVault connectionVault = ConnectionVault.create(tabular, connectionVaultPath)) {
       Connection connection = connectionVault.getConnection(connectionName);
       if (connection == null) {
-        connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, urlValue);
-        connectionVault.add(connection);
+        connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, urlValue)
+            .setOrigin(ConnectionOrigin.USER);
+        connectionVault.put(connection);
         System.out.println("The connection (" + connectionName + ") didn't exist and was created");
       } else {
         System.out.println("The connection (" + connectionName + ") exist already.");
+        if(!connection.getUriAsString().equals(urlValue)){
+          connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, urlValue)
+            .setDescription((String) connection.getDescription().getValueOrDefaultOrNull())
+            .setOrigin(connection.getOrigin())
+            .setVariables(connection.getVariables())
+            .setPassword(connection.getPasswordVariable())
+            .setUser((String) connection.getUser().getValueOrDefaultOrNull());
+          connectionVault.put(connection);
+        }
       }
       connection
         .setUser(userValue)

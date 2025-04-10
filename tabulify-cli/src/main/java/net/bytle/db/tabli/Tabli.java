@@ -188,7 +188,7 @@ public class Tabli {
           manifest = Manifest.createFor(Tabli.class);
         } catch (NoManifestException e) {
           System.out.println("Version: dev");
-          System.exit(0);
+          Tabli.exit(0);
         }
         DataPath tabularVersion = tabular.getAndCreateRandomMemoryDataPath()
           .setLogicalName("Version")
@@ -213,7 +213,7 @@ public class Tabli {
           }
         }
         Tabulars.print(tabularVersion);
-        System.exit(0);
+        Tabli.exit(0);
       }
 
       try {
@@ -409,7 +409,7 @@ public class Tabli {
          */
         if (tabular.getExitStatus() != 0) {
           LOGGER_TABLI.severe("Errors were seen");
-          System.exit(tabular.getExitStatus());
+          Tabli.exit(tabular.getExitStatus());
         }
 
         /**
@@ -473,7 +473,7 @@ public class Tabli {
          * Always returns a +1 and let the
          * calling script or user handle it.
          */
-        System.exit(1);
+        Tabli.exit(1);
 
 
       }
@@ -481,6 +481,16 @@ public class Tabli {
     }
 
 
+  }
+
+  private static void exit(int exitStatus) {
+    if (JavaEnvs.isJUnitTest()) {
+      if (exitStatus != 0) {
+        throw new TabliExitStatusException(exitStatus);
+      }
+      return;
+    }
+    System.exit(exitStatus);
   }
 
   /**
