@@ -7,12 +7,8 @@ import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NoPathFoundException;
 import net.bytle.exception.NoPatternFoundException;
 import net.bytle.type.UriEnhanced;
-import net.bytle.type.Uris;
 
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -114,16 +110,7 @@ public class DataUri implements Comparable<DataUri> {
       // Data Uri
       DataUriString dataUriString = DataUriString.createFromString(spec);
       String connectionName = dataUriString.getConnectionName();
-      Connection connection;
-      if (connectionName == null) {
-        connection = tabular.getDefaultConnection();
-      } else {
-        if (connectionName.equals(Tabular.SD_LOCAL_FILE_SYSTEM)) {
-          connection = tabular.getSdConnection();
-        } else {
-          connection = tabular.getConnection(connectionName);
-        }
-      }
+      Connection connection = getConnectionFromStringOrNull(tabular, connectionName);
       if (connection == null) {
         throw new RuntimeException("The connection (" + connectionName + ") given by the data uri (" + spec + ") is unknown.");
       }
@@ -134,15 +121,7 @@ public class DataUri implements Comparable<DataUri> {
       } else {
         DataUriString scriptDataUriString = dataUriString.getScriptDataUriString();
         String scriptConnectionName = scriptDataUriString.getConnectionName();
-        Connection scriptConnection;
-        if (scriptConnectionName.equals(Tabular.SD_LOCAL_FILE_SYSTEM)) {
-          scriptConnection = tabular.getSdConnection();
-        } else {
-          scriptConnection = tabular.getConnection(scriptConnectionName);
-        }
-        if (scriptConnection == null) {
-          throw new RuntimeException("The script connection name (" + scriptConnectionName + ") is unknown in the data uri (" + scriptDataUriString + ")");
-        }
+        Connection scriptConnection = getConnectionFromStringOrNull(tabular, scriptConnectionName);
         String path = scriptDataUriString.getPath();
         scriptDataUri = new DataUri(scriptConnection, path, null);
       }
@@ -150,6 +129,23 @@ public class DataUri implements Comparable<DataUri> {
       return new DataUri(connection, relativePath, scriptDataUri);
 
     }
+
+  }
+
+  /**
+   * @param tabular tabular
+   * @param connectionName connection name
+   * @return the connection object
+   */
+  private static Connection getConnectionFromStringOrNull(Tabular tabular, String connectionName) {
+
+    if (connectionName == null) {
+      return tabular.getDefaultConnection();
+    }
+    if (connectionName.equals(Tabular.SD_LOCAL_FILE_SYSTEM)) {
+      return tabular.getSdConnection();
+    }
+    return tabular.getConnection(connectionName);
 
   }
 
