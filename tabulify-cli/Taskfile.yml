@@ -25,7 +25,7 @@ tasks:
   jdks-setup:
     cmds:
       - |
-        mvn jdks:setup-disco -P package > /dev/null
+        mvn jdks:setup-disco -P package
         echo "Jdks installed in <target/jdks>: "
         ls target/jdks/
   # List the configured Jdks

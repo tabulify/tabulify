@@ -158,19 +158,25 @@
             <configuration>
               <pkgs>
                 <pkg>
-                  <name>zulu11Linux</name>
+                  <name>temurinLinux</name>
+                  <distribution>${jdk.distribution}</distribution>
                   <platform>linux-x86_64</platform>
-                  <version>${java.version}</version>
+                  <version>${jdk.version}</version>
+                  <archiveType>tar.gz</archiveType>
                 </pkg>
                 <pkg>
-                  <name>zulu11Osx</name>
+                  <name>temurinOsx</name>
+                  <distribution>${jdk.distribution}</distribution>
                   <platform>osx-x86_64</platform>
-                  <version>${java.version}</version>
+                  <version>${jdk.version}</version>
+                  <archiveType>tar.gz</archiveType>
                 </pkg>
                 <pkg>
-                  <name>zulu11Windows</name>
+                  <name>temurinWindows</name>
+                  <distribution>${jdk.distribution}</distribution>
                   <platform>windows-x86_64</platform>
-                  <version>${java.version}</version>
+                  <version>${jdk.version}</version>
+                  <archiveType>zip</archiveType>
                 </pkg>
               </pkgs>
             </configuration>
