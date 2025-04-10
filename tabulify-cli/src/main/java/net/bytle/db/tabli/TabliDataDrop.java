@@ -77,6 +77,7 @@ public class TabliDataDrop {
         )
         .addStepToGraph(
           DropFunction.create()
+            .setWithForce(withForce)
         )
         .addStepToGraph(
           ListCollector.create()
