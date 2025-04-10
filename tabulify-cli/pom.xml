@@ -9,9 +9,6 @@
   <artifactId>tabulify-cli</artifactId>
   <name>Tabulify Cli</name>
   <inceptionYear>2020</inceptionYear>
-  <properties>
-    <jreleaser-plugin.version>1.5.1</jreleaser-plugin.version>
-  </properties>
   <url>https://www.tabulify.com</url>
 
   <!-- Parent are used before all for the assembly build steps -->
@@ -129,7 +126,7 @@
       <plugin>
         <groupId>org.jreleaser</groupId>
         <artifactId>jreleaser-maven-plugin</artifactId>
-        <version>${jreleaser-plugin.version}</version>
+        <version>${jreleaser.version}</version>
         <configuration>
           <jreleaser>
             <project>
@@ -151,10 +148,11 @@
       </properties>
       <build>
         <plugins>
+          <!-- Download the jdk -->
           <plugin>
             <groupId>org.jreleaser</groupId>
             <artifactId>jdks-maven-plugin</artifactId>
-            <version>${jreleaser-plugin.version}</version>
+            <version>${jreleaser.version}</version>
             <configuration>
               <pkgs>
                 <pkg>
@@ -187,6 +185,22 @@
                 <goals>
                   <goal>setup-disco</goal>
                 </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>copy-dependencies</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>copy-dependencies</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${project.build.directory}/deps</outputDirectory>
+                </configuration>
               </execution>
             </executions>
           </plugin>

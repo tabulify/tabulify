@@ -22,7 +22,7 @@ tasks:
   # Download jdks with the jdks maven plugin
   # Output: ${project.build.directory}/jdks
   # https://jreleaser.org/guide/latest/tools/jdks-maven.html
-  jdks-setup:
+  release-jdks-setup:
     cmds:
       - |
         mvn jdks:setup-disco -P package
@@ -30,7 +30,27 @@ tasks:
         ls target/jdks/
   # List the configured Jdks
   # https://jreleaser.org/guide/latest/tools/jdks-maven.html
-  jdks-list:
+  release-jdks-list:
     cmds:
       - |
         mvn jdks:list-disco -P package
+  # Install tabulify locally
+  # the root `install` command install the jars
+  release-install:
+    cmds:
+      - |
+        # Env
+        ARCHIVE_NAME=tabulify-early-access-linux-x86_64
+        ASSEMBLY_DIR=target/jreleaser/assemble/tabulify/jlink
+        ASSEMBLY_WORK_DIR=work-linux-x86_64
+
+        # Clean
+        # mkdir first as the tabulify dir should not exists, other the move command will copy the directory into
+        mkdir -p $TABULIFY_HOME && rm -rf $TABULIFY_HOME
+        rm -rf $ASSEMBLY_DIR
+
+        # Generate only for the current platform
+        jreleaser assemble --select-current-platform
+        # No need to unzip - the dir is till there
+        mv ${ASSEMBLY_DIR}/${ASSEMBLY_WORK_DIR}/${ARCHIVE_NAME} ${TABULIFY_HOME}
+

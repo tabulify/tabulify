@@ -20,6 +20,7 @@
     <!-- Disco Api value used to download the jdk https://github.com/foojayio/discoapi   -->
     <jdk.version>11.0.26</jdk.version>
     <jdk.distribution>temurin</jdk.distribution>
+    <jreleaser.version>1.17.0</jreleaser.version>
   </properties>
 
 

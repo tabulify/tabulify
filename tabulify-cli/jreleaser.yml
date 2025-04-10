@@ -2,7 +2,9 @@
 
 environment:
   properties:
-    jdkPathPrefix: 'plugins/jreleaser/build/jdks'
+    jdkPathPrefix: 'target/jdks/temurin'
+    jdkDirectoryName: 'jdk-11.0.26+4'
+    depsPrefix: 'target/deps'
 
 # https://jreleaser.org/guide/latest/reference/project.html
 project:
@@ -44,7 +46,9 @@ assemble:
   # https://jreleaser.org/guide/latest/reference/assemble/jlink.html
   jlink:
     # Assembly Name
-    tabulify-jlink:
+    # Use in the name of the assembly
+    # Example: tabulify-early-access-linux-x86_64.zip
+    tabulify:
       active: ALWAYS
       imageName: '{{distributionName}}-{{projectEffectiveVersion}}'
       executable: tabli
@@ -52,13 +56,11 @@ assemble:
         - input: '.'
           includes:
             - LICENSE.md
-        - input: licenses
-          output: licenses
       jdeps:
         multiRelease: base
         ignoreMissingDeps: true
         targets:
-          - 'plugins/jreleaser/build/libs/jreleaser-{{projectVersion}}.jar'
+          - 'target/tabulify-cli-{{projectVersion}}.jar'
       additionalModuleNames:
         - 'java.rmi'
         - 'java.security.sasl'
@@ -70,26 +72,16 @@ assemble:
         - 'jdk.security.auth'
         - 'jdk.security.jgss'
       targetJdks:
-        - path: '{{jdkPathPrefix}}/zulu21Osx/{{jdkFilePrefix}}-macosx_x64/zulu-21.jdk/Contents/Home'
-          platform: 'osx-x86_64'
-        - path: '{{jdkPathPrefix}}/zulu21OsxArm/{{jdkFilePrefix}}-macosx_aarch64/zulu-21.jdk/Contents/Home'
-          platform: 'osx-aarch_64'
-        - path: '{{jdkPathPrefix}}/zulu21Linux/{{jdkFilePrefix}}-linux_x64'
+        - path: '{{jdkPathPrefix}}Linux/{{jdkDirectoryName}}'
           platform: 'linux-x86_64'
-        - path: '{{jdkPathPrefix}}/zulu21LinuxArm/{{jdkFilePrefix}}-linux_aarch64'
-          platform: 'linux-aarch_64'
-        - path: '{{jdkPathPrefix}}/zulu21LinuxMusl/{{jdkFilePrefix}}-linux_musl_x64'
-          platform: 'linux_musl-x86_64'
-        - path: '{{jdkPathPrefix}}/zulu21LinuxMuslArm/{{jdkFilePrefix}}-linux_musl_aarch64'
-          platform: 'linux_musl-aarch_64'
-        - path: '{{jdkPathPrefix}}/zulu21Windows/{{jdkFilePrefix}}-win_x64'
+        - path: '{{jdkPathPrefix}}Windows/{{jdkDirectoryName}}'
           platform: 'windows-x86_64'
-        - path: '{{jdkPathPrefix}}/zulu21WindowsArm/{{jdkFilePrefix}}-win_aarch64'
-          platform: 'windows-aarch_64'
+        - path: '{{jdkPathPrefix}}Osx/{{jdkDirectoryName}}'
+          platform: 'osx-x86_64'
       mainJar:
-        path: 'plugins/jreleaser/build/libs/jreleaser-{{projectVersion}}.jar'
+        path: 'target/tabulify-cli-{{projectVersion}}.jar'
       jars:
-        - pattern: 'plugins/jreleaser/build/dependencies/flat/*.jar'
+        - pattern: '{{depsPrefix}}/*.jar'
       swid:
         tagRef: swid-tag
 
