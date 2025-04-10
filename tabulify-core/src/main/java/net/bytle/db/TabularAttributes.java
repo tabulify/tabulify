@@ -30,7 +30,6 @@ public enum TabularAttributes implements Attribute {
   PROJECT_ENV( "The project environment", false, null, String.class),
   PROJECT_CONNECTION( "The project connection file", false, null, String.class),
   PROJECT_VARIABLE( "The project variable file", false, null, String.class),
-  ENCRYPTED_VARIABLES("The list of the variables that should have their value automatically encrypted", true, null, String.class),
 
   // This is just a feature of the cli library for the options
   // Not really a tabular option
