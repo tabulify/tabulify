@@ -29,7 +29,6 @@ public class Vault {
    */
   public static final String VAULT_PREFIX = "vault";
   private final Protector protector;
-  private final SetKeyIndependent<String> propertiesToEncrypt;
   private final Map<String, Object> tabularEnvVariables;
 
   public Vault(Tabular tabular, String passphrase) {
@@ -38,24 +37,6 @@ public class Vault {
      */
     this.protector = Protector.create(passphrase);
 
-    String conf;
-    try {
-      conf = (String) tabular.getVariable(TabularAttributes.ENCRYPTED_VARIABLES).getValueOrDefaultOrNull();
-    } catch (NoVariableException e) {
-      throw new InternalException("The `encrypted variables` variable was not found");
-    }
-
-    if (conf != null) {
-      propertiesToEncrypt = Arrays.stream(conf.split(","))
-        .map(String::trim)
-        .collect(Collectors.toCollection(SetKeyIndependent::new));
-    } else {
-      // ok
-      propertiesToEncrypt = new SetKeyIndependent<>();
-    }
-
-
-    propertiesToEncrypt.add(ConnectionAttribute.PASSWORD.toString());
 
     this.tabularEnvVariables = tabular.getEnvVariables().getVariablesAsKeyIndependentMap();
 
@@ -108,23 +89,6 @@ public class Vault {
         return;
       }
 
-      /**
-       * Not an encrypted value
-       * Is this a value that should be encrypted (ie
-       * a runtime password created for instance when creating the
-       * default connection)
-       */
-      boolean isVariableValue = valueString.startsWith("$");
-      if (propertiesToEncrypt.contains(variable.getUniqueName()) && !isVariableValue) {
-        variable.setClearValue(valueString);
-        if (protector.useDefaultPassphrase()) {
-          throw new RuntimeException("A passphrase should be provided to encrypt the variable (" + variable.getPublicName() + ")");
-        }
-        String encryptedValue = encrypt(valueString);
-        variable.setOriginalValue(encryptedValue);
-        return;
-      }
-
 
       /*
        * Template processing if the value has a variable
@@ -140,11 +104,6 @@ public class Vault {
 
   }
 
-
-  public Vault addPropertyToEncrypt(String key) {
-    this.propertiesToEncrypt.add(key);
-    return this;
-  }
 
   public Variable createVariable(Attribute attribute, Object value) throws Exception {
 
