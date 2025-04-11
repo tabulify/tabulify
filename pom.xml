@@ -35,6 +35,7 @@
     <module>tabulify-flow-template</module>
     <module>tabulify-xml</module>
     <module>tabulify-sqlite</module>
+    <module>tabulify-html</module>
   </modules>
 
   <!-- The rest of dependencies management is in core  -->
