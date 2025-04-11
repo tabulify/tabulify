@@ -68,6 +68,11 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.eraldy</groupId>
+      <artifactId>eraldy-doc-exec</artifactId>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>${project.groupId}</groupId>

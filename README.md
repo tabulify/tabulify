@@ -6,5 +6,5 @@ https://www.tabulify.com
 
 ## Contrib
 
-See [doc](doc/Dev.md)
+See [doc](contrib/doc/Dev.md)
 

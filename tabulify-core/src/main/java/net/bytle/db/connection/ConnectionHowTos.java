@@ -26,7 +26,7 @@ public class ConnectionHowTos {
    * The name of the resource directory in the distribution
    * ALl resources such as howto file, entity, sql should be below this directory
    */
-  public static final String DIST_RESOURCE_DIRECTORY = "resource";
+  public static final String DIST_RESOURCE_DIRECTORY = "resources";
 
 
   /**
@@ -178,9 +178,9 @@ public class ConnectionHowTos {
     if (tabular.isDev()) {
       Path path;
       path = tabular.getHomePath()
-        .resolve("tabulify-website")
+        .resolve("tabulify-cli")
         .resolve("src")
-        .resolve("doc")
+        .resolve("main")
         .resolve(HOW_TO_FILE_CONNECTION_NAME)
         .normalize();
 
