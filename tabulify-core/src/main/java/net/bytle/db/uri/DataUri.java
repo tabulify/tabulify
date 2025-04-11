@@ -63,7 +63,7 @@ public class DataUri implements Comparable<DataUri> {
 
 
     // No data Uri given, means the location of the default datastore
-    if (spec.equals("")) {
+    if (spec.isEmpty()) {
       return new DataUri(tabular.getDefaultConnection(), "", null);
     }
 
@@ -101,7 +101,7 @@ public class DataUri implements Comparable<DataUri> {
           .setDescription("Connection for the connection URI " + connectionUri);
       }
 
-      String relativePath = workingPath.relativize(path).toString();
+      String relativePath = workingPath.toAbsolutePath().relativize(path).toString();
       Connection connection = fsConnection;
       return (new DataUri(connection, relativePath, null));
 

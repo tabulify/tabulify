@@ -295,7 +295,7 @@ public class FsConnection extends NoOpConnection {
   Path getNioPath() {
     URI uri = this.getConnectionUri();
     try {
-      return Paths.get(uri).normalize();
+      return Paths.get(uri).normalize().toAbsolutePath();
     } catch (Exception e) {
       /**
        * To get context for

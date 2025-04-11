@@ -117,7 +117,7 @@ public class FsDataSystem extends DataSystemAbs {
     try {
       mediaType = Fs.detectMediaType(absolutePath);
     } catch (NotAbsoluteException e) {
-      throw new InternalException("It should not happen as the path passed is absolute.",e);
+      throw new InternalException("It should not happen as the path passed is absolute. Path: "+absolutePath,e);
     }
 
     FsFileManager fileManager = getFsFileManagerWithMediaType(mediaType);
