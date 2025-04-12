@@ -10,7 +10,7 @@ tasks:
     cmds:
       - |
         docker run \
-          --volume $PWD/src/test/resources:/usr/local/lib/python3.6/dist-packages/flasgger/ui2/static/resources \
+          --volume $PWD/src/test/resources:/usr/local/lib/python3.6/dist-packages/httpbin/static/ \
           -p 8081:80 \
           --rm \
           -d \
