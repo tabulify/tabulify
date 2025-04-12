@@ -2,6 +2,7 @@ package com.tabulify.html;
 
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.textfile.FsTextDataPath;
+import com.tabulify.fs.textfile.FsTextDataPathAttributes;
 import com.tabulify.model.RelationDef;
 import com.tabulify.model.RelationDefDefault;
 import com.tabulify.stream.SelectStream;
@@ -70,19 +71,21 @@ public class HtmlDataPath extends FsTextDataPath {
     String selector = this.getTableSelectorOrDefault();
     Element table = doc.selectFirst(selector);
     if (table == null) {
-      throw new RuntimeException("No table element was found with the selector " + selector + " in the resource (" + this + ")");
+      HtmlLogs.LOGS.warning("No table element was found with the selector " + selector + " in the resource (" + this + ")");
+      relationDef.addColumn(this.getColumnName());
+      return;
     }
 
 
     String rowSelector = this.getRowSelectorOrDefault();
     this.trElements = table.select(rowSelector);
-    if (this.trElements.size() == 0) {
+    if (this.trElements.isEmpty()) {
       return;
     }
     Element firstTrElement = this.trElements.get(0);
     String headerSelector = this.getHeaderSelector();
     Elements headerElements = firstTrElement.select(headerSelector);
-    if (headerElements.size() > 0) {
+    if (!headerElements.isEmpty()) {
       this.trElements.remove(0);
       for (Element tdElement : headerElements) {
         relationDef.addColumn(tdElement.text());
@@ -91,7 +94,7 @@ public class HtmlDataPath extends FsTextDataPath {
     }
 
     headerElements = table.select(headerSelector);
-    if (headerElements.size() > 0) {
+    if (!headerElements.isEmpty()) {
       throw new RuntimeException("The (" + headerSelector + ") headers element are not in the first (" + rowSelector + ") element of the table selector " + this.getTableSelector() + " in the resource (" + this + ")");
     }
 
