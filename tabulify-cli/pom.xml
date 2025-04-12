@@ -105,7 +105,7 @@
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <manifestEntries>
-                    <Main-Class>net.bytle.db.tabli.Tabli</Main-Class>
+                    <Main-Class>com.tabulify.tabli.Tabli</Main-Class>
                     <Build-Number>${project.version}</Build-Number>
                   </manifestEntries>
                 </transformer>
@@ -164,21 +164,21 @@
                   <name>temurinLinux</name>
                   <distribution>${jdk.distribution}</distribution>
                   <platform>linux-x86_64</platform>
-                  <version>${jdk.version}</version>
+                  <version>${maven.compiler.release}</version>
                   <archiveType>tar.gz</archiveType>
                 </pkg>
                 <pkg>
                   <name>temurinOsx</name>
                   <distribution>${jdk.distribution}</distribution>
                   <platform>osx-x86_64</platform>
-                  <version>${jdk.version}</version>
+                  <version>${maven.compiler.release}</version>
                   <archiveType>tar.gz</archiveType>
                 </pkg>
                 <pkg>
                   <name>temurinWindows</name>
                   <distribution>${jdk.distribution}</distribution>
                   <platform>windows-x86_64</platform>
-                  <version>${jdk.version}</version>
+                  <version>${maven.compiler.release}</version>
                   <archiveType>zip</archiveType>
                 </pkg>
               </pkgs>

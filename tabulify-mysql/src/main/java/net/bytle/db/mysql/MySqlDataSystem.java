@@ -1,6 +1,5 @@
 package net.bytle.db.mysql;
 
-import net.bytle.db.jdbc.*;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.SqlDataType;
 

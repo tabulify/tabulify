@@ -1,0 +1,4 @@
+com.tabulify.memory.MemoryConnectionProvider
+com.tabulify.fs.FsConnectionProvider
+com.tabulify.tpc.TpcConnectionProvider
+com.tabulify.noop.NoopConnectionProvider

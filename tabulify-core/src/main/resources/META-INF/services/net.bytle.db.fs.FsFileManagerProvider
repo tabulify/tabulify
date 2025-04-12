@@ -1,3 +1,0 @@
-net.bytle.db.fs.textfile.FsTextManagerProvider
-net.bytle.db.fs.dir.FsDirManagerProvider
-net.bytle.db.fs.sql.FsSqlManagerProvider

@@ -1,6 +1,6 @@
 package net.bytle.template.flow;
 
-import net.bytle.db.flow.Granularity;
+import com.tabulify.flow.Granularity;
 import net.bytle.type.Attribute;
 
 import static net.bytle.template.flow.TemplateOutputOperation.EXTENDED_RECORDS;

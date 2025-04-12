@@ -31,7 +31,7 @@ project:
       groupId: com.tabulify
       artifactId: tabulify-cli
       mainClass: net.bytle.db.tabli.Tabli
-      version: '11'
+      #version: '{{Env.JDK_VERSION}}'
       multiProject: true
   stereotype: CLI
 

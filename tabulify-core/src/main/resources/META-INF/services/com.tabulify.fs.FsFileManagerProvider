@@ -1,0 +1,3 @@
+com.tabulify.fs.textfile.FsTextManagerProvider
+com.tabulify.fs.dir.FsDirManagerProvider
+com.tabulify.fs.sql.FsSqlManagerProvider

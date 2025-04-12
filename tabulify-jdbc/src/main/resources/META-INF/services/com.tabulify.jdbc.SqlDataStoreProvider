@@ -1,0 +1,2 @@
+com.tabulify.postgres.PostgresProvider
+com.tabulify.hive.HiveProvider

@@ -18,8 +18,6 @@ import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
 
-import static net.bytle.db.gen.entities.EntitiesProperties.*;
-
 public class Country {
 
 
