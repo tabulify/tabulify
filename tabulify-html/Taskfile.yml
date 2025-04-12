@@ -1,0 +1,23 @@
+version: '3'
+
+includes:
+  root:
+    taskfile: ../Taskfile.yml
+    flatten: true
+
+tasks:
+  http-start:
+    cmds:
+      - |
+        docker run \
+          --volume $PWD/src/test/resources:/usr/local/lib/python3.6/dist-packages/flasgger/ui2/static/resources \
+          -p 8081:80 \
+          --rm \
+          -d \
+          --name httpbin \
+          kennethreitz/httpbin:latest
+
+  http-stop:
+    cmds:
+      - |
+        docker stop httpbin
