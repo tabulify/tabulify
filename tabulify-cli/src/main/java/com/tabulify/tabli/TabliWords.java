@@ -53,6 +53,7 @@ public class TabliWords {
   public static final String PIPELINE_SELECTORS = "pipeline-selectors";
   public static final String TEMPLATE_COMMAND = "template";
   public static final String PING_COMMAND = "ping";
+  public static final String DIAGNOSTIC_COMMAND = "diagnostic";
 
 
   protected static final String PASSPHRASE_PROPERTY = "--passphrase";

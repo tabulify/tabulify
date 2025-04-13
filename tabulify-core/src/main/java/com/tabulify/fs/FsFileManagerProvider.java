@@ -81,7 +81,7 @@ public abstract class FsFileManagerProvider {
     ServiceLoader<FsFileManagerProvider> loadedTableSystemProviders = ServiceLoader
       .load(FsFileManagerProvider.class, ClassLoader.getSystemClassLoader());
 
-    // ServiceConfigurationError may be throw here
+    // ServiceConfigurationError may be thrown here
     for (FsFileManagerProvider provider : loadedTableSystemProviders) {
 
       fsFileManagerProviders.add(provider);

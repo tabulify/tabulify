@@ -99,7 +99,7 @@ public class TabliDataPrint {
       )
       .execute()
       .getDownStreamDataPaths();
-    if (dataPaths.size() == 0) {
+    if (dataPaths.isEmpty()) {
       System.out.println();
       System.out.println("No data resources selected by the data selectors (" + dataUriSelectors.stream().sorted().map(DataUri::toString).collect(Collectors.joining(",")) + ")");
       System.out.println();

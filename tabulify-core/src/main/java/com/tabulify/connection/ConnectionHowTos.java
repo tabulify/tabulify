@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 /**
  * A class that gives back default connections for how to's demos
- * See https://tabulify.com/howtos
+ * See <a href="https://tabulify.com/howtos">...</a>
  * <p>
  * The connection name are the name of the scheme in the URL and does not have any minus
  * because SQL see them as an operation (even without space)
@@ -76,7 +76,7 @@ public class ConnectionHowTos {
   }
 
   /**
-   * @return the set of howto's datastore
+   * @return a map of how's datastore
    */
   static public Map<String, Connection> createHowtoConnections(Tabular tabular) {
 
@@ -99,7 +99,7 @@ public class ConnectionHowTos {
       howToDataStoresSet.add(
         Connection.createConnectionFromProviderOrDefault(tabular, ORACLE_CONNECTION_NAME, "jdbc:oracle:thin:@localhost:1521:xe")
           .setDescription("The default oracle connection")
-          .setPassword(tabular.getVault().encrypt("oracle"))
+          .setPassword("oracle")
           .setUser("system")
           .addVariable("Driver", "oracle.jdbc.OracleDriver")
       );
@@ -109,7 +109,7 @@ public class ConnectionHowTos {
           .setDescription("The default sqlserver connection")
           .addVariable("Driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver")
           .setUser("sa")
-          .setPassword(tabular.getVault().encrypt("TheSecret1!"))
+          .setPassword("TheSecret1!")
       );
 
       /**
@@ -138,7 +138,7 @@ public class ConnectionHowTos {
           .setPassword(tabular.getVault().encrypt("welcome"))
       );
 
-      // The howtofiles
+      // The how-to-files
       Path howToFilesPath = ConnectionHowTos.getHowToFilesPath(tabular);
       howToDataStoresSet.add(
         Connection.createConnectionFromProviderOrDefault(tabular, HOW_TO_FILE_CONNECTION_NAME, howToFilesPath.toUri().toString())

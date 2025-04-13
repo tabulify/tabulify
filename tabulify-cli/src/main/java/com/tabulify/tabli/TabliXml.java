@@ -38,7 +38,7 @@ public class TabliXml {
     cliCommand.addChildCommand(STRUCTURE_COMMAND)
       .setDescription("print a tree summary structure of an xml");
     cliCommand.addChildCommand(CSV)
-      .setDescription("create form an XML file a CSV file");
+      .setDescription("create from an XML file a CSV file");
 
     // Initiate the client helper
     cliCommand.setDescription("Xml utility")
@@ -47,7 +47,7 @@ public class TabliXml {
     CliParser cliParser = cliCommand.parse();
 
     List<CliCommand> commands = cliParser.getFoundedChildCommands();
-    if (commands.size() > 0) {
+    if (!commands.isEmpty()) {
       for (CliCommand command : commands) {
         switch (command.getName()) {
           case EXTRACT:

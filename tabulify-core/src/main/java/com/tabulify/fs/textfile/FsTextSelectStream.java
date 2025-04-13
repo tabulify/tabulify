@@ -9,6 +9,7 @@ import net.bytle.type.TailQueue;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.MalformedInputException;
 import java.nio.file.Files;
 import java.sql.Clob;
 import java.util.ArrayList;
@@ -149,6 +150,9 @@ public class FsTextSelectStream extends SelectStreamAbs {
       }
 
     } catch (IOException e) {
+      if (e instanceof MalformedInputException) {
+        throw new RuntimeException("The file (" + this.getDataPath() + ") appears to not be a text file. We can't read it.", e);
+      }
       throw new RuntimeException(e);
     }
 
@@ -189,7 +193,7 @@ public class FsTextSelectStream extends SelectStreamAbs {
     if (columnIndex == 1) {
       return record;
     } else {
-      throw new RuntimeException("The file ("+this.getDataPath().getName()+") has been loaded as a text file. Therefore, you can ask only the column (1) not the column (" + columnIndex + "). If the file has a structured format, the plugin should be enabled.");
+      throw new RuntimeException("The file (" + this.getDataPath().getName() + ") has been loaded as a text file. Therefore, you can ask only the column (1) not the column (" + columnIndex + "). If the file has a structured format, the plugin should be enabled.");
     }
   }
 
@@ -282,7 +286,7 @@ public class FsTextSelectStream extends SelectStreamAbs {
     try {
       return getObject(this.getDataPath().getOrCreateRelationDef().getColumnDef(columnName).getColumnPosition());
     } catch (NoColumnException e) {
-      throw new RuntimeException("The column name ("+columnName+") was not found in the resource ("+this.getDataPath()+"), we could not retrieve the value.");
+      throw new RuntimeException("The column name (" + columnName + ") was not found in the resource (" + this.getDataPath() + "), we could not retrieve the value.");
     }
   }
 

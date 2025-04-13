@@ -25,7 +25,7 @@ tasks:
   release-jdks-setup:
     cmds:
       - |
-        mvn jdks:setup-disco -P package
+        mvn jdks:setup-disco -P release
         echo "Jdks installed in <target/jdks>: "
         ls target/jdks/
   # List the configured Jdks
@@ -33,12 +33,23 @@ tasks:
   release-jdks-list:
     cmds:
       - |
-        mvn jdks:list-disco -P package
+        mvn jdks:list-disco -P release
   # Install tabulify locally
   # the root `install` command install the jars
-  release-install:
+  install-cli:
     cmds:
       - |
+
+        # Install the package
+        (cd ..; mvn install -DskipTests)
+
+        # Create the release package
+        # Download the jdk, the deps
+        mvn package -DskipTests -P release
+
+        # Split package
+        rm target/deps/stax-api-1.0.1.jar
+
         # Env
         ARCHIVE_NAME=tabulify-early-access-linux-x86_64
         ASSEMBLY_DIR=target/jreleaser/assemble/tabulify/jlink
@@ -50,7 +61,7 @@ tasks:
         rm -rf $ASSEMBLY_DIR
 
         # Generate only for the current platform
-        jreleaser assemble --select-current-platform
+        jreleaser assemble --debug --select-current-platform
         # No need to unzip - the dir is till there
         mv ${ASSEMBLY_DIR}/${ASSEMBLY_WORK_DIR}/${ARCHIVE_NAME} ${TABULIFY_HOME}
 

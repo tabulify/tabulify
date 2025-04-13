@@ -141,7 +141,9 @@ public class Tabli {
     rootCommand.addChildCommand(TabliWords.VAULT_COMMAND)
       .setDescription("Encrypt and decrypt sensitive information");
     rootCommand.addChildCommand(TabliWords.FLOW_COMMAND)
-      .setDescription("Start Plays (beta)");
+      .setDescription("Execute Flow");
+    rootCommand.addChildCommand(DIAGNOSTIC_COMMAND)
+      .setDescription("Print diagnostic information");
 
 
     /*
@@ -299,6 +301,9 @@ public class Tabli {
                 break;
               case TabliWords.FLOW_COMMAND:
                 feedbackDataPaths = TabliFlow.run(tabular, childCommand);
+                break;
+              case TabliWords.DIAGNOSTIC_COMMAND:
+                feedbackDataPaths = TabliDiagnostic.run(tabular, childCommand);
                 break;
               default:
                 throw new IllegalArgumentException("The sub-command (" + childCommand.getName() + ") is unknown for the command (" + CliUsage.getFullChainOfCommand(rootCommand) + ")");

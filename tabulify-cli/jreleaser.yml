@@ -30,8 +30,8 @@ project:
     java:
       groupId: com.tabulify
       artifactId: tabulify-cli
-      mainClass: net.bytle.db.tabli.Tabli
-      #version: '{{Env.JDK_VERSION}}'
+      mainClass: com.tabulify.tabli.Tabli
+      version: '11.0.26'
       multiProject: true
   stereotype: CLI
 
@@ -57,7 +57,7 @@ assemble:
           includes:
             - LICENSE.md
       jdeps:
-        multiRelease: base
+        multiRelease: '11'
         ignoreMissingDeps: true
         targets:
           - 'target/tabulify-cli-{{projectVersion}}.jar'
