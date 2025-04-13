@@ -55,7 +55,7 @@ public class FsBinaryDataPath extends FsDataPathAbs implements FsDataPath {
 
   @Override
   public SelectStream getSelectStream() {
-    throw new UnsupportedOperationException("The selection in binary file is not yet supported. File (" + getAbsoluteNioPath() + ")");
+    throw new UnsupportedOperationException("The loop of this binary file is not implemented. By default, you can't loop over a binary file as there is no clear row separator. File (" + getAbsoluteNioPath() + ")");
   }
 
 }

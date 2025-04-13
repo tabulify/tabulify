@@ -41,6 +41,7 @@
     <module>tabulify-xml</module>
     <module>tabulify-sqlite</module>
     <module>tabulify-html</module>
+    <module>tabulify-excel</module>
   </modules>
 
   <!-- The rest of dependencies management is in core  -->
@@ -79,6 +80,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>tabulify-csv</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-excel</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
