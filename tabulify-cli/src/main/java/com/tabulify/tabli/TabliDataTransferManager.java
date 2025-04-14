@@ -283,7 +283,7 @@ public class TabliDataTransferManager {
       }
 
       // Do we have selected something
-      if (targetDataPaths.size() == 0) {
+      if (targetDataPaths.isEmpty()) {
         TabliLog.LOGGER_TABLI.fine("The data uri selectors (" + targetDataUriSelectors.stream().map(DataUri::toString).collect(Collectors.joining(", ")) + ") are not selectors that select data resources, we use them as data uri");
         targetDataPaths = targetDataUriSelectors.stream()
           .map(du -> tabular.getDataPath(du.toString()))
@@ -330,7 +330,7 @@ public class TabliDataTransferManager {
             s.append("The target to fill (")
               .append(targetDataPath)
               .append(") has no column definitions.");
-            if (genDataPaths.size() > 0) {
+            if (!genDataPaths.isEmpty()) {
               s.append(" We found the following generators (");
               s.append(genDataPaths
                 .stream()
@@ -341,7 +341,7 @@ public class TabliDataTransferManager {
                 .append(targetDataPath.getLogicalName())
                 .append(")");
             } else {
-              if (genDataUris == null || genDataUris.size() == 0) {
+              if (genDataUris == null || genDataUris.isEmpty()) {
                 s.append(" You should use the (" + GENERATOR_SELECTOR + ") option to add a generator.");
               } else {
                 s.append(" The given generator selectors (")
