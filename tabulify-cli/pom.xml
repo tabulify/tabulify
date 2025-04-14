@@ -140,6 +140,7 @@
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                   </transformers>
                   <finalName>${project.artifactId}-${project.version}-fatjar</finalName>
+                  <!-- By minimizing, some class were not added -->
                   <minimizeJar>false</minimizeJar>
                   <filters>
                     <filter>
@@ -171,26 +172,28 @@
             <artifactId>jdks-maven-plugin</artifactId>
             <version>${jreleaser.version}</version>
             <configuration>
+              <!-- So that we don't need to download them again after a clean-->
+              <outputDirectory>${java.io.tmpdir}/jdks</outputDirectory>
               <pkgs>
                 <pkg>
                   <name>temurinLinux</name>
                   <distribution>${jdk.distribution}</distribution>
                   <platform>linux-x86_64</platform>
-                  <version>${maven.compiler.release}</version>
+                  <version>${maven.compiler.source}</version>
                   <archiveType>tar.gz</archiveType>
                 </pkg>
                 <pkg>
                   <name>temurinOsx</name>
                   <distribution>${jdk.distribution}</distribution>
                   <platform>osx-x86_64</platform>
-                  <version>${maven.compiler.release}</version>
+                  <version>${maven.compiler.source}</version>
                   <archiveType>tar.gz</archiveType>
                 </pkg>
                 <pkg>
                   <name>temurinWindows</name>
                   <distribution>${jdk.distribution}</distribution>
                   <platform>windows-x86_64</platform>
-                  <version>${maven.compiler.release}</version>
+                  <version>${maven.compiler.source}</version>
                   <archiveType>zip</archiveType>
                 </pkg>
               </pkgs>

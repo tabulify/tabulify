@@ -2,7 +2,7 @@
 
 environment:
   properties:
-    jdkPathPrefix: 'target/jdks/temurin'
+    jdkPathPrefix: '/tmp/jdks/temurin'
     jdkDirectoryName: 'jdk-11.0.26+4'
     depsPrefix: 'target/deps'
 

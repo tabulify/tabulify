@@ -28,3 +28,10 @@ tasks:
       # -P for profile name
       - |
         mvn test -P slow-tests-only
+
+  # Install tabulify locally
+  # the root `install` command install the jars
+  install-cli:
+    cmds:
+      - contrib/script/install-cli
+

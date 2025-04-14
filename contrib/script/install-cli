@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+# Install Tabulify locally
+# at TABULIFY_HOME
+
+set -TCEeuo pipefail
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/../.."
+
+# Install the package
+(cd "$PROJECT_ROOT"; mvn install -DskipTests)
+
+# Change context
+TABULIFY_CLI_DIR=$(realpath "$PROJECT_ROOT/tabulify-cli")
+cd "$TABULIFY_CLI_DIR"
+
+# Create the release package
+# Download the jdk, the deps
+mvn clean package -DskipTests -P release
+
+# Split package
+# rm target/deps/stax-api-1.0.1.jar
+
+# Env
+ARCHIVE_NAME=tabulify-early-access-linux-x86_64
+ASSEMBLY_DIR=target/jreleaser/assemble/tabulify/jlink
+ASSEMBLY_WORK_DIR=work-linux-x86_64
+
+# Clean
+# mkdir first as the tabulify dir should not exists, other the move command will copy the directory into
+mkdir -p "$TABULIFY_HOME" && rm -rf "$TABULIFY_HOME"
+rm -rf $ASSEMBLY_DIR
+
+# Generate only for the current platform
+jreleaser assemble --debug --select-current-platform
+
+# No need to unzip - the dir is till there
+mv "${ASSEMBLY_DIR}/${ASSEMBLY_WORK_DIR}/${ARCHIVE_NAME}" "${TABULIFY_HOME}"
