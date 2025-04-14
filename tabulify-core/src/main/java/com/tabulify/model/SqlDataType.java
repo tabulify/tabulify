@@ -67,7 +67,7 @@ public class SqlDataType {
    * The java class expected of the object
    * that is passed to the driver in the insert
    */
-  private Class<?> clazz;
+  private Class<?> sqlClazz;
 
   /**
    * Others properties
@@ -178,11 +178,11 @@ public class SqlDataType {
    */
   public Class<?> getSqlClass() {
 
-    if (this.clazz == null) {
+    if (this.sqlClazz == null) {
       DbLoggers.LOGGER_DB_ENGINE.warning("The class for the sql type (" + this + ") was null, we have returned a string");
       return String.class;
     }
-    return this.clazz;
+    return this.sqlClazz;
 
   }
 
@@ -191,9 +191,7 @@ public class SqlDataType {
     return typeCode;
   }
 
-//  public List<String> getTypeNames() {
-//    return typeNames;
-//  }
+
 
 
   /**
@@ -331,12 +329,12 @@ public class SqlDataType {
       Objects.equals(localTypeName, that.localTypeName) &&
       Objects.equals(minimumScale, that.minimumScale) &&
       Objects.equals(maximumScale, that.maximumScale) &&
-      Objects.equals(clazz, that.clazz);
+      Objects.equals(sqlClazz, that.sqlClazz);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(connection, typeCode, sqlName, maxPrecision, literalPrefix, literalSuffix, createParams, nullable, caseSensitive, searchable, unsignedAttribute, fixedPrecisionScale, autoIncrement, localTypeName, minimumScale, maximumScale, clazz);
+    return Objects.hash(connection, typeCode, sqlName, maxPrecision, literalPrefix, literalSuffix, createParams, nullable, caseSensitive, searchable, unsignedAttribute, fixedPrecisionScale, autoIncrement, localTypeName, minimumScale, maximumScale, sqlClazz);
   }
 
   /**
@@ -424,7 +422,7 @@ public class SqlDataType {
     if (clazz == null && this.connection.getTabular().isDev()) {
       throw new IllegalStateException("The class cannot be null for the type (" + this + ")");
     }
-    this.clazz = clazz;
+    this.sqlClazz = clazz;
     return this;
   }
 
