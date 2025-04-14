@@ -5,3 +5,4 @@
 !*.java
 # Exclude test files
 *Test.java
+!pom.xml
