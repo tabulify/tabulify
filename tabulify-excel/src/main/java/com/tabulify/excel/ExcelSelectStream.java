@@ -29,7 +29,7 @@ public class ExcelSelectStream extends SelectStreamAbs {
 
   @Override
   public String getString(int columnIndex) {
-    return resultSet.getString(columnIndex);
+    return String.valueOf(getObject(columnIndex));
   }
 
   @Override

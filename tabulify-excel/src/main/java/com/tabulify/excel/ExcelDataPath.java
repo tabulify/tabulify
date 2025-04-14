@@ -11,6 +11,8 @@ import com.tabulify.transfer.TransferProperties;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
+import net.bytle.fs.Fs;
+import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
 import net.bytle.type.Variable;
 import org.apache.commons.collections4.bidimap.TreeBidiMap;
@@ -21,16 +23,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static com.tabulify.excel.ExcelManagerProvider.XLS;
+import static com.tabulify.excel.ExcelManagerProvider.XLSX;
+
 public class ExcelDataPath extends FsBinaryDataPath {
+
 
 
   private ExcelSheet excelSheet;
 
   public ExcelDataPath(FsConnection fsConnection, Path path) {
-    super(fsConnection, path, MediaTypes.EXCEL_FILE);
+    super(fsConnection, path, ExcelManagerProvider.getMediaTye(path));
 
     this.addVariablesFromEnumAttributeClass(ExcelDataPathAttribute.class);
   }
+
+
 
   @Override
   public RelationDef getOrCreateRelationDef() {

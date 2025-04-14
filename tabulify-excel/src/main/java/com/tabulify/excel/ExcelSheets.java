@@ -8,6 +8,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DateUtil;
 
+import java.sql.SQLException;
 import java.sql.Types;
 
 /**
@@ -48,7 +49,11 @@ public class ExcelSheets {
 
   }
 
-  static <T> T getCellValue(Cell cell, Class<T> clazz) {
+  /**
+   *
+   * @throws SQLException because {@link ExcelResultSet} was first created and SQLException is mandatory. Use {@link #getCellValueSafe(Cell, Class)} to get rid of it
+   */
+  static <T> T getCellValue(Cell cell, Class<T> clazz) throws SQLException {
 
     // https://poi.apache.org/components/spreadsheet/quick-guide.html#CellContents
 
@@ -97,17 +102,24 @@ public class ExcelSheets {
         value = cell.getCellFormula();
         break;
       case ERROR:
-        throw new RuntimeException("Error type have no value. The cell with the Excel coordinates (" + sheetRowIndex + "," + sheetColumnIndex + ") is of type " + cellType);
+        throw new SQLException("Error type have no value. The cell with the Excel coordinates (" + sheetRowIndex + "," + sheetColumnIndex + ") is of type " + cellType);
       default:
-        throw new RuntimeException("Internal Error: Type not yet supported. The cell with the Excel coordinates (" + sheetRowIndex + "," + sheetColumnIndex + ") is of type " + cellType);
+        throw new SQLException("Internal Error: Type not yet supported. The cell with the Excel coordinates (" + sheetRowIndex + "," + sheetColumnIndex + ") is of type " + cellType);
     }
 
     try {
       return Casts.cast(value, clazz);
     } catch (CastException e) {
-      throw new RuntimeException(e);
+      throw new SQLException(e);
     }
   }
 
 
+  static <T> T getCellValueSafe(Cell cell, Class<T> clazz)  {
+    try {
+      return getCellValue(cell,clazz);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
   }
+}

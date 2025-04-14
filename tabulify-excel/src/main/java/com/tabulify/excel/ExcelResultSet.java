@@ -1,16 +1,19 @@
 package com.tabulify.excel;
 
-import com.tabulify.model.RelationDef;
 import org.apache.commons.collections4.bidimap.TreeBidiMap;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 
-import java.io.*;
+import java.io.InputStream;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.nio.file.Files;
 import java.sql.*;
-import java.sql.Date;
-import java.util.*;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 
@@ -84,7 +87,7 @@ public class ExcelResultSet implements ResultSet {
       headerNames = new TreeBidiMap<>();
       for (Cell cell : headerRow) {
         if (cell.getCellType() != CellType.STRING) {
-          throw new IllegalArgumentException("The cell (" + cell.getRowIndex() + "," + cell.getColumnIndex() + ") with the value (" + ExcelSheets.getCellValue(cell, String.class) + ") can be an header as it is not of STRING type but of type (" + getCellTypeName(cell.getCellType()) + ")");
+          throw new IllegalArgumentException("The cell (" + cell.getRowIndex() + "," + cell.getColumnIndex() + ") with the value (" + ExcelSheets.getCellValueSafe(cell, String.class) + ") can be an header as it is not of STRING type but of type (" + getCellTypeName(cell.getCellType()) + ")");
         } else {
           columnIndex++;
           headerNames.put(cell.getStringCellValue(), columnIndex);
@@ -154,7 +157,7 @@ public class ExcelResultSet implements ResultSet {
    *                   called on a closed result set
    */
 
-  public String getString(int columnIndex) {
+  public String getString(int columnIndex) throws SQLException {
 
     return cast(null, columnIndex, String.class);
 
@@ -163,7 +166,7 @@ public class ExcelResultSet implements ResultSet {
   /* This function check if the cell has valid coordinates.
    * It is used by all cell operations such as read and updates
    */
-  private void validateCell(int rowIndex, int columnIndex) {
+  private void validateCell(int rowIndex, int columnIndex) throws SQLException {
     validateRowIndex(rowIndex);
     validateColumnIndex(columnIndex);
   }
@@ -173,11 +176,11 @@ public class ExcelResultSet implements ResultSet {
    *
    * @param rowIndex
    */
-  private void validateRowIndex(int rowIndex) {
+  private void validateRowIndex(int rowIndex) throws SQLException {
     if (rowIndex < 1) {
-      throw new RuntimeException("The row index (" + rowIndex + ") cannot be below 1");
+      throw new SQLException("The row index (" + rowIndex + ") cannot be below 1");
     } else if (rowIndex > size()) {
-      throw new RuntimeException("The row index (" + rowIndex + ") can not be greater than the number of row (" + size() + ")");
+      throw new SQLException("The row index (" + rowIndex + ") can not be greater than the number of row (" + size() + ")");
     }
   }
 
@@ -186,11 +189,11 @@ public class ExcelResultSet implements ResultSet {
    *
    * @param columnIndex
    */
-  private void validateColumnIndex(int columnIndex) {
+  private void validateColumnIndex(int columnIndex) throws SQLException {
     if (columnIndex < 1) {
-      throw new RuntimeException("The column index (" + columnIndex + ") must not be negative or null");
+      throw new SQLException("The column index (" + columnIndex + ") must not be negative or null");
     } else if (columnIndex > this.lastColumnNum) {
-      throw new RuntimeException("The column index (" + columnIndex + ") can not be greater than the last one (" + this.lastColumnNum + ")");
+      throw new SQLException("The column index (" + columnIndex + ") can not be greater than the last one (" + this.lastColumnNum + ")");
     }
   }
 
@@ -208,7 +211,7 @@ public class ExcelResultSet implements ResultSet {
    *                   called on a closed result set
    */
 
-  public Double getNumeric(int columnIndex) {
+  public Double getNumeric(int columnIndex) throws SQLException {
 
 
     return this.cast(null, columnIndex, Double.class);
@@ -216,7 +219,7 @@ public class ExcelResultSet implements ResultSet {
   }
 
 
-  public boolean getBoolean(int columnIndex) {
+  public boolean getBoolean(int columnIndex) throws SQLException {
 
 
     return cast(null, columnIndex, Boolean.class);
@@ -367,7 +370,7 @@ public class ExcelResultSet implements ResultSet {
   }
 
 
-  public boolean getBoolean(String columnLabel) {
+  public boolean getBoolean(String columnLabel) throws SQLException {
     return getBoolean(getColumnIndex(columnLabel));
   }
 
@@ -527,7 +530,7 @@ public class ExcelResultSet implements ResultSet {
    *                   called on a closed result set
    */
 
-  public Date getDate(int columnIndex) {
+  public Date getDate(int columnIndex) throws SQLException {
 
 
     return cast(null, columnIndex, Date.class);
@@ -683,7 +686,7 @@ public class ExcelResultSet implements ResultSet {
    *                   called on a closed result set
    */
 
-  public String getString(String columnLabel) {
+  public String getString(String columnLabel) throws SQLException {
     return getString(getColumnIndex(columnLabel));
   }
 
@@ -716,7 +719,7 @@ public class ExcelResultSet implements ResultSet {
    *                   called on a closed result set
    */
 
-  public double getNumeric(String columnLabel) {
+  public double getNumeric(String columnLabel) throws SQLException {
     return getNumeric(getColumnIndex(columnLabel));
   }
 
@@ -733,7 +736,7 @@ public class ExcelResultSet implements ResultSet {
    *                   called on a closed result set
    */
 
-  public Date getDate(String columnLabel) {
+  public Date getDate(String columnLabel) throws SQLException {
     return getDate(getColumnIndex(columnLabel));
   }
 
@@ -4684,7 +4687,7 @@ public class ExcelResultSet implements ResultSet {
   /**
    * Get a string from a cell
    */
-  public String getString(int rowIndex, int columnIndex) {
+  public String getString(int rowIndex, int columnIndex) throws SQLException {
 
 
     return this.cast(rowIndex, columnIndex, String.class);
@@ -4700,7 +4703,7 @@ public class ExcelResultSet implements ResultSet {
    * @param <T>         - the type
    * @return the value cast
    */
-  private <T> T cast(Integer rowIndex, int columnIndex, Class<T> clazz) {
+  private <T> T cast(Integer rowIndex, int columnIndex, Class<T> clazz) throws SQLException {
 
 
     return ExcelSheets.getCellValue(getCell(rowIndex, columnIndex), clazz);
@@ -4767,12 +4770,10 @@ public class ExcelResultSet implements ResultSet {
    *
    * @param iface a Class defining an interface.
    * @return true if this implements the interface or directly or indirectly wraps an object that does.
-   * @throws SQLException if an error occurs while determining whether this is a wrapper
-   *                      for an object with the given interface.
    * @since 1.6
    */
   @Override
-  public boolean isWrapperFor(Class<?> iface) throws SQLException {
+  public boolean isWrapperFor(Class<?> iface) {
     return false;
   }
 
@@ -5105,7 +5106,7 @@ public class ExcelResultSet implements ResultSet {
 
   }
 
-  private Cell getCell(Integer rowIndex, int columnIndex) {
+  private Cell getCell(Integer rowIndex, int columnIndex) throws SQLException {
     if (rowIndex == null) {
       rowIndex = logicalRowIndex;
     }
