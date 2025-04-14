@@ -116,6 +116,11 @@ public class SqlDataPath extends DataPathAbs {
     }
   }
 
+  @Override
+  public boolean hasHeaderInContent() {
+    return false;
+  }
+
 
   /**
    * Sql Server does not allow
