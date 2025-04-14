@@ -66,6 +66,11 @@ public class MemoryListDataPath extends MemoryDataPathAbs {
   }
 
   @Override
+  public boolean hasHeaderInContent() {
+    return false;
+  }
+
+  @Override
   public Long getSize() {
     return (long) values.size();
   }

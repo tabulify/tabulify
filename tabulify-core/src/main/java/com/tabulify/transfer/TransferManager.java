@@ -549,7 +549,7 @@ public class TransferManager {
          * the meta move on file system cannot be done otherwise the headers will get there 2 times
          */
         boolean metaMove = false;
-        boolean headerInContent = firstTransferSourceTarget.getSourceDataPath().getMediaType().getSubType().equals("csv");
+        boolean headerInContent = firstTransferSourceTarget.getSourceDataPath().hasHeaderInContent();
         Boolean targetExist = Tabulars.exists(firstTransferSourceTarget.getTargetDataPath());
         boolean sameDataStore = sameDataStore(firstTransferSourceTarget);
         if(sameDataStore && !targetExist){

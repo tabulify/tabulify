@@ -494,4 +494,8 @@ public class CsvDataPath extends FsTextDataPath {
     return CsvInsertStream.of(this);
   }
 
+  @Override
+  public boolean hasHeaderInContent() {
+    return this.getHeaderRowId() != 0;
+  }
 }

@@ -73,4 +73,9 @@ public class FsDirectoryDataPath extends FsDataPathAbs implements FsDataPath {
   public SelectStream getSelectStream() {
     throw new UnsupportedOperationException("The select of directory is not yet implemented");
   }
+
+  @Override
+  public boolean hasHeaderInContent() {
+    return false;
+  }
 }

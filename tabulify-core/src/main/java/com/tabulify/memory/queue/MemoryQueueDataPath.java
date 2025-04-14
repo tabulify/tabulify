@@ -105,6 +105,11 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
   }
 
   @Override
+  public boolean hasHeaderInContent() {
+    return false;
+  }
+
+  @Override
   public Long getSize() {
     return (long) this.values.size();
   }

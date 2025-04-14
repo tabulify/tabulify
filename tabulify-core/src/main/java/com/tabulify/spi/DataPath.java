@@ -358,4 +358,11 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
 
   boolean hasVariable(String name);
 
+  /**
+   * @return true if the file headers are stored alongside the content
+   * It's important for transfer operation.
+   * You can use block operation to append a source file to an existing file if it has no header.
+   */
+  boolean hasHeaderInContent();
+
 }

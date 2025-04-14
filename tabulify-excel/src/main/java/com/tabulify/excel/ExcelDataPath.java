@@ -131,4 +131,10 @@ public class ExcelDataPath extends FsBinaryDataPath {
     excelResultSet.close();
 
   }
+
+  @Override
+  public boolean hasHeaderInContent() {
+    return this.getHeaderRowId() != 0;
+  }
+
 }

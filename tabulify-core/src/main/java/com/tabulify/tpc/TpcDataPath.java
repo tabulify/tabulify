@@ -87,6 +87,11 @@ public class TpcDataPath extends DataPathAbs {
   }
 
   @Override
+  public boolean hasHeaderInContent() {
+    return false;
+  }
+
+  @Override
   public DataPath getSibling(String name) {
     return this.dataStore.getDataModel().getAndCreateDataPath(name);
   }

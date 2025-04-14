@@ -74,4 +74,9 @@ public class FsBinaryDataPath extends FsDataPathAbs implements FsDataPath {
     throw new UnsupportedOperationException("The loop of this " + this.getClass().getSimpleName() + " file is not implemented. File (" + getAbsoluteNioPath() + ")");
   }
 
+  @Override
+  public boolean hasHeaderInContent() {
+    return false;
+  }
+
 }
