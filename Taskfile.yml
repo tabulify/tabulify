@@ -34,4 +34,20 @@ tasks:
   install-cli:
     cmds:
       - contrib/script/install-cli
-
+  # Start the documentation website
+  start-web:
+    cmds:
+      - |
+        docker run \
+        --name site-com-tabulify \
+        --rm \
+        -d \
+        -p 8081:80 \
+        --user 1000:1000 \
+        -e DOKU_DOCKER_ENV=dev \
+        -e DOKU_DOCKER_ACL_POLICY='public' \
+        -e DOKU_DOCKER_ADMIN_NAME='admin' \
+        -e DOKU_DOCKER_ADMIN_PASSWORD='welcome' \
+        -e DOKU_DOCKER_BASE_URL='http://localhost:8081' \
+        -v $PWD/tabulify-cli/src/main/tabulify.com:/var/www/html \
+        ghcr.io/combostrap/dokuwiki:php8.3-latest
