@@ -14,7 +14,7 @@ public class ExcelSelectStream extends SelectStreamAbs {
   public ExcelSelectStream(ExcelDataPath excelDataPath) {
     super(excelDataPath);
     this.excelDataPath = excelDataPath;
-    this.resultSet = excelDataPath.getExcelResultSet(PackageAccess.READ);
+    this.resultSet = new ExcelResultSet(excelDataPath.getExcelSheet(PackageAccess.READ));
   }
 
   @Override

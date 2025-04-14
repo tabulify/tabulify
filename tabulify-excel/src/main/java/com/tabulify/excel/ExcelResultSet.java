@@ -57,17 +57,17 @@ public class ExcelResultSet implements ResultSet {
    * * xlsx: Excel
    * * csv: CSV
    *
-   * @param excelDataPath - path to the excel file
+   * @param excelSheet - path to the excel file
    */
-  public ExcelResultSet(ExcelSheet excelDataPath) {
+  public ExcelResultSet(ExcelSheet excelSheet) {
 
-    this.excelSheet = excelDataPath;
+    this.excelSheet = excelSheet;
     this.sheet = this.excelSheet.getSheet();
 
     // The last row num with data
     this.lastPhysicalRowNum = getLastRowNum();
 
-    this.firstPhysicalRowNum = excelDataPath.getHeaderRowId();
+    this.firstPhysicalRowNum = excelSheet.getHeaderRowId();
 
     if (this.firstPhysicalRowNum <= this.lastPhysicalRowNum) {
       this.dataSetIsEmpty = false;
@@ -78,8 +78,8 @@ public class ExcelResultSet implements ResultSet {
     this.lastColumnNum = getLastColNum();
 
     // Metadata Building
-    if (excelDataPath.getHeaderRowId() != 0) {
-      Row headerRow = sheet.getRow(this.getExcelRowIndex(excelDataPath.getHeaderRowId()));
+    if (excelSheet.getHeaderRowId() != 0) {
+      Row headerRow = sheet.getRow(this.getExcelRowIndex(excelSheet.getHeaderRowId()));
       int columnIndex = 0;
       headerNames = new TreeBidiMap<>();
       for (Cell cell : headerRow) {
@@ -96,7 +96,7 @@ public class ExcelResultSet implements ResultSet {
     // The data type comes from the first row of data
     // We need to read it
     // rowId is zero based so getRow(headerRowId) get the next row
-    int nextRow = excelDataPath.getHeaderRowId();
+    int nextRow = excelSheet.getHeaderRowId();
     Row firstRowWithData = sheet.getRow(nextRow);
     if (firstRowWithData != null) {
 
@@ -4640,32 +4640,6 @@ public class ExcelResultSet implements ResultSet {
   private TreeBidiMap<String, Integer> headerNames;
   private Map<Integer, Cell> headerCells = new HashMap<>();
 
-
-  /**
-   * Create the headers
-   */
-  ExcelResultSet createHeaders(RelationDef relationDef) {
-
-    this.headerNames = new TreeBidiMap<>();
-
-    Row headerRow = this.sheet.createRow(this.firstPhysicalRowNum);
-    for (int i = 1; i <= relationDef.getColumnsSize(); i++) {
-
-      String headerName = relationDef.getColumnDef(i).getColumnName();
-
-      // Construct the cell
-      Cell headerCell = headerRow.createCell(i);
-      headerCell.setCellValue(headerName);
-      this.sheet.autoSizeColumn(i);
-
-      // Construct the headers data
-      this.headerNames.put(headerName, i);
-      this.headerCells.put(i, headerCell);
-
-    }
-    return this;
-
-  }
 
   Integer getLastRowNum() {
     return this.sheet.getLastRowNum();

@@ -1,6 +1,11 @@
 package com.tabulify.excel;
 
+import com.tabulify.model.RelationDef;
+import com.tabulify.model.SqlDataType;
+import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
+import net.bytle.type.Casts;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
@@ -13,6 +18,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Types;
+import java.util.Date;
 
 /**
  * An Excel sheet wrapper that is only Nio Path dependent
@@ -30,10 +37,14 @@ public class ExcelSheet {
 
   private final POIFSFileSystem poifsFileSystem;
   private final ExcelSheetConfig excelSheetConfig;
+  private final CreationHelper createHelper;
+  private final CellStyle dateCellStyle;
+
 
   public ExcelSheet(ExcelSheetConfig excelSheetConfig) {
     this.excelSheetConfig = excelSheetConfig;
     Path path = excelSheetConfig.path;
+
     // A workbook, either a .xls HSSFWorkbook, or a .xlsx XSSFWorkbook,
 
     // Files vs InputStreams
@@ -95,6 +106,17 @@ public class ExcelSheet {
       throw new RuntimeException(e);
     }
 
+    /**
+     * Helper to create cell values
+     */
+    createHelper = wb.getCreationHelper();
+    dateCellStyle = wb.createCellStyle();
+    dateCellStyle.setDataFormat(
+      createHelper.createDataFormat().getFormat(this.excelSheetConfig.getDateFormat()));
+
+    /**
+     * Get the sheet
+     */
     String sheetName = excelSheetConfig.getSheetName();
     if (Files.exists(path)) {
       if (sheetName == null) {
@@ -128,6 +150,76 @@ public class ExcelSheet {
     return sheet == null;
   }
 
+  /**
+   * Create the headers
+   */
+  ExcelSheet createHeaders() {
+
+    if (this.excelSheetConfig.excelDataPath == null) {
+      throw new IllegalStateException("excel data path should not be null");
+    }
+
+    Row headerRow = this.sheet.createRow(this.getHeaderRowId() - 1);
+    RelationDef relationDef = this.excelSheetConfig.excelDataPath.getRelationDef();
+    for (int i = 1; i <= relationDef.getColumnsSize(); i++) {
+
+      String headerName = relationDef.getColumnDef(i).getColumnName();
+
+      // Construct the cell
+      Cell headerCell = headerRow.createCell(i);
+      headerCell.setCellValue(headerName);
+      this.sheet.autoSizeColumn(i);
+
+    }
+    return this;
+
+  }
+
+  public Workbook getWorkbook() {
+    return this.wb;
+  }
+
+  public void setCellValue(Cell cell, Object value) throws CastException {
+
+    // https://poi.apache.org/components/spreadsheet/quick-guide.html#CreateCells
+
+    if (value == null) {
+      // no cell value is null?
+      return;
+    }
+
+    if (this.excelSheetConfig.excelDataPath == null) {
+      throw new InternalException("Internal: The excel data path is empty");
+    }
+
+    RelationDef relationDef = this.excelSheetConfig.excelDataPath.getRelationDef();
+    if (relationDef == null) {
+      throw new InternalException("Internal: The relation def is empty");
+    }
+
+    SqlDataType dataType = relationDef.getColumnDef(cell.getColumnIndex() + 1).getDataType();
+    if (dataType.isNumeric()) {
+      cell.setCellValue(Casts.cast(value, Float.class));
+      return;
+    }
+
+    int typeCode = dataType.getTypeCode();
+    switch (typeCode) {
+      case Types.BOOLEAN:
+        cell.setCellValue(Casts.cast(value, Boolean.class));
+        return;
+      case Types.TIMESTAMP:
+      case Types.DATE:
+        cell.setCellStyle(dateCellStyle);
+        cell.setCellValue(Casts.cast(value, Date.class));
+        return;
+      default:
+        // could be also setCellValue("a string");
+        cell.setCellValue(createHelper.createRichTextString(value.toString()));
+    }
+
+  }
+
 
 
   public static class ExcelSheetConfig {
@@ -136,15 +228,32 @@ public class ExcelSheet {
     private int headerId = 0;
     private String sheetName = null;
 
+    private String dateFormat;
+    private ExcelDataPath excelDataPath;
+
     public ExcelSheetConfig(Path pathObj, PackageAccess packageAccess) {
       this.path = pathObj;
       this.access = packageAccess;
+    }
+
+    public ExcelSheetConfig setDateFormat(String i) {
+      this.dateFormat = i;
+      return this;
     }
 
     public ExcelSheetConfig setHeaderId(int i) {
       this.headerId = i;
       return this;
     }
+
+    // relation def may be `build` at read time or at def time, ie later
+    // ie after ExcelSheet creation
+    // we inject it to get the column data type
+    public ExcelSheetConfig setDataPath(ExcelDataPath excelDataPath) {
+      this.excelDataPath = excelDataPath;
+      return this;
+    }
+
 
     public ExcelSheet build() {
       return new ExcelSheet(this);
@@ -157,6 +266,10 @@ public class ExcelSheet {
     public ExcelSheetConfig setSheetName(String sheetName) {
       this.sheetName = sheetName;
       return this;
+    }
+
+    public String getDateFormat() {
+      return this.dateFormat;
     }
   }
 
