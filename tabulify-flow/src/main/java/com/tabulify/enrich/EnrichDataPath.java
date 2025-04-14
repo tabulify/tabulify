@@ -139,6 +139,11 @@ public class EnrichDataPath extends DataPathAbs {
     return this.wrappedDataPath.getParent();
   }
 
+  @Override
+  public boolean hasHeaderInContent() {
+    return this.wrappedDataPath.hasHeaderInContent();
+  }
+
   public EnrichDataPath addVirtualColumn(String columnName, DataPathAttribute dataPathAttribute) {
 
 

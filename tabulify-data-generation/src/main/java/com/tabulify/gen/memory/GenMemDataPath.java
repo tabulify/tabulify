@@ -99,5 +99,10 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath,
     return this.getConnection().getCurrentDataPath();
   }
 
+  @Override
+  public boolean hasHeaderInContent() {
+    return false;
+  }
+
 
 }
