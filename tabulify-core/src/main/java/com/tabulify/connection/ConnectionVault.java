@@ -10,6 +10,7 @@ import net.bytle.fs.Fs;
 import net.bytle.log.Log;
 import net.bytle.regexp.Glob;
 import net.bytle.type.Casts;
+import net.bytle.type.Origin;
 import net.bytle.type.SetKeyIndependent;
 import net.bytle.type.Variable;
 import org.ini4j.Config;
@@ -113,7 +114,8 @@ public class ConnectionVault implements AutoCloseable {
          * http://ini4j.sourceforge.net/tutorial/IniTutorial.java.html
          */
         boolean uriFound = false;
-        for (Variable variable : connection.getVariables().stream().sorted().collect(Collectors.toList())) {
+        List<Variable> connectionVariables = connection.getVariables().stream().sorted().collect(Collectors.toList());
+        for (Variable variable : connectionVariables) {
           if (variable.getAttribute() == ConnectionAttribute.NAME) {
             continue;
           }
@@ -232,11 +234,10 @@ public class ConnectionVault implements AutoCloseable {
           Url Property search
          */
 
-        /*
-
-          URI is a variable because it needs
-          templating and may be encryption feature
-         */
+      /**
+       * URI is a variable because it needs
+       * templating and may be encryption feature
+       */
       Variable uri = null;
       Set<Variable> variableMap = new SetKeyIndependent<>();
       for (String propertyName : iniSection.keySet()) {
@@ -255,7 +256,7 @@ public class ConnectionVault implements AutoCloseable {
           if (connectionAttribute == null) {
             variable = vault.createVariable(propertyName, value);
           } else {
-            variable = vault.createVariable(connectionAttribute, value);
+            variable = vault.createVariable(connectionAttribute, value, Origin.USER);
           }
           if (connectionAttribute == ConnectionAttribute.URI) {
             uri = variable;

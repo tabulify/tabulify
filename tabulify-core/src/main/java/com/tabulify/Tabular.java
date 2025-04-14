@@ -943,7 +943,7 @@ public class Tabular implements AutoCloseable {
 
       List<DataPath> dataPathsByPattern = this.select(dataUriSelector, mediaType);
 
-      if (dataPathsByPattern.size() == 0) {
+      if (dataPathsByPattern.isEmpty()) {
 
         /**
          * This is a fine level because a data selector may define a target uri.
@@ -1123,7 +1123,7 @@ public class Tabular implements AutoCloseable {
   }
 
   public Variable createVariable(Attribute attribute, Object value) throws Exception {
-    return this.getVault().createVariable(attribute, value);
+    return this.getVault().createVariable(attribute, value, Origin.INTERNAL);
   }
 
   public Variable getVariable(Attribute attribute) throws NoVariableException {

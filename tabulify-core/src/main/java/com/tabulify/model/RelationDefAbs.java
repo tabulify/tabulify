@@ -428,7 +428,7 @@ public abstract class RelationDefAbs implements RelationDef {
 
   @Override
   public RelationDef mergeStructWithoutConstraints(DataPath fromDataPath) {
-    assert fromDataPath != null : "The source data definition cannot be null";
+    assert fromDataPath != null : "The target data definition cannot be null";
     RelationDef fromDataDef = fromDataPath.getOrCreateRelationDef();
 
     int columnCount = fromDataDef.getColumnsSize();

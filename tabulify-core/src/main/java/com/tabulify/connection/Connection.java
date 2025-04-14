@@ -234,7 +234,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setUser(String user) {
     try {
-      Variable userVariable = tabular.getVault().createVariable(ConnectionAttribute.USER, user);
+      Variable userVariable = tabular.getVault().createVariable(ConnectionAttribute.USER, user, INTERNAL);
       this.addVariable(userVariable);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the user variable", e);
@@ -244,7 +244,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setPassword(String pwd) {
     try {
-      Variable password = tabular.getVault().createVariable(ConnectionAttribute.PASSWORD, pwd);
+      Variable password = tabular.getVault().createVariable(ConnectionAttribute.PASSWORD, pwd, INTERNAL);
       this.variables.put(password.getUniqueName(), password);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the password variable for the connection (" + this + "). Error: " + e.getMessage(), e);
@@ -320,7 +320,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection addVariable(Attribute key, Object value) {
     try {
-      Variable variable = tabular.getVault().createVariable(key, value);
+      Variable variable = tabular.getVault().createVariable(key, value, INTERNAL);
       this.addVariable(variable);
     } catch (Exception e) {
       throw new RuntimeException("Error while adding connection the property " + key + ". Error: " + e.getMessage(), e);
@@ -329,11 +329,13 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
   public Connection addVariable(Variable variable) {
-    // uri and name cannot be changed
-    // has they are constructor variable
-    // we don't send any error to not give any burden to the developer
-    if (variable.getAttribute().equals(ConnectionAttribute.NAME) || variable.getAttribute().equals(ConnectionAttribute.URI)) {
-      return this;
+    // uri and name value cannot be changed as they are constructor variable
+    // the original may be template so we allow to change the variable if the value are the same
+    if (variable.getAttribute().equals(ConnectionAttribute.NAME) && !variable.getValueOrDefaultAsStringNotNull().equals(this.getName())) {
+      throw new RuntimeException("You can't change the name of this connection from " + this.getName() + " to " + variable.getValueOrDefaultAsStringNotNull());
+    }
+    if (variable.getAttribute().equals(ConnectionAttribute.URI) && !variable.getValueOrDefaultAsStringNotNull().equals(this.getUriAsString())) {
+      throw new RuntimeException("You can't change the URI of this connection from " + this.getUriAsString() + " to  " + variable.getValueOrDefaultAsStringNotNull());
     }
     Variable actualVariable = variables.get(variable.getUniqueName());
     if (actualVariable != null) {
@@ -782,7 +784,18 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * @return the path for chaining
    */
   public Connection addVariablesFromEnumAttributeClass(Class<? extends Attribute> enumClass) {
-    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addVariable(Variable.create(c, INTERNAL)));
+    Arrays.asList(enumClass.getEnumConstants()).forEach(c ->
+      {
+        Variable variable = Variable.create(c, INTERNAL);
+        if (variable.getAttribute().equals(ConnectionAttribute.NAME)) {
+          return;
+        }
+        if (variable.getAttribute().equals(ConnectionAttribute.URI)) {
+          return;
+        }
+        this.addVariable(variable);
+      }
+    );
     return this;
   }
 
