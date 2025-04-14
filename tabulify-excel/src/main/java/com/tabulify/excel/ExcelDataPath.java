@@ -2,6 +2,7 @@ package com.tabulify.excel;
 
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.binary.FsBinaryDataPath;
+import com.tabulify.model.ColumnDef;
 import com.tabulify.model.RelationDef;
 import com.tabulify.model.RelationDefDefault;
 import com.tabulify.stream.SelectStream;
@@ -12,9 +13,14 @@ import net.bytle.type.MediaTypes;
 import net.bytle.type.Variable;
 import org.apache.commons.collections4.bidimap.TreeBidiMap;
 import org.apache.poi.openxml4j.opc.PackageAccess;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ExcelDataPath extends FsBinaryDataPath {
 
@@ -31,12 +37,15 @@ public class ExcelDataPath extends FsBinaryDataPath {
     if (this.relationDef == null) {
 
       this.relationDef = new RelationDefDefault(this);
+      if (!Files.exists(this.getNioPath())) {
+        return this.relationDef;
+      }
       excelResultSet = this.getExcelResultSet(PackageAccess.READ);
 
       TreeBidiMap<String, Integer> headerNames = excelResultSet.getHeaderNames();
-      for (Map.Entry<Integer, Integer> type : excelResultSet.getColumnTypes().entrySet()) {
+      for (Map.Entry<Integer, Cell> type : excelResultSet.getColumnTypes().entrySet()) {
         Integer columnId = type.getKey();
-        Integer typeCode = type.getValue();
+        Integer typeCode = ExcelSheet.toSqlType(type.getValue(), this.getDefaultDateFormat());
         String columnName = "col" + columnId;
         if (headerNames != null) {
           columnName = headerNames.getKey(columnId);
@@ -54,35 +63,36 @@ public class ExcelDataPath extends FsBinaryDataPath {
    * @param packageAccess - the package access if important (if not read, it will write and mess up with it)
    * @return the Excel result set
    */
-  @SuppressWarnings("SameParameterValue")
   protected ExcelResultSet getExcelResultSet(PackageAccess packageAccess) {
     if (excelResultSet == null) {
-      excelResultSet = new ExcelResultSet(this.getNioPath(), isHeaderPresent(), getSheetName(), packageAccess);
+      excelResultSet = new ExcelResultSet(this.getNioPath(), getHeaderRowId(), getSheetName(), packageAccess, getDefaultDateFormat());
     }
     return this.excelResultSet;
+  }
+
+  private String getDefaultDateFormat() {
+    try {
+      Variable variable = this.getVariable(ExcelDataPathAttribute.DATE_FORMAT);
+      return (String) variable.getValueOrDefault();
+    } catch (NoVariableException | NoValueException e) {
+      throw new InternalException("The DATE_FORMAT has already a default, this should not happen", e);
+    }
   }
 
   /**
    * @return the header row number (0, no header)
    */
-  public boolean isHeaderPresent() {
+  public int getHeaderRowId() {
 
     try {
       Variable variable = this.getVariable(ExcelDataPathAttribute.HEADER_ROW_ID);
-      int valueOrDefault = (int) variable.getValueOrDefault();
-      switch (valueOrDefault) {
-        case 0:
-          return false;
-        case 1:
-          return true;
-        default:
-          throw new RuntimeException("The excel variable " + variable + " value should be 1 or 0, not " + valueOrDefault);
-      }
+      return (int) variable.getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       throw new InternalException("The HEADER_ROW_ID has already a default, this should not happen", e);
     }
 
   }
+
 
   /**
    * @return the header row number (0, no header)
@@ -109,5 +119,27 @@ public class ExcelDataPath extends FsBinaryDataPath {
     } catch (NoVariableException e) {
       throw new InternalException("The HEADER_ROW_ID has already been added in the constructor, it should not happen");
     }
+  }
+
+  public void createFile() {
+    excelResultSet = this.getExcelResultSet(PackageAccess.READ_WRITE);
+    List<String> headers = this.getOrCreateRelationDef()
+      .getColumnDefs()
+      .stream()
+      .map(ColumnDef::getColumnName)
+      .collect(Collectors.toList());
+//    columnTypes = this.getOrCreateRelationDef()
+//        .getColumnDefs()
+//          .stream()
+//            .collect(Collectors.toMap(
+//              ColumnDef::getColumnPosition, // the key
+//              c->c.getDataType(), // the value
+//              (e1, e2) -> e1, // the merge resolution
+//              MapBiDirectional::new // the provider
+//            ));
+
+    excelResultSet.createHeaders(headers);
+
+
   }
 }

@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 public class ExcelResultSet implements ResultSet {
 
   private static final Logger LOGGER = Logger.getLogger(Thread.currentThread().getStackTrace()[0].getClassName());
+  private final String defaultDateFormatString;
   private POIFSFileSystem poifsFileSystem = null;
 
   // the path of the excel file
@@ -61,33 +62,6 @@ public class ExcelResultSet implements ResultSet {
 
 
   /**
-   * Create a new sourceResultSet A new tabular format
-   * <p>
-   * The format is chosen from the extension sourceResultSet
-   * * xlsx: Excel
-   */
-  public ExcelResultSet(Path path, List<Integer> columnTypes, List<String> headerNames) {
-
-    this.path = path;
-    this.wb = new XSSFWorkbook();
-    this.sheet = wb.createSheet("data");
-    createHeaders(headerNames);
-    for (int i = 0; i < columnTypes.size(); i++) {
-      this.columnTypes.put(i + 1, columnTypes.get(i));
-    }
-
-  }
-
-  static private String getFileExtension(Path path) {
-    String name = path.getFileName().toString();
-    try {
-      return name.substring(name.lastIndexOf(".") + 1);
-    } catch (Exception e) {
-      return "";
-    }
-  }
-
-  /**
    * Read a new sourceResultSet
    * <p>
    * The format is chosen from the extension sourceResultSet
@@ -95,12 +69,13 @@ public class ExcelResultSet implements ResultSet {
    * * csv: CSV
    *
    * @param path          - path to the excel file
-   * @param headerPresent - do we have an header in the first line
+   * @param headerRowId   - do we have an header in the first line
    * @param sheetName     Only for Excel. If the sheetName is null = first sheet
    * @param packageAccess - the access, read, write
    */
-  public ExcelResultSet(Path path, boolean headerPresent, String sheetName, PackageAccess packageAccess) {
+  public ExcelResultSet(Path path, int headerRowId, String sheetName, PackageAccess packageAccess, String defaultFormatString) {
 
+    this.defaultDateFormatString = defaultFormatString;
 
     // A workbook, either a .xls HSSFWorkbook, or a .xlsx XSSFWorkbook,
     // the Workbook can be loaded from either a File or an InputStream.
@@ -146,11 +121,8 @@ public class ExcelResultSet implements ResultSet {
     // The last row num with data
     this.lastPhysicalRowNum = getLastRowNum();
 
-    if (headerPresent) {
-      this.firstPhysicalRowNum = 1;
-    } else {
-      this.firstPhysicalRowNum = 0;
-    }
+    this.firstPhysicalRowNum = headerRowId;
+
     if (this.firstPhysicalRowNum <= this.lastPhysicalRowNum) {
       this.dataSetIsEmpty = false;
     } else {
@@ -161,8 +133,8 @@ public class ExcelResultSet implements ResultSet {
 
 
     // Metadata Building
-    if (headerPresent) {
-      Row headerRow = this.sheet.getRow(0);
+    if (headerRowId != 0) {
+      Row headerRow = this.sheet.getRow(headerRowId - 1);
       int columnIndex = 0;
       headerNames = new TreeBidiMap<>();
       for (Cell cell : headerRow) {
@@ -178,44 +150,19 @@ public class ExcelResultSet implements ResultSet {
     // DataType Building
     // The data type comes from the first row of data
     // We need to read it
-    int firstRowNumWithData = 0;
-    if (headerPresent) {
-      firstRowNumWithData = 1;
-    }
-    Row firstRowWithData = sheet.getRow(firstRowNumWithData);
+    // rowId is zero based so getRow(headerRowId) get the next row
+    Row firstRowWithData = sheet.getRow(headerRowId);
     if (firstRowWithData == null) {
 
-      throw new IllegalArgumentException("The first row of data must be present in order to determine the data type of each column automatically.");
+      throw new IllegalArgumentException("The first row of data must be present in order to determine the data type of each column automatically. The row (" + (headerRowId + 1) + ") does not exist");
 
     } else {
 
       int columnIndex = 0;
       for (Cell cell : firstRowWithData) {
 
-        Integer dataType;
-        if (cell.getCellType() == CellType.NUMERIC || cell.getCellType() == CellType.BLANK) {
-          // A numeric can be a date
-          CellStyle cellstyle = cell.getCellStyle();
-          String formatString = cellstyle.getDataFormatString();
-          // A backslash comes from nowhere
-          // Example: dd/mm/yyyy\ hh:mm:ss
-          // Suppressing it
-          formatString = formatString.replace("\\ ", " ");
-          if (formatString.equals(defaultFormatString)) {
-            dataType = Types.DATE;
-          } else {
-            dataType = Types.NUMERIC;
-          }
-        } else {
-          dataType = typesMap.get(cell.getCellType());
-        }
-
-        if (dataType == null) {
-          throw new IllegalArgumentException("The cell type (" + getCellTypeName(cell.getCellType()) + ") of the cell (" + cell.getRowIndex() + "," + cell.getColumnIndex() + ") can not be mapped to a intern data type.");
-        } else {
-          columnIndex++;
-          columnTypes.put(columnIndex, dataType);
-        }
+        columnIndex++;
+        headerCells.put(columnIndex, cell);
 
       }
     }
@@ -4748,29 +4695,10 @@ public class ExcelResultSet implements ResultSet {
   Workbook wb;
   Sheet sheet;
 
-  // Default format String
-  // See Format Cells > Number > Custom
-  private static String defaultFormatString = "dd/mm/yyyy hh:mm:ss";
-
-  // The type of Excel
-  static Map<CellType, Integer> typesMap = new HashMap<>();
-
-  static {
-
-    typesMap.put(CellType.BOOLEAN, Types.BOOLEAN);
-    typesMap.put(CellType.NUMERIC, Types.NUMERIC);
-    typesMap.put(CellType.STRING, Types.VARCHAR);
-
-    // Remarks
-    // BLANK, FORMULA and ERROR are not data type
-    // The date data type is a numeric and is handle through the format style
-
-  }
 
   // Header and column data type
   private TreeBidiMap<String, Integer> headerNames;
-  private Map<Integer, Integer> columnTypes = new HashMap<>();
-  private boolean closed;
+  private Map<Integer, Cell> headerCells = new HashMap<>();
 
 
   /**
@@ -4782,7 +4710,7 @@ public class ExcelResultSet implements ResultSet {
 
     this.headerNames = new TreeBidiMap<>();
 
-    Row headerRow = this.sheet.createRow(0);
+    Row headerRow = this.sheet.createRow(this.firstPhysicalRowNum - 1);
     for (int i = 0; i < headerNames.size(); i++) {
 
       String headerName = headerNames.get(i);
@@ -4857,19 +4785,8 @@ public class ExcelResultSet implements ResultSet {
    */
   private <T> T cast(Integer rowIndex, int columnIndex, Class<T> clazz) {
 
-    if (rowIndex == null) {
-      rowIndex = logicalRowIndex;
-    }
 
-    validateCell(logicalRowIndex, columnIndex);
-    int physicalRowIndex = getPhysicalRowIndex(rowIndex);
-
-    // Mapping of logical location with the sourceResultSet sheet location
-    int sheetRowIndex = this.getExcelRowIndex(physicalRowIndex);
-    int sheetColumnIndex = this.getExcelColumnIndex(columnIndex);
-
-    Cell cell = this.sheet.getRow(sheetRowIndex).getCell(sheetColumnIndex);
-    return getCellValue(cell, clazz);
+    return getCellValue(getCell(rowIndex, columnIndex), clazz);
 
   }
 
@@ -5038,9 +4955,10 @@ public class ExcelResultSet implements ResultSet {
     return this.headerNames;
   }
 
-  public Map<Integer, Integer> getColumnTypes() {
-    return this.columnTypes;
+  public Map<Integer, Cell> getColumnTypes() {
+    return headerCells;
   }
+
 
   class ExcelMeta implements ResultSetMetaData {
 
@@ -5048,12 +4966,10 @@ public class ExcelResultSet implements ResultSet {
      * Returns the number of columns in this <code>ResultSet</code> object.
      *
      * @return the number of columns
-     * @throws SQLException if a database access error occurs
      */
-    public int getColumnCount() throws SQLException {
+    public int getColumnCount() {
 
-      int columnCount = headerNames.size();
-      return columnCount;
+      return headerNames.size();
 
     }
 
@@ -5248,10 +5164,10 @@ public class ExcelResultSet implements ResultSet {
       if (column < 1) {
         throw new SQLException("The column index can not be 0 or less. The column index passed was (" + column + ")");
       }
-      if (column > columnTypes.size()) {
-        throw new SQLException("The column index can not be greater than the number of column (" + columnTypes.size() + "). The column index passed was (" + column + ")");
+      if (column > headerCells.size()) {
+        throw new SQLException("The column index can not be greater than the number of column (" + headerCells.size() + "). The column index passed was (" + column + ")");
       }
-      return columnTypes.get(column);
+      return ExcelSheet.toSqlType(headerCells.get(column), defaultDateFormatString);
     }
 
 
@@ -5361,6 +5277,22 @@ public class ExcelResultSet implements ResultSet {
       return false;
     }
 
+
+  }
+
+  private Cell getCell(Integer rowIndex, int columnIndex) {
+    if (rowIndex == null) {
+      rowIndex = logicalRowIndex;
+    }
+
+    validateCell(logicalRowIndex, columnIndex);
+    int physicalRowIndex = getPhysicalRowIndex(rowIndex);
+
+    // Mapping of logical location with the sourceResultSet sheet location
+    int sheetRowIndex = this.getExcelRowIndex(physicalRowIndex);
+    int sheetColumnIndex = this.getExcelColumnIndex(columnIndex);
+
+    return this.sheet.getRow(sheetRowIndex).getCell(sheetColumnIndex);
 
   }
 }

@@ -7,7 +7,11 @@ public enum ExcelDataPathAttribute implements Attribute {
 
   HEADER_ROW_ID("The row id of the header row - Only 0 (no header) or 1 are supported",Integer.class,0),
 
-  SHEET_NAME( "The name of the sheet (By default, the first one)", String.class, null);
+  SHEET_NAME( "The name of the sheet (By default, the first one)", String.class, null),
+
+  // Default format String
+  // See Format Cells > Number > Custom
+  DATE_FORMAT( "The default date format string (Format Cells > Number > Custom)", String.class, "dd/mm/yyyy hh:mm:ss");
 
 
 

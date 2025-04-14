@@ -1,6 +1,7 @@
 package com.tabulify.excel;
 
 import com.tabulify.fs.FsConnection;
+import com.tabulify.fs.FsDataPath;
 import com.tabulify.fs.binary.FsBinaryDataPath;
 import com.tabulify.fs.binary.FsBinaryFileManager;
 
@@ -23,5 +24,9 @@ public class ExcelManager extends FsBinaryFileManager {
     return new ExcelDataPath(fsConnection, path);
   }
 
+  @Override
+  public void create(FsDataPath fsDataPath) {
 
+    ((ExcelDataPath) fsDataPath).createFile();
+  }
 }
