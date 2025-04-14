@@ -45,7 +45,8 @@ public class FsBinaryDataPath extends FsDataPathAbs implements FsDataPath {
 
   @Override
   public Long getCount() {
-    return null;
+    // 1 the object (avoid null)
+    return 1L;
   }
 
   @Override
