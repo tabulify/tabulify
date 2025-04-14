@@ -5,6 +5,6 @@ import net.bytle.log.Logs;
 
 public class FsTextLogger {
 
-  protected static final Log LOGGER = Logs.createFromClazz(FsTextLogger.class);
+  static final Log LOGGER = Logs.createFromClazz(FsTextLogger.class);
 
 }

@@ -208,21 +208,15 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
   @Override
   public Long getCount() {
 
-    long i = 0;
-
-    try (SelectStream selectStream = getSelectStream()) {
-      while (selectStream.next()) {
-        i++;
-      }
+    try {
+      return super.getCount();
     } catch (Exception e) {
       if (e.getCause() instanceof MalformedInputException) {
-        FsTextLogger.LOGGER.fine("The row count of the file (" + this.getNioPath() + ") could not be calculated because we got the following error (" + e.getMessage() + ") while reading it. The file is not a text file or the known/detected character set (" + this.getCharset() + ") is not the good one.");
-        return null;
-      } else {
-        throw e;
+        throw new RuntimeException("The row count of the file (" + this.getNioPath() + ") could not be calculated because we got the following error (" + e.getMessage() + ") while reading it. The file is not a text file or the known/detected character set (" + this.getCharset() + ") is not the good one.",e);
       }
+      throw e;
     }
-    return i;
+
   }
 
   @Override
@@ -309,4 +303,6 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
       return FsTextDataPathAttributes.DEFAULTS.HEADER_DEFAULT;
     }
   }
+
+
 }

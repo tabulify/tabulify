@@ -3,6 +3,8 @@ package com.tabulify.fs.binary;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.FsDataPath;
 import com.tabulify.fs.FsDataPathAbs;
+import com.tabulify.fs.textfile.FsTextDataPath;
+import com.tabulify.fs.textfile.FsTextLogger;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
@@ -10,6 +12,7 @@ import com.tabulify.transfer.TransferProperties;
 import net.bytle.type.MediaType;
 
 import java.io.IOException;
+import java.nio.charset.MalformedInputException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -45,18 +48,30 @@ public class FsBinaryDataPath extends FsDataPathAbs implements FsDataPath {
 
   @Override
   public Long getCount() {
-    // 1 the object (avoid null)
-    return 1L;
+
+    if (this.getClass().equals(FsBinaryDataPath.class)) {
+      // binary does not implement any select stream
+      // 1 represents the file
+      return 1L;
+    }
+
+    long i = 0;
+    try (SelectStream selectStream = getSelectStream()) {
+      while (selectStream.next()) {
+        i++;
+      }
+    }
+    return i;
   }
 
   @Override
   public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
-    throw new UnsupportedOperationException("The insertion in binary file is not yet supported. File (" + getAbsoluteNioPath() + ")");
+    throw new UnsupportedOperationException("The insertion in " + this.getClass().getSimpleName() + " file is not yet supported. File (" + getAbsoluteNioPath() + ")");
   }
 
   @Override
   public SelectStream getSelectStream() {
-    throw new UnsupportedOperationException("The loop of this binary file is not implemented. By default, you can't loop over a binary file as there is no clear row separator. File (" + getAbsoluteNioPath() + ")");
+    throw new UnsupportedOperationException("The loop of this " + this.getClass().getSimpleName() + " file is not implemented. File (" + getAbsoluteNioPath() + ")");
   }
 
 }
