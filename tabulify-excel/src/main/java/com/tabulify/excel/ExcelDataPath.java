@@ -2,7 +2,6 @@ package com.tabulify.excel;
 
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.binary.FsBinaryDataPath;
-import com.tabulify.model.ColumnDef;
 import com.tabulify.model.RelationDef;
 import com.tabulify.model.RelationDefDefault;
 import com.tabulify.stream.SelectStream;
@@ -14,13 +13,10 @@ import net.bytle.type.Variable;
 import org.apache.commons.collections4.bidimap.TreeBidiMap;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ExcelDataPath extends FsBinaryDataPath {
 
@@ -45,7 +41,7 @@ public class ExcelDataPath extends FsBinaryDataPath {
       TreeBidiMap<String, Integer> headerNames = excelResultSet.getHeaderNames();
       for (Map.Entry<Integer, Cell> type : excelResultSet.getColumnTypes().entrySet()) {
         Integer columnId = type.getKey();
-        Integer typeCode = ExcelSheet.toSqlType(type.getValue(), this.getDefaultDateFormat());
+        Integer typeCode = ExcelSheets.toSqlType(type.getValue());
         String columnName = "col" + columnId;
         if (headerNames != null) {
           columnName = headerNames.getKey(columnId);
@@ -65,7 +61,11 @@ public class ExcelDataPath extends FsBinaryDataPath {
    */
   protected ExcelResultSet getExcelResultSet(PackageAccess packageAccess) {
     if (excelResultSet == null) {
-      excelResultSet = new ExcelResultSet(this.getNioPath(), getHeaderRowId(), getSheetName(), packageAccess, getDefaultDateFormat());
+      ExcelSheet excelSheet = ExcelSheet.config(this.getNioPath(), packageAccess)
+        .setHeaderId(getHeaderRowId())
+        .setSheetName(getSheetName())
+        .build();
+      excelResultSet = new ExcelResultSet(excelSheet);
     }
     return this.excelResultSet;
   }
@@ -122,24 +122,13 @@ public class ExcelDataPath extends FsBinaryDataPath {
   }
 
   public void createFile() {
-    excelResultSet = this.getExcelResultSet(PackageAccess.READ_WRITE);
-    List<String> headers = this.getOrCreateRelationDef()
-      .getColumnDefs()
-      .stream()
-      .map(ColumnDef::getColumnName)
-      .collect(Collectors.toList());
-//    columnTypes = this.getOrCreateRelationDef()
-//        .getColumnDefs()
-//          .stream()
-//            .collect(Collectors.toMap(
-//              ColumnDef::getColumnPosition, // the key
-//              c->c.getDataType(), // the value
-//              (e1, e2) -> e1, // the merge resolution
-//              MapBiDirectional::new // the provider
-//            ));
 
-    excelResultSet.createHeaders(headers);
-
+    excelResultSet = this.getExcelResultSet(PackageAccess.WRITE);
+    if (this.getHeaderRowId() != 0) {
+      excelResultSet
+        .createHeaders(this.getOrCreateRelationDef());
+    }
+    excelResultSet.close();
 
   }
 }

@@ -1,23 +1,13 @@
 package com.tabulify.excel;
 
-import net.bytle.exception.CastException;
-import net.bytle.fs.Fs;
-import net.bytle.type.Casts;
+import com.tabulify.model.RelationDef;
 import org.apache.commons.collections4.bidimap.TreeBidiMap;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.poi.openxml4j.opc.PackageAccess;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
+import java.io.*;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
@@ -32,13 +22,11 @@ import java.util.logging.Logger;
 public class ExcelResultSet implements ResultSet {
 
   private static final Logger LOGGER = Logger.getLogger(Thread.currentThread().getStackTrace()[0].getClassName());
-  private final String defaultDateFormatString;
-  private POIFSFileSystem poifsFileSystem = null;
-
-  // the path of the excel file
-  private Path path;
+  private final Sheet sheet;
+  private final ExcelSheet excelSheet;
 
 
+  // Excel Poi Row Num
   // As zero is the first row num, null means that there are no data in the sheet
   private Integer firstPhysicalRowNum = null;
   private boolean dataSetIsEmpty = true;
@@ -48,7 +36,8 @@ public class ExcelResultSet implements ResultSet {
   // null if there is no row, no header
   private Integer lastPhysicalRowNum;
   // The last columnNum is defined by the first row size
-  private int lastColumnNum;
+  // may be null
+  private Short lastColumnNum;
 
 
   // The logical location of the row
@@ -68,60 +57,17 @@ public class ExcelResultSet implements ResultSet {
    * * xlsx: Excel
    * * csv: CSV
    *
-   * @param path          - path to the excel file
-   * @param headerRowId   - do we have an header in the first line
-   * @param sheetName     Only for Excel. If the sheetName is null = first sheet
-   * @param packageAccess - the access, read, write
+   * @param excelDataPath - path to the excel file
    */
-  public ExcelResultSet(Path path, int headerRowId, String sheetName, PackageAccess packageAccess, String defaultFormatString) {
+  public ExcelResultSet(ExcelSheet excelDataPath) {
 
-    this.defaultDateFormatString = defaultFormatString;
-
-    // A workbook, either a .xls HSSFWorkbook, or a .xlsx XSSFWorkbook,
-    // the Workbook can be loaded from either a File or an InputStream.
-    // Using a File object allows for lower memory consumption, while an InputStream requires more memory as it has to buffer the whole file.
-    try {
-      String extension = Fs.getExtension(path);
-      boolean localFile = path.getFileSystem().provider().getScheme().equals("file");
-      switch (extension) {
-        case ExcelManagerProvider.XLSX:
-          if (localFile) {
-            // doesn't need to hold the whole zip file in memory, and can take advantage of native methods
-            this.pkg = OPCPackage.open(path.toString(), packageAccess);
-            this.wb = new XSSFWorkbook(pkg);
-          } else {
-            // need to hold the whole zip sourceResultSet in memory, and can not take advantage of native methods
-            this.wb = new XSSFWorkbook(Files.newInputStream(path));
-
-          }
-          break;
-        case ExcelManagerProvider.XLS:
-          if (localFile) {
-            this.poifsFileSystem = new POIFSFileSystem(path.toFile());
-            this.wb = new HSSFWorkbook(poifsFileSystem.getRoot(), true);
-          } else {
-            // need to hold the whole zip sourceResultSet in memory, and can not take advantage of native methods
-            this.wb = new HSSFWorkbook(Files.newInputStream(path));
-          }
-        default:
-          throw new RuntimeException("Internal error: extension " + extension + " not taken into account");
-
-      }
-
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-
-    if (sheetName == null) {
-      this.sheet = wb.getSheetAt(0);
-    } else {
-      this.sheet = wb.getSheet(sheetName);
-    }
+    this.excelSheet = excelDataPath;
+    this.sheet = this.excelSheet.getSheet();
 
     // The last row num with data
     this.lastPhysicalRowNum = getLastRowNum();
 
-    this.firstPhysicalRowNum = headerRowId;
+    this.firstPhysicalRowNum = excelDataPath.getHeaderRowId();
 
     if (this.firstPhysicalRowNum <= this.lastPhysicalRowNum) {
       this.dataSetIsEmpty = false;
@@ -131,15 +77,14 @@ public class ExcelResultSet implements ResultSet {
     // The last ColumnNum with data
     this.lastColumnNum = getLastColNum();
 
-
     // Metadata Building
-    if (headerRowId != 0) {
-      Row headerRow = this.sheet.getRow(headerRowId - 1);
+    if (excelDataPath.getHeaderRowId() != 0) {
+      Row headerRow = sheet.getRow(this.getExcelRowIndex(excelDataPath.getHeaderRowId()));
       int columnIndex = 0;
       headerNames = new TreeBidiMap<>();
       for (Cell cell : headerRow) {
         if (cell.getCellType() != CellType.STRING) {
-          throw new IllegalArgumentException("The cell (" + cell.getRowIndex() + "," + cell.getColumnIndex() + ") with the value (" + getCellValue(cell, String.class) + ") can be an header as it is not of STRING type but of type (" + getCellTypeName(cell.getCellType()) + ")");
+          throw new IllegalArgumentException("The cell (" + cell.getRowIndex() + "," + cell.getColumnIndex() + ") with the value (" + ExcelSheets.getCellValue(cell, String.class) + ") can be an header as it is not of STRING type but of type (" + getCellTypeName(cell.getCellType()) + ")");
         } else {
           columnIndex++;
           headerNames.put(cell.getStringCellValue(), columnIndex);
@@ -151,12 +96,9 @@ public class ExcelResultSet implements ResultSet {
     // The data type comes from the first row of data
     // We need to read it
     // rowId is zero based so getRow(headerRowId) get the next row
-    Row firstRowWithData = sheet.getRow(headerRowId);
-    if (firstRowWithData == null) {
-
-      throw new IllegalArgumentException("The first row of data must be present in order to determine the data type of each column automatically. The row (" + (headerRowId + 1) + ") does not exist");
-
-    } else {
+    int nextRow = excelDataPath.getHeaderRowId();
+    Row firstRowWithData = sheet.getRow(nextRow);
+    if (firstRowWithData != null) {
 
       int columnIndex = 0;
       for (Cell cell : firstRowWithData) {
@@ -166,6 +108,9 @@ public class ExcelResultSet implements ResultSet {
 
       }
     }
+    // empty sheet, data type may be given manually
+    // throw new IllegalArgumentException("The first row of data must be present in order to determine the data type of each column automatically. The row (" + (nextRow + 1) + ") does not exist");
+
 
 
   }
@@ -397,6 +342,7 @@ public class ExcelResultSet implements ResultSet {
    * @deprecated Use {@code getBigDecimal(int columnIndex)}
    * or {@code getBigDecimal(String columnLabel)}
    */
+  @Deprecated
   @Override
   public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
     throw new UnsupportedOperationException("Not yet implemented");
@@ -544,9 +490,10 @@ public class ExcelResultSet implements ResultSet {
    * @deprecated Use {@code getBigDecimal(int columnIndex)}
    * or {@code getBigDecimal(String columnLabel)}
    */
+  @Deprecated
   @Override
   public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Deprecated");
   }
 
   /**
@@ -688,9 +635,10 @@ public class ExcelResultSet implements ResultSet {
    * @deprecated use <code>getCharacterStream</code> in place of
    * <code>getUnicodeStream</code>
    */
+  @Deprecated
   @Override
   public InputStream getUnicodeStream(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not yet implemented");
+    throw new UnsupportedOperationException("Deprecated");
   }
 
   /**
@@ -884,9 +832,10 @@ public class ExcelResultSet implements ResultSet {
    *                                         this method
    * @deprecated use <code>getCharacterStream</code> instead
    */
+  @Deprecated
   @Override
   public InputStream getUnicodeStream(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not yet implemented");
+    throw new UnsupportedOperationException("Deprecated");
   }
 
   /**
@@ -4687,33 +4636,22 @@ public class ExcelResultSet implements ResultSet {
   }
 
 
-  // Use in a local sourceResultSet in order to read the Excel File in Stream
-  // not completly in memory
-  private OPCPackage pkg = null;
-
-  // The Workbook and the sheet containing the data
-  Workbook wb;
-  Sheet sheet;
-
-
   // Header and column data type
   private TreeBidiMap<String, Integer> headerNames;
   private Map<Integer, Cell> headerCells = new HashMap<>();
 
 
   /**
-   * Create the header for a new result set
-   *
-   * @param headerNames
+   * Create the headers
    */
-  void createHeaders(List<String> headerNames) {
+  ExcelResultSet createHeaders(RelationDef relationDef) {
 
     this.headerNames = new TreeBidiMap<>();
 
-    Row headerRow = this.sheet.createRow(this.firstPhysicalRowNum - 1);
-    for (int i = 0; i < headerNames.size(); i++) {
+    Row headerRow = this.sheet.createRow(this.firstPhysicalRowNum);
+    for (int i = 1; i <= relationDef.getColumnsSize(); i++) {
 
-      String headerName = headerNames.get(i);
+      String headerName = relationDef.getColumnDef(i).getColumnName();
 
       // Construct the cell
       Cell headerCell = headerRow.createCell(i);
@@ -4721,10 +4659,11 @@ public class ExcelResultSet implements ResultSet {
       this.sheet.autoSizeColumn(i);
 
       // Construct the headers data
-      Integer columnIndex = i + 1;
-      this.headerNames.put(headerName, columnIndex);
+      this.headerNames.put(headerName, i);
+      this.headerCells.put(i, headerCell);
 
     }
+    return this;
 
   }
 
@@ -4732,8 +4671,12 @@ public class ExcelResultSet implements ResultSet {
     return this.sheet.getLastRowNum();
   }
 
-  int getLastColNum() {
-    return this.sheet.getRow(0).getLastCellNum();
+  Short getLastColNum() {
+    Row row = this.sheet.getRow(0);
+    if (row == null) {
+      return null;
+    }
+    return row.getLastCellNum();
   }
 
   /**
@@ -4781,106 +4724,19 @@ public class ExcelResultSet implements ResultSet {
    * @param columnIndex - the logical column asked
    * @param clazz       - the class to cast to
    * @param <T>         - the type
-   * @return the value casted
+   * @return the value cast
    */
   private <T> T cast(Integer rowIndex, int columnIndex, Class<T> clazz) {
 
 
-    return getCellValue(getCell(rowIndex, columnIndex), clazz);
+    return ExcelSheets.getCellValue(getCell(rowIndex, columnIndex), clazz);
 
   }
 
-
-  public Double getNumeric(int rowIndex, int columnIndex) {
-
-    return this.cast(rowIndex, columnIndex, Double.class);
-
-  }
-
-  <T> T getCellValue(Cell cell, Class<T> clazz) {
-    // Special case because Cell does not have this type
-    // but have the getter
-    if (java.util.Date.class.equals(clazz)) {
-      //noinspection unchecked
-      return (T) cell.getDateCellValue();
-    }
-    if (java.sql.Date.class.equals(clazz)) {
-      java.util.Date dateCellValue = cell.getDateCellValue();
-      if (dateCellValue == null) {
-        return null;
-      }
-      //noinspection unchecked
-      return (T) new java.sql.Date(dateCellValue.getTime());
-    }
-
-    String sheetRowIndex = String.valueOf(cell.getRowIndex());
-    String sheetColumnIndex = String.valueOf(cell.getColumnIndex());
-
-    Object value;
-    CellType cellType = cell.getCellType();
-    switch (cellType) {
-      case STRING:
-        value = cell.getStringCellValue();
-        break;
-      case NUMERIC:
-        value = cell.getNumericCellValue();
-        break;
-      case BLANK:
-        if (clazz.equals(String.class)) {
-          value = "";
-          break;
-        }
-        value = null;
-        break;
-      case _NONE:
-        value = null;
-        break;
-      case BOOLEAN:
-        value = cell.getBooleanCellValue();
-        break;
-      case FORMULA:
-
-        throw new RuntimeException("Formula have no value. The cell with the Excel coordinates (" + sheetRowIndex + "," + sheetColumnIndex + ") is of type " + getCellTypeName(cellType));
-      case ERROR:
-        throw new RuntimeException("Error type have no value. The cell with the Excel coordinates (" + sheetRowIndex + "," + sheetColumnIndex + ") is of type " + getCellTypeName(cellType));
-      default:
-        throw new RuntimeException("Internal Error: Type not yet supported. The cell with the Excel coordinates (" + sheetRowIndex + "," + sheetColumnIndex + ") is of type " + getCellTypeName(cellType));
-    }
-
-    try {
-      return Casts.cast(value, clazz);
-    } catch (CastException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public boolean getBoolean(int rowIndex, int columnIndex) {
-
-    return this.cast(rowIndex, columnIndex, Boolean.class);
-
-  }
-
-  public Date getDate(int rowIndex, int columnIndex) {
-
-    return this.cast(rowIndex, columnIndex, Date.class);
-
-  }
 
   public void close() {
 
-    try {
-      if (this.poifsFileSystem != null) {
-        this.poifsFileSystem.close();
-        this.poifsFileSystem = null;
-      }
-      if (this.pkg != null) {
-        // close may change the package
-        this.pkg.close();
-        this.pkg = null;
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    this.excelSheet.close();
 
   }
 
@@ -4902,11 +4758,7 @@ public class ExcelResultSet implements ResultSet {
   }
 
   public boolean isClosed() {
-    if (this.pkg == null) {
-      return true;
-    } else {
-      return false;
-    }
+    return this.excelSheet.isClosed();
   }
 
   /**
@@ -4923,11 +4775,10 @@ public class ExcelResultSet implements ResultSet {
    *
    * @param iface A Class defining an interface that the result must implement.
    * @return an object that implements the interface. May be a proxy for the actual implementing object.
-   * @throws SQLException If no object found that implements the interface
    * @since 1.6
    */
   @Override
-  public <T> T unwrap(Class<T> iface) throws SQLException {
+  public <T> T unwrap(Class<T> iface) {
     return null;
   }
 
@@ -5167,7 +5018,7 @@ public class ExcelResultSet implements ResultSet {
       if (column > headerCells.size()) {
         throw new SQLException("The column index can not be greater than the number of column (" + headerCells.size() + "). The column index passed was (" + column + ")");
       }
-      return ExcelSheet.toSqlType(headerCells.get(column), defaultDateFormatString);
+      return ExcelSheets.toSqlType(headerCells.get(column));
     }
 
 
