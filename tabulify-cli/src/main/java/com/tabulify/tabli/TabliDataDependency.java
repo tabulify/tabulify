@@ -1,5 +1,6 @@
 package com.tabulify.tabli;
 
+import com.tabulify.connection.ConnectionBuiltIn;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
@@ -32,9 +33,9 @@ public class TabliDataDependency {
     cliCommand
       .setDescription("List the data dependencies (foreign key, view, ...)")
       .addExample(
-        "To list the dependencies of the " + Tabular.TPCDS_CONNECTION + " connection:",
+        "To list the dependencies of the " + ConnectionBuiltIn.TPCDS_CONNECTION + " connection:",
         CliUsage.CODE_BLOCK,
-        CliUsage.getFullChainOfCommand(cliCommand) + " " + DataUriString.create().setPattern("*").setConnection(Tabular.TPCDS_CONNECTION),
+        CliUsage.getFullChainOfCommand(cliCommand) + " " + DataUriString.create().setPattern("*").setConnection(ConnectionBuiltIn.TPCDS_CONNECTION),
         CliUsage.CODE_BLOCK
       )
       .addExample(

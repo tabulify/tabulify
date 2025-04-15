@@ -27,9 +27,7 @@ public class Vault {
   private final Map<String, Object> tabularEnvVariables;
 
   public Vault(Tabular tabular, String passphrase) {
-    /**
-     * If passphrase is null, the vault protect with a default passphrase
-     */
+
     this.protector = Protector.create(passphrase);
 
 
@@ -70,17 +68,9 @@ public class Vault {
       try {
         variable.setClearValue(protector.decrypt(valueToDecrypt));
       } catch (Exception exception) {
-        try {
-          /**
-           * The passphrase has been set for the first time,
-           * the password  may be encrypted with the default passphrase
-           */
-          variable.setClearValue(protector.decryptWithDefault(valueToDecrypt));
-        } catch (Exception exceptionHowTo) {
-          String message = "We were unable to decrypt the value with the given passphrase. Value:" + valueToDecrypt;
-          DbLoggers.LOGGER_DB_ENGINE.severe(message);
-          throw new Exception(message);
-        }
+        String message = "We were unable to decrypt the value with the given passphrase. Value:" + valueToDecrypt;
+        DbLoggers.LOGGER_DB_ENGINE.severe(message);
+        throw new Exception(message);
       }
       // not a template
       return;

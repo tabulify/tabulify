@@ -13,11 +13,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A class that gives back default connections for how to's demos
- * See <a href="https://tabulify.com/howtos">...</a>
+ * A class that gives back default connections for how-to demos
+ * See <a href="https://tabulify.com/howtos">HowTo</a>
  * <p>
  * The connection name are the name of the scheme in the URL and does not have any minus
- * because SQL see them as an operation (even without space)
+ * because SQL see them as an operator (even without space)
  */
 public class ConnectionHowTos {
 
@@ -47,8 +47,8 @@ public class ConnectionHowTos {
 
 
   /**
-   * The datastore that points to the location of the internal files
-   * howtofiles, entity
+   * The connections that points to the location of the internal files
+   * howto files, entity
    */
   public static final String HOW_TO_FILE_CONNECTION_NAME = "howto";
   public static final String ENTITY_CONNECTION_NAME = "entity";
@@ -61,7 +61,7 @@ public class ConnectionHowTos {
   static private String getSqliteConnectionString(String connectionName) {
 
     Path dbFile;
-    // Trick to not have the user name in the output ie C:\Users\Username\...
+    // Trick to not have the username in the output ie C:\Users\Username\...
     // The env value have a fake account
     final String bytle_db_databases_store = System.getenv("BYTLE_DB_SQLITE_PATH");
     if (bytle_db_databases_store != null) {
@@ -113,7 +113,7 @@ public class ConnectionHowTos {
       );
 
       /**
-       * By default my sql does not have any database
+       * By default, my sql does not have any database
        * This is the one created in the test
        * {@link MySqlDataStoreResource}
        *
@@ -185,7 +185,7 @@ public class ConnectionHowTos {
         .normalize();
 
       if (!Files.exists(path)) {
-        throw new RuntimeException("The howtofiles directory path (" + path + ") does not exist for a dev env. Have they moved ?");
+        throw new RuntimeException("The howto files directory path (" + path + ") does not exist for a dev env. Have they moved ?");
       }
       return path;
 

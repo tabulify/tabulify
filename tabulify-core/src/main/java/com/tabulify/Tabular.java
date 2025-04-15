@@ -1,9 +1,6 @@
 package com.tabulify;
 
-import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionHowTos;
-import com.tabulify.connection.ConnectionOrigin;
-import com.tabulify.connection.ConnectionVault;
+import com.tabulify.connection.*;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.FsDataPath;
 import com.tabulify.memory.MemoryConnection;
@@ -58,24 +55,6 @@ public class Tabular implements AutoCloseable {
 
   // The default connection added to a data URI if it does not have it.
   protected Connection defaultConnection;
-
-  // The internal connection
-  public static final String PROJECT_CONNECTION = "project";
-  public static final String MEMORY_CONNECTION = "memory";
-  public static final String TPCDS_CONNECTION = "tpcds";
-  public static final String NO_OP_CONNECTION = "noop";
-  /**
-   * We choose smtp and not email
-   * because email is a more common word
-   * and may clash if a user uses it as connection name
-   */
-  public static final String SMTP_CONNECTION = "smtp";
-  public static final String CD_LOCAL_FILE_SYSTEM = "cd";
-  public static final String SD_LOCAL_FILE_SYSTEM = "sd";
-  public static final String TEMP_LOCAL_FILE_SYSTEM = "temp";
-  public static final String HOME_LOCAL_FILE_SYSTEM = "home";
-  public static final String LOG_LOCAL_CONNECTION = "log";
-  public static final String DESKTOP_LOCAL_FILE_SYSTEM = "desktop";
 
 
   /**
@@ -169,27 +148,10 @@ public class Tabular implements AutoCloseable {
     this.tabularVariables = TabularVariables.create(this, projectConfigurationFile);
 
 
-    /**
-     * If passphrase is null, the vault protect with a default passphrase
-     */
     this.vault = Vault.create(this, passphrase);
 
-    /**
-     * Connection (should be created after the {@link Vault})
-     * Loaded by order of precedence
-     */
-    if (projectFilePath != null) {
-      String localFileUrl = projectFilePath
-        .getParent()
-        .toAbsolutePath()
-        .normalize()
-        .toUri()
-        .toString();
-      this.createRuntimeConnection(Tabular.PROJECT_CONNECTION, localFileUrl)
-        .setDescription("The project home directory");
-    }
 
-    loadBuiltInConnections();
+    ConnectionBuiltIn.loadBuiltInConnections(this);
     loadConnections(getUserConnectionVaultPath(), ConnectionOrigin.USER);
     if (connectionVaultPath != null) {
       this.connectionVaultPath = connectionVaultPath;
@@ -205,12 +167,12 @@ public class Tabular implements AutoCloseable {
     if (projectFilePath != null) {
 
       // Default connection is project
-      this.setDefaultConnection(Tabular.PROJECT_CONNECTION);
+      this.setDefaultConnection(ConnectionBuiltIn.PROJECT_CONNECTION);
 
     } else {
 
       // Default connection is cd
-      this.setDefaultConnection(Tabular.CD_LOCAL_FILE_SYSTEM);
+      this.setDefaultConnection(ConnectionBuiltIn.CD_LOCAL_FILE_SYSTEM);
 
     }
 
@@ -289,162 +251,8 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  /**
-   * Create the built-in, internal connections
-   */
-  private void loadBuiltInConnections() {
-    /**
-     * Internal datastores
-     * Not in a static field, please
-     * Because of test, we need different scope
-     * which is the goal of a tabular
-     */
-    // Local Fs
-    String localFileUrl = Paths.get(".")
-      .toAbsolutePath()
-      .normalize()
-      .toUri()
-      .toString();
-    Connection localConnection = Connection
-      .createConnectionFromProviderOrDefault(this, CD_LOCAL_FILE_SYSTEM, localFileUrl)
-      .setDescription("The local file system")
-      .setOrigin(ConnectionOrigin.BUILT_IN);
-    this.addConnection(localConnection);
 
-
-    // Local temporary Directory
-    String localTempUrl = Fs.getTempDirectory()
-      .toAbsolutePath()
-      .normalize()
-      .toUri()
-      .toString();
-    Connection temp = Connection.createConnectionFromProviderOrDefault(this, TEMP_LOCAL_FILE_SYSTEM, localTempUrl)
-      .setDescription("The local temporary directory of the local file system")
-      .setOrigin(ConnectionOrigin.BUILT_IN);
-    this.addConnection(temp);
-    // Local temporary Directory
-
-    String localUserUrl = Fs.getUserHome()
-      .toAbsolutePath()
-      .normalize()
-      .toUri()
-      .toString();
-    Connection user = Connection.createConnectionFromProviderOrDefault(this, HOME_LOCAL_FILE_SYSTEM, localUserUrl)
-      .setDescription("The user home directory of the local file system")
-      .setOrigin(ConnectionOrigin.BUILT_IN);
-    this.addConnection(user);
-
-    Path logDbPath = Fs.getUserAppData(TabularAttributes.APP_NAME.toString()).resolve(LOG_LOCAL_CONNECTION + ".db");
-    String rootWindows = "///";
-    String localLogsUriString = "jdbc:sqlite:" + rootWindows + logDbPath.toString().replace("\\", "/");
-    Connection logs = Connection.createConnectionFromProviderOrDefault(this, LOG_LOCAL_CONNECTION, localLogsUriString)
-      .setDescription("The tabli logs")
-      .setOrigin(ConnectionOrigin.BUILT_IN);
-    this.addConnection(logs);
-
-    String localDesktopUrl = Fs.getUserDesktop()
-      .toAbsolutePath()
-      .normalize()
-      .toUri()
-      .toString();
-    Connection desktop = Connection.createConnectionFromProviderOrDefault(this, DESKTOP_LOCAL_FILE_SYSTEM, localDesktopUrl)
-      .setDescription("The user desktop directory of the local file system")
-      .setOrigin(ConnectionOrigin.BUILT_IN);
-    this.addConnection(desktop);
-
-    // Memory
-    Connection memoryConnection = Connection.createConnectionFromProviderOrDefault(this, MEMORY_CONNECTION, MemoryConnectionProvider.SCHEME)
-      .setOrigin(ConnectionOrigin.BUILT_IN);
-    this.addConnection(memoryConnection);
-
-    this.setDefaultConnection(memoryConnection);
-
-    // TpcsDs
-    Connection tpcDs = Connection.createConnectionFromProviderOrDefault(this, TPCDS_CONNECTION, TPCDS_CONNECTION)
-      .setOrigin(ConnectionOrigin.BUILT_IN)
-      .addVariable("scale", 0.01);
-    this.addConnection(tpcDs);
-
-    // NoOp
-    Connection noOp = Connection.createConnectionFromProviderOrDefault(this, NO_OP_CONNECTION, NoopConnectionProvider.NOOP_SCHEME)
-      .setOrigin(ConnectionOrigin.BUILT_IN);
-    this.addConnection(noOp);
-
-    // Email
-    UriEnhanced emailUri = UriEnhanced.create()
-      .setScheme("smtp");
-
-    String smtpHostKey = "SMTP_HOST";
-    String smtpHost = this.getVariableAsStringOrDefault(smtpHostKey, "localhost");
-    try {
-      emailUri.setHost(smtpHost);
-    } catch (IllegalStructure e) {
-      throw IllegalArgumentExceptions.createFromMessage("The environment variable (" + smtpHostKey + ") has a invalid value (" + smtpHost + "). Error: " + e.getMessage(), e);
-    }
-    String smtpPortEnv = "SMTP_PORT";
-    String smtpPort = this.getVariableAsStringOrDefault(smtpPortEnv, "25");
-    try {
-      emailUri.setPort(Integers.createFromObject(smtpPort).toInteger());
-    } catch (CastException e) {
-      throw IllegalArgumentExceptions.createFromMessage("The environment variable (" + smtpPortEnv + ") has a invalid value (" + smtpPort + "). Error: " + e.getMessage(), e);
-    }
-
-    String smtpFrom = this.getVariableAsStringOrDefault("SMTP_FROM", null);
-    if (smtpFrom != null) {
-      emailUri.addQueryProperty("from", smtpFrom);
-    } else {
-      try {
-        emailUri.addQueryProperty("from", Oss.getUser() + "@" + Oss.getFqdn().toStringWithoutRoot());
-      } catch (UnknownHostException e) {
-        // oeps
-      }
-    }
-    String smtpFromName = this.getVariableAsStringOrDefault("SMTP_FROM_NAME", null);
-    if (smtpFromName != null) {
-      emailUri.addQueryProperty("from-name", smtpFrom);
-    }
-    String smtpTo = this.getVariableAsStringOrDefault("SMTP_TO", null);
-    if (smtpTo != null) {
-      emailUri.addQueryProperty("to", smtpTo);
-    }
-    String smtpToNames = this.getVariableAsStringOrDefault("SMTP_TO_NAMES", null);
-    if (smtpToNames != null) {
-      emailUri.addQueryProperty("to-names", smtpTo);
-    }
-    String smtpAuth = this.getVariableAsStringOrDefault("SMTP_AUTH", null);
-    if (smtpAuth != null) {
-      emailUri.addQueryProperty("auth", smtpAuth);
-    }
-    String smtpTls = this.getVariableAsStringOrDefault("SMTP_TLS", null);
-    if (smtpTls != null) {
-      emailUri.addQueryProperty("tls", smtpTls);
-    }
-
-    Connection smtpConnection = Connection.createConnectionFromProviderOrDefault(this, SMTP_CONNECTION, emailUri.toUri().toString())
-      .setOrigin(ConnectionOrigin.BUILT_IN);
-    String smtpUser = this.getVariableAsStringOrDefault("SMTP_USER", null);
-    if (smtpUser != null) {
-      smtpConnection.setUser(smtpUser);
-    }
-
-    try {
-      Variable smtpPwd = this.getVariable("SMTP_PWD");
-      smtpConnection.setPassword(smtpPwd);
-    } catch (NoVariableException e) {
-      // ok
-    }
-
-    String smtpDebug = this.getVariableAsStringOrDefault("SMTP_DEBUG", null);
-    if (smtpDebug != null) {
-      emailUri.addQueryProperty("debug", smtpDebug);
-    }
-
-
-    this.addConnection(smtpConnection);
-
-  }
-
-  private Tabular addConnection(Connection connection) {
+  public Tabular addConnection(Connection connection) {
 
     connections.put(connection.getName(), connection);
     return this;
@@ -680,7 +488,7 @@ public class Tabular implements AutoCloseable {
    * @return the local file system
    */
   public FsConnection getCurrentLocalDirectoryConnection() {
-    return (FsConnection) getConnection(CD_LOCAL_FILE_SYSTEM);
+    return (FsConnection) getConnection(ConnectionBuiltIn.CD_LOCAL_FILE_SYSTEM);
   }
 
 
@@ -694,14 +502,14 @@ public class Tabular implements AutoCloseable {
    */
   public MemoryDataPath getAndCreateRandomMemoryDataPath() {
 
-    return (MemoryDataPath) getConnection(MEMORY_CONNECTION).getAndCreateRandomDataPath(null);
+    return (MemoryDataPath) getConnection(ConnectionBuiltIn.MEMORY_CONNECTION).getAndCreateRandomDataPath(null);
 
   }
 
   @SuppressWarnings("unused")
   public DataPath getAndCreateRandomDataPathWithType(MediaType mediaType) {
 
-    return getConnection(MEMORY_CONNECTION).getAndCreateRandomDataPath(mediaType);
+    return getConnection(ConnectionBuiltIn.MEMORY_CONNECTION).getAndCreateRandomDataPath(mediaType);
 
   }
 
@@ -744,7 +552,7 @@ public class Tabular implements AutoCloseable {
    * @return the memory datastore
    */
   public MemoryConnection getMemoryDataStore() {
-    return (MemoryConnection) getConnection(MEMORY_CONNECTION);
+    return (MemoryConnection) getConnection(ConnectionBuiltIn.MEMORY_CONNECTION);
   }
 
 
@@ -895,7 +703,7 @@ public class Tabular implements AutoCloseable {
 
 
   public TpcConnection getTpcConnection() {
-    return (TpcConnection) getConnection(TPCDS_CONNECTION);
+    return (TpcConnection) getConnection(ConnectionBuiltIn.TPCDS_CONNECTION);
   }
 
 
@@ -906,7 +714,7 @@ public class Tabular implements AutoCloseable {
 
 
   public Connection getTempConnection() {
-    return getConnection(TEMP_LOCAL_FILE_SYSTEM);
+    return getConnection(ConnectionBuiltIn.TEMP_LOCAL_FILE_SYSTEM);
   }
 
 
@@ -1025,7 +833,7 @@ public class Tabular implements AutoCloseable {
 
   public Connection getNoOpConnection() {
 
-    return connections.get(NO_OP_CONNECTION);
+    return connections.get(ConnectionBuiltIn.NO_OP_CONNECTION);
   }
 
 
@@ -1056,7 +864,7 @@ public class Tabular implements AutoCloseable {
   }
 
   public Connection getLogsConnection() {
-    return this.getConnection(LOG_LOCAL_CONNECTION);
+    return this.getConnection(ConnectionBuiltIn.LOG_LOCAL_CONNECTION);
   }
 
   public String getEnvironment() {

@@ -2,6 +2,7 @@ package com.tabulify.uri;
 
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
+import com.tabulify.connection.ConnectionBuiltIn;
 import com.tabulify.fs.FsConnection;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NoPathFoundException;
@@ -142,7 +143,7 @@ public class DataUri implements Comparable<DataUri> {
     if (connectionName == null) {
       return tabular.getDefaultConnection();
     }
-    if (connectionName.equals(Tabular.SD_LOCAL_FILE_SYSTEM)) {
+    if (connectionName.equals(ConnectionBuiltIn.SD_LOCAL_FILE_SYSTEM)) {
       return tabular.getSdConnection();
     }
     return tabular.getConnection(connectionName);
