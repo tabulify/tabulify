@@ -34,7 +34,7 @@ tasks:
     cmds:
       - contrib/script/install-cli
   # Start a whole test cycle
-  # Restart with: mvn install
+  # Restart with: mvn install --resume-from tabulify-data-generation
   install-test:
     cmds:
       - mvn install

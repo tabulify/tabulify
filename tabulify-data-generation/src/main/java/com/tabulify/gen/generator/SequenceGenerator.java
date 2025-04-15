@@ -340,7 +340,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
       } else if (getColumnDef().getClazz() == Float.class) {
         localValue = (Float) (start) + Casts.castSafe(offset, Float.class) + tickCounter * Casts.castSafe(stepSize, Float.class);
       } else if (getColumnDef().getClazz() == java.sql.Date.class) {
-        localValue = Date.createFromObject(start).plusDays(Casts.castSafe(offset, Integer.class) + (long) tickCounter * Casts.castSafe(stepSize, Integer.class)).toSqlDate();
+        localValue = Date.createFromObjectSafeCast(start).plusDays(Casts.castSafe(offset, Integer.class) + (long) tickCounter * Casts.castSafe(stepSize, Integer.class)).toSqlDate();
       } else if (getColumnDef().getClazz() == java.sql.Timestamp.class) {
         localValue = Timestamp.createFromObjectSafeCast(start).afterMillis(Casts.castSafe(offset, Integer.class) + (long) tickCounter * Casts.castSafe(stepSize, Integer.class)).toSqlTimestamp();
       } else if (getColumnDef().getClazz() == BigDecimal.class) {
@@ -583,10 +583,10 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
       }
     } else if (clazz == java.sql.Date.class) {
       if (Casts.castSafe(stepSize, Integer.class) < 0) {
-        return clazz.cast(Date.createFromObject(start).plusDays(Casts.castSafe(offset, Integer.class)).toSqlDate());
+        return clazz.cast(Date.createFromObjectSafeCast(start).plusDays(Casts.castSafe(offset, Integer.class)).toSqlDate());
       } else {
         if (maxSteps != Long.MAX_VALUE) {
-          java.sql.Date max = Date.createFromObject(start).plusDays((long) Casts.castSafe(stepSize, Integer.class) * (int) maxSteps + Casts.castSafe(offset, Integer.class) - 1).toSqlDate();
+          java.sql.Date max = Date.createFromObjectSafeCast(start).plusDays((long) Casts.castSafe(stepSize, Integer.class) * (int) maxSteps + Casts.castSafe(offset, Integer.class) - 1).toSqlDate();
           return Casts.castSafe(max, clazz);
         } else {
           return Casts.castSafe(java.sql.Date.valueOf(LocalDate.MAX), clazz);
@@ -640,7 +640,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
              */
             return clazz.cast(new java.sql.Date(0));
           } else {
-            return clazz.cast(Date.createFromObject(start).plusDays((Casts.castSafe(stepSize, Integer.class)) * (size - 1) + Casts.castSafe(offset, Integer.class)).toSqlDate());
+            return clazz.cast(Date.createFromObjectSafeCast(start).plusDays((Casts.castSafe(stepSize, Integer.class)) * (size - 1) + Casts.castSafe(offset, Integer.class)).toSqlDate());
           }
         }
       } else if (clazz.equals(java.sql.Timestamp.class)) {
