@@ -94,7 +94,8 @@ public class Tabli {
 
     rootCommand.addProperty(TabliWords.PASSPHRASE_PROPERTY)
       .setShortName("-pp")
-      .setDescription("A passphrase (master password) to decrypt the encrypted values")
+      .setDescription("A passphrase (master password) to decrypt the encrypted vault values")
+      .setEnvName("TABLI_PASSPHRASE")
       .setValueName("passphrase");
 
     /*
