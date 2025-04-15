@@ -92,7 +92,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
     /**
      * Media Type
      */
-    this.mediaType = DataPathType.SCRIPT;
+    this.mediaType = DataPathType.TABLI_SCRIPT;
 
 
     /**
@@ -339,7 +339,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
     return getName();
   }
 
-  private DataPath getScriptDataPath() {
+  public DataPath getScriptDataPath() {
     return this.scriptDataPath;
   }
 

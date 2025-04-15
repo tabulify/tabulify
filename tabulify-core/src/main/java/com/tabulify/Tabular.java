@@ -333,17 +333,22 @@ public class Tabular implements AutoCloseable {
   public DataPath getDataPath(DataUri dataUri, MediaType mediaType) {
 
     Connection connection = dataUri.getConnection();
+
     String path;
     try {
       path = dataUri.getPath();
     } catch (NoPathFoundException e) {
+
+      if (dataUri.isScriptSelector()) {
+        DataPath scriptPath = this.getDataPath(dataUri.getScriptUri().toString());
+        return connection.createScriptDataPath(scriptPath);
+      }
+
       return connection.getCurrentDataPath();
+
     }
 
-    if (dataUri.isScriptSelector()) {
-      DataPath scriptPath = this.getDataPath(path);
-      return connection.createScriptDataPath(scriptPath);
-    }
+
     return connection.getDataPath(path, mediaType);
 
 

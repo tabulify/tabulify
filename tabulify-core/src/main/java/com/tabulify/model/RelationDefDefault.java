@@ -147,7 +147,7 @@ public class RelationDefDefault extends RelationDefAbs {
       .stream()
       .filter(c -> c.getColumnPosition().equals(columnIndex))
       .findFirst()
-      .orElse(null);
+      .orElseThrow(()->new RuntimeException("No column at the index "+columnIndex));
 
   }
 

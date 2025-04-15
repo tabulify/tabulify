@@ -16,6 +16,13 @@
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
+  <!-- Scm is mandatory for the release plugin  -->
+  <!-- https://maven.apache.org/maven-release/maven-release-plugin/usage.html -->
+  <!-- https://maven.apache.org/scm/git.html -->
+  <scm>
+    <developerConnection>scm:git://github.com:EraldyHq/tabulify.git</developerConnection>
+  </scm>
+
   <properties>
 
     <!-- Disco Api values used to download the jdk https://github.com/foojayio/discoapi   -->

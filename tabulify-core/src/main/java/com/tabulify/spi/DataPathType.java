@@ -4,7 +4,7 @@ import net.bytle.type.MediaType;
 
 public enum DataPathType implements MediaType {
 
-  SCRIPT("application", "tabli-script");
+  TABLI_SCRIPT("application", "tabli-script");
 
   private final String type;
   private final String sub;

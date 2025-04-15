@@ -87,19 +87,19 @@ public class EnrichStep extends FilterStepAbs implements Function<Set<DataPath>,
   @Override
   public Set<DataPath> apply(Set<DataPath> dataPaths) {
 
-    if (this.virtualColumns.size() == 0) {
+    if (this.virtualColumns.isEmpty()) {
       return dataPaths;
-    } else {
-      Set<DataPath> outputs = new HashSet<>();
-      for (DataPath input : dataPaths) {
-        EnrichDataPath enrichDataPath = EnrichDataPath.create(input);
-        outputs.add(enrichDataPath);
-        for (VirtualColumn virtualColumn : virtualColumns) {
-          enrichDataPath.addVirtualColumn(virtualColumn.getColumnName(), virtualColumn.getDataPathAttribute());
-        }
-      }
-      return outputs;
     }
+    Set<DataPath> outputs = new HashSet<>();
+    for (DataPath input : dataPaths) {
+      EnrichDataPath enrichDataPath = EnrichDataPath.create(input);
+      outputs.add(enrichDataPath);
+      for (VirtualColumn virtualColumn : virtualColumns) {
+        enrichDataPath.addVirtualColumn(virtualColumn.getColumnName(), virtualColumn.getDataPathAttribute());
+      }
+    }
+    return outputs;
+
 
   }
 
@@ -193,7 +193,7 @@ public class EnrichStep extends FilterStepAbs implements Function<Set<DataPath>,
                 case "name":
                   name = virtualColumnEntry.getValue();
                   break;
-                case "resourceattribute":
+                case "resource-attribute":
                   resourceAttribute = virtualColumnEntry.getValue();
                   break;
                 default:

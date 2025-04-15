@@ -66,7 +66,8 @@ public class StructStep extends FilterStepAbs implements Function<Set<DataPath>,
     ) {
       int i = 0;
       for (DataPath dataPath : dataPaths.stream().sorted().collect(Collectors.toList())) {
-        for (ColumnDef columnDef : dataPath.getOrCreateRelationDef().getColumnDefs()) {
+        List<ColumnDef> columnDefs = dataPath.getOrCreateRelationDef().getColumnDefs();
+        for (ColumnDef columnDef : columnDefs) {
 
           PrimaryKeyDef primaryKey = dataPath.getOrCreateRelationDef().getPrimaryKey();
           Object[] columnsColumns = {

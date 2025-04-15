@@ -56,7 +56,7 @@ public class Vault {
     variable.setOriginalValue(value);
 
     if (!(value instanceof String)) {
-      variable.setProcessedValue(value);
+      variable.setClearValue(value);
       return;
     }
 
@@ -90,7 +90,7 @@ public class Vault {
       .compile(valueString)
       .applyVariables(tabularEnvVariables)
       .getResult();
-    variable.setProcessedValue(clearValue);
+    variable.setClearValue(clearValue);
 
 
   }

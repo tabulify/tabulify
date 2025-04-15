@@ -97,7 +97,6 @@ public class SourceTargetHelperFunction implements Function<Set<DataPath>, Map<D
     /**
      * Calculating the target
      */
-
     final String targetConnectionName = targetUri.getConnection().getName();
     final Connection targetConnection;
 
@@ -212,7 +211,7 @@ public class SourceTargetHelperFunction implements Function<Set<DataPath>, Map<D
   static DataPath createTargetNameFromSource(DataPath sourceDataPath, Connection targetConnection) {
 
     /**
-     * By default we take the logical Name
+     * By default, we take the logical Name
      */
     DataPath dataPath = targetConnection.getDataPath(sourceDataPath.getLogicalName());
 
@@ -237,15 +236,11 @@ public class SourceTargetHelperFunction implements Function<Set<DataPath>, Map<D
      * will be `foo.txt`
      */
     String name = sourceDataPath.getName();
-    if (name == null) {
+    if (sourceDataPath.isScript()) {
       // a query is anonymous and does not have any name
       name = sourceDataPath.getLogicalName();
     }
 
-    /**
-     * If this is tabular data that should go into a File System,
-     * the default format is CSV
-     */
     if (
       !(sourceDataPath.getConnection() instanceof FsConnection)
         && (sourceDataPath.getOrCreateRelationDef().getColumnsSize() > 0 || sourceDataPath.isScript())
@@ -253,9 +248,10 @@ public class SourceTargetHelperFunction implements Function<Set<DataPath>, Map<D
       return (FsDataPath) targetConnection
         .getDataPath(name + "." + FS_DEFAULT_TABULAR_MEDIA_TYPE.getExtension(), FS_DEFAULT_TABULAR_MEDIA_TYPE)
         .addVariable("headerRowId", 1);
-    } else {
-      return targetConnection.getDataPath(name);
     }
+
+    return targetConnection.getDataPath(name);
+
   }
 
 

@@ -110,6 +110,7 @@ public class FsTextInsertStream extends InsertStreamAbs implements InsertStream 
    */
   @Override
   public void close() {
+
     try {
       bufferedWriter.close();
       this.incrementBatchAndCommitToListener();
@@ -120,15 +121,15 @@ public class FsTextInsertStream extends InsertStreamAbs implements InsertStream 
     /**
      * During the transfer {@link TransferManager#beforeTargetCreationAndPreOperations(TransferSourceTarget, TransferListener)}
      * may add columns
-     *
+     * <p></p>
      * We correct it here
-     *
+     * <p></p>
      * If the file is passed along another transfer will not be happy
      * because it will have multiple column for only one value
      */
     RelationDef relationDef = this.dataPath.getOrCreateRelationDef();
     if (relationDef.getColumnsSize() > 1) {
-      String uniqueColumnName = ((FsTextDataPath) this.dataPath).getUniqueColumnName();
+      String uniqueColumnName = relationDef.getColumnDef(1).getColumnName();
       relationDef.dropAll().addColumn(uniqueColumnName);
     }
 

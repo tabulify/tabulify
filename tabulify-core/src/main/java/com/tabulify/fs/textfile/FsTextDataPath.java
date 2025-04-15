@@ -167,7 +167,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
     if (characterSet != null) {
       try {
         Charset charset = Casts.cast(characterSet, Charset.class);
-        this.getOrCreateVariable(CHARACTER_SET).setProcessedValue(charset);
+        this.getOrCreateVariable(CHARACTER_SET).setOriginalValue(charset);
       } catch (CastException ex) {
         String message = "The string (" + characterSet + ") could not be transformed as characters set";
         if (getConnection().getTabular().isDev()) {
@@ -212,7 +212,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
       return super.getCount();
     } catch (Exception e) {
       if (e.getCause() instanceof MalformedInputException) {
-        throw new RuntimeException("The row count of the file (" + this.getNioPath() + ") could not be calculated because we got the following error (" + e.getMessage() + ") while reading it. The file is not a text file or the known/detected character set (" + this.getCharset() + ") is not the good one.",e);
+        throw new RuntimeException("The row count of the file (" + this.getNioPath() + ") could not be calculated because we got the following error (" + e.getMessage() + ") while reading it. The file is not a text file or the known/detected character set (" + this.getCharset() + ") is not the good one.", e);
       }
       throw e;
     }
@@ -232,47 +232,55 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
 
   @Override
   public RelationDef getOrCreateRelationDef() {
-    if (relationDef == null) {
-      relationDef = new RelationDefDefault(this);
-      /**
-       * A data path needs at minimum a column in a cross system transfer (ie fs to relation)
-       * {@link TransferSourceTarget#sourcePreChecks()}
-       * but it's created at runtime
-       * <p>
-       * Why ? for 2 reasons.
-       * <p>
-       * 1 - column name should be dynamic
-       * Because we couldn't arrive to a meaningful name for this column
-       * When people are choosing a column from a database to be the content of file
-       * there is a column mapping and generally, the name of this column
-       * is the name of the extension file.
-       * <p>
-       * Example, creating html files from a clob column named `html`
-       * - name: "Store"
-       *   operation: transfer
-       *   args:
-       *     target-uri: 'emails/${logicalName}.html@build'
-       *     transfer-operation: insert
-       *     transfer-column-mapping:
-       *       "html": "html"
-       *     step-granularity: "record"
-       * We therefore don't add a pre-existing column.
-       * If the column does not exist, it's created:
-       *   * by the transfer manager
-       *   * and if not at runtime, see {@link FsTextSelectStream#getRuntimeRelationDef()}
-       *
-       *
-       * 2 - target transfer
-       * if the text file have 1 column, there is no match at all when transfering
-       * if there is no column, the transfer creates all the columns that it needs
-       * pass the value
-       * and the {@link FsTextInsertStream} correct the column structure at {@link FsTextInsertStream#close()} close }
-       * time
-       *
-       */
+    if (relationDef != null) {
       return relationDef;
     }
+
+    if (Files.exists(this.getNioPath())) {
+      relationDef = new RelationDefDefault(this)
+        .addColumn(this.getUniqueColumnName());
+      return relationDef;
+    }
+
+    /**
+     * A data path needs at minimum a column in a cross system transfer (ie fs to relation)
+     * {@link TransferSourceTarget#sourcePreChecks()}
+     * but it's created at runtime
+     * <p>
+     * Why ? for 2 reasons.
+     * <p>
+     * 1 - column name should be dynamic
+     * Because we couldn't arrive to a meaningful name for this column
+     * When people are choosing a column from a database to be the content of file
+     * there is a column mapping and generally, the name of this column
+     * is the name of the extension file.
+     * <p>
+     * Example, creating html files from a clob column named `html`
+     * - name: "Store"
+     *   operation: transfer
+     *   args:
+     *     target-uri: 'emails/${logicalName}.html@build'
+     *     transfer-operation: insert
+     *     transfer-column-mapping:
+     *       "html": "html"
+     *     step-granularity: "record"
+     * We therefore don't add a pre-existing column.
+     * If the column does not exist, it's created:
+     *   * by the transfer manager
+     *   * and if not at runtime, see {@link FsTextSelectStream#getRuntimeRelationDef()}
+     *
+     *
+     * 2 - target transfer
+     * if the text file has 1 column, there is no match at all when transferring
+     * if there is no column, the transfer creates all the columns that it needs
+     * pass the value
+     * and the {@link FsTextInsertStream} correct the column structure at {@link FsTextInsertStream#close()} close
+     * time
+     *
+     */
+    relationDef = new RelationDefDefault(this);
     return relationDef;
+
   }
 
   public String getColumnName() {

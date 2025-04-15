@@ -11,10 +11,7 @@ import com.tabulify.transfer.TransferProperties;
 import com.tabulify.transfer.TransferSourceTarget;
 import net.bytle.exception.*;
 import net.bytle.fs.Fs;
-import net.bytle.type.Casts;
-import net.bytle.type.Key;
-import net.bytle.type.MediaType;
-import net.bytle.type.Strings;
+import net.bytle.type.*;
 
 import java.sql.DatabaseMetaData;
 import java.util.List;
@@ -52,7 +49,7 @@ public class SqlDataPath extends DataPathAbs {
      * We don't read the content of the script and make a hash id
      * as the resource may not exist
      */
-    String object = Key.toColumnName(scriptDataPath.getRelativePath() + "_" + scriptDataPath.getConnection() + "_" + sqlConnection);
+    String object = KeyNormalizer.create(scriptDataPath.getRelativePath() + "_" + scriptDataPath.getConnection() + "_" + sqlConnection).toSqlCase();
     this.sqlConnectionResourcePath = SqlConnectionResourcePath
       .createOfCatalogSchemaAndObjectName(this.getConnection(), currentCatalog, schema, object);
 
@@ -266,6 +263,10 @@ public class SqlDataPath extends DataPathAbs {
 
   }
 
+  @Override
+  public String getLogicalName() {
+    return this.scriptDataPath.getLogicalName();
+  }
 
   /**
    * A sql data resource may be anonymous (such as a query),

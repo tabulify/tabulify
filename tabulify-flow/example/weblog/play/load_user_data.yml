@@ -10,7 +10,7 @@ pipeline:
   - name: 'LoadUserCsv'
     op: copy
     arguments:
-      target-data-uri: stg_users@sqlite
+      target-data-uri: stg_users.csv@temp
       target-operation: drop
 
 

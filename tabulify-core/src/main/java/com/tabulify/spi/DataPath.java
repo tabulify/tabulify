@@ -100,9 +100,8 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
 
   /**
    * A utility function that allows
-   * some {@link #getScript()} script}
+   * some {@link #getScript()} script
    * processing that is only for query
-   *
    * For instance, a SQL query does not allow a `;` at the end
    * @return the query
    */
@@ -178,7 +177,7 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
    *  * for a file system (web): mime type (ie csv, ...)
    *  * for a memory system: list / queue / gen
    *  * for a relational system: table, view, query
-   *
+   * <p></p>
    * The name was taken from the term `Internet media type`
    * from the mime specification.
    * <a href="http://www.iana.org/assignments/media-types/media-types.xhtml">MediaType</a>
@@ -364,5 +363,10 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
    * You can use block operation to append a source file to an existing file if it has no header.
    */
   boolean hasHeaderInContent();
+
+  /**
+   * If this data path has a script or null
+   */
+  DataPath getScriptDataPath();
 
 }

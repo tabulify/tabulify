@@ -61,7 +61,7 @@ public class SelectSupplier extends StepAbs implements DataPathSupplier, Operati
     this.getOrCreateArgument(DATA_SELECTOR).setValueProvider(this::getDataSelector);
     this.getOrCreateArgument(LOGICAL_NAME).setValueProvider(() -> this.logicalName);
     this.getOrCreateArgument(STRICT).setValueProvider(() -> this.isStrict);
-    this.getOrCreateArgument(TYPE).setValueProvider(() -> this.mediaType.toString());
+    this.getOrCreateArgument(TYPE).setValueProvider(() -> this.mediaType);
     this.getOrCreateArgument(WITH_DEPENDENCIES).setValueProvider(() -> this.withDependencies);
 
   }

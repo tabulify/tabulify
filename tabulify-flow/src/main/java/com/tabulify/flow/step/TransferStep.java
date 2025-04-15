@@ -62,10 +62,11 @@ public class TransferStep extends TargetFilterStepAbs {
   private List<TransferListener> allTransfersListeners = new ArrayList<>();
 
   /**
+   * Used to no create the target 2 times
    * TODO: We should use it to be able to change the target operation (ie no TRUNCATE, REPLACE) if the target was already seen
    */
   @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-  private final Set<DataPath> targetsAlreadyVisited = new HashSet<>();
+  private final Set<DataPath> targets = new HashSet<>();
 
   private TransferOutputArgument transferOutput = TARGETS;
 
@@ -376,12 +377,19 @@ public class TransferStep extends TargetFilterStepAbs {
       for (Map.Entry<? extends DataPath, ? extends DataPath> sourceTarget : sourceTargets.entrySet()) {
         DataPath source = sourceTarget.getKey();
         DataPath target = sourceTarget.getValue();
+        if (targets.contains(target)) {
+          target = targets.stream()
+            .filter(d -> d.equals(sourceTarget.getValue()))
+            .findFirst()
+            .orElseThrow();
+        }
         TransferSourceTarget transferSourceTarget = TransferSourceTarget.create(
           source,
           target,
           transferProperties
         );
-        targetsAlreadyVisited.add(target);
+
+        targets.add(target);
         transferManager.addTransfer(transferSourceTarget);
       }
 

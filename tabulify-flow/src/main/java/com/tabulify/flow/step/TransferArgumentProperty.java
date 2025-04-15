@@ -7,6 +7,8 @@ import com.tabulify.transfer.TransferResourceOperations;
 import net.bytle.type.Attribute;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public enum TransferArgumentProperty implements Attribute {
@@ -16,7 +18,7 @@ public enum TransferArgumentProperty implements Attribute {
   TRANSFER_OPERATION(  "defines the transfer operation (" + Arrays.stream(TransferOperation.values()).map(TransferOperation::toString).collect(Collectors.joining(", ")) + "). Default to `copy` for a file system and `insert` for a database.", null, TransferOperation.class),
   TRANSFER_MAPPING_METHOD( "defines the method used to map the source columns to the target columns", null, String.class),
   TRANSFER_COLUMN_MAPPING("defines the column mapping between the source and the target", null, String.class),
-  TARGET_OPERATION( "defines the data operations (replace, truncate) on the existing target before transfer.", null, TransferResourceOperations.class),
+  TARGET_OPERATION( "defines the data operations (replace, truncate) on the existing target before transfer.", null, Set.class),
   SOURCE_OPERATION("defines the data operation (drop or truncate) on the source after transfer. Note: A `move` operation will drop the source.", null, String.class),
   TARGET_COMMIT_FREQUENCY( "defines the commit frequency in number of batches against the target data resource", TransferProperties.DEFAULT_COMMIT_FREQUENCY, Integer.class),
   TARGET_BATCH_SIZE("defines the batch size against the target data resource", TransferProperties.DEFAULT_BATCH_SIZE,Integer.class),

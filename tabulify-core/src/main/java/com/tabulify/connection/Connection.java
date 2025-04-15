@@ -400,7 +400,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
         throw new RuntimeException("The data-uri scheme is supported only with file system data uri. The connection " + connectionName + " is not a file system connection but a " + connection.getClass().getSimpleName() + " connection");
       }
       String resolve = connection.getCurrentDataPath().resolve(dataUri.getPath()).getAbsolutePath();
-      variableUri.setProcessedValue("file://" + "/" + resolve.replace("\\", "/"));
+      variableUri.setClearValue("file://" + "/" + resolve.replace("\\", "/"));
     }
 
     List<ConnectionProvider> installedProviders = ConnectionProvider.installedProviders();
