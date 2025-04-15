@@ -19,6 +19,8 @@ import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static com.tabulify.connection.ConnectionHowTos.*;
+
 /**
  * The internal connection
  */
@@ -50,14 +52,14 @@ public class ConnectionBuiltIn {
      * Connection (should be created after the {@link Vault})
      * Loaded by order of precedence
      */
-    if (tabular.projectFilePath != null) {
-      String localFileUrl = projectFilePath
-        .getParent()
+    if (tabular.getProjectConfigurationFile() != null) {
+      String localFileUrl = tabular.getProjectConfigurationFile()
+        .getProjectDirectory()
         .toAbsolutePath()
         .normalize()
         .toUri()
         .toString();
-      this.createRuntimeConnection(ConnectionBuiltIn.PROJECT_CONNECTION, localFileUrl)
+      tabular.createRuntimeConnection(ConnectionBuiltIn.PROJECT_CONNECTION, localFileUrl)
         .setDescription("The project home directory");
     }
 
@@ -206,9 +208,27 @@ public class ConnectionBuiltIn {
     if (smtpDebug != null) {
       emailUri.addQueryProperty("debug", smtpDebug);
     }
-
-
     tabular.addConnection(smtpConnection);
+
+    // The how-to-files
+    Path howToFilesPath = ConnectionHowTos.getHowToFilesPath(tabular);
+    tabular.addConnection(
+      Connection.createConnectionFromProviderOrDefault(tabular, HOW_TO_FILE_CONNECTION_NAME, howToFilesPath.toUri().toString())
+        .setDescription("The location of the how to files")
+    );
+
+    // The entities
+    Path entityRootPath = ConnectionHowTos.getEntitiesRootPath(tabular);
+    tabular.addConnection(
+      Connection.createConnectionFromProviderOrDefault(tabular, ENTITY_CONNECTION_NAME, entityRootPath.toUri().toString())
+        .setDescription("The location of the entity files")
+    );
+
+    Path tpcDsQueriesPath = ConnectionHowTos.getTpcDsQueriesPath(tabular);
+    tabular.addConnection(
+      Connection.createConnectionFromProviderOrDefault(tabular, TPCDS_QUERY_CONNECTION_NAME, tpcDsQueriesPath.toUri().toString())
+        .setDescription("The location of the Tpc Ds queries")
+    );
 
   }
 

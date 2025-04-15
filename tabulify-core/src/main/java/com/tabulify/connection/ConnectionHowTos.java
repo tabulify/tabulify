@@ -81,82 +81,63 @@ public class ConnectionHowTos {
   static public Map<String, Connection> createHowtoConnections(Tabular tabular) {
 
 
-      Set<Connection> howToDataStoresSet = new HashSet<>();
+    Set<Connection> howToDataStoresSet = new HashSet<>();
 
-      howToDataStoresSet.add(
-        Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_CONNECTION_NAME, getSqliteConnectionString(SQLITE_CONNECTION_NAME))
-          .addVariable("Driver", "org.sqlite.JDBC")
-          .setDescription("The sqlite default connection")
-      );
+    howToDataStoresSet.add(
+      Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_CONNECTION_NAME, getSqliteConnectionString(SQLITE_CONNECTION_NAME))
+        .addVariable("Driver", "org.sqlite.JDBC")
+        .setDescription("The sqlite default connection")
+    );
 
-      howToDataStoresSet.add(
-        Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_TARGET_CONNECTION_NAME, getSqliteConnectionString(SQLITE_TARGET_CONNECTION_NAME))
-          .addVariable("Driver", "org.sqlite.JDBC")
-          .setDescription("The default sqlite target (Sqlite cannot read and write with the same connection)")
-      );
+    howToDataStoresSet.add(
+      Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_TARGET_CONNECTION_NAME, getSqliteConnectionString(SQLITE_TARGET_CONNECTION_NAME))
+        .addVariable("Driver", "org.sqlite.JDBC")
+        .setDescription("The default sqlite target (Sqlite cannot read and write with the same connection)")
+    );
 
 
-      howToDataStoresSet.add(
-        Connection.createConnectionFromProviderOrDefault(tabular, ORACLE_CONNECTION_NAME, "jdbc:oracle:thin:@localhost:1521:xe")
-          .setDescription("The default oracle connection")
-          .setPassword("oracle")
-          .setUser("system")
-          .addVariable("Driver", "oracle.jdbc.OracleDriver")
-      );
+    howToDataStoresSet.add(
+      Connection.createConnectionFromProviderOrDefault(tabular, ORACLE_CONNECTION_NAME, "jdbc:oracle:thin:@localhost:1521:xe")
+        .setDescription("The default oracle connection")
+        .setPassword("oracle")
+        .setUser("system")
+        .addVariable("Driver", "oracle.jdbc.OracleDriver")
+    );
 
-      howToDataStoresSet.add(
-        Connection.createConnectionFromProviderOrDefault(tabular, SQLSERVER_CONNECTION_NAME, "jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
-          .setDescription("The default sqlserver connection")
-          .addVariable("Driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver")
-          .setUser("sa")
-          .setPassword("TheSecret1!")
-      );
+    howToDataStoresSet.add(
+      Connection.createConnectionFromProviderOrDefault(tabular, SQLSERVER_CONNECTION_NAME, "jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
+        .setDescription("The default sqlserver connection")
+        .addVariable("Driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver")
+        .setUser("sa")
+        .setPassword("TheSecret1!")
+    );
 
-      /**
-       * By default, my sql does not have any database
-       * This is the one created in the test
-       * {@link MySqlDataStoreResource}
-       *
-       * Documentation:
-       * https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-jdbc-url-format.html
-       */
-      String howToDatabaseName = "howto";
-      howToDataStoresSet.add(
-        Connection.createConnectionFromProviderOrDefault(tabular, MYSQL_CONNECTION_NAME, "jdbc:mysql://localhost:3306/" + howToDatabaseName)
-          .setDescription("The default mysql data store")
-          .addVariable("Driver", "com.mysql.jdbc.Driver")
-          .setUser("root")
-          .setPassword(tabular.getVault().encrypt("my-secret-pw")) // from the docker doc - https://hub.docker.com/_/mysql
-      );
+    /**
+     * By default, my sql does not have any database
+     * This is the one created in the test
+     * {@link MySqlDataStoreResource}
+     *
+     * Documentation:
+     * https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-jdbc-url-format.html
+     */
+    String howToDatabaseName = "howto";
+    howToDataStoresSet.add(
+      Connection.createConnectionFromProviderOrDefault(tabular, MYSQL_CONNECTION_NAME, "jdbc:mysql://localhost:3306/" + howToDatabaseName)
+        .setDescription("The default mysql data store")
+        .addVariable("Driver", "com.mysql.jdbc.Driver")
+        .setUser("root")
+        .setPassword("my-secret-pw") // from the docker doc - https://hub.docker.com/_/mysql
+    );
 
-      // jdbc:postgresql://host:port/database?prop=value
-      howToDataStoresSet.add(
-        Connection.createConnectionFromProviderOrDefault(tabular, POSTGRESQL_CONNECTION_NAME, "jdbc:postgresql://localhost:5432/postgres")
-          .setDescription("The default postgres data store")
-          .addVariable("Driver", "org.postgresql.Driver")
-          .setUser("postgres")
-          .setPassword(tabular.getVault().encrypt("welcome"))
-      );
+    // jdbc:postgresql://host:port/database?prop=value
+    howToDataStoresSet.add(
+      Connection.createConnectionFromProviderOrDefault(tabular, POSTGRESQL_CONNECTION_NAME, "jdbc:postgresql://localhost:5432/postgres")
+        .setDescription("The default postgres data store")
+        .addVariable("Driver", "org.postgresql.Driver")
+        .setUser("postgres")
+        .setPassword("welcome")
+    );
 
-      // The how-to-files
-      Path howToFilesPath = ConnectionHowTos.getHowToFilesPath(tabular);
-      howToDataStoresSet.add(
-        Connection.createConnectionFromProviderOrDefault(tabular, HOW_TO_FILE_CONNECTION_NAME, howToFilesPath.toUri().toString())
-          .setDescription("The local location of the how to files")
-      );
-
-      // The entities
-      Path entityRootPath = ConnectionHowTos.getEntitiesRootPath(tabular);
-      howToDataStoresSet.add(
-        Connection.createConnectionFromProviderOrDefault(tabular, ENTITY_CONNECTION_NAME, entityRootPath.toUri().toString())
-          .setDescription("The location of the entity files")
-      );
-
-      Path tpcDsQueriesPath = ConnectionHowTos.getTpcDsQueriesPath(tabular);
-      howToDataStoresSet.add(
-        Connection.createConnectionFromProviderOrDefault(tabular, TPCDS_QUERY_CONNECTION_NAME, tpcDsQueriesPath.toUri().toString())
-          .setDescription("The location of the Tpc Ds queries")
-      );
 
     return howToDataStoresSet
       .stream()
@@ -213,12 +194,12 @@ public class ConnectionHowTos {
      */
     if (tabular.isDev()) {
       Path path = tabular.getHomePath()
-          .resolve("tabulify-gen-entities")
-          .resolve("src")
-          .resolve("main")
-          .resolve("resources")
-          .resolve(ENTITY_CONNECTION_NAME)
-          .normalize();
+        .resolve("tabulify-gen-entities")
+        .resolve("src")
+        .resolve("main")
+        .resolve("resources")
+        .resolve(ENTITY_CONNECTION_NAME)
+        .normalize();
 
       if (!Files.exists(path)) {
         throw new RuntimeException("The entity directory path (" + path + ") does not exist for a dev env. Have they moved ?");

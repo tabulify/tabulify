@@ -70,7 +70,6 @@ public class FsDataSystem extends DataSystemAbs {
   }
 
 
-
   @Override
   public FsConnection getConnection() {
     return dataStore;
@@ -117,7 +116,7 @@ public class FsDataSystem extends DataSystemAbs {
     try {
       mediaType = Fs.detectMediaType(absolutePath);
     } catch (NotAbsoluteException e) {
-      throw new InternalException("It should not happen as the path passed is absolute. Path: "+absolutePath,e);
+      throw new InternalException("It should not happen as the path passed is absolute. Path: " + absolutePath, e);
     }
 
     FsFileManager fileManager = getFsFileManagerWithMediaType(mediaType);
@@ -152,11 +151,12 @@ public class FsDataSystem extends DataSystemAbs {
 
   /**
    * Resolve a path against the connection path
+   *
    * @param path the path to resolve
    * @return the path if already absolute or the path resolved to the connection path
    */
   public Path toAbsolutePath(Path path) {
-    if(path.isAbsolute()){
+    if (path.isAbsolute()) {
       return path;
     }
     return this.getConnection().getNioPath().resolve(path);
@@ -539,7 +539,7 @@ public class FsDataSystem extends DataSystemAbs {
        */
       if (!recursiveWildCardFound) {
         /**
-         * This is not, we just lookup this level
+         * This is not, we just look up this level
          */
         List<Path> matchesPath = new ArrayList<>();
         for (Path currentRecursivePath : currentMatchesPaths) {
@@ -549,12 +549,12 @@ public class FsDataSystem extends DataSystemAbs {
         // Recursion
         currentMatchesPaths = matchesPath;
         // Break if there is no match
-        if (matchesPath.size() == 0) {
+        if (matchesPath.isEmpty()) {
           break;
         }
       } else {
         List<Path> matchedFiles = new ArrayList<>();
-        while (currentMatchesPaths.size() != 0) {
+        while (!currentMatchesPaths.isEmpty()) {
           List<Path> matchesPath = new ArrayList<>();
           for (Path currentRecursivePath : currentMatchesPaths) {
             List<Path> currentMatchesPath = getMatchesPath(pattern, currentRecursivePath, true);

@@ -23,12 +23,14 @@ public class Vault {
    * Don't change this value
    */
   public static final String VAULT_PREFIX = "vault";
-  private final Protector protector;
+  private Protector protector;
   private final Map<String, Object> tabularEnvVariables;
 
   public Vault(Tabular tabular, String passphrase) {
 
-    this.protector = Protector.create(passphrase);
+    if (passphrase != null) {
+      this.protector = Protector.create(passphrase);
+    }
 
 
     this.tabularEnvVariables = tabular.getEnvVariables().getVariablesAsKeyIndependentMap();
@@ -65,6 +67,9 @@ public class Vault {
        * Decrypt
        */
       String valueToDecrypt = valueString.substring(Vault.VAULT_PREFIX.length());
+      if (protector == null) {
+        throw new Exception("No passphrase was given, we can't decrypt the vault value (" + valueToDecrypt + ")");
+      }
       try {
         variable.setClearValue(protector.decrypt(valueToDecrypt));
       } catch (Exception exception) {
@@ -100,6 +105,9 @@ public class Vault {
   }
 
   public String encrypt(String s) {
+    if (protector == null) {
+      throw new RuntimeException("No passphrase was given, vault can't encrypt");
+    }
     return VAULT_PREFIX + protector.encrypt(CryptoSymmetricCipher.AES_CBC_PKCS5PADDING, s);
   }
 

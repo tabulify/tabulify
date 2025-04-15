@@ -251,7 +251,6 @@ public class Tabular implements AutoCloseable {
   }
 
 
-
   public Tabular addConnection(Connection connection) {
 
     connections.put(connection.getName(), connection);
