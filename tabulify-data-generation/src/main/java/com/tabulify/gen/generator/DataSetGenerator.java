@@ -1,9 +1,9 @@
 package com.tabulify.gen.generator;
 
 import com.tabulify.Tabular;
+import com.tabulify.connection.ConnectionBuiltIn;
 import com.tabulify.csv.CsvDataPath;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionHowTos;
 import com.tabulify.gen.GenColumnDef;
 import com.tabulify.gen.GenLog;
 import com.tabulify.model.ColumnDef;
@@ -169,7 +169,7 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
   public static CsvDataPath getEntityPath(Tabular tabular, String entityName, String locale) {
 
     MediaType csvMediaType = MediaTypes.TEXT_CSV;
-    Connection entityConnection = tabular.getConnection(ConnectionHowTos.ENTITY_CONNECTION_NAME);
+    Connection entityConnection = tabular.getConnection(ConnectionBuiltIn.ENTITY_CONNECTION_NAME);
 
 
     CsvDataPath csvDataPath = (CsvDataPath) entityConnection.getDataPath(entityName + "/" + entityName + ".csv", csvMediaType)

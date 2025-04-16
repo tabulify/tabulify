@@ -663,21 +663,33 @@ public class Tabular implements AutoCloseable {
 
 
   public Boolean isDev() {
+    String tabliEnv = System.getenv("TABLI_ENV");
+    if (tabliEnv != null && tabliEnv.equalsIgnoreCase("dev")) {
+      return true;
+    }
     return JavaEnvs.isDev(Tabular.class);
   }
 
   private Path getHomePathDynamic() {
-    try {
-      // in dev
-      return Javas.getBuildDirectory(ConnectionHowTos.class)
-        .getParent()
-        .getParent();
-    } catch (NotDirectoryException e) {
-      // in prod
-      return Javas.getSourceCodePath(JavaEnvs.class)
-        .getParent()
-        .getParent();
+    // in dev (with maven, the class are in the m2 repository)
+    String tabliHome = System.getenv("TABLI_HOME");
+    if (tabliHome != null ) {
+      return Paths.get(tabliHome);
     }
+    if (this.isDev()) {
+      try {
+        // in dev (with Idea, the class are in the build directory)
+        return Javas.getBuildDirectory(ConnectionHowTos.class)
+          .getParent()
+          .getParent();
+      } catch (NotDirectoryException e) {
+        throw new RuntimeException("Build directory not found. "+e.getMessage());
+      }
+    }
+    // in prod, the class are in the jars directory
+    return Javas.getSourceCodePath(ConnectionHowTos.class)
+      .getParent();
+
   }
 
   /**

@@ -82,8 +82,8 @@ public class RandomGenerator<T> extends CollectionGeneratorAbs<T> implements Col
     } else if (Date.class.equals(aClass)) {
       Date minDefault = Date.valueOf(LocalDate.now().minusDays(10));
       Date maxDefault = Date.valueOf(LocalDate.now());
-      this.min = (min != null ? net.bytle.type.time.Date.createFromObject(min).toSqlDate() : clazz.cast(minDefault));
-      this.max = (max != null ? net.bytle.type.time.Date.createFromObject(max).toSqlDate() : clazz.cast(maxDefault));
+      this.min = (min != null ? net.bytle.type.time.Date.createFromObjectSafeCast(min).toSqlDate() : clazz.cast(minDefault));
+      this.max = (max != null ? net.bytle.type.time.Date.createFromObjectSafeCast(max).toSqlDate() : clazz.cast(maxDefault));
       range = ((int) DAYS.between(((Date) this.min).toLocalDate(), ((Date) this.max).toLocalDate()));
       actualValue = Date.valueOf(((Date) this.min).toLocalDate().plusDays((int) range / 2));
     } else if (Timestamp.class.equals(aClass)) {

@@ -19,8 +19,6 @@ import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static com.tabulify.connection.ConnectionHowTos.*;
-
 /**
  * The internal connection
  */
@@ -42,6 +40,13 @@ public class ConnectionBuiltIn {
   public static final String HOME_LOCAL_FILE_SYSTEM = "home";
   public static final String LOG_LOCAL_CONNECTION = "log";
   public static final String DESKTOP_LOCAL_FILE_SYSTEM = "desktop";
+  /**
+   * The connections that points to the location of the internal files
+   * howto files, entity
+   */
+  public static final String HOW_TO_FILE_CONNECTION_NAME = "howto";
+  public static final String ENTITY_CONNECTION_NAME = "entity";
+  public static final String TPCDS_QUERY_CONNECTION_NAME = "tpcds_query";
 
   /**
    * Create the built-in, internal connections

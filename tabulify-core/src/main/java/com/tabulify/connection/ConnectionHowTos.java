@@ -47,14 +47,6 @@ public class ConnectionHowTos {
 
 
   /**
-   * The connections that points to the location of the internal files
-   * howto files, entity
-   */
-  public static final String HOW_TO_FILE_CONNECTION_NAME = "howto";
-  public static final String ENTITY_CONNECTION_NAME = "entity";
-  public static final String TPCDS_QUERY_CONNECTION_NAME = "tpcds_query";
-
-  /**
    * @param connectionName the name of the connection
    * @return a JDBC connection string for the default data vault
    */
@@ -162,7 +154,7 @@ public class ConnectionHowTos {
         .resolve("tabulify-cli")
         .resolve("src")
         .resolve("main")
-        .resolve(HOW_TO_FILE_CONNECTION_NAME)
+        .resolve(ConnectionBuiltIn.HOW_TO_FILE_CONNECTION_NAME)
         .normalize();
 
       if (!Files.exists(path)) {
@@ -177,7 +169,7 @@ public class ConnectionHowTos {
      */
     return tabular.getHomePath()
       .resolve(DIST_RESOURCE_DIRECTORY)
-      .resolve(HOW_TO_FILE_CONNECTION_NAME)
+      .resolve(ConnectionBuiltIn.HOW_TO_FILE_CONNECTION_NAME)
       .toAbsolutePath()
       .normalize();
 
@@ -198,7 +190,7 @@ public class ConnectionHowTos {
         .resolve("src")
         .resolve("main")
         .resolve("resources")
-        .resolve(ENTITY_CONNECTION_NAME)
+        .resolve(ConnectionBuiltIn.ENTITY_CONNECTION_NAME)
         .normalize();
 
       if (!Files.exists(path)) {
@@ -213,7 +205,7 @@ public class ConnectionHowTos {
      */
     return tabular.getHomePath()
       .resolve(DIST_RESOURCE_DIRECTORY)
-      .resolve(ENTITY_CONNECTION_NAME)
+      .resolve(ConnectionBuiltIn.ENTITY_CONNECTION_NAME)
       .toAbsolutePath()
       .normalize();
   }
@@ -247,7 +239,7 @@ public class ConnectionHowTos {
      */
     return tabular.getHomePath()
       .resolve(DIST_RESOURCE_DIRECTORY)
-      .resolve(TPCDS_QUERY_CONNECTION_NAME)
+      .resolve(ConnectionBuiltIn.TPCDS_QUERY_CONNECTION_NAME)
       .toAbsolutePath()
       .normalize();
   }
