@@ -1,7 +1,7 @@
 package net.bytle.email.flow.flow;
 
-import net.bytle.db.flow.engine.OperationStep;
-import net.bytle.db.flow.engine.StepProvider;
+import com.tabulify.flow.engine.OperationStep;
+import com.tabulify.flow.engine.StepProvider;
 
 import java.util.HashSet;
 import java.util.Set;

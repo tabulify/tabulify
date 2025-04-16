@@ -118,7 +118,7 @@ public abstract class RelationDefAbs implements RelationDef {
         uniqueKeys.add(uniqueKeyDefToReturn);
       } catch (NoColumnException e) {
         String message = "A unique key of the resource (" + this.getDataPath() + ") was not created  because a column was not found in the metadata." + e.getMessage();
-        if (this.getDataPath().getConnection().getTabular().isDev()) {
+        if (this.getDataPath().getConnection().getTabular().isIdeDev()) {
           throw new RuntimeException(message, e);
         } else {
           DbLoggers.LOGGER_DB_ENGINE.severe(message);

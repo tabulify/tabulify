@@ -170,7 +170,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
         this.getOrCreateVariable(CHARACTER_SET).setOriginalValue(charset);
       } catch (CastException ex) {
         String message = "The string (" + characterSet + ") could not be transformed as characters set";
-        if (getConnection().getTabular().isDev()) {
+        if (getConnection().getTabular().isIdeDev()) {
           throw new IllegalArgumentException(message);
         } else {
           DbLoggers.LOGGER_DB_ENGINE.warning(message);

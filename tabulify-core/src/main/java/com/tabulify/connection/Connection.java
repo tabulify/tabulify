@@ -712,7 +712,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setOrigin(ConnectionOrigin connectionOrigin) {
     try {
-      this.getVariable(ConnectionAttribute.ORIGIN).setOriginalValue(connectionOrigin);
+      this.getVariable(ConnectionAttribute.ORIGIN)
+        .setClearValue(connectionOrigin);
     } catch (NoVariableException e) {
       throw new InternalException(e);
     }

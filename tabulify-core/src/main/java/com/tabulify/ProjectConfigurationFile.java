@@ -4,12 +4,10 @@ import net.bytle.conf.ConfManager;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
-import net.bytle.os.Oss;
 import net.bytle.type.Casts;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.FileNotFoundException;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -19,16 +17,13 @@ import java.util.Map;
 public class ProjectConfigurationFile {
 
 
-  public static final String DEVELOPMENT_ENV = "development";
-  public static final String PRODUCTION_ENV = "production";
-  public static final String NONE_ENV = "None";
+  public static final String PROJECT_CONF_FILE_NAME = ".tabli.yml";
   private final Path path;
   private final String connectionsRelativePath;
   private final String variablesRelativePath;
-  private final String environment;
 
 
-  public ProjectConfigurationFile(Path path, String env) {
+  public ProjectConfigurationFile(Path path) {
     this.path = path;
 
     if (Files.isDirectory(path)) {
@@ -43,10 +38,9 @@ public class ProjectConfigurationFile {
       throw new RuntimeException("The project configuration file (" + path + ") does not exists");
     }
 
-    if (input.trim().equals("")) {
+    if (input.trim().isEmpty()) {
       connectionsRelativePath = null;
       variablesRelativePath = null;
-      environment = NONE_ENV;
       return;
     }
 
@@ -57,61 +51,26 @@ public class ProjectConfigurationFile {
     } catch (CastException e) {
       throw new InternalException("String and Object should not throw a cast exception", e);
     }
-    Object environmentObject = null;
 
+
+    Map<String, Object> environmentMaps = Map.of();
     Object environmentObjects = yamlRootMap.get("envs");
     if (environmentObjects != null) {
-      Map<String, Object> environmentMaps;
       try {
         environmentMaps = Casts.castToSameMap(environmentObjects, String.class, Object.class);
       } catch (CastException e) {
         throw new InternalException("String and Object should not throw a cast exception", e);
       }
-      String environment = DEVELOPMENT_ENV;
-      if (env != null) {
-        environmentObject = environmentMaps.get(env);
-        environment = env;
-      } else {
-
-        String fqdn;
-        try {
-          fqdn = Oss.getFqdn().toStringWithoutRoot();
-          environment = fqdn;
-          environmentObject = environmentMaps.get(fqdn);
-        } catch (UnknownHostException e) {
-          DbLoggers.LOGGER_DB_ENGINE.warning("Project File: We couldn't get the full qualified name of your machine to determine your environment. Error: " + e.getMessage());
-        }
-        if (environmentObject == null) {
-          environment = DEVELOPMENT_ENV;
-          environmentObject = environmentMaps.get(DEVELOPMENT_ENV);
-        }
-      }
-      this.environment = environment;
-    } else {
-      this.environment = NONE_ENV;
     }
 
-
-    if (environmentObject == null) {
-      connectionsRelativePath = null;
-      variablesRelativePath = null;
-      return;
-    }
-
-    Map<String, String> environmentMap;
-    try {
-      environmentMap = Casts.castToSameMap(environmentObject, String.class, String.class);
-    } catch (CastException e) {
-      throw new InternalException("String and String should not throw a cast exception", e);
-    }
-    this.connectionsRelativePath = environmentMap.get("connections");
-    this.variablesRelativePath = environmentMap.get("variables");
+    this.connectionsRelativePath = (String) environmentMaps.get("connections");
+    this.variablesRelativePath = (String) environmentMaps.get("variables");
 
 
   }
 
-  public static ProjectConfigurationFile createFrom(Path path, String env) throws FileNotFoundException {
-    return new ProjectConfigurationFile(path, env);
+  public static ProjectConfigurationFile createFrom(Path path) throws FileNotFoundException {
+    return new ProjectConfigurationFile(path);
   }
 
   public Path getProjectDirectory() {
@@ -141,7 +100,6 @@ public class ProjectConfigurationFile {
   public Map<String, Object> getVariables() {
     Path projectConf = this.getVariablesPath();
     Map<String, Object> envs = new HashMap<>();
-    envs.put(TabularAttributes.PROJECT_ENV.toString(), this.environment);
     if (Files.exists(projectConf)) {
       try(ConfManager fromPath = ConfManager.createFromPath(projectConf)) {
         envs.putAll(fromPath.getConfMap());
@@ -161,8 +119,4 @@ public class ProjectConfigurationFile {
     }
   }
 
-
-  public String getEnvironment() {
-    return environment;
-  }
 }

@@ -7,6 +7,7 @@ import com.tabulify.flow.step.SelectSupplierArgument;
 import com.tabulify.flow.step.TargetArguments;
 import com.tabulify.flow.step.TransferArgumentProperty;
 import net.bytle.type.Key;
+import net.bytle.type.KeyNormalizer;
 
 /**
  * Define the words of the command line
@@ -156,13 +157,13 @@ public class TabliWords {
   static final String OUTPUT_DATA_URI = "--output-data-uri";
   // Options used in all sub actions
   static final String CONNECTION_VAULT_PROPERTY = "--connection-vault";
-  static final String PROJECT_FILE = "--project-file";
+  static final String PROJECT_HOME = "--project-home";
 
 
   /**
    * Argument
    */
-  public static String TARGET_DATA_URI = Key.toLongOptionName(TargetArguments.TARGET_DATA_URI);
+  public static String TARGET_DATA_URI = KeyNormalizer.create(TargetArguments.TARGET_DATA_URI).toCliLongOptionName();
   public static String SOURCE_SELECTOR = "source-selector";
   public static String DATA_SELECTORS = "data-selector...";
   public static String NAME_SELECTORS = "name-selector...";

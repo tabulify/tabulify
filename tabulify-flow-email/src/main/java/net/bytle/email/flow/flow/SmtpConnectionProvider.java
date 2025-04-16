@@ -1,8 +1,8 @@
 package net.bytle.email.flow.flow;
 
-import net.bytle.db.Tabular;
-import net.bytle.db.connection.Connection;
-import net.bytle.db.spi.ConnectionProvider;
+import com.tabulify.Tabular;
+import com.tabulify.connection.Connection;
+import com.tabulify.spi.ConnectionProvider;
 import net.bytle.type.Variable;
 
 public class SmtpConnectionProvider extends ConnectionProvider {

@@ -1,28 +1,28 @@
 package net.bytle.email.flow.flow;
 
+import com.tabulify.TabularOsEnv;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
-import net.bytle.db.ProjectConfigurationFile;
-import net.bytle.db.Tabular;
-import net.bytle.db.connection.Connection;
-import net.bytle.db.flow.Granularity;
-import net.bytle.db.flow.engine.FilterRunnable;
-import net.bytle.db.flow.engine.FilterStepAbs;
-import net.bytle.db.flow.engine.OperationStep;
-import net.bytle.db.flow.step.SourceTargetHelperFunction;
-import net.bytle.db.fs.FsConnection;
-import net.bytle.db.fs.FsDataPath;
-import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.RelationDef;
-import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.SelectException;
-import net.bytle.db.spi.Tabulars;
-import net.bytle.db.stream.InsertStream;
-import net.bytle.db.stream.SelectStream;
-import net.bytle.db.transfer.TransferManager;
-import net.bytle.db.uri.DataUri;
-import net.bytle.db.uri.DataUriString;
+import com.tabulify.Tabular;
+import com.tabulify.connection.Connection;
+import com.tabulify.flow.Granularity;
+import com.tabulify.flow.engine.FilterRunnable;
+import com.tabulify.flow.engine.FilterStepAbs;
+import com.tabulify.flow.engine.OperationStep;
+import com.tabulify.flow.step.SourceTargetHelperFunction;
+import com.tabulify.fs.FsConnection;
+import com.tabulify.fs.FsDataPath;
+import com.tabulify.model.ColumnDef;
+import com.tabulify.model.RelationDef;
+import com.tabulify.spi.DataPath;
+import com.tabulify.spi.SelectException;
+import com.tabulify.spi.Tabulars;
+import com.tabulify.stream.InsertStream;
+import com.tabulify.stream.SelectStream;
+import com.tabulify.transfer.TransferManager;
+import com.tabulify.uri.DataUri;
+import com.tabulify.uri.DataUriString;
 import net.bytle.email.BMailAddressStatic;
 import net.bytle.email.BMailMimeMessage;
 import net.bytle.email.BMailSmtpClient;
@@ -380,11 +380,11 @@ public class SendmailStep extends FilterStepAbs {
       private void sendMail(String logicalName, BMailMimeMessage bMailMimeMessage, InsertStream logInsertStream, BMailSmtpClient smtpClient) throws MessagingException {
 
         String originalToMessageAddresses = bMailMimeMessage.getToAsAddresses().toString();
-        String environment = tabular.getEnvironment();
+        String environment = tabular.getExecutionEnvironment();
         /*
          * Modify the `to` email
          */
-        if (!environment.equals(ProjectConfigurationFile.PRODUCTION_ENV)) {
+        if (!environment.equals(TabularOsEnv.PRODUCTION_ENV)) {
 
           List<InternetAddress> toMessagesAddresses = bMailMimeMessage.getToInternetAddresses();
           if (toMessagesAddresses.isEmpty()) {
@@ -413,7 +413,7 @@ public class SendmailStep extends FilterStepAbs {
               } else {
                 personal = personal + " ";
               }
-              personal = personal + "(not in " + ProjectConfigurationFile.PRODUCTION_ENV + " environment, receiver address (" + oldAddress + ") was changed to connection default)";
+              personal = personal + "(not in " + TabularOsEnv.PRODUCTION_ENV + " environment, receiver address (" + oldAddress + ") was changed to connection default)";
               internetAddress.setPersonal(personal);
             } catch (UnsupportedEncodingException e) {
               throw new RuntimeException("Error while changing the personal of the to email address before sending. Error:" + e.getMessage());

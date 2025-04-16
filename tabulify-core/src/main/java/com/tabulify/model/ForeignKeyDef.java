@@ -75,7 +75,7 @@ public class ForeignKeyDef implements Comparable<ForeignKeyDef>, Constraint {
 
         if (!relationDef.hasColumn(columnName)) {
           String msg = "The column (" + columnName + ") is not known for the data resource (" + relationDef.getDataPath() + ") and then cannot be used to create a foreign key.";
-          if (this.getRelationDef().getDataPath().getConnection().getTabular().isDev()) {
+          if (this.getRelationDef().getDataPath().getConnection().getTabular().isIdeDev()) {
             throw new IllegalStateException(msg);
           }
           DbLoggers.LOGGER_DB_ENGINE.severe(msg);

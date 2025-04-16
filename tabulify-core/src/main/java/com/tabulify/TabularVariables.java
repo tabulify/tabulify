@@ -46,7 +46,7 @@ public class TabularVariables {
             .setValueProvider(tabular::getHomePath);
           break;
         case PROJECT_ENV:
-          variable.setValueProvider(tabular::getEnvironment);
+          variable.setValueProvider(tabular::getExecutionEnvironment);
           break;
         case PROJECT_CONNECTION:
           variable.setValueProvider(() -> {
@@ -173,9 +173,6 @@ public class TabularVariables {
     List<String> envNames = new ArrayList<>();
     String baseEnv = ".env";
     envNames.add(baseEnv);
-    if (projectConfigurationFile != null) {
-      envNames.add(baseEnv + "." + projectConfigurationFile.getEnvironment());
-    }
     for (String envName : envNames) {
       Path dotEnvPath;
       if (projectConfigurationFile != null) {

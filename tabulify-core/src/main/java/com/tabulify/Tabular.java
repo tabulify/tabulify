@@ -4,9 +4,7 @@ import com.tabulify.connection.*;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.FsDataPath;
 import com.tabulify.memory.MemoryConnection;
-import com.tabulify.memory.MemoryConnectionProvider;
 import com.tabulify.memory.MemoryDataPath;
-import com.tabulify.noop.NoopConnectionProvider;
 import com.tabulify.spi.DataPath;
 import com.tabulify.tpc.TpcConnection;
 import com.tabulify.uri.DataUri;
@@ -14,7 +12,6 @@ import net.bytle.exception.*;
 import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
 import net.bytle.java.Javas;
-import net.bytle.os.Oss;
 import net.bytle.regexp.Glob;
 import net.bytle.type.*;
 
@@ -23,7 +20,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.nio.file.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -46,11 +42,11 @@ import static com.tabulify.TabularAttributes.USER_VARIABLES_FILE;
 public class Tabular implements AutoCloseable {
 
 
-  public static final String PROJECT_CONF_FILE_NAME = ".tabli.yml";
   private final ProjectConfigurationFile projectConfigurationFile;
   final Path variablePathArgument;
   private final Vault vault;
   private final Map<String, Connection> howtoConnections;
+  private final TabularExecEnv env;
   private TabularVariables tabularVariables;
 
   // The default connection added to a data URI if it does not have it.
@@ -88,7 +84,7 @@ public class Tabular implements AutoCloseable {
   private Path homePath;
 
 
-  public Tabular(String passphrase, Path projectFilePath, Path connectionVaultPath, Path variablePath, String env) {
+  public Tabular(String passphrase, Path projectHomePath, Path connectionVaultPath, Path variablePath, TabularExecEnv env) {
 
 
     /**
@@ -105,31 +101,46 @@ public class Tabular implements AutoCloseable {
     Logger.getLogger("oracle.jdbc").setLevel(Level.SEVERE);
 
 
-    if (projectFilePath == null) {
+    if (projectHomePath == null) {
       try {
-        projectFilePath = Fs.closest(Paths.get("."), PROJECT_CONF_FILE_NAME);
+        projectHomePath = Fs.closest(Paths.get("."), ProjectConfigurationFile.PROJECT_CONF_FILE_NAME).getParent();
       } catch (FileNotFoundException e) {
         // not a project
       }
     }
 
+    // Env
+    if (env != null) {
+      this.env = env;
+    } else {
+      String envOsValue = System.getenv(TabularOsEnv.TABLI_ENV);
+      if (envOsValue != null) {
+        try {
+          this.env = Casts.cast(envOsValue, TabularExecEnv.class);
+        } catch (CastException e) {
+          throw new IllegalArgumentException("The os env (" + TabularOsEnv.TABLI_ENV + ") has a env value (" + envOsValue + ") that is unknown. Possible values: " + Enums.toConstantAsStringCommaSeparated(TabularOsEnv.class), e);
+        }
+      } else {
+        this.env = TabularExecEnv.DEV;
+      }
+    }
 
-    if (projectFilePath != null) {
+    if (projectHomePath != null) {
 
-      DbLoggers.LOGGER_TABULAR_START.info("This is a project run (" + projectFilePath + ")");
+      DbLoggers.LOGGER_TABULAR_START.info("This is a project run (" + projectHomePath + ")");
 
+      Path projectFilePath = projectHomePath.resolve(ProjectConfigurationFile.PROJECT_CONF_FILE_NAME);
       if (!Files.exists(projectFilePath)) {
-        throw new RuntimeException("The project file (" + projectFilePath + ") did not exist.");
+        DbLoggers.LOGGER_TABULAR_START.warning("The project file (" + projectFilePath + ") did not exist.");
+        this.projectConfigurationFile = null;
+      } else {
+        try {
+          this.projectConfigurationFile = ProjectConfigurationFile.createFrom(projectFilePath);
+        } catch (FileNotFoundException e) {
+          // should not happen
+          throw new RuntimeException("The project file path (" + projectFilePath + ") does not exits");
+        }
       }
-
-      try {
-        this.projectConfigurationFile = ProjectConfigurationFile.createFrom(projectFilePath, env);
-      } catch (FileNotFoundException e) {
-        // should not happen
-        throw new RuntimeException("The project file path (" + projectFilePath + ") does not exits");
-      }
-
-
     } else {
 
       DbLoggers.LOGGER_TABULAR_START.info("This is not a project run.");
@@ -164,7 +175,7 @@ public class Tabular implements AutoCloseable {
     }
 
 
-    if (projectFilePath != null) {
+    if (projectConfigurationFile != null) {
 
       // Default connection is project
       this.setDefaultConnection(ConnectionBuiltIn.PROJECT_CONNECTION);
@@ -206,8 +217,8 @@ public class Tabular implements AutoCloseable {
     return new Tabular(passphrase, projectFilePath, connectionVaultPath, variablesPath, null);
   }
 
-  public static Tabular tabular(String passphrase, Path projectFilePath, Path connectionVaultPath, Path variablesPath, String env) {
-    return new Tabular(passphrase, projectFilePath, connectionVaultPath, variablesPath, env);
+  public static Tabular tabular(String passphrase, Path projectFilePath, Path connectionVaultPath, Path variablesPath, TabularExecEnv env) {
+    return new Tabular(passphrase, projectFilePath, connectionVaultPath, variablesPath, null);
   }
 
   /**
@@ -596,7 +607,7 @@ public class Tabular implements AutoCloseable {
 
 
   /**
-   * An utility to get a local file resource data store
+   * A utility to get a local file resource data store
    *
    * @param clazz - the class to locate the resource for
    * @param root  - the root directory (mandatory otherwise the root is not on the resources directory)
@@ -662,28 +673,26 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public Boolean isDev() {
-    String tabliEnv = System.getenv("TABLI_ENV");
-    if (tabliEnv != null && tabliEnv.equalsIgnoreCase("dev")) {
-      return true;
-    }
-    return JavaEnvs.isDev(Tabular.class);
+  public Boolean isIdeDev() {
+
+    return this.env.equals(TabularExecEnv.IDE);
+
   }
 
   private Path getHomePathDynamic() {
     // in dev (with maven, the class are in the m2 repository)
-    String tabliHome = System.getenv("TABLI_HOME");
-    if (tabliHome != null ) {
+    String tabliHome = System.getenv(TabularOsEnv.TABLI_HOME);
+    if (tabliHome != null) {
       return Paths.get(tabliHome);
     }
-    if (this.isDev()) {
+    if (this.isIdeDev()) {
       try {
         // in dev (with Idea, the class are in the build directory)
         return Javas.getBuildDirectory(ConnectionHowTos.class)
           .getParent()
           .getParent();
       } catch (NotDirectoryException e) {
-        throw new RuntimeException("Build directory not found. "+e.getMessage());
+        throw new RuntimeException("Build directory not found. " + e.getMessage());
       }
     }
     // in prod, the class are in the jars directory
@@ -883,12 +892,12 @@ public class Tabular implements AutoCloseable {
     return this.getConnection(ConnectionBuiltIn.LOG_LOCAL_CONNECTION);
   }
 
-  public String getEnvironment() {
-    ProjectConfigurationFile projectConfigurationFile = this.projectConfigurationFile;
-    if (projectConfigurationFile == null) {
-      return ProjectConfigurationFile.NONE_ENV;
-    }
-    return projectConfigurationFile.getEnvironment();
+  /**
+   * The execution environment
+   */
+  public TabularExecEnv getExecutionEnvironment() {
+
+    return this.env;
   }
 
 

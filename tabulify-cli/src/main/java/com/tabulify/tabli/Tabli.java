@@ -1,5 +1,7 @@
 package com.tabulify.tabli;
 
+import com.tabulify.TabularExecEnv;
+import com.tabulify.TabularOsEnv;
 import com.tabulify.transfer.*;
 import net.bytle.cli.*;
 import com.tabulify.Tabular;
@@ -17,10 +19,7 @@ import net.bytle.log.Log;
 import net.bytle.log.Logs;
 import net.bytle.regexp.Glob;
 import net.bytle.timer.Timer;
-import net.bytle.type.Casts;
-import net.bytle.type.Key;
-import net.bytle.type.Manifest;
-import net.bytle.type.ManifestAttribute;
+import net.bytle.type.*;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -70,6 +69,7 @@ public class Tabli {
     rootCommand.addProperty(ENVIRONMENT)
       .setDescription("The name of the environment")
       .setValueName("env")
+      .setEnvName(TabularOsEnv.TABLI_ENV)
       .setShortName("-e");
 
     rootCommand.addFlag(TabliWords.HELP_FLAG)
@@ -90,12 +90,13 @@ public class Tabli {
     rootCommand.addProperty(CONNECTION_VAULT_PROPERTY)
       .setDescription("The path where a connection vault is located")
       .setValueName("path")
+      .setEnvName(TabularOsEnv.TABLI_CONNECTION_VAULT)
       .setShortName("-cv");
 
     rootCommand.addProperty(TabliWords.PASSPHRASE_PROPERTY)
       .setShortName("-pp")
       .setDescription("A passphrase (master password) to decrypt the encrypted vault values")
-      .setEnvName("TABLI_PASSPHRASE")
+      .setEnvName(TabularOsEnv.TABLI_PASSPHRASE)
       .setValueName("passphrase");
 
     /*
@@ -123,10 +124,11 @@ public class Tabli {
       .setShortName("-oo")
       .setValueName("dataOperation");
 
-    rootCommand.addProperty(PROJECT_FILE)
-      .setShortName("-pf")
-      .setGroup("Project Options:")
-      .setDescription("A file system path to a project file")
+    rootCommand.addProperty(PROJECT_HOME)
+      .setShortName("-ph")
+      .setGroup("Project Home")
+      .setDescription("The project home")
+      .setEnvName(TabularOsEnv.TABLI_PROJECT_HOME)
       .setValueName("path");
 
 
@@ -165,7 +167,7 @@ public class Tabli {
     /*
      * Project home
      */
-    Path projectFilePath = cliParser.getPath(PROJECT_FILE);
+    Path projectHome = cliParser.getPath(PROJECT_HOME);
 
     /*
      * Set the connection vault
@@ -178,8 +180,16 @@ public class Tabli {
 
 
     String executionEnvironment = cliParser.getString(ENVIRONMENT);
+    TabularExecEnv execEnv = null;
+    if (executionEnvironment != null) {
+      try {
+        execEnv = Casts.cast(executionEnvironment, TabularExecEnv.class);
+      } catch (CastException e) {
+        throw new IllegalArgumentException("The option (" + ENVIRONMENT + ") has a env value (" + executionEnvironment + ") that is unknown. Possible values: " + Enums.toConstantAsStringCommaSeparated(TabularOsEnv.class), e);
+      }
+    }
 
-    try (Tabular tabular = Tabular.tabular(passphrase, projectFilePath, commandLineConnectionVault, confPath, executionEnvironment)) {
+    try (Tabular tabular = Tabular.tabular(passphrase, projectHome, commandLineConnectionVault, confPath, execEnv)) {
 
       /*
        * Check for the version
@@ -261,7 +271,6 @@ public class Tabli {
         LOGGER_TABLI.info("The default connection was set to: `" + tabular.getDefaultConnection().getName() + "`");
 
         if (tabular.isProjectRun()) {
-          LOGGER_TABLI.info("The project environment is: `" + tabular.getProjectConfigurationFile().getEnvironment() + "`");
           LOGGER_TABLI.info("The project variable file is: `" + tabular.getProjectConfigurationFile().getVariablesPath().toAbsolutePath() + "`");
           LOGGER_TABLI.info("The project connection vault is: `" + tabular.getProjectConfigurationFile().getConnectionVaultPath().toAbsolutePath() + "`");
         } else {

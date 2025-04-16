@@ -48,6 +48,10 @@
     </dependency>
     <dependency>
       <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-html</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
       <artifactId>tabulify-sqlite</artifactId>
     </dependency>
     <dependency>

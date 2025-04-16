@@ -405,7 +405,7 @@ public class SqlRelationDef extends RelationDefDefault {
 
       } catch (NoColumnException e) {
         String s = "A column could not be found for the index (" + indexName + ") for the resource (" + this.getDataPath() + "). "+e.getMessage();
-        if (this.getDataPath().getConnection().getTabular().isDev()) {
+        if (this.getDataPath().getConnection().getTabular().isIdeDev()) {
           throw new IllegalStateException(s);
         }
         DbLoggers.LOGGER_DB_ENGINE.warning("An index column was discarded. " + s);

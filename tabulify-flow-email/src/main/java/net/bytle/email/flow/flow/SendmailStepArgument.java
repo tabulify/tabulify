@@ -1,6 +1,6 @@
 package net.bytle.email.flow.flow;
 
-import net.bytle.db.flow.Granularity;
+import com.tabulify.flow.Granularity;
 import net.bytle.type.Attribute;
 import net.bytle.type.Key;
 

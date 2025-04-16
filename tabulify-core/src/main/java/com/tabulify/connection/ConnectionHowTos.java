@@ -148,7 +148,7 @@ public class ConnectionHowTos {
     /*
      * Dev environment
      */
-    if (tabular.isDev()) {
+    if (tabular.isIdeDev()) {
       Path path;
       path = tabular.getHomePath()
         .resolve("tabulify-cli")
@@ -184,7 +184,7 @@ public class ConnectionHowTos {
     /*
      * Dev environment
      */
-    if (tabular.isDev()) {
+    if (tabular.isIdeDev()) {
       Path path = tabular.getHomePath()
         .resolve("tabulify-gen-entities")
         .resolve("src")
@@ -219,7 +219,7 @@ public class ConnectionHowTos {
     /**
      * Dev environment
      */
-    if (tabular.isDev()) {
+    if (tabular.isIdeDev()) {
       Path path = tabular.getHomePath()
         .resolve("tabulify-jdbc")
         .resolve("src")

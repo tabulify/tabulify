@@ -46,6 +46,7 @@
     <module>tabulify-data-generation</module>
     <module>tabulify-csv</module>
     <module>tabulify-flow-template</module>
+    <module>tabulify-flow-email</module>
     <module>tabulify-xml</module>
     <module>tabulify-sqlite</module>
     <module>tabulify-html</module>
@@ -103,6 +104,16 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>tabulify-xml</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-html</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-flow-email</artifactId>
         <version>${project.version}</version>
       </dependency>
       <!-- from https://jdbc.postgresql.org/download.html-->

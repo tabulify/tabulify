@@ -53,5 +53,6 @@ tasks:
         -e DOKU_DOCKER_ADMIN_NAME='admin' \
         -e DOKU_DOCKER_ADMIN_PASSWORD='welcome' \
         -e DOKU_DOCKER_BASE_URL='http://localhost:8081' \
-        -v $PWD/tabulify-cli/src/main/tabulify.com:/var/www/html \
+        -v {{.TASKFILE_DIR}}/tabulify-cli/src/main/tabulify.com:/var/www/html \
         ghcr.io/combostrap/dokuwiki:php8.3-latest
+
