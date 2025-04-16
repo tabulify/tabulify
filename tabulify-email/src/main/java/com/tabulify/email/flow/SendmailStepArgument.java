@@ -1,4 +1,4 @@
-package net.bytle.email.flow.flow;
+package com.tabulify.email.flow;
 
 import com.tabulify.flow.Granularity;
 import net.bytle.type.Attribute;

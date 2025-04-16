@@ -1,10 +1,10 @@
-package net.bytle.email.flow.flow;
+package com.tabulify.email.flow;
 
-import com.tabulify.TabularOsEnv;
+import com.tabulify.TabularExecEnv;
+import com.tabulify.connection.ConnectionBuiltIn;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
-import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
 import com.tabulify.flow.Granularity;
 import com.tabulify.flow.engine.FilterRunnable;
@@ -196,7 +196,7 @@ public class SendmailStep extends FilterStepAbs {
               throw new RuntimeException("Error while transferring the non-local resource " + dataPath + " to a temporary directory to add it to the email. Error:" + transferManager.getError());
             }
           }
-          Path nioPath = fsDataPath.getNioPath();
+          Path nioPath = fsDataPath.getAbsoluteNioPath();
           try {
             mimeMessage.addAttachment(nioPath);
           } catch (MessagingException e) {
@@ -227,7 +227,7 @@ public class SendmailStep extends FilterStepAbs {
         if (connection != null) {
           return connection;
         }
-        return (SmtpConnection) tabular.getConnection(Tabular.SMTP_CONNECTION);
+        return (SmtpConnection) tabular.getConnection(ConnectionBuiltIn.SMTP_CONNECTION);
       }
 
       private void recordRun() {
@@ -380,11 +380,11 @@ public class SendmailStep extends FilterStepAbs {
       private void sendMail(String logicalName, BMailMimeMessage bMailMimeMessage, InsertStream logInsertStream, BMailSmtpClient smtpClient) throws MessagingException {
 
         String originalToMessageAddresses = bMailMimeMessage.getToAsAddresses().toString();
-        String environment = tabular.getExecutionEnvironment();
-        /*
-         * Modify the `to` email
+        TabularExecEnv environment = tabular.getExecutionEnvironment();
+        /**
+         * If not prod, modify the `to` email
          */
-        if (!environment.equals(TabularOsEnv.PRODUCTION_ENV)) {
+        if (!environment.equals(TabularExecEnv.PROD)) {
 
           List<InternetAddress> toMessagesAddresses = bMailMimeMessage.getToInternetAddresses();
           if (toMessagesAddresses.isEmpty()) {
@@ -413,7 +413,7 @@ public class SendmailStep extends FilterStepAbs {
               } else {
                 personal = personal + " ";
               }
-              personal = personal + "(not in " + TabularOsEnv.PRODUCTION_ENV + " environment, receiver address (" + oldAddress + ") was changed to connection default)";
+              personal = personal + "(not in " + TabularExecEnv.PROD + " environment, receiver address (" + oldAddress + ") was changed to connection default)";
               internetAddress.setPersonal(personal);
             } catch (UnsupportedEncodingException e) {
               throw new RuntimeException("Error while changing the personal of the to email address before sending. Error:" + e.getMessage());
@@ -699,12 +699,12 @@ public class SendmailStep extends FilterStepAbs {
       }
     }
     if (this.connection == null) {
-      Connection yamlConnection = tabular.getConnection(Tabular.SMTP_CONNECTION);
+      Connection yamlConnection = tabular.getConnection(ConnectionBuiltIn.SMTP_CONNECTION);
       if (yamlConnection == null) {
-        throw new RuntimeException("The target uri argument (" + SendmailStepArgument.TARGET_URI + ") or the default email connection (" + Tabular.SMTP_CONNECTION + ") is mandatory for the " + this + " step but none was found");
+        throw new RuntimeException("The target uri argument (" + SendmailStepArgument.TARGET_URI + ") or the default email connection (" + ConnectionBuiltIn.SMTP_CONNECTION + ") is mandatory for the " + this + " step but none was found");
       }
       if (!(yamlConnection instanceof SmtpConnection)) {
-        throw new IllegalArgumentException("The default email connection (" + Tabular.SMTP_CONNECTION + ") of the " + this + " step is not a smtp connection but a " + yamlConnection.getClass().getSimpleName());
+        throw new IllegalArgumentException("The default email connection (" + ConnectionBuiltIn.SMTP_CONNECTION + ") of the " + this + " step is not a smtp connection but a " + yamlConnection.getClass().getSimpleName());
       }
       this.setConnection((SmtpConnection) yamlConnection);
     }

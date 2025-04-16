@@ -47,7 +47,7 @@ public class Tabular implements AutoCloseable {
   private final Vault vault;
   private final Map<String, Connection> howtoConnections;
   private final TabularExecEnv env;
-  private TabularVariables tabularVariables;
+  private final TabularVariables tabularVariables;
 
   // The default connection added to a data URI if it does not have it.
   protected Connection defaultConnection;
@@ -67,10 +67,6 @@ public class Tabular implements AutoCloseable {
    */
   private Boolean strict = true;
 
-  /**
-   * The path of the data store vault
-   */
-  private Path connectionVaultPath;
 
   /**
    * The exit status
@@ -82,9 +78,10 @@ public class Tabular implements AutoCloseable {
   private int exitStatus = 0;
   private Path runningPipelineScript;
   private Path homePath;
+  private Path connectionVaultPath;
 
 
-  public Tabular(String passphrase, Path projectHomePath, Path connectionVaultPath, Path variablePath, TabularExecEnv env) {
+  public Tabular(TabularConfig tabularConfig) {
 
 
     /**
@@ -101,6 +98,15 @@ public class Tabular implements AutoCloseable {
     Logger.getLogger("oracle.jdbc").setLevel(Level.SEVERE);
 
 
+    /**
+     * Env
+     */
+    this.env = determineEnv(tabularConfig.execEnv);
+
+    /**
+     * Project and Project File
+     */
+    Path projectHomePath = tabularConfig.projectHome;
     if (projectHomePath == null) {
       try {
         projectHomePath = Fs.closest(Paths.get("."), ProjectConfigurationFile.PROJECT_CONF_FILE_NAME).getParent();
@@ -108,9 +114,6 @@ public class Tabular implements AutoCloseable {
         // not a project
       }
     }
-
-    this.env = determineEnv(env);
-
     if (projectHomePath != null) {
 
       DbLoggers.LOGGER_TABULAR_START.info("This is a project run (" + projectHomePath + ")");
@@ -141,18 +144,26 @@ public class Tabular implements AutoCloseable {
      * lower priority first
      * ie host, project, tabli add the command line conf
      */
-    this.variablePathArgument = variablePath;
+    this.variablePathArgument = tabularConfig.confPath;
     this.tabularVariables = TabularVariables.create(this, projectConfigurationFile);
 
+    /**
+     * Env
+     */
+    this.vault = Vault.create(this, tabularConfig.passphrase);
 
-    this.vault = Vault.create(this, passphrase);
-
+    /**
+     * ConnectionVault
+     */
+    this.connectionVaultPath = tabularConfig.connectionVault;
+    if (this.connectionVaultPath == null) {
+      this.connectionVaultPath = getUserConnectionVaultPath();
+    }
 
     ConnectionBuiltIn.loadBuiltInConnections(this);
     loadConnections(getUserConnectionVaultPath(), ConnectionOrigin.USER);
-    if (connectionVaultPath != null) {
-      this.connectionVaultPath = connectionVaultPath;
-      loadConnections(connectionVaultPath, ConnectionOrigin.COMMAND_LINE);
+    if (tabularConfig.connectionVault != null) {
+      loadConnections(tabularConfig.connectionVault, ConnectionOrigin.COMMAND_LINE);
     }
 
     if (projectConfigurationFile != null) {
@@ -177,6 +188,15 @@ public class Tabular implements AutoCloseable {
 
   }
 
+
+  public static TabularConfig tabularConfig() {
+    return new TabularConfig();
+  }
+
+  public static Tabular tabular() {
+    return new TabularConfig().build();
+  }
+
   private TabularExecEnv determineEnv(TabularExecEnv env) {
 
     // Env
@@ -192,7 +212,7 @@ public class Tabular implements AutoCloseable {
       }
     }
 
-    if(JavaEnvs.isJUnitTest()){
+    if (JavaEnvs.isJUnitTest()) {
       return TabularExecEnv.IDE;
     }
 
@@ -200,49 +220,24 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public static Tabular tabular(String passphrase) {
-    return new Tabular(passphrase, null, null, null, null);
-  }
-
-  public static Tabular tabular(String passphrase, Path projectFilePath) {
-    return new Tabular(passphrase, projectFilePath, null, null, null);
-  }
-
-  public static Tabular tabular(String passphrase, Path projectFilePath, Path connectionVaultPath) {
-    return new Tabular(passphrase, projectFilePath, connectionVaultPath, null, null);
-  }
-
   /**
-   * TODO: We could just make a builder
-   *
-   * @param passphrase          the passphrase
-   * @param projectFilePath     the project file
-   * @param connectionVaultPath the connection vault path
-   * @param variablesPath       the variable path
-   * @return the tabular object for chaining
+   * Utility function that will return a clean environment.
+   * ie delete the configurations file (ie
+   * User connection and configuration)
+   * <p>
+   * This is mostly used in test
    */
-  public static Tabular tabular(String passphrase, Path projectFilePath, Path connectionVaultPath, Path variablesPath) {
-    return new Tabular(passphrase, projectFilePath, connectionVaultPath, variablesPath, null);
+  public static Tabular tabularWithCleanEnvironment() {
+
+    return cleanTabularConfig().build();
   }
 
-  public static Tabular tabular(String passphrase, Path projectFilePath, Path connectionVaultPath, Path variablesPath, TabularExecEnv env) {
-    return new Tabular(passphrase, projectFilePath, connectionVaultPath, variablesPath, null);
-  }
-
-  /**
-   * @param passphrase the passphrase
-   * @return a tabular without the user configuration files
-   */
-  public static Tabular tabularWithCleanEnvironment(String passphrase) {
-    Tabular.cleanEnvironment();
-    return tabular(passphrase);
-  }
-
-  public static void cleanEnvironment() {
+  public static TabularConfig cleanTabularConfig() {
     Path userConnectionVaultPath = (Path) USER_CONNECTION_VAULT.getDefaultValue();
     Fs.deleteIfExists(userConnectionVaultPath);
     Path userVariablePath = (Path) USER_VARIABLES_FILE.getDefaultValue();
     Fs.deleteIfExists(userVariablePath);
+    return Tabular.tabularConfig();
   }
 
 
@@ -306,10 +301,6 @@ public class Tabular implements AutoCloseable {
         Strings.createMultiLineFromStrings("The data store (" + dataStoreName + ") was not found and could not be set as the default one.",
           "The actual datastore are (" + getConnections().stream().map(Connection::toString).collect(Collectors.joining(", ")) + ")").toString());
     }
-  }
-
-  public static Tabular tabular() {
-    return new Tabular(null, null, null, null, null);
   }
 
 
@@ -554,8 +545,6 @@ public class Tabular implements AutoCloseable {
   }
 
 
-
-
   /**
    * Utility function
    *
@@ -578,18 +567,6 @@ public class Tabular implements AutoCloseable {
     }
   }
 
-
-  /**
-   * Utility function that will return a clean environment.
-   * ie delete the configurations file (ie
-   * User connection and configuration)
-   * <p>
-   * This is mostly used in test
-   */
-  public static Tabular tabularWithCleanEnvironment() {
-
-    return tabularWithCleanEnvironment(null);
-  }
 
   public Tabular setExitStatus(int exitStatus) {
     this.exitStatus = exitStatus;
@@ -756,11 +733,7 @@ public class Tabular implements AutoCloseable {
 
 
   public Path getConnectionVaultPath() {
-    if (this.connectionVaultPath != null) {
-      return this.connectionVaultPath;
-    } else {
-      return getUserConnectionVaultPath();
-    }
+    return this.connectionVaultPath;
   }
 
   public Set<DataPath> select(Set<DataUri> dataSelectors, boolean isStrict, MediaType mediaType) {
@@ -1009,5 +982,42 @@ public class Tabular implements AutoCloseable {
   public Tabular loadHowtoConnections() {
     this.connections.putAll(this.howtoConnections);
     return this;
+  }
+
+  public static class TabularConfig {
+    private String passphrase;
+    private Path projectHome;
+    private Path connectionVault;
+    private Path confPath;
+    private TabularExecEnv execEnv;
+
+    public TabularConfig setPassphrase(String passphrase) {
+      this.passphrase = passphrase;
+      return this;
+    }
+
+    public TabularConfig setProjectHome(Path projectHome) {
+      this.projectHome = projectHome;
+      return this;
+    }
+
+    public TabularConfig setConnectionVault(Path connectionVault) {
+      this.connectionVault = connectionVault;
+      return this;
+    }
+
+    public TabularConfig setConf(Path confPath) {
+      this.confPath = confPath;
+      return this;
+    }
+
+    public TabularConfig setExecEnv(TabularExecEnv execEnv) {
+      this.execEnv = execEnv;
+      return this;
+    }
+
+    public Tabular build() {
+      return new Tabular(this);
+    }
   }
 }

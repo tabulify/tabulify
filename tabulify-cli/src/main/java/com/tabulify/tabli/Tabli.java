@@ -14,7 +14,6 @@ import com.tabulify.spi.Tabulars;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.uri.DataUri;
 import net.bytle.exception.*;
-import net.bytle.java.JavaEnvs;
 import net.bytle.log.Log;
 import net.bytle.log.Logs;
 import net.bytle.regexp.Glob;
@@ -192,7 +191,14 @@ public class Tabli {
       }
     }
 
-    try (Tabular tabular = Tabular.tabular(passphrase, projectHome, commandLineConnectionVault, confPath, execEnv)) {
+    try (Tabular tabular = Tabular.tabularConfig()
+      .setPassphrase(passphrase)
+      .setProjectHome(projectHome)
+      .setConnectionVault(commandLineConnectionVault)
+      .setConf(confPath)
+      .setExecEnv(execEnv)
+      .build()
+    ) {
 
       final Boolean isNotStrictPresent = cliParser.getBoolean(NOT_STRICT_FLAG);
       if (isNotStrictPresent) {

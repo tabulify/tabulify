@@ -1,4 +1,4 @@
-package net.bytle.email.flow.flow;
+package com.tabulify.email.flow;
 
 import com.tabulify.flow.engine.OperationStep;
 import com.tabulify.flow.engine.StepProvider;

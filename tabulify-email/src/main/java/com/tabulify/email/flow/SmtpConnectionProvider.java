@@ -1,4 +1,4 @@
-package net.bytle.email.flow.flow;
+package com.tabulify.email.flow;
 
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;

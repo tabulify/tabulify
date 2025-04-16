@@ -1,4 +1,4 @@
-package net.bytle.email.flow.flow;
+package com.tabulify.email.flow;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.AddressException;
