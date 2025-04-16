@@ -22,6 +22,11 @@
       <groupId>com.tabulify</groupId>
       <artifactId>tabulify-flow</artifactId>
     </dependency>
+    <!-- For the log -->
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-sqlite</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>com.eraldy</groupId>

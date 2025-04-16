@@ -592,7 +592,7 @@ public class Tabular implements AutoCloseable {
   /**
    * @param clazz - the class
    * @param root  - the resource root
-   * @param name  - the name of the created connection (may be null)
+   * @param name  - the name of the created connection (maybe null)
    * @return the connection created
    */
   public FsConnection createRuntimeConnectionForResourcesWithName(Class<?> clazz, String root, String name) {
@@ -614,7 +614,7 @@ public class Tabular implements AutoCloseable {
        * To avoid
        * java.nio.file.FileSystemAlreadyExistsException
        * at com.sun.nio.zipfs.ZipFileSystemProvider.newFileSystem(ZipFileSystemProvider.java:113)
-       *
+       * or uri.getScheme().equals("jar")
        */
       if (!uri.getScheme().equals("file")) {
         try {
