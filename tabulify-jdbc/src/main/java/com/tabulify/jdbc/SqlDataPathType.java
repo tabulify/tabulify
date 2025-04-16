@@ -58,7 +58,7 @@ public enum SqlDataPathType implements AttributeValue, MediaType {
     try {
       return Casts.cast(typeName, SqlDataPathType.class);
     } catch (CastException e) {
-      throw new NotSupportedException("Not a supported table type");
+      throw new NotSupportedException("Not a supported table type. "+e.getMessage());
     }
 
   }
@@ -67,7 +67,8 @@ public enum SqlDataPathType implements AttributeValue, MediaType {
   @Override
   public String toString() {
 
-    return this.getType() + "/" + this.getSubType();
+    // Name should match the Sql Jdbc type
+    return super.toString();
 
   }
 

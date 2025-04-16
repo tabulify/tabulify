@@ -265,7 +265,10 @@ public class SqlDataPath extends DataPathAbs {
 
   @Override
   public String getLogicalName() {
-    return this.scriptDataPath.getLogicalName();
+    if (this.scriptDataPath != null) {
+      return this.scriptDataPath.getLogicalName();
+    }
+    return super.getLogicalName();
   }
 
   /**

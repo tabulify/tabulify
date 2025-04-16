@@ -1039,24 +1039,24 @@ public class SqlConnection extends NoOpConnection {
              * We return the SQL Date string
              * Postgres would prefer {@link Timestamp#toIsoString()} but on a date level, they are just the same
              */
-            return Date.createFromObject(objectInserted).toSqlDate().toString();
+            return Date.createFromObjectSafeCast(objectInserted).toSqlDate().toString();
           case EPOCH_MS:
             if (objectInserted instanceof Long || objectInserted instanceof Integer) {
               return objectInserted.toString();
             } else {
-              return Date.createFromObject(objectInserted).toEpochMillis().toString();
+              return Date.createFromObjectSafeCast(objectInserted).toEpochMillis().toString();
             }
           case EPOCH_SEC:
             if (objectInserted instanceof Long || objectInserted instanceof Integer) {
               return objectInserted.toString();
             } else {
-              return Date.createFromObject(objectInserted).toEpochSec().toString();
+              return Date.createFromObjectSafeCast(objectInserted).toEpochSec().toString();
             }
           case EPOCH_DAY:
             if (objectInserted instanceof Long || objectInserted instanceof Integer) {
               return objectInserted.toString();
             } else {
-              return Date.createFromObject(objectInserted).toEpochDay().toString();
+              return Date.createFromObjectSafeCast(objectInserted).toEpochDay().toString();
             }
           default:
             throw new IllegalStateException("The date data type storage (" + dateDataType + ") has no processing. A developer should add one.");
@@ -1074,31 +1074,19 @@ public class SqlConnection extends NoOpConnection {
              * <p>
              * Postgres would prefer {@link Timestamp#toIsoString()} ie 2020-11-17T00:00
              */
-              try {
-                  return Timestamp.createFromObject(objectInserted).toSqlTimestamp().toString();
-              } catch (CastException e) {
-                  throw new RuntimeException(e);
-              }
-            case EPOCH_MS:
+            return Timestamp.createFromObjectSafeCast(objectInserted).toSqlTimestamp().toString();
+
+          case EPOCH_MS:
             if (objectInserted instanceof Long || objectInserted instanceof Integer) {
               return objectInserted.toString();
-            } else {
-                try {
-                    return Timestamp.createFromObject(objectInserted).toEpochMilli().toString();
-                } catch (CastException e) {
-                    throw new RuntimeException(e);
-                }
             }
+            return Timestamp.createFromObjectSafeCast(objectInserted).toEpochMilli().toString();
           case EPOCH_SEC:
             if (objectInserted instanceof Long || objectInserted instanceof Integer) {
               return objectInserted.toString();
-            } else {
-                try {
-                    return Timestamp.createFromObject(objectInserted).toEpochSec().toString();
-                } catch (CastException e) {
-                    throw new RuntimeException(e);
-                }
             }
+            return Timestamp.createFromObjectSafeCast(objectInserted).toEpochSec().toString();
+
           case EPOCH_DAY:
             throw new IllegalStateException("The timestamp data type storage (" + timestampDataType + ") is not valid for a timestamp. You can choose (" + SQL_LITERAL + "," + NATIVE + "," + EPOCH_MS + "," + EPOCH_SEC + ")");
           default:

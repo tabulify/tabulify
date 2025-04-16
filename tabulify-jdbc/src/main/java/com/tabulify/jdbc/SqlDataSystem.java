@@ -2104,7 +2104,7 @@ public class SqlDataSystem extends DataSystemAbs {
             return SqlDataPathType.getSqlType(table_type);
           } catch (NotSupportedException e) {
             // should not happen
-            throw new InternalException("The table type from the database (" + table_type + ") is not a supported table type");
+            throw new InternalException("The table type (" + table_type + ") from the database is not a supported table type");
           }
 
         } else {
