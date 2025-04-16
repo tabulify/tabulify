@@ -1,5 +1,6 @@
 package com.tabulify;
 
+import com.tabulify.connection.ConnectionAttribute;
 import net.bytle.crypto.CryptoSymmetricCipher;
 import net.bytle.crypto.Protector;
 import net.bytle.template.TextTemplate;
@@ -42,9 +43,9 @@ public class Vault {
   }
 
 
-  public Variable createVariable(String key, Object value) throws Exception {
+  public Variable createVariable(String key, Object value, Origin origin) throws Exception {
 
-    Variable variable = Variable.createWithClass(key, Origin.INTERNAL, value.getClass());
+    Variable variable = Variable.createWithClass(key, origin, value.getClass());
     this.setValue(variable, value);
     return variable;
 
@@ -111,4 +112,11 @@ public class Vault {
     return VAULT_PREFIX + protector.encrypt(CryptoSymmetricCipher.AES_CBC_PKCS5PADDING, s);
   }
 
+  public Variable createVariableSafe(ConnectionAttribute attribute, Object value, Origin origin) {
+    try {
+      return createVariable(attribute,value,origin);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

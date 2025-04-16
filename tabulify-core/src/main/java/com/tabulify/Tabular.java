@@ -109,21 +109,7 @@ public class Tabular implements AutoCloseable {
       }
     }
 
-    // Env
-    if (env != null) {
-      this.env = env;
-    } else {
-      String envOsValue = System.getenv(TabularOsEnv.TABLI_ENV);
-      if (envOsValue != null) {
-        try {
-          this.env = Casts.cast(envOsValue, TabularExecEnv.class);
-        } catch (CastException e) {
-          throw new IllegalArgumentException("The os env (" + TabularOsEnv.TABLI_ENV + ") has a env value (" + envOsValue + ") that is unknown. Possible values: " + Enums.toConstantAsStringCommaSeparated(TabularOsEnv.class), e);
-        }
-      } else {
-        this.env = TabularExecEnv.DEV;
-      }
-    }
+    this.env = determineEnv(env);
 
     if (projectHomePath != null) {
 
@@ -189,6 +175,28 @@ public class Tabular implements AutoCloseable {
 
     this.howtoConnections = ConnectionHowTos.createHowtoConnections(this);
 
+  }
+
+  private TabularExecEnv determineEnv(TabularExecEnv env) {
+
+    // Env
+    if (env != null) {
+      return env;
+    }
+    String envOsValue = System.getenv(TabularOsEnv.TABLI_ENV);
+    if (envOsValue != null) {
+      try {
+        return Casts.cast(envOsValue, TabularExecEnv.class);
+      } catch (CastException e) {
+        throw new IllegalArgumentException("The os env (" + TabularOsEnv.TABLI_ENV + ") has a env value (" + envOsValue + ") that is unknown. Possible values: " + Enums.toConstantAsStringCommaSeparated(TabularOsEnv.class), e);
+      }
+    }
+
+    if(JavaEnvs.isJUnitTest()){
+      return TabularExecEnv.IDE;
+    }
+
+    return TabularExecEnv.DEV;
   }
 
 
@@ -546,19 +554,6 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  /**
-   * Reload data from disk (ie {@link ConnectionVault}
-   * This is mostly used in test
-   * to test the command line client operation
-   */
-  public void reload() {
-
-    /**
-     * We may need to track the configuration file
-     */
-    this.tabularVariables = TabularVariables.create(this, projectConfigurationFile);
-
-  }
 
 
   /**
@@ -673,7 +668,7 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public Boolean isIdeDev() {
+  public Boolean isIdeEnv() {
 
     return this.env.equals(TabularExecEnv.IDE);
 
@@ -685,7 +680,7 @@ public class Tabular implements AutoCloseable {
     if (tabliHome != null) {
       return Paths.get(tabliHome);
     }
-    if (this.isIdeDev()) {
+    if (this.isIdeEnv()) {
       try {
         // in dev (with Idea, the class are in the build directory)
         return Javas.getBuildDirectory(ConnectionHowTos.class)
@@ -952,7 +947,7 @@ public class Tabular implements AutoCloseable {
   }
 
   public Variable createVariable(String key, Object value) throws Exception {
-    return this.getVault().createVariable(key, value);
+    return this.getVault().createVariable(key, value, Origin.INTERNAL);
   }
 
   public Variable createVariable(Attribute attribute, Object value) throws Exception {

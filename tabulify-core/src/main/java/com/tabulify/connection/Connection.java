@@ -310,7 +310,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection addVariable(String key, Object value) {
     try {
-      Variable variable = tabular.getVault().createVariable(key, value);
+      Variable variable = tabular.getVault().createVariable(key, value,Origin.INTERNAL);
       this.addVariable(variable);
     } catch (Exception e) {
       throw new RuntimeException("Error while adding connection the property " + key + ". Error: " + e.getMessage(), e);

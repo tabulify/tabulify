@@ -129,7 +129,7 @@ public class SelectSupplier extends StepAbs implements DataPathSupplier, Operati
      * Have we selected something ?
      *
      */
-    if (dataPathSet.size() == 0) {
+    if (dataPathSet.isEmpty()) {
 
       return;
 

@@ -419,7 +419,7 @@ public class SqlDataType {
    *
    */
   public SqlDataType setSqlJavaClazz(Class<?> clazz) {
-    if (clazz == null && this.connection.getTabular().isIdeDev()) {
+    if (clazz == null && this.connection.getTabular().isIdeEnv()) {
       throw new IllegalStateException("The class cannot be null for the type (" + this + ")");
     }
     this.sqlClazz = clazz;

@@ -82,7 +82,8 @@ public class TabliDataPrint {
     Set<DataPath> dataPaths = Pipeline
       .createFrom(tabular)
       .addStepToGraph(
-        SelectSupplier.create()
+        SelectSupplier
+          .create()
           .setDataSelectors(dataUriSelectors)
           .setIsStrict(isStrict)
           .setWithDependencies(withDependencies)

@@ -11,7 +11,7 @@ public class TabliExitStatusException extends RuntimeException {
 
     public TabliExitStatusException(int exitStatus) {
         super();
-        this.exitStatus = 1;
+        this.exitStatus = exitStatus;
     }
 
     @SuppressWarnings("unused")

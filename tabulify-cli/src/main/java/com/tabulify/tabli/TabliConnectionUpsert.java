@@ -1,6 +1,7 @@
 package com.tabulify.tabli;
 
 
+import com.tabulify.connection.ConnectionAttribute;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
@@ -14,6 +15,7 @@ import com.tabulify.spi.DataPath;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.tabulify.tabli.TabliConnectionAdd.*;
 
@@ -89,16 +91,19 @@ public class TabliConnectionUpsert {
       Connection connection = connectionVault.getConnection(connectionName);
       if (connection == null) {
         connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, urlValue)
-            .setOrigin(ConnectionOrigin.USER);
+          .setOrigin(ConnectionOrigin.USER);
         connectionVault.put(connection);
         System.out.println("The connection (" + connectionName + ") didn't exist and was created");
       } else {
         System.out.println("The connection (" + connectionName + ") exist already.");
-        if(!connection.getUriAsString().equals(urlValue)){
+        if (!connection.getUriAsString().equals(urlValue)) {
           connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, urlValue)
             .setDescription((String) connection.getDescription().getValueOrDefaultOrNull())
             .setOrigin(connection.getOrigin())
-            .setVariables(connection.getVariables())
+            .setVariables(connection.getVariables()
+              .stream()
+              .filter(v -> v.getAttribute() != ConnectionAttribute.URI)
+              .collect(Collectors.toSet()))
             .setPassword(connection.getPasswordVariable())
             .setUser((String) connection.getUser().getValueOrDefaultOrNull());
           connectionVault.put(connection);
@@ -112,7 +117,7 @@ public class TabliConnectionUpsert {
       }
       connectionVault.flush();
     }
-    System.out.println("The connection (" + connectionName + ") was upsert-ed in ("+connectionVaultPath+")");
+    System.out.println("The connection (" + connectionName + ") was upsert-ed in (" + connectionVaultPath + ")");
 
     return new ArrayList<>();
   }

@@ -99,6 +99,8 @@ public class Tabli {
       .setEnvName(TabularOsEnv.TABLI_PASSPHRASE)
       .setValueName("passphrase");
 
+    rootCommand.addFlag(TabliWords.NOT_STRICT_FLAG);
+
     /*
      * Output options
      */
@@ -130,6 +132,7 @@ public class Tabli {
       .setDescription("The project home")
       .setEnvName(TabularOsEnv.TABLI_PROJECT_HOME)
       .setValueName("path");
+
 
 
     /*
@@ -191,45 +194,55 @@ public class Tabli {
 
     try (Tabular tabular = Tabular.tabular(passphrase, projectHome, commandLineConnectionVault, confPath, execEnv)) {
 
-      /*
-       * Check for the version
-       * https://docs.oracle.com/javase/tutorial/deployment/jar/packageman.html
+      final Boolean isNotStrictPresent = cliParser.getBoolean(NOT_STRICT_FLAG);
+      if (isNotStrictPresent) {
+        tabular.setStrict(false);
+      }
+
+      /**
+       * An inner catch block because we need access to the strict parameters
        */
-      if (cliParser.getBoolean(VERSION_FLAG)) {
-        Manifest manifest = null;
-        try {
-          manifest = Manifest.createFor(Tabli.class);
-        } catch (NoManifestException e) {
-          System.out.println("Version: dev");
-          Tabli.exit(0);
-        }
-        DataPath tabularVersion = tabular.getAndCreateRandomMemoryDataPath()
-          .setLogicalName("Version")
-          .getOrCreateRelationDef()
-          .addColumn("Name")
-          .addColumn("Value")
-          .addColumn("Description")
-          .getDataPath();
-        try (InsertStream inputStream = tabularVersion.getInsertStream()) {
-          for (ManifestAttribute manifestAttribute : ManifestAttribute.values()) {
-            if (manifestAttribute.isVersion()) {
-              try {
-                inputStream.insert(
-                  Key.toUriName(manifestAttribute.toString()),
-                  manifest.getAttribute(manifestAttribute),
-                  manifestAttribute.getDescription()
-                );
-              } catch (NoValueException e) {
-                // no value
+      try {
+
+        /*
+         * Check for the version
+         * https://docs.oracle.com/javase/tutorial/deployment/jar/packageman.html
+         */
+        if (cliParser.getBoolean(VERSION_FLAG)) {
+          Manifest manifest = null;
+          try {
+            manifest = Manifest.createFor(Tabli.class);
+          } catch (NoManifestException e) {
+            System.out.println("Version: dev");
+            Tabli.exit(tabular, 0);
+          }
+          DataPath tabularVersion = tabular.getAndCreateRandomMemoryDataPath()
+            .setLogicalName("Version")
+            .getOrCreateRelationDef()
+            .addColumn("Name")
+            .addColumn("Value")
+            .addColumn("Description")
+            .getDataPath();
+          try (InsertStream inputStream = tabularVersion.getInsertStream()) {
+            for (ManifestAttribute manifestAttribute : ManifestAttribute.values()) {
+              if (manifestAttribute.isVersion()) {
+                try {
+                  inputStream.insert(
+                    Key.toUriName(manifestAttribute.toString()),
+                    manifest.getAttribute(manifestAttribute),
+                    manifestAttribute.getDescription()
+                  );
+                } catch (NoValueException e) {
+                  // no value
+                }
               }
             }
           }
+          Tabulars.print(tabularVersion);
+          Tabli.exit(tabular, 0);
         }
-        Tabulars.print(tabularVersion);
-        Tabli.exit(0);
-      }
 
-      try {
+
         String logLevel = cliParser.getString(LOG_LEVEL_LONG_OPTION).toLowerCase();
         if (!cliParser.has(LOG_LEVEL_LONG_OPTION)) {
           try {
@@ -424,7 +437,7 @@ public class Tabli {
          */
         if (tabular.getExitStatus() != 0) {
           LOGGER_TABLI.severe("Errors were seen");
-          Tabli.exit(tabular.getExitStatus());
+          Tabli.exit(tabular, tabular.getExitStatus());
         }
 
         /**
@@ -437,6 +450,20 @@ public class Tabli {
 
 
       } catch (Exception e) {
+
+
+        if (e instanceof TabliExitStatusException) {
+
+          int exitStatus = ((TabliExitStatusException) e).getExitStatus();
+          if (exitStatus == 0) {
+            /**
+             * An earlier {@link Tabli#exit(int)}
+             * may have created it, we just return
+             */
+            return;
+          }
+
+        }
 
         if (e instanceof HelpPrintedException) {
 
@@ -478,7 +505,7 @@ public class Tabli {
          * In a development mode, we want to see the stack,
          * we then throw the exception again
          */
-        if (throwFinalException()) {
+        if (throwFinalException(tabular)) {
           System.out.println(); // layout
           LOGGER_TABLI.severe("Stack Trace:");
           throw e;
@@ -488,7 +515,7 @@ public class Tabli {
          * Always returns a +1 and let the
          * calling script or user handle it.
          */
-        Tabli.exit(1);
+        Tabli.exit(tabular, 1);
 
 
       }
@@ -498,12 +525,11 @@ public class Tabli {
 
   }
 
-  private static void exit(int exitStatus) {
-    if (JavaEnvs.isJUnitTest()) {
-      if (exitStatus != 0) {
-        throw new TabliExitStatusException(exitStatus);
-      }
-      return;
+  private static void exit(Tabular tabular, int exitStatus) {
+    if (tabular.isIdeEnv()) {
+      // We need to throw to exit
+      // The code does not use a return
+      throw new TabliExitStatusException(exitStatus);
     }
     System.exit(exitStatus);
   }
@@ -544,13 +570,13 @@ public class Tabli {
    * * for the tests (example: to check that a help was asked)
    * * and to see the stack
    */
-  private static Boolean throwFinalException() {
+  private static Boolean throwFinalException(Tabular tabular) {
     /**
      * The stack trace is given
      * when we are below a fine level
      * or
      * in dev mode
      */
-    return Logs.getLevel().intValue() <= Level.FINE.intValue() || JavaEnvs.isDev(Tabli.class);
+    return Logs.getLevel().intValue() <= Level.FINE.intValue() || tabular.isIdeEnv();
   }
 }

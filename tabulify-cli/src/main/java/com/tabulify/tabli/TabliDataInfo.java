@@ -62,16 +62,11 @@ public class TabliDataInfo {
       .setDescription("One or more name data resource selectors (ie pattern[@connection])")
       .setMandatory(true);
     childCommand.addFlag(TabliWords.WITH_DEPENDENCIES_PROPERTY);
-    childCommand.addFlag(TabliWords.NOT_STRICT_FLAG);
     childCommand.addProperty(TYPE_PROPERTY);
 
     // Arguments
     final CliParser cliParser = childCommand.parse();
 
-    final Boolean isNotStrictPresent = cliParser.getBoolean(NOT_STRICT_FLAG);
-    if(isNotStrictPresent){
-      tabular.setStrict(false);
-    }
 
     final Set<DataUri> dataSelectors = cliParser
       .getStrings(TabliWords.DATA_SELECTORS)

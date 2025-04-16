@@ -254,7 +254,7 @@ public class ConnectionVault implements AutoCloseable {
         try {
 
           if (connectionAttribute == null) {
-            variable = vault.createVariable(propertyName, value);
+            variable = vault.createVariable(propertyName, value, Origin.USER);
           } else {
             variable = vault.createVariable(connectionAttribute, value, Origin.USER);
           }
@@ -279,6 +279,7 @@ public class ConnectionVault implements AutoCloseable {
       // variables map should be in the building of the connection
       // as they may be used for the default values
       connection.setVariables(variableMap);
+      connection.addVariable(vault.createVariableSafe(ConnectionAttribute.ORIGIN, Origin.USER, Origin.INTERNAL));
       connections.put(connectionName, connection);
 
     }

@@ -3,7 +3,9 @@ package com.tabulify.flow.step;
 import com.tabulify.flow.engine.FilterRunnable;
 import com.tabulify.flow.engine.FilterStepAbs;
 import com.tabulify.fs.textfile.FsTextDataPath;
+import com.tabulify.fs.textfile.FsTextDataPathAttributes;
 import com.tabulify.spi.DataPath;
+import net.bytle.exception.NoVariableException;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -35,7 +37,16 @@ public class CastStep extends FilterStepAbs implements Function<DataPath, DataPa
     if (dataPath.getMediaType().isText()) {
       if (dataPath instanceof FsTextDataPath) {
         FsTextDataPath fsDataPath = (FsTextDataPath) dataPath;
-        return FsTextDataPath.create(fsDataPath.getConnection(), fsDataPath.getNioPath());
+        FsTextDataPath casted = FsTextDataPath.create(fsDataPath.getConnection(), fsDataPath.getNioPath());
+        for (FsTextDataPathAttributes attribute : FsTextDataPathAttributes.values()) {
+          try {
+            casted.addVariable(dataPath.getVariable(attribute));
+          } catch (NoVariableException e) {
+            // not present
+          }
+        }
+        return casted;
+
       }
     }
 
