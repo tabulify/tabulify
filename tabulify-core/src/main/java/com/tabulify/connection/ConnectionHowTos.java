@@ -90,10 +90,10 @@ public class ConnectionHowTos {
 
 
     howToDataStoresSet.add(
-      Connection.createConnectionFromProviderOrDefault(tabular, ORACLE_CONNECTION_NAME, "jdbc:oracle:thin:@localhost:1521:xe")
+      Connection.createConnectionFromProviderOrDefault(tabular, ORACLE_CONNECTION_NAME, "jdbc:oracle:thin:@localhost:1521/freepdb1")
         .setDescription("The default oracle connection")
+        .setUser("hr")
         .setPassword("oracle")
-        .setUser("system")
         .addVariable("Driver", "oracle.jdbc.OracleDriver")
     );
 

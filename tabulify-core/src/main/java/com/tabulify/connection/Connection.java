@@ -380,7 +380,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     URI uri;
     String uriStringValue = (String) variableUri.getValueOrDefaultOrNull();
     if (uriStringValue == null) {
-      throw new RuntimeException("The uri of the connection" + nameString + " should not be null");
+      throw new RuntimeException("The uri of the connection (" + nameString + ") should not be null");
     }
     try {
 
