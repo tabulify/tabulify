@@ -70,6 +70,10 @@
       <groupId>com.tabulify</groupId>
       <artifactId>tabulify-json</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-oracle</artifactId>
+    </dependency>
 
     <!-- Eraldy -->
     <dependency>

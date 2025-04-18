@@ -123,6 +123,11 @@
         <artifactId>tabulify-flow-email</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-oracle</artifactId>
+        <version>${project.version}</version>
+      </dependency>
       <!-- from https://jdbc.postgresql.org/download.html-->
       <!-- 42.2.16 is the current version of the driver. This is the driver you should be using.-->
       <!-- It supports PostgreSQL 8.2 or newer and requires Java 6 or newer. It contains support for SSL and the javax.sql package.-->
@@ -130,6 +135,14 @@
         <groupId>org.postgresql</groupId>
         <artifactId>postgresql</artifactId>
         <version>42.2.16</version>
+      </dependency>
+      <!-- ojdbc8 means certified with jdk8 -->
+      <!-- https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc8/ -->
+      <!-- https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc11 -->
+      <dependency>
+        <groupId>com.oracle.database.jdbc</groupId>
+        <artifactId>ojdbc11</artifactId>
+        <version>23.7.0.25.01</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

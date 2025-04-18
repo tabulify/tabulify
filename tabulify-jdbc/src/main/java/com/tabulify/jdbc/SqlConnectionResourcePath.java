@@ -120,12 +120,12 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
     }
 
     // the type of selector
-    if (this.objectPart.equals("")
-      && this.schemaPart != null && this.schemaPart.equals("")
+    if (this.objectPart.isEmpty()
+      && this.schemaPart != null && this.schemaPart.isEmpty()
       && this.catalogPart != null
     ) {
       this.mediaType = CATALOG;
-    } else if (this.objectPart.equals("")) {
+    } else if (this.objectPart.isEmpty()) {
       this.mediaType = SCHEMA;
     } else {
       this.mediaType = UNKNOWN;
@@ -339,7 +339,7 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
         sqlStringPaths.add("");
         break;
       case SCHEMA:
-        if (!currentCatalog.equals(this.catalogPart)) {
+        if (!currentCatalog.isEmpty() && !currentCatalog.equals(this.catalogPart)) {
           sqlStringPaths.add(this.catalogPart);
         }
         sqlStringPaths.add(this.schemaPart);

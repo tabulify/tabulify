@@ -14,13 +14,17 @@ public class OracleSystem extends SqlDataSystem {
 
   /**
    * 4000 bytes
-   * https://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#CNCPT1825
-   *
+   * <a href="https://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#CNCPT1825">...</a>
+   * <p></p>
    * if AL16UTF16 -> 1 char = 2 bytes
    * if UTF8      -> 1 char = 3 bytes
    */
   public static final int MAX_NVARCHAR_PRECISION_BYTE = 4000;
   protected static final int MAX_NCHAR_PRECISION_BYTE = 2000;
+
+  // https://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#i1960
+  // max precision is 2000 in char or bytes
+  protected static final int MAX_CHAR_PRECISION_BYTE_OR_CHAR = 2000;
 
   public OracleSystem(OracleConnection oracleConnection) {
     super(oracleConnection);
@@ -101,8 +105,11 @@ public class OracleSystem extends SqlDataSystem {
         bytesByChar = 2; // The AL16UTF16 use 2 bytes to store a character.
         break;
     }
+
+
     sqlDataTypes.computeIfAbsent(Types.CHAR, SqlMetaDataType::new)
       .setSqlName("CHAR")
+      .setMaxPrecision(MAX_CHAR_PRECISION_BYTE_OR_CHAR)
       .setDefaultPrecision(1);
 
     int maxVarcharPrecision = MAX_VARCHAR2_PRECISION_BYTE / bytesByChar;
