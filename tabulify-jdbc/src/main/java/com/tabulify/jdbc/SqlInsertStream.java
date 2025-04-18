@@ -252,7 +252,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
   /**
    * Free Xml object created
-   * https://docs.oracle.com/javase/tutorial/jdbc/basics/sqlxml.html#releasing_sqlxml
+   * <a href="https://docs.oracle.com/javase/tutorial/jdbc/basics/sqlxml.html#releasing_sqlxml">...</a>
    */
   private void freeSqlXmlObject() {
     try {

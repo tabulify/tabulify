@@ -53,6 +53,7 @@
     <module>tabulify-html</module>
     <module>tabulify-excel</module>
     <module>tabulify-oracle</module>
+    <module>tabulify-sqlserver</module>
   </modules>
 
   <!-- The rest of dependencies management is in core  -->
@@ -143,6 +144,12 @@
         <groupId>com.oracle.database.jdbc</groupId>
         <artifactId>ojdbc11</artifactId>
         <version>23.7.0.25.01</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc -->
+      <dependency>
+        <groupId>com.microsoft.sqlserver</groupId>
+        <artifactId>mssql-jdbc</artifactId>
+        <version>12.10.0.jre11</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

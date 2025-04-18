@@ -1,9 +1,10 @@
-package net.bytle.db.sqlserver;
+package com.tabulify.sqlserver;
 
-import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.SqlDataType;
-import net.bytle.db.model.SqlTypes;
-import net.bytle.db.spi.DataPath;
+import com.tabulify.jdbc.*;
+import com.tabulify.model.ColumnDef;
+import com.tabulify.model.SqlDataType;
+import com.tabulify.model.SqlTypes;
+import com.tabulify.spi.DataPath;
 
 import java.sql.Types;
 import java.util.List;
@@ -16,7 +17,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
   }
 
   /**
-   * https://docs.microsoft.com/en-us/sql/t-sql/statements/truncate-table-transact-sql?view=sql-server-ver15
+   * <a href="https://docs.microsoft.com/en-us/sql/t-sql/statements/truncate-table-transact-sql?view=sql-server-ver15">...</a>
    */
   @Override
   public void truncate(List<DataPath> dataPaths) {
@@ -105,8 +106,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
      *
      * datetime should become datetime2.
      * https://docs.microsoft.com/en-us/sql/t-sql/data-types/datetime-transact-sql?view=sql-server-ver15
-     *
-     *
+     * <p></p>
      * https://docs.microsoft.com/en-us/sql/t-sql/data-types/datetime2-transact-sql?view=sql-server-ver15
      */
     metaDataType.computeIfAbsent(Types.TIMESTAMP, SqlMetaDataType::new)
@@ -197,6 +197,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
 
   }
 
+
   @Override
   public List<SqlMetaColumn> getMetaColumns(SqlDataPath dataPath) {
     List<SqlMetaColumn> metaColumns = super.getMetaColumns(dataPath);
@@ -216,6 +217,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
     );
     return metaColumns;
   }
+
 
   @Override
   protected String createDropTableStatement(SqlDataPath sqlDataPath) {

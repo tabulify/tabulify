@@ -98,7 +98,7 @@ public class ConnectionHowTos {
     );
 
     howToDataStoresSet.add(
-      Connection.createConnectionFromProviderOrDefault(tabular, SQLSERVER_CONNECTION_NAME, "jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
+      Connection.createConnectionFromProviderOrDefault(tabular, SQLSERVER_CONNECTION_NAME, "jdbc:sqlserver://localhost:1433;databaseName=AdventureWorks;encrypt=true;trustServerCertificate=true")
         .setDescription("The default sqlserver connection")
         .addVariable("Driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver")
         .setUser("sa")

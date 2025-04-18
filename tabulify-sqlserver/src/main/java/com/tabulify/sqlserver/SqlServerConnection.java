@@ -1,8 +1,8 @@
-package net.bytle.db.sqlserver;
+package com.tabulify.sqlserver;
 
-import net.bytle.db.Tabular;
+import com.tabulify.Tabular;
 import net.bytle.type.Variable;
-import net.bytle.db.jdbc.SqlConnection;
+import com.tabulify.jdbc.SqlConnection;
 
 import java.util.Set;
 

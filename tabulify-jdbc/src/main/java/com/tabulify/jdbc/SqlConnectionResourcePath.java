@@ -295,7 +295,7 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
 
     SqlDataSystem dataSystem = this.sqlConnection.getDataSystem();
     StringBuilder sqlStringPath = new StringBuilder();
-    if (this.catalogPart != null && !this.sqlConnection.getMetadata().supportsCatalogsInSqlStatementPath()) {
+    if (this.catalogPart != null && this.sqlConnection.getMetadata().supportsCatalogsInSqlStatementPath()) {
       sqlStringPath.append(dataSystem.createQuotedName(this.catalogPart));
     }
     if (this.schemaPart != null) {
