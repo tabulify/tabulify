@@ -52,6 +52,7 @@
     <module>tabulify-sqlite</module>
     <module>tabulify-html</module>
     <module>tabulify-excel</module>
+    <module>tabulify-oracle</module>
   </modules>
 
   <!-- The rest of dependencies management is in core  -->

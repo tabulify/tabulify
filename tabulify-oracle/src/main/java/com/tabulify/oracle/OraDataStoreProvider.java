@@ -1,8 +1,8 @@
-package net.bytle.db.oracle;
+package com.tabulify.oracle;
 
-import net.bytle.db.Tabular;
-import net.bytle.db.connection.Connection;
-import net.bytle.db.jdbc.SqlDataStoreProvider;
+import com.tabulify.Tabular;
+import com.tabulify.connection.Connection;
+import com.tabulify.jdbc.SqlDataStoreProvider;
 import net.bytle.type.Variable;
 
 public class OraDataStoreProvider extends SqlDataStoreProvider {

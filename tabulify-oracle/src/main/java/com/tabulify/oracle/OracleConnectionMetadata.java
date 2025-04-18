@@ -1,9 +1,9 @@
-package net.bytle.db.oracle;
+package com.tabulify.oracle;
 
-import net.bytle.db.jdbc.SqlConnectionMetadata;
-import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.SelectException;
-import net.bytle.db.stream.SelectStream;
+import com.tabulify.jdbc.SqlConnectionMetadata;
+import com.tabulify.spi.DataPath;
+import com.tabulify.spi.SelectException;
+import com.tabulify.stream.SelectStream;
 
 
 public class OracleConnectionMetadata extends SqlConnectionMetadata {

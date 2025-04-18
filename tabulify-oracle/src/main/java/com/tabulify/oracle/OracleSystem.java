@@ -1,7 +1,7 @@
-  package net.bytle.db.oracle;
+  package com.tabulify.oracle;
 
-import net.bytle.db.jdbc.SqlDataSystem;
-import net.bytle.db.jdbc.SqlMetaDataType;
+import com.tabulify.jdbc.SqlDataSystem;
+import com.tabulify.jdbc.SqlMetaDataType;
 import oracle.jdbc.OracleTypes;
 
 import java.sql.Types;

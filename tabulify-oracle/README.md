@@ -4,10 +4,15 @@
 
 ## Test Container
 
-### In Hub
+### Free vs Xe
 
-We are using this docker image [wnameless/docker-oracle-xe-11g](https://github.com/wnameless/docker-oracle-xe-11g)
-because the official below is too big.
+Free is oracle but only for a couple of resources (cpu, ...)
+https://java.testcontainers.org/modules/databases/oraclefree/
+
+* xe: `INFO: Pull complete. 9 layers, pulled in 480s (downloaded 1 GB at 2 MB/s)`
+
+We are using the docker express image
+because the free image is too big.
 
 ```dos
 docker run ^
@@ -21,8 +26,9 @@ docker run ^
     -e ORACLE_ALLOW_REMOTE=true ^
     wnameless/oracle-xe-11g-r2
 ```
-    
+
 ### Official
+
 Container can also be build from:
    * [Single Instance](https://github.com/oracle/docker-images/tree/master/OracleDatabase/SingleInstance)
      * [18c](https://github.com/oracle/docker-images/tree/master/OracleDatabase/SingleInstance/dockerfiles/18.4.0)
@@ -72,7 +78,7 @@ docker run ^
     container-registry.oracle.com/database/standard
 ```
 
-## Oracle Type 
+## Oracle Type
 
   * [Oracle Type Constant](http://docs.oracle.com/cd/E11882_01/appdev.112/e13995/constant-values.html#oracle_jdbc_OracleTypes_BINARY_DOUBLE)
   * [Data Type Mapping - Database JDBC Developer's Guide and Reference](http://docs.oracle.com/cd/B28359_01/java.111/b31224/datacc.htm#i1008338)

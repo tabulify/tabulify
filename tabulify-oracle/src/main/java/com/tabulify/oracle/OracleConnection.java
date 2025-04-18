@@ -1,11 +1,11 @@
-package net.bytle.db.oracle;
+package com.tabulify.oracle;
 
-import net.bytle.db.Tabular;
-import net.bytle.db.jdbc.SqlConnection;
-import net.bytle.db.jdbc.SqlDataPath;
-import net.bytle.db.jdbc.SqlDataSystem;
-import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.SqlDataType;
+import com.tabulify.Tabular;
+import com.tabulify.jdbc.SqlConnection;
+import com.tabulify.jdbc.SqlDataPath;
+import com.tabulify.jdbc.SqlDataSystem;
+import com.tabulify.model.ColumnDef;
+import com.tabulify.model.SqlDataType;
 import net.bytle.type.Variable;
 import oracle.jdbc.OracleTypes;
 
