@@ -1,4 +1,4 @@
-package net.bytle.db.yaml;
+package com.tabulify.yaml;
 
 import org.yaml.snakeyaml.resolver.Resolver;
 

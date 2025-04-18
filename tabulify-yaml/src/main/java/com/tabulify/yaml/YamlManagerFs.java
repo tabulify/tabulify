@@ -1,7 +1,7 @@
-package net.bytle.db.yaml;
+package com.tabulify.yaml;
 
-import net.bytle.db.fs.FsConnection;
-import net.bytle.db.fs.textfile.FsTextManager;
+import com.tabulify.fs.FsConnection;
+import com.tabulify.fs.textfile.FsTextManager;
 
 import java.nio.file.Path;
 

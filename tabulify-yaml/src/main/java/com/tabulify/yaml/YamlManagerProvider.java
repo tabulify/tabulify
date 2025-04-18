@@ -1,7 +1,7 @@
-package net.bytle.db.yaml;
+package com.tabulify.yaml;
 
-import net.bytle.db.fs.FsFileManagerProvider;
-import net.bytle.db.fs.binary.FsBinaryFileManager;
+import com.tabulify.fs.FsFileManagerProvider;
+import com.tabulify.fs.binary.FsBinaryFileManager;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
 
@@ -13,7 +13,7 @@ public class YamlManagerProvider extends FsFileManagerProvider {
   public Boolean accept(MediaType mediaType) {
 
     /**
-     * Media type can be application/json; charset=utf-8
+     * Media type can be application/yaml; charset=utf-8
      */
 
     return mediaType.getSubType().equals(MediaTypes.TEXT_YAML.getSubType());

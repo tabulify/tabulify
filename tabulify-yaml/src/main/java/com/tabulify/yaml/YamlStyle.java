@@ -1,4 +1,4 @@
-package net.bytle.db.yaml;
+package com.tabulify.yaml;
 
 import net.bytle.type.AttributeValue;
 

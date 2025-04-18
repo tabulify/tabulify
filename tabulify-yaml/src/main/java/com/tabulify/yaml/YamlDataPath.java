@@ -1,15 +1,15 @@
-package net.bytle.db.yaml;
+package com.tabulify.yaml;
 
-import net.bytle.db.fs.FsConnection;
-import net.bytle.db.fs.textfile.FsTextDataPath;
-import net.bytle.db.fs.textfile.FsTextDataPathAttributes;
-import net.bytle.db.model.RelationDef;
-import net.bytle.db.model.RelationDefDefault;
-import net.bytle.db.model.SqlTypes;
-import net.bytle.db.spi.DataPath;
-import net.bytle.db.stream.InsertStream;
-import net.bytle.db.stream.SelectStream;
-import net.bytle.db.transfer.TransferProperties;
+import com.tabulify.fs.FsConnection;
+import com.tabulify.fs.textfile.FsTextDataPath;
+import com.tabulify.fs.textfile.FsTextDataPathAttributes;
+import com.tabulify.model.RelationDef;
+import com.tabulify.model.RelationDefDefault;
+import com.tabulify.model.SqlTypes;
+import com.tabulify.spi.DataPath;
+import com.tabulify.stream.InsertStream;
+import com.tabulify.stream.SelectStream;
+import com.tabulify.transfer.TransferProperties;
 import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
 import net.bytle.type.*;
@@ -19,6 +19,8 @@ import java.sql.Types;
 
 public class YamlDataPath extends FsTextDataPath {
 
+
+  public static final String YAML_DEFAULT_HEADER_NAME = "yaml";
 
   public YamlStructure getStructure() {
     try {
@@ -37,8 +39,6 @@ public class YamlDataPath extends FsTextDataPath {
   }
 
 
-  public static final String YAML_DEFAULT_HEADER_NAME = "yaml";
-
 
   public YamlDataPath(FsConnection fsConnection, Path path) {
 
@@ -54,7 +54,7 @@ public class YamlDataPath extends FsTextDataPath {
      * Change the default value
      */
     try {
-      this.getVariable(FsTextDataPathAttributes.COLUMN_NAME).setOriginalValue(YAML_DEFAULT_HEADER_NAME);
+      this.getVariable(FsTextDataPathAttributes.COLUMN_NAME).setClearValue(YAML_DEFAULT_HEADER_NAME);
     } catch (NoVariableException e) {
       throw new RuntimeException("Internal Error: COLUMN_NAME variable was not found. It should not happen");
     }

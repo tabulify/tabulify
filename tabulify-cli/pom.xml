@@ -58,6 +58,18 @@
       <groupId>com.tabulify</groupId>
       <artifactId>tabulify-excel</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-csv</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-yaml</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-json</artifactId>
+    </dependency>
 
     <!-- Eraldy -->
     <dependency>

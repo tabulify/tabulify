@@ -1,9 +1,9 @@
-package net.bytle.db.yaml;
+package com.tabulify.yaml;
 
 
-import net.bytle.db.model.RelationDef;
-import net.bytle.db.stream.SelectStream;
-import net.bytle.db.stream.SelectStreamAbs;
+import com.tabulify.model.RelationDef;
+import com.tabulify.stream.SelectStream;
+import com.tabulify.stream.SelectStreamAbs;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
