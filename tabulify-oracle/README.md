@@ -4,12 +4,24 @@
 
 ## Test Container
 
+### Continuous Integration
+
+https://github.com/gvenzl/setup-oracle-free
+
 ### Free vs Xe
 
-Free is oracle but only for a couple of resources (cpu, ...)
-https://java.testcontainers.org/modules/databases/oraclefree/
-
+They have the same size, it takes between 5 and 7 minutes
 * xe: `INFO: Pull complete. 9 layers, pulled in 480s (downloaded 1 GB at 2 MB/s)`
+* free: `INFO: Pull complete. 9 layers, pulled in 316s (downloaded 1 GB at 3 MB/s)`
+
+* Free is oracle but only for a couple of resources (cpu, ...)
+  * https://www.oracle.com/nl/database/free/
+  * https://java.testcontainers.org/modules/databases/oraclefree/
+  * https://hub.docker.com/r/gvenzl/oracle-free
+  * https://github.com/gvenzl/oci-oracle-free
+* Xe:
+  * https://testcontainers.com/modules/oracle-xe/
+
 
 We are using the docker express image
 because the free image is too big.
