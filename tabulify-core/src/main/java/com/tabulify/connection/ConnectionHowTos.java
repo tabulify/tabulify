@@ -2,6 +2,7 @@ package com.tabulify.connection;
 
 import com.tabulify.TabularAttributes;
 import com.tabulify.Tabular;
+import com.tabulify.TabularOsEnv;
 import net.bytle.fs.Fs;
 
 import java.nio.file.Files;
@@ -50,12 +51,12 @@ public class ConnectionHowTos {
    * @param connectionName the name of the connection
    * @return a JDBC connection string for the default data vault
    */
-  static private String getSqliteConnectionString(String connectionName) {
+  static public String getSqliteConnectionString(String connectionName) {
 
     Path dbFile;
     // Trick to not have the username in the output ie C:\Users\Username\...
     // The env value have a fake account
-    final String bytle_db_databases_store = System.getenv("BYTLE_DB_SQLITE_PATH");
+    final String bytle_db_databases_store = System.getenv(TabularOsEnv.TABLI_SQLITE_HOME);
     if (bytle_db_databases_store != null) {
       dbFile = Paths.get(bytle_db_databases_store);
     } else {

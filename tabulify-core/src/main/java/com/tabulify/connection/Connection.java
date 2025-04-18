@@ -310,7 +310,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection addVariable(String key, Object value) {
     try {
-      Variable variable = tabular.getVault().createVariable(key, value,Origin.INTERNAL);
+      Variable variable = tabular.getVault().createVariable(key, value, Origin.INTERNAL);
       this.addVariable(variable);
     } catch (Exception e) {
       throw new RuntimeException("Error while adding connection the property " + key + ". Error: " + e.getMessage(), e);
@@ -379,9 +379,12 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
     URI uri;
     String uriStringValue = (String) variableUri.getValueOrDefaultOrNull();
+    if (uriStringValue == null) {
+      throw new RuntimeException("The uri of the connection" + nameString + " should not be null");
+    }
     try {
 
-      uri = java.net.URI.create(uriStringValue);
+      uri = UriEnhanced.createFromString(uriStringValue).toUri();
 
     } catch (Exception e) {
       String message = "The uri `" + uriStringValue + "` of the connection (" + variableName + ") is not a valid.";
@@ -389,7 +392,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
         message += " You should delete the character quote.";
       }
       message += " Error: " + e.getMessage();
-      throw new RuntimeException(message);
+      throw new RuntimeException(message, e);
     }
 
     if (uri.getScheme() != null && uri.getScheme().equals(DATA_URI_SCHEME)) {

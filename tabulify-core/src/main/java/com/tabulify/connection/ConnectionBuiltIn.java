@@ -109,9 +109,7 @@ public class ConnectionBuiltIn {
       .setOrigin(ConnectionOrigin.BUILT_IN);
     tabular.addConnection(user);
 
-    Path logDbPath = Fs.getUserAppData(TabularAttributes.APP_NAME.toString()).resolve(ConnectionBuiltIn.LOG_LOCAL_CONNECTION + ".db");
-    String rootWindows = "///";
-    String localLogsUriString = "jdbc:sqlite:" + rootWindows + logDbPath.toString().replace("\\", "/");
+    String localLogsUriString = ConnectionHowTos.getSqliteConnectionString(ConnectionBuiltIn.LOG_LOCAL_CONNECTION);
     Connection logs = Connection.createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.LOG_LOCAL_CONNECTION, localLogsUriString)
       .setDescription("The tabli logs")
       .setOrigin(ConnectionOrigin.BUILT_IN);
