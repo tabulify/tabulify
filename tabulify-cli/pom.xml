@@ -74,6 +74,14 @@
       <groupId>com.tabulify</groupId>
       <artifactId>tabulify-oracle</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-sqlserver</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-email</artifactId>
+    </dependency>
 
     <!-- Eraldy -->
     <dependency>

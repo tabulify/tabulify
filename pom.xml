@@ -121,12 +121,17 @@
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-flow-email</artifactId>
+        <artifactId>tabulify-email</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>tabulify-oracle</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-sqlserver</artifactId>
         <version>${project.version}</version>
       </dependency>
       <!-- from https://jdbc.postgresql.org/download.html-->

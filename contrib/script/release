@@ -33,8 +33,11 @@ cd "$PROJECT_ROOT"
 # but we do it here with a loop
 # The advantage is that the test container is stopped at the end of the execution
 
+# To resolve/list the dependencies with the command below,
+# they should be installed in the local repo
+mvn install -DskipTests
 
-# Get dependencies
+# Get dependencies in dag order
 TABULIFY_DEPENDENCIES=$(mvn dependency:list \
   -DexcludeTransitive=true \
   -DincludeScope=compile \
@@ -42,7 +45,10 @@ TABULIFY_DEPENDENCIES=$(mvn dependency:list \
   --projects tabulify-cli
 )
 
+SKIP_TESTS=("tabulify-sqlserver")
+
 RESUMED="false"
+PROJECTS=();
 for word in $TABULIFY_DEPENDENCIES; do
 
   # For loop split by space and we get words
@@ -52,6 +58,7 @@ for word in $TABULIFY_DEPENDENCIES; do
     # Project
     PROJECT=${BASH_REMATCH[1]}
     echo "Project: $PROJECT"
+    PROJECTS+=("$PROJECT")
 
     # Resume ?
     if [ "$RESUME_FROM" != "" ] && [ "$RESUMED" == "false" ]; then
@@ -60,6 +67,12 @@ for word in $TABULIFY_DEPENDENCIES; do
         continue
       fi
       RESUMED="true";
+    fi
+
+    # Skip test?
+    if [[ " ${SKIP_TESTS[*]} " =~ ${PROJECT} ]]; then
+      echo "Project: $PROJECT skipped due to test being not performed"
+      continue
     fi
 
     # Execute
@@ -71,3 +84,10 @@ for word in $TABULIFY_DEPENDENCIES; do
   fi
 
 done
+
+echo ""
+echo "Project processed"
+for PROJECT in "${PROJECTS[@]}"; do
+  echo "$PROJECT";
+done
+
