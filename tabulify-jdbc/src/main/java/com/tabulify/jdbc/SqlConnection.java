@@ -475,6 +475,14 @@ public class SqlConnection extends NoOpConnection {
         throw new NoCatalogException("Catalog is not supported");
       }
 
+      /**
+       * Postgres supports a fictif catalog called `postgres`
+       * We don't use it as it has no added value
+       */
+      if(!this.getMetadata().supportsCatalogsInSqlStatementPath()){
+        throw new NoCatalogException("Catalog is not supported");
+      }
+
       String catalog = this.getCurrentConnection().getCatalog();
       if (catalog == null || (catalog.isEmpty()
       )) {

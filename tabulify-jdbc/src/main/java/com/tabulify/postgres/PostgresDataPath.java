@@ -44,7 +44,10 @@ public class PostgresDataPath extends SqlDataPath {
      */
     Set<DataPath> dependencies = new HashSet<>();
     String script = Strings.createFromResource(PostgresDataPath.class, "/sql/postgresQueryDependencies.sql").toString();
-    String queryDependencies = SqlPlusLexer.createFromString(script).getSqlStatements().get(0);
+    String queryDependencies;
+    try (SqlPlusLexer fromString = SqlPlusLexer.createFromString(script)) {
+      queryDependencies = fromString.getSqlStatements().get(0);
+    }
     try (PreparedStatement statement = this.getConnection().getCurrentConnection().prepareStatement(queryDependencies)) {
       statement.setString(1, this.getName());
       String schemaName;
@@ -88,7 +91,7 @@ public class PostgresDataPath extends SqlDataPath {
 
   /**
    * See column `relpages` from
-   * https://www.postgresql.org/docs/9.5/catalog-pg-class.html
+   * <a href="https://www.postgresql.org/docs/9.5/catalog-pg-class.html">...</a>
    */
   @Override
   public Long getSize() {
@@ -97,7 +100,7 @@ public class PostgresDataPath extends SqlDataPath {
 
   /**
    * See column `reltuples` from
-   * https://www.postgresql.org/docs/9.5/catalog-pg-class.html
+   * <a href="https://www.postgresql.org/docs/9.5/catalog-pg-class.html">...</a>
    */
   @Override
   public Long getCount() {

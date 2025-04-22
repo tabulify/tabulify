@@ -2,6 +2,7 @@ package com.tabulify.postgres;
 
 import com.tabulify.Tabular;
 import com.tabulify.jdbc.SqlConnection;
+import com.tabulify.jdbc.SqlConnectionMetadata;
 import com.tabulify.jdbc.SqlDataPath;
 import net.bytle.type.MediaType;
 import net.bytle.type.Variable;
@@ -26,5 +27,8 @@ public class PostgresConnection extends SqlConnection {
 
   }
 
-
+  @Override
+  public SqlConnectionMetadata getMetadata() {
+    return new PostgresFeatures(this);
+  }
 }

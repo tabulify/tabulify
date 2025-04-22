@@ -86,8 +86,8 @@ public class SqlConnectionMetadata extends ConnectionMetadata {
    * Do the datastore supports the fact to
    * add the catalog name in the {@link SqlConnectionResourcePath#toSqlStatementPath()}}
    * sql statement path
-   *
-   * For instance, Postgres does not need it but
+   * <p></p>
+   * For instance, Postgres does not need it, but
    * it supports it for ISO conformance reason
    *
    */

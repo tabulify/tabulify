@@ -266,6 +266,13 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
   public static SqlConnectionResourcePath createOfCatalogSchemaAndObjectName(SqlConnection connection, String catalog, String schema, String objectName) {
 
     List<String> tabliSqlPaths = new ArrayList<>();
+
+    // Hack: postgres supports a catalog but this is only for compliance
+    // the catalog is always called postgres and the table is qualified with a schema
+    if (!connection.getMetadata().supportsCatalogsInSqlStatementPath()) {
+      catalog = null;
+    }
+
     if (catalog != null) {
       tabliSqlPaths.add(catalog);
     }
