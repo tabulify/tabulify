@@ -355,5 +355,23 @@ public class SqlServerDataSystem extends SqlDataSystem {
     return mergeStatement.toString();
   }
 
+  @Override
+  public String createViewStatement(SqlDataPath dataPath) {
 
+    if (dataPath.getMediaType() == SqlDataPathType.SCRIPT) {
+      String query = createOrGetQuery(dataPath);
+      // A view in sql server have only one name
+      // Otherwise, error !
+      // 'CREATE/ALTER VIEW' does not allow specifying the database name as a prefix to the object name.
+      String viewName = this.createQuotedName(dataPath.getName());
+      return "create view " + viewName + " as " + query;
+    }
+    /**
+     * We need a name for the view
+     * A view is just a stored query
+     */
+    throw new UnsupportedOperationException("A create view statement is only support for a query data resource");
+
+
+  }
 }

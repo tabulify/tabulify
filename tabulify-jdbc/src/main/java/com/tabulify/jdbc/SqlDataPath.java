@@ -313,7 +313,8 @@ public class SqlDataPath extends DataPathAbs {
 
     if (Tabulars.isDocument(this)) {
 
-      DataPath queryDataPath = this.getConnection().createScriptDataPath("select count(1) from " + this.getConnection().getDataSystem().createFromClause(this));
+      // `as count` is mandatory for sql server
+      DataPath queryDataPath = this.getConnection().createScriptDataPath("select count(1) as count from " + this.getConnection().getDataSystem().createFromClause(this));
       try (
         SelectStream selectStream = queryDataPath.getSelectStream()
       ) {
