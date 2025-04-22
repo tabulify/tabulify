@@ -370,7 +370,8 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         freeSqlXmlObject();
       }
     } catch (SQLException e) {
-      throw new RuntimeException(e);
+      String statement = sqlStatement;
+      throw new RuntimeException("Error: " + e.getMessage() + " on batch execution with statement " + statement, e);
     }
   }
 

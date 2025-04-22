@@ -104,16 +104,17 @@ public class SqlDataSystem extends DataSystemAbs {
 
     transferSourceTarget.checkBeforeInsert();
     return createInsertStatementUtilityValuesClauseBefore(transferSourceTarget) +
-      createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, sqlBindVariableFormat) +
+      createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, sqlBindVariableFormat, false) +
       createInsertStatementUtilityValuesClauseAfter();
 
   }
 
   /**
    * @param sqlBindVariableFormat -  if true, the sql `?` character is used, otherwise the printf pattern `%s` is used
+   * @param withAlias             - if true the bind character is followed by `as columnName`
    * @return return a parametrized series of values in a sql or printf format
    */
-  protected String createInsertStatementUtilityValuesClauseGenerator(TransferSourceTarget transferSourceTarget, Boolean sqlBindVariableFormat) {
+  protected String createInsertStatementUtilityValuesClauseGenerator(TransferSourceTarget transferSourceTarget, Boolean sqlBindVariableFormat, Boolean withAlias) {
 
     RelationDef source = transferSourceTarget.getSourceDataPath().getOrCreateRelationDef();
     StringBuilder valuesListStatement = new StringBuilder();
@@ -130,6 +131,12 @@ public class SqlDataSystem extends DataSystemAbs {
           valuesListStatement.append("?");
         } else {
           valuesListStatement.append("%s");
+        }
+        if (withAlias) {
+          valuesListStatement
+            .append(" as ")
+            .append(sourceColumnDef.getColumnName())
+          ;
         }
       }
       if (i != source.getColumnsSize()) {
@@ -152,7 +159,7 @@ public class SqlDataSystem extends DataSystemAbs {
   }
 
   /**
-   * Return a parameterized insert statement again the tableDef from the resultSetMetdata
+   * Return a parameterized insert statement again the tableDef from the resultSetMetadata
    */
   public String createInsertStatementWithBindVariables(TransferSourceTarget transferSourceTarget) {
 
@@ -442,7 +449,6 @@ public class SqlDataSystem extends DataSystemAbs {
 
 
   /**
-   *
    * @param transferSourceTarget the transfer meta
    * @return if the create table as method can be used
    */
@@ -1058,7 +1064,7 @@ public class SqlDataSystem extends DataSystemAbs {
          * and should all declare their default precision if not set
          */
         if (defaultPrecision == null) {
-          if(targetTypeCode == Types.TIME){
+          if (targetTypeCode == Types.TIME) {
             // implicit zero
             // https://datacadamia.com/data/type/relation/sql/time
             defaultPrecision = 0;
@@ -1190,34 +1196,14 @@ public class SqlDataSystem extends DataSystemAbs {
   protected String createUpsertStatementUtilityOnConflict(TransferSourceTarget transferSourceTarget) {
 
 
-    /**
-     * Build the targetUniqueKeyFoundInSourceColumns
-     * with the target unique constraint columns found in the source
-     */
-    List<ColumnDef> uniqueColumnsForTarget = transferSourceTarget.getSourceUniqueColumnsForTarget();
-    List<String> uniqueColumnsNameForTarget = uniqueColumnsForTarget.stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
-    SqlDataPath targetDataPath = (SqlDataPath) transferSourceTarget.getTargetDataPath();
-    List<UniqueKeyDef> targetUniqueKeyFoundInSourceColumns = new ArrayList<>();
-    for (UniqueKeyDef targetUniqueKey : targetDataPath.getOrCreateRelationDef().getUniqueKeys()) {
-      boolean notColumnFound = false;
-      for (ColumnDef column : targetUniqueKey.getColumns()) {
-        if (!uniqueColumnsNameForTarget.contains(column.getColumnName())) {
-          notColumnFound = true;
-          break;
-        }
-      }
-      if (!notColumnFound) {
-        targetUniqueKeyFoundInSourceColumns.add(targetUniqueKey);
-        break;
-      }
-    }
+    List<UniqueKeyDef> targetUniqueKeysFoundInSourceColumns = getTargetUniqueKeysFoundInSourceColumns(transferSourceTarget);
 
     /**
      * Build the statement
      */
     StringBuilder upsertStatement = new StringBuilder();
-    if (!targetUniqueKeyFoundInSourceColumns.isEmpty()) {
-      UniqueKeyDef targetUniqueKey = targetUniqueKeyFoundInSourceColumns.get(0);
+    if (!targetUniqueKeysFoundInSourceColumns.isEmpty()) {
+      UniqueKeyDef targetUniqueKey = targetUniqueKeysFoundInSourceColumns.get(0);
       upsertStatement
         .append("on conflict ( ")
         .append(targetUniqueKey.getColumns().stream().map(ColumnDef::getColumnName).map(this::createQuotedName).collect(Collectors.joining(", ")))
@@ -1234,6 +1220,7 @@ public class SqlDataSystem extends DataSystemAbs {
        * On conflict on primary key when there is no unique keys
        * For whatever reason, where there is no unique column, it seems mandatory
        */
+      DataPath targetDataPath = transferSourceTarget.getTargetDataPath();
       PrimaryKeyDef targetPrimaryKey = targetDataPath.getOrCreateRelationDef().getPrimaryKey();
       if (targetPrimaryKey == null) {
         SqlLog.LOGGER_DB_JDBC.warning("The table (" + targetDataPath + ") has no primary key or uniques keys, the `on conflict` upsert clause was not added");
@@ -1251,6 +1238,32 @@ public class SqlDataSystem extends DataSystemAbs {
     }
 
     return upsertStatement.toString();
+  }
+
+  /**
+   * Build the targetUniqueKeyFoundInSourceColumns
+   * with the target unique constraint columns found in the source
+   */
+  protected List<UniqueKeyDef> getTargetUniqueKeysFoundInSourceColumns(TransferSourceTarget transferSourceTarget) {
+
+    List<ColumnDef> uniqueColumnsForTarget = transferSourceTarget.getSourceUniqueColumnsForTarget();
+    List<String> uniqueColumnsNameForTarget = uniqueColumnsForTarget.stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
+    SqlDataPath targetDataPath = (SqlDataPath) transferSourceTarget.getTargetDataPath();
+    List<UniqueKeyDef> targetUniqueKeyFoundInSourceColumns = new ArrayList<>();
+    for (UniqueKeyDef targetUniqueKey : targetDataPath.getOrCreateRelationDef().getUniqueKeys()) {
+      boolean notColumnFound = false;
+      for (ColumnDef column : targetUniqueKey.getColumns()) {
+        if (!uniqueColumnsNameForTarget.contains(column.getColumnName())) {
+          notColumnFound = true;
+          break;
+        }
+      }
+      if (!notColumnFound) {
+        targetUniqueKeyFoundInSourceColumns.add(targetUniqueKey);
+        break;
+      }
+    }
+    return targetUniqueKeyFoundInSourceColumns;
   }
 
 
@@ -1362,10 +1375,10 @@ public class SqlDataSystem extends DataSystemAbs {
       case SYSTEM_VIEW:
         // Not supported, but we don't return an error because
         // a `*@sqlite` selection returns them by default for now
-        SqlLog.LOGGER_DB_JDBC.warning("The resource ("+sqlDataPath+") is not a (" + type + ") and was not dropped");
+        SqlLog.LOGGER_DB_JDBC.warning("The resource (" + sqlDataPath + ") is not a (" + type + ") and was not dropped");
         return;
       default:
-        throw new UnsupportedOperationException("The resource ("+sqlDataPath+") is not a view or a table. It's a (" + type + "). We don't support a drop");
+        throw new UnsupportedOperationException("The resource (" + sqlDataPath + ") is not a view or a table. It's a (" + type + "). We don't support a drop");
     }
 
 
@@ -1821,13 +1834,13 @@ public class SqlDataSystem extends DataSystemAbs {
    */
   public String createUpsertStatementWithPrintfExpressions(TransferSourceTarget transferSourceTarget) {
     return createUpsertStatementUtilityValuesPartBefore(transferSourceTarget) +
-      createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, false) +
+      createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, false, false) +
       createUpsertStatementUtilityValuesPartAfter(transferSourceTarget);
   }
 
   public String createUpsertStatementWithBindVariables(TransferSourceTarget transferSourceTarget) {
     return createUpsertStatementUtilityValuesPartBefore(transferSourceTarget) +
-      createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, true) +
+      createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, true, false) +
       createUpsertStatementUtilityValuesPartAfter(transferSourceTarget);
   }
 

@@ -1,10 +1,9 @@
 package com.tabulify.sqlserver;
 
 import com.tabulify.jdbc.*;
-import com.tabulify.model.ColumnDef;
-import com.tabulify.model.SqlDataType;
-import com.tabulify.model.SqlTypes;
+import com.tabulify.model.*;
 import com.tabulify.spi.DataPath;
+import com.tabulify.transfer.TransferSourceTarget;
 
 import java.sql.Types;
 import java.util.List;
@@ -230,5 +229,118 @@ public class SqlServerDataSystem extends SqlDataSystem {
     }
   }
 
+  @Override
+  public String createInsertStatementWithBindVariables(TransferSourceTarget transferSourceTarget) {
+    return super.createInsertStatementWithBindVariables(transferSourceTarget);
+  }
+
+  @Override
+  public String createUpsertStatementWithPrintfExpressions(TransferSourceTarget transferSourceTarget) {
+    return getMergeStatement(transferSourceTarget, false);
+  }
+
+
+  @Override
+  public String createUpsertStatementWithBindVariables(TransferSourceTarget transferSourceTarget) {
+
+    return getMergeStatement(transferSourceTarget, true);
+
+  }
+
+  /**
+   * Upsert statement is known as Merge
+   * <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/merge-transact-sql?view=sql-server-ver16">...</a>
+   */
+  private String getMergeStatement(TransferSourceTarget transferSourceTarget, boolean sqlBindForat) {
+    /**
+     * MERGE INTO target_table AS target
+     * USING (SELECT ? AS id, ? AS name, ? AS value) AS source
+     * ON (target.id = source.id)
+     * WHEN MATCHED THEN
+     *     UPDATE SET
+     *         target.name = source.name,
+     *         target.value = source.value
+     * WHEN NOT MATCHED THEN
+     *     INSERT (id, name, value)
+     *     VALUES (source.id, source.name, source.value);
+     */
+    transferSourceTarget.checkBeforeInsert();
+
+    RelationDef target = transferSourceTarget.getTargetDataPath().getOrCreateRelationDef();
+    final SqlDataPath targetDataPath = (SqlDataPath) target.getDataPath();
+    StringBuilder mergeStatement = new StringBuilder();
+    String targetAlias = "target";
+    mergeStatement.append("merge into ")
+      .append(targetDataPath.toSqlStringPath())
+      .append(" as ")
+      .append(targetAlias);
+    String sourceAlias = "source";
+    String values = createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, sqlBindForat, true);
+    mergeStatement.append(" using (select ")
+      .append(values)
+      .append(") as ")
+      .append(sourceAlias);
+
+    // on
+    List<UniqueKeyDef> targetUniqueKeysFoundInSourceColumns = getTargetUniqueKeysFoundInSourceColumns(transferSourceTarget);
+    if (targetUniqueKeysFoundInSourceColumns.isEmpty()) {
+      throw new RuntimeException("No ON clause could be created because no unique key mapping could be found");
+    }
+    mergeStatement.append(" on ");
+    List<ColumnDef> uniqueKeyColumns = targetUniqueKeysFoundInSourceColumns.get(0).getColumns();
+    for (int i = 0; i < uniqueKeyColumns.size(); i++) {
+      ColumnDef uniqueKeyColumnDef = uniqueKeyColumns.get(i);
+      mergeStatement
+        .append(sourceAlias).append(".").append(this.createQuotedName(uniqueKeyColumnDef.getColumnName()))
+        .append(" = ")
+        .append(targetAlias).append(".").append(this.createQuotedName(uniqueKeyColumnDef.getColumnName()));
+      if (i != uniqueKeyColumns.size() - 1) {
+        mergeStatement.append(",");
+      }
+    }
+
+    // WHEN MATCHED THEN update
+    mergeStatement.append("WHEN MATCHED THEN UPDATE SET ");
+    List<ColumnDef> sourceNonUniqueColumnsForTarget = transferSourceTarget.getSourceNonUniqueColumnsForTarget();
+    for (int i = 0; i < sourceNonUniqueColumnsForTarget.size(); i++) {
+      ColumnDef updateColumn = sourceNonUniqueColumnsForTarget.get(i);
+      mergeStatement
+        .append(targetAlias)
+        .append(".")
+        .append(this.createQuotedName(updateColumn.getColumnName()))
+        .append(" = ")
+        .append(sourceAlias)
+        .append(".")
+        .append(this.createQuotedName(updateColumn.getColumnName()));
+      if (i != sourceNonUniqueColumnsForTarget.size() - 1) {
+        mergeStatement.append(",");
+      }
+    }
+
+    // WHEN not MATCHED THEN insert
+    mergeStatement.append("WHEN NOT MATCHED THEN INSERT (");
+    List<? extends ColumnDef> targetColumnsToLoad = transferSourceTarget.getSourceColumnsInInsertStatement();
+    for (int i = 0; i < targetColumnsToLoad.size(); i++) {
+      ColumnDef targetInsertColumn = targetColumnsToLoad.get(i);
+      mergeStatement.append(this.createQuotedName(targetInsertColumn.getColumnName()));
+      if (i != targetColumnsToLoad.size() - 1) {
+        mergeStatement.append(",");
+      }
+    }
+    mergeStatement.append(") VALUES (");
+    for (int i = 0; i < targetColumnsToLoad.size(); i++) {
+      ColumnDef targetInsertColumn = targetColumnsToLoad.get(i);
+      mergeStatement
+        .append(sourceAlias)
+        .append(".")
+        .append(this.createQuotedName(targetInsertColumn.getColumnName()));
+      if (i != targetColumnsToLoad.size() - 1) {
+        mergeStatement.append(",");
+      }
+    }
+    mergeStatement.append(")");
+
+    return mergeStatement.toString();
+  }
 
 }
