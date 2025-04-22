@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+# Release Tabulify
+
+set -TCEeuo pipefail
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/../.."
+
+# Change context
+cd "$PROJECT_ROOT"
+
+# Not all module pass tests
+# We handle that by configuring the module to skip test on release profile
+# https://maven.apache.org/surefire/maven-surefire-plugin/examples/skipping-tests.html
+
+# Build the dependent module and test tabulify-cli
+mvn install -P release

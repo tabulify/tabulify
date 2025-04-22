@@ -105,10 +105,12 @@
       <classifier>tests</classifier>
       <type>test-jar</type>
       <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.eraldy</groupId>
       <artifactId>eraldy-test</artifactId>
+      <scope>test</scope>
     </dependency>
 
   </dependencies>

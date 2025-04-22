@@ -119,6 +119,10 @@ public class ConnectionVault implements AutoCloseable {
           if (variable.getAttribute() == ConnectionAttribute.NAME) {
             continue;
           }
+          if (variable.getAttribute() == ConnectionAttribute.ORIGIN) {
+            // origin is an internal
+            continue;
+          }
           String valueToStore;
           if (variable.getAttribute() == ConnectionAttribute.URI) {
             uriFound = true;

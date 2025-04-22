@@ -64,7 +64,7 @@
     <dependency>
       <groupId>com.tabulify</groupId>
       <artifactId>tabulify-jdbc</artifactId>
-      <version>${parent.version}</version>
+      <version>${project.parent.version}</version>
       <classifier>tests</classifier>
       <type>test-jar</type>
       <scope>test</scope>
