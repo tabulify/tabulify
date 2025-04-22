@@ -630,7 +630,7 @@ public class TransferSourceTarget {
     List<ColumnDef> targetUniqueColumns = checkThatTargetHasPrimaryOrUniqueColumns();
     List<ColumnDef> sourceUniqueColumns = this.getSourceUniqueColumnsForTarget();
     if (sourceUniqueColumns.isEmpty()) {
-      throw new RuntimeException("No target unique column name was found in the source. At minimal one of the unique columns(" +
+      throw new RuntimeException("No target unique column name was found in the source. At minimal one of the unique columns (" +
         targetUniqueColumns.stream().map(ColumnDef::getColumnName).collect(Collectors.joining(", "))
         + ") of the target (" + target + ") should appear in the source (" + source + ")");
     }

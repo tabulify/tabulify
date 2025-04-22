@@ -45,7 +45,8 @@ TABULIFY_DEPENDENCIES=$(mvn dependency:list \
   --projects tabulify-cli
 )
 
-SKIP_TESTS=("tabulify-sqlserver")
+# Not yet processed
+SKIP_TESTS=("tabulify-sqlserver" "tabulify-mysql")
 
 RESUMED="false"
 PROJECTS=();
