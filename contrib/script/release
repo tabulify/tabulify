@@ -8,13 +8,18 @@ set -TCEeuo pipefail
 RESUME_FROM=""
 while [[ $# -gt 0 ]]
 do
-   case $1 in
+   case "$1" in
     "--resume-from"|"-rf")
+      shift
       RESUME_FROM="$1"
-    shift
-    ;;
+      shift
+      ;;
+    *)
+      echo "Option $1 not known"
+      exit 1
    esac
 done
+
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 PROJECT_ROOT="$SCRIPT_DIR/../.."
