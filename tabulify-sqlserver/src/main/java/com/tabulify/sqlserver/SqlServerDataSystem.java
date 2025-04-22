@@ -251,7 +251,19 @@ public class SqlServerDataSystem extends SqlDataSystem {
    * Upsert statement is known as Merge
    * <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/merge-transact-sql?view=sql-server-ver16">...</a>
    */
-  private String getMergeStatement(TransferSourceTarget transferSourceTarget, boolean sqlBindForat) {
+  private String getMergeStatement(TransferSourceTarget transferSourceTarget, boolean sqlBindFormat) {
+
+    // Original upsert statement are insert and then update on conflict
+    // Sql server is match expression on column, meaning that
+    // if there is no unique column, we need to switch to insert statement
+    List<UniqueKeyDef> targetUniqueKeysFoundInSourceColumns = getTargetUniqueKeysFoundInSourceColumns(transferSourceTarget);
+    if (targetUniqueKeysFoundInSourceColumns.isEmpty()) {
+      if (sqlBindFormat) {
+        return createInsertStatementWithBindVariables(transferSourceTarget);
+      }
+      return createInsertStatementWithPrintfExpressions(transferSourceTarget);
+    }
+
     /**
      * MERGE INTO target_table AS target
      * USING (SELECT ? AS id, ? AS name, ? AS value) AS source
@@ -275,17 +287,13 @@ public class SqlServerDataSystem extends SqlDataSystem {
       .append(" as ")
       .append(targetAlias);
     String sourceAlias = "source";
-    String values = createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, sqlBindForat, true);
+    String values = createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, sqlBindFormat, true);
     mergeStatement.append(" using (select ")
       .append(values)
       .append(") as ")
       .append(sourceAlias);
 
     // on
-    List<UniqueKeyDef> targetUniqueKeysFoundInSourceColumns = getTargetUniqueKeysFoundInSourceColumns(transferSourceTarget);
-    if (targetUniqueKeysFoundInSourceColumns.isEmpty()) {
-      throw new RuntimeException("No ON clause could be created because no unique key mapping could be found");
-    }
     mergeStatement.append(" on ");
     List<ColumnDef> uniqueKeyColumns = targetUniqueKeysFoundInSourceColumns.get(0).getColumns();
     for (int i = 0; i < uniqueKeyColumns.size(); i++) {
@@ -340,7 +348,12 @@ public class SqlServerDataSystem extends SqlDataSystem {
     }
     mergeStatement.append(")");
 
+    // Jdbc returns this error:
+    // A MERGE statement must be terminated by a semi-colon (;). on batch execution
+    mergeStatement.append(";");
+
     return mergeStatement.toString();
   }
+
 
 }
