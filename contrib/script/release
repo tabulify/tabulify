@@ -4,6 +4,18 @@
 
 set -TCEeuo pipefail
 
+# Arg
+RESUME_FROM=""
+while [[ $# -gt 0 ]]
+do
+   case $1 in
+    "--resume-from"|"-rf")
+      RESUME_FROM="$1"
+    shift
+    ;;
+   esac
+done
+
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 PROJECT_ROOT="$SCRIPT_DIR/../.."
 
@@ -11,15 +23,13 @@ PROJECT_ROOT="$SCRIPT_DIR/../.."
 cd "$PROJECT_ROOT"
 
 # Not all module pass tests
-# We handle that by configuring the module to skip test on release profile
+# We could handle that by configuring the module to skip test on release profile
 # https://maven.apache.org/surefire/maven-surefire-plugin/examples/skipping-tests.html
-
-
-# Build the dependent module and test tabulify-cli
-# mvn install -P release
-
-# We could also loop over each module
+# but we do it here with a loop
 # The advantage is that the test container is stopped at the end of the execution
+
+
+# Get dependencies
 TABULIFY_DEPENDENCIES=$(mvn dependency:list \
   -DexcludeTransitive=true \
   -DincludeScope=compile \
@@ -27,16 +37,32 @@ TABULIFY_DEPENDENCIES=$(mvn dependency:list \
   --projects tabulify-cli
 )
 
-# Split by space
+RESUMED="false"
 for word in $TABULIFY_DEPENDENCIES; do
 
+  # For loop split by space and we get words
+  # Is it a dependency word ?
   if [[ $word =~ com.tabulify:(tabulify-[^:]*):.* ]]; then
+
+    # Project
     PROJECT=${BASH_REMATCH[1]}
     echo "Project: $PROJECT"
+
+    # Resume ?
+    if [ "$RESUME_FROM" != "" ] && [ "$RESUMED" == "false" ]; then
+      if [ "$PROJECT" != "$RESUME_FROM" ]; then
+        echo "Project: $PROJECT skipped due to resume from"
+        continue
+      fi
+      RESUMED="true";
+    fi
+
+    # Execute
     if ! mvn install --projects "$PROJECT"; then
       echo "Error while installing the project: $PROJECT"
       exit 1
     fi
+
   fi
 
 done
