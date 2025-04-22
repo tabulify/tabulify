@@ -40,7 +40,7 @@
     </dependency>
     <dependency>
       <groupId>com.tabulify</groupId>
-      <artifactId>tabulify-flow-template</artifactId>
+      <artifactId>tabulify-templating</artifactId>
     </dependency>
     <dependency>
       <groupId>com.tabulify</groupId>

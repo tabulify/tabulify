@@ -6,8 +6,8 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tabulify-flow-template</artifactId>
-  <name>Tabulify Flow Template Step</name>
+  <artifactId>tabulify-templating</artifactId>
+  <name>Tabulify Templating</name>
 
   <!-- Parent are used before all for the assembly build steps -->
   <parent>

@@ -45,7 +45,7 @@
     <module>tabulify-jdbc</module>
     <module>tabulify-data-generation</module>
     <module>tabulify-csv</module>
-    <module>tabulify-flow-template</module>
+    <module>tabulify-templating</module>
     <module>tabulify-email</module>
     <module>tabulify-xml</module>
     <module>tabulify-yaml</module>
@@ -106,7 +106,7 @@
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-flow-template</artifactId>
+        <artifactId>tabulify-templating</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
