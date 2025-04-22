@@ -14,5 +14,29 @@ cd "$PROJECT_ROOT"
 # We handle that by configuring the module to skip test on release profile
 # https://maven.apache.org/surefire/maven-surefire-plugin/examples/skipping-tests.html
 
+
 # Build the dependent module and test tabulify-cli
-mvn install -P release
+# mvn install -P release
+
+# We could also loop over each module
+# The advantage is that the test container is stopped at the end of the execution
+TABULIFY_DEPENDENCIES=$(mvn dependency:list \
+  -DexcludeTransitive=true \
+  -DincludeScope=compile \
+  -DincludeGroupIds=com.tabulify \
+  --projects tabulify-cli
+)
+
+# Split by space
+for word in $TABULIFY_DEPENDENCIES; do
+
+  if [[ $word =~ com.tabulify:(tabulify-[^:]*):.* ]]; then
+    PROJECT=${BASH_REMATCH[1]}
+    echo "Project: $PROJECT"
+    if ! mvn install --projects "$PROJECT"; then
+      echo "Error while installing the project: $PROJECT"
+      exit 1
+    fi
+  fi
+
+done
