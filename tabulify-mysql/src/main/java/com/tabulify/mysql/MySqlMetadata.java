@@ -12,6 +12,19 @@ public class MySqlMetadata extends SqlConnectionMetadata {
 
   @Override
   public boolean isSchemaSeenAsCatalog() {
+
     return true;
+
   }
+
+  @Override
+  public boolean supportsCatalogsInSqlStatementPath() {
+    return false;
+  }
+
+  @Override
+  public Integer getMaxNamesInPath() {
+    return 2;
+  }
+
 }
