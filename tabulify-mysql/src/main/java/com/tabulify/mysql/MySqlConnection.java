@@ -1,8 +1,8 @@
-package net.bytle.db.mysql;
+package com.tabulify.mysql;
 
-import net.bytle.db.Tabular;
-import net.bytle.db.jdbc.SqlConnection;
-import net.bytle.db.jdbc.SqlDataSystem;
+import com.tabulify.Tabular;
+import com.tabulify.jdbc.SqlConnection;
+import com.tabulify.jdbc.SqlDataSystem;
 import net.bytle.type.Variable;
 
 public class MySqlConnection extends SqlConnection {

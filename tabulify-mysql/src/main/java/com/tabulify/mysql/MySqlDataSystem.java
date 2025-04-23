@@ -1,7 +1,8 @@
-package net.bytle.db.mysql;
+package com.tabulify.mysql;
 
-import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.SqlDataType;
+import com.tabulify.jdbc.*;
+import com.tabulify.model.ColumnDef;
+import com.tabulify.model.SqlDataType;
 
 import java.sql.Types;
 import java.util.ArrayList;
@@ -36,12 +37,12 @@ public class MySqlDataSystem extends SqlDataSystem {
     Map<Integer, SqlMetaDataType> sqlMetaDataType = super.getMetaDataTypes();
 
     Integer maxVarcharPrecision = MySqlDataSystem.VARCHAR_MAX_LENGTH;
-    if(this.getConnection().isPlanetScale()){
+    if (this.getConnection().isPlanetScale()) {
       maxVarcharPrecision = MySqlDataSystem.VARCHAR_MAX_LENGTH_PSCALE;
     }
 
     Integer maxCharPrecision = MySqlDataSystem.CHAR_MAX_LENGTH;
-    if(this.getConnection().isPlanetScale()){
+    if (this.getConnection().isPlanetScale()) {
       maxCharPrecision = MySqlDataSystem.CHAR_MAX_LENGTH_PSCALE;
     }
     /**
@@ -149,8 +150,8 @@ public class MySqlDataSystem extends SqlDataSystem {
   public List<SqlMetaForeignKey> getMetaForeignKeys(SqlDataPath dataPath) {
 
     MySqlConnection sqlConnection = (MySqlConnection) (dataPath.getConnection());
-    if(sqlConnection.isPlanetScale()){
-      SqlLog.LOGGER_DB_JDBC.warning("PlanetScale does not support the retrieval of imported keys (ie foreign keys). No Foreign keys added to "+dataPath);
+    if (sqlConnection.isPlanetScale()) {
+      SqlLog.LOGGER_DB_JDBC.warning("PlanetScale does not support the retrieval of imported keys (ie foreign keys). No Foreign keys added to " + dataPath);
       return new ArrayList<>();
     }
     return super.getMetaForeignKeys(dataPath);

@@ -1,1 +1,1 @@
-net.bytle.db.mysql.MySqlProvider
+com.tabulify.mysql.MySqlProvider

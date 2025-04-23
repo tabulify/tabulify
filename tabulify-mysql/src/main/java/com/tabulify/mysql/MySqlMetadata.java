@@ -1,7 +1,7 @@
-package net.bytle.db.mysql;
+package com.tabulify.mysql;
 
-import net.bytle.db.jdbc.SqlConnection;
-import net.bytle.db.jdbc.SqlConnectionMetadata;
+import com.tabulify.jdbc.SqlConnection;
+import com.tabulify.jdbc.SqlConnectionMetadata;
 
 public class MySqlMetadata extends SqlConnectionMetadata {
 

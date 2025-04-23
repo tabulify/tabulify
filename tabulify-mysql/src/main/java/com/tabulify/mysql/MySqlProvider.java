@@ -1,7 +1,7 @@
-package net.bytle.db.mysql;
+package com.tabulify.mysql;
 
-import net.bytle.db.Tabular;
-import net.bytle.db.jdbc.SqlDataStoreProvider;
+import com.tabulify.Tabular;
+import com.tabulify.jdbc.SqlDataStoreProvider;
 import net.bytle.type.Variable;
 
 public class MySqlProvider extends SqlDataStoreProvider {
