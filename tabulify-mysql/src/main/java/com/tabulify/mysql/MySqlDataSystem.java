@@ -3,11 +3,15 @@ package com.tabulify.mysql;
 import com.tabulify.jdbc.*;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.model.SqlDataType;
+import com.tabulify.model.UniqueKeyDef;
+import com.tabulify.transfer.TransferSourceTarget;
 
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.stream.Collectors;
 
 public class MySqlDataSystem extends SqlDataSystem {
 
@@ -105,6 +109,21 @@ public class MySqlDataSystem extends SqlDataSystem {
       .setDefaultPrecision(defaultPrecision)
       .setAutoIncrement(false);
 
+    /**
+     * Types.DATE is by default a year(4) ....
+     * https://dev.mysql.com/doc/refman/5.7/en/fixed-point-types.html
+     */
+    sqlMetaDataType.computeIfAbsent(Types.DATE, SqlMetaDataType::new)
+      .setSqlName("date")
+      .setAutoIncrement(false);
+
+    /**
+     * 4
+     */
+//    sqlMetaDataType.computeIfAbsent(Types.INTEGER, SqlMetaDataType::new)
+//      .setSqlName("int")
+//      .setAutoIncrement(false);
+
     return sqlMetaDataType;
 
   }
@@ -156,4 +175,27 @@ public class MySqlDataSystem extends SqlDataSystem {
     }
     return super.getMetaForeignKeys(dataPath);
   }
+
+
+  @Override
+  protected String createUpsertStatementUtilityOnConflict(TransferSourceTarget transferSourceTarget) {
+    List<UniqueKeyDef> targetUniqueKeysFoundInSourceColumns = getTargetUniqueKeysFoundInSourceColumns(transferSourceTarget);
+
+    List<ColumnDef> sourceNonUniqueColumnsForTarget = transferSourceTarget.getSourceNonUniqueColumnsForTarget();
+    if (targetUniqueKeysFoundInSourceColumns.isEmpty() || sourceNonUniqueColumnsForTarget.isEmpty()) {
+      return "";
+    }
+
+    /**
+     * Build the statement
+     */
+    return "on duplicate key update " +
+      sourceNonUniqueColumnsForTarget
+        .stream()
+        .map(c -> this.createQuotedName(c.getColumnName()) + " = values(" + this.createQuotedName(c.getColumnName()) + ")")
+        .collect(Collectors.joining(", "));
+
+  }
+
+
 }

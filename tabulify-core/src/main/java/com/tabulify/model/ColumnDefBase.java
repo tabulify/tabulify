@@ -62,9 +62,9 @@ public class ColumnDefBase implements ColumnDef {
   private int columnPosition;
   private String fullyQualifiedName;
 
-  /* Precision = Length for string, Precision =  Precision for Fix Number */
   /**
-   * JDBC returns a integer
+   * Precision = Length for string,
+   * Precision = Precision for Fix Number
    */
   private Integer precision;
   /* Only needed for number */

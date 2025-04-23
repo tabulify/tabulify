@@ -138,7 +138,6 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
 
   /**
    * The properties of a generator from a data definition file
-   *
    */
 
   public static <T> SequenceGenerator<T> create(Class<T> clazz) {
@@ -192,8 +191,6 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
   /**
    * This is the function that's called recursively at the function {@link GenColumnDef#getOrCreateGenerator(Class)}
    * Don't delete
-   *
-   *
    */
   public static <T> SequenceGenerator<T> createFromProperties(Class<T> clazz, GenColumnDef columnDef) {
 
@@ -378,7 +375,6 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
   /**
    * Just tick this sequence generator
    * Process the increment of the counter
-   *
    */
   private SequenceGenerator<T> tick() {
     incrementTickCounter();
@@ -485,12 +481,14 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
     GenColumnDef columnDef = getColumnDef();
     if (clazz == Integer.class || clazz == BigDecimal.class || clazz == Double.class) {
       Integer precisionOrMax = columnDef != null ? columnDef.getPrecisionOrMax() : null;
-      int precision = precisionOrMax != null ? precisionOrMax : MAX_NUMBER_PRECISION;
-      maxPrecisionSize = Double.valueOf(Math.pow(10, precision)).longValue();
+      maxPrecisionSize = precisionOrMax != null ?
+        Double.valueOf(Math.pow(10, precisionOrMax)).longValue() - 1
+        : MAX_NUMBER_PRECISION;
     } else if (clazz == String.class) {
       Integer precisionOrMax = columnDef != null ? columnDef.getPrecisionOrMax() : null;
-      int precision = precisionOrMax != null ? precisionOrMax : MAX_STRING_PRECISION;
-      maxPrecisionSize = Double.valueOf(Math.pow(SequenceStringGeneratorHelper.MAX_RADIX, precision)).longValue();
+      maxPrecisionSize = precisionOrMax != null ?
+        Double.valueOf(Math.pow(SequenceStringGeneratorHelper.MAX_RADIX, precisionOrMax)).longValue()
+        : MAX_STRING_PRECISION;
     }
 
     Long maxSize = maxByClassSize;
@@ -622,6 +620,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
   }
 
   /**
+   *
    */
   @Override
   public T getDomainMin(long size) {
@@ -693,7 +692,6 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
 
   /**
    * The sequence generator that will tick this generator
-   *
    */
   private SequenceGenerator<T> addTickedBy(SequenceGenerator<?> sequenceGenerator) {
     this.tickedBy = sequenceGenerator;
@@ -706,7 +704,6 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
    * This is a maximum value on the internal {@link #tickCounter}
    * <p>
    * By default {@link Long#MAX_VALUE}
-   *
    */
   public SequenceGenerator<T> setMaxTick(Long maxTickCount) {
     this.maxTickCount = maxTickCount;
@@ -726,7 +723,6 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
 
   /**
    * The generator that ticks this sequence
-   *
    */
   public SequenceGenerator<?> getTickedBy() {
     return this.tickedBy;
@@ -734,7 +730,6 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
 
   /**
    * The generator that must be ticked by this sequence
-   *
    */
   public SequenceGenerator<?> getTickerFor() {
     return this.tickerFor;
@@ -742,7 +737,6 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
 
   /**
    * The offset from the start used to start a date before than the first day of a month.
-   *
    */
   public Number getOffset() {
     return offset;

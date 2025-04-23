@@ -381,7 +381,9 @@ public class SqlConnection extends NoOpConnection {
 
 
     java.sql.Connection connection;
-    Properties connectionProperties = Maps.toProperties(this.getVariablesAsKeyValueMap());
+
+    Properties connectionProperties = this.getDefaultConnectionProperties();
+    connectionProperties.putAll(Maps.toProperties(this.getVariablesAsKeyValueMap()));
     SqlLog.LOGGER_DB_JDBC.info("Trying to connect to the connection (" + this.getUriAsVariable() + ")");
     try {
 
@@ -434,6 +436,13 @@ public class SqlConnection extends NoOpConnection {
     }
 
 
+  }
+
+  /**
+   * @return the default connection properties for the driver
+   */
+  public Properties getDefaultConnectionProperties() {
+    return new Properties();
   }
 
 
@@ -544,7 +553,7 @@ public class SqlConnection extends NoOpConnection {
   private void updateSqlDataTypeIfNeeded() {
     if (!sqlDataTypeWereUpdated) {
       // As soon as we have the connection, we update the sql data type
-      // This is because the credential are needed and they are not given at the constructor level
+      // This is because the credential are needed, and they are not given at the constructor level
       // because they are not always mandatory
 
       /**
@@ -552,9 +561,9 @@ public class SqlConnection extends NoOpConnection {
        * on the type code in order to create the data type and this alias
        * as two different {@link SqlDataType}
        */
-      Map<Integer, SqlMetaDataType> map = this.getDataSystem().getMetaDataTypes();
-      for (Integer typeCode : map.keySet()) {
-        SqlMetaDataType sqlMetaDataType = map.get(typeCode);
+      Map<Integer, SqlMetaDataType> systemType = this.getDataSystem().getMetaDataTypes();
+      for (Integer typeCode : systemType.keySet()) {
+        SqlMetaDataType sqlMetaDataType = systemType.get(typeCode);
         SqlDataType sqlDataType = driverDataType.computeIfAbsent(typeCode, type -> SqlDataType.creationOf(this, type));
         // Clazz mapping cannot be null
         if (sqlMetaDataType.getSqlClass() != null) {
