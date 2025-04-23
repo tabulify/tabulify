@@ -3,6 +3,7 @@ package com.tabulify.mysql;
 import com.tabulify.Tabular;
 import com.tabulify.jdbc.SqlConnection;
 import com.tabulify.jdbc.SqlDataSystem;
+import net.bytle.exception.NoCatalogException;
 import net.bytle.type.Variable;
 
 public class MySqlConnection extends SqlConnection {
@@ -32,8 +33,8 @@ public class MySqlConnection extends SqlConnection {
   }
 
   @Override
-  public String getCurrentCatalog() {
-    return null;
+  public String getCurrentCatalog() throws NoCatalogException {
+    throw new NoCatalogException("Catalog is not supported");
   }
 
   public boolean isPlanetScale(){

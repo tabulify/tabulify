@@ -334,6 +334,10 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
     String currentCatalog;
     try {
       currentCatalog = sqlConnection.getCurrentCatalog();
+      // Implementation may return null ...
+      if (currentCatalog == null) {
+        currentCatalog = "";
+      }
     } catch (NoCatalogException e) {
       currentCatalog = "";
     }

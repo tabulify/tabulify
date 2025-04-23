@@ -479,13 +479,12 @@ public class SqlConnection extends NoOpConnection {
        * Postgres supports a fictif catalog called `postgres`
        * We don't use it as it has no added value
        */
-      if(!this.getMetadata().supportsCatalogsInSqlStatementPath()){
+      if (!this.getMetadata().supportsCatalogsInSqlStatementPath()) {
         throw new NoCatalogException("Catalog is not supported");
       }
 
       String catalog = this.getCurrentConnection().getCatalog();
-      if (catalog == null || (catalog.isEmpty()
-      )) {
+      if (catalog == null || (catalog.isEmpty())) {
         throw new NoCatalogException("Catalog is not supported");
       }
       return catalog;
