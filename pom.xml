@@ -54,6 +54,7 @@
     <module>tabulify-excel</module>
     <module>tabulify-oracle</module>
     <module>tabulify-sqlserver</module>
+    <module>tabulify-mysql</module>
   </modules>
 
   <!-- The rest of dependencies management is in core  -->
@@ -155,6 +156,12 @@
         <groupId>com.microsoft.sqlserver</groupId>
         <artifactId>mssql-jdbc</artifactId>
         <version>12.10.0.jre11</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/com.mysql/mysql-connector-j -->
+      <dependency>
+        <groupId>com.mysql</groupId>
+        <artifactId>mysql-connector-j</artifactId>
+        <version>9.2.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
