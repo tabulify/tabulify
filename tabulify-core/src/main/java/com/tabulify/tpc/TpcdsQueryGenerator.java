@@ -5,6 +5,7 @@ import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
 import com.tabulify.connection.ConnectionHowTos;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,24 +21,30 @@ public class TpcdsQueryGenerator {
      */
     public static void main(String[] args) {
 
-      //String datastoreName = DataStoresHowTos.SQLITE_DATASTORE_NAME;
-      String datastoreName = ConnectionHowTos.POSTGRESQL_CONNECTION_NAME;
+      // Args
+      String datastoreName = ConnectionHowTos.MYSQL_CONNECTION_NAME;
+
+      // Dialect by Database
       Map<String,String> dialects = new HashMap<>();
       dialects.put(ConnectionHowTos.SQLITE_CONNECTION_NAME,"sqlite");
       dialects.put(ConnectionHowTos.POSTGRESQL_CONNECTION_NAME, "netezza");
+      dialects.put(ConnectionHowTos.SQLSERVER_CONNECTION_NAME, "sqlserver");
+      dialects.put(ConnectionHowTos.ORACLE_CONNECTION_NAME, "oracle");
+      // For Mysql: https://github.com/gregrahn/tpcds-kit/issues/13
+      dialects.put(ConnectionHowTos.MYSQL_CONNECTION_NAME, "netezza");
 
-      Map<String, String> projects = new HashMap<>();
-      projects.put(ConnectionHowTos.POSTGRESQL_CONNECTION_NAME,"db-jdbc");
+      Path tpcDsHomePath = Paths.get(System.getenv("HOME"),"code","tpcds-kit");
 
       try (Tabular tabular = Tabular.tabularWithCleanEnvironment()) {
-        Connection connection = tabular.getConnection(datastoreName);
+        Connection connection = tabular.loadHowtoConnections().getConnection(datastoreName);
+        Path buildPath = tpcDsHomePath.resolve("tools");
         TpcdsQgen tpcdsQgen = TpcdsQgen
           .create(connection)
           .setDialect(dialects.get(datastoreName))
-          .setDsqGenDirectory(Paths.get("D:/code/tpcds-xp/build"))
-          .setOutputDirectory(Paths.get(projects.get(datastoreName)+"/src/main/sql/tpcds/" + connection.getName()))
-          .setDistributionFile(Paths.get("D:/code/tpcds-xp/build/tpcds.idx"))
-          .setQueryTemplatesDirectory(Paths.get("D:/code/tpcds-xp/query_templates"));
+          .setDsqGenDirectory(buildPath)
+          .setOutputDirectory(Paths.get("tabulify-jdbc/src/main/sql/tpcds/" + connection.getName()))
+          .setDistributionFile(buildPath.resolve("tpcds.idx"))
+          .setQueryTemplatesDirectory(tpcDsHomePath.resolve("query_templates"));
 
         String feedback = tpcdsQgen.start();
         System.out.println(feedback);

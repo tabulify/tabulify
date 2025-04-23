@@ -3,6 +3,7 @@ package com.tabulify.tpc;
 import net.bytle.command.Command;
 import com.tabulify.connection.Connection;
 import net.bytle.fs.Fs;
+import net.bytle.os.Oss;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,7 +22,6 @@ public class TpcdsQgen {
   private final Connection connection;
   private Path outputDirectory;
 
-  private String dsqgenExe = "dsqgen.exe";
   private Path queryTemplatesDirectory = Paths.get(".");
   private Path distributionFile = Paths.get(".");
   private String dialect;
@@ -56,18 +56,24 @@ public class TpcdsQgen {
      * Args of dsqgen building
      */
     List<String> args = new ArrayList<>();
-    args.add("/directory");
-    args.add(queryTemplatesDirectory.toAbsolutePath().normalize().toString());
-    if (dialect!=null) {
-      args.add("/dialect "+dialect);
+    String startParameter = "-";
+    if (Oss.isWindows()) {
+      startParameter = "/";
     }
-    args.add("/distributions " + distributionFile.toAbsolutePath().normalize());
+    args.add(startParameter + "directory");
+    args.add(queryTemplatesDirectory.toAbsolutePath().normalize().toString());
+    if (dialect != null) {
+      args.add(startParameter + "dialect");
+      args.add(dialect);
+    }
+    args.add(startParameter + "distributions");
+    args.add(String.valueOf(distributionFile.toAbsolutePath().normalize()));
 
     /**
      * Output target directory
      */
-    Path targetDirectory = Paths.get("./src/main/sql/tpcds/query/"+ connection.getName());
-    if (outputDirectory!=null){
+    Path targetDirectory = Paths.get("./src/main/sql/tpcds/query/" + connection.getName());
+    if (outputDirectory != null) {
       targetDirectory = outputDirectory;
     }
     Fs.createDirectoryIfNotExists(targetDirectory);
@@ -81,8 +87,9 @@ public class TpcdsQgen {
     /**
      * dsqgenExePath path
      */
+    String dsqgenExe = "dsqgen";
     Path dsqgenExePath = Paths.get(dsqgenExe);
-    if (dsqgenDirectory!=null){
+    if (dsqgenDirectory != null) {
       dsqgenExePath = dsqgenDirectory.resolve(dsqgenExe);
     }
 
@@ -91,7 +98,8 @@ public class TpcdsQgen {
 
       Command command = Command.create(dsqgenExePath.toAbsolutePath().toString())
         .addArgs(args)
-        .addArg("/template query" + i + ".tpl")
+        .addArg(startParameter + "template")
+        .addArg("query" + i + ".tpl")
         .setWorkingDirectory(targetDirectory);
       command.startAndWait();
       if (command.getExitValue() != 0) {
@@ -115,12 +123,10 @@ public class TpcdsQgen {
 
   /**
    * The dialect value:
-   *   * `sqlite`
-   *   * ...
+   * * `sqlite`
+   * * ...
    *
-   * <a href="https://datacadamia.com/data/type/relation/benchmark/tpcds/dsqgen#dialect">Dialect</a>
-   * @param dialect
-   * @return
+   * @param dialect <a href="https://datacadamia.com/data/type/relation/benchmark/tpcds/dsqgen#dialect">Dialect</a>
    */
   public TpcdsQgen setDialect(String dialect) {
     this.dialect = dialect;
