@@ -1040,7 +1040,7 @@ public class SqlDataSystem extends DataSystemAbs {
           return dataTypeCreateStatement;
         }
       case Types.TIME_WITH_TIMEZONE:
-        if (!(precision == null || precision.equals(defaultPrecision))) {
+        if (!(precision == null || precision == 0 || precision.equals(defaultPrecision))) {
           return "time(" + precision + ") with time zone";
         } else {
           return dataTypeCreateStatement;
@@ -1049,7 +1049,7 @@ public class SqlDataSystem extends DataSystemAbs {
         // timestamp without timezone
         // timestamp precision if not specified is generally implicitly 6 (ie precision is optional)
         // https://www.postgresql.org/docs/current/datatype-datetime.html
-        if (!(precision == null || precision.equals(defaultPrecision))) {
+        if (!(precision == null || precision == 0 || precision.equals(defaultPrecision))) {
           return "timestamp(" + precision + ")";
         } else {
           return dataTypeCreateStatement;
@@ -1078,12 +1078,10 @@ public class SqlDataSystem extends DataSystemAbs {
         if (precision.equals(defaultPrecision)) {
           if (targetSqlType.getMandatoryPrecision() != null && targetSqlType.getMandatoryPrecision()) {
             return dataTypeCreateStatement + "(" + precision + ")";
-          } else {
-            return dataTypeCreateStatement;
           }
-        } else {
-          return dataTypeCreateStatement + "(" + precision + ")";
+          return dataTypeCreateStatement;
         }
+        return dataTypeCreateStatement + "(" + precision + ")";
       case Types.DECIMAL:
       case Types.NUMERIC:
         if ((precision == null || precision.equals(defaultPrecision)) && (scale == null || scale == 0 || scale.equals(maximumScale))) {
@@ -1663,7 +1661,13 @@ public class SqlDataSystem extends DataSystemAbs {
 
         int data_type = columnResultSet.getInt("DATA_TYPE");
         Integer scale = columnResultSet.getInt("DECIMAL_DIGITS");
+        // COLUMN_SIZE
+        // For numeric data, this is the maximum precision.
+        // For character data, this is the length in characters.
+        // For datetime datatypes, this is the length in characters
         int precision = columnResultSet.getInt("COLUMN_SIZE");
+        // BUFFER_LENGTH not used
+
 
         /**
          * For Postgresql, Sqlserver, by default
@@ -2133,7 +2137,6 @@ public class SqlDataSystem extends DataSystemAbs {
     }
 
   }
-
 
 
 }

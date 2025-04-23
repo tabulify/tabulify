@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import static java.sql.DatabaseMetaData.typeNoNulls;
+
 public class MySqlDataSystem extends SqlDataSystem {
 
 
@@ -118,11 +120,21 @@ public class MySqlDataSystem extends SqlDataSystem {
       .setAutoIncrement(false);
 
     /**
-     * 4
+     * Default precision to zero so that we don't get it in the `create` statement
+     * By default, null
      */
-//    sqlMetaDataType.computeIfAbsent(Types.INTEGER, SqlMetaDataType::new)
-//      .setSqlName("int")
-//      .setAutoIncrement(false);
+    sqlMetaDataType.computeIfAbsent(Types.TIME, SqlMetaDataType::new)
+      .setDefaultPrecision(0);
+
+    /**
+     * Timezone does not exist
+     * MySQL converts TIMESTAMP values from the current time zone to UTC for storage, and back from UTC to the current time zone for retrieval.
+     * https://dev.mysql.com/doc/refman/8.4/en/datetime.html
+     */
+    SqlMetaDataType timestamp = sqlMetaDataType.get(Types.TIMESTAMP);
+    sqlMetaDataType.put(Types.TIMESTAMP_WITH_TIMEZONE, timestamp);
+    SqlMetaDataType time = sqlMetaDataType.get(Types.TIME);
+    sqlMetaDataType.put(Types.TIME_WITH_TIMEZONE, time);
 
     return sqlMetaDataType;
 
@@ -159,11 +171,24 @@ public class MySqlDataSystem extends SqlDataSystem {
           precision = defaultPrecision;
         }
         return sqlName + "(" + precision + ")";
+      case Types.TIMESTAMP:
+      case Types.TIMESTAMP_WITH_TIMEZONE:
+        // to avoid Invalid default value for timestamp field
+        // we add null default null
+        // https://stackoverflow.com/questions/9192027/invalid-default-value-for-create-date-timestamp-field
+        Short nullable = targetSqlType.getNullable();
+        if (nullable != typeNoNulls) {
+          if (precision != null && precision != 0) {
+            sqlName = sqlName + "(" + precision + ")";
+          }
+          return sqlName + " null default null";
+        }
 
     }
     return super.createDataTypeStatement(columnDef);
 
   }
+
 
   @Override
   public List<SqlMetaForeignKey> getMetaForeignKeys(SqlDataPath dataPath) {

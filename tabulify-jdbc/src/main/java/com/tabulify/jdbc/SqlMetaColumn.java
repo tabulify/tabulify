@@ -32,6 +32,12 @@ public class SqlMetaColumn {
   private String isAutoIncrement;
   /**
    * The COLUMN_SIZE of the JDBC driver (ie precision)
+   * For numeric data, this is the maximum precision.
+   * For character data, this is the length in characters.
+   * For datetime datatypes, this is the length in characters of the String representation
+   * For binary data, this is the length in bytes.
+   * For the ROWID datatype, this is the length in bytes.
+   * Null is returned for data types where the column size is not applicable.
    */
   private Integer precision;
   /**

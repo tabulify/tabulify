@@ -514,11 +514,9 @@ public class SqlConnection extends NoOpConnection {
     updateSqlDataTypeIfNeeded();
     SqlDataType sqlDataType = driverDataType.get(typeCode);
     if (sqlDataType != null) {
-
       return sqlDataType;
-    } else {
-      return super.getSqlDataType(typeCode);
     }
+    return super.getSqlDataType(typeCode);
   }
 
   @Override

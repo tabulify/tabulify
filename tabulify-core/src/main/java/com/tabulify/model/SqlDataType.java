@@ -192,8 +192,6 @@ public class SqlDataType {
   }
 
 
-
-
   /**
    * The PRECISION column represents the maximum column size that the server supports for the given datatype.
    * For numeric data, this is the maximum precision.
@@ -231,9 +229,9 @@ public class SqlDataType {
 
   /**
    * @return can you use null for this type
-   * * typeNoNulls - does not allow NULL values
-   * * typeNullable - allows NULL values
-   * * typeNullableUnknown - nullability unknown
+   * * {@link DatabaseMetaData#typeNoNulls} - does not allow NULL values
+   * * {@link DatabaseMetaData#typeNullable} - allows NULL values
+   * * {{@link DatabaseMetaData#typeNullableUnknown} - nullability unknown
    */
   public Short getNullable() {
     return nullable;
@@ -304,7 +302,7 @@ public class SqlDataType {
 
   @Override
   public String toString() {
-    return getName() + " (" + getTypeCode() + "," + getSqlName() + ")@"+this.connection.getName();
+    return getName() + " (" + getTypeCode() + "," + getSqlName() + ")@" + this.connection.getName();
   }
 
 
@@ -339,7 +337,6 @@ public class SqlDataType {
 
   /**
    * The name used in a SQL statement
-   *
    */
   public SqlDataType setSqlName(String typeName) {
     this.sqlName = typeName;
@@ -416,7 +413,6 @@ public class SqlDataType {
   /**
    * The java clazz that expects the driver to load the object in
    * this type
-   *
    */
   public SqlDataType setSqlJavaClazz(Class<?> clazz) {
     if (clazz == null && this.connection.getTabular().isIdeEnv()) {
@@ -453,7 +449,6 @@ public class SqlDataType {
    * The name of the type
    * if in {@link Types#REAL} it would be real
    * but it may be implemented via a {@link #getSqlName()} `float4` for instance
-   *
    */
   public String getName() {
     if (this.name != null) {
@@ -490,14 +485,12 @@ public class SqlDataType {
   public Integer getDefaultPrecision() {
     if (this.defaultPrecision == null) {
       return this.maxPrecision;
-    } else {
-      return this.defaultPrecision;
     }
+    return this.defaultPrecision;
   }
 
   /**
    * The precision that will be created when not given
-   *
    */
   public SqlDataType setDefaultPrecision(Integer defaultPrecision) {
     this.defaultPrecision = defaultPrecision;
@@ -508,7 +501,6 @@ public class SqlDataType {
   /**
    * If the precision should be in the statement
    * Example nvarchar2 for oracle
-   *
    */
   public SqlDataType setMandatoryPrecision(Boolean mandatoryPrecision) {
     this.mandatoryPrecision = mandatoryPrecision;
