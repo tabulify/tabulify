@@ -6,7 +6,6 @@ import com.tabulify.spi.DataPath;
 import com.tabulify.transfer.TransferSourceTarget;
 
 import java.sql.Types;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -69,16 +68,20 @@ public class SqlServerDataSystem extends SqlDataSystem {
      * https://docs.microsoft.com/en-us/sql/t-sql/statements/create-table-transact-sql-identity-property
      */
     metaDataType.computeIfAbsent(Types.INTEGER, SqlMetaDataType::new)
-      .setSqlName("int");
+      .setSqlName("int")
+      .setMaxPrecision(10);
 
     metaDataType.computeIfAbsent(Types.BIGINT, SqlMetaDataType::new)
-      .setSqlName("bigint");
+      .setSqlName("bigint")
+      .setMaxPrecision(19);
 
     metaDataType.computeIfAbsent(Types.SMALLINT, SqlMetaDataType::new)
-      .setSqlName("smallint");
+      .setSqlName("smallint")
+      .setMaxPrecision(5);
 
     metaDataType.computeIfAbsent(Types.TINYINT, SqlMetaDataType::new)
-      .setSqlName("tinyint");
+      .setSqlName("tinyint")
+      .setMaxPrecision(3);
 
     /**
      * Numeric
@@ -87,6 +90,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
     metaDataType.computeIfAbsent(Types.NUMERIC, SqlMetaDataType::new)
       .setSqlName("numeric")
       .setMaxPrecision(38)
+      .setMaximumScale(38)
       .setDefaultPrecision(18);
 
     metaDataType.computeIfAbsent(Types.DECIMAL, SqlMetaDataType::new)
@@ -389,7 +393,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
       // A view in sql server have only one name
       // Otherwise, error !
       // 'CREATE/ALTER VIEW' does not allow specifying the database name as a prefix to the object name.
-      String viewName = this.createQuotedName(dataPath.getName());
+      String viewName = this.createQuotedName(dataPath.getLogicalName());
       return "create view " + viewName + " as " + query;
     }
     /**

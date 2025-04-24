@@ -383,7 +383,7 @@ public class SqlDataPath extends DataPathAbs {
    */
   public String toSqlStringPath() {
 
-    return SqlConnectionResourcePath.createOfSqlDataPath(this).toAbsolute().toSqlStatementPath();
+    return toSqlStatementPath(false);
 
   }
 
@@ -394,7 +394,60 @@ public class SqlDataPath extends DataPathAbs {
    */
   public String toSqlStringPathWithNameValidation() {
 
-    return SqlConnectionResourcePath.createOfSqlDataPath(this).toAbsolute().toSqlStatementPathWithNameValidation();
+    return toSqlStatementPath(true);
+
+  }
+
+  /**
+   * @return a sql string path that can be used in a sql statement (with {@link SqlConnectionMetadata#getIdentifierQuote()} quoted identifier})
+   */
+  private String toSqlStatementPath(Boolean nameValidation) {
+
+    SqlConnectionResourcePath absoluteSqlConnectionResourcePath = SqlConnectionResourcePath.createOfSqlDataPath(this).toAbsolute();
+    SqlConnection connection = this.getConnection();
+    SqlDataSystem dataSystem = connection.getDataSystem();
+    StringBuilder sqlStringPath = new StringBuilder();
+
+    try {
+      String catalogPart = absoluteSqlConnectionResourcePath.getCatalogPart();
+      if (connection.getMetadata().supportsCatalogsInSqlStatementPath()) {
+        String catalogName = catalogPart;
+        if (nameValidation) {
+          catalogName = dataSystem.validateName(catalogName);
+        }
+        sqlStringPath.append(dataSystem.createQuotedName(catalogName));
+      }
+    } catch (NoCatalogException e) {
+      // no catalog
+    }
+
+
+    try {
+      String schemaName = absoluteSqlConnectionResourcePath.getSchemaPart();
+      if (sqlStringPath.length() != 0) {
+        sqlStringPath.append(absoluteSqlConnectionResourcePath.getPathSeparator());
+      }
+      if (nameValidation) {
+        schemaName = dataSystem.validateName(schemaName);
+      }
+      sqlStringPath.append(dataSystem.createQuotedName(schemaName));
+    } catch (NoSchemaException e) {
+      // No schema
+    }
+
+    if (sqlStringPath.length() != 0) {
+      sqlStringPath.append(absoluteSqlConnectionResourcePath.getPathSeparator());
+    }
+    if (absoluteSqlConnectionResourcePath.getObjectPartOrNull() == null) {
+      throw new RuntimeException("A sql statement exists only for an object. The data path (" + this + ") seems to not be a object but a catalog or schema.");
+    }
+    // the sql name is the logical name
+    String objectName = this.getLogicalName();
+    if (nameValidation) {
+      objectName = dataSystem.validateName(objectName);
+    }
+    sqlStringPath.append(dataSystem.createQuotedName(objectName));
+    return sqlStringPath.toString();
 
   }
 
@@ -430,7 +483,6 @@ public class SqlDataPath extends DataPathAbs {
     }
     return (SqlRelationDef) this.relationDef;
   }
-
 
 
 }

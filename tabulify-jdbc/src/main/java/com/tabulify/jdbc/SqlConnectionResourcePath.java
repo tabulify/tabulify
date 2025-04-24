@@ -297,51 +297,6 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
   }
 
 
-  public String toSqlStatementPathWithNameValidation() {
-    return toSqlStatementPath(true);
-  }
-
-  public String toSqlStatementPath() {
-    return toSqlStatementPath(false);
-  }
-
-  /**
-   * @return a sql string path that can be used in a sql statement (with {@link SqlConnectionMetadata#getIdentifierQuote()} quoted identifier})
-   */
-  public String toSqlStatementPath(Boolean nameValidation) {
-
-    SqlDataSystem dataSystem = this.sqlConnection.getDataSystem();
-    StringBuilder sqlStringPath = new StringBuilder();
-    if (this.catalogPart != null && this.sqlConnection.getMetadata().supportsCatalogsInSqlStatementPath()) {
-      String catalogName = this.catalogPart;
-      if (nameValidation) {
-        catalogName = this.sqlConnection.getDataSystem().validateName(catalogName);
-      }
-      sqlStringPath.append(dataSystem.createQuotedName(catalogName));
-    }
-    if (this.schemaPart != null) {
-      if (sqlStringPath.length() != 0) {
-        sqlStringPath.append(getPathSeparator());
-      }
-      String schemaName = this.schemaPart;
-      if (nameValidation) {
-        schemaName = this.sqlConnection.getDataSystem().validateName(schemaName);
-      }
-      sqlStringPath.append(dataSystem.createQuotedName(schemaName));
-    }
-    if (this.objectPart != null) {
-      if (sqlStringPath.length() != 0) {
-        sqlStringPath.append(getPathSeparator());
-      }
-      String objectName = this.objectPart;
-      if (nameValidation) {
-        objectName = this.sqlConnection.getDataSystem().validateName(objectName);
-      }
-      sqlStringPath.append(dataSystem.createQuotedName(objectName));
-    }
-    return sqlStringPath.toString();
-  }
-
   /**
    * @return a resource path where the catalog and schema have been deleted if they are the connection default
    */

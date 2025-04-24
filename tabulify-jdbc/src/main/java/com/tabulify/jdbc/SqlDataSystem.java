@@ -181,7 +181,7 @@ public class SqlDataSystem extends DataSystemAbs {
 
     String catalog;
     try {
-      catalog = sqlDataPath.getCatalogDataPath().getName();
+      catalog = sqlDataPath.getCatalogDataPath().getLogicalName();
     } catch (NoCatalogException e) {
       catalog = null;
     }
@@ -192,7 +192,7 @@ public class SqlDataSystem extends DataSystemAbs {
         throw new RuntimeException("Catalog exists is not yet supported");
       case SCHEMA:
 
-        final String schemaPattern = sqlDataPath.getName();
+        final String schemaPattern = sqlDataPath.getLogicalName();
 
         List<SqlDataPath> schemas = this.getConnection().getSchemas(catalog, schemaPattern);
         switch (schemas.size()) {
@@ -209,14 +209,14 @@ public class SqlDataSystem extends DataSystemAbs {
 
           String schema;
           try {
-            schema = sqlDataPath.getSchema().getName();
+            schema = sqlDataPath.getSchema().getLogicalName();
           } catch (NoSchemaException e) {
             schema = null;
           }
 
           String[] allTypes = null; // null  means all types
           //noinspection ConstantConditions
-          try (ResultSet tableResultSet = this.sqlConnection.getCurrentConnection().getMetaData().getTables(catalog, schema, sqlDataPath.getName(), allTypes)) {
+          try (ResultSet tableResultSet = this.sqlConnection.getCurrentConnection().getMetaData().getTables(catalog, schema, sqlDataPath.getLogicalName(), allTypes)) {
             return tableResultSet.next(); // For TYPE_FORWARD_ONLY
           }
 
