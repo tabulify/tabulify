@@ -116,7 +116,7 @@ public class SqlMetaColumn {
     return this;
   }
 
-  public SqlMetaColumn setTypeCode(int typeCode) {
+  public SqlMetaColumn setTypeCode(Integer typeCode) {
     this.typeCode = typeCode;
     return this;
   }

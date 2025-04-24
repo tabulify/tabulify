@@ -180,10 +180,13 @@ public class SqlRelationDef extends RelationDefDefault {
             dataType = this.getDataPath().getConnection().getSqlDataType(typeCode);
           } else {
             String typeName = meta.getTypeName();
-            if(typeName==null){
-              throw new RuntimeException("The column "+meta.getColumnName()+" has no type code or name");
+            if (typeName == null) {
+              throw new RuntimeException("The column " + meta.getColumnName() + " has no type code or name");
             }
             dataType = this.getDataPath().getConnection().getSqlDataType(typeName);
+            if (dataType == null) {
+              throw new RuntimeException("The column " + meta.getColumnName() + " has a unknown type name (" + typeName + ")");
+            }
           }
           Class<?> sqlClass = dataType.getSqlClass();
           this.getOrCreateColumn(meta.getColumnName(), dataType, sqlClass)

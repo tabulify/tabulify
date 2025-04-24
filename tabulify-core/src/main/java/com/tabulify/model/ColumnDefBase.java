@@ -52,7 +52,7 @@ public class ColumnDefBase implements ColumnDef {
   private final String columnName;
 
   private int nullable = DatabaseMetaData.columnNullable;
-  private Boolean isAutoincrement = false;
+  private Boolean isAutoincrement = null;
   private Boolean isGeneratedColumn = false;
   private final RelationDef relationDef;
 
@@ -113,6 +113,9 @@ public class ColumnDefBase implements ColumnDef {
 
   @Override
   public Boolean isAutoincrement() {
+    if (isAutoincrement == null) {
+      return false;
+    }
     return isAutoincrement;
   }
 

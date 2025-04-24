@@ -549,59 +549,64 @@ public class SqlConnection extends NoOpConnection {
   // A breaker to not update the data type each time
   Boolean sqlDataTypeWereUpdated = false;
 
+  /**
+   * As soon as we have the connection, we update the sql data type
+   * This is because the credential are needed, and they are not given at the constructor level
+   * because they are not always mandatory
+   */
   private void updateSqlDataTypeIfNeeded() {
-    if (!sqlDataTypeWereUpdated) {
-      // As soon as we have the connection, we update the sql data type
-      // This is because the credential are needed, and they are not given at the constructor level
-      // because they are not always mandatory
 
-      /**
-       * Because of alias (ie NUMERIC=REAL for instance), we are looping
-       * on the type code in order to create the data type and this alias
-       * as two different {@link SqlDataType}
-       */
-      Map<Integer, SqlMetaDataType> systemType = this.getDataSystem().getMetaDataTypes();
-      for (Integer typeCode : systemType.keySet()) {
-        SqlMetaDataType sqlMetaDataType = systemType.get(typeCode);
-        SqlDataType sqlDataType = driverDataType.computeIfAbsent(typeCode, type -> SqlDataType.creationOf(this, type));
-        // Clazz mapping cannot be null
-        if (sqlMetaDataType.getSqlClass() != null) {
-          sqlDataType.setSqlJavaClazz(sqlMetaDataType.getSqlClass());
-        } else {
-          SqlDataType superSqlDataType = super.getSqlDataType(sqlMetaDataType.getTypeCode());
-          if (superSqlDataType != null && superSqlDataType.getSqlClass() != null) {
-            sqlDataType.setSqlJavaClazz(superSqlDataType.getSqlClass());
-          }
-        }
-        Boolean mandatoryPrecision = sqlMetaDataType.getMandatoryPrecision();
-        if (mandatoryPrecision != null) {
-          sqlDataType.setMandatoryPrecision(mandatoryPrecision);
-        }
-        Integer maxPrecision = sqlMetaDataType.getMaxPrecision();
-        if (maxPrecision != null) {
-          sqlDataType.setMaxPrecision(maxPrecision);
-        }
-        sqlDataType
-          .setDriverTypeCode(sqlMetaDataType.getDriverTypeCode())
-          .setSqlName(sqlMetaDataType.getTypeName())
-          .setMaximumScale(sqlMetaDataType.getMaximumScale())
-          .setAutoIncrement(sqlMetaDataType.getAutoIncrement())
-          .setMinimumScale(sqlMetaDataType.getMinimumScale())
-          .setCaseSensitive(sqlMetaDataType.getCaseSensitive())
-          .setCreateParams(sqlMetaDataType.getCreateParams())
-          .setFixedPrecisionScale(sqlMetaDataType.getFixedPrecisionScale())
-          .setLiteralPrefix(sqlMetaDataType.getLiteralPrefix())
-          .setLiteralSuffix(sqlMetaDataType.getLiteralSuffix())
-          .setNullable(sqlMetaDataType.getNullable())
-          .setLocalTypeName(sqlMetaDataType.getLocalTypeName())
-          .setSearchable(sqlMetaDataType.getSearchable())
-          .setUnsignedAttribute(sqlMetaDataType.getUnsignedAttribute())
-          .setDefaultPrecision(sqlMetaDataType.getDefaultPrecision());
-
-      }
-
-      sqlDataTypeWereUpdated = true;
+    if (sqlDataTypeWereUpdated) {
+      return;
     }
+
+    /**
+     * Because of alias (ie NUMERIC=REAL for instance), we are looping
+     * on the type code in order to create the data type and this alias
+     * as two different {@link SqlDataType}
+     */
+    Map<Integer, SqlMetaDataType> systemType = this.getDataSystem().getMetaDataTypes();
+    for (Integer typeCode : systemType.keySet()) {
+      SqlMetaDataType sqlMetaDataType = systemType.get(typeCode);
+      SqlDataType sqlDataType = driverDataType.computeIfAbsent(typeCode, type -> SqlDataType.creationOf(this, type));
+      // Clazz mapping cannot be null
+      if (sqlMetaDataType.getSqlClass() != null) {
+        sqlDataType.setSqlJavaClazz(sqlMetaDataType.getSqlClass());
+      } else {
+        SqlDataType superSqlDataType = super.getSqlDataType(sqlMetaDataType.getTypeCode());
+        if (superSqlDataType != null && superSqlDataType.getSqlClass() != null) {
+          sqlDataType.setSqlJavaClazz(superSqlDataType.getSqlClass());
+        }
+      }
+      Boolean mandatoryPrecision = sqlMetaDataType.getMandatoryPrecision();
+      if (mandatoryPrecision != null) {
+        sqlDataType.setMandatoryPrecision(mandatoryPrecision);
+      }
+      Integer maxPrecision = sqlMetaDataType.getMaxPrecision();
+      if (maxPrecision != null) {
+        sqlDataType.setMaxPrecision(maxPrecision);
+      }
+      sqlDataType
+        .setDriverTypeCode(sqlMetaDataType.getDriverTypeCode())
+        .setSqlName(sqlMetaDataType.getTypeName())
+        .setMaximumScale(sqlMetaDataType.getMaximumScale())
+        .setAutoIncrement(sqlMetaDataType.getAutoIncrement())
+        .setMinimumScale(sqlMetaDataType.getMinimumScale())
+        .setCaseSensitive(sqlMetaDataType.getCaseSensitive())
+        .setCreateParams(sqlMetaDataType.getCreateParams())
+        .setFixedPrecisionScale(sqlMetaDataType.getFixedPrecisionScale())
+        .setLiteralPrefix(sqlMetaDataType.getLiteralPrefix())
+        .setLiteralSuffix(sqlMetaDataType.getLiteralSuffix())
+        .setNullable(sqlMetaDataType.getNullable())
+        .setLocalTypeName(sqlMetaDataType.getLocalTypeName())
+        .setSearchable(sqlMetaDataType.getSearchable())
+        .setUnsignedAttribute(sqlMetaDataType.getUnsignedAttribute())
+        .setDefaultPrecision(sqlMetaDataType.getDefaultPrecision());
+
+    }
+
+    sqlDataTypeWereUpdated = true;
+
   }
 
   /**

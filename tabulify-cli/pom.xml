@@ -80,6 +80,10 @@
     </dependency>
     <dependency>
       <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-mysql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
       <artifactId>tabulify-email</artifactId>
     </dependency>
 
