@@ -1,12 +1,13 @@
 package com.tabulify.jdbc;
 
 import com.tabulify.connection.Connection;
+import com.tabulify.engine.ForeignKeyDag;
 import com.tabulify.exception.DataResourceNotEmptyException;
 import com.tabulify.model.*;
-import com.tabulify.transfer.*;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataSystemAbs;
 import com.tabulify.spi.Tabulars;
+import com.tabulify.transfer.*;
 import net.bytle.exception.*;
 import net.bytle.regexp.Glob;
 import net.bytle.type.Casts;
@@ -1454,15 +1455,24 @@ public class SqlDataSystem extends DataSystemAbs {
     }
 
     /**
+     * In order, not all database (I see you sqlserver)
+     * support the truncate table table1, table2, ...
+     */
+    List<SqlDataPath> dagSourceDataPaths = ForeignKeyDag
+      .createFromPaths(jdbcDataPaths)
+      .getDropOrdered();
+
+    /**
      * Truncating
      */
-    List<String> sqls = createTruncateStatement(jdbcDataPaths);
+    List<String> sqls = createTruncateStatement(dagSourceDataPaths);
     for (String sql : sqls) {
       try (Statement statement = jdbcDataPaths.get(0).getConnection().getCurrentConnection().createStatement()) {
+        //noinspection SqlSourceToSinkFlow
         statement.execute(sql);
         SqlLog.LOGGER_DB_JDBC.info("Truncate Statement executed: " + Strings.createFromString(sql).onOneLine().toString());
       } catch (SQLException e) {
-        throw new RuntimeException("Bad Sql:" + Strings.createFromString(sql).onOneLine().toString(), e);
+        throw new RuntimeException("Error, not permitted or bad Sql:" + Strings.createFromString(sql).onOneLine().toString(), e);
       }
     }
     SqlLog.LOGGER_DB_JDBC.info("Table(s) (" + dataPaths.stream().map(DataPath::toString).collect(Collectors.joining(", ")) + ") were truncated");

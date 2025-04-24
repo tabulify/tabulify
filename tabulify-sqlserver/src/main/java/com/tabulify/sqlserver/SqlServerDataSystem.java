@@ -6,8 +6,10 @@ import com.tabulify.spi.DataPath;
 import com.tabulify.transfer.TransferSourceTarget;
 
 import java.sql.Types;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SqlServerDataSystem extends SqlDataSystem {
 
@@ -399,5 +401,17 @@ public class SqlServerDataSystem extends SqlDataSystem {
 
   }
 
+  /**
+   * Truncate does not support multiple table as the standard/postgres does
+   * <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/truncate-table-transact-sql?view=sql-server-ver16">...</a>
+   */
+  protected List<String> createTruncateStatement(List<SqlDataPath> dataPaths) {
+
+
+    return dataPaths.stream()
+      .map(d -> "truncate table " + d.toSqlStringPath())
+      .collect(Collectors.toList());
+
+  }
 
 }
