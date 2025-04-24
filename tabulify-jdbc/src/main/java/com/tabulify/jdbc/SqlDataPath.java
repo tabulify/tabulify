@@ -16,6 +16,7 @@ import net.bytle.type.*;
 import java.sql.DatabaseMetaData;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.tabulify.jdbc.SqlDataPathType.*;
 
@@ -279,13 +280,17 @@ public class SqlDataPath extends DataPathAbs {
    */
   @Override
   public String getName() {
+
     return this.sqlConnectionResourcePath.getName();
+
   }
 
 
   @Override
   public List<String> getNames() {
+
     return this.sqlConnectionResourcePath.getNames();
+
   }
 
 
@@ -382,6 +387,17 @@ public class SqlDataPath extends DataPathAbs {
 
   }
 
+  /**
+   * The qualified SQL name with its {@link SqlConnectionMetadata#getIdentifierQuote()}
+   * that can be used in SQL Statement with name validation
+   * Use in create statement
+   */
+  public String toSqlStringPathWithNameValidation() {
+
+    return SqlConnectionResourcePath.createOfSqlDataPath(this).toAbsolute().toSqlStatementPathWithNameValidation();
+
+  }
+
   @Override
   public SqlRelationDef getRelationDef() {
 
@@ -414,6 +430,7 @@ public class SqlDataPath extends DataPathAbs {
     }
     return (SqlRelationDef) this.relationDef;
   }
+
 
 
 }

@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Utility script to stop all containers using the testcontainers/ryuk
+# For whatever reason, they keep running
+
+# Tag is mandatory (default to latest otherwise)
+# https://docs.docker.com/reference/cli/docker/container/ls/#ancestor
+IMAGE="testcontainers/ryuk:0.11.0"
+echo "Searching for ryuk containers using image $IMAGE"
+CONTAINER_IDS=$(docker ps -q --filter "ancestor=$IMAGE")
+
+# Check if any containers were found
+if [ -z "$CONTAINER_IDS" ]; then
+    echo "No ryuk containers are currently running."
+    exit 0
+fi
+
+# Count the number of containers found
+CONTAINER_COUNT=$(echo "$CONTAINER_IDS" | wc -l)
+echo "Found $CONTAINER_COUNT container(s) to stop."
+
+# Stop each container
+echo "$CONTAINER_IDS" | while read -r container_id; do
+    if [ -n "$container_id" ]; then
+        echo "Stopping container $container_id..."
+        # Check if the stop command was successful
+        if docker stop "$container_id"; then
+            echo "Container $container_id stopped successfully."
+        else
+            echo "Failed to stop container $container_id."
+        fi
+    fi
+done
+
+echo "Operation completed."

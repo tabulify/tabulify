@@ -96,16 +96,6 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
       .split(this.getPathSeparator())
       .stream()
       .map(s -> sqlConnection.getDataSystem().deleteQuoteIdentifier(s))
-      .map(s-> {
-        /**
-         * Transform name in sql name
-         * We don't throw for now
-         * Oracle can create table with weird characters (ie "table-name")
-         * but will issue an unrelated error when reading metadata.
-         * Example: https://docs.oracle.com/en/error-help/db/ora-17068/?r=23ai when reading Jdbc Info View
-         */
-        return KeyNormalizer.create(s).toSqlCase();
-      })
       .collect(Collectors.toList());
     int nameSizes = processedPathNames.size();
     switch (nameSizes) {
@@ -307,27 +297,47 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
   }
 
 
+  public String toSqlStatementPathWithNameValidation() {
+    return toSqlStatementPath(true);
+  }
+
+  public String toSqlStatementPath() {
+    return toSqlStatementPath(false);
+  }
+
   /**
    * @return a sql string path that can be used in a sql statement (with {@link SqlConnectionMetadata#getIdentifierQuote()} quoted identifier})
    */
-  public String toSqlStatementPath() {
+  public String toSqlStatementPath(Boolean nameValidation) {
 
     SqlDataSystem dataSystem = this.sqlConnection.getDataSystem();
     StringBuilder sqlStringPath = new StringBuilder();
     if (this.catalogPart != null && this.sqlConnection.getMetadata().supportsCatalogsInSqlStatementPath()) {
-      sqlStringPath.append(dataSystem.createQuotedName(this.catalogPart));
+      String catalogName = this.catalogPart;
+      if (nameValidation) {
+        catalogName = this.sqlConnection.getDataSystem().validateName(catalogName);
+      }
+      sqlStringPath.append(dataSystem.createQuotedName(catalogName));
     }
     if (this.schemaPart != null) {
       if (sqlStringPath.length() != 0) {
         sqlStringPath.append(getPathSeparator());
       }
-      sqlStringPath.append(dataSystem.createQuotedName(this.schemaPart));
+      String schemaName = this.schemaPart;
+      if (nameValidation) {
+        schemaName = this.sqlConnection.getDataSystem().validateName(schemaName);
+      }
+      sqlStringPath.append(dataSystem.createQuotedName(schemaName));
     }
     if (this.objectPart != null) {
       if (sqlStringPath.length() != 0) {
         sqlStringPath.append(getPathSeparator());
       }
-      sqlStringPath.append(dataSystem.createQuotedName(this.objectPart));
+      String objectName = this.objectPart;
+      if (nameValidation) {
+        objectName = this.sqlConnection.getDataSystem().validateName(objectName);
+      }
+      sqlStringPath.append(dataSystem.createQuotedName(objectName));
     }
     return sqlStringPath.toString();
   }
@@ -514,6 +524,9 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
       );
   }
 
+  /**
+   * @return a sql name or a glob name
+   */
   public String getName() {
     switch (this.getSqlMediaType()) {
       case CATALOG:

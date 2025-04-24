@@ -23,15 +23,15 @@ public class PostgresDataPath extends SqlDataPath {
   }
 
   /**
-   * https://www.postgresql.org/docs/9.5/ddl-depend.html
+   * <a href="https://www.postgresql.org/docs/9.5/ddl-depend.html">...</a>
    * The dependent table is pg_dependent
-   * https://www.postgresql.org/docs/9.5/catalog-pg-depend.html
+   * <a href="https://www.postgresql.org/docs/9.5/catalog-pg-depend.html">...</a>
    * <p>
    * <p>
    * A namespace in Postgres is a schema
    * <p>
    * Based on:
-   * https://stackoverflow.com/questions/4462908/find-dependent-objects-for-a-table-or-view
+   * <a href="https://stackoverflow.com/questions/4462908/find-dependent-objects-for-a-table-or-view">...</a>
    */
   @Override
   public Set<DataPath> getDependencies() {
@@ -49,7 +49,8 @@ public class PostgresDataPath extends SqlDataPath {
       queryDependencies = fromString.getSqlStatements().get(0);
     }
     try (PreparedStatement statement = this.getConnection().getCurrentConnection().prepareStatement(queryDependencies)) {
-      statement.setString(1, this.getName());
+      String tableName = this.getLogicalName();
+      statement.setString(1, tableName);
       String schemaName;
       try {
         schemaName = this.getSchema().getName();
@@ -66,7 +67,7 @@ public class PostgresDataPath extends SqlDataPath {
          * As a query depends on itself for whatever reason,
          * and that we don't want any loop, we block it with this condition
          */
-        if (!(schemaName + this.getName()).equals(schema + name)) {
+        if (!(schemaName + tableName).equals(schema + name)) {
           String catalogName;
           try {
             catalogName = this.getCatalogDataPath().getName();

@@ -193,7 +193,8 @@ public class Tabulars {
         DbLoggers.LOGGER_DB_ENGINE.info("The data resource (" + dataPath + ") does not exist and was not dropped");
       }
     } else {
-      for (DataPath dataPath : ForeignKeyDag.createFromPaths(dataPaths).getDropOrdered()) {
+      List<DataPath> dropOrdered = ForeignKeyDag.createFromPaths(dataPaths).getDropOrdered();
+      for (DataPath dataPath : dropOrdered) {
         if (exists(dataPath)) {
           drop(dataPath);
         } else {

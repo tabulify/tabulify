@@ -927,11 +927,29 @@ public class SqlDataSystem extends DataSystemAbs {
   public String createTableStatement(SqlDataPath dataPath) {
 
     return "create table " +
-      dataPath.toSqlStringPath() +
+      dataPath.toSqlStringPathWithNameValidation() +
       " (\n" +
       createColumnsStatement(dataPath) +
       " )\n";
 
+  }
+
+  /**
+   * @param sqlName - the sql name to validate
+   *                throw if not valid
+   */
+  public String validateName(String sqlName) {
+
+    char firstChar = sqlName.charAt(0);
+    if (!String.valueOf(firstChar).matches("[a-zA-Z]")) {
+      throw new IllegalArgumentException("Name (" + sqlName + ") is not valid for sql as it should start with a Latin letter (a-z, A-Z), not " + firstChar);
+    }
+
+    if (!sqlName.matches("[a-zA-Z0-9_]*")) {
+      throw new IllegalArgumentException("Name (" + sqlName + ") is not valid for sql. It should contain only the following characters (a-zA-Z0-9_)");
+    }
+
+    return sqlName;
   }
 
   /**
@@ -1827,7 +1845,7 @@ public class SqlDataSystem extends DataSystemAbs {
   public String createViewStatement(SqlDataPath dataPath) {
     if (dataPath.getMediaType() == SqlDataPathType.SCRIPT) {
       String query = createOrGetQuery(dataPath);
-      return "create view " + dataPath.toSqlStringPath() + " as " + query;
+      return "create view " + dataPath.toSqlStringPathWithNameValidation() + " as " + query;
     } else {
       /**
        * We need a name for the view

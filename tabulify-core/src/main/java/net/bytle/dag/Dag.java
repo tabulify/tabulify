@@ -160,7 +160,7 @@ public class Dag<T extends Dependency> {
       currentDependency = orderIterator.next();
 
       final Set<? extends Dependency> parents = currentDependency.getDependencies();
-      if (parents.size() == 0) {
+      if (parents.isEmpty()) {
         dependencies.add(currentDependency);
       } else {
         if (previousDependency != null) {

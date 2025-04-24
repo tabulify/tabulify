@@ -38,6 +38,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   // The connection name
   private final Tabular tabular;
 
+  private final Random random = new Random();
+
 
   public Connection(Tabular tabular, Variable name, Variable uri) {
 
@@ -626,7 +628,11 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     // We take only the first characters to only have alphabetic characters, no letter minus and
     // character that SQL or other system would not take
     String smallUid = UUID.randomUUID().toString().substring(0, 8);
-    return getDataPath(smallUid, mediaType);
+    char randomChar = (char) ('a' + random.nextInt(26));
+    // Hack, Sql name should start with a letter
+    // It's a hack because name is for now immutable
+    String name = randomChar + smallUid;
+    return getDataPath(name, mediaType);
   }
 
   public DataPath getAndCreateRandomDataPath() {
