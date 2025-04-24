@@ -847,4 +847,15 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
     return this.mediaType;
   }
 
+  /**
+   * Same as {@link #getVariable(Attribute)} but without compile exception
+   */
+  @Override
+  public Variable getVariableSafe(Attribute sqlDataPathAttribute) {
+    try {
+      return getVariable(sqlDataPathAttribute);
+    } catch (NoVariableException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

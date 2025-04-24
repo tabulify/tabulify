@@ -369,4 +369,5 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
    */
   DataPath getScriptDataPath();
 
+  Variable getVariableSafe(Attribute sqlDataPathAttribute);
 }

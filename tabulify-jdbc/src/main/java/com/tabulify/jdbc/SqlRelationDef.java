@@ -11,9 +11,8 @@ import com.tabulify.model.SqlDataType;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.Tabulars;
 import com.tabulify.stream.SelectStream;
-import net.bytle.exception.NoCatalogException;
-import net.bytle.exception.NoColumnException;
-import net.bytle.exception.NoSchemaException;
+import net.bytle.exception.*;
+import net.bytle.type.Enums;
 
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -22,12 +21,11 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+import static com.tabulify.jdbc.SqlDataPathAttribute.QUERY_METADATA_DETECTION;
+
 
 public class SqlRelationDef extends RelationDefDefault {
 
-
-  @SuppressWarnings("FieldCanBeLocal")
-  private final SqlDataPathQueryMetadataDetectionMethod queryMetadataDetectionMethod = SqlDataPathQueryMetadataDetectionMethod.TEMPORARY_VIEW;
 
   /**
    *
@@ -65,18 +63,29 @@ public class SqlRelationDef extends RelationDefDefault {
            * We use the {@link SqlDataPathQueryMetadataDetectionMethod#TEMPORARY_VIEW} but the code
            * is still here to show the history
            */
+          SqlDataPathQueryMetadataDetectionMethod queryMetadataDetectionMethod;
+          try {
+            queryMetadataDetectionMethod = dataPath.getVariableSafe(QUERY_METADATA_DETECTION).getValueOrDefaultCastAs(SqlDataPathQueryMetadataDetectionMethod.class);
+          } catch (NoValueException e) {
+            // should not
+            queryMetadataDetectionMethod = SqlDataPathQueryMetadataDetectionMethod.TEMPORARY_VIEW;
+          } catch (CastException e) {
+            throw new RuntimeException("The value of the variable " + QUERY_METADATA_DETECTION + " is not conform. You can use any of the following " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(SqlDataPathQueryMetadataDetectionMethod.class), e);
+          }
           switch (queryMetadataDetectionMethod) {
             //noinspection ConstantConditions
             case TEMPORARY_VIEW:
-              try {
-                /**
-                 * We don't want to see the creation/dropping
-                 * of the view in the INFO log
-                 */
-                Level oldLevel = DbLoggers.LOGGER_DB_ENGINE.getLevel();
-                SqlLog.LOGGER_DB_JDBC.setLevel(Level.WARNING);
 
-                SqlConnection dataStore = this.getDataPath().getConnection();
+              /**
+               * We don't want to see the creation/dropping
+               * of the view in the INFO log
+               */
+              Level oldLevel = DbLoggers.LOGGER_DB_ENGINE.getLevel();
+              SqlLog.LOGGER_DB_JDBC.setLevel(Level.WARNING);
+              SqlConnection dataStore = this.getDataPath().getConnection();
+              SqlDataSystem dataSystem = dataStore.getDataSystem();
+              try {
+
                 /**
                  * Due to side effect such as recursive call, we create another
                  * data path view
@@ -88,28 +97,30 @@ public class SqlRelationDef extends RelationDefDefault {
                   .setContent(this.getDataPath().getQuery())
                   .setLogicalName(name);
                 SqlDataPath temporaryQueryDataPath = dataStore.createScriptDataPath(scriptDataPath);
-                // Create the view
-                SqlDataSystem dataSystem = dataStore.getDataSystem();
+
                 SqlDataPath view = dataSystem.createViewFromQueryDataPath(temporaryQueryDataPath);
                 this.mergeStruct(view);
                 // Drop the temp view
                 dataSystem.drop(view);
-                SqlLog.LOGGER_DB_JDBC.setLevel(oldLevel);
+
               } catch (Exception e) {
                 /**
                  * You can't create a view when the column name are the same
                  * Example: ERROR: column "avg" specified more than once
+                 * Or Sql Server: The ORDER BY clause is invalid in views, inline functions, derived tables, subqueries, and common table expressions, unless TOP, OFFSET or FOR XML is also specified.
                  */
-                SqlLog.LOGGER_DB_JDBC.finest("The create view method returned an error " + e.getMessage());
-                SqlLog.LOGGER_DB_JDBC.finest("Parsing the query to extract the columns identifier");
-                parseQueryAndAddColumns();
+                throw new RuntimeException("Error when getting the metadata of the sql query: " + e.getMessage(), e);
+
+              } finally {
+
+                SqlLog.LOGGER_DB_JDBC.setLevel(oldLevel);
               }
               break;
             case RESULT_SET:
               /**
                * Weakness:
                *   * the query will run
-               *
+               * <p></p>
                * This is now mandatory to get the data def at runtime
                * with the function {@link SelectStream#getRuntimeRelationDef()}
                *
