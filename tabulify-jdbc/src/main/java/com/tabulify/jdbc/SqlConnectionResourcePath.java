@@ -96,7 +96,16 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
       .split(this.getPathSeparator())
       .stream()
       .map(s -> sqlConnection.getDataSystem().deleteQuoteIdentifier(s))
-      .map(s-> KeyNormalizer.create(s).toSqlCase())
+      .map(s-> {
+        /**
+         * Transform name in sql name
+         * We don't throw for now
+         * Oracle can create table with weird characters (ie "table-name")
+         * but will issue an unrelated error when reading metadata.
+         * Example: https://docs.oracle.com/en/error-help/db/ora-17068/?r=23ai when reading Jdbc Info View
+         */
+        return KeyNormalizer.create(s).toSqlCase();
+      })
       .collect(Collectors.toList());
     int nameSizes = processedPathNames.size();
     switch (nameSizes) {
