@@ -3,10 +3,13 @@ package com.tabulify.mysql;
 import com.tabulify.jdbc.*;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.model.SqlDataType;
+import com.tabulify.model.SqlTypes;
 import com.tabulify.model.UniqueKeyDef;
 import com.tabulify.transfer.TransferSourceTarget;
+import net.bytle.exception.NoCatalogException;
+import net.bytle.exception.NoSchemaException;
 
-import java.sql.Types;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -222,5 +225,104 @@ public class MySqlDataSystem extends SqlDataSystem {
 
   }
 
+  /**
+   * Unfortunately, MySql does not return the correct precision for timestampt
+   */
+  @Override
+  public List<SqlMetaColumn> getMetaColumns(SqlDataPath dataPath) {
 
+    Connection currentConnection = dataPath.getConnection().getCurrentConnection();
+
+    List<SqlMetaColumn> sqlMetaColumns = new ArrayList<>();
+    String schemaName;
+    try {
+      schemaName = dataPath.getSchema().getName();
+    } catch (NoSchemaException e) {
+      try {
+        schemaName = currentConnection.getSchema();
+      } catch (SQLException ex) {
+        // should not occur
+        throw new RuntimeException("No schema found for the MySql connection. We can't retrieve the columns of the table " + dataPath, ex);
+      }
+    }
+
+
+    String sql = "SELECT *\n" +
+      "FROM information_schema.columns\n" +
+      "WHERE (table_schema=? and table_name = ?)\n" +
+      "order by ordinal_position";
+
+    // Set the parameter values
+    PreparedStatement preparedStatement;
+    try {
+      preparedStatement = currentConnection.prepareStatement(sql);
+      preparedStatement.setString(1, schemaName);
+      preparedStatement.setString(2, dataPath.getName());
+    } catch (SQLException e) {
+      // should not occur
+      throw new RuntimeException("Internal Error in prepared statement", e);
+    }
+
+    try (
+      ResultSet columnResultSet = preparedStatement.executeQuery()
+    ) {
+      while (columnResultSet.next()) {
+
+        SqlMetaColumn sqlMetaColumn = SqlMetaColumn.createOf(columnResultSet.getString("COLUMN_NAME"));
+        sqlMetaColumns.add(sqlMetaColumn);
+
+
+        String sqlName = columnResultSet.getString("DATA_TYPE");
+        Integer scale = columnResultSet.getInt("NUMERIC_SCALE");
+        Integer position = columnResultSet.getInt("ORDINAL_POSITION");
+
+        Boolean isNullable = columnResultSet.getBoolean("IS_NULLABLE");
+
+        /**
+         * Precision
+         * MySql has the precision spawn on  multiple column by type
+         * We make the assumption that they are all null except the good one
+         * We don't check the type
+         */
+
+        /**
+         * Fix point data type
+         * We use getObject to see if the value is null
+         * {@link ResultSet#getInt(int)} returns 0, and it's a little bit weird
+         */
+        Integer precision = columnResultSet.getObject("NUMERIC_PRECISION", Integer.class);
+        if (precision == null) {
+          /**
+           * String
+           */
+          precision = columnResultSet.getObject("CHARACTER_MAXIMUM_LENGTH", Integer.class);
+        }
+        if (precision == null) {
+          /**
+           * Character
+           */
+          precision = columnResultSet.getObject("CHARACTER_OCTET_LENGTH", Integer.class);
+        }
+        if (precision == null) {
+          /**
+           * Date
+           */
+          precision = columnResultSet.getObject("DATETIME_PRECISION", Integer.class);
+        }
+
+        sqlMetaColumn
+          .setPrecision(precision)
+          .setTypeName(sqlName)
+          .setScale(scale)
+          .setPosition(position)
+          .setIsNullable(isNullable);
+      }
+
+    } catch (
+      SQLException e) {
+      throw new RuntimeException(e);
+    }
+    return sqlMetaColumns;
+
+  }
 }

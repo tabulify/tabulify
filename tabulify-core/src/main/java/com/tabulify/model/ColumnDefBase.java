@@ -99,9 +99,9 @@ public class ColumnDefBase implements ColumnDef {
 
   /**
    * @return one of
-   * DatabaseMetaData.columnNullable,
-   * DatabaseMetaData.columnNoNulls,
-   * DatabaseMetaData.columnNullableUnknown
+   * {@link DatabaseMetaData#columnNullable},
+   * {@link DatabaseMetaData#columnNoNulls},
+   * {@link DatabaseMetaData#columnNullableUnknown}
    */
   @Override
   public Boolean isNullable() {
@@ -206,18 +206,10 @@ public class ColumnDefBase implements ColumnDef {
     return this;
   }
 
-  /**
-   * Same value than the JDBC metadata
-   * YES
-   * NO
-   * '' Empty string: not known
-   *
-   * @param isAutoincrement YES, NO or '' Empty string: not known
-   * @return the object for chaining
-   */
+
   @Override
-  public ColumnDef setIsAutoincrement(String isAutoincrement) {
-    this.isAutoincrement = isAutoincrement.equals("YES");
+  public ColumnDef setIsAutoincrement(Boolean isAutoincrement) {
+    this.isAutoincrement = isAutoincrement;
     return this;
   }
 

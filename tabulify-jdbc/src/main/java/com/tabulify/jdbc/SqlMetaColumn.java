@@ -1,6 +1,9 @@
 package com.tabulify.jdbc;
 
+import com.tabulify.model.ColumnDef;
 import com.tabulify.spi.DataPath;
+
+import java.sql.DatabaseMetaData;
 
 /**
  * Represents the column meta that we get from the database
@@ -8,7 +11,7 @@ import com.tabulify.spi.DataPath;
  * to {@link SqlDataStoreProvider}
  * in order to correct them
  * before creating the columns
- *
+ * <p>
  * By default, they are created with the {@link SqlDataSystem#getMetaColumns(SqlDataPath)}
  * that takes this information from the JDBC driver {@link java.sql.DatabaseMetaData#getColumns(String, String, String, String)}
  */
@@ -19,17 +22,13 @@ public class SqlMetaColumn {
    */
   private final String columnName;
   /**
-   * The data path
-   */
-  private final DataPath dataPath;
-  /**
    * The IsGeneratedColumn of the JDBC driver
    */
   private String isGeneratedColumn;
   /**
    * The isAutoIncrement of the JDBC driver
    */
-  private String isAutoIncrement;
+  private Boolean isAutoIncrement;
   /**
    * The COLUMN_SIZE of the JDBC driver (ie precision)
    * For numeric data, this is the maximum precision.
@@ -47,6 +46,8 @@ public class SqlMetaColumn {
   /**
    * The type name of the JDBC driver
    * It's handy when the type code constant is not the good one
+   * or when retrieving the meta from the information schema
+   * where the type code is not available.
    */
   private String typeName;
   /**
@@ -55,17 +56,21 @@ public class SqlMetaColumn {
   private Integer scale;
   /**
    * The NULLABLE value of the JDBC driver
+   * See {@link ColumnDef#setNullable(int)}
    */
   private Integer isNullable;
+  /**
+   * The position in the list of columns
+   */
+  private Integer position;
 
 
-  public SqlMetaColumn(DataPath dataPath, String columnName) {
-    this.dataPath = dataPath;
+  public SqlMetaColumn(String columnName) {
     this.columnName = columnName;
   }
 
-  public static SqlMetaColumn createOf(DataPath dataPath, String columnName) {
-    return new SqlMetaColumn(dataPath, columnName);
+  public static SqlMetaColumn createOf(String columnName) {
+    return new SqlMetaColumn(columnName);
   }
 
   public Integer getTypeCode() {
@@ -84,8 +89,8 @@ public class SqlMetaColumn {
     return scale;
   }
 
-  public String isAutoIncrement() {
-      return isAutoIncrement;
+  public Boolean isAutoIncrement() {
+    return isAutoIncrement;
   }
 
   public String isGeneratedColumn() {
@@ -101,9 +106,9 @@ public class SqlMetaColumn {
     return this;
   }
 
-  public SqlMetaColumn setIsAutoIncrement(String isAutoincrement) {
+  public SqlMetaColumn setIsAutoIncrement(Boolean isAutoincrement) {
     this.isAutoIncrement = isAutoincrement;
-      return this;
+    return this;
   }
 
   public SqlMetaColumn setPrecision(Integer precision) {
@@ -131,9 +136,26 @@ public class SqlMetaColumn {
     return this;
   }
 
+  public SqlMetaColumn setIsNullable(Boolean nullable) {
+    if (nullable == null) {
+      this.isNullable = DatabaseMetaData.columnNullableUnknown;
+      return this;
+    }
+    if (nullable) {
+      this.isNullable = DatabaseMetaData.columnNullable;
+    } else {
+      this.isNullable = DatabaseMetaData.columnNoNulls;
+    }
+    return this;
+  }
+
   public String getTypeName() {
     return typeName;
   }
 
 
+  public SqlMetaColumn setPosition(Integer position) {
+    this.position = position;
+    return this;
+  }
 }

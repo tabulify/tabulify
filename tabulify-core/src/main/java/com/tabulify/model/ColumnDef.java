@@ -1,5 +1,6 @@
 package com.tabulify.model;
 
+import java.sql.DatabaseMetaData;
 import java.util.Map;
 
 /**
@@ -11,6 +12,7 @@ import java.util.Map;
 public interface ColumnDef extends Comparable<ColumnDef> {
 
   Boolean isGeneratedColumn();
+
 
   Boolean isNullable();
 
@@ -30,6 +32,12 @@ public interface ColumnDef extends Comparable<ColumnDef> {
 
   Integer getColumnPosition();
 
+  /**
+   * Nullable should be one of:
+   * {@link DatabaseMetaData#columnNullable},
+   * {@link DatabaseMetaData#columnNoNulls},
+   * {@link DatabaseMetaData#columnNullableUnknown}
+   */
   ColumnDef setNullable(int nullable);
 
   ColumnDef setNullable(Boolean nullable);
@@ -41,7 +49,8 @@ public interface ColumnDef extends Comparable<ColumnDef> {
 
   ColumnDef precision(Integer precision);
 
-  ColumnDef setIsAutoincrement(String isAutoincrement);
+
+  ColumnDef setIsAutoincrement(Boolean isAutoincrement);
 
   ColumnDef setIsGeneratedColumn(String isGeneratedColumn);
 

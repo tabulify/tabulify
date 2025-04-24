@@ -165,8 +165,8 @@ public class SqlDataType {
     this.connection = datastore;
   }
 
-  public static SqlDataType creationOf(Connection datastore, int typeCode) {
-    return new SqlDataType(datastore, typeCode);
+  public static SqlDataType creationOf(Connection connection, int typeCode) {
+    return new SqlDataType(connection, typeCode);
   }
 
 
@@ -238,7 +238,7 @@ public class SqlDataType {
   }
 
   /**
-   * @return is it case sensitive
+   * @return is it case-sensitive
    */
   public Boolean getCaseSensitive() {
     return caseSensitive;

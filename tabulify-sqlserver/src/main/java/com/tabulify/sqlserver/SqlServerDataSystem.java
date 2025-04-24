@@ -207,7 +207,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
           c.setScale(null);
         }
         /**
-         * The diver is return {@link Types.LONGNVARCHAR}
+         * The driver returns {@link Types.LONGNVARCHAR}
          */
         if (c.getTypeName().equals("xml")) {
           c.setTypeCode(Types.SQLXML);
@@ -215,6 +215,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
       }
     );
     return metaColumns;
+
   }
 
 

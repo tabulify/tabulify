@@ -525,11 +525,12 @@ public class SqlConnection extends NoOpConnection {
   }
 
   @Override
-  public SqlDataType getSqlDataType(String typeName) {
+  public SqlDataType getSqlDataType(String sqlName) {
     updateSqlDataTypeIfNeeded();
-    SqlDataType sqlDataType = driverDataType.values()
+    SqlDataType sqlDataType = driverDataType
+      .values()
       .stream()
-      .filter(dt -> dt.getSqlName().equalsIgnoreCase(typeName))
+      .filter(dt -> dt.getSqlName().equalsIgnoreCase(sqlName))
       .findFirst()
       .orElse(null);
     if (sqlDataType != null) {
@@ -540,9 +541,9 @@ public class SqlConnection extends NoOpConnection {
        * in the function {@link #getSqlDataType(Integer)}
        */
       return getSqlDataType(sqlDataType.getTypeCode());
-    } else {
-      return super.getSqlDataType(typeName);
     }
+    return super.getSqlDataType(sqlName);
+
   }
 
   // A breaker to not update the data type each time

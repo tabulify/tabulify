@@ -1620,6 +1620,10 @@ public class SqlDataSystem extends DataSystemAbs {
 
   }
 
+  /**
+   * @param dataPath - the data path
+   * @return the list of meta columns ordered by position (asc)
+   */
   public List<SqlMetaColumn> getMetaColumns(SqlDataPath dataPath) {
 
     List<SqlMetaColumn> sqlMetaColumns = new ArrayList<>();
@@ -1642,7 +1646,7 @@ public class SqlDataSystem extends DataSystemAbs {
     ) {
       while (columnResultSet.next()) {
 
-        SqlMetaColumn meta = SqlMetaColumn.createOf(dataPath, columnResultSet.getString("COLUMN_NAME"));
+        SqlMetaColumn meta = SqlMetaColumn.createOf(columnResultSet.getString("COLUMN_NAME"));
         sqlMetaColumns.add(meta);
 
         // Not implemented on all driver (example: sqliteDriver)
@@ -1654,7 +1658,28 @@ public class SqlDataSystem extends DataSystemAbs {
 
         // Not implemented on all driver (example: sqliteDriver)
         try {
-          meta.setIsAutoIncrement(columnResultSet.getString("IS_AUTOINCREMENT"));
+          /**
+           * JDBC metadata
+           * YES
+           * NO
+           * '' Empty string: not known
+           *
+           */
+          String isAutoincrement = columnResultSet.getString("IS_AUTOINCREMENT").toLowerCase();
+          switch (isAutoincrement) {
+            case "yes":
+              meta.setIsAutoIncrement(true);
+              break;
+            case "no":
+              meta.setIsAutoIncrement(false);
+              break;
+            case "":
+              meta.setIsAutoIncrement(null);
+              break;
+            default:
+              throw new RuntimeException("isAutoIncrement value (" + isAutoincrement + ") is not JDBC compliant");
+          }
+
         } catch (SQLException e) {
           SqlLog.LOGGER_DB_JDBC.fine("The IS_AUTOINCREMENT column seems not to be implemented. Message: " + e.getMessage());
         }

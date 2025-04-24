@@ -174,7 +174,17 @@ public class SqlRelationDef extends RelationDefDefault {
 
     this.getDataPath().getConnection().getDataSystem().getMetaColumns(this.getDataPath())
       .forEach(meta -> {
-          SqlDataType dataType = this.getDataPath().getConnection().getSqlDataType(meta.getTypeCode());
+          Integer typeCode = meta.getTypeCode();
+          SqlDataType dataType;
+          if (typeCode != null) {
+            dataType = this.getDataPath().getConnection().getSqlDataType(typeCode);
+          } else {
+            String typeName = meta.getTypeName();
+            if(typeName==null){
+              throw new RuntimeException("The column "+meta.getColumnName()+" has no type code or name");
+            }
+            dataType = this.getDataPath().getConnection().getSqlDataType(typeName);
+          }
           Class<?> sqlClass = dataType.getSqlClass();
           this.getOrCreateColumn(meta.getColumnName(), dataType, sqlClass)
             .precision(meta.getPrecision())
@@ -404,7 +414,7 @@ public class SqlRelationDef extends RelationDefDefault {
         this.getOrCreateUniqueKey(columnNames).name(indexName);
 
       } catch (NoColumnException e) {
-        String s = "A column could not be found for the index (" + indexName + ") for the resource (" + this.getDataPath() + "). "+e.getMessage();
+        String s = "A column could not be found for the index (" + indexName + ") for the resource (" + this.getDataPath() + "). " + e.getMessage();
         if (this.getDataPath().getConnection().getTabular().isIdeEnv()) {
           throw new IllegalStateException(s);
         }

@@ -1,5 +1,6 @@
 package com.tabulify.connection;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tabulify.DbLoggers;
 import com.tabulify.Tabular;
 import com.tabulify.fs.FsConnection;
@@ -150,18 +151,18 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    */
   private final Map<Class<?>, Integer[]> sqlDataTypeByJavaClass = new HashMap<>();
   /**
-   * A map to retreive quickly a sql data type by {@link Types type code}
+   * Our Standard datatype by {@link Types type code}
    */
-  private final Map<Integer, SqlDataType> sqlDataTypes = new HashMap<>();
+  private final Map<Integer, SqlDataType> sqlDataTypesByCode = new HashMap<>();
 
 
   /**
-   * An utility tool to create the map
+   * A utility tool to create the map
    *
    * @param sqlDataType the sql data type
    */
   private void addToStaticTypeMapping(SqlDataType sqlDataType) {
-    sqlDataTypes.put(sqlDataType.getTypeCode(), sqlDataType);
+    sqlDataTypesByCode.put(sqlDataType.getTypeCode(), sqlDataType);
   }
 
 
@@ -559,7 +560,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    */
   public Set<SqlDataType> getSqlDataTypes() {
 
-    return new HashSet<>(sqlDataTypes.values());
+    return new HashSet<>(sqlDataTypesByCode.values());
 
   }
 
@@ -582,7 +583,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * @return the data type for one type
    */
   public SqlDataType getSqlDataType(Integer typeCode) {
-    return sqlDataTypes.get(typeCode);
+    return sqlDataTypesByCode.get(typeCode);
   }
 
   /**
@@ -590,7 +591,9 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * @return the data type from a sql type name
    */
   public SqlDataType getSqlDataType(String typeName) {
-    return sqlDataTypes.values().stream()
+    return sqlDataTypesByCode
+      .values()
+      .stream()
       .filter(dt -> dt.getSqlName().equalsIgnoreCase(typeName))
       .findFirst()
       .orElse(null);
