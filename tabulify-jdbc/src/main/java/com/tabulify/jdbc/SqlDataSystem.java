@@ -1037,15 +1037,18 @@ public class SqlDataSystem extends DataSystemAbs {
         return dataTypeCreateStatement;
       case Types.TIMESTAMP_WITH_TIMEZONE:
         if (!(precision == null || precision.equals(defaultPrecision))) {
-          return dataTypeCreateStatement + "(" + precision + ") with time zone";
+          // timestamp may be datetime2 (ie sql server)
+          String timestampWord = dataTypeCreateStatement.split(" ")[0];
+          return timestampWord + "(" + precision + ") with time zone";
         }
         return dataTypeCreateStatement;
       case Types.TIME_WITH_TIMEZONE:
         if (!(precision == null || precision == 0 || precision.equals(defaultPrecision))) {
-          return dataTypeCreateStatement + "(" + precision + ") with time zone";
-        } else {
-          return dataTypeCreateStatement;
+          // time word may be another one
+          String timeWord = dataTypeCreateStatement.split(" ")[0];
+          return timeWord + "(" + precision + ") with time zone";
         }
+        return dataTypeCreateStatement;
       case Types.TIMESTAMP:
         // timestamp without timezone
         // timestamp precision if not specified is generally implicitly 6 (ie precision is optional)

@@ -7,7 +7,7 @@ includes:
     # dir: ../ we don't as the dir gives the context of the execution
 
 tasks:
-  pg-start:
+  db-start:
     cmds:
       - |
         docker run \
@@ -17,7 +17,7 @@ tasks:
             --rm \
             --name postgres \
             postgres:9.5
-  pg-stop:
+  db-stop:
     cmds:
       - |
         docker stop postgres

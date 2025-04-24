@@ -35,7 +35,10 @@ cd "$PROJECT_ROOT"
 
 # To resolve/list the dependencies with the command below,
 # they should be installed in the local repo
-mvn install -DskipTests
+# No compile for a resume run
+if [ "$RESUME_FROM" == "" ]; then
+  mvn install -DskipTests
+fi
 
 # Get dependencies in dag order
 TABULIFY_DEPENDENCIES=$(mvn dependency:list \
@@ -45,8 +48,8 @@ TABULIFY_DEPENDENCIES=$(mvn dependency:list \
   --projects tabulify-cli
 )
 
-# Not yet processed
-SKIP_TESTS=("tabulify-sqlserver" "tabulify-mysql")
+# Modules where to skip test
+SKIP_MODULE_TESTS=()
 
 RESUMED="false"
 PROJECTS=();
@@ -71,7 +74,7 @@ for word in $TABULIFY_DEPENDENCIES; do
     fi
 
     # Skip test?
-    if [[ " ${SKIP_TESTS[*]} " =~ ${PROJECT} ]]; then
+    if [[ " ${SKIP_MODULE_TESTS[*]} " =~ ${PROJECT} ]]; then
       echo "Project: $PROJECT skipped due to test being not performed"
       continue
     fi

@@ -1,0 +1,31 @@
+version: '3'
+
+includes:
+  root:
+    taskfile: ../Taskfile.yml
+    flatten: true
+    # dir: ../ we don't as the dir gives the context of the execution
+
+tasks:
+  db-create:
+    cmds:
+      - |
+        docker run \
+        -e ORACLE_DISABLE_ASYNCH_IO=true \
+        -e ORACLE_ALLOW_REMOTE=true \
+        -e ORACLE_PASSWORD=oracle \
+        -e APP_USER=hr \
+        -e APP_USER_PASSWORD=oracle \
+        -p 1521:1521 \
+        -d \
+        --name oracle \
+        ghcr.io/gvenzl/oracle-free:23.7-slim-faststart
+  db-start:
+    cmds:
+      - |
+        docker stop oracle
+  db-stop:
+    cmds:
+      - |
+        docker stop oracle
+

@@ -3,6 +3,7 @@ package com.tabulify.jdbc;
 import com.tabulify.spi.ConnectionResourcePathAbs;
 import com.tabulify.uri.DataUri;
 import net.bytle.exception.*;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.Strings;
 
 import java.util.ArrayList;
@@ -93,7 +94,9 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
 
     List<String> processedPathNames = Strings.createFromString(sqlResourcePath)
       .split(this.getPathSeparator())
-      .stream().map(s -> sqlConnection.getDataSystem().deleteQuoteIdentifier(s))
+      .stream()
+      .map(s -> sqlConnection.getDataSystem().deleteQuoteIdentifier(s))
+      .map(s-> KeyNormalizer.create(s).toSqlCase())
       .collect(Collectors.toList());
     int nameSizes = processedPathNames.size();
     switch (nameSizes) {
@@ -157,28 +160,28 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
 
     switch (sqlDataPath.getMediaType()) {
       case CATALOG:
-        catalog = sqlDataPath.getName();
+        catalog = sqlDataPath.getLogicalName();
         break;
       case SCHEMA:
         try {
-          catalog = sqlDataPath.getCatalogDataPath().getName();
+          catalog = sqlDataPath.getCatalogDataPath().getLogicalName();
         } catch (NoCatalogException e) {
           //
         }
-        schema = sqlDataPath.getName();
+        schema = sqlDataPath.getLogicalName();
         break;
       default:
         try {
-          catalog = sqlDataPath.getCatalogDataPath().getName();
+          catalog = sqlDataPath.getCatalogDataPath().getLogicalName();
         } catch (NoCatalogException e) {
           //
         }
         try {
-          schema = sqlDataPath.getSchema().getName();
+          schema = sqlDataPath.getSchema().getLogicalName();
         } catch (NoSchemaException e) {
           //
         }
-        objectName = sqlDataPath.getName();
+        objectName = sqlDataPath.getLogicalName();
         break;
 
     }
@@ -405,14 +408,14 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
 
 
   public String getSchemaPart() throws NoSchemaException {
-    if (this.schemaPart == null || this.schemaPart.equals("")) {
+    if (this.schemaPart == null || this.schemaPart.isEmpty()) {
       throw new NoSchemaException();
     }
     return this.schemaPart;
   }
 
   public String getObjectPart() throws NoObjectException {
-    if (this.objectPart == null || this.objectPart.equals("")) {
+    if (this.objectPart == null || this.objectPart.isEmpty()) {
       throw new NoObjectException();
     }
     return this.objectPart;

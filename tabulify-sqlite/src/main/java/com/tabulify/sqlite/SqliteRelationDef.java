@@ -91,7 +91,7 @@ public class SqliteRelationDef extends SqlRelationDef {
         this.getOrCreateColumn(columnName, jdbcDataType, jdbcDataType.getSqlClass())
           .precision(type.getPrecision())
           .scale(type.getScale())
-          .setIsAutoincrement("")
+          .setIsAutoincrement(null)
           .setIsGeneratedColumn("")
           .setNullable(notnull == 0 ? 1 : 0);
       }

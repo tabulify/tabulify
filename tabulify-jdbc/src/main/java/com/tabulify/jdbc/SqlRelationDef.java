@@ -22,6 +22,8 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.tabulify.jdbc.SqlDataPathAttribute.QUERY_METADATA_DETECTION;
+import static com.tabulify.jdbc.SqlDataPathQueryMetadataDetectionMethod.PARSING;
+import static com.tabulify.jdbc.SqlDataPathQueryMetadataDetectionMethod.TEMPORARY_VIEW;
 
 
 public class SqlRelationDef extends RelationDefDefault {
@@ -68,9 +70,16 @@ public class SqlRelationDef extends RelationDefDefault {
             queryMetadataDetectionMethod = dataPath.getVariableSafe(QUERY_METADATA_DETECTION).getValueOrDefaultCastAs(SqlDataPathQueryMetadataDetectionMethod.class);
           } catch (NoValueException e) {
             // should not
-            queryMetadataDetectionMethod = SqlDataPathQueryMetadataDetectionMethod.TEMPORARY_VIEW;
+            queryMetadataDetectionMethod = TEMPORARY_VIEW;
           } catch (CastException e) {
             throw new RuntimeException("The value of the variable " + QUERY_METADATA_DETECTION + " is not conform. You can use any of the following " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(SqlDataPathQueryMetadataDetectionMethod.class), e);
+          }
+          if (queryMetadataDetectionMethod == TEMPORARY_VIEW && !this.getDataPath().getQuery().toLowerCase().contains("select")) {
+            // query can be other thing than a select
+            // Example: `PRAGMA table_info(f_sales)`
+            // creating a temporary view will not work because this is not a sql statement
+            // not the best, but it works as we read the columns after query execution.
+            return;
           }
           switch (queryMetadataDetectionMethod) {
             //noinspection ConstantConditions
@@ -92,7 +101,7 @@ public class SqlRelationDef extends RelationDefDefault {
                  * A drop may ask for foreign key of the runtime data resource
                  * creating a recursive call
                  */
-                String name = "tmp_tabli_" + Digest.createFromString(Digest.Algorithm.MD5, this.getDataPath().getQuery()).getHashHex();
+                String name = "tmp_tabulify_" + Digest.createFromString(Digest.Algorithm.MD5, this.getDataPath().getQuery()).getHashHex();
                 DataPath scriptDataPath = this.getDataPath().getConnection().getTabular().getAndCreateRandomMemoryDataPath()
                   .setContent(this.getDataPath().getQuery())
                   .setLogicalName(name);
@@ -394,8 +403,8 @@ public class SqlRelationDef extends RelationDefDefault {
       }
 
     } catch (SQLException e) {
-      String s = "Error when building the unique key (ie indexinfo) of the table (" + dataPath + ")";
-      throw new RuntimeException(s, e);
+      String s = "Error when getting the unique key (via Jdbc IndexInfo function) for the table (" + dataPath + "): ";
+      throw new RuntimeException(s + e.getMessage(), e);
     }
 
     // Process the data
