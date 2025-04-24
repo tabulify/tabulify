@@ -1,9 +1,11 @@
 package com.tabulify.sqlserver;
 
 import com.tabulify.Tabular;
+import com.tabulify.model.SqlDataType;
 import net.bytle.type.Variable;
 import com.tabulify.jdbc.SqlConnection;
 
+import java.sql.Types;
 import java.util.Set;
 
 /**
@@ -44,4 +46,11 @@ public class SqlServerConnection extends SqlConnection {
     return new SqlServerDataSystem(this);
   }
 
+  @Override
+  public SqlDataType getSqlDataTypeFromSourceDataType(SqlDataType sourceSqlDataType) {
+    if (sourceSqlDataType.getTypeCode() == Types.TIME_WITH_TIMEZONE) {
+      return this.getSqlDataType(Types.TIME);
+    }
+    return super.getSqlDataTypeFromSourceDataType(sourceSqlDataType);
+  }
 }

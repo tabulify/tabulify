@@ -11,6 +11,9 @@ import java.util.Map;
 
 public class SqlServerDataSystem extends SqlDataSystem {
 
+  public static final int MAX_NVARCHAR_PRECISION = 4000;
+  public static final int MAX_VARCHAR_PRECISION = 8000;
+
   public SqlServerDataSystem(SqlServerConnection jdbcDataStore) {
     super(jdbcDataStore);
   }
@@ -30,18 +33,23 @@ public class SqlServerDataSystem extends SqlDataSystem {
     /**
      * Character
      */
+    // The size (xxxxxxx) given to the column 'varchar' exceeds the maximum allowed for any data type (8000).
     metaDataType.computeIfAbsent(Types.VARCHAR, SqlMetaDataType::new)
       .setDefaultPrecision(1)
-      .setMaxPrecision(2147483647);
+      .setMaxPrecision(MAX_VARCHAR_PRECISION);
 
     metaDataType.computeIfAbsent(Types.CHAR, SqlMetaDataType::new)
       .setDefaultPrecision(1);
 
+    metaDataType.computeIfAbsent(Types.NCHAR, SqlMetaDataType::new)
+      .setDefaultPrecision(1);
+
     // nvarchar is used to store json in the doc
+
     metaDataType.computeIfAbsent(Types.NVARCHAR, SqlMetaDataType::new)
       .setSqlName("nvarchar") // was sysname
       .setDefaultPrecision(1)
-      .setMaxPrecision(2147483647);
+      .setMaxPrecision(MAX_NVARCHAR_PRECISION);
 
     /**
      * https://docs.microsoft.com/en-us/sql/connect/jdbc/using-advanced-data-types
@@ -158,24 +166,23 @@ public class SqlServerDataSystem extends SqlDataSystem {
 
   @Override
   protected String createDataTypeStatement(ColumnDef columnDef) {
-    SqlDataType dataType = columnDef.getDataType();
 
+    SqlDataType dataType = sqlConnection.getSqlDataTypeFromSourceDataType(columnDef.getDataType());
     Integer precision = columnDef.getPrecision();
     switch (dataType.getTargetTypeCode()) {
       case Types.TIMESTAMP_WITH_TIMEZONE:
         if (!(precision == null || precision.equals(dataType.getDefaultPrecision()))) {
           return dataType.getSqlName() + "(" + precision + ")";
-        } else {
-          return dataType.getSqlName();
         }
+        return dataType.getSqlName();
       case Types.VARCHAR:
       case Types.NVARCHAR:
         /**
-         * The default for varchar is 1 when there is no position
+         * The default for varchar is 1 when there is no precision
          * Which means that we got a lot of problem.
-         *
+         * <p></p>
          * We change that it to make it max and output `max` when the precision is the max
-         *
+         * <p></p>
          * This has also the effect that JSON takes also the max
          */
         StringBuilder typeStatement = new StringBuilder();
@@ -211,6 +218,22 @@ public class SqlServerDataSystem extends SqlDataSystem {
          */
         if (c.getTypeName().equals("xml")) {
           c.setTypeCode(Types.SQLXML);
+        }
+        /**
+         * The driver returns 2147483647 but max is 4000
+         */
+        if (c.getTypeCode().equals(Types.NVARCHAR)) {
+          if (c.getPrecision() > MAX_NVARCHAR_PRECISION) {
+            c.setPrecision(MAX_NVARCHAR_PRECISION);
+          }
+        }
+        /**
+         * The driver returns 2147483647 but max is 8000
+         */
+        if (c.getTypeCode().equals(Types.VARCHAR)) {
+          if (c.getPrecision() > MAX_VARCHAR_PRECISION) {
+            c.setPrecision(MAX_VARCHAR_PRECISION);
+          }
         }
       }
     );
@@ -375,4 +398,6 @@ public class SqlServerDataSystem extends SqlDataSystem {
 
 
   }
+
+
 }

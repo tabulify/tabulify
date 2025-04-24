@@ -948,7 +948,8 @@ public class SqlDataSystem extends DataSystemAbs {
 
         ColumnDef columnDef = dataDef.getColumnDef(i);
         // Add it to the columns statement
-        statementColumnPart.append(createColumnStatement(columnDef));
+        String columnStatement = createColumnStatement(columnDef);
+        statementColumnPart.append(columnStatement);
 
       } catch (Exception e) {
 
@@ -1035,13 +1036,12 @@ public class SqlDataSystem extends DataSystemAbs {
         return dataTypeCreateStatement;
       case Types.TIMESTAMP_WITH_TIMEZONE:
         if (!(precision == null || precision.equals(defaultPrecision))) {
-          return "timestamp(" + precision + ") with time zone";
-        } else {
-          return dataTypeCreateStatement;
+          return dataTypeCreateStatement + "(" + precision + ") with time zone";
         }
+        return dataTypeCreateStatement;
       case Types.TIME_WITH_TIMEZONE:
         if (!(precision == null || precision == 0 || precision.equals(defaultPrecision))) {
-          return "time(" + precision + ") with time zone";
+          return dataTypeCreateStatement + "(" + precision + ") with time zone";
         } else {
           return dataTypeCreateStatement;
         }
@@ -1050,10 +1050,9 @@ public class SqlDataSystem extends DataSystemAbs {
         // timestamp precision if not specified is generally implicitly 6 (ie precision is optional)
         // https://www.postgresql.org/docs/current/datatype-datetime.html
         if (!(precision == null || precision == 0 || precision.equals(defaultPrecision))) {
-          return "timestamp(" + precision + ")";
-        } else {
-          return dataTypeCreateStatement;
+          return dataTypeCreateStatement + "(" + precision + ")";
         }
+        return dataTypeCreateStatement;
       case Types.TIME:
       case Types.VARCHAR:
       case Types.NVARCHAR:
