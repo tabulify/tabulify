@@ -11,12 +11,14 @@ import com.tabulify.transfer.TransferProperties;
 import com.tabulify.transfer.TransferSourceTarget;
 import net.bytle.exception.*;
 import net.bytle.fs.Fs;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.KeyNormalizer;
+import net.bytle.type.MediaType;
+import net.bytle.type.Strings;
 
 import java.sql.DatabaseMetaData;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static com.tabulify.jdbc.SqlDataPathType.*;
 
