@@ -94,13 +94,16 @@ public class TabliDataQuery {
         for (DataPath selectDataPathsFromSelector : queryFileDataSelectors) {
           if (Tabulars.isDocument(selectDataPathsFromSelector) && selectDataPathsFromSelector instanceof FsDataPath) {
             FsDataPath fsDataPath = (FsDataPath) selectDataPathsFromSelector;
-            List<String> selectStatements = SqlPlusLexer.createFromPath(fsDataPath.getAbsoluteNioPath()).getSqlStatements();
-            if (selectStatements.size() == 0) {
+            List<String> selectStatements;
+            try(SqlPlusLexer fromPath = SqlPlusLexer.createFromPath(fsDataPath.getAbsoluteNioPath())) {
+              selectStatements = fromPath.getSqlStatements();
+            }
+            if (selectStatements.isEmpty()) {
               tabular.warningOrTerminateIfStrict("No query found in the file (" + fsDataPath + ")");
             } else {
               for (int i = 0; i < selectStatements.size(); i++) {
                 String queryName = fsDataPath.getNioPath().getFileName().toString() + "_" + (i + 1);
-                DataPath queryDataPath = connection.createScriptDataPath(Tabular.tabular().getAndCreateRandomMemoryDataPath()
+                DataPath queryDataPath = connection.createScriptDataPath(tabular.getAndCreateRandomMemoryDataPath()
                   .setLogicalName(queryName)
                   .setContent(selectStatements.get(0))
                 );
@@ -111,7 +114,7 @@ public class TabliDataQuery {
         }
       } else {
         List<DataPath> select = tabular.select(dataSelector);
-        if (select.size() == 0) {
+        if (select.isEmpty()) {
           TabliLog.LOGGER_TABLI.warning("No data resources found with the data selector (" + dataSelector.getScriptUri() + ")");
         } else {
           dataPathsToExecute.addAll(select);
