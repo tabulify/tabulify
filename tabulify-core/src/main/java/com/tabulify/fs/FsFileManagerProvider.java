@@ -122,6 +122,8 @@ public abstract class FsFileManagerProvider {
 
   /**
    * @return true if the file manager accepts the media type
+   * If you want to create your own type, you need to implement
+   * a {@link java.nio.file.spi.FileTypeDetector}
    */
   public abstract Boolean accept(MediaType mediaType);
 
@@ -140,24 +142,6 @@ public abstract class FsFileManagerProvider {
    *                           permission.
    */
   public abstract FsFileManager getFsFileManager();
-
-  /**
-   * Accept a file by path and not by mime, this is to be able to
-   * create a file manager that accepts file
-   * such as `--datadef.yml`
-   * This is a wrapper around a configuration file
-   */
-  public boolean accept(Path path) {
-
-    try {
-      String extension = Fs.getExtension(path);
-      return accept(MediaTypes.createFromExtension(extension));
-    } catch (NullValueException e) {
-      // null = no extension, false
-      return false;
-    }
-
-  }
 
 
 }

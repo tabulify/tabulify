@@ -1,10 +1,9 @@
 package com.tabulify.noop;
 
-import com.tabulify.connection.Connection;
 import com.tabulify.model.Constraint;
 import com.tabulify.model.ForeignKeyDef;
 import com.tabulify.spi.DataPath;
-import com.tabulify.spi.DataSystem;
+import com.tabulify.spi.DataSystemAbs;
 import com.tabulify.transfer.TransferListener;
 import com.tabulify.transfer.TransferProperties;
 import net.bytle.type.MediaType;
@@ -12,17 +11,11 @@ import net.bytle.type.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NoOpDataSystem implements DataSystem {
+public class NoOpDataSystem extends DataSystemAbs {
 
-  private final NoOpConnection noopConnection;
 
   public NoOpDataSystem(NoOpConnection noopConnection) {
-    this.noopConnection = noopConnection;
-  }
-
-  @Override
-  public Connection getConnection() {
-    return this.noopConnection;
+    super(noopConnection);
   }
 
   @Override

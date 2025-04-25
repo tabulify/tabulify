@@ -47,5 +47,9 @@ public abstract class  DataSystemAbs implements DataSystem {
     throw new UnsupportedOperationException("The execute command is not yet supported in the system of the connection ("+this.getConnection().getName()+")");
   }
 
+  @Override
+  public String getTargetNameFromSource(DataPath sourceDataPath) {
+    return sourceDataPath.getName();
+  }
 
 }

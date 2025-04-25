@@ -210,10 +210,9 @@ public class SourceTargetHelperFunction implements Function<Set<DataPath>, Map<D
    */
   static DataPath createTargetNameFromSource(DataPath sourceDataPath, Connection targetConnection) {
 
-    /**
-     * By default, we take the logical Name
-     */
-    DataPath dataPath = targetConnection.getDataPath(sourceDataPath.getLogicalName());
+
+    String targetName = targetConnection.getDataSystem().getTargetNameFromSource(sourceDataPath);
+    DataPath dataPath = targetConnection.getDataPath(targetName);
 
     /**
      * Except if we are on the file system level (physical level)

@@ -10,11 +10,6 @@ public class HtmlManagerProvider extends FsFileManagerProvider  {
 
   static private HtmlManager htmlManager;
 
-  @Override
-  public boolean accept(Path path) {
-
-    return testEnd(path.getFileName().toString());
-  }
 
   @Override
   public Boolean accept(MediaType mediaType) {

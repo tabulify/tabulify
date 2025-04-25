@@ -19,12 +19,6 @@ public class GenFsManagerProvider extends FsFileManagerProvider {
 
   }
 
-  @Override
-  public boolean accept(Path path) {
-
-    return path.getFileName().toString().endsWith(GenDataPathType.DATA_GEN.getExtension());
-
-  }
 
   @Override
   public FsBinaryFileManager getFsFileManager() {

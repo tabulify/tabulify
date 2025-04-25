@@ -2,6 +2,7 @@ package com.tabulify.tabli;
 
 import com.tabulify.TabularExecEnv;
 import com.tabulify.TabularOsEnv;
+import com.tabulify.connection.ConnectionVault;
 import com.tabulify.transfer.*;
 import net.bytle.cli.*;
 import com.tabulify.Tabular;
@@ -203,6 +204,16 @@ public class Tabli {
       final Boolean isNotStrictPresent = cliParser.getBoolean(NOT_STRICT_FLAG);
       if (isNotStrictPresent) {
         tabular.setStrict(false);
+      }
+
+      /**
+       * Creation howto connection user vault if it does not exist
+       */
+      Path userConnectionVaultPath = tabular.getUserConnectionVaultPath();
+      if(!Files.exists(userConnectionVaultPath)){
+        ConnectionVault.create(tabular,userConnectionVaultPath)
+          .loadHowtoConnections()
+          .flush();
       }
 
       /**

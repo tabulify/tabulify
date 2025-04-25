@@ -136,4 +136,15 @@ public interface DataSystem {
    */
   void execute(DataPath dataPath);
 
+  /**
+   * In a transfer when the target resource does not exist,
+   * we need to create it. System may have constraints such as
+   * sql that does not allow a digit as first letter.
+   * This function will return a valid name to create a target resource
+   * from a source resource.
+   * @param sourceDataPath - the source data path
+   * @return the target name
+   */
+  String getTargetNameFromSource(DataPath sourceDataPath);
+
 }

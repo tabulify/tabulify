@@ -125,15 +125,6 @@ public class FsDataSystem extends DataSystemAbs {
     }
 
     /**
-     * Try to get a file manager by path (file name)
-     * In case of complex subtype such as `--datagen.yml`
-     */
-    fileManager = getFsFileManagerWithPath(path);
-    if (fileManager != null) {
-      return fileManager;
-    }
-
-    /**
      * Try to return a text (Charset to verify that this is a text file)
      */
     String charset = Fs.detectCharacterSet(path);
@@ -168,7 +159,7 @@ public class FsDataSystem extends DataSystemAbs {
       if (structProvider.accept(mediaType)) {
         FsFileManager fileManager = structProvider.getFsFileManager();
         if (fileManager == null) {
-          String message = "The returned file manager is null for the provider (" + structProvider.getClass().toString() + ")";
+          String message = "The returned file manager is null for the provider (" + structProvider.getClass() + ")";
           DbLoggers.LOGGER_DB_ENGINE.severe(message);
           throw new RuntimeException(message);
         }
@@ -178,21 +169,6 @@ public class FsDataSystem extends DataSystemAbs {
     return null;
   }
 
-  private FsFileManager getFsFileManagerWithPath(Path path) {
-    List<FsFileManagerProvider> installedProviders = FsFileManagerProvider.installedProviders();
-    for (FsFileManagerProvider structProvider : installedProviders) {
-      if (structProvider.accept(path)) {
-        FsFileManager fileManager = structProvider.getFsFileManager();
-        if (fileManager == null) {
-          String message = "The returned file manager is null for the provider (" + structProvider.getClass().toString() + ")";
-          DbLoggers.LOGGER_DB_ENGINE.severe(message);
-          throw new RuntimeException(message);
-        }
-        return fileManager;
-      }
-    }
-    return null;
-  }
 
 
   @Override

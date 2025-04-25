@@ -11,6 +11,7 @@ import com.tabulify.transfer.*;
 import net.bytle.exception.*;
 import net.bytle.regexp.Glob;
 import net.bytle.type.Casts;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MediaType;
 import net.bytle.type.Strings;
 
@@ -1554,6 +1555,14 @@ public class SqlDataSystem extends DataSystemAbs {
   @Override
   public void execute(DataPath dataPath) {
     execute(dataPath.getScript());
+  }
+
+  @Override
+  public String getTargetNameFromSource(DataPath sourceDataPath) {
+
+    String logicalName = sourceDataPath.getLogicalName();
+    return KeyNormalizer.create(logicalName).toSqlName();
+
   }
 
   /**
