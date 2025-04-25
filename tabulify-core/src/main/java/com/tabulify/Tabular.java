@@ -201,11 +201,14 @@ public class Tabular implements AutoCloseable {
 
     // Env
     if (env != null) {
+      DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Passed as argument " + env);
       return env;
     }
+
     String envOsValue = System.getenv(TabularOsEnv.TABLI_ENV);
     if (envOsValue != null) {
       try {
+        DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Found in OS env " + TabularOsEnv.TABLI_ENV + " with the value " + envOsValue);
         return Casts.cast(envOsValue, TabularExecEnv.class);
       } catch (CastException e) {
         throw new IllegalArgumentException("The os env (" + TabularOsEnv.TABLI_ENV + ") has a env value (" + envOsValue + ") that is unknown. Possible values: " + Enums.toConstantAsStringCommaSeparated(TabularOsEnv.class), e);
@@ -213,9 +216,11 @@ public class Tabular implements AutoCloseable {
     }
 
     if (JavaEnvs.isJUnitTest()) {
+      DbLoggers.LOGGER_TABULAR_START.info("Tabli env: IDE as it's a junit run");
       return TabularExecEnv.IDE;
     }
 
+    DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Default to dev");
     return TabularExecEnv.DEV;
   }
 
@@ -651,36 +656,46 @@ public class Tabular implements AutoCloseable {
 
   }
 
-  private Path getHomePathDynamic() {
-    // in dev (with maven, the class are in the m2 repository)
-    String tabliHome = System.getenv(TabularOsEnv.TABLI_HOME);
-    if (tabliHome != null) {
-      return Paths.get(tabliHome);
-    }
-    if (this.isIdeEnv()) {
-      try {
-        // in dev (with Idea, the class are in the build directory)
-        return Javas.getBuildDirectory(ConnectionHowTos.class)
-          .getParent()
-          .getParent();
-      } catch (NotDirectoryException e) {
-        throw new RuntimeException("Build directory not found. " + e.getMessage());
-      }
-    }
-    // in prod, the class are in the jars directory
-    return Javas.getSourceCodePath(ConnectionHowTos.class)
-      .getParent();
-
-  }
 
   /**
    * @return the home directory of the installation
    */
   public Path getHomePath() {
 
-    if (this.homePath == null) {
-      this.homePath = this.getHomePathDynamic();
+    if (this.homePath != null) {
+      return this.homePath;
     }
+
+    // Env
+    String tabliHome = System.getenv(TabularOsEnv.TABLI_HOME);
+    if (tabliHome != null) {
+      this.homePath = Paths.get(tabliHome);
+      return this.homePath;
+    }
+
+    /**
+     * Trying to guess
+     */
+    if (this.isIdeEnv()) {
+
+      // in dev, we try to find the directory until the git directory is found
+      // with Idea, the class are in the build directory,
+      // but with maven, they are in the jars
+      // We can't check the location of the class
+
+      try {
+        this.homePath = Fs.getPathUntilName(Paths.get("."), ".git")
+          .getParent();
+        return this.homePath;
+      } catch (FileNotFoundException e) {
+        // Not found
+      }
+
+
+    }
+
+    // in prod, the class are in the jars directory
+    this.homePath = Javas.getSourceCodePath(ConnectionHowTos.class).getParent();
     return this.homePath;
 
   }

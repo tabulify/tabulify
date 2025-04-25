@@ -35,7 +35,7 @@ public class TabularVariables {
       tabularVariables.add(variable);
       switch (tabularAttribute) {
         case IS_DEV:
-          boolean isDev = JavaEnvs.isDev(TabularVariables.class);
+          boolean isDev = tabular.getExecutionEnvironment().equals(TabularExecEnv.DEV);
           variable
             .setOriginalValue(isDev)
             .setValueProvider(() -> isDev);

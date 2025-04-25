@@ -25,8 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * A database store implementation based on ini file
- * If a password is saved a passphrase should be provided
+ * A database store implementation based on an ini file
  */
 public class ConnectionVault implements AutoCloseable {
 
@@ -234,9 +233,9 @@ public class ConnectionVault implements AutoCloseable {
     for (String connectionName : ini.keySet()) {
       Wini.Section iniSection = ini.get(connectionName);
 
-        /*
-          Url Property search
-         */
+      /**
+       Url Property search
+       */
 
       /**
        * URI is a variable because it needs

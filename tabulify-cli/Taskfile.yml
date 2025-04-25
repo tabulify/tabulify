@@ -35,7 +35,7 @@ tasks:
       - |
         mvn jdks:list-disco -P release
 
-  pg-start:
+  db-start:
     cmds:
       - |
         docker run \
@@ -45,7 +45,7 @@ tasks:
             -d \
             --name postgres \
             postgres:9.5
-  pg-stop:
+  db-stop:
     cmds:
       - |
         docker stop postgres
