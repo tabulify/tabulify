@@ -1,7 +1,0 @@
-sharedIndex:
-    project:
-        - url: https://idea-shared-indexes.t0w0.c15.e2-3.dev/project/java-mono
-    # Consent to download: https://www.jetbrains.com/help/idea/shared-indexes.html#configure-index-update
-    consents:
-        - kind: project
-          decision: allowed

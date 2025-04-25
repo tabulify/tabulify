@@ -28,8 +28,8 @@ where:
 
   * /catalog/schema/table@fs
   * C:\catalog\schema\table@fs
-        
-### SQL 
+
+### SQL
 
   * Relative ../schema@fs?query=1&asd=2#element
   * Absolute: schema or catalog depending on the SQL database implementation
@@ -37,14 +37,14 @@ where:
     * /catalog@fs?query=1&asd=2#element
 
 In Sql the point is a path separator but as we want to be able to define an absolute path
-the following syntax was not chosen (schema.table@fs?query=1&asd=2#element) 
+the following syntax was not chosen (schema.table@fs?query=1&asd=2#element)
 because the point has meaning (one point is the current working path, `..` is the parent).
 
 ## Note
 
 The following URI can be directly open by the browser.
 ```
-file:///D:/code/bytle-mono/db-gen/build/reports/tests/test/index.html
+file:///D:/db-gen/build/reports/tests/test/index.html
 ```
 
 ## Others

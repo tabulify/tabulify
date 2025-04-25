@@ -1,4 +1,4 @@
-# DataStore
+# Connection (formerly DataStore)
 
 
 ## About
@@ -31,19 +31,19 @@ The data system is a child object of the datastore responsible for:
 
 Warehouse:
   * Redshift
-  * BigQuery, 
+  * BigQuery,
   * SnowflakeDB
-Streaming targets: 
-  * Pub/Sub, 
+Streaming targets:
+  * Pub/Sub,
   * Kinesis
 File System:
-  * S3, 
+  * S3,
   * GCS
 Database:
   * Elasticsearch
-  
+
 #### Source Stream
-  
+
 Apache Kafka
 AWS Kinesis
 Http
@@ -51,9 +51,9 @@ Web sockets
 Network Sockets
 Files
 Teradata Listener
-  
+
 #### Output Stream & Sinks
-  
+
 Kafka, Kinesis or AMQP Streams
 Databases (SQL, NoSQL)
 Datawarehouses
