@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * Data Set = Source only data store
- *
+ * <p></p>
  * A data set system does not have all table system because it's only a read system
  * This abstract method takes care of this
  */
@@ -53,7 +53,6 @@ public abstract class DataSetSystemAbs extends DataSystemAbs implements DataSyst
   public abstract Long count(DataPath dataPath);
 
   /**
-   * @param dataPath
    * @return true if the data path locate a document
    * <p>
    * The opposite is {@link #isContainer(DataPath)}
@@ -62,7 +61,6 @@ public abstract class DataSetSystemAbs extends DataSystemAbs implements DataSyst
 
 
   /**
-   * @param dataPath
    * @return the content of a data path in a string format
    */
   @Override
@@ -78,14 +76,6 @@ public abstract class DataSetSystemAbs extends DataSystemAbs implements DataSyst
 
 
   /**
-   * @param dataPath the ancestor data path
-   * @return the descendants of the data path
-   */
-  public abstract List<DataPath> getDescendants(DataPath dataPath);
-
-
-
-  /**
    * @param dataPath the data path
    * @return data paths that references the data path primary key (via foreign keys)
    */
@@ -96,4 +86,7 @@ public abstract class DataSetSystemAbs extends DataSystemAbs implements DataSyst
   public void execute(DataPath dataPath) {
     throw new UnsupportedOperationException("A data set system does not support execution");
   }
+
+
+
 }

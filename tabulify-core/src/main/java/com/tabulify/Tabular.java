@@ -705,14 +705,26 @@ public class Tabular implements AutoCloseable {
    * @param msg - terminate if the run is strict or print a warning message
    */
   public void warningOrTerminateIfStrict(String msg) {
-    if (!this.isStrict()) {
-      DbLoggers.LOGGER_DB_ENGINE.warning(msg);
-    } else {
+    if (this.isStrict()) {
       DbLoggers.LOGGER_DB_ENGINE.warning("The run is strict, we terminate");
       throw new IllegalStateException(msg);
     }
+
+    DbLoggers.LOGGER_DB_ENGINE.warning(msg);
+
   }
 
+  /**
+   * @param e Exception - terminate if the run is strict or print a warning message
+   */
+  public void warningOrTerminateIfStrict(Exception e) {
+    if (this.isStrict()) {
+      DbLoggers.LOGGER_DB_ENGINE.warning("The run is strict, we terminate");
+      throw new IllegalStateException(e);
+    }
+    DbLoggers.LOGGER_DB_ENGINE.warning(e.getMessage());
+
+  }
 
   public TpcConnection getTpcConnection() {
     return (TpcConnection) getConnection(ConnectionBuiltIn.TPCDS_CONNECTION);
@@ -920,6 +932,7 @@ public class Tabular implements AutoCloseable {
     return this.vault;
   }
 
+  @SuppressWarnings("unused")
   public void removeConnection(String connectionName) {
     Connection conn = this.connections.remove(connectionName);
     conn.close();

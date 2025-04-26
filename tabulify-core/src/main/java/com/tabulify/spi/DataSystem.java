@@ -14,18 +14,18 @@ import java.util.List;
  *   * a file system
  *   * a relational database
  *   * a memory system
- *
+ *<p></p>
  * The data system is where the data is stored
  *   * a file system store them on the file system
  *   * the relational database store them remotely on the server
  *   * memory system store them in a map
- *
+ *<p></p>
  * See also Sisense that uses
  * JDBC for all data system:
- * https://documentation.sisense.com/docs/introduction-to-data-sources
- *
+ * <a href="https://documentation.sisense.com/docs/introduction-to-data-sources">...</a>
+ * <p></p>
  * Example: ftp
- * https://documentation.sisense.com/docs/connecting-to-ftp
+ * <a href="https://documentation.sisense.com/docs/connecting-to-ftp">...</a>
  */
 public interface DataSystem {
 
@@ -77,7 +77,6 @@ public interface DataSystem {
 
   /**
    * Copy the source to the target on the same data store
-   *
    *   * cp on Os
    *   * insert/create from select
    *
@@ -140,11 +139,24 @@ public interface DataSystem {
    * In a transfer when the target resource does not exist,
    * we need to create it. System may have constraints such as
    * sql that does not allow a digit as first letter.
-   * This function will return a valid name to create a target resource
+   * This function will return a data path with a valid name to create a target resource
    * from a source resource.
+   * Why we return the data path and not just a name? Because in transfer between system
+   * The target connection may want to set attribute/variable on the created resource
+   * For example, from sql to file system, if the default is a csv, we may set add or not a header.
    * @param sourceDataPath - the source data path
-   * @return the target name
+   * @return the data path
    */
-  String getTargetNameFromSource(DataPath sourceDataPath);
+  DataPath getTargetFromSource(DataPath sourceDataPath);
+
+  /**
+   * @param name - a name
+   * @return a valid name
+   * For instance, in sql, you can't have a name that starts with a number or have a point
+   * This function will correct it and returns a valid name
+   * Use normally in {@link #getTargetFromSource(DataPath)}
+   * but also for the creation of script or automated name
+   */
+  String toValidName(String name);
 
 }

@@ -40,7 +40,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
 
   /**
    * The relative path from the connection locate the resource
-   * (if this value is null, the script data path should not)
+   * This value can only be null if the script data path is not
    */
   private final String relativeConnectionPath;
 
@@ -151,7 +151,6 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
     });
     this.getOrCreateVariable(LOGICAL_NAME).setValueProvider(this::getDefaultLogicalName);
   }
-
 
 
   public Variable getOrCreateVariable(Attribute attribute) {
@@ -348,7 +347,6 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
 
-
   @Override
   public DataPath getSelectStreamDependency() throws NotFoundException {
     throw new NotFoundException("No select stream dependency found");
@@ -363,9 +361,8 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   public DataUri toDataUri() {
     if (this.scriptDataPath != null) {
       return DataUri.createFromConnectionAndScriptUri(this.getConnection(), this.scriptDataPath.toDataUri());
-    } else {
-      return DataUri.createFromConnectionAndPath(this.getConnection(), this.relativeConnectionPath);
     }
+    return DataUri.createFromConnectionAndPath(this.getConnection(), this.relativeConnectionPath);
   }
 
 
@@ -516,6 +513,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
           document = Casts.castToSameMap(data, String.class, Object.class);
         } catch (CastException e) {
           String message = "A data Def must be in a map format. ";
+          //noinspection ConstantValue
           if (data.getClass().equals(java.util.ArrayList.class)) {
             message += "They are in a list format. You should suppress the minus if they are present.";
           }
@@ -790,14 +788,14 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
       .getDataPath(this.getName() + "_variable")
       .setDescription("Information about the data resource (" + this + ")")
       .getOrCreateRelationDef()
-      .addColumn(Key.toColumnName(AttributeProperties.ATTRIBUTE))
-      .addColumn(Key.toColumnName(AttributeProperties.VALUE))
-      .addColumn(Key.toColumnName(AttributeProperties.DESCRIPTION));
+      .addColumn(KeyNormalizer.create(AttributeProperties.ATTRIBUTE).toSqlName())
+      .addColumn(KeyNormalizer.create(AttributeProperties.VALUE).toSqlName())
+      .addColumn(KeyNormalizer.create(AttributeProperties.DESCRIPTION).toSqlName());
 
     try (InsertStream insertStream = variablesDataPath.getDataPath().getInsertStream()) {
       for (Variable variable : this.getVariables()) {
         List<Object> row = new ArrayList<>();
-        row.add(Key.toCamelCaseValue(variable.getAttribute().toString()));
+        row.add(KeyNormalizer.create(variable.getAttribute().toString()).toCamelCase());
         row.add(variable.getValueOrDefaultOrNull());
         row.add(variable.getAttribute().getDescription());
         insertStream.insert(row);

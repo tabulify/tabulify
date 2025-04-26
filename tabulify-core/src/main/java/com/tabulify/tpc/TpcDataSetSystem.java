@@ -79,8 +79,9 @@ public class TpcDataSetSystem extends DataSetSystemAbs {
 
 
   @Override
-  public List<DataPath> getDescendants(DataPath dataPath) {
-    return getChildrenDataPath(dataPath);
+  public <D extends DataPath> List<D> getDescendants(DataPath dataPath) {
+    //noinspection unchecked
+    return (List<D>) getChildrenDataPath(dataPath);
   }
 
 
@@ -104,6 +105,8 @@ public class TpcDataSetSystem extends DataSetSystemAbs {
       .filter(d -> d.getForeignPrimaryKey().getRelationDef().getDataPath().equals(dataPath))
       .collect(Collectors.toList());
   }
+
+
 
 
 }

@@ -5,8 +5,6 @@ import com.tabulify.DbLoggers;
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
 import com.tabulify.flow.engine.OperationStep;
-import com.tabulify.fs.FsConnection;
-import com.tabulify.fs.FsDataPath;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.Tabulars;
 import com.tabulify.uri.DataUri;
@@ -15,8 +13,6 @@ import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
 import net.bytle.template.TextTemplate;
 import net.bytle.template.TextTemplateEngine;
-import net.bytle.type.MediaType;
-import net.bytle.type.MediaTypes;
 import net.bytle.type.Variable;
 
 import java.net.URI;
@@ -48,11 +44,7 @@ import java.util.stream.Collectors;
 public class SourceTargetHelperFunction implements Function<Set<DataPath>, Map<DataPath, DataPath>> {
 
 
-  /**
-   * When we move tabular data into a file system,
-   * the below extension (tabular format) for the file is used
-   */
-  public static final MediaType FS_DEFAULT_TABULAR_MEDIA_TYPE = MediaTypes.TEXT_CSV;
+
   private final Tabular tabular;
 
 
@@ -211,45 +203,7 @@ public class SourceTargetHelperFunction implements Function<Set<DataPath>, Map<D
   static DataPath createTargetNameFromSource(DataPath sourceDataPath, Connection targetConnection) {
 
 
-    String targetName = targetConnection.getDataSystem().getTargetNameFromSource(sourceDataPath);
-    DataPath dataPath = targetConnection.getDataPath(targetName);
-
-    /**
-     * Except if we are on the file system level (physical level)
-     */
-    if (targetConnection instanceof FsConnection) {
-
-      dataPath = SourceTargetHelperFunction.getTargetDataPathForFileSystem(sourceDataPath, (FsConnection) targetConnection);
-
-    }
-
-    return dataPath;
-
-  }
-
-  public static FsDataPath getTargetDataPathForFileSystem(DataPath sourceDataPath, FsConnection targetConnection) {
-
-    /**
-     * FsConnection takes the name and not the logical name as name
-     * (ie when we move the file `foo.txt`, to a file system, the name
-     * will be `foo.txt`
-     */
-    String name = sourceDataPath.getName();
-    if (sourceDataPath.isScript()) {
-      // a query is anonymous and does not have any name
-      name = sourceDataPath.getLogicalName();
-    }
-
-    if (
-      !(sourceDataPath.getConnection() instanceof FsConnection)
-        && (sourceDataPath.getOrCreateRelationDef().getColumnsSize() > 0 || sourceDataPath.isScript())
-    ) {
-      return (FsDataPath) targetConnection
-        .getDataPath(name + "." + FS_DEFAULT_TABULAR_MEDIA_TYPE.getExtension(), FS_DEFAULT_TABULAR_MEDIA_TYPE)
-        .addVariable("headerRowId", 1);
-    }
-
-    return targetConnection.getDataPath(name);
+    return targetConnection.getDataSystem().getTargetFromSource(sourceDataPath);
 
   }
 

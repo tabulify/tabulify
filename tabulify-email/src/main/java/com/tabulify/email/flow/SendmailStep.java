@@ -1,16 +1,12 @@
 package com.tabulify.email.flow;
 
 import com.tabulify.TabularExecEnv;
-import com.tabulify.connection.ConnectionBuiltIn;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.AddressException;
-import jakarta.mail.internet.InternetAddress;
 import com.tabulify.connection.Connection;
+import com.tabulify.connection.ConnectionBuiltIn;
 import com.tabulify.flow.Granularity;
 import com.tabulify.flow.engine.FilterRunnable;
 import com.tabulify.flow.engine.FilterStepAbs;
 import com.tabulify.flow.engine.OperationStep;
-import com.tabulify.flow.step.SourceTargetHelperFunction;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.FsDataPath;
 import com.tabulify.model.ColumnDef;
@@ -23,6 +19,9 @@ import com.tabulify.stream.SelectStream;
 import com.tabulify.transfer.TransferManager;
 import com.tabulify.uri.DataUri;
 import com.tabulify.uri.DataUriString;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
 import net.bytle.email.BMailAddressStatic;
 import net.bytle.email.BMailMimeMessage;
 import net.bytle.email.BMailSmtpClient;
@@ -31,6 +30,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
 import net.bytle.fs.Fs;
 import net.bytle.type.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
@@ -188,7 +188,7 @@ public class SendmailStep extends FilterStepAbs {
             // we download it, wow effect
             Path tempDirectory = Fs.createTempDirectory(SendmailStep.STEP_NAME);
             FsConnection tempConnection = tabular.createRuntimeConnectionFromLocalPath(tempDirectory.getFileName().toString(), tempDirectory);
-            fsDataPath = SourceTargetHelperFunction.getTargetDataPathForFileSystem(dataPath, tempConnection);
+            fsDataPath = (FsDataPath) tempConnection.getDataSystem().getTargetFromSource(dataPath);
             TransferManager transferManager = TransferManager.create().addTransfer(dataPath, fsDataPath).run();
             int exitStatus = transferManager
               .getExitStatus();
@@ -468,7 +468,7 @@ public class SendmailStep extends FilterStepAbs {
       }
 
       @Override
-      public Set<DataPath> get(long timeout, TimeUnit unit) {
+      public Set<DataPath> get(long timeout, @NotNull TimeUnit unit) {
         throw new RuntimeException("No queue here");
       }
 

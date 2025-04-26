@@ -1442,7 +1442,7 @@ public class SqlDataSystem extends DataSystemAbs {
   public void delete(DataPath dataPath) {
 
     SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
-    //noinspection SqlDialectInspection,SqlWithoutWhere
+    //noinspection SqlDialectInspection,SqlWithoutWhere,SqlNoDataSourceInspection
     String deleteStatement = "delete from " + sqlDataPath.toSqlStringPath();
     try (Statement statement = sqlDataPath.getConnection().getCurrentConnection().createStatement()) {
       statement.execute(deleteStatement);
@@ -1558,11 +1558,17 @@ public class SqlDataSystem extends DataSystemAbs {
   }
 
   @Override
-  public String getTargetNameFromSource(DataPath sourceDataPath) {
+  public DataPath getTargetFromSource(DataPath sourceDataPath) {
 
     String logicalName = sourceDataPath.getLogicalName();
-    return KeyNormalizer.create(logicalName).toSqlName();
+    String sqlName = KeyNormalizer.create(logicalName).toSqlName();
+    return this.getConnection().getDataPath(sqlName);
 
+  }
+
+  @Override
+  public String toValidName(String name) {
+    return KeyNormalizer.create(name).toSqlName();
   }
 
   /**

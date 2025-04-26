@@ -69,7 +69,8 @@ public class SqlDataPath extends DataPathAbs {
     if (scriptDataPath instanceof FsDataPath) {
       logicalName = Fs.getFileNameWithoutExtension(((FsDataPath) scriptDataPath).getNioPath());
     }
-    this.setLogicalName(logicalName);
+    String logicalNameSql = this.getConnection().getDataSystem().toValidName(logicalName);
+    this.setLogicalName(logicalNameSql);
 
   }
 
@@ -320,7 +321,7 @@ public class SqlDataPath extends DataPathAbs {
 
     if (Tabulars.isDocument(this)) {
 
-      // `as count` is mandatory for sql server
+      // `as count` alias is mandatory for sql server
       DataPath queryDataPath = this.getConnection().createScriptDataPath("select count(1) as count from " + this.getConnection().getDataSystem().createFromClause(this));
       try (
         SelectStream selectStream = queryDataPath.getSelectStream()

@@ -7,7 +7,7 @@ import com.tabulify.model.ForeignKeyDef;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class  DataSystemAbs implements DataSystem {
+public abstract class DataSystemAbs implements DataSystem {
 
 
   private final Connection connection;
@@ -28,7 +28,7 @@ public abstract class  DataSystemAbs implements DataSystem {
 
   @Override
   public void dropNotNullConstraint(DataPath dataPath) {
-    for(ColumnDef columnDef: dataPath.getOrCreateRelationDef().getColumnDefs()){
+    for (ColumnDef columnDef : dataPath.getOrCreateRelationDef().getColumnDefs()) {
       columnDef.setNullable(false);
     }
   }
@@ -44,12 +44,17 @@ public abstract class  DataSystemAbs implements DataSystem {
 
   @Override
   public void execute(DataPath dataPath) {
-    throw new UnsupportedOperationException("The execute command is not yet supported in the system of the connection ("+this.getConnection().getName()+")");
+    throw new UnsupportedOperationException("The execute command is not yet supported in the system of the connection (" + this.getConnection().getName() + ")");
   }
 
   @Override
-  public String getTargetNameFromSource(DataPath sourceDataPath) {
-    return sourceDataPath.getName();
+  public DataPath getTargetFromSource(DataPath sourceDataPath) {
+    return this.getConnection().getDataPath(sourceDataPath.getName());
+  }
+
+  @Override
+  public String toValidName(String name) {
+    return name;
   }
 
 }

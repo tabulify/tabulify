@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.tabulify.fs.FsConnectionAttribute.FS_DEFAULT_TABULAR_MEDIA_TYPE;
+
 /**
  * A wrapper around a {@link java.nio.file.FileSystem}
  */
@@ -170,7 +172,6 @@ public class FsDataSystem extends DataSystemAbs {
   }
 
 
-
   @Override
   public boolean isContainer(DataPath dataPath) {
     return Files.isDirectory(((FsDataPath) dataPath).getAbsoluteNioPath());
@@ -223,9 +224,9 @@ public class FsDataSystem extends DataSystemAbs {
 
   /**
    * See also how Github handles shell
-   * https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstepsrun
+   * <a href="https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstepsrun">...</a>
    * <p>
-   * https://www.nextflow.io/docs/latest/process.html
+   * <a href="https://www.nextflow.io/docs/latest/process.html">...</a>
    * The shebangdeclaration for a Perl script, for example, would look like: #!/usr/bin/env perl
    *
    * @param dataPath - a script data path
@@ -236,6 +237,7 @@ public class FsDataSystem extends DataSystemAbs {
   }
 
 
+  @SuppressWarnings("unused")
   private FsFileManager getFileManager(FsDataPath fsDataPath) {
     FsFileManager fileManager = fsDataPath.getFileManager();
     if (fileManager == null) {
@@ -253,10 +255,10 @@ public class FsDataSystem extends DataSystemAbs {
       throw new RuntimeException("The data path (" + dataPath + ") is not a directory and therefore has no child");
     }
 
-    try {
+    try (DirectoryStream<Path> paths = Files.newDirectoryStream(path)) {
 
       List<DataPath> children = new ArrayList<>();
-      Files.newDirectoryStream(path).forEach(p -> children.add(dataPath.getChild(p.getFileName().toString())));
+      paths.forEach(p -> children.add(dataPath.getChild(p.getFileName().toString())));
       //noinspection unchecked
       return (List<D>) children;
 
@@ -616,4 +618,35 @@ public class FsDataSystem extends DataSystemAbs {
   }
 
 
+  @Override
+  public DataPath getTargetFromSource(DataPath sourceDataPath) {
+
+    // For convenience
+    FsConnection connection = this.getConnection();
+
+    // Script ?
+    if (sourceDataPath.isScript()) {
+      // a query is anonymous and does not have any name
+      connection.getDataPath(sourceDataPath.getLogicalName());
+    }
+
+    // Tabular (ie Sql data)
+    if (
+      !(sourceDataPath.getConnection() instanceof FsConnection)
+        && (sourceDataPath.getOrCreateRelationDef().getColumnsSize() > 0 || sourceDataPath.isScript())
+    ) {
+
+      return connection
+        .getDataPath(sourceDataPath.getLogicalName() + "." + FS_DEFAULT_TABULAR_MEDIA_TYPE.getExtension(), FS_DEFAULT_TABULAR_MEDIA_TYPE)
+        .addVariable("header-row-id", 1);
+    }
+
+    /**
+     * FsConnection takes the name and not the logical name as name
+     * (ie when we move the file `foo.txt`, to a file system, the name
+     * will be `foo.txt`
+     */
+    return connection.getDataPath(sourceDataPath.getName());
+
+  }
 }

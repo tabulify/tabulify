@@ -1,8 +1,5 @@
 package com.tabulify.tabli;
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliUsage;
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
 import com.tabulify.fs.FsDataPath;
@@ -11,6 +8,10 @@ import com.tabulify.spi.DataPath;
 import com.tabulify.spi.Tabulars;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.uri.DataUri;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
+import net.bytle.fs.Fs;
 import net.bytle.log.Log;
 import net.bytle.timer.Timer;
 import net.bytle.type.time.Timestamp;
@@ -88,27 +89,35 @@ public class TabliDataQuery {
 
       if (dataSelector.isScriptSelector()) {
         List<DataPath> queryFileDataSelectors = tabular.select(dataSelector.getScriptUri());
-        if (queryFileDataSelectors.size() == 0) {
+        if (queryFileDataSelectors.isEmpty()) {
           TabliLog.LOGGER_TABLI.warning("No data resources found with the data selector (" + dataSelector.getScriptUri() + ")");
         }
         for (DataPath selectDataPathsFromSelector : queryFileDataSelectors) {
           if (Tabulars.isDocument(selectDataPathsFromSelector) && selectDataPathsFromSelector instanceof FsDataPath) {
             FsDataPath fsDataPath = (FsDataPath) selectDataPathsFromSelector;
             List<String> selectStatements;
-            try(SqlPlusLexer fromPath = SqlPlusLexer.createFromPath(fsDataPath.getAbsoluteNioPath())) {
+            try (SqlPlusLexer fromPath = SqlPlusLexer.createFromPath(fsDataPath.getAbsoluteNioPath())) {
               selectStatements = fromPath.getSqlStatements();
             }
             if (selectStatements.isEmpty()) {
               tabular.warningOrTerminateIfStrict("No query found in the file (" + fsDataPath + ")");
-            } else {
-              for (int i = 0; i < selectStatements.size(); i++) {
-                String queryName = fsDataPath.getNioPath().getFileName().toString() + "_" + (i + 1);
-                DataPath queryDataPath = connection.createScriptDataPath(tabular.getAndCreateRandomMemoryDataPath()
-                  .setLogicalName(queryName)
-                  .setContent(selectStatements.get(0))
-                );
-                dataPathsToExecute.add(queryDataPath);
-              }
+              continue;
+            }
+            int countSelectStatements = selectStatements.size();
+
+            for (int i = 0; i < countSelectStatements; i++) {
+              String fileNameWithoutExtension = Fs.getFileNameWithoutExtension(fsDataPath.getNioPath());
+              String fileExtension = Fs.getExtension(fsDataPath.getNioPath());
+              String logicalName = fileNameWithoutExtension + "_" + (i + 1);
+              String queryName = logicalName + "." + fileExtension;
+              DataPath queryDataPath = connection.createScriptDataPath(
+                tabular
+                  .getMemoryDataStore()
+                  .getDataPath(queryName)
+                  .setLogicalName(logicalName)
+                  .setContent(selectStatements.get(i))
+              );
+              dataPathsToExecute.add(queryDataPath);
             }
           }
         }
@@ -137,7 +146,7 @@ public class TabliDataQuery {
       .getDataPath();
 
     TabliLog.LOGGER_TABLI.info("Executing the " + dataPathsToExecute.size() + " queries (view, fetch, ...)");
-    if (dataPathsToExecute.size() == 0) {
+    if (dataPathsToExecute.isEmpty()) {
       tabular.warningOrTerminateIfStrict("No data resource query found");
     } else {
       try (
@@ -155,7 +164,7 @@ public class TabliDataQuery {
           } catch (Exception e) {
             status = "Err";
             message = Log.onOneLine(e.getMessage());
-            tabular.warningOrTerminateIfStrict(e.getMessage());
+            tabular.warningOrTerminateIfStrict(e);
           }
 
           cliTimer.stop();

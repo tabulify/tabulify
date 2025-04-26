@@ -50,7 +50,7 @@ public class TabliConnectionDelete {
     final List<String> names = cliParser.getStrings(NAME_OR_GLOB_PATTERN);
     for (String name : names) {
       final List<Connection> connections = tabular.selectConnections(name);
-      if (connections.size() == 0) {
+      if (connections.isEmpty()) {
         tabular.warningOrTerminateIfStrict("There is no connection called (" + name + ")");
       } else {
         LOGGER_TABLI.fine(connections.size() + " connections were found");
