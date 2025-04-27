@@ -40,13 +40,17 @@ if [ "$RESUME_FROM" == "" ]; then
   mvn install -DskipTests
 fi
 
+MAIN_GROUP="com.tabulify"
+MAIN_PROJECT="tabulify-cli"
 # Get dependencies in dag order
 TABULIFY_DEPENDENCIES=$(mvn dependency:list \
   -DexcludeTransitive=true \
   -DincludeScope=compile \
-  -DincludeGroupIds=com.tabulify \
-  --projects tabulify-cli
+  -DincludeGroupIds="$MAIN_GROUP" \
+  --projects "$MAIN_PROJECT"
 )
+# Add the main module/project
+TABULIFY_DEPENDENCIES="$TABULIFY_DEPENDENCIES $MAIN_GROUP.$MAIN_PROJECT"
 
 # Modules where to skip test
 SKIP_MODULE_TESTS=()
@@ -88,6 +92,7 @@ for word in $TABULIFY_DEPENDENCIES; do
   fi
 
 done
+
 
 echo ""
 echo "Project processed"
