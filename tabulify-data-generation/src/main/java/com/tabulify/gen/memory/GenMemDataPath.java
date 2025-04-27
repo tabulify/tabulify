@@ -29,6 +29,7 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath,
   public GenMemDataPath(MemoryConnection memoryConnection, String path) {
     super(memoryConnection, path, GenDataPathType.DATA_GEN);
     this.genDataPathUtility = new GenDataPathUtility(this);
+    this.addVariablesFromEnumAttributeClass(GenDataPathAttribute.class);
   }
 
 

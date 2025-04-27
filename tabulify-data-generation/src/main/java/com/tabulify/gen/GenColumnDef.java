@@ -65,55 +65,58 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
 
   public <T> CollectionGenerator<T> getOrCreateGenerator(Class<T> clazz) {
 
-    if (generator == null) {
-
-      // When read from a data definition file into the column property
-      String nameProperty = this.getVariable(String.class, GENERATOR_PROPERTY_KEY, GENERATOR_TYPE_PROPERTY);
-      if (nameProperty == null) {
-        /**
-         * We don't return an error because
-         * it permits to create the generators
-         * recursively from the Yaml properties if any
-         */
-        return null;
-      }
-
-      /**
-       * We don't use reflection because it makes debugging an horror
-       */
-      switch (nameProperty.toLowerCase()) {
-        case "dataset":
-          generator = DataSetGenerator.createFromProperties(clazz, this);
-          break;
-        case "datasetcolumn":
-          generator = DataSetColumnGenerator.createFromProperties(clazz, this);
-          break;
-        case "foreigncolumn":
-          generator = ForeignColumnGenerator.createFromProperties(clazz, this);
-          break;
-        case "expression":
-          generator = ExpressionGenerator.createFromProperties(clazz, this);
-          break;
-        case "random":
-          generator = RandomGenerator.createFromProperties(clazz, this);
-          break;
-        case "regexp":
-          generator = RegexpGenerator.createFromProperties(clazz, this);
-          break;
-        case "histogram":
-          generator = HistogramGenerator.createFromProperties(clazz, this);
-          break;
-        case "sequence":
-          generator = SequenceGenerator.createFromProperties(clazz, this);
-          break;
-        default:
-          throw new RuntimeException("The generator (" + nameProperty + ") defined for the column (" + this + ") does not exist.");
-      }
+    if (generator != null) {
+      //noinspection unchecked
+      return (CollectionGenerator<T>) (generator)
+        .setColumnDef(this);
     }
 
+    // When read from a data definition file into the column property
+    String nameProperty = this.getVariable(String.class, GENERATOR_PROPERTY_KEY, GENERATOR_TYPE_PROPERTY);
+    if (nameProperty == null) {
+      /**
+       * We don't return an error because
+       * it permits to create the generators
+       * recursively from the Yaml properties if any
+       */
+      return null;
+    }
+
+    /**
+     * We don't use reflection because it makes debugging an horror
+     */
+    switch (nameProperty.toLowerCase()) {
+      case "dataset":
+        generator = DataSetGenerator.createFromProperties(clazz, this);
+        break;
+      case "datasetcolumn":
+        generator = DataSetColumnGenerator.createFromProperties(clazz, this);
+        break;
+      case "foreigncolumn":
+        generator = ForeignColumnGenerator.createFromProperties(clazz, this);
+        break;
+      case "expression":
+        generator = ExpressionGenerator.createFromProperties(clazz, this);
+        break;
+      case "random":
+        generator = RandomGenerator.createFromProperties(clazz, this);
+        break;
+      case "regexp":
+        generator = RegexpGenerator.createFromProperties(clazz, this);
+        break;
+      case "histogram":
+        generator = HistogramGenerator.createFromProperties(clazz, this);
+        break;
+      case "sequence":
+        generator = SequenceGenerator.createFromProperties(clazz, this);
+        break;
+      default:
+        throw new RuntimeException("The generator (" + nameProperty + ") defined for the column (" + this + ") does not exist.");
+    }
     //noinspection unchecked
     return (CollectionGenerator<T>) (generator)
       .setColumnDef(this);
+
   }
 
   public SequenceGenerator<?> addSequenceGenerator() {
@@ -200,7 +203,7 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
       try {
         castedElement = Casts.castToSameMap(element, clazz, Double.class);
       } catch (CastException e) {
-        throw new RuntimeException("An histogram element is not a double",e);
+        throw new RuntimeException("An histogram element is not a double", e);
       }
       return addHistogramGenerator(clazz, castedElement);
     } else {
@@ -378,6 +381,7 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
     return getVariable(clazz, GENERATOR_PROPERTY_KEY, Arrayss.concat(name, names));
   }
 
+  @SuppressWarnings("unused")
   public GenColumnDef addGeneratorProperty(String key, Object value) {
     return (GenColumnDef) setVariable(value, GENERATOR_PROPERTY_KEY, key);
   }

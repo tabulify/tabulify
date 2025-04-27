@@ -18,7 +18,6 @@ import java.nio.file.Path;
 public class GenFsDataPath extends FsTextDataPath implements FsDataPath, GenDataPath {
 
 
-  public static final String DATA_GEN_EXTENSION = "";
   private final GenDataPathUtility genDataPathUtility;
 
 
@@ -34,11 +33,15 @@ public class GenFsDataPath extends FsTextDataPath implements FsDataPath, GenData
     this.genDataPathUtility = new GenDataPathUtility(this);
 
 
+    /**
+     * Default
+     */
     try {
       this.getVariable(DataPathAttribute.LOGICAL_NAME).setValueProvider(()->super.getName().replace(GenDataPathType.DATA_GEN.getExtension(), ""));
     } catch (NoVariableException e) {
       throw new IllegalStateException("The logical Name is a standard attribute and should exist");
     }
+    this.addVariablesFromEnumAttributeClass(GenDataPathAttribute.class);
 
   }
 

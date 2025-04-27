@@ -1,6 +1,5 @@
 package com.tabulify.model;
 
-import com.tabulify.spi.DataPath;
 import net.bytle.exception.CastException;
 import net.bytle.type.Arrayss;
 import net.bytle.type.Casts;
@@ -36,7 +35,7 @@ public class ColumnDefBase implements ColumnDef {
    */
   protected Class<?> clazz;
 
-  protected Map<String, Object> properties = new MapKeyIndependent<>();
+  protected Map<String, Object> caseIndependentProperties = new MapKeyIndependent<>();
 
   static {
     allowedNullableValues.add(DatabaseMetaData.columnNoNulls);
@@ -183,7 +182,6 @@ public class ColumnDefBase implements ColumnDef {
   @Override
   public String getFullyQualifiedName() {
     if (fullyQualifiedName == null) {
-      DataPath path = relationDef.getDataPath();
       fullyQualifiedName = getColumnName() + "@(" + this.getRelationDef().getDataPath() + ")";
     }
     return fullyQualifiedName;
@@ -195,7 +193,6 @@ public class ColumnDefBase implements ColumnDef {
   }
 
 
-  @SuppressWarnings("rawtypes")
   @Override
   public ColumnDef precision(Integer precision) {
     if (precision != null) {
@@ -219,8 +216,6 @@ public class ColumnDefBase implements ColumnDef {
   /**
    * What is this ? derived column ?
    *
-   * @param isGeneratedColumn
-   * @return
    */
   @Override
   public ColumnDef setIsGeneratedColumn(String isGeneratedColumn) {
@@ -277,7 +272,6 @@ public class ColumnDefBase implements ColumnDef {
   /**
    * TODO: not yet implemented
    *
-   * @return
    */
   @Override
   public String getDescription() {
@@ -297,7 +291,7 @@ public class ColumnDefBase implements ColumnDef {
    */
   @Override
   public <T> T getVariable(Class<T> clazz, String name, String... names) {
-    Object o = Maps.getPropertyCaseIndependent(properties, name);
+    Object o = caseIndependentProperties.get(name);
     if (o == null) {
       return null;
     }
@@ -338,9 +332,6 @@ public class ColumnDefBase implements ColumnDef {
    * @param valueClazz - the class of the value
    * @param name       - the first name of the path
    * @param names      - the path to the property
-   * @param <K>
-   * @param <V>
-   * @return
    */
   @Override
   public <K, V> Map<K, V> getMapProperty(Class<K> keyClazz, Class<V> valueClazz, String name, String... names) {
@@ -358,15 +349,10 @@ public class ColumnDefBase implements ColumnDef {
   }
 
 
-  /**
-   * @param key
-   * @param value
-   * @return
-   */
   @Override
   public ColumnDef setVariable(String key, Object value) {
 
-    properties.put(key, value);
+    caseIndependentProperties.put(key, value);
     return this;
 
   }
@@ -374,8 +360,6 @@ public class ColumnDefBase implements ColumnDef {
   /**
    * @param name  - a name of the key space
    * @param names - the names of the key
-   * @param value
-   * @return
    */
   @Override
   public ColumnDef setVariable(Object value, String name, String... names) {
@@ -386,7 +370,7 @@ public class ColumnDefBase implements ColumnDef {
         Map<String, Object> mapProperty = getMapProperty(String.class, Object.class, name);
         if (mapProperty == null) {
           mapProperty = new HashMap<>();
-          this.properties.put(name, mapProperty);
+          this.caseIndependentProperties.put(name, mapProperty);
         }
         mapProperty.put(names[0], value);
         return this;
@@ -399,7 +383,7 @@ public class ColumnDefBase implements ColumnDef {
 
   @Override
   public Map<String, Object> getProperties() {
-    return properties;
+    return caseIndependentProperties;
   }
 
   @Override
@@ -426,7 +410,7 @@ public class ColumnDefBase implements ColumnDef {
 
   @Override
   public ColumnDef setAllPropertiesFrom(ColumnDef source) {
-    this.properties.putAll(source.getProperties());
+    this.caseIndependentProperties.putAll(source.getProperties());
     return this;
   }
 

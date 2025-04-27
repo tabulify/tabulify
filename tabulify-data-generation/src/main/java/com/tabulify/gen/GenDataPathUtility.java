@@ -106,7 +106,7 @@ public class GenDataPathUtility {
       .filter(uk -> uk.getColumns().contains(columnDef))
       .collect(Collectors.toList());
 
-    if (uniqueKeys.size() > 0) {
+    if (!uniqueKeys.isEmpty()) {
 
       uniqueKeys.forEach(uniqueKeyDef -> {
         List<GenColumnDef> ukCols =
@@ -116,7 +116,7 @@ public class GenDataPathUtility {
             .map(DataGens::castToGenColumnDef)
             .collect(Collectors.toList());
 
-        if (ukCols.size() == 0) {
+        if (ukCols.isEmpty()) {
           throw new IllegalStateException("The unique key constraint (" + uniqueKeyDef + ") have no columns, we can't therefore add a unique key generator. Delete the constraint or add columns to it.");
         } else {
           SequenceGenerator.createOdometer(ukCols);
@@ -154,7 +154,7 @@ public class GenDataPathUtility {
    */
   public Long getMaxRecordCount() {
     try {
-      return Casts.castSafe(genDataPath.getVariable(GenDataPath.MAX_RECORD_COUNT_PROPERTY_KEY).getValueOrDefault(), Long.class);
+      return Casts.castSafe(genDataPath.getVariable(GenDataPathAttribute.MAX_RECORD_COUNT_PROPERTY_KEY).getValueOrDefault(), Long.class);
     } catch (NoVariableException | NoValueException e) {
       return null;
     }
@@ -171,9 +171,8 @@ public class GenDataPathUtility {
     Long maxSize = this.getMaxRecordCount();
     if (maxSize != null && maxNumberOfRowToInsert > maxSize) {
       return maxSize;
-    } else {
-      return maxNumberOfRowToInsert;
     }
+    return maxNumberOfRowToInsert;
 
   }
 
@@ -185,7 +184,7 @@ public class GenDataPathUtility {
   public GenDataPathUtility setMaxRecordCount(Long maxRecordCount) {
     // Just to be able to have this function in a fluent code with a null value
     if (maxRecordCount != null) {
-      genDataPath.getOrCreateRelationDef().getDataPath().addVariable(GenDataPath.MAX_RECORD_COUNT_PROPERTY_KEY, maxRecordCount);
+      genDataPath.getOrCreateRelationDef().getDataPath().addVariable(GenDataPathAttribute.MAX_RECORD_COUNT_PROPERTY_KEY, maxRecordCount);
     }
     return this;
   }

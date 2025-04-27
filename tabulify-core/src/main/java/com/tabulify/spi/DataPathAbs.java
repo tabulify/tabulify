@@ -171,6 +171,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   /**
    * @param connection   - the connection
    * @param relativePath - the relative path from the connection path
+   * @param mediaType    - the media type
    */
   public DataPathAbs(Connection connection, String relativePath, MediaType mediaType) {
 
