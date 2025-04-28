@@ -1,6 +1,7 @@
 package com.tabulify.gen.generator;
 
 
+import com.tabulify.gen.DataGenType;
 import com.tabulify.gen.GenColumnDef;
 import net.bytle.exception.CastException;
 import net.bytle.exception.NoColumnException;
@@ -16,18 +17,16 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import static com.tabulify.gen.GenColumnDef.GENERATOR_PROPERTY_KEY;
+import static com.tabulify.gen.DataGenAttribute.COLUMN_PARENTS;
+import static com.tabulify.gen.DataGenAttribute.EXPRESSION;
 
 
 public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements CollectionGenerator<T>, java.util.function.Supplier<T> {
 
-  public static final String TYPE = "expression";
+  public static final DataGenType TYPE = DataGenType.EXPRESSION;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ExpressionGenerator.class);
 
-
-  public static final String EXPRESSION_PROPERTY = "expression";
-  public static final String COLUMN_PARENT_PROPERTY = "ColumnParents";
 
   private static final Context cx;
 
@@ -65,9 +64,9 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
   public static <T> ExpressionGenerator<T> createFromProperties(Class<T> tClass, GenColumnDef genColumnDef) {
 
     // Parent Generator
-    Object columnParentsValue = genColumnDef.getVariable(Object.class, GENERATOR_PROPERTY_KEY, COLUMN_PARENT_PROPERTY);
+    Object columnParentsValue = genColumnDef.getDataGeneratorValue(COLUMN_PARENTS);
     if (columnParentsValue == null) {
-      throw new IllegalStateException("The parent column is not defined in the '" + COLUMN_PARENT_PROPERTY + "' properties for the column " + genColumnDef.getFullyQualifiedName());
+      throw new IllegalStateException("The " + COLUMN_PARENTS + " property is not defined in the '" + COLUMN_PARENTS + "' properties for the column " + genColumnDef.getFullyQualifiedName());
     }
     List<String> columnParentNames = new ArrayList<>();
     if (columnParentsValue instanceof Collection) {
@@ -92,13 +91,13 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
     }
 
     // Expression
-    String expression = genColumnDef.getVariable(String.class, GENERATOR_PROPERTY_KEY, EXPRESSION_PROPERTY);
+    Object expression = genColumnDef.getDataGeneratorValue(EXPRESSION);
     if (expression == null) {
-      throw new IllegalStateException("The '" + EXPRESSION_PROPERTY + "' property is mandatory to create a expression data generator and is missing for the column (" + genColumnDef.getFullyQualifiedName() + ")");
+      throw new IllegalStateException("The '" + EXPRESSION + "' property is mandatory to create a expression data generator and is missing for the column (" + genColumnDef.getFullyQualifiedName() + ")");
     }
 
     // New Instance
-    return (ExpressionGenerator<T>) (new ExpressionGenerator<>(tClass, expression, parentCollectionGenerator))
+    return (ExpressionGenerator<T>) (new ExpressionGenerator<>(tClass, expression.toString(), parentCollectionGenerator))
       .setColumnDef(genColumnDef);
 
   }
@@ -209,4 +208,10 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
   public String getExpression() {
     return this.expression;
   }
+
+  @Override
+  public DataGenType getGeneratorType() {
+    return DataGenType.EXPRESSION;
+  }
+
 }

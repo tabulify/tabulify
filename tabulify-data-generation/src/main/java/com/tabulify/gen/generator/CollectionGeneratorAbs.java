@@ -1,8 +1,11 @@
 package com.tabulify.gen.generator;
 
+import com.tabulify.gen.DataGenType;
 import com.tabulify.gen.GenColumnDef;
 import com.tabulify.gen.GenRelationDef;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
+import net.bytle.type.Casts;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
 
@@ -63,8 +66,12 @@ public abstract class CollectionGeneratorAbs<T> implements CollectionGenerator<T
   }
 
   @Override
-  public String getGeneratorType() {
-    return this.getClass().getSimpleName().toLowerCase().replace("generator", "");
+  public DataGenType getGeneratorType() {
+    try {
+      return Casts.cast(this.getClass().getSimpleName().toLowerCase().replace("generator", ""), DataGenType.class);
+    } catch (CastException e) {
+      throw new RuntimeException("Internal Error: Unable to cast to the generator type", e);
+    }
   }
 
   @Override

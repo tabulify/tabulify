@@ -14,7 +14,6 @@ public interface GenDataPath extends DataPath {
   Long getMaxRecordCount();
 
 
-
   GenDataPathUtility getGenDataPathUtility();
 
   @Override
@@ -25,6 +24,10 @@ public interface GenDataPath extends DataPath {
   @Override
   GenRelationDef createRelationDef();
 
+  /**
+   * @return the maximum size that this data path can return, not capped to max record count
+   */
+  Long getSizeNotCapped();
 
 
 }

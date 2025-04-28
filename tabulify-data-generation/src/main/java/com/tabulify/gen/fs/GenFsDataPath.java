@@ -25,13 +25,10 @@ public class GenFsDataPath extends FsTextDataPath implements FsDataPath, GenData
 
     super(fsConnection, path, GenDataPathType.DATA_GEN);
 
-    Path absoluteNioPath = this.getAbsoluteNioPath();
-    if (Files.exists(absoluteNioPath)) {
-      this.mergeDataDefinitionFromYamlFile(absoluteNioPath);
-    }
-
+    /**
+     * Utility
+     */
     this.genDataPathUtility = new GenDataPathUtility(this);
-
 
     /**
      * Default
@@ -41,7 +38,17 @@ public class GenFsDataPath extends FsTextDataPath implements FsDataPath, GenData
     } catch (NoVariableException e) {
       throw new IllegalStateException("The logical Name is a standard attribute and should exist");
     }
-    this.addVariablesFromEnumAttributeClass(GenDataPathAttribute.class);
+    this.genDataPathUtility.initVariables();
+
+    /**
+     * Overwrite Default
+     */
+    Path absoluteNioPath = this.getAbsoluteNioPath();
+    if (Files.exists(absoluteNioPath)) {
+      this.mergeDataDefinitionFromYamlFile(absoluteNioPath);
+    }
+
+
 
   }
 
@@ -108,6 +115,11 @@ public class GenFsDataPath extends FsTextDataPath implements FsDataPath, GenData
   @Override
   public SelectStream getSelectStream() {
     return new GenSelectStream(this);
+  }
+
+  @Override
+  public Long getSizeNotCapped() {
+    return this.genDataPathUtility.getMaxSizeFromGenerators();
   }
 
 }

@@ -1,10 +1,10 @@
 package com.tabulify.gen;
 
 
-import com.tabulify.gen.generator.ExpressionGenerator;
 import com.tabulify.Tabular;
 import com.tabulify.engine.ForeignKeyDag;
 import com.tabulify.gen.fs.GenFsDataPath;
+import com.tabulify.gen.generator.ExpressionGenerator;
 import com.tabulify.gen.generator.ForeignColumnGenerator;
 import com.tabulify.gen.memory.GenMemDataPath;
 import com.tabulify.memory.MemoryConnection;
@@ -106,7 +106,7 @@ public class DataGenerator implements AutoCloseable {
     /**
      * Adding the table into the list of tables to load
      */
-    addTransfer(sourceDataPath, targetDataPath);
+    this.addTransfer(sourceDataPath, targetDataPath);
 
     return this;
   }
@@ -120,24 +120,23 @@ public class DataGenerator implements AutoCloseable {
    * <p>
    * This is because we need a single source data store (memory) in order to keep
    * the foreign key consistency (ie there is no foreign key constraint possible between two different data store)
-   *
    */
   public GenMemDataPath toGenMemDataPath(DataPath dataPath) {
 
     if (dataPath instanceof GenMemDataPath) {
       return (GenMemDataPath) dataPath;
-    } else {
-
-      /**
-       * No foreign Key merge, please, this is done later in the {@link #generateSourceTargetMap()}
-       */
-      return (GenMemDataPath) this.memoryConnection
-        .getTypedDataPath(GenDataPathType.DATA_GEN, dataPath.getLogicalName())
-        .mergeDataPathVariablesFrom(dataPath)
-        .getOrCreateRelationDef()
-        .mergeStruct(dataPath)
-        .getDataPath();
     }
+
+    /**
+     * No foreign Key merge, please, this is done later in the {@link #generateSourceTargetMap()}
+     */
+    return (GenMemDataPath) this.memoryConnection
+      .getTypedDataPath(GenDataPathType.DATA_GEN, dataPath.getLogicalName())
+      .mergeDataPathVariablesFrom(dataPath)
+      .getOrCreateRelationDef()
+      .mergeStruct(dataPath)
+      .getDataPath();
+
 
   }
 
@@ -158,7 +157,7 @@ public class DataGenerator implements AutoCloseable {
 
     // Add the parent if needed
     // build the generators
-    generateSourceTargetMap();
+    this.generateSourceTargetMap();
 
     TransferManager transferManager = TransferManager.create();
     targetSources.keySet().forEach(targetDataPath -> {
@@ -210,7 +209,7 @@ public class DataGenerator implements AutoCloseable {
       // ie a column that references itself so that we got a cycle
       targetSources.keySet().forEach(dp -> {
         List<ForeignKeyDef> fk = getSelfReferencingForeignKeys(dp);
-        if (fk.size() > 0) {
+        if (!fk.isEmpty()) {
           throw new RuntimeException(Strings.createMultiLineFromStrings(
             "The data path (" + dp + ") has one more foreign key that references itself",
             "We have the following self referencing foreign key: " + fk.stream()
@@ -223,7 +222,7 @@ public class DataGenerator implements AutoCloseable {
       // ie a foreign column that have two foreign table references (not supported)
       targetSources.keySet().forEach(dp -> {
         List<ForeignKeyDef> fk = getSecondForeignKeysOnTheSameColumn(dp);
-        if (fk.size() > 0) {
+        if (!fk.isEmpty()) {
           throw new RuntimeException(Strings.createMultiLineFromStrings(
             "The data path (" + dp + ") has more than one foreign key definition on a column and that's not permitted",
             "We have the following double foreign keys: " + fk.stream()
@@ -237,7 +236,7 @@ public class DataGenerator implements AutoCloseable {
       // If yes, add a transfer with the parent tables
       List<DataPath> targetDataPaths = new ArrayList<>(targetSources.keySet());
       for (DataPath targetDataPath : targetDataPaths) {
-        if (targetDataPath.getOrCreateRelationDef().getForeignKeys().size() != 0) {
+        if (!targetDataPath.getOrCreateRelationDef().getForeignKeys().isEmpty()) {
           for (ForeignKeyDef foreignKeyDef : targetDataPath.getOrCreateRelationDef().getForeignKeys()) {
             DataPath foreignDataPath = foreignKeyDef.getForeignPrimaryKey().getRelationDef().getDataPath();
             if (!targetSources.containsKey(foreignDataPath)) {
@@ -245,7 +244,7 @@ public class DataGenerator implements AutoCloseable {
               if (rows == 0) {
                 if (this.loadParent != null && this.loadParent) {
                   GenLog.LOGGER.info("The table (" + foreignDataPath + ") has no records, the option to load the parent is on, therefore the table will be loaded.");
-                  addDummyTransfer(foreignDataPath);
+                  this.addDummyTransfer(foreignDataPath);
                 } else {
                   throw new RuntimeException("The table (" + targetDataPath + ") has a foreign key to the parent table (" + foreignDataPath + "). This table has no rows and the option to load parent is disabled, we cannot then generated rows in the table (" + targetDataPath + ")");
                 }
@@ -401,7 +400,6 @@ public class DataGenerator implements AutoCloseable {
   /**
    * Add a {@link #generateSourceTargetMap()}
    * without totalRows specification
-   *
    */
   public DataGenerator addDummyTransfer(DataPath dataPath) {
     return addDummyTransfer(dataPath, null);
@@ -414,25 +412,23 @@ public class DataGenerator implements AutoCloseable {
    */
   public DataGenerator addDummyTransfers(List<DataPath> dataPaths, Long maxRowCount) {
     for (DataPath dataPath : dataPaths) {
-      addDummyTransfer(dataPath, maxRowCount);
+      this.addDummyTransfer(dataPath, maxRowCount);
     }
     return this;
   }
 
   /**
    * Add several transfer to the same target at once
-   *
    */
   public DataGenerator addTransfers(List<GenDataPath> sourceDataPaths, DataPath targetDataPath) {
     for (GenDataPath sourceDataPath : sourceDataPaths) {
-      addTransfer(sourceDataPath, targetDataPath);
+      this.addTransfer(sourceDataPath, targetDataPath);
     }
     return this;
   }
 
   /**
    * Add a transfer
-   *
    */
   public DataGenerator addTransfer(GenDataPath sourceDataPath, DataPath targetDataPath) {
 
@@ -481,7 +477,6 @@ public class DataGenerator implements AutoCloseable {
 
   /**
    * A utility function used mostly during testing
-   *
    */
   public DataGenerator throwErrorIfFail() {
 
@@ -490,7 +485,6 @@ public class DataGenerator implements AutoCloseable {
     }
     return this;
   }
-
 
 
   @Override

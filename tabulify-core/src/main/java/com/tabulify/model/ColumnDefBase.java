@@ -1,10 +1,12 @@
 package com.tabulify.model;
 
 import net.bytle.type.Attribute;
+import net.bytle.type.MapKeyIndependent;
+import net.bytle.type.Origin;
 import net.bytle.type.Variable;
 
 import java.sql.DatabaseMetaData;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +34,11 @@ public class ColumnDefBase implements ColumnDef {
    */
   protected Class<?> clazz;
 
-  protected Map<Attribute, Variable> variables = new HashMap<>();
+  /**
+   * Variables may be generated
+   * so the identifier is a string name
+   */
+  protected Map<String, Variable> variables = new MapKeyIndependent<>();
 
   static {
     allowedNullableValues.add(DatabaseMetaData.columnNoNulls);
@@ -90,6 +96,7 @@ public class ColumnDefBase implements ColumnDef {
     this.sqlDataType = sqlDataType;
     this.clazz = clazz;
 
+    this.addVariablesFromEnumAttributeClass(ColumnAttribute.class);
 
   }
 
@@ -280,13 +287,17 @@ public class ColumnDefBase implements ColumnDef {
   }
 
   public Variable getVariable(Attribute attribute) {
-    return variables.get(attribute);
+    return getVariable(attribute.toString());
+  }
+
+  public Variable getVariable(String s) {
+    return variables.get(s);
   }
 
 
   @Override
   public ColumnDef setVariable(String key, Object value) {
-    throw new RuntimeException("The property column value (" + key + ") is unexpected as this default column implementation does not have any attribute.");
+    throw new RuntimeException("The property column value (" + key + ") is unexpected. The column (" + this.getClass().getSimpleName() + ") does not implement (or have) any extra columns.");
   }
 
   @Override
@@ -297,7 +308,7 @@ public class ColumnDefBase implements ColumnDef {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
-    this.variables.put(variable.getAttribute(), variable);
+    this.variables.put(variable.getAttribute().toString(), variable);
     return this;
   }
 
@@ -354,7 +365,7 @@ public class ColumnDefBase implements ColumnDef {
 
   @Override
   public ColumnDef setAllVariablesFrom(ColumnDef source) {
-    source.getVariables().forEach(v -> this.variables.put(v.getAttribute(), v));
+    source.getVariables().forEach(v -> this.variables.put(v.getAttribute().toString(), v));
     return this;
   }
 
@@ -369,4 +380,20 @@ public class ColumnDefBase implements ColumnDef {
     this.scale = scale;
     return this;
   }
+
+  /**
+   * A utility class to add the default variables when a columnDef is build
+   *
+   * @param enumClass - the class that holds all enum attribute
+   * @return the column for chaining
+   */
+  public ColumnDef addVariablesFromEnumAttributeClass(Class<? extends Attribute> enumClass) {
+    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> {
+      Variable variable = Variable.create(c, Origin.INTERNAL);
+      this.variables.put(c.toString(), variable);
+    });
+    return this;
+  }
+
+
 }

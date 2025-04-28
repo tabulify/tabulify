@@ -16,7 +16,9 @@ public enum GenDataPathAttribute implements Attribute {
    * primary key but for a unique key on multiple columns
    * this is more difficult
    */
-  MAX_RECORD_COUNT_PROPERTY_KEY("The origin of the connection", Long.class, 100L);
+  MAX_RECORD_COUNT("The maximum of records generated", Long.class, 100L),
+  SIZE_NOT_CAPPED("The number of records without max", Long.class, null),
+  SIZE("The size", Long.class, null);
 
   private final String description;
   private final Class<?> clazz;

@@ -1,6 +1,8 @@
 package com.tabulify.gen.generator;
 
 import com.github.curiousoddman.rgxgen.RgxGen;
+import com.tabulify.gen.DataGenAttribute;
+import com.tabulify.gen.DataGenType;
 import com.tabulify.gen.GenColumnDef;
 import net.bytle.type.BigIntegers;
 import net.bytle.type.Casts;
@@ -24,12 +26,9 @@ public class RegexpGenerator<T> extends CollectionGeneratorAbs<T> {
    * This function is called via recursion by the function {@link GenColumnDef#getOrCreateGenerator(Class)}
    * Don't delete
    *
-   * @param genColumnDef
-   * @param <T>
-   * @return
    */
   public static <T> RegexpGenerator<T> createFromProperties(Class<T> clazz, GenColumnDef genColumnDef) {
-    String regexp = genColumnDef.getGeneratorProperty(String.class, "regexp");
+    String regexp = (String) genColumnDef.getDataGeneratorValue(DataGenAttribute.REGEXP);
     return (RegexpGenerator<T>) (new RegexpGenerator<>(clazz, regexp))
       .setColumnDef(genColumnDef);
   }
@@ -58,6 +57,11 @@ public class RegexpGenerator<T> extends CollectionGeneratorAbs<T> {
   public T getNewValue() {
     this.actualValue = rgxGen.generate();
     return getActualValue();
+  }
+
+  @Override
+  public DataGenType getGeneratorType() {
+    return DataGenType.REGEXP;
   }
 
 }

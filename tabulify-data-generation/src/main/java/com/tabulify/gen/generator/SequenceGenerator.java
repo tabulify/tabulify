@@ -1,9 +1,13 @@
 package com.tabulify.gen.generator;
 
 
+import com.tabulify.gen.DataGenAttribute;
+import com.tabulify.gen.DataGenType;
 import com.tabulify.gen.GenColumnDef;
+import com.tabulify.gen.GenDataPath;
 import com.tabulify.model.PrimaryKeyDef;
 import com.tabulify.model.UniqueKeyDef;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoColumnException;
 import net.bytle.type.Arrayss;
@@ -197,7 +201,12 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
     SequenceGenerator<T> sequenceGenerator = (SequenceGenerator<T>) create(clazz)
       .setColumnDef(columnDef);
 
-    final Number stepObj = columnDef.getGeneratorProperty(Number.class, "step");
+    final Integer stepObj;
+    try {
+      stepObj = columnDef.getDataGeneratorValue(DataGenAttribute.STEP, Integer.class);
+    } catch (CastException e) {
+      throw new RuntimeException("The data generator " + DataGenAttribute.STEP + " value of the column " + columnDef + " is not a valid integer. Error: " + e.getMessage(), e);
+    }
     if (stepObj != null) {
       sequenceGenerator.setStep(stepObj);
       if (columnDef.getClazz().equals(java.sql.Date.class)) {
@@ -209,22 +218,37 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
         }
       }
     }
-    final Integer offset = columnDef.getGeneratorProperty(Integer.class, "offset");
+    final Integer offset;
+    try {
+      offset = columnDef.getDataGeneratorValue(DataGenAttribute.OFFSET, Integer.class);
+    } catch (CastException e) {
+      throw new RuntimeException("The data generator " + DataGenAttribute.OFFSET + " value of the column " + columnDef + " is not a valid integer. Error: " + e.getMessage(), e);
+    }
     if (offset != null) {
       sequenceGenerator.setOffset(offset);
     }
 
-    final T startObj = columnDef.getGeneratorProperty(clazz, "start");
+    final T startObj;
+    try {
+      startObj = columnDef.getDataGeneratorValue(DataGenAttribute.START, clazz);
+    } catch (CastException e) {
+      throw new RuntimeException("The data generator " + DataGenAttribute.START + " value of the column " + columnDef + " is not a valid " + clazz.getSimpleName() + ". Error: " + e.getMessage(), e);
+    }
     if (startObj != null) {
       sequenceGenerator.setStart(startObj);
     }
 
-    final Boolean reset = columnDef.getGeneratorProperty(Boolean.class, "reset");
+    final Boolean reset;
+    try {
+      reset = columnDef.getDataGeneratorValue(DataGenAttribute.RESET, Boolean.class);
+    } catch (CastException e) {
+      throw new RuntimeException("The data generator " + DataGenAttribute.RESET + " value of the column " + columnDef + " is not a valid boolean. Error: " + e.getMessage(), e);
+    }
     if (reset != null) {
       sequenceGenerator.setReset(reset);
     }
 
-    Object valuesProperty = columnDef.getGeneratorProperty(Object.class, "values");
+    Object valuesProperty = columnDef.getDataGeneratorValue(DataGenAttribute.VALUES);
     if (valuesProperty != null) {
       List<T> valuesList;
       if (valuesProperty instanceof List) {
@@ -234,19 +258,19 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
       }
       sequenceGenerator.setValues(valuesList);
     }
-
-    Long maxTickProperty = columnDef.getGeneratorProperty(Long.class, "maxTick");
+    Long maxTickProperty;
+    try {
+      maxTickProperty = columnDef.getDataGeneratorValue(DataGenAttribute.MAX_TICK, Long.class);
+    } catch (CastException e) {
+      throw new RuntimeException("The max tick property for the data generator of the column (" + columnDef.getFullyQualifiedName() + ") is not an long. Error: " + e.getMessage(), e);
+    }
     if (maxTickProperty != null) {
-      try {
-        sequenceGenerator.setMaxTick(maxTickProperty);
-      } catch (ClassCastException e) {
-        throw new RuntimeException("The max tick property for the data generator of the column (" + columnDef.getFullyQualifiedName() + ") is not an number (Value: " + maxTickProperty + ")", e);
-      }
+      sequenceGenerator.setMaxTick(maxTickProperty);
     }
 
-    String tickerFor = columnDef.getGeneratorProperty(String.class, "tickerFor");
+    Object tickerFor = columnDef.getDataGeneratorValue(DataGenAttribute.MAX_TICK);
     if (tickerFor != null) {
-      sequenceGenerator.setTickerFor(tickerFor);
+      sequenceGenerator.setTickerFor(tickerFor.toString());
     }
 
     return sequenceGenerator;
@@ -292,6 +316,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
    * @param value  the value
    * @param values the values
    */
+  @SuppressWarnings("unused")
   @SafeVarargs
   private SequenceGenerator<T> setValues(T value, T... values) {
 
@@ -531,14 +556,11 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
 
     }
 
-
     /**
-     * Capping on data path max size
+     * Don't cap on {@link GenDataPath#getMaxRecordCount()}
+     * Capping happens on data path level not generator level
+     * so that we can test the size generated without capping/limit
      */
-    if (this.getRelationDef().getDataPath().getMaxRecordCount() != null && maxSize > this.getRelationDef().getDataPath().getMaxRecordCount()) {
-      maxSize = this.getRelationDef().getDataPath().getMaxRecordCount();
-    }
-
 
     return maxSize;
 
@@ -751,4 +773,10 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
   public boolean getReset() {
     return reset;
   }
+
+  @Override
+  public DataGenType getGeneratorType() {
+    return DataGenType.SEQUENCE;
+  }
+
 }

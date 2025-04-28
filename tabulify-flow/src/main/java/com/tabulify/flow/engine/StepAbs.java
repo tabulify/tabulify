@@ -105,13 +105,14 @@ public abstract class StepAbs extends StepProvider implements OperationStep {
     return new HashSet<>(this.arguments.values());
   }
 
+  @SuppressWarnings("unused")
   public StepAbs addArgumentsFromEnumAttributeClass(Class<? extends Attribute> enumClass) {
     Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addArgument(Variable.create(c,Origin.INTERNAL)));
     return this;
   }
 
   private StepAbs addArgument(Variable variable) {
-    this.arguments.put(variable.getUniqueName(), variable);
+    this.arguments.put(variable.getAttribute().toString(), variable);
     return this;
   }
 

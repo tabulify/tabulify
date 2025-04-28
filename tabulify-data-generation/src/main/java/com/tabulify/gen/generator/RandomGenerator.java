@@ -1,6 +1,8 @@
 package com.tabulify.gen.generator;
 
 
+import com.tabulify.gen.DataGenAttribute;
+import com.tabulify.gen.DataGenType;
 import com.tabulify.gen.GenColumnDef;
 import net.bytle.exception.CastException;
 import net.bytle.type.BigDecimals;
@@ -52,8 +54,8 @@ public class RandomGenerator<T> extends CollectionGeneratorAbs<T> implements Col
    * @param max    - included
    */
   public RandomGenerator(Class<T> aClass, Object min, Object max) {
-    super(aClass);
 
+    super(aClass);
 
     if (Double.class.equals(aClass) || Float.class.equals(aClass)) {
       min = Doubles.createFromObject(min).toDouble();
@@ -148,8 +150,8 @@ public class RandomGenerator<T> extends CollectionGeneratorAbs<T> implements Col
    * @return the generator
    */
   public static <T> RandomGenerator<T> createFromProperties(Class<T> tClass, GenColumnDef genColumnDef) {
-    Object min = genColumnDef.getGeneratorProperty(Object.class, "min");
-    Object max = genColumnDef.getGeneratorProperty(Object.class, "max");
+    Object min = genColumnDef.getDataGeneratorValue(DataGenAttribute.MIN);
+    Object max = genColumnDef.getDataGeneratorValue(DataGenAttribute.MAX);
     return (RandomGenerator<T>) (new RandomGenerator<>(tClass, min, max)).setColumnDef(genColumnDef);
   }
 
@@ -292,4 +294,10 @@ public class RandomGenerator<T> extends CollectionGeneratorAbs<T> implements Col
   public Number getRange() {
     return range;
   }
+
+  @Override
+  public DataGenType getGeneratorType() {
+    return DataGenType.RANDOM;
+  }
+
 }

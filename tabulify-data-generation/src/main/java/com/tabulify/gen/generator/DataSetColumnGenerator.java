@@ -1,5 +1,7 @@
 package com.tabulify.gen.generator;
 
+import com.tabulify.gen.DataGenAttribute;
+import com.tabulify.gen.DataGenType;
 import com.tabulify.gen.GenColumnDef;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.spi.DataPath;
@@ -50,15 +52,14 @@ public class DataSetColumnGenerator<T> extends CollectionGeneratorAbs<T> {
     /**
      * The column
      */
-    String entityColumnName = genColumnDef.getGeneratorProperty(String.class, "column");
+    String entityColumnName = (String) genColumnDef.getDataGeneratorValue(DataGenAttribute.COLUMN);
     if (entityColumnName == null) {
       throw new IllegalStateException("The generator definition of the column (" + genColumnDef + ") miss the `column` property. This property defines the column that will be used to return the data and is therefore mandatory.");
     }
     /**
      * Try to find the parent generator
      */
-    String parentKey = "parent";
-    String columnParent = genColumnDef.getGeneratorProperty(String.class, parentKey);
+    String columnParent = (String) genColumnDef.getDataGeneratorValue(DataGenAttribute.COLUMN_PARENTS);
 
     if (columnParent != null) {
       GenColumnDef parentColumn = genColumnDef.getRelationDef().getColumnDefs()
@@ -67,7 +68,7 @@ public class DataSetColumnGenerator<T> extends CollectionGeneratorAbs<T> {
         .findFirst()
         .orElse(null);
       if (parentColumn == null) {
-        throw new IllegalStateException("The " + parentKey + " attribute of the column " + genColumnDef + " defines a column (" + columnParent + ") that does not exists");
+        throw new IllegalStateException("The " + DataGenAttribute.COLUMN_PARENTS + " attribute of the column " + genColumnDef + " defines a column (" + columnParent + ") that does not exists");
       }
       CollectionGenerator<?> collectionGenerator = parentColumn.getOrCreateGenerator(clazz);
       if (!(collectionGenerator instanceof DataSetGenerator)) {
@@ -76,7 +77,7 @@ public class DataSetColumnGenerator<T> extends CollectionGeneratorAbs<T> {
         return new DataSetColumnGenerator<>(clazz, entityColumnName, (DataSetGenerator<?>) collectionGenerator);
       }
     } else {
-      throw new IllegalStateException("The `" + parentKey + "` attribute is mandatory and was not found in the generation definition of the column " + genColumnDef + ".");
+      throw new IllegalStateException("The `" + DataGenAttribute.COLUMN_PARENTS + "` attribute is mandatory and was not found in the generation definition of the column " + genColumnDef + ".");
     }
 
   }
@@ -108,6 +109,11 @@ public class DataSetColumnGenerator<T> extends CollectionGeneratorAbs<T> {
   @Override
   public void reset() {
     // Nothing to do
+  }
+
+  @Override
+  public DataGenType getGeneratorType() {
+    return DataGenType.DATA_SET_COLUMN;
   }
 
 }

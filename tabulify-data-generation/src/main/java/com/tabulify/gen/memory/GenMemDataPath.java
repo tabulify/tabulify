@@ -29,7 +29,7 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath,
   public GenMemDataPath(MemoryConnection memoryConnection, String path) {
     super(memoryConnection, path, GenDataPathType.DATA_GEN);
     this.genDataPathUtility = new GenDataPathUtility(this);
-    this.addVariablesFromEnumAttributeClass(GenDataPathAttribute.class);
+    this.genDataPathUtility.initVariables();
   }
 
 
@@ -66,6 +66,11 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath,
   public GenRelationDef createRelationDef() {
     this.relationDef = new GenRelationDef(this);
     return (GenRelationDef) this.relationDef;
+  }
+
+  @Override
+  public Long getSizeNotCapped() {
+    return this.genDataPathUtility.getMaxSizeFromGenerators();
   }
 
 

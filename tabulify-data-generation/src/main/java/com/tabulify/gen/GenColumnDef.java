@@ -8,8 +8,10 @@ import com.tabulify.model.ColumnDefBase;
 import com.tabulify.model.SqlDataType;
 import net.bytle.exception.CastException;
 import net.bytle.exception.NoColumnException;
+import net.bytle.exception.NoValueException;
 import net.bytle.type.Arrayss;
 import net.bytle.type.Casts;
+import net.bytle.type.Enums;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,34 +19,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.tabulify.gen.GenColumnAttribute.HIDDEN;
+
 /**
  * A wrapper/extension around a {@link ColumnDefBase}
  * that map a {@link ColumnDefBase} to a {@link CollectionGenerator}
  */
 public class GenColumnDef extends ColumnDefBase implements ColumnDef {
 
-  /**
-   * The property key giving the data generator data
-   */
-  public static final String GENERATOR_PROPERTY_KEY = "DataGenerator";
-  public static final String GENERATOR_TYPE_PROPERTY = "type";
-  public static final String HIDDEN_PROPERTY = "hidden";
+
   private final GenRelationDef genDataDef;
   private CollectionGenerator<?> generator;
+  // Attribute value may be string, map or list
+  private Map<DataGenAttribute, Object> generatorObj;
 
 
   /**
-   * Only called by the function of of a TableDef
-   * To construct a column use TableDef.of
+   * Use {@link #createOf(GenRelationDef, String, SqlDataType, Class)}
    *
    * @param genRelationDef - the relation
    * @param columnName     the column name
    * @param sqlDataType    the data type
    * @param clazz          the class is here to have a sort of type checking (not yet full proof)
    */
-  public GenColumnDef(GenRelationDef genRelationDef, String columnName, SqlDataType sqlDataType, Class<?> clazz) {
+  private GenColumnDef(GenRelationDef genRelationDef, String columnName, SqlDataType sqlDataType, Class<?> clazz) {
     super(genRelationDef, columnName, clazz, sqlDataType);
     this.genDataDef = genRelationDef;
+    this.addVariablesFromEnumAttributeClass(GenColumnAttribute.class);
   }
 
   @Override
@@ -70,10 +71,10 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
       return (CollectionGenerator<T>) (generator)
         .setColumnDef(this);
     }
-
-    // When read from a data definition file into the column property
-    String nameProperty = this.getVariable(String.class, GENERATOR_PROPERTY_KEY, GENERATOR_TYPE_PROPERTY);
-    if (nameProperty == null) {
+    Object dataGeneratorAsObject;
+    try {
+      dataGeneratorAsObject = this.getVariable(GenColumnAttribute.DATA_GENERATOR).getValue();
+    } catch (NoValueException e) {
       /**
        * We don't return an error because
        * it permits to create the generators
@@ -82,36 +83,52 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
       return null;
     }
 
-    /**
-     * We don't use reflection because it makes debugging an horror
-     */
-    switch (nameProperty.toLowerCase()) {
-      case "dataset":
+    // When read from a data definition file into the column property
+
+    try {
+      this.generatorObj = Casts.castToNewMap(
+        dataGeneratorAsObject,
+        DataGenAttribute.class,
+        Object.class
+      );
+    } catch (CastException e) {
+      throw new RuntimeException("The data of the attribute " + GenColumnAttribute.DATA_GENERATOR + " of the column (" + this + ") is not a conform map. Error: " + e.getMessage() + ". Value: " + dataGeneratorAsObject, e);
+    }
+
+    DataGenType dataGenType;
+    String dataGenTypeAsString = (String) generatorObj.get(DataGenAttribute.TYPE);
+    try {
+      dataGenType = Casts.cast(dataGenTypeAsString, DataGenType.class);
+    } catch (CastException e) {
+      throw new RuntimeException("The generator type value (" + dataGenTypeAsString + ") of the column " + this + " is not valid. You can use one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(DataGenType.class), e);
+    }
+    switch (dataGenType) {
+      case DATA_SET:
         generator = DataSetGenerator.createFromProperties(clazz, this);
         break;
-      case "datasetcolumn":
+      case DATA_SET_COLUMN:
         generator = DataSetColumnGenerator.createFromProperties(clazz, this);
         break;
-      case "foreigncolumn":
+      case FOREIGN_COLUMN:
         generator = ForeignColumnGenerator.createFromProperties(clazz, this);
         break;
-      case "expression":
+      case EXPRESSION:
         generator = ExpressionGenerator.createFromProperties(clazz, this);
         break;
-      case "random":
+      case RANDOM:
         generator = RandomGenerator.createFromProperties(clazz, this);
         break;
-      case "regexp":
+      case REGEXP:
         generator = RegexpGenerator.createFromProperties(clazz, this);
         break;
-      case "histogram":
+      case HISTOGRAM:
         generator = HistogramGenerator.createFromProperties(clazz, this);
         break;
-      case "sequence":
+      case SEQUENCE:
         generator = SequenceGenerator.createFromProperties(clazz, this);
         break;
       default:
-        throw new RuntimeException("The generator (" + nameProperty + ") defined for the column (" + this + ") does not exist.");
+        throw new RuntimeException("The generator (" + dataGenType + ") defined for the column (" + this + ") does not exist.");
     }
     //noinspection unchecked
     return (CollectionGenerator<T>) (generator)
@@ -307,14 +324,25 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
 
   @Override
   public ColumnDef setVariable(String key, Object value) {
-    if (key.equalsIgnoreCase(HIDDEN_PROPERTY)) {
-      try {
-        setIsHidden(Casts.cast(value, Boolean.class));
-      } catch (CastException e) {
-        throw new RuntimeException("The value (" + value + ") is not a boolean value for the argument " + HIDDEN_PROPERTY + " on the column (" + this + ").");
-      }
+    GenColumnAttribute attribute;
+    try {
+      attribute = Casts.cast(key, GenColumnAttribute.class);
+    } catch (CastException e) {
+      // there is no
+      throw new RuntimeException("The attribute (" + key + ") of the column (" + this + ") is not a valid generator column attribute. Possible values: " + String.join(", ", this.variables.keySet()));
     }
-    return super.setVariable(key, value);
+    if (attribute.equals(HIDDEN)) {
+      Boolean isHidden;
+      try {
+        isHidden = Casts.cast(value, Boolean.class);
+      } catch (CastException e) {
+        throw new RuntimeException("The value " + value + " of the hidden attribute of the column (" + this + ") is not a valid boolean");
+      }
+      setIsHidden(isHidden);
+      return this;
+    }
+    setVariable(attribute, value);
+    return this;
   }
 
   /**
@@ -349,19 +377,23 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
        * because the {@link GenFsDataDef#getColumnDefs() function}
        * is sensitive to hidden
        */
-      super.setVariable(HIDDEN_PROPERTY, true);
+      super.setVariable(HIDDEN, true);
       this.setColumnPosition(-1);
     }
     return this;
   }
 
   public boolean isNotHidden() {
-    Boolean hiddenProperty = getVariable(Boolean.class, HIDDEN_PROPERTY);
+    Boolean hiddenProperty;
+    try {
+      hiddenProperty = super.getVariable(HIDDEN).getValueOrDefaultCastAs(Boolean.class);
+    } catch (NoValueException | CastException e) {
+      throw new RuntimeException("Should not happen. We have a default value and check at set", e);
+    }
     if (hiddenProperty != null) {
       return !hiddenProperty;
-    } else {
-      return true;
     }
+    return true;
 
   }
 
@@ -372,25 +404,21 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
     return regexpGenerator;
   }
 
-  /**
-   * An utility class to get quickly generator properties.
-   * <p>
-   * This class asks property in the namespace ({@link #GENERATOR_PROPERTY_KEY}
-   */
-  public <V> V getGeneratorProperty(Class<V> clazz, String name, String... names) {
-    return getVariable(clazz, GENERATOR_PROPERTY_KEY, Arrayss.concat(name, names));
-  }
-
-  @SuppressWarnings("unused")
-  public GenColumnDef addGeneratorProperty(String key, Object value) {
-    return (GenColumnDef) setVariable(value, GENERATOR_PROPERTY_KEY, key);
-  }
 
   public CollectionGenerator<?> getGenerator() {
     return this.generator;
   }
 
-  public <K, V> Map<K, V> getGeneratorMapProperty(Class<K> keyClazz, Class<V> valueClazz, String name, String... names) {
-    return getMapProperty(keyClazz, valueClazz, GENERATOR_PROPERTY_KEY, Arrayss.concat(name, names));
+  public Object getDataGeneratorValue(DataGenAttribute dataGenAttribute) {
+    return this.generatorObj.get(dataGenAttribute);
   }
+
+  public <T> T getDataGeneratorValue(DataGenAttribute dataGenAttribute, Class<T> aClass) throws CastException {
+    Object value = this.generatorObj.get(dataGenAttribute);
+    if (value == null) {
+      return null;
+    }
+    return Casts.cast(value, aClass);
+  }
+
 }

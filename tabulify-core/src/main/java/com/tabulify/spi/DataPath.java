@@ -22,6 +22,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * A data path is the in-memory representation of a data resource
@@ -357,4 +358,11 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
   DataPath getScriptDataPath();
 
   Variable getVariableSafe(Attribute sqlDataPathAttribute);
+
+  /**
+   * Add a variable.
+   * It makes it possible to create a variable with a {@link Variable#setValueProvider(Supplier)}
+   */
+  DataPath addVariable(Variable variable);
+
 }

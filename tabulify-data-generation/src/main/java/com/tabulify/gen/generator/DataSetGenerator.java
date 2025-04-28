@@ -1,9 +1,11 @@
 package com.tabulify.gen.generator;
 
 import com.tabulify.Tabular;
+import com.tabulify.connection.Connection;
 import com.tabulify.connection.ConnectionBuiltIn;
 import com.tabulify.csv.CsvDataPath;
-import com.tabulify.connection.Connection;
+import com.tabulify.gen.DataGenAttribute;
+import com.tabulify.gen.DataGenType;
 import com.tabulify.gen.GenColumnDef;
 import com.tabulify.gen.GenLog;
 import com.tabulify.model.ColumnDef;
@@ -140,21 +142,19 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
    *
    */
   public static <T> DataSetGenerator<T> createFromProperties(Class<T> clazz, GenColumnDef genColumnDef) {
-    String valueColumnName = genColumnDef.getGeneratorProperty(String.class, "column");
-    String entityKey = "entity";
-    String entity = genColumnDef.getGeneratorProperty(String.class, entityKey);
-    String locale = genColumnDef.getGeneratorProperty(String.class, "locale");
+    String valueColumnName = (String) genColumnDef.getDataGeneratorValue(DataGenAttribute.COLUMN);
+    String entity = (String) genColumnDef.getDataGeneratorValue(DataGenAttribute.ENTITY);
+    String locale = (String) genColumnDef.getDataGeneratorValue(DataGenAttribute.LOCALE);
     Tabular tabular = genColumnDef.getRelationDef().getDataPath().getConnection().getTabular();
     DataPath dataPath;
     if (entity != null) {
       dataPath = getEntityPath(tabular, entity, locale);
     } else {
-      String dataUriKey = "dataUri";
-      String dataUri = genColumnDef.getGeneratorProperty(String.class, dataUriKey);
+      String dataUri = (String) genColumnDef.getDataGeneratorValue(DataGenAttribute.DATA_URI);
       if (dataUri != null) {
         dataPath = tabular.getDataPath(dataUri);
       } else {
-        throw new RuntimeException("The data generation definition of the column (" + genColumnDef + ") does not have an `" + entityKey + "` or `dataUriKey` that defines the data set.");
+        throw new RuntimeException("The data generation definition of the column (" + genColumnDef + ") does not have an `" + DataGenAttribute.ENTITY + "` or `" + DataGenAttribute.DATA_URI + "` key that defines the data set.");
       }
     }
     return (DataSetGenerator<T>) (new DataSetGenerator<>(clazz, dataPath, valueColumnName))
@@ -203,7 +203,7 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
     /**
      * First Building of the histogram generators
      */
-    if (nameStreams.size() == 0) {
+    if (nameStreams.isEmpty()) {
 
       Map<String, Map<Long, Double>> distProbabilities = new HashMap<>();
       Map<Long, Double> distProb;
@@ -298,6 +298,7 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
    * in the entity file
    *
    */
+  @SuppressWarnings("unused")
   public DataSetGenerator<?> addDependency(String dependentColumnName) {
     addDependency(dependentColumnName, dependentColumnName);
     return this;
@@ -367,5 +368,9 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
   }
 
 
+  @Override
+  public DataGenType getGeneratorType() {
+    return DataGenType.DATA_SET;
+  }
 
 }

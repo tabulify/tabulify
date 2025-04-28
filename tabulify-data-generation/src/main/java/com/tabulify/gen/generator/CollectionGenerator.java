@@ -1,10 +1,11 @@
 package com.tabulify.gen.generator;
 
+import com.tabulify.gen.DataGenType;
 import com.tabulify.gen.DataGenerator;
-import net.bytle.dag.Dag;
-import net.bytle.dag.Dependency;
 import com.tabulify.gen.GenColumnDef;
 import com.tabulify.gen.GenRelationDef;
+import net.bytle.dag.Dag;
+import net.bytle.dag.Dependency;
 
 import java.util.Set;
 import java.util.function.Supplier;
@@ -45,7 +46,7 @@ public interface CollectionGenerator<T> extends Dependency, Supplier<T> {
   /**
    * How much data can this generator generate.
    * <p>
-   * Example with a start of 0, a step 0f 1 and a maxValue of 2, the maxValue must be 2 (ie 1,2)
+   * Example with a start of 0, a step of 1 and a maxValue of 2, the maxValue must be 2 (ie 1,2)
    *
    * @return the maxValue number of times the function getNewValue can be called
    */
@@ -98,8 +99,9 @@ public interface CollectionGenerator<T> extends Dependency, Supplier<T> {
 
   /**
    * @return the type of the generator
+   * This value is used when casting from File to Class
    */
-  String getGeneratorType();
+  DataGenType getGeneratorType();
 
 
   CollectionGenerator<?> setColumnDef(GenColumnDef genColumnDef);

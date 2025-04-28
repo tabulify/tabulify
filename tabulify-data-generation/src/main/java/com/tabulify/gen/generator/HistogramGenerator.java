@@ -1,7 +1,9 @@
 package com.tabulify.gen.generator;
 
 
+import com.tabulify.gen.DataGenAttribute;
 import com.tabulify.gen.GenColumnDef;
+import net.bytle.exception.CastException;
 import net.bytle.type.Casts;
 
 import java.util.*;
@@ -16,11 +18,11 @@ import java.util.stream.Collectors;
  * * Probabilities if not given have all the same size for the sample
  * * Probabilities must all be non-negative
  * * Probabilities of zero are allowed
- * * Probabilities sum does not have to equal one, they will be be normalize to make them sum to one.
- * http://en.wikipedia.org/wiki/Probability_distribution#Discrete_probability_distribution
+ * * Probabilities sum does not have to equal one, they will be normalize to make them sum to one.
+ * <a href="http://en.wikipedia.org/wiki/Probability_distribution#Discrete_probability_distribution">...</a>
  * <p>
  * See another example at
- * https://commons.apache.org/proper/commons-math/apidocs/org/apache/commons/math4/distribution/EnumeratedDistribution.html
+ * <a href="https://commons.apache.org/proper/commons-math/apidocs/org/apache/commons/math4/distribution/EnumeratedDistribution.html">...</a>
  */
 public class HistogramGenerator<T> extends CollectionGeneratorAbs<T> implements CollectionGenerator<T>, java.util.function.Supplier<T> {
 
@@ -30,12 +32,12 @@ public class HistogramGenerator<T> extends CollectionGeneratorAbs<T> implements 
 
   private T actualValue;
 
-  private List<Object> values;
+  private final List<Object> values;
 
   /**
    * @param buckets - the buckets where the data needs to be generated
-   * @param clazz     - the return clazz of the value - this is used from the {@link DataSetGenerator} where
-   *                  an histogram of the row (long) is used to choose the value
+   * @param clazz   - the return clazz of the value - this is used from the {@link DataSetGenerator} where
+   *                an histogram of the row (long) is used to choose the value
    */
   public HistogramGenerator(Class<T> clazz, Map<T, Double> buckets) {
 
@@ -81,37 +83,39 @@ public class HistogramGenerator<T> extends CollectionGeneratorAbs<T> implements 
    * @return the histogram
    */
   public static <T> HistogramGenerator<T> create(Class<T> clazz, Map<T, Double> buckets) {
-    return new HistogramGenerator<T>(clazz, buckets);
+    return new HistogramGenerator<>(clazz, buckets);
   }
 
   /**
    * Instantiate an expression generator from the columns properties
    * This function is called via recursion by the function {@link GenColumnDef#getOrCreateGenerator(Class)}
    * Don't delete
-   * @param genColumnDef
-   * @param <T>
-   * @return
+   *
    */
-  public static <T> HistogramGenerator<T> createFromProperties(Class<T> clazz, GenColumnDef genColumnDef){
+  public static <T> HistogramGenerator<T> createFromProperties(Class<T> clazz, GenColumnDef genColumnDef) {
 
-    Object objectBucket = genColumnDef.getGeneratorProperty(Object.class, "buckets");
-    if (objectBucket==null){
-      throw new RuntimeException("The buckets column property is mandatory and was not found for the column ("+genColumnDef+")");
+    Object objectBucket = genColumnDef.getDataGeneratorValue(DataGenAttribute.BUCKETS);
+    if (objectBucket == null) {
+      throw new RuntimeException("The buckets column property is mandatory and was not found for the column (" + genColumnDef + ")");
     }
     Map<T, Double> buckets;
     if (objectBucket instanceof Map) {
-      buckets = genColumnDef.getGeneratorMapProperty(clazz, Double.class,"buckets");
-    } else if (objectBucket instanceof Collection){
+      try {
+        buckets = Casts.castToSameMap(objectBucket, clazz, Double.class);
+      } catch (CastException e) {
+        throw new RuntimeException("The data generator buckets column property for the column (" + genColumnDef + ") is not a map of " + clazz.getSimpleName() + ", Double. Error: " + e.getMessage(), e);
+      }
+    } else if (objectBucket instanceof Collection) {
       buckets = Casts.castToListSafe(objectBucket, clazz)
         .stream()
         .collect(Collectors.toMap(
-          s->s,
-          s->1.0
+          s -> s,
+          s -> 1.0
         ));
     } else {
-      throw new RuntimeException("The `buckets` value ("+objectBucket+") of the column ("+genColumnDef+") are not a list or a map");
+      throw new RuntimeException("The `buckets` value (" + objectBucket + ") of the column (" + genColumnDef + ") are not a list or a map");
     }
-    return new HistogramGenerator<T>(clazz, buckets);
+    return new HistogramGenerator<>(clazz, buckets);
 
   }
 

@@ -407,7 +407,6 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
 
-
   @Override
   public boolean isScript() {
     return scriptDataPath != null;
@@ -805,6 +804,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
     return getInsertStream(this, transferProperties);
   }
 
+  @Override
   public DataPath addVariable(Variable variable) {
     this.variables.put(variable.getAttribute().toString(), variable);
     if (DbLoggers.LOGGER_DB_ENGINE.getLevel().intValue() <= Level.FINE.intValue()) {

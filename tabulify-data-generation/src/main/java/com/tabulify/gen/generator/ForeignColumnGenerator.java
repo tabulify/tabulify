@@ -1,6 +1,8 @@
 package com.tabulify.gen.generator;
 
 
+import com.tabulify.gen.DataGenAttribute;
+import com.tabulify.gen.DataGenType;
 import com.tabulify.gen.GenColumnDef;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.spi.DataPath;
@@ -8,7 +10,10 @@ import com.tabulify.spi.SelectException;
 import com.tabulify.stream.SelectStream;
 import net.bytle.exception.NoColumnException;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Get the values of an other column (called foreign)
@@ -72,11 +77,11 @@ public class ForeignColumnGenerator<T> extends CollectionGeneratorAbs<T> impleme
     /**
      * Properties
      */
-    String dataUri = genColumnDef.getGeneratorProperty(String.class, "dataUri");
+    String dataUri = (String) genColumnDef.getDataGeneratorValue(DataGenAttribute.DATA_URI);
     if (dataUri == null) {
       throw new IllegalStateException("The `dataUri` property is mandatory to create a foreign column generator for the column (" + genColumnDef + ") and was not found.");
     }
-    String column = genColumnDef.getGeneratorProperty(String.class, "column");
+    String column = (String) genColumnDef.getDataGeneratorValue(DataGenAttribute.COLUMN);
     if (column == null) {
       throw new IllegalStateException("The `column` property is mandatory to create a foreign column generator for the column (" + genColumnDef + ") and was not found.");
     }
@@ -115,7 +120,7 @@ public class ForeignColumnGenerator<T> extends CollectionGeneratorAbs<T> impleme
       while (selectStream.next()) {
         histogram.put(selectStream.getObject(foreignColumnDef.getColumnName(), aClass), 1.0);
       }
-      if (histogram.size() == 0) {
+      if (histogram.isEmpty()) {
         throw new RuntimeException("The foreign table (" + foreignColumnDef.getRelationDef().getDataPath().toString() + ") has no data for the column (" + foreignColumnDef + ")");
       }
       return HistogramGenerator.create(aClass, histogram);
@@ -170,4 +175,10 @@ public class ForeignColumnGenerator<T> extends CollectionGeneratorAbs<T> impleme
   public CollectionGenerator<?> getGenerator() {
     return this.generator;
   }
+
+  @Override
+  public DataGenType getGeneratorType() {
+    return DataGenType.FOREIGN_COLUMN;
+  }
+
 }
