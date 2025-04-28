@@ -1,11 +1,11 @@
 package com.tabulify.fs;
 
-import net.bytle.crypto.Digest;
 import com.tabulify.DbLoggers;
 import com.tabulify.TabularAttributes;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataPathAbs;
 import com.tabulify.spi.DataPathAttribute;
+import net.bytle.crypto.Digest;
 import net.bytle.exception.NoParentException;
 import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
@@ -73,7 +73,7 @@ public abstract class FsDataPathAbs extends DataPathAbs implements FsDataPath {
   public DataPath addVariable(Variable variable) {
     try {
 
-      String key = variable.getWebName();
+      String key = variable.getAttribute().toString();
       Object valueOrDefaultOrNull = variable.getValueOrDefaultOrNull();
       String value;
       if (valueOrDefaultOrNull != null) {

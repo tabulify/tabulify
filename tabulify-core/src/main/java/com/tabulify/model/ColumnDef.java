@@ -1,13 +1,13 @@
 package com.tabulify.model;
 
+import net.bytle.type.Attribute;
+import net.bytle.type.Variable;
+
 import java.sql.DatabaseMetaData;
-import java.util.Map;
+import java.util.Set;
 
 /**
- *
- *
  * A metadata class about column information
- *
  */
 public interface ColumnDef extends Comparable<ColumnDef> {
 
@@ -44,6 +44,7 @@ public interface ColumnDef extends Comparable<ColumnDef> {
 
   String getFullyQualifiedName();
 
+  @SuppressWarnings("NullableProblems")
   @Override
   int compareTo(ColumnDef o);
 
@@ -63,47 +64,40 @@ public interface ColumnDef extends Comparable<ColumnDef> {
   ColumnDef setComment(String comment);
 
   /**
-   * Retrieve a property
+   * Retrieve a variable
    *
-   * @param name  - the first name of the path
-   * @param names - the path to the property
    * @return Example:
    * if the total names are `generator`,`type`
    * this function will return the key `type` in the namespace `generator`
    */
-  <T> T getVariable(Class<T> clazz, String name, String... names);
+  Variable getVariable(Attribute attribute);
+
 
   /**
-   * Retrieve a map property
-   *
-   * @param keyClazz   - the class of the key
-   * @param valueClazz - the class of the value
-   * @param name       - the first name of the path
-   * @param names      - the path to the property
-   * @return Example:
-   * if the total names are `generator`,`buckets` with keyClazz of string and a value clazz of double
-   * this function will return the key `buckets` in the namespace `generator`
-   * with a `Map<String,Double>`
+   * Function used to pass unknown attribute/properties
+   * so that it can be checked by the underlining data path, create an attribute
+   * and use the {@link #setVariable(Attribute, Object)}
    */
-  <K, V> Map<K, V> getMapProperty(Class<K> keyClazz, Class<V> valueClazz, String name, String... names);
-
   ColumnDef setVariable(String key, Object value);
 
-  ColumnDef setVariable(Object value, String name, String... names);
+  /**
+   * The main entry to set a variable
+   */
+  ColumnDef setVariable(Attribute key, Object value);
 
-  Map<String, Object> getProperties();
+
+  Set<Variable> getVariables();
 
   String getComment();
 
   /**
-   *
    * @return the class of the value
    */
   Class<?> getClazz();
 
   Integer getPrecisionOrMax();
 
-  ColumnDef setAllPropertiesFrom(ColumnDef source);
+  ColumnDef setAllVariablesFrom(ColumnDef source);
 
   ColumnDef setPrecision(Integer precision);
 

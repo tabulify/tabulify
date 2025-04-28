@@ -1,6 +1,5 @@
 package com.tabulify.connection;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tabulify.DbLoggers;
 import com.tabulify.Tabular;
 import com.tabulify.fs.FsConnection;
@@ -52,8 +51,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       throw new InternalException("A connection cannot be created without name");
     }
 
-    variables.put(uri.getUniqueName(), uri);
-    variables.put(name.getUniqueName(), name);
+    variables.put(uri.getAttribute().toString(), uri);
+    variables.put(name.getAttribute().toString(), name);
 
     this.addVariablesFromEnumAttributeClass(ConnectionAttribute.class);
 
@@ -145,7 +144,11 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   }
 
-  // Env (equivalent Url query)
+  /**
+   * Connection Variable
+   * They are a mixed now of our own and of the jdbc driver
+   * so the key identifier is the name
+   */
   Map<String, Variable> variables = new MapKeyIndependent<>();
 
   /**
@@ -176,6 +179,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * Used in the {@link ConnectionVault#load(Path)}  datastore vault load function} to create a deep copy of the
    * internal data stores.
    */
+  @SuppressWarnings("JavadocReference")
   public static Connection of(Connection connection) {
     return Connection.createConnectionFromProviderOrDefault(connection.getTabular(), connection.getNameAsVariable(), connection.getUriAsVariable())
       .setVariables(connection.getVariables());
@@ -248,7 +252,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   public Connection setPassword(String pwd) {
     try {
       Variable password = tabular.getVault().createVariable(ConnectionAttribute.PASSWORD, pwd, INTERNAL);
-      this.variables.put(password.getUniqueName(), password);
+      this.variables.put(password.getAttribute().toString(), password);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the password variable for the connection (" + this + "). Error: " + e.getMessage(), e);
     }
@@ -276,7 +280,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       Variable password = Variable
         .create(ConnectionAttribute.PASSWORD, origin)
         .setOriginalValue(pwd.getValueOrDefaultAsStringNotNull());
-      this.variables.put(password.getUniqueName(), password);
+      this.variables.put(password.getAttribute().toString(), password);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the password variable for the connection (" + this + "). Error: " + e.getMessage(), e);
     }
@@ -340,13 +344,13 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     if (variable.getAttribute().equals(ConnectionAttribute.URI) && !variable.getValueOrDefaultAsStringNotNull().equals(this.getUriAsString())) {
       throw new RuntimeException("You can't change the URI of this connection from " + this.getUriAsString() + " to  " + variable.getValueOrDefaultAsStringNotNull());
     }
-    Variable actualVariable = variables.get(variable.getUniqueName());
+    Variable actualVariable = variables.get(variable.getAttribute().toString());
     if (actualVariable != null) {
       // overwrite of an actual known attribute
       // we copy the attribute otherwise the description is lost
       variable.setAttribute(actualVariable.getAttribute());
     }
-    variables.put(variable.getUniqueName(), variable);
+    variables.put(variable.getAttribute().toString(), variable);
     return this;
   }
 

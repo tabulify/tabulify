@@ -140,7 +140,7 @@ public class ConnectionVault implements AutoCloseable {
             }
             valueToStore = originalValue.toString();
           }
-          ini.put(connectionNameSection, variable.getPublicName(), valueToStore);
+          ini.put(connectionNameSection, tabular.toPublicName(variable.getAttribute().toString()), valueToStore);
         }
         if (!uriFound) {
           throw new InternalException("The URI variable was not found for the connection (" + connection + ")");
@@ -164,7 +164,9 @@ public class ConnectionVault implements AutoCloseable {
   public List<Connection> removeConnections(String... globPatterns) {
     List<Connection> connectionsToRemove = getConnections(globPatterns);
     for (Connection connectionToRemove : connectionsToRemove) {
-      connections.remove(connectionToRemove.getName());
+      connections
+        .remove(connectionToRemove.getName())
+        .close();
     }
     return connectionsToRemove;
   }
@@ -310,7 +312,8 @@ public class ConnectionVault implements AutoCloseable {
   public ConnectionVault deleteConnectionIfExists(String name) {
 
     if (exists(name)) {
-      deleteConnection(name);
+      deleteConnection(name)
+        .close();
     }
     return this;
   }

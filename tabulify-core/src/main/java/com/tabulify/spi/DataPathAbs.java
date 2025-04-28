@@ -1,14 +1,14 @@
 package com.tabulify.spi;
 
-import com.tabulify.model.*;
-import net.bytle.dag.Dependency;
 import com.tabulify.DbLoggers;
 import com.tabulify.connection.Connection;
 import com.tabulify.engine.StreamDependencies;
+import com.tabulify.model.*;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
 import com.tabulify.transfer.TransferProperties;
 import com.tabulify.uri.DataUri;
+import net.bytle.dag.Dependency;
 import net.bytle.exception.*;
 import net.bytle.type.*;
 import net.bytle.type.yaml.DefaultTimestampWithoutTimeZoneConstructor;
@@ -58,9 +58,11 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
   /**
-   * Properties
+   * Variable may be created dynamically
+   * (ie backref of a regexp for instance)
+   * So we need string as key identifier
    */
-  private final MapKeyIndependent<Variable> variables = new MapKeyIndependent<>();
+  private final Map<String, Variable> variables = new MapKeyIndependent<>();
 
 
   @Override
@@ -296,10 +298,6 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
 
   }
 
-  @Override
-  public boolean hasVariable(String name) {
-    return this.variables.containsKey(name);
-  }
 
   /**
    * @param description - set a description (to be able to label queries)
@@ -344,9 +342,13 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
   public Variable getVariable(Attribute attribute) throws NoVariableException {
-    return this.getVariable(attribute.toString());
+    return getVariable(attribute.toString());
   }
 
+  @Override
+  public Variable getVariable(String name) throws NoVariableException {
+    return this.variables.get(name);
+  }
 
   @Override
   public DataPath getSelectStreamDependency() throws NotFoundException {
@@ -405,24 +407,6 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
 
-  /**
-   * Property value are generally given via a {@link DataDef data definition file}
-   *
-   * @param name the key
-   * @return the property value of this table def
-   * @throws NoVariableException if not found
-   */
-  @Override
-  public Variable getVariable(String name) throws NoVariableException {
-
-    Variable variable = this.variables.get(name);
-    if (variable == null) {
-      throw new NoVariableException("The variable (" + name + ") was not found");
-    }
-    return variable;
-
-
-  }
 
   @Override
   public boolean isScript() {
@@ -822,8 +806,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
   public DataPath addVariable(Variable variable) {
-    String uniqueName = variable.getUniqueName();
-    this.variables.put(uniqueName, variable);
+    this.variables.put(variable.getAttribute().toString(), variable);
     if (DbLoggers.LOGGER_DB_ENGINE.getLevel().intValue() <= Level.FINE.intValue()) {
       DbLoggers.LOGGER_DB_ENGINE.fine("The variable (" + variable + ") for the resource (" + this + ") was set to the value (" + Strings.createFromObjectNullSafe(variable.getValueOrDefaultOrNull()) + ")");
     }

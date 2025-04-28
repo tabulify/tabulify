@@ -1,10 +1,7 @@
 package com.tabulify.model;
 
-import net.bytle.exception.CastException;
-import net.bytle.type.Arrayss;
-import net.bytle.type.Casts;
-import net.bytle.type.MapKeyIndependent;
-import net.bytle.type.Maps;
+import net.bytle.type.Attribute;
+import net.bytle.type.Variable;
 
 import java.sql.DatabaseMetaData;
 import java.util.HashMap;
@@ -35,7 +32,7 @@ public class ColumnDefBase implements ColumnDef {
    */
   protected Class<?> clazz;
 
-  protected Map<String, Object> caseIndependentProperties = new MapKeyIndependent<>();
+  protected Map<Attribute, Variable> variables = new HashMap<>();
 
   static {
     allowedNullableValues.add(DatabaseMetaData.columnNoNulls);
@@ -215,7 +212,6 @@ public class ColumnDefBase implements ColumnDef {
 
   /**
    * What is this ? derived column ?
-   *
    */
   @Override
   public ColumnDef setIsGeneratedColumn(String isGeneratedColumn) {
@@ -271,7 +267,6 @@ public class ColumnDefBase implements ColumnDef {
 
   /**
    * TODO: not yet implemented
-   *
    */
   @Override
   public String getDescription() {
@@ -284,106 +279,55 @@ public class ColumnDefBase implements ColumnDef {
     return this;
   }
 
-
-  /**
-   * @param names - a key (The get is case independent)
-   * @return object for chaining
-   */
-  @Override
-  public <T> T getVariable(Class<T> clazz, String name, String... names) {
-    Object o = caseIndependentProperties.get(name);
-    if (o == null) {
-      return null;
-    }
-    switch (names.length) {
-      case 0:
-        try {
-          return Casts.cast(o, clazz);
-        } catch (CastException e) {
-          throw new RuntimeException("Unable to cast the property (" + name + " from the column (" + this + ")", e);
-        }
-      case 1:
-        String namespace = names[0];
-        if (o instanceof Map) {
-          /**
-           * The below line should not give an error because it's a string, object
-           * map and we know that it's already a map
-           */
-          Map<String, Object> oMap = Casts.castToNewMapSafe(o, String.class, Object.class);
-          try {
-            return Casts.cast(Maps.getPropertyCaseIndependent(oMap, namespace), clazz);
-          } catch (CastException e) {
-            throw new RuntimeException("Unable to cast the property (" + Arrayss.toJoinedString(".", Arrayss.concat(name, names)) + " from the column (" + this + ")", e);
-          }
-        } else {
-          throw new RuntimeException("The namespace (" + namespace + ") property should be a map in order to get a sub property key of the column (" + this + "). Values:" + o + ", Type:" + o.getClass().getSimpleName());
-        }
-      default:
-        throw new IllegalArgumentException("The retrieving of a property on more than 2 level is not yet supported. The names arguments length (" + Arrayss.toJoinedStringWithComma(names) + " should be less or equal to one value and it has " + names.length);
-    }
-  }
-
-  /**
-   * An utility function to return a map from a property
-   * This function calls the function {@link #getVariable(Class, String, String...)}
-   * and cast the return value to a map
-   *
-   * @param keyClazz   - the class of the key
-   * @param valueClazz - the class of the value
-   * @param name       - the first name of the path
-   * @param names      - the path to the property
-   */
-  @Override
-  public <K, V> Map<K, V> getMapProperty(Class<K> keyClazz, Class<V> valueClazz, String name, String... names) {
-
-    Object o = getVariable(Object.class, name, names);
-    if (o == null) {
-      return null;
-    }
-    try {
-      return Casts.castToNewMap(o, keyClazz, valueClazz);
-    } catch (CastException e) {
-      throw new RuntimeException("Unable to cast the value (" + o + ") from the property (" + Arrayss.toJoinedString(".", Arrayss.concat(name, names)) + ") from the column (" + this + ") into a map because " + e.getMessage(), e);
-    }
-
+  public Variable getVariable(Attribute attribute) {
+    return variables.get(attribute);
   }
 
 
   @Override
   public ColumnDef setVariable(String key, Object value) {
-
-    caseIndependentProperties.put(key, value);
-    return this;
-
+    throw new RuntimeException("The property column value (" + key + ") is unexpected as this default column implementation does not have any attribute.");
   }
 
-  /**
-   * @param name  - a name of the key space
-   * @param names - the names of the key
-   */
   @Override
-  public ColumnDef setVariable(Object value, String name, String... names) {
-    switch (names.length) {
-      case 0:
-        return setVariable(name, value);
-      case 1:
-        Map<String, Object> mapProperty = getMapProperty(String.class, Object.class, name);
-        if (mapProperty == null) {
-          mapProperty = new HashMap<>();
-          this.caseIndependentProperties.put(name, mapProperty);
-        }
-        mapProperty.put(names[0], value);
-        return this;
-      default:
-        throw new IllegalArgumentException("A property with more than one namespace is not yet supported");
+  public ColumnDef setVariable(Attribute key, Object value) {
+    Variable variable;
+    try {
+      variable = this.getRelationDef().getDataPath().getConnection().getTabular().createVariable(key, value);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
-
+    this.variables.put(variable.getAttribute(), variable);
+    return this;
   }
+
+//  /**
+//   * @param name  - a name of the key space
+//   * @param names - the names of the key
+//   */
+//  @Override
+//  public ColumnDef setVariable(Object value, String name, String... names) {
+//    switch (names.length) {
+//      case 0:
+//        return setVariable(name, value);
+//      case 1:
+//        Map<String, Object> mapProperty = getMapProperty(String.class, Object.class, name);
+//        if (mapProperty == null) {
+//          mapProperty = new HashMap<>();
+//          this.attributes.put(name, mapProperty);
+//        }
+//        mapProperty.put(names[0], value);
+//        return this;
+//      default:
+//        throw new IllegalArgumentException("A property with more than one namespace is not yet supported");
+//    }
+//
+//  }
 
 
   @Override
-  public Map<String, Object> getProperties() {
-    return caseIndependentProperties;
+  public Set<Variable> getVariables() {
+    return new HashSet<>(variables.values());
   }
 
   @Override
@@ -409,8 +353,8 @@ public class ColumnDefBase implements ColumnDef {
   }
 
   @Override
-  public ColumnDef setAllPropertiesFrom(ColumnDef source) {
-    this.caseIndependentProperties.putAll(source.getProperties());
+  public ColumnDef setAllVariablesFrom(ColumnDef source) {
+    source.getVariables().forEach(v -> this.variables.put(v.getAttribute(), v));
     return this;
   }
 

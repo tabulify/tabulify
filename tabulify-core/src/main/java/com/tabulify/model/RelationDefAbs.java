@@ -7,7 +7,7 @@ import com.tabulify.spi.DataPath;
 import com.tabulify.spi.Tabulars;
 import com.tabulify.stream.InsertStream;
 import net.bytle.exception.NoColumnException;
-import net.bytle.type.Key;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.Strings;
 
 import java.util.*;
@@ -311,7 +311,7 @@ public abstract class RelationDefAbs implements RelationDef {
   public DataPath toColumnsDataPathBy(ColumnAttribute orderColumn, ColumnAttribute... columnAttributes) {
     if (columnAttributes.length == 0) {
       /**
-       * This are the attributes that can be used to compare
+       * These are the attributes that can be used to compare
        * a query metadata
        */
       columnAttributes = new ColumnAttribute[]{
@@ -321,7 +321,7 @@ public abstract class RelationDefAbs implements RelationDef {
     MemoryDataPath structureComparisonDataPath = this.getDataPath().getConnection().getTabular().getMemoryDataStore().getDataPath("structure" + this.getDataPath().getLogicalName());
     RelationDef relationDef = structureComparisonDataPath.getOrCreateRelationDef();
     for (ColumnAttribute columnAttribute : columnAttributes) {
-      relationDef.addColumn(Key.toColumnName(columnAttribute), columnAttribute.getValueClazz());
+      relationDef.addColumn(KeyNormalizer.create(columnAttribute).toSqlName(), columnAttribute.getValueClazz());
     }
 
     try (
@@ -444,7 +444,7 @@ public abstract class RelationDefAbs implements RelationDef {
         .precision(columnDef.getPrecision())
         .scale(columnDef.getScale())
         .setComment(columnDef.getComment())
-        .setAllPropertiesFrom(columnDef);
+        .setAllVariablesFrom(columnDef);
     }
 
     return this;
@@ -471,7 +471,7 @@ public abstract class RelationDefAbs implements RelationDef {
         .scale(columnDef.getScale())
         .setNullable(columnDef.isNullable())
         .setComment(columnDef.getComment())
-        .setAllPropertiesFrom(columnDef);
+        .setAllVariablesFrom(columnDef);
     }
 
 

@@ -3,9 +3,10 @@ package com.tabulify;
 import com.tabulify.connection.ConnectionAttribute;
 import net.bytle.crypto.CryptoSymmetricCipher;
 import net.bytle.crypto.Protector;
-import net.bytle.template.TextTemplate;
+import net.bytle.exception.CastException;
 import net.bytle.template.TextTemplateEngine;
 import net.bytle.type.Attribute;
+import net.bytle.type.Casts;
 import net.bytle.type.Origin;
 import net.bytle.type.Variable;
 
@@ -24,17 +25,16 @@ public class Vault {
    * Don't change this value
    */
   public static final String VAULT_PREFIX = "vault";
+  private final Tabular tabular;
   private Protector protector;
-  private final Map<String, Object> tabularEnvVariables;
+
 
   public Vault(Tabular tabular, String passphrase) {
 
     if (passphrase != null) {
       this.protector = Protector.create(passphrase);
     }
-
-
-    this.tabularEnvVariables = tabular.getEnvVariables().getVariablesAsKeyIndependentMap();
+    this.tabular = tabular;
 
   }
 
@@ -84,12 +84,18 @@ public class Vault {
 
 
     /*
-     * Template processing if the value has a variable
+     * Template processing if the value has a env variable
      */
+    Map<String, Object> templatingEnv;
+    try {
+      templatingEnv = Casts.castToSameMap(this.tabular.getTemplatingEnv(), String.class, Object.class);
+    } catch (CastException e) {
+      throw new RuntimeException("Should not happen as we go to object", e);
+    }
     String clearValue = TextTemplateEngine
       .getOrCreate()
       .compile(valueString)
-      .applyVariables(tabularEnvVariables)
+      .applyVariables(templatingEnv)
       .getResult();
     variable.setClearValue(clearValue);
 
@@ -114,7 +120,7 @@ public class Vault {
 
   public Variable createVariableSafe(ConnectionAttribute attribute, Object value, Origin origin) {
     try {
-      return createVariable(attribute,value,origin);
+      return createVariable(attribute, value, origin);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

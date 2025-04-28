@@ -79,6 +79,7 @@ public class Tabular implements AutoCloseable {
   private Path runningPipelineScript;
   private Path homePath;
   private Path connectionVaultPath;
+  private final Map<String, String> templatingEnv;
 
 
   public Tabular(TabularConfig tabularConfig) {
@@ -97,6 +98,12 @@ public class Tabular implements AutoCloseable {
      */
     Logger.getLogger("oracle.jdbc").setLevel(Level.SEVERE);
 
+
+    /**
+     * Templating env (ie free form os/sys env used to template variable value)
+     */
+    this.templatingEnv = new HashMap<>(System.getenv());
+    this.templatingEnv.putAll(tabularConfig.templatingEnv);
 
     /**
      * Env
@@ -185,6 +192,7 @@ public class Tabular implements AutoCloseable {
     }
 
     this.howtoConnections = ConnectionHowTos.createHowtoConnections(this);
+
 
   }
 
@@ -684,8 +692,7 @@ public class Tabular implements AutoCloseable {
       // We can't check the location of the class
 
       try {
-        this.homePath = Fs.getPathUntilName(Paths.get("."), ".git")
-          .getParent();
+        this.homePath = Fs.getPathUntilName(Paths.get("."), ".git");
         return this.homePath;
       } catch (FileNotFoundException e) {
         // Not found
@@ -970,16 +977,22 @@ public class Tabular implements AutoCloseable {
   public Tabular setVariable(Attribute attribute, Object value) {
 
     try {
-      this.getVariable(attribute).setOriginalValue(value);
+      this.getVariable(attribute)
+        .setOriginalValue(value);
     } catch (NoVariableException e) {
       try {
-        this.createVariable(attribute, value);
+        Variable variable = this.createVariable(attribute, value);
+        this.addVariable(variable);
       } catch (Exception ex) {
         throw new RuntimeException("Error while trying to create the variable (" + attribute + ")" + e.getMessage(), e);
       }
     }
 
     return this;
+  }
+
+  private void addVariable(Variable variable) {
+    this.tabularVariables.addVariable(variable);
   }
 
   public MemoryDataPath createMemoryDataPath(String path) {
@@ -1012,12 +1025,28 @@ public class Tabular implements AutoCloseable {
     return this;
   }
 
+  /**
+   * Templating Env are free variable used in templating
+   * to create clear value from variable
+   */
+  public Map<String, String> getTemplatingEnv() {
+    return this.templatingEnv;
+  }
+
+  /**
+   * @return a key/attribute name in a public format
+   */
+  public String toPublicName(String attribute) {
+    return KeyNormalizer.create(attribute).toCliLongOptionName();
+  }
+
   public static class TabularConfig {
     private String passphrase;
     private Path projectHome;
     private Path connectionVault;
     private Path confPath;
     private TabularExecEnv execEnv;
+    private final Map<String, String> templatingEnv = new HashMap<>();
 
     public TabularConfig setPassphrase(String passphrase) {
       this.passphrase = passphrase;
@@ -1046,6 +1075,15 @@ public class Tabular implements AutoCloseable {
 
     public Tabular build() {
       return new Tabular(this);
+    }
+
+    /**
+     * Add a templating env
+     * (Used only in test to inject os/sys env variable
+     */
+    public TabularConfig addTemplatingEnv(String key, String value) {
+      this.templatingEnv.put(key, value);
+      return this;
     }
   }
 }

@@ -14,12 +14,24 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * The variables of tabular
+ */
 public class TabularVariables {
 
+  /**
+   * The env and sys properties
+   * are chosen via this prefix
+   */
+  public static final String TABLI_PREFIX = "tabli_";
 
+
+  /**
+   * We may add derived generated variables.
+   * so the key identifier is a string
+   */
   private final Map<String, Variable> variables = new MapKeyIndependent<>();
 
 
@@ -76,6 +88,8 @@ public class TabularVariables {
       .filter(a -> ((TabularAttributes) a.getAttribute()).isPublic())
       .collect(Collectors.toSet());
     loadTabularAttributes(publicVariables);
+
+
     loadEnvironmentVariable();
     loadSys();
     loadUserConfigurationFile();
@@ -103,8 +117,9 @@ public class TabularVariables {
       sysProperties = Casts.castToSameMap(System.getProperties(), String.class, Object.class)
         .entrySet()
         .stream()
+        .filter(e -> validKey(e.getKey()))
         .collect(Collectors.toMap(
-          Map.Entry::getKey,
+          e -> deletePrefix(e.getKey()),
           Map.Entry::getValue
         ));
     } catch (CastException e) {
@@ -129,13 +144,12 @@ public class TabularVariables {
 
   private void loadTabularAttributes(Set<Variable> tabularVariables) {
 
-
     this.variables.putAll(
       tabularVariables
         .stream()
         .collect(
           Collectors.toMap(
-            Variable::getUniqueName,
+            e -> e.getAttribute().toString(),
             e -> e
           ))
     );
@@ -154,12 +168,26 @@ public class TabularVariables {
       throw new InternalException("String, object should not bring a cast exception", e);
     }
     Map<String, Object> newConfMap = new HashMap<>();
-    Pattern pattern = Pattern.compile("(?i:tabli_)");
+
     for (Map.Entry<String, Object> actual : actualEnvEntries.entrySet()) {
-      String key = pattern.matcher(actual.getKey()).replaceFirst("").toLowerCase(Locale.ROOT).trim();
+      if (!validKey(actual.getKey())) {
+        continue;
+      }
+      String key = deletePrefix(actual.getKey());
       newConfMap.put(key, actual.getValue().toString().trim());
     }
     this.addAllConf(newConfMap, Origin.OS);
+  }
+
+  private String deletePrefix(String key) {
+    return key.substring(TABLI_PREFIX.length());
+  }
+
+  /**
+   * Do we load this key?
+   */
+  private boolean validKey(String key) {
+    return key.toLowerCase().startsWith(TABLI_PREFIX);
   }
 
   private void loadProjectConfigurationFile(ProjectConfigurationFile projectConfigurationFile) {
@@ -201,8 +229,17 @@ public class TabularVariables {
 
     Map<String, Variable> variables = confMap.entrySet()
       .stream()
-      .map(e -> Variable.create(e.getKey(), tabularVariableOrigin)
-        .setOriginalValue(e.getValue())
+      .map(e -> {
+          TabularAttributes tabularAttributes;
+          String key = e.getKey();
+          try {
+            tabularAttributes = Casts.cast(key, TabularAttributes.class);
+          } catch (CastException ex) {
+            throw new RuntimeException("The key (" + key + ") from " + tabularVariableOrigin + " is not a tabular attribute", ex);
+          }
+          return Variable.create(tabularAttributes, tabularVariableOrigin)
+            .setOriginalValue(e.getValue());
+        }
       )
       .collect(Collectors.toMap(
         e -> e.getAttribute().toString(),
@@ -252,21 +289,8 @@ public class TabularVariables {
     return this.variables.values();
   }
 
-  public Map<String, Object> getVariablesAsKeyIndependentMap() {
-    MapKeyIndependent<Object> returnedMap = new MapKeyIndependent<>();
-    for (Variable variable : this.variables.values()) {
-      returnedMap.put(variable.getUniqueName(), variable.getValueOrDefaultOrNull());
-    }
-    return returnedMap;
-//    return this.variables.values()
-//      .stream()
-//      .collect(Collectors.toMap(
-//        Variable::getUniqueName,
-//        Variable::getOriginalValue,
-//        (e1, e2) -> e1,
-//        MapKeyIndependent::new
-//      ));
+
+  public void addVariable(Variable variable) {
+    this.variables.put(variable.getAttribute().toString(), variable);
   }
-
-
 }
