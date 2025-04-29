@@ -9,7 +9,7 @@ public enum DataGenAttribute {
   // expression
   EXPRESSION,
   // sequence attribute
-  OFFSET, START, RESET, VALUES, MAX_TICK, STEP,
+  OFFSET, START, RESET, VALUES, MAX_TICK, STEP, TICKER_FOR,
   // histogram
   BUCKETS,
   // data set

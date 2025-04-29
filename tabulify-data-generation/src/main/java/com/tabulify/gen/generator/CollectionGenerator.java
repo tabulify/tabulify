@@ -1,9 +1,6 @@
 package com.tabulify.gen.generator;
 
-import com.tabulify.gen.DataGenType;
-import com.tabulify.gen.DataGenerator;
-import com.tabulify.gen.GenColumnDef;
-import com.tabulify.gen.GenRelationDef;
+import com.tabulify.gen.*;
 import net.bytle.dag.Dag;
 import net.bytle.dag.Dependency;
 
@@ -48,7 +45,7 @@ public interface CollectionGenerator<T> extends Dependency, Supplier<T> {
    * <p>
    * Example with a start of 0, a step of 1 and a maxValue of 2, the maxValue must be 2 (ie 1,2)
    *
-   * @return the maxValue number of times the function getNewValue can be called
+   * @return the maxValue number of times the function getNewValue can be called, not capped by {@link GenDataPath#getMaxRecordCount()}
    */
   long getCount();
 

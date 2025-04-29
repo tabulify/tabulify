@@ -12,10 +12,10 @@ public interface CollectionGeneratorScale<T> {
    *
    * @return the max generated value for the given size
    * This is used to get the max for the domain on the whole data resource.
-   *
-   * The {@link GenFsDataDef#getSize()} is generally injected to obtain the max for the domain
+   * <p></p>
+   * The {@link com.tabulify.gen.GenDataPath#getSize()} is generally injected to obtain the max for the domain
    * according to this size.
-   *
+   * <p></p>
    *
    * This is used to create a {@link RandomGenerator} on a {@link ForeignColumnGenerator foreign column}
    *
@@ -24,12 +24,12 @@ public interface CollectionGeneratorScale<T> {
 
   /**
    *
-   * @return the max generated value of the domain capped by the {@link GenFsDataDef#setMaxRecordCount(Long) max size}
+   * @return the max generated value of the domain capped by the {@link com.tabulify.gen.GenDataPath#setMaxRecordCount(Long) max size}
    * on the data resources (included)
-   *
+   * <p></p>
    * It's not capped by the size of the other generators of the same data resource
    * otherwise there will be a stackoverflow error (every generator would need the value of the other)
-   *
+   * <p></p>
    * See {@link #getDomainMax(long)} etDomainMax}
    */
   T getDomainMax();
@@ -50,7 +50,6 @@ public interface CollectionGeneratorScale<T> {
   /**
    *
    * @param step - the value of a step
-   * @return
    */
   CollectionGenerator<T> setStep(Number step);
 

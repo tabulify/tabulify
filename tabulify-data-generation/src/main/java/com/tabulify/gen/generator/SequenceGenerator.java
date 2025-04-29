@@ -268,7 +268,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
       sequenceGenerator.setMaxTick(maxTickProperty);
     }
 
-    Object tickerFor = columnDef.getDataGeneratorValue(DataGenAttribute.MAX_TICK);
+    Object tickerFor = columnDef.getDataGeneratorValue(DataGenAttribute.TICKER_FOR);
     if (tickerFor != null) {
       sequenceGenerator.setTickerFor(tickerFor.toString());
     }
@@ -559,7 +559,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
     /**
      * Don't cap on {@link GenDataPath#getMaxRecordCount()}
      * Capping happens on data path level not generator level
-     * so that we can test the size generated without capping/limit
+     * so that we can test the data path size generated without capping/limit
      */
 
     return maxSize;
@@ -631,14 +631,28 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
 
   @Override
   public T getDomainMax() {
-    long maxSteps = getCount();
+    long maxSteps = getCountCapped();
     return getDomainMax(maxSteps);
   }
 
   @Override
   public T getDomainMin() {
-    long size = getCount();
+    long size = getCountCapped();
     return getDomainMin(size);
+  }
+
+  /**
+   * A utility function to cap on domainMin and domainMax
+   * We don't cap on {@link #getSizeWithoutBeingTicked()}
+   * to be able to test the maximum generated size for a gen data path
+   */
+  private long getCountCapped() {
+    long size = getCount();
+    Long maxRecordCount = this.getRelationDef().getDataPath().getMaxRecordCount();
+    if (maxRecordCount != null && size > maxRecordCount) {
+      return maxRecordCount;
+    }
+    return size;
   }
 
   /**
@@ -657,12 +671,11 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
         } else {
           if (size == Long.MAX_VALUE) {
             /**
-             * The min is at 0 for 1970
+             * The min is at 0 for 1970/01/01
              */
             return clazz.cast(new java.sql.Date(0));
-          } else {
-            return clazz.cast(Date.createFromObjectSafeCast(start).plusDays((Casts.castSafe(stepSize, Integer.class)) * (size - 1) + Casts.castSafe(offset, Integer.class)).toSqlDate());
           }
+          return clazz.cast(Date.createFromObjectSafeCast(start).plusDays((Casts.castSafe(stepSize, Integer.class)) * (size - 1) + Casts.castSafe(offset, Integer.class)).toSqlDate());
         }
       } else if (clazz.equals(java.sql.Timestamp.class)) {
         if (Casts.castSafe(stepSize, Integer.class) > 0) {
