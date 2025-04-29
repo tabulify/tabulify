@@ -73,7 +73,7 @@ public class InfoStep extends FilterStepAbs implements Function<Set<DataPath>, D
           if (dataPaths.size() > 1) {
             row.add(dataPath.toDataUri().toString());
           }
-          row.add(variable.getPublicName());
+          row.add(tabular.toPublicName(variable.getAttribute().toString()));
           row.add(attributeValue);
           row.add(variable.getAttribute().getDescription());
           insertStream.insert(row);

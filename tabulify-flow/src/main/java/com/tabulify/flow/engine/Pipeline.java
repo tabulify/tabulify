@@ -429,10 +429,11 @@ public class Pipeline implements AutoCloseable {
       JsonObject args = operationJson.createChildObject("args");
       for (Variable variable : operationStep.getArguments()) {
         Object value = variable.getValueOrDefaultOrNull();
+        String publicName = tabular.toPublicName(variable.getAttribute().toString());
         if (value != null) {
-          args.addProperty(variable.getPublicName(), value);
+          args.addProperty(publicName, value);
         } else {
-          args.addProperty(variable.getPublicName(), "");
+          args.addProperty(publicName, "");
         }
       }
     }
