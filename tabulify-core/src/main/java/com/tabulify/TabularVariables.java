@@ -52,13 +52,14 @@ public class TabularVariables {
             .setOriginalValue(isDev)
             .setValueProvider(() -> isDev);
           break;
-        case TABULIFY_HOME_PATH:
+        case ENV:
+          variable
+            .setValueProvider(tabular::getExecutionEnvironment);
+          break;
+        case HOME:
           variable
             .setOriginalValue(JavaEnvs.HOME_PATH)
             .setValueProvider(tabular::getHomePath);
-          break;
-        case PROJECT_ENV:
-          variable.setValueProvider(tabular::getExecutionEnvironment);
           break;
         case PROJECT_CONNECTION:
           variable.setValueProvider(() -> {

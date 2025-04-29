@@ -83,7 +83,7 @@ public class ProjectConfigurationFile {
       projectConnectionVault = this
         .getProjectDirectory()
         .resolve(TabularAttributes.PROJECT_CONF_DIR_NAME.getDefaultValue().toString())
-        .resolve(TabularAttributes.CONNECTION_VAULT_NAME.getDefaultValue().toString());
+        .resolve(TabularAttributes.CONNECTION_VAULT.getDefaultValue().toString());
     } else {
       projectConnectionVault = this
         .getProjectDirectory()

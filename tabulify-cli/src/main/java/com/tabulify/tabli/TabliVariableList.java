@@ -1,18 +1,17 @@
 package com.tabulify.tabli;
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliUsage;
 import com.tabulify.Tabular;
 import com.tabulify.TabularVariables;
 import com.tabulify.model.RelationDef;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.regexp.Glob;
 import net.bytle.type.Casts;
-import net.bytle.type.Key;
 import net.bytle.type.Origin;
 import net.bytle.type.Strings;
 
@@ -65,7 +64,7 @@ public class TabliVariableList {
 
     List<String> origins = Arrays.stream(Origin.values())
       .map(Origin::toString)
-      .map(Key::toCamelCaseValue)
+      .map(tabular::toPublicName)
       .sorted().collect(Collectors.toList());
 
     childCommand.addProperty(TabliWords.TYPE_PROPERTY)
@@ -86,7 +85,7 @@ public class TabliVariableList {
 
     List<Glob> nameSelectors = cliParser.getStrings(TabliWords.NAME_SELECTORS)
       .stream()
-      .map(Key::toNormalizedKey)
+      .map(tabular::toPublicName)
       .map(Glob::createOf)
       .collect(Collectors.toList());
 
@@ -97,7 +96,7 @@ public class TabliVariableList {
      */
     List<Origin> listOrigins;
     if (
-      nameSelectors.size() >= 1
+      !nameSelectors.isEmpty()
         && !nameSelectors.get(0).getPattern().equals(DEFAULT_SELECTOR)
         && !cliParser.has(TabliWords.TYPE_PROPERTY)
     ) {
@@ -136,7 +135,7 @@ public class TabliVariableList {
           Origin origin = e.getOrigin();
           return listOrigins.contains(origin);
         })
-        .filter(e -> Glob.matchOneOfGlobs(e.getUniqueName(), nameSelectors))
+        .filter(e -> Glob.matchOneOfGlobs(tabular.toPublicName(e.getAttribute().toString()), nameSelectors))
         .sorted()
         .forEach(e ->
           {
@@ -145,7 +144,7 @@ public class TabliVariableList {
               .toString();
             Object originalValue = e.getValueOrDefaultAsStringNotNull();
             insertStream.insert(
-              Key.toCamelCaseValue(e.getAttribute().toString()),
+              tabular.toPublicName(e.getAttribute().toString()),
               originalValue.toString(),
               capitalizedOrigin,
               e.getAttribute().getDescription()

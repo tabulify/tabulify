@@ -1,15 +1,15 @@
 package com.tabulify.tabli;
 
 
-import com.tabulify.jdbc.SqlDataStoreStatic;
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliUsage;
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
+import com.tabulify.jdbc.SqlDataStoreStatic;
 import com.tabulify.model.RelationDef;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -98,7 +98,7 @@ public class TabliConnectionInfo {
             try {
 
               List<Object> rowAttributes = new ArrayList<>();
-              rowAttributes.add(variable.getPublicName());
+              rowAttributes.add(tabular.toPublicName(variable));
               rowAttributes.add(variable.getValueOrDefaultOrNull());
               rowAttributes.add(variable.getAttribute().getDescription());
               insertStream.insert(rowAttributes);

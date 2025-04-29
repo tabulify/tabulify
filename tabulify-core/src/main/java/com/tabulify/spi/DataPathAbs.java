@@ -347,7 +347,11 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
 
   @Override
   public Variable getVariable(String name) throws NoVariableException {
-    return this.variables.get(name);
+    Variable variable = this.variables.get(name);
+    if (variable == null) {
+      throw new NoVariableException();
+    }
+    return variable;
   }
 
   @Override

@@ -16,24 +16,29 @@ public enum TabularAttributes implements Attribute {
   /**
    * Meta directory
    */
-  APP_NAME( "The name of the app", false, "tabli", String.class),
-  USER_CONF_DIR_NAME( "The user configuration directory name", false, ".tabli", String.class),
-  USER_CONF_DIR_PATH( "The user home configuration directory", false, Fs.getUserHome().resolve(TabularAttributes.USER_CONF_DIR_NAME.getDefaultValue().toString()), Path.class),
-  PROJECT_CONF_DIR_NAME( "The project configuration directory name", false, "conf", String.class),
-  VARS_FILE_NAME( "The variables file name", false, "variables.yml", String.class),
-  CONNECTION_VAULT_NAME( "The name of the connection vault file", false, "connections.ini", String.class),
-  USER_VARIABLES_FILE( "The location of the user variables file", true, Casts.castSafe(USER_CONF_DIR_PATH.getDefaultValue(), Path.class).resolve(VARS_FILE_NAME.getDefaultValue().toString()), Path.class),
-  USER_CONNECTION_VAULT( "The location of the user connection vault file", true, Casts.castSafe(USER_CONF_DIR_PATH.getDefaultValue(), Path.class).resolve(CONNECTION_VAULT_NAME.getDefaultValue().toString()), Path.class),
-  IS_DEV( "If Tabulify runs in a dev mode", true, true, Boolean.class),
+  APP_NAME("The name of the app", false, "tabli", String.class),
+  USER_CONF_DIR_NAME("The user configuration directory name", false, ".tabli", String.class),
+  USER_CONF_DIR_PATH("The user home configuration directory", false, Fs.getUserHome().resolve(TabularAttributes.USER_CONF_DIR_NAME.getDefaultValue().toString()), Path.class),
+  PROJECT_CONF_DIR_NAME("The project configuration directory name", false, "conf", String.class),
+  VARS_FILE_NAME("The variables file name", false, "variables.yml", String.class),
+  CONNECTION_VAULT("The path to the connection vault file", false, "connections.ini", String.class),
+  USER_VARIABLES_FILE("The location of the user variables file", true, Casts.castSafe(USER_CONF_DIR_PATH.getDefaultValue(), Path.class).resolve(VARS_FILE_NAME.getDefaultValue().toString()), Path.class),
+  USER_CONNECTION_VAULT("The location of the user connection vault file", true, Casts.castSafe(USER_CONF_DIR_PATH.getDefaultValue(), Path.class).resolve(CONNECTION_VAULT.getDefaultValue().toString()), Path.class),
+  IS_DEV("If Tabulify runs in a dev mode", true, true, Boolean.class),
+  ENV("The execution environment", true, TabularExecEnv.DEV, TabularExecEnv.class),
   DEFAULT_FILE_SYSTEM_TABULAR_TYPE("The default file extension for tabular data", true, "csv", String.class),
-  TABULIFY_HOME_PATH("The directory home of the Tabulify installation", true, null, Path.class),
-  PROJECT_ENV( "The project environment", false, null, String.class),
-  PROJECT_CONNECTION( "The project connection file", false, null, String.class),
-  PROJECT_VARIABLE( "The project variable file", false, null, String.class),
+  HOME("The directory home of the Tabulify installation", true, null, Path.class),
+  PROJECT_CONNECTION("The project connection file", false, null, String.class),
+  PROJECT_VARIABLE("The project variable file", false, null, String.class),
 
   // This is just a feature of the cli library for the options
   // Not really a tabular option
-  LOG_LEVEL("The tabli log level", true, "info", String.class);
+  LOG_LEVEL("The tabli log level", true, "info", String.class),
+  PASSPHRASE("The passphrase", false, null, String.class),
+  PROJECT_HOME("The project home path", false, null, Path.class),
+  // Where to store the sqlite database
+  // By default, the user home (trick to not show the user in the path)
+  SQLITE_HOME("Sqlite home", false, null, String.class);
 
 
   private final String description;
@@ -50,7 +55,6 @@ public enum TabularAttributes implements Attribute {
 
 
   /**
-   *
    * @return if this variable can be overwritten by the environment
    */
   boolean isPublic() {
@@ -72,7 +76,6 @@ public enum TabularAttributes implements Attribute {
   public Object getDefaultValue() {
     return this.value;
   }
-
 
 
 }

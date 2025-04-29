@@ -1040,6 +1040,10 @@ public class Tabular implements AutoCloseable {
     return KeyNormalizer.create(attribute).toCliLongOptionName();
   }
 
+  public String toPublicName(Variable variable) {
+    return toPublicName(variable.getAttribute().toString());
+  }
+
   public static class TabularConfig {
     private String passphrase;
     private Path projectHome;

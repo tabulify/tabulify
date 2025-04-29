@@ -35,10 +35,9 @@ cd "$PROJECT_ROOT"
 
 # To resolve/list the dependencies with the command below,
 # they should be installed in the local repo
-# No compile for a resume run
-if [ "$RESUME_FROM" == "" ]; then
-  mvn install -DskipTests
-fi
+# Recompile all module even
+# in a resume mode as a previous module may have been modified
+mvn install -DskipTests
 
 MAIN_GROUP="com.tabulify"
 MAIN_PROJECT="tabulify-cli"
