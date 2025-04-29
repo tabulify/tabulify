@@ -1,13 +1,10 @@
 package com.tabulify.connection;
 
-import com.tabulify.TabularAttributes;
 import com.tabulify.Tabular;
-import com.tabulify.TabularOsEnv;
 import net.bytle.fs.Fs;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -51,17 +48,15 @@ public class ConnectionHowTos {
    * @param connectionName the name of the connection
    * @return a JDBC connection string for the default data vault
    */
-  static public String getSqliteConnectionString(String connectionName) {
+  static public String getSqliteConnectionString(Tabular tabular, String connectionName) {
 
-    Path dbFile;
-    // Trick to not have the username in the output ie C:\Users\Username\...
-    // The env value have a fake account
-    final String bytle_db_databases_store = System.getenv(TabularOsEnv.TABLI_SQLITE_HOME);
-    if (bytle_db_databases_store != null) {
-      dbFile = Paths.get(bytle_db_databases_store);
-    } else {
-      dbFile = Fs.getUserAppData(TabularAttributes.APP_NAME.getDefaultValue().toString()).resolve(connectionName + ".db");
+
+    Path sqliteHome = tabular.getSqliteHome();
+    if (sqliteHome == null) {
+      sqliteHome = tabular.getUserHomePath();
+      ;
     }
+    Path dbFile = sqliteHome.resolve(connectionName + ".db");
     Fs.createDirectoryIfNotExists(dbFile.getParent());
     String rootWindows = "///";
     return "jdbc:sqlite:" + rootWindows + dbFile.toString().replace("\\", "/");
@@ -77,13 +72,13 @@ public class ConnectionHowTos {
     Set<Connection> howToDataStoresSet = new HashSet<>();
 
     howToDataStoresSet.add(
-      Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_CONNECTION_NAME, getSqliteConnectionString(SQLITE_CONNECTION_NAME))
+      Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_CONNECTION_NAME, getSqliteConnectionString(tabular, SQLITE_CONNECTION_NAME))
         .addVariable("Driver", "org.sqlite.JDBC")
         .setDescription("The sqlite default connection")
     );
 
     howToDataStoresSet.add(
-      Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_TARGET_CONNECTION_NAME, getSqliteConnectionString(SQLITE_TARGET_CONNECTION_NAME))
+      Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_TARGET_CONNECTION_NAME, getSqliteConnectionString(tabular, SQLITE_TARGET_CONNECTION_NAME))
         .addVariable("Driver", "org.sqlite.JDBC")
         .setDescription("The default sqlite target (Sqlite cannot read and write with the same connection)")
     );

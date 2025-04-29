@@ -10,17 +10,16 @@ import com.tabulify.tpc.TpcConnection;
 import com.tabulify.uri.DataUri;
 import net.bytle.exception.*;
 import net.bytle.fs.Fs;
-import net.bytle.java.JavaEnvs;
-import net.bytle.java.Javas;
 import net.bytle.regexp.Glob;
 import net.bytle.type.*;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.*;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,12 +41,16 @@ import static com.tabulify.TabularAttributes.USER_VARIABLES_FILE;
 public class Tabular implements AutoCloseable {
 
 
-  private final ProjectConfigurationFile projectConfigurationFile;
-  final Path variablePathArgument;
+  static final String TABLI_PREFIX = "tabli";
+  static final String TABLI_CONF_FILE_NAME = "." + TABLI_PREFIX + ".yml";
+  static final Path USER_HOME_PATH = Fs.getUserHome().resolve("." + TABLI_PREFIX);
+
+  final Path confPath;
   private final Vault vault;
   private final Map<String, Connection> howtoConnections;
   private final TabularExecEnv env;
   private final TabularVariables tabularVariables;
+  private final Path projectHomePath;
 
   // The default connection added to a data URI if it does not have it.
   protected Connection defaultConnection;
@@ -79,7 +82,14 @@ public class Tabular implements AutoCloseable {
   private Path runningPipelineScript;
   private Path homePath;
   private Path connectionVaultPath;
-  private final Map<String, String> templatingEnv;
+
+
+  /**
+   * Where to store sqlite database by default
+   * Trick to not have the username in the output ie C:\Users\Username\...
+   * The env value have a fake account
+   */
+  private Path sqliteHome;
 
 
   public Tabular(TabularConfig tabularConfig) {
@@ -100,64 +110,46 @@ public class Tabular implements AutoCloseable {
 
 
     /**
-     * Templating env (ie free form os/sys env used to template variable value)
+     * Building Helper
      */
-    this.templatingEnv = new HashMap<>(System.getenv());
-    this.templatingEnv.putAll(tabularConfig.templatingEnv);
+    // Templating env (ie free form os/sys env used to template variable value)
+    HashMap<String, String> templatingEnv = new HashMap<>(System.getenv());
+    templatingEnv.putAll(tabularConfig.templatingEnv);
+    this.vault = Vault.create(this, tabularConfig.passphrase, templatingEnv);
+
+    // All determine functions utility
+    // we don't pass the tabular object so that we have dependency in the function signature
+    TabularInit tabularInit = new TabularInit();
+
 
     /**
      * Env
      */
-    this.env = determineEnv(tabularConfig.execEnv);
+    this.env = tabularInit.determineEnv(tabularConfig.execEnv, vault);
 
     /**
-     * Project and Project File
+     * Home Path
      */
-    Path projectHomePath = tabularConfig.projectHome;
-    if (projectHomePath == null) {
-      try {
-        projectHomePath = Fs.closest(Paths.get("."), ProjectConfigurationFile.PROJECT_CONF_FILE_NAME).getParent();
-      } catch (FileNotFoundException e) {
-        // not a project
-      }
-    }
+    this.homePath = tabularInit.determineHomePath(tabularConfig.homePath, this.env);
+
+    /**
+     * Project
+     */
+    this.projectHomePath = tabularInit.determineProjectHome(tabularConfig.projectHome);
     if (projectHomePath != null) {
-
       DbLoggers.LOGGER_TABULAR_START.info("This is a project run (" + projectHomePath + ")");
-
-      Path projectFilePath = projectHomePath.resolve(ProjectConfigurationFile.PROJECT_CONF_FILE_NAME);
-      if (!Files.exists(projectFilePath)) {
-        DbLoggers.LOGGER_TABULAR_START.warning("The project file (" + projectFilePath + ") did not exist.");
-        this.projectConfigurationFile = null;
-      } else {
-        try {
-          this.projectConfigurationFile = ProjectConfigurationFile.createFrom(projectFilePath);
-        } catch (FileNotFoundException e) {
-          // should not happen
-          throw new RuntimeException("The project file path (" + projectFilePath + ") does not exits");
-        }
-      }
     } else {
-
       DbLoggers.LOGGER_TABULAR_START.info("This is not a project run.");
-      this.projectConfigurationFile = null;
-
     }
 
     /**
-     * Load variables environment first
-     * (It's used by the {@link Vault)
-     * Configuration file
-     * lower priority first
-     * ie host, project, tabli add the command line conf
+     * Conf Path
      */
-    this.variablePathArgument = tabularConfig.confPath;
-    this.tabularVariables = TabularVariables.create(this, projectConfigurationFile);
+    this.confPath = tabularInit.determineConfPath(tabularConfig.confPath, vault, this.projectHomePath);
 
-    /**
-     * Env
-     */
-    this.vault = Vault.create(this, tabularConfig.passphrase);
+
+    this.tabularVariables = TabularVariables.create(this, null);
+
 
     /**
      * ConnectionVault
@@ -167,30 +159,24 @@ public class Tabular implements AutoCloseable {
       this.connectionVaultPath = getUserConnectionVaultPath();
     }
 
+    /**
+     * After init
+     */
+    // Load connections
     ConnectionBuiltIn.loadBuiltInConnections(this);
-    loadConnections(getUserConnectionVaultPath(), ConnectionOrigin.USER);
     if (tabularConfig.connectionVault != null) {
       loadConnections(tabularConfig.connectionVault, ConnectionOrigin.COMMAND_LINE);
     }
 
-    if (projectConfigurationFile != null) {
-      Path projectConnectionVaultPath = projectConfigurationFile.getConnectionVaultPath();
-      loadConnections(projectConnectionVaultPath, ConnectionOrigin.PROJECT);
-    }
-
-
-    if (projectConfigurationFile != null) {
-
+    // Default Connection
+    if (projectHomePath != null) {
       // Default connection is project
       this.setDefaultConnection(ConnectionBuiltIn.PROJECT_CONNECTION);
-
     } else {
-
       // Default connection is cd
       this.setDefaultConnection(ConnectionBuiltIn.CD_LOCAL_FILE_SYSTEM);
-
     }
-
+    // How to connection utility
     this.howtoConnections = ConnectionHowTos.createHowtoConnections(this);
 
 
@@ -203,33 +189,6 @@ public class Tabular implements AutoCloseable {
 
   public static Tabular tabular() {
     return new TabularConfig().build();
-  }
-
-  private TabularExecEnv determineEnv(TabularExecEnv env) {
-
-    // Env
-    if (env != null) {
-      DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Passed as argument " + env);
-      return env;
-    }
-
-    String envOsValue = System.getenv(TabularOsEnv.TABLI_ENV);
-    if (envOsValue != null) {
-      try {
-        DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Found in OS env " + TabularOsEnv.TABLI_ENV + " with the value " + envOsValue);
-        return Casts.cast(envOsValue, TabularExecEnv.class);
-      } catch (CastException e) {
-        throw new IllegalArgumentException("The os env (" + TabularOsEnv.TABLI_ENV + ") has a env value (" + envOsValue + ") that is unknown. Possible values: " + Enums.toConstantAsStringCommaSeparated(TabularOsEnv.class), e);
-      }
-    }
-
-    if (JavaEnvs.isJUnitTest()) {
-      DbLoggers.LOGGER_TABULAR_START.info("Tabli env: IDE as it's a junit run");
-      return TabularExecEnv.IDE;
-    }
-
-    DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Default to dev");
-    return TabularExecEnv.DEV;
   }
 
 
@@ -670,39 +629,6 @@ public class Tabular implements AutoCloseable {
    */
   public Path getHomePath() {
 
-    if (this.homePath != null) {
-      return this.homePath;
-    }
-
-    // Env
-    String tabliHome = System.getenv(TabularOsEnv.TABLI_HOME);
-    if (tabliHome != null) {
-      this.homePath = Paths.get(tabliHome);
-      return this.homePath;
-    }
-
-    /**
-     * Trying to guess
-     */
-    if (this.isIdeEnv()) {
-
-      // in dev, we try to find the directory until the git directory is found
-      // with Idea, the class are in the build directory,
-      // but with maven, they are in the jars
-      // We can't check the location of the class
-
-      try {
-        this.homePath = Fs.getPathUntilName(Paths.get("."), ".git");
-        return this.homePath;
-      } catch (FileNotFoundException e) {
-        // Not found
-      }
-
-
-    }
-
-    // in prod, the class are in the jars directory
-    this.homePath = Javas.getSourceCodePath(ConnectionHowTos.class).getParent();
     return this.homePath;
 
   }
@@ -873,10 +799,6 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public ProjectConfigurationFile getProjectConfigurationFile() {
-    return this.projectConfigurationFile;
-  }
-
   @SuppressWarnings("unused")
   public FsDataPath getTempDirectory(String prefix) {
     return (FsDataPath) this.getTempConnection().getDataPath("tabli" + prefix + UUID.randomUUID());
@@ -887,7 +809,7 @@ public class Tabular implements AutoCloseable {
   }
 
   public boolean isProjectRun() {
-    return this.projectConfigurationFile != null;
+    return this.projectHomePath != null;
   }
 
   public Connection getLogsConnection() {
@@ -991,7 +913,7 @@ public class Tabular implements AutoCloseable {
     return this;
   }
 
-  private void addVariable(Variable variable) {
+  void addVariable(Variable variable) {
     this.tabularVariables.addVariable(variable);
   }
 
@@ -1025,13 +947,6 @@ public class Tabular implements AutoCloseable {
     return this;
   }
 
-  /**
-   * Templating Env are free variable used in templating
-   * to create clear value from variable
-   */
-  public Map<String, String> getTemplatingEnv() {
-    return this.templatingEnv;
-  }
 
   /**
    * @return a key/attribute name in a public format
@@ -1044,7 +959,13 @@ public class Tabular implements AutoCloseable {
     return toPublicName(variable.getAttribute().toString());
   }
 
+  public Path getSqliteHome() {
+    return this.sqliteHome;
+  }
+
+
   public static class TabularConfig {
+    private Path homePath;
     private String passphrase;
     private Path projectHome;
     private Path connectionVault;
@@ -1074,6 +995,11 @@ public class Tabular implements AutoCloseable {
 
     public TabularConfig setExecEnv(TabularExecEnv execEnv) {
       this.execEnv = execEnv;
+      return this;
+    }
+
+    public TabularConfig setHomePath(Path homePath) {
+      this.homePath = homePath;
       return this;
     }
 

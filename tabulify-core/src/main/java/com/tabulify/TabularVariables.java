@@ -98,7 +98,7 @@ public class TabularVariables {
       loadProjectConfigurationFile(projectConfigurationFile);
       loadDotEnvConfiguration(projectConfigurationFile);
     }
-    loadVariablesArgument(tabular.variablePathArgument);
+    loadVariablesArgument(tabular.confPath);
 
     /**
      * Load the private variable at the end

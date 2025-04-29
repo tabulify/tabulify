@@ -28,14 +28,16 @@ public enum TabularAttributes implements Attribute {
   ENV("The execution environment", true, TabularExecEnv.DEV, TabularExecEnv.class),
   DEFAULT_FILE_SYSTEM_TABULAR_TYPE("The default file extension for tabular data", true, "csv", String.class),
   HOME("The directory home of the Tabulify installation", true, null, Path.class),
-  PROJECT_CONNECTION("The project connection file", false, null, String.class),
-  PROJECT_VARIABLE("The project variable file", false, null, String.class),
+  CONF("The path to the conf file", true, null, Path.class),
 
   // This is just a feature of the cli library for the options
   // Not really a tabular option
   LOG_LEVEL("The tabli log level", true, "info", String.class),
+
   PASSPHRASE("The passphrase", false, null, String.class),
+
   PROJECT_HOME("The project home path", false, null, Path.class),
+
   // Where to store the sqlite database
   // By default, the user home (trick to not show the user in the path)
   SQLITE_HOME("Sqlite home", false, null, String.class);

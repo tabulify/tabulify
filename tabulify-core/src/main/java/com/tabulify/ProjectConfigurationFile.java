@@ -17,7 +17,6 @@ import java.util.Map;
 public class ProjectConfigurationFile {
 
 
-  public static final String PROJECT_CONF_FILE_NAME = ".tabli.yml";
   private final Path path;
   private final String connectionsRelativePath;
   private final String variablesRelativePath;

@@ -1,7 +1,6 @@
 package com.tabulify.connection;
 
 import com.tabulify.Tabular;
-import com.tabulify.TabularAttributes;
 import com.tabulify.Vault;
 import com.tabulify.memory.MemoryConnectionProvider;
 import com.tabulify.noop.NoopConnectionProvider;
@@ -109,7 +108,7 @@ public class ConnectionBuiltIn {
       .setOrigin(ConnectionOrigin.BUILT_IN);
     tabular.addConnection(user);
 
-    String localLogsUriString = ConnectionHowTos.getSqliteConnectionString(ConnectionBuiltIn.LOG_LOCAL_CONNECTION);
+    String localLogsUriString = ConnectionHowTos.getSqliteConnectionString(tabular, ConnectionBuiltIn.LOG_LOCAL_CONNECTION);
     Connection logs = Connection.createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.LOG_LOCAL_CONNECTION, localLogsUriString)
       .setDescription("The tabli logs")
       .setOrigin(ConnectionOrigin.BUILT_IN);
