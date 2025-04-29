@@ -90,7 +90,6 @@ public class HistogramGenerator<T> extends CollectionGeneratorAbs<T> implements 
    * Instantiate an expression generator from the columns properties
    * This function is called via recursion by the function {@link GenColumnDef#getOrCreateGenerator(Class)}
    * Don't delete
-   *
    */
   public static <T> HistogramGenerator<T> createFromProperties(Class<T> clazz, GenColumnDef genColumnDef) {
 
@@ -101,7 +100,11 @@ public class HistogramGenerator<T> extends CollectionGeneratorAbs<T> implements 
     Map<T, Double> buckets;
     if (objectBucket instanceof Map) {
       try {
-        buckets = Casts.castToSameMap(objectBucket, clazz, Double.class);
+        // Strict: ie
+        // Key: 2.0 on an integer clazz will return an error (ie strictKey = true)
+        // Values: 2 should return an error as it's not a Double, but we do not as it's the castToNewMap and not castToSameMap
+        boolean strictKey = true;
+        buckets = Casts.castToNewMap(objectBucket, clazz, Double.class, strictKey);
       } catch (CastException e) {
         throw new RuntimeException("The data generator buckets column property for the column (" + genColumnDef + ") is not a map of " + clazz.getSimpleName() + ", Double. Error: " + e.getMessage(), e);
       }
