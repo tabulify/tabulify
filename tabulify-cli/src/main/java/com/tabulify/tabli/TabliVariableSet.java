@@ -1,12 +1,12 @@
 package com.tabulify.tabli;
 
+import com.tabulify.Tabular;
+import com.tabulify.spi.DataPath;
+import com.tabulify.stream.InsertStream;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
 import net.bytle.conf.ConfManager;
-import com.tabulify.Tabular;
-import com.tabulify.spi.DataPath;
-import com.tabulify.stream.InsertStream;
 
 import java.nio.file.Path;
 import java.util.Collections;
@@ -42,10 +42,9 @@ public class TabliVariableSet {
 
     Path conf = TabliVariable.getVariablesFilePathToModify(tabular, cliParser);
 
-    ConfManager
-      .createFromPath(conf)
-      .setProperty(key, value)
-      .flush();
+    try (ConfManager fromPath = ConfManager.createFromPath(conf)) {
+      fromPath.setProperty(key, value);
+    }
 
     DataPath feedbackDataPath = tabular.getMemoryDataStore().getDataPath("configurationSet")
       .setDescription("The below configuration was set")

@@ -1,9 +1,5 @@
 package com.tabulify.tabli;
 
-import com.tabulify.transfer.*;
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliWord;
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
 import com.tabulify.flow.engine.Pipeline;
@@ -13,15 +9,19 @@ import com.tabulify.flow.step.TargetPipelineSimple;
 import com.tabulify.flow.step.TransferArgumentProperty;
 import com.tabulify.gen.DataGenerator;
 import com.tabulify.gen.GenDataPath;
+import com.tabulify.gen.GenDataPathAttribute;
 import com.tabulify.gen.GenDataPathType;
-import com.tabulify.licence.LicenceProperties;
 import com.tabulify.spi.DataPath;
+import com.tabulify.transfer.*;
 import com.tabulify.uri.DataUri;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliWord;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.NullValueException;
 import net.bytle.type.Casts;
-import net.bytle.type.Key;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
 
@@ -32,10 +32,10 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toSet;
 import static com.tabulify.flow.step.TransferArgumentProperty.SOURCE_OPERATION;
 import static com.tabulify.flow.step.TransferArgumentProperty.values;
 import static com.tabulify.tabli.TabliWords.*;
+import static java.util.stream.Collectors.toSet;
 
 public class TabliDataTransferManager {
 
@@ -43,7 +43,7 @@ public class TabliDataTransferManager {
   public static final TransferOperation DEFAULT_FILL_TRANSFER_OPERATION = TransferOperation.UPSERT;
 
 
-  enum TransferCommandType {
+  public enum TransferCommandType {
     FILL, // the fill transfer has other option
     DEFAULT // All other transfer
   }
@@ -105,12 +105,12 @@ public class TabliDataTransferManager {
     CliWord cliWord;
     if (defaultValue != null) {
       if (defaultValue instanceof Boolean) {
-        cliWord = childCommand.addFlag(CliParser.PREFIX_LONG_OPTION + Key.toLongOptionName(transferArgumentProperty));
+        cliWord = childCommand.addFlag(CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(transferArgumentProperty).toCliLongOptionName());
       } else {
-        cliWord = childCommand.addProperty(CliParser.PREFIX_LONG_OPTION + Key.toLongOptionName(transferArgumentProperty));
+        cliWord = childCommand.addProperty(CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(transferArgumentProperty).toCliLongOptionName());
       }
     } else {
-      cliWord = childCommand.addProperty(CliParser.PREFIX_LONG_OPTION + Key.toLongOptionName(transferArgumentProperty));
+      cliWord = childCommand.addProperty(CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(transferArgumentProperty).toCliLongOptionName());
     }
     String shortOption;
     switch (transferArgumentProperty) {
@@ -123,7 +123,7 @@ public class TabliDataTransferManager {
         shortOption = "out";
         break;
       default:
-        shortOption = Key.toShortOptionName(transferArgumentProperty);
+        shortOption = KeyNormalizer.create(transferArgumentProperty).toCliShortOptionName();
     }
 
     cliWord.setGroup("Cross Data Transfer Options")
@@ -411,7 +411,7 @@ public class TabliDataTransferManager {
      */
     childCommand.addProperty(MAX_RECORD_COUNT)
       .setDescription("This option defines the maximum total number of record that the data resource(s) must have when no data resource generator was found.")
-      .setDefaultValue(LicenceProperties.MAX_INSERT)
+      .setDefaultValue(GenDataPathAttribute.MAX_RECORD_COUNT.getDefaultValue())
       .setGroup(fillOptionsGroupName)
       .setValueName("maxRecordCount")
       .setShortName("-mrc");

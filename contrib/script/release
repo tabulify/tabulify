@@ -92,6 +92,11 @@ for word in $TABULIFY_DEPENDENCIES; do
 
 done
 
+# Processing main module
+if ! mvn install --projects "$MAIN_PROJECT"; then
+  echo "Error while installing the project: $MAIN_PROJECT"
+  exit 1
+fi
 
 echo ""
 echo "Project processed"

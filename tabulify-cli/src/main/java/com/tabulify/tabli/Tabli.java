@@ -1,25 +1,28 @@
 package com.tabulify.tabli;
 
-import com.tabulify.TabularExecEnv;
-import com.tabulify.TabularOsEnv;
-import com.tabulify.connection.ConnectionVault;
-import com.tabulify.transfer.*;
-import net.bytle.cli.*;
 import com.tabulify.Tabular;
 import com.tabulify.TabularAttributes;
+import com.tabulify.TabularExecEnv;
+import com.tabulify.TabularOsEnv;
 import com.tabulify.connection.Connection;
+import com.tabulify.connection.ConnectionVault;
 import com.tabulify.memory.MemoryDataPath;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.ResourcePath;
 import com.tabulify.spi.Tabulars;
 import com.tabulify.stream.InsertStream;
+import com.tabulify.transfer.*;
 import com.tabulify.uri.DataUri;
+import net.bytle.cli.*;
 import net.bytle.exception.*;
 import net.bytle.log.Log;
 import net.bytle.log.Logs;
 import net.bytle.regexp.Glob;
 import net.bytle.timer.Timer;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.Enums;
+import net.bytle.type.Manifest;
+import net.bytle.type.ManifestAttribute;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -188,7 +191,7 @@ public class Tabli {
       try {
         execEnv = Casts.cast(executionEnvironment, TabularExecEnv.class);
       } catch (CastException e) {
-        throw new IllegalArgumentException("The option (" + ENVIRONMENT + ") has a env value (" + executionEnvironment + ") that is unknown. Possible values: " + Enums.toConstantAsStringCommaSeparated(TabularOsEnv.class), e);
+        throw new IllegalArgumentException("The option (" + ENVIRONMENT + ") has a env value (" + executionEnvironment + ") that is unknown. Possible values: " + Enums.toConstantAsStringCommaSeparated(TabularExecEnv.class), e);
       }
     }
 
@@ -233,6 +236,8 @@ public class Tabli {
             System.out.println("Version: dev");
             Tabli.exit(tabular, 0);
           }
+          // for the compiler
+          assert manifest != null;
           DataPath tabularVersion = tabular.getAndCreateRandomMemoryDataPath()
             .setLogicalName("Version")
             .getOrCreateRelationDef()
@@ -245,7 +250,7 @@ public class Tabli {
               if (manifestAttribute.isVersion()) {
                 try {
                   inputStream.insert(
-                    Key.toUriName(manifestAttribute.toString()),
+                    tabular.toPublicName(manifestAttribute.toString()),
                     manifest.getAttribute(manifestAttribute),
                     manifestAttribute.getDescription()
                   );

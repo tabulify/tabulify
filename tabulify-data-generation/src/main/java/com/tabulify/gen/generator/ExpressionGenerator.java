@@ -7,12 +7,13 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.NoColumnException;
 import net.bytle.type.Casts;
 import net.bytle.type.Strings;
+import net.bytle.type.time.Date;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.EvaluatorException;
 import org.mozilla.javascript.ScriptableObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Date;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -116,8 +117,13 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
       Object parentValue = parentCollectionGenerator.getActualValue();
       String value = parentValue.toString();
 
-      if (parentValue.getClass().equals(Date.class)) {
-        LocalDate actualDate = ((Date) parentValue).toLocalDate();
+      if (Arrays.asList(java.util.Date.class, java.sql.Date.class).contains(parentValue.getClass())) {
+        LocalDate actualDate;
+        if (parentValue.getClass().equals(java.sql.Date.class)) {
+          actualDate = ((java.sql.Date) parentValue).toLocalDate();
+        } else {
+          actualDate = Date.createFromDate((java.util.Date) parentValue).toLocalDate();
+        }
         value = "new Date(\"" + actualDate.format(DateTimeFormatter.ISO_DATE) + "\")";
       } else if (parentValue.getClass().equals(String.class)) {
         value = "'" + value + "'";
@@ -141,7 +147,12 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
 
     try (Context cx = Context.enter()) {
 
-      Object evalValue = cx.evaluateString(scope, evalScript.toString(), "<cmd>", 1, null);
+      Object evalValue;
+      try {
+        evalValue = cx.evaluateString(scope, evalScript.toString(), "<cmd>", 1, null);
+      } catch (Exception e) {
+        throw new RuntimeException("Error while evaluating the expression for the column " + this.getColumnDef() + ". \nError: " + e.getMessage() + ". \nExpression:\n" + evalScript, e);
+      }
       if (evalValue == null) {
         final String msg = "The expression generator for the column (" + this.getColumnDef() + ") has returned a NULL value and it's not expected.\nThe expression was: " + evalScript;
         LOGGER.error(msg);
@@ -166,8 +177,19 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
 
       try {
         return Casts.cast(this.actualValue, clazz);
-      } catch (CastException e) {
-        throw new RuntimeException("The value (" + this.actualValue + ") can not be cast to " + clazz, e);
+      } catch (CastException ex) {
+        try {
+          if (clazz.equals(java.sql.Date.class)) {
+            // Happens on formula
+            // The object (org.mozilla.javascript.NativeDate@46678e49) has an class (NativeDate) that is not yet seen as a date.
+            this.actualValue = Context.jsToJava(this.actualValue, java.util.Date.class);
+            return Casts.cast(this.actualValue, clazz);
+          }
+          return clazz.cast(Context.jsToJava(this.actualValue, clazz));
+        } catch (EvaluatorException | CastException e) {
+          throw new RuntimeException("The value (" + this.actualValue + ") can not be cast to " + clazz, e);
+        }
+
       }
 
     }
