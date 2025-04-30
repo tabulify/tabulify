@@ -1,8 +1,13 @@
 package com.tabulify.conf;
 
+import com.tabulify.TabularAttribute;
+import com.tabulify.Vault;
+import net.bytle.exception.CastException;
 import net.bytle.fs.Fs;
 import net.bytle.type.Casts;
-import net.bytle.type.MapKeyIndependent;
+import net.bytle.type.Enums;
+import net.bytle.type.Origin;
+import net.bytle.type.Variable;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.BufferedWriter;
@@ -18,24 +23,12 @@ import java.util.stream.Collectors;
 public class ConfManager implements AutoCloseable {
 
 
-  private Path path;
-  private Map<String, Object> confMap = new MapKeyIndependent<>();
+  private final Vault vault;
+  private final Path path;
 
-  public ConfManager(Path path) {
-    this.setPath(path);
-  }
+  private final Map<TabularAttribute, Variable> env = new HashMap<>();
 
-  public static ConfManager createFromPath(Path confPath) {
-    return new ConfManager(confPath);
-  }
-
-  public Map<String, Object> getConfMap() {
-
-    return confMap;
-  }
-
-
-  public ConfManager setPath(Path path) {
+  public ConfManager(Path path, Vault vault) {
 
     if (path == null) {
       throw new IllegalArgumentException("The configuration file path passed is null");
@@ -46,57 +39,119 @@ public class ConfManager implements AutoCloseable {
 
       throw new IllegalArgumentException("The configuration file (" + path + ") should be a yaml file with the extension (" + String.join(", ", yamlExtensions) + " )");
 
-    } else {
-
-      this.path = path;
-      parseYaml();
-
     }
-    return this;
+    this.path = path;
+    this.vault = vault;
+    try {
+      parseYaml();
+    } catch (CastException e) {
+      // we cannot recover from that
+      throw new RuntimeException(e.getMessage(), e);
+    }
+
   }
+
+  public static ConfManager createFromPath(Path confPath, Vault vault) {
+
+    return new ConfManager(confPath, vault);
+  }
+
+  public Variable getVariable(TabularAttribute name) {
+    return this.env.get(name);
+  }
+
 
   /**
    * Parse the {@link #path} if the file exists and is not null
-   * and save the result into {@link #confMap}
    */
-  private void parseYaml() {
-    if (this.path != null) {
-      /*
-       * Parsing
-       */
-      if (Files.exists(path)) {
-        /*
-         * Read the file into the map
-         */
-        try {
-          Yaml yaml = new Yaml();
-          int count = 0;
-          for (Object data : yaml.loadAll(Files.newBufferedReader(path))) {
+  private void parseYaml() throws CastException {
 
-            if (count > 1) {
-              throw new RuntimeException("The yaml file (" + path + ") has more than one Yaml document and that's not supported.");
-            }
-            count++;
 
-            /*
-             * Cast
-             */
-            try {
-              confMap = Casts.castToSameMap(data, String.class, Object.class);
-            } catch (ClassCastException e) {
-              String message = e.getMessage() + ". A configuration must be in a map format. ";
-              if (data.getClass().equals(java.util.ArrayList.class)) {
-                message += "They are in a list format. You should suppress the minus as name suffix if they are present.";
-              }
-              message += "The Bad Data Values are: " + data;
-              throw new RuntimeException(message, e);
-            }
-          }
-        } catch (Exception e) {
-          throw new RuntimeException("Error parsing the Yaml file (" + path + ")", e);
-        }
-      }
+    if (!Files.exists(path)) {
+      return;
     }
+    /*
+     * Read the file into yamlDocuments
+     */
+    Yaml yaml = new Yaml();
+    Iterable<Object> yamlDocuments;
+    try {
+      yamlDocuments = yaml.loadAll(Files.newBufferedReader(path));
+    } catch (Exception e) {
+      throw new CastException("Error parsing the Yaml file (" + path + ")", e);
+    }
+
+    /**
+     * Map processing
+     */
+    int count = 0;
+    for (Object data : yamlDocuments) {
+
+      if (count > 1) {
+        throw new CastException("The yaml file (" + path + ") has more than one Yaml document and that's not supported.");
+      }
+      count++;
+
+      /*
+       * Cast
+       */
+      Map<String, Object> confMap;
+      try {
+        confMap = Casts.castToNewMap(data, String.class, Object.class);
+      } catch (CastException e) {
+        throw new RuntimeException("Error: " + e.getMessage() + ". " + badMapCast(data, "map"));
+      }
+      for (Map.Entry<String, Object> rootEntry : confMap.entrySet()) {
+
+        String rootName = rootEntry.getKey();
+        ConfManagerAttribute rootAttribute;
+        try {
+          rootAttribute = Casts.cast(rootName, ConfManagerAttribute.class);
+        } catch (CastException e) {
+          throw new CastException("The root name (" + rootName + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(ConfManagerAttribute.class), e);
+        }
+
+        switch (rootAttribute) {
+          case VARIABLES:
+
+            Map<String, String> localEnvs;
+            try {
+              localEnvs = Casts.castToSameMap(rootEntry.getValue(), String.class, String.class);
+            } catch (CastException e) {
+              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfManagerAttribute.VARIABLES)), e);
+            }
+            for (Map.Entry<String, String> localEnv : localEnvs.entrySet()) {
+
+              TabularAttribute tabularAttribute;
+              String variableName = localEnv.getKey();
+              try {
+                tabularAttribute = Casts.cast(variableName, TabularAttribute.class);
+              } catch (ClassCastException e) {
+                throw new CastException("The env name (" + variableName + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttribute.class), e);
+              }
+              Variable variable = vault.createVariableWithRawValue(tabularAttribute, localEnv.getValue(), Origin.USER);
+              env.put(tabularAttribute, variable);
+
+            }
+
+            break;
+        }
+
+      }
+
+    }
+
+
+  }
+
+  private static String badMapCast(Object data, String keyPath) {
+    String message = "The " + keyPath + " configuration must be in a map format. ";
+    if (data.getClass().equals(ArrayList.class)) {
+      message += "They are in a list format. You should suppress the minus as name suffix if they are present.";
+    }
+    message += "The Bad Data Values are: " + data;
+    return message;
+
   }
 
   public void close() {
@@ -105,21 +160,6 @@ public class ConfManager implements AutoCloseable {
 
   }
 
-  public ConfManager setProperty(String key, String value) {
-    this.getConfMap().put(key, value);
-    return this;
-  }
-
-
-  public ConfManager reset() {
-    try {
-      Files.deleteIfExists(this.path);
-      this.confMap = new HashMap<>();
-      return this;
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
 
   public void flush() {
     BufferedWriter outputStream;
@@ -135,7 +175,12 @@ public class ConfManager implements AutoCloseable {
        */
       outputStream = Files.newBufferedWriter(path);
 
-      for (Map.Entry<String, Object> entry : getConfMap().entrySet().stream().sorted(Map.Entry.comparingByKey()).collect(Collectors.toList())) {
+      Map<String, Object> confMap = new HashMap<>();
+      for (Map.Entry<String, Object> entry : confMap
+        .entrySet()
+        .stream()
+        .sorted(Map.Entry.comparingByKey())
+        .collect(Collectors.toList())) {
 
         // Value
         Object value = entry.getValue();
@@ -164,15 +209,17 @@ public class ConfManager implements AutoCloseable {
     }
   }
 
-  public ConfManager reload() {
-
-    parseYaml();
-
-    return this;
-  }
-
-  public Object delete(String key) {
-
-    return confMap.remove(key);
+  /**
+   * Used in Tabli
+   */
+  public void addVariable(String key, Object value) throws CastException {
+    TabularAttribute tabularAttribute;
+    try {
+      tabularAttribute = Casts.cast(key, TabularAttribute.class);
+    } catch (CastException e) {
+      throw new CastException("Error: the variable name (" + key + " is not a valid variable name. We were expecting one of: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttribute.class));
+    }
+    Variable variable = vault.createVariableWithRawValue(tabularAttribute, value, Origin.USER);
+    env.put(tabularAttribute, variable);
   }
 }

@@ -1,5 +1,6 @@
 package com.tabulify;
 
+import com.tabulify.conf.ConfManager;
 import com.tabulify.conf.ConnectionVault;
 import com.tabulify.conf.TabularEnvs;
 import com.tabulify.connection.Connection;
@@ -30,8 +31,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.tabulify.TabularAttribute.USER_CONNECTION_VAULT;
-import static com.tabulify.TabularAttribute.USER_VARIABLES_FILE;
 
 /**
  * A tabular is a global domain that represents the runtime environment
@@ -49,8 +48,9 @@ public class Tabular implements AutoCloseable {
   public static final String TABLI_NAME = "tabli";
   static final String TABLI_CONF_FILE_NAME = "." + TABLI_NAME + ".yml";
   public static final Path TABLI_USER_HOME_PATH = Fs.getUserHome().resolve("." + TABLI_NAME);
+  public static final Path TABLI_USER_CONF_PATH = TABLI_USER_HOME_PATH.resolve(TABLI_CONF_FILE_NAME);
 
-  private final Path confPath;
+
   private final Vault vault;
   private final Map<String, Connection> howtoConnections;
   private final TabularExecEnv executionEnv;
@@ -85,7 +85,6 @@ public class Tabular implements AutoCloseable {
   private int exitStatus = 0;
   private Path runningPipelineScript;
   private final Path homePath;
-  private Path connectionVaultPath;
 
 
   /**
@@ -128,16 +127,6 @@ public class Tabular implements AutoCloseable {
     this.vault = Vault.create(tabularConfig.passphrase, tabularEnvs);
 
     /**
-     * Execution Env
-     */
-    this.executionEnv = TabularInit.determineEnv(tabularConfig.execEnv, vault, tabularEnvs, variables);
-
-    /**
-     * Home Path
-     */
-    this.homePath = TabularInit.determineHomePath(tabularConfig.homePath, this.executionEnv, tabularEnvs, variables, vault);
-
-    /**
      * Project
      */
     this.projectHomePath = TabularInit.determineProjectHome(tabularConfig.projectHome, vault, variables, tabularEnvs);
@@ -148,9 +137,22 @@ public class Tabular implements AutoCloseable {
     }
 
     /**
-     * Conf Path
+     * Tabli Yaml File
      */
-    this.confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, this.projectHomePath, tabularEnvs);
+    Path confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, tabularEnvs, projectHomePath);
+    ConfManager confManager = ConfManager.createFromPath(confPath, vault);
+
+    /**
+     * Execution Env
+     */
+    this.executionEnv = TabularInit.determineEnv(tabularConfig.execEnv, vault, tabularEnvs, variables, confManager);
+
+    /**
+     * Home Path
+     */
+    this.homePath = TabularInit.determineHomePath(tabularConfig.homePath, this.executionEnv, tabularEnvs, variables, vault, confManager);
+
+
 
 
     /**
@@ -206,13 +208,9 @@ public class Tabular implements AutoCloseable {
   }
 
   public static TabularConfig cleanTabularConfig() {
-    Path userConnectionVaultPath = (Path) USER_CONNECTION_VAULT.getDefaultValue();
-    Fs.deleteIfExists(userConnectionVaultPath);
-    Path userVariablePath = (Path) USER_VARIABLES_FILE.getDefaultValue();
-    Fs.deleteIfExists(userVariablePath);
+    Fs.deleteIfExists(TABLI_USER_CONF_PATH);
     return Tabular.tabularConfig();
   }
-
 
   private void loadConnections(Path path, ConnectionOrigin connectionOrigin) {
 
@@ -930,6 +928,7 @@ public class Tabular implements AutoCloseable {
       return this;
     }
 
+    @SuppressWarnings("unused")
     public TabularConfig setHomePath(Path homePath) {
       this.homePath = homePath;
       return this;

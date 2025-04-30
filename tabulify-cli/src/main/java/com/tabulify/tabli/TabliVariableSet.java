@@ -7,6 +7,7 @@ import com.tabulify.stream.InsertStream;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
+import net.bytle.exception.CastException;
 
 import java.nio.file.Path;
 import java.util.Collections;
@@ -42,8 +43,10 @@ public class TabliVariableSet {
 
     Path conf = TabliVariable.getVariablesFilePathToModify(tabular, cliParser);
 
-    try (ConfManager fromPath = ConfManager.createFromPath(conf)) {
-      fromPath.setProperty(key, value);
+    try (ConfManager fromPath = ConfManager.createFromPath(conf, tabular.getVault())) {
+      fromPath.addVariable(key, value);
+    } catch (CastException e) {
+      throw new RuntimeException(e.getMessage(), e);
     }
 
     DataPath feedbackDataPath = tabular.getMemoryDataStore().getDataPath("configurationSet")

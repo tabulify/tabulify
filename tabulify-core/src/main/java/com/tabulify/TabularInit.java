@@ -1,5 +1,6 @@
 package com.tabulify;
 
+import com.tabulify.conf.ConfManager;
 import com.tabulify.conf.TabularEnvs;
 import com.tabulify.connection.ConnectionHowTos;
 import net.bytle.exception.CastException;
@@ -22,29 +23,47 @@ import static com.tabulify.Tabular.TABLI_USER_HOME_PATH;
 public class TabularInit {
 
 
-  static TabularExecEnv determineEnv(TabularExecEnv env, Vault vault, TabularEnvs tabularEnvs, Map<TabularAttribute, Variable> variables) {
+  static TabularExecEnv determineEnv(TabularExecEnv env, Vault vault, TabularEnvs tabularEnvs, Map<TabularAttribute, Variable> variables, ConfManager confManager) {
 
     TabularAttribute attribute = TabularAttribute.ENV;
-    Vault.ConfVariable confVariable = vault.confVariable(attribute);
+    Vault.VariableBuilder configVariable = vault.variableBuilder(attribute);
+    TabularExecEnv value;
 
     // Env
     if (env != null) {
       DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Passed as argument " + env);
-      Variable variable = confVariable
+      Variable variable = configVariable
         .setOrigin(Origin.COMMAND_LINE)
         .buildFromRawValue(env.toString());
       variables.put((TabularAttribute) variable.getAttribute(), variable);
       return env;
     }
 
+    /**
+     * Conf Manager
+     */
+    Variable confVariable = confManager.getVariable(attribute);
+    if (confVariable != null) {
+      String confEnvValue = confVariable.getValueOrDefaultAsStringNotNull();
+      try {
+        value = Casts.cast(confEnvValue, TabularExecEnv.class);
+      } catch (CastException e) {
+        throw new RuntimeException("The env value (" + confEnvValue + ") in the conf file is not correct. We were expecting one of: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularExecEnv.class), e);
+      }
+      variables.put((TabularAttribute) confVariable.getAttribute(), confVariable);
+      return value;
+    }
+
+    /**
+     * Os
+     */
     KeyNormalizer osEnvName = tabularEnvs.getOsTabliEnvName(attribute);
     String envOsValue = tabularEnvs.getOsEnvValue(osEnvName);
-    TabularExecEnv value;
     if (envOsValue != null) {
       try {
         DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Found in OS env " + osEnvName.toEnvName() + " with the value " + envOsValue);
         value = Casts.cast(envOsValue, TabularExecEnv.class);
-        Variable variable = confVariable
+        Variable variable = configVariable
           .setOrigin(Origin.OS)
           .buildFromRawValue(value.toString());
         variables.put((TabularAttribute) variable.getAttribute(), variable);
@@ -57,7 +76,7 @@ public class TabularInit {
     if (JavaEnvs.isJUnitTest()) {
       DbLoggers.LOGGER_TABULAR_START.info("Tabli env: IDE as it's a junit run");
       value = TabularExecEnv.IDE;
-      Variable variable = confVariable
+      Variable variable = configVariable
         .setOrigin(Origin.INTERNAL)
         .buildFromRawValue(value.toString());
       variables.put((TabularAttribute) variable.getAttribute(), variable);
@@ -66,7 +85,7 @@ public class TabularInit {
 
     DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Default to dev");
     value = TabularExecEnv.DEV;
-    Variable variable = confVariable
+    Variable variable = configVariable
       .setOrigin(Origin.INTERNAL)
       .buildFromRawValue(value.toString());
     variables.put((TabularAttribute) variable.getAttribute(), variable);
@@ -76,26 +95,36 @@ public class TabularInit {
 
 
   /**
-   * @param homePath the home path from the init
+   * @param homePath the home path from the constructor
    */
-  static Path determineHomePath(Path homePath, TabularExecEnv execEnv, TabularEnvs tabularEnvs, Map<TabularAttribute, Variable> variables, Vault vault) {
+  static Path determineHomePath(Path homePath, TabularExecEnv execEnv, TabularEnvs tabularEnvs, Map<TabularAttribute, Variable> variables, Vault vault, ConfManager confManager) {
 
     TabularAttribute attribute = TabularAttribute.HOME;
-    Vault.ConfVariable confVariable = vault.confVariable(attribute);
+    Vault.VariableBuilder variableBuilder = vault.variableBuilder(attribute);
 
     if (homePath != null) {
-      Variable variable = confVariable
+      Variable variable = variableBuilder
         .setOrigin(Origin.COMMAND_LINE)
         .buildFromClearValue(homePath.toString());
       variables.put((TabularAttribute) variable.getAttribute(), variable);
       return homePath;
     }
 
+    /**
+     * Conf Manager
+     */
+    Variable confHomeVariable = confManager.getVariable(attribute);
+    if (confHomeVariable != null) {
+      String confEnvValue = confHomeVariable.getValueOrDefaultAsStringNotNull();
+      variables.put((TabularAttribute) confHomeVariable.getAttribute(), confHomeVariable);
+      return Paths.get(confEnvValue);
+    }
+
     // Env
     KeyNormalizer envName = tabularEnvs.getOsTabliEnvName(TabularAttribute.HOME);
     String tabliHome = tabularEnvs.getOsEnvValue(envName);
     if (tabliHome != null) {
-      Variable variable = confVariable
+      Variable variable = variableBuilder
         .setOrigin(Origin.OS)
         .buildFromClearValue(tabliHome);
       variables.put((TabularAttribute) variable.getAttribute(), variable);
@@ -113,7 +142,7 @@ public class TabularInit {
       // We can't check the location of the class
       try {
         Path closestHomePath = Fs.closest(Paths.get("."), ".git").getParent();
-        Variable variable = confVariable
+        Variable variable = variableBuilder
           .setOrigin(Origin.INTERNAL)
           .buildFromRawValue(closestHomePath.toString());
         variables.put((TabularAttribute) variable.getAttribute(), variable);
@@ -126,7 +155,7 @@ public class TabularInit {
 
     // in prod, the class are in the jars directory
     Path prodHomePath = Javas.getSourceCodePath(ConnectionHowTos.class).getParent();
-    Variable variable = confVariable
+    Variable variable = variableBuilder
       .setOrigin(Origin.INTERNAL)
       .buildFromRawValue(prodHomePath.toString());
     variables.put((TabularAttribute) variable.getAttribute(), variable);
@@ -138,7 +167,7 @@ public class TabularInit {
   static public Path determineProjectHome(Path projectHomePath, Vault vault, Map<TabularAttribute, Variable> variables, TabularEnvs tabularEnvs) {
 
     TabularAttribute attribute = TabularAttribute.PROJECT_HOME;
-    Vault.ConfVariable confVariable = vault.confVariable(attribute);
+    Vault.VariableBuilder confVariable = vault.variableBuilder(attribute);
 
     if (projectHomePath != null) {
       Variable variable = confVariable
@@ -178,9 +207,9 @@ public class TabularInit {
     }
   }
 
-  static public Path determineConfPath(Path confPath, Vault vault, Path projectHome, TabularEnvs tabularEnvs) {
+  static public Path determineConfPath(Path confPath, Vault vault, TabularEnvs tabularEnvs, Path projectHome) {
 
-    Vault.ConfVariable confVariable = vault.confVariable(TabularAttribute.CONF);
+    Vault.VariableBuilder confVariable = vault.variableBuilder(TabularAttribute.CONF);
     if (confPath != null) {
       confVariable
         .setOrigin(Origin.COMMAND_LINE)
@@ -238,4 +267,6 @@ public class TabularInit {
       }
     }
   }
+
+
 }

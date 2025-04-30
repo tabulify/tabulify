@@ -65,6 +65,14 @@ public class Vault {
     return new Vault(passphrase, null);
   }
 
+  /**
+   * Used mostly in test as a vault without passphrase
+   * and env is not really real
+   */
+  public static Vault create() {
+    return new Vault(null, null);
+  }
+
 
   public Variable createVariableWithRawValue(String key, Object value, Origin origin) throws Exception {
 
@@ -149,8 +157,8 @@ public class Vault {
     }
   }
 
-  public ConfVariable confVariable(TabularAttribute tabularAttributes) {
-    return new ConfVariable(tabularAttributes);
+  public VariableBuilder variableBuilder(TabularAttribute tabularAttributes) {
+    return new VariableBuilder(tabularAttributes);
   }
 
   public Variable createVariableWithClearValue(Attribute connectionAttribute, String secret, Origin origin) {
@@ -162,15 +170,15 @@ public class Vault {
   /**
    * Helper to build a variable
    */
-  public class ConfVariable {
+  public class VariableBuilder {
     private final Attribute attribute;
     private Origin origin;
 
-    public ConfVariable(Attribute attribute) {
+    public VariableBuilder(Attribute attribute) {
       this.attribute = attribute;
     }
 
-    public ConfVariable setOrigin(Origin origin) {
+    public VariableBuilder setOrigin(Origin origin) {
       this.origin = origin;
       return this;
     }
