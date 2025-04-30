@@ -63,7 +63,7 @@ public class TabliWords {
   protected static final String LIMIT_PROPERTY = "--limit";
 
   // Config file words
-  static final String CONF_VARIABLES_PATH_PROPERTY = "--vars";
+  static final String CONF_VARIABLES_PATH_PROPERTY = "--conf";
 
   static final String ENVIRONMENT = "--env";
 

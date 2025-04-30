@@ -99,6 +99,7 @@ public class Tabular implements AutoCloseable {
    * The env value have a fake account
    */
   private Path sqliteHome;
+  private final Path confPath;
 
 
   public Tabular(TabularConfig tabularConfig) {
@@ -138,9 +139,11 @@ public class Tabular implements AutoCloseable {
 
     /**
      * Tabli Yaml File
+     * confPath is a field because it's used by the cli
+     * to modify a conf file with the cli
      */
-    Path confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, tabularEnvs, projectHomePath);
-    ConfManager confManager = ConfManager.createFromPath(confPath, vault);
+    confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, tabularEnvs, projectHomePath);
+    ConfManager confManager = ConfManager.createFromPath(confPath, vault, this);
 
     /**
      * Execution Env
@@ -153,6 +156,10 @@ public class Tabular implements AutoCloseable {
     this.homePath = TabularInit.determineHomePath(tabularConfig.homePath, this.executionEnv, tabularEnvs, variables, vault, confManager);
 
 
+    /**
+     * Smtp Connection
+     */
+    TabularInit.buildSmtpVariables(tabularEnvs, variables, vault, confManager);
 
 
     /**
@@ -656,9 +663,6 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public Path getConnectionVaultPath() {
-    return this.connectionVaultPath;
-  }
 
   public Set<DataPath> select(Set<DataUri> dataSelectors, boolean isStrict, MediaType mediaType) {
 
@@ -897,6 +901,10 @@ public class Tabular implements AutoCloseable {
 
   public Path getUserConfFilePath() {
     return TABLI_USER_HOME_PATH.resolve(TABLI_CONF_FILE_NAME);
+  }
+
+  public Path getConfPath() {
+    return this.confPath;
   }
 
 

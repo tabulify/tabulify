@@ -2,6 +2,8 @@ package com.tabulify.connection;
 
 import net.bytle.type.Attribute;
 
+import java.util.Map;
+
 /**
  * All built-in connection attribute
  */
@@ -18,7 +20,8 @@ public enum ConnectionAttribute implements Attribute {
   TIME_DATA_TYPE( "Time format data type to store time values", ConnectionAttValueTimeDataType.class, ConnectionAttValueTimeDataType.NATIVE),
   BOOLEAN_DATA_TYPE("Boolean data type used to store boolean values", ConnectionAttValueBooleanDataType.class,  ConnectionAttValueBooleanDataType.Native),
   MAX_NAME_IN_PATH( "The maximum number of names in a path", Integer.class, null),
-  MAX_CONCURRENT_THREAD( "The maximum number of threads that can be created against the system", Integer.class, null);
+  MAX_CONCURRENT_THREAD("The maximum number of threads that can be created against the system", Integer.class, null),
+  DRIVER("Jdbc Driver attributes", Map.class, null);
 
   private final String description;
 

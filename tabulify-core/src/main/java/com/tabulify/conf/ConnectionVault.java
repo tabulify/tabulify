@@ -29,7 +29,9 @@ import java.util.stream.Collectors;
 
 /**
  * A database store implementation based on an ini file
+ * Deprecated for {@link ConfManager}
  */
+@Deprecated
 public class ConnectionVault implements AutoCloseable {
 
 

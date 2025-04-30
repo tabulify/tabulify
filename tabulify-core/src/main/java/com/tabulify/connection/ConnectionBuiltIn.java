@@ -9,6 +9,7 @@ import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.fs.Fs;
 import net.bytle.os.Oss;
+import net.bytle.type.Casts;
 import net.bytle.type.Integers;
 import net.bytle.type.UriEnhanced;
 import net.bytle.type.Variable;
@@ -165,13 +166,13 @@ public class ConnectionBuiltIn {
     if (smtpToNames != null) {
       emailUri.addQueryProperty("to-names", smtpTo);
     }
-    String smtpAuth = (String) tabular.getVariable(TabularAttribute.SMTP_AUTH).getValueOrDefaultOrNull();
+    Boolean smtpAuth = (Boolean) tabular.getVariable(TabularAttribute.SMTP_AUTH).getValueOrDefaultOrNull();
     if (smtpAuth != null) {
-      emailUri.addQueryProperty("auth", smtpAuth);
+      emailUri.addQueryProperty("auth", Casts.castSafe(smtpAuth, String.class));
     }
-    String smtpTls = (String) tabular.getVariable(TabularAttribute.SMTP_TLS).getValueOrDefaultOrNull();
+    Boolean smtpTls = (Boolean) tabular.getVariable(TabularAttribute.SMTP_TLS).getValueOrDefaultOrNull();
     if (smtpTls != null) {
-      emailUri.addQueryProperty("tls", smtpTls);
+      emailUri.addQueryProperty("tls", Casts.castSafe(smtpTls, String.class));
     }
 
     Connection smtpConnection = Connection.createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.SMTP_CONNECTION, emailUri.toUri().toString())

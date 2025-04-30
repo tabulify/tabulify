@@ -1,13 +1,13 @@
 package com.tabulify.conf;
 
+import com.tabulify.Tabular;
 import com.tabulify.TabularAttribute;
 import com.tabulify.Vault;
+import com.tabulify.connection.Connection;
+import com.tabulify.connection.ConnectionAttribute;
 import net.bytle.exception.CastException;
 import net.bytle.fs.Fs;
-import net.bytle.type.Casts;
-import net.bytle.type.Enums;
-import net.bytle.type.Origin;
-import net.bytle.type.Variable;
+import net.bytle.type.*;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.BufferedWriter;
@@ -27,8 +27,15 @@ public class ConfManager implements AutoCloseable {
   private final Path path;
 
   private final Map<TabularAttribute, Variable> env = new HashMap<>();
+  private final Tabular tabular;
+  private final MapKeyIndependent<Connection> connections = new MapKeyIndependent<>();
 
-  public ConfManager(Path path, Vault vault) {
+  /**
+   * @param path    - the file
+   * @param vault   - the vault to create the variables
+   * @param tabular - tabular to create the connection
+   */
+  public ConfManager(Path path, Vault vault, Tabular tabular) {
 
     if (path == null) {
       throw new IllegalArgumentException("The configuration file path passed is null");
@@ -42,6 +49,7 @@ public class ConfManager implements AutoCloseable {
     }
     this.path = path;
     this.vault = vault;
+    this.tabular = tabular;
     try {
       parseYaml();
     } catch (CastException e) {
@@ -51,9 +59,9 @@ public class ConfManager implements AutoCloseable {
 
   }
 
-  public static ConfManager createFromPath(Path confPath, Vault vault) {
+  public static ConfManager createFromPath(Path confPath, Vault vault, Tabular tabular) {
 
-    return new ConfManager(confPath, vault);
+    return new ConfManager(confPath, vault, tabular);
   }
 
   public Variable getVariable(TabularAttribute name) {
@@ -104,11 +112,11 @@ public class ConfManager implements AutoCloseable {
       for (Map.Entry<String, Object> rootEntry : confMap.entrySet()) {
 
         String rootName = rootEntry.getKey();
-        ConfManagerAttribute rootAttribute;
+        ConfManagerRootAttribute rootAttribute;
         try {
-          rootAttribute = Casts.cast(rootName, ConfManagerAttribute.class);
+          rootAttribute = Casts.cast(rootName, ConfManagerRootAttribute.class);
         } catch (CastException e) {
-          throw new CastException("The root name (" + rootName + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(ConfManagerAttribute.class), e);
+          throw new CastException("The root name (" + rootName + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(ConfManagerRootAttribute.class), e);
         }
 
         switch (rootAttribute) {
@@ -118,7 +126,7 @@ public class ConfManager implements AutoCloseable {
             try {
               localEnvs = Casts.castToSameMap(rootEntry.getValue(), String.class, String.class);
             } catch (CastException e) {
-              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfManagerAttribute.VARIABLES)), e);
+              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfManagerRootAttribute.VARIABLES)), e);
             }
             for (Map.Entry<String, String> localEnv : localEnvs.entrySet()) {
 
@@ -135,14 +143,73 @@ public class ConfManager implements AutoCloseable {
             }
 
             break;
-        }
+          case CONNECTIONS:
 
+            Map<String, Object> localConnections;
+            try {
+              localConnections = Casts.castToSameMap(rootEntry.getValue(), String.class, Object.class);
+            } catch (CastException e) {
+              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfManagerRootAttribute.CONNECTIONS)), e);
+            }
+            Variable uri = null;
+            Set<Variable> variableMap = new SetKeyIndependent<>();
+            for (Map.Entry<String, Object> localConnection : localConnections.entrySet()) {
+
+              String connectionName = localConnection.getKey();
+              Map<String, Object> connectionAttributes = Casts.castToSameMap(localConnection.getValue(), String.class, Object.class);
+              for (Map.Entry<String, Object> confConnectionAttribute : connectionAttributes.entrySet()) {
+
+                String connectionAttributeAsString = confConnectionAttribute.getKey();
+                ConnectionAttribute connectionAttribute;
+                try {
+                  connectionAttribute = Casts.cast(connectionAttributeAsString, ConnectionAttribute.class);
+                } catch (Exception e) {
+                  throw new CastException("The connection attribute (" + connectionAttributeAsString + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(ConnectionAttribute.class), e);
+                }
+                if (connectionAttribute == ConnectionAttribute.DRIVER) {
+                  continue;
+                }
+
+                Variable variable;
+                try {
+                  variable = vault.createVariableWithRawValue(connectionAttribute, confConnectionAttribute.getValue(), Origin.USER);
+
+                } catch (Exception e) {
+                  throw new RuntimeException("An error has occurred while reading the connection attribute " + connectionAttributeAsString + " value for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
+                }
+                if (connectionAttribute == ConnectionAttribute.URI) {
+                  uri = variable;
+                  continue;
+                }
+                variableMap.add(variable);
+              }
+
+              if (uri == null) {
+                throw new RuntimeException("The uri is a mandatory variable and was not found for the connection (" + connectionName + ") in the conf file (" + this + ")");
+              }
+
+              /**
+               * Create the connection
+               */
+              Connection connection = Connection.createConnectionFromProviderOrDefault(this.tabular, connectionName, (String) uri.getValueOrDefaultOrNull());
+              // variables map should be in the building of the connection
+              // as they may be used for the default values
+              connection.setVariables(variableMap);
+              connection.addVariable(vault.createVariableSafe(ConnectionAttribute.ORIGIN, Origin.USER, Origin.INTERNAL));
+              connections.put(connectionName, connection);
+
+            }
+
+            break;
+          default:
+            throw new RuntimeException("Internal Error: the root attribute " + rootAttribute + " should be processed");
+        }
       }
 
     }
 
-
   }
+
 
   private static String badMapCast(Object data, String keyPath) {
     String message = "The " + keyPath + " configuration must be in a map format. ";
@@ -222,4 +289,14 @@ public class ConfManager implements AutoCloseable {
     Variable variable = vault.createVariableWithRawValue(tabularAttribute, value, Origin.USER);
     env.put(tabularAttribute, variable);
   }
+
+  @Override
+  public String toString() {
+    return path.toAbsolutePath().toString();
+  }
+
+  public Connection getConnection(String name) {
+    return this.connections.get(name);
+  }
+
 }

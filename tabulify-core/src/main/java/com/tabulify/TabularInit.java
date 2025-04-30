@@ -12,7 +12,10 @@ import net.bytle.type.*;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.tabulify.Tabular.TABLI_USER_HOME_PATH;
 
@@ -269,4 +272,43 @@ public class TabularInit {
   }
 
 
+  public static void buildSmtpVariables(TabularEnvs tabularEnvs, Map<TabularAttribute, Variable> variables, Vault vault, ConfManager confManager) {
+
+    List<TabularAttribute> smtpAttributes = Arrays.stream(TabularAttribute.values())
+      .filter(a -> a.toString().toLowerCase().startsWith("smtp"))
+      .collect(Collectors.toList());
+    for (TabularAttribute smtpAttribute : smtpAttributes) {
+
+      Vault.VariableBuilder variableBuilder = vault.variableBuilder(smtpAttribute);
+
+      /**
+       * Conf Manager
+       */
+      Variable confHomeVariable = confManager.getVariable(smtpAttribute);
+      if (confHomeVariable != null) {
+        variables.put((TabularAttribute) confHomeVariable.getAttribute(), confHomeVariable);
+        continue;
+      }
+
+      // Env
+      KeyNormalizer envName = tabularEnvs.getOsTabliEnvName(smtpAttribute);
+      String envValue = tabularEnvs.getOsEnvValue(envName);
+      if (envValue != null) {
+        Variable variable = variableBuilder
+          .setOrigin(Origin.OS)
+          .buildFromClearValue(envValue);
+        variables.put((TabularAttribute) variable.getAttribute(), variable);
+        continue;
+      }
+
+      // None
+      Variable variable = variableBuilder
+        .setOrigin(Origin.INTERNAL)
+        .buildFromClearValue(null);
+      variables.put((TabularAttribute) variable.getAttribute(), variable);
+
+    }
+
+
+  }
 }

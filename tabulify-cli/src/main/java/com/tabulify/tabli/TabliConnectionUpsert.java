@@ -86,7 +86,7 @@ public class TabliConnectionUpsert {
 
 
     // Main
-    Path connectionVaultPath = tabular.getConnectionVaultPath();
+    Path connectionVaultPath = tabular.getConfPath();
     try (ConnectionVault connectionVault = ConnectionVault.create(tabular, connectionVaultPath)) {
       Connection connection = connectionVault.getConnection(connectionName);
       if (connection == null) {

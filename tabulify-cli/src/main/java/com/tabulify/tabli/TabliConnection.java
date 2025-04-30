@@ -1,11 +1,11 @@
 package com.tabulify.tabli;
 
 
+import com.tabulify.Tabular;
+import com.tabulify.spi.DataPath;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
-import com.tabulify.Tabular;
-import com.tabulify.spi.DataPath;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,13 +17,11 @@ import static com.tabulify.tabli.TabliWords.*;
 public class TabliConnection {
 
 
-
-
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
 
     childCommand.setDescription("Management of the Datastore Vault",
       "",
-      "(Location: "+tabular.getConnectionVaultPath()+")"
+      "(Location: " + tabular.getConfPath() + ")"
     );
 
     childCommand.addChildCommand(TabliWords.ADD_COMMAND)
@@ -43,35 +41,34 @@ public class TabliConnection {
     List<DataPath> feedbackDataPaths = new ArrayList<>();
 
     List<CliCommand> commands = cliParser.getFoundedChildCommands();
-    if (commands.size() == 0) {
-      throw new IllegalArgumentException("A known command must be given for the command ("+ CliUsage.getFullChainOfCommand(childCommand)+").");
-    } else {
-      for (CliCommand subChildCommand : commands) {
-        LOGGER_TABLI.info("The command (" + subChildCommand + ") was found");
-        switch (subChildCommand.getName()) {
-          case ADD_COMMAND:
-            feedbackDataPaths = TabliConnectionAdd.run(tabular, subChildCommand);
-            break;
-          case UPSERT_COMMAND:
-            feedbackDataPaths = TabliConnectionUpsert.run(tabular, subChildCommand);
-            break;
-          case LIST_COMMAND:
-            feedbackDataPaths = TabliConnectionList.run(tabular, subChildCommand);
-            break;
-          case DELETE_COMMAND:
-            feedbackDataPaths = TabliConnectionDelete.run(tabular, subChildCommand);
-            break;
-          case INFO_COMMAND:
-            feedbackDataPaths = TabliConnectionInfo.run(tabular, subChildCommand);
-            break;
-          case PING_COMMAND:
-            feedbackDataPaths = TabliConnectionPing.run(tabular, subChildCommand);
-            break;
-          default:
-            throw new IllegalArgumentException("The sub-command (" + subChildCommand.getName() + ") is unknown for the command ("+ CliUsage.getFullChainOfCommand(childCommand)+")");
-        }
-
+    if (commands.isEmpty()) {
+      throw new IllegalArgumentException("A known command must be given for the command (" + CliUsage.getFullChainOfCommand(childCommand) + ").");
+    }
+    for (CliCommand subChildCommand : commands) {
+      LOGGER_TABLI.info("The command (" + subChildCommand + ") was found");
+      switch (subChildCommand.getName()) {
+        case ADD_COMMAND:
+          feedbackDataPaths = TabliConnectionAdd.run(tabular, subChildCommand);
+          break;
+        case UPSERT_COMMAND:
+          feedbackDataPaths = TabliConnectionUpsert.run(tabular, subChildCommand);
+          break;
+        case LIST_COMMAND:
+          feedbackDataPaths = TabliConnectionList.run(tabular, subChildCommand);
+          break;
+        case DELETE_COMMAND:
+          feedbackDataPaths = TabliConnectionDelete.run(tabular, subChildCommand);
+          break;
+        case INFO_COMMAND:
+          feedbackDataPaths = TabliConnectionInfo.run(tabular, subChildCommand);
+          break;
+        case PING_COMMAND:
+          feedbackDataPaths = TabliConnectionPing.run(tabular, subChildCommand);
+          break;
+        default:
+          throw new IllegalArgumentException("The sub-command (" + subChildCommand.getName() + ") is unknown for the command (" + CliUsage.getFullChainOfCommand(childCommand) + ")");
       }
+
     }
     return feedbackDataPaths;
   }

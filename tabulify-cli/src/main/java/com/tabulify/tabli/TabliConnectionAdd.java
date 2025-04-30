@@ -94,7 +94,7 @@ public class TabliConnectionAdd {
 
 
     // Main
-    Path connectionVaultPath = tabular.getConnectionVaultPath();
+    Path connectionVaultPath = tabular.getConfPath();
     Connection connection;
     try (ConnectionVault connectionVault = ConnectionVault.create(tabular, connectionVaultPath)) {
 
