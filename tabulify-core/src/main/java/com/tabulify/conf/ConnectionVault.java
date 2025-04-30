@@ -1,9 +1,12 @@
-package com.tabulify.connection;
+package com.tabulify.conf;
 
 
 import com.tabulify.DbLoggers;
 import com.tabulify.Tabular;
 import com.tabulify.Vault;
+import com.tabulify.connection.Connection;
+import com.tabulify.connection.ConnectionAttribute;
+import com.tabulify.connection.ConnectionHowTos;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
 import net.bytle.fs.Fs;
@@ -72,7 +75,7 @@ public class ConnectionVault implements AutoCloseable {
   }
 
   public static ConnectionVault create(Tabular tabular, Path connectionVaultPath, String passphrase) {
-    return new ConnectionVault(tabular, connectionVaultPath, Vault.create(tabular, passphrase));
+    return new ConnectionVault(tabular, connectionVaultPath, Vault.create(passphrase, null));
   }
 
   public static ConnectionVault create(Tabular tabular, Path connectionVaultPath, Vault vault) {
@@ -259,9 +262,9 @@ public class ConnectionVault implements AutoCloseable {
         try {
 
           if (connectionAttribute == null) {
-            variable = vault.createVariable(propertyName, value, Origin.USER);
+            variable = vault.createVariableWithRawValue(propertyName, value, Origin.USER);
           } else {
-            variable = vault.createVariable(connectionAttribute, value, Origin.USER);
+            variable = vault.createVariableWithRawValue(connectionAttribute, value, Origin.USER);
           }
           if (connectionAttribute == ConnectionAttribute.URI) {
             uri = variable;

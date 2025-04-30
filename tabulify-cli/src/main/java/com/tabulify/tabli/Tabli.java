@@ -1,11 +1,10 @@
 package com.tabulify.tabli;
 
 import com.tabulify.Tabular;
-import com.tabulify.TabularAttributes;
+import com.tabulify.TabularAttribute;
 import com.tabulify.TabularExecEnv;
-import com.tabulify.TabularOsEnv;
+import com.tabulify.conf.ConnectionVault;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionVault;
 import com.tabulify.memory.MemoryDataPath;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.ResourcePath;
@@ -72,7 +71,6 @@ public class Tabli {
     rootCommand.addProperty(ENVIRONMENT)
       .setDescription("The name of the environment")
       .setValueName("env")
-      .setEnvName(TabularOsEnv.TABLI_ENV)
       .setShortName("-e");
 
     rootCommand.addFlag(TabliWords.HELP_FLAG)
@@ -90,16 +88,9 @@ public class Tabli {
       .setValueName("error|warning|tip|info|fine")
       .setDefaultValue("info");
 
-    rootCommand.addProperty(CONNECTION_VAULT_PROPERTY)
-      .setDescription("The path where a connection vault is located")
-      .setValueName("path")
-      .setEnvName(TabularOsEnv.TABLI_CONNECTION_VAULT)
-      .setShortName("-cv");
-
     rootCommand.addProperty(TabliWords.PASSPHRASE_PROPERTY)
       .setShortName("-pp")
       .setDescription("A passphrase (master password) to decrypt the encrypted vault values")
-      .setEnvName(TabularOsEnv.TABLI_PASSPHRASE)
       .setValueName("passphrase");
 
     rootCommand.addFlag(TabliWords.NOT_STRICT_FLAG);
@@ -133,7 +124,6 @@ public class Tabli {
       .setShortName("-ph")
       .setGroup("Project Home")
       .setDescription("The project home")
-      .setEnvName(TabularOsEnv.TABLI_PROJECT_HOME)
       .setValueName("path");
 
 
@@ -179,7 +169,7 @@ public class Tabli {
      * Set the connection vault
      * Passphrase first
      */
-    Path commandLineConnectionVault = cliParser.getPath(CONNECTION_VAULT_PROPERTY);
+
 
     // Command line last (higher priority)
     Path confPath = cliParser.getPath(CONF_VARIABLES_PATH_PROPERTY);
@@ -198,7 +188,6 @@ public class Tabli {
     try (Tabular tabular = Tabular.tabularConfig()
       .setPassphrase(passphrase)
       .setProjectHome(projectHome)
-      .setConnectionVault(commandLineConnectionVault)
       .setConf(confPath)
       .setExecEnv(execEnv)
       .build()
@@ -212,7 +201,7 @@ public class Tabli {
       /**
        * Creation howto connection user vault if it does not exist
        */
-      Path userConnectionVaultPath = tabular.getUserConnectionVaultPath();
+      Path userConnectionVaultPath = tabular.getUserConfFilePath();
       if(!Files.exists(userConnectionVaultPath)){
         ConnectionVault.create(tabular,userConnectionVaultPath)
           .loadHowtoConnections()
@@ -268,7 +257,7 @@ public class Tabli {
         String logLevel = cliParser.getString(LOG_LEVEL_LONG_OPTION).toLowerCase();
         if (!cliParser.has(LOG_LEVEL_LONG_OPTION)) {
           try {
-            logLevel = tabular.getVariable(TabularAttributes.LOG_LEVEL, String.class);
+            logLevel = tabular.getVariable(TabularAttribute.LOG_LEVEL, String.class);
           } catch (NoVariableException | NoValueException e) {
             logLevel = "info";
           } catch (CastException e) {
@@ -305,10 +294,7 @@ public class Tabli {
 
         LOGGER_TABLI.info("The default connection was set to: `" + tabular.getDefaultConnection().getName() + "`");
 
-        if (tabular.isProjectRun()) {
-          LOGGER_TABLI.info("The project variable file is: `" + tabular.getProjectConfigurationFile().getVariablesPath().toAbsolutePath() + "`");
-          LOGGER_TABLI.info("The project connection vault is: `" + tabular.getProjectConfigurationFile().getConnectionVaultPath().toAbsolutePath() + "`");
-        } else {
+        if (!tabular.isProjectRun()) {
           LOGGER_TABLI.info("No project was found.");
         }
 
@@ -564,7 +550,7 @@ public class Tabli {
    */
   public static boolean hasBuildFileInRunningDirectory() {
     /**
-     * Not the same than {@link TabularAttributes.IS_DEV}
+     * Not the same than {@link TabularAttribute.IS_DEV}
      * that checks if there is a `build` directory in the children
      */
     boolean buildFileFound = false;

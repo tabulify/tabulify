@@ -1,7 +1,6 @@
 package com.tabulify.tabli;
 
 import com.tabulify.Tabular;
-import com.tabulify.TabularVariables;
 import com.tabulify.model.RelationDef;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
@@ -124,9 +123,10 @@ public class TabliVariableList {
       .addColumn("origin")
       .addColumn("description");
 
-    TabularVariables tabularVariables = tabular.getEnvVariables();
     try (InsertStream insertStream = feedbackDataDef.getDataPath().getInsertStream()) {
-      tabularVariables.getVariables()
+      tabular
+        .getVariables()
+        .values()
         .stream()
         .filter(e -> {
           if (listOrigins.contains(Origin.ALL)) {

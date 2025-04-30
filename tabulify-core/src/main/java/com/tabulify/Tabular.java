@@ -1,6 +1,11 @@
 package com.tabulify;
 
-import com.tabulify.connection.*;
+import com.tabulify.conf.ConnectionVault;
+import com.tabulify.conf.TabularEnvs;
+import com.tabulify.connection.Connection;
+import com.tabulify.connection.ConnectionBuiltIn;
+import com.tabulify.connection.ConnectionHowTos;
+import com.tabulify.connection.ConnectionOrigin;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.FsDataPath;
 import com.tabulify.memory.MemoryConnection;
@@ -25,8 +30,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.tabulify.TabularAttributes.USER_CONNECTION_VAULT;
-import static com.tabulify.TabularAttributes.USER_VARIABLES_FILE;
+import static com.tabulify.TabularAttribute.USER_CONNECTION_VAULT;
+import static com.tabulify.TabularAttribute.USER_VARIABLES_FILE;
 
 /**
  * A tabular is a global domain that represents the runtime environment
@@ -41,15 +46,14 @@ import static com.tabulify.TabularAttributes.USER_VARIABLES_FILE;
 public class Tabular implements AutoCloseable {
 
 
-  static final String TABLI_PREFIX = "tabli";
-  static final String TABLI_CONF_FILE_NAME = "." + TABLI_PREFIX + ".yml";
-  static final Path USER_HOME_PATH = Fs.getUserHome().resolve("." + TABLI_PREFIX);
+  public static final String TABLI_NAME = "tabli";
+  static final String TABLI_CONF_FILE_NAME = "." + TABLI_NAME + ".yml";
+  public static final Path TABLI_USER_HOME_PATH = Fs.getUserHome().resolve("." + TABLI_NAME);
 
-  final Path confPath;
+  private final Path confPath;
   private final Vault vault;
   private final Map<String, Connection> howtoConnections;
-  private final TabularExecEnv env;
-  private final TabularVariables tabularVariables;
+  private final TabularExecEnv executionEnv;
   private final Path projectHomePath;
 
   // The default connection added to a data URI if it does not have it.
@@ -73,16 +77,22 @@ public class Tabular implements AutoCloseable {
 
   /**
    * The exit status
-   * We may want to show what we have and not throw an error
+   * We may want to show what we have an error but not throw it
    * Example: of all transfers, if only one has failed
    * we will gather the transfers data to create an output
    * and then fail
    */
   private int exitStatus = 0;
   private Path runningPipelineScript;
-  private Path homePath;
+  private final Path homePath;
   private Path connectionVaultPath;
 
+
+  /**
+   * We may not add derived generated variables.
+   * so the key identifier is not a string
+   */
+  private final Map<TabularAttribute, Variable> variables = new HashMap<>();
 
   /**
    * Where to store sqlite database by default
@@ -108,34 +118,29 @@ public class Tabular implements AutoCloseable {
      */
     Logger.getLogger("oracle.jdbc").setLevel(Level.SEVERE);
 
+    // All determine functions utility
+    // we don't pass the tabular object so that we have dependency in the function signature
+    TabularEnvs tabularEnvs = new TabularEnvs(tabularConfig.templatingEnv);
 
     /**
      * Building Helper
      */
-    // Templating env (ie free form os/sys env used to template variable value)
-    HashMap<String, String> templatingEnv = new HashMap<>(System.getenv());
-    templatingEnv.putAll(tabularConfig.templatingEnv);
-    this.vault = Vault.create(this, tabularConfig.passphrase, templatingEnv);
-
-    // All determine functions utility
-    // we don't pass the tabular object so that we have dependency in the function signature
-    TabularInit tabularInit = new TabularInit();
-
+    this.vault = Vault.create(tabularConfig.passphrase, tabularEnvs);
 
     /**
-     * Env
+     * Execution Env
      */
-    this.env = tabularInit.determineEnv(tabularConfig.execEnv, vault);
+    this.executionEnv = TabularInit.determineEnv(tabularConfig.execEnv, vault, tabularEnvs, variables);
 
     /**
      * Home Path
      */
-    this.homePath = tabularInit.determineHomePath(tabularConfig.homePath, this.env);
+    this.homePath = TabularInit.determineHomePath(tabularConfig.homePath, this.executionEnv, tabularEnvs, variables, vault);
 
     /**
      * Project
      */
-    this.projectHomePath = tabularInit.determineProjectHome(tabularConfig.projectHome);
+    this.projectHomePath = TabularInit.determineProjectHome(tabularConfig.projectHome, vault, variables, tabularEnvs);
     if (projectHomePath != null) {
       DbLoggers.LOGGER_TABULAR_START.info("This is a project run (" + projectHomePath + ")");
     } else {
@@ -145,27 +150,23 @@ public class Tabular implements AutoCloseable {
     /**
      * Conf Path
      */
-    this.confPath = tabularInit.determineConfPath(tabularConfig.confPath, vault, this.projectHomePath);
-
-
-    this.tabularVariables = TabularVariables.create(this, null);
+    this.confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, this.projectHomePath, tabularEnvs);
 
 
     /**
-     * ConnectionVault
+     * Check for env
      */
-    this.connectionVaultPath = tabularConfig.connectionVault;
-    if (this.connectionVaultPath == null) {
-      this.connectionVaultPath = getUserConnectionVaultPath();
-    }
+    TabularInit.checkForEnvNotProcessed(tabularEnvs, variables);
+
 
     /**
      * After init
      */
     // Load connections
     ConnectionBuiltIn.loadBuiltInConnections(this);
-    if (tabularConfig.connectionVault != null) {
-      loadConnections(tabularConfig.connectionVault, ConnectionOrigin.COMMAND_LINE);
+    if (tabularConfig.confPath != null) {
+      throw new RuntimeException("Not yet implemented");
+      //loadConnections(tabularConfig.connectionVault, ConnectionOrigin.COMMAND_LINE);
     }
 
     // Default Connection
@@ -245,20 +246,6 @@ public class Tabular implements AutoCloseable {
 
   }
 
-  /**
-   * @param name - the variable name
-   * @param def  - the default
-   * @return the value or the default if not found
-   */
-  public String getVariableAsStringOrDefault(String name, String def) {
-
-    try {
-      return this.getVariable(name, String.class);
-    } catch (NoValueException | CastException e) {
-      return def;
-    }
-
-  }
 
   public void setDefaultConnection(Connection connection) {
     this.defaultConnection = connection;
@@ -527,19 +514,6 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  /**
-   * @return the default data store path
-   */
-  public Path getUserConnectionVaultPath() {
-    try {
-      return (Path) this.getEnvVariables().getVariable(USER_CONNECTION_VAULT).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
-      // should not happen
-      throw new InternalException(e);
-    }
-  }
-
-
   public Tabular setExitStatus(int exitStatus) {
     this.exitStatus = exitStatus;
     return this;
@@ -619,7 +593,7 @@ public class Tabular implements AutoCloseable {
 
   public Boolean isIdeEnv() {
 
-    return this.env.equals(TabularExecEnv.IDE);
+    return this.executionEnv.equals(TabularExecEnv.IDE);
 
   }
 
@@ -675,16 +649,8 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public <T> T getVariable(String key, Class<T> clazz) throws NoValueException, CastException {
-    Variable variable = this.tabularVariables.getVariable(key);
-    if (variable == null) {
-      throw new NoValueException("The variable (" + key + ") was not found");
-    }
-    return variable.getValueOrDefaultCastAs(clazz);
-  }
-
-  public <T> T getVariable(Attribute attribute, Class<T> clazz) throws NoValueException, CastException, NoVariableException {
-    Variable variable = this.tabularVariables.getVariable(attribute);
+  public <T> T getVariable(TabularAttribute attribute, Class<T> clazz) throws NoValueException, CastException, NoVariableException {
+    Variable variable = this.variables.get(attribute);
     if (variable == null) {
       throw new NoValueException("The variable (" + attribute + ") was not found");
     }
@@ -804,9 +770,6 @@ public class Tabular implements AutoCloseable {
     return (FsDataPath) this.getTempConnection().getDataPath("tabli" + prefix + UUID.randomUUID());
   }
 
-  public TabularVariables getEnvVariables() {
-    return this.tabularVariables;
-  }
 
   public boolean isProjectRun() {
     return this.projectHomePath != null;
@@ -821,7 +784,7 @@ public class Tabular implements AutoCloseable {
    */
   public TabularExecEnv getExecutionEnvironment() {
 
-    return this.env;
+    return this.executionEnv;
   }
 
 
@@ -867,55 +830,22 @@ public class Tabular implements AutoCloseable {
     conn.close();
   }
 
-  public Variable getName() {
-    try {
-      return this.getEnvVariables().getVariable(TabularAttributes.APP_NAME);
-    } catch (Exception | NoVariableException e) {
-      // ok should not happen
-      throw new RuntimeException("Internal Error, the name should exists", e);
-    }
+  public String getName() {
+    return TABLI_NAME;
   }
 
   public Variable createVariable(String key, Object value) throws Exception {
-    return this.getVault().createVariable(key, value, Origin.INTERNAL);
+    return this.getVault().createVariableWithRawValue(key, value, Origin.INTERNAL);
   }
 
   public Variable createVariable(Attribute attribute, Object value) throws Exception {
-    return this.getVault().createVariable(attribute, value, Origin.INTERNAL);
+    return this.getVault().createVariableWithRawValue(attribute, value, Origin.INTERNAL);
   }
 
-  public Variable getVariable(Attribute attribute) throws NoVariableException {
-    return getVariable(attribute.toString());
+  public Variable getVariable(TabularAttribute attribute) {
+    return this.variables.get(attribute);
   }
 
-  public Variable getVariable(String attribute) throws NoVariableException {
-    Variable variable = this.tabularVariables.getVariable(attribute);
-    if (variable == null) {
-      throw new NoVariableException();
-    }
-    return variable;
-  }
-
-  public Tabular setVariable(Attribute attribute, Object value) {
-
-    try {
-      this.getVariable(attribute)
-        .setOriginalValue(value);
-    } catch (NoVariableException e) {
-      try {
-        Variable variable = this.createVariable(attribute, value);
-        this.addVariable(variable);
-      } catch (Exception ex) {
-        throw new RuntimeException("Error while trying to create the variable (" + attribute + ")" + e.getMessage(), e);
-      }
-    }
-
-    return this;
-  }
-
-  void addVariable(Variable variable) {
-    this.tabularVariables.addVariable(variable);
-  }
 
   public MemoryDataPath createMemoryDataPath(String path) {
     return this.getMemoryDataStore().getDataPath(path);
@@ -963,12 +893,19 @@ public class Tabular implements AutoCloseable {
     return this.sqliteHome;
   }
 
+  public Map<TabularAttribute, Variable> getVariables() {
+    return this.variables;
+  }
+
+  public Path getUserConfFilePath() {
+    return TABLI_USER_HOME_PATH.resolve(TABLI_CONF_FILE_NAME);
+  }
+
 
   public static class TabularConfig {
     private Path homePath;
     private String passphrase;
     private Path projectHome;
-    private Path connectionVault;
     private Path confPath;
     private TabularExecEnv execEnv;
     private final Map<String, String> templatingEnv = new HashMap<>();
@@ -980,11 +917,6 @@ public class Tabular implements AutoCloseable {
 
     public TabularConfig setProjectHome(Path projectHome) {
       this.projectHome = projectHome;
-      return this;
-    }
-
-    public TabularConfig setConnectionVault(Path connectionVault) {
-      this.connectionVault = connectionVault;
       return this;
     }
 

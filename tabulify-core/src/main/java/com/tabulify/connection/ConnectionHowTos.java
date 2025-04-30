@@ -53,8 +53,7 @@ public class ConnectionHowTos {
 
     Path sqliteHome = tabular.getSqliteHome();
     if (sqliteHome == null) {
-      sqliteHome = tabular.getUserHomePath();
-      ;
+      sqliteHome = Tabular.TABLI_USER_HOME_PATH;
     }
     Path dbFile = sqliteHome.resolve(connectionName + ".db");
     Fs.createDirectoryIfNotExists(dbFile.getParent());

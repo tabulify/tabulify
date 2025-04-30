@@ -1,11 +1,11 @@
 package com.tabulify.tabli;
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
 import com.tabulify.flow.step.EnrichStep;
 import com.tabulify.flow.step.SelectSupplierArgument;
 import com.tabulify.flow.step.TargetArguments;
 import com.tabulify.flow.step.TransferArgumentProperty;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
 import net.bytle.type.Key;
 import net.bytle.type.KeyNormalizer;
 
@@ -156,7 +156,6 @@ public class TabliWords {
 
   static final String OUTPUT_DATA_URI = "--output-data-uri";
   // Options used in all sub actions
-  static final String CONNECTION_VAULT_PROPERTY = "--connection-vault";
   static final String PROJECT_HOME = "--project-home";
 
 

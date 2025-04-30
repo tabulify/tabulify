@@ -1,13 +1,13 @@
 package com.tabulify.tabli;
 
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
 import com.tabulify.Tabular;
+import com.tabulify.conf.ConnectionVault;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionVault;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
 
 import java.util.Collections;
 import java.util.List;

@@ -1,4 +1,4 @@
-package net.bytle.conf;
+package com.tabulify.conf;
 
 import net.bytle.fs.Fs;
 import net.bytle.type.Casts;

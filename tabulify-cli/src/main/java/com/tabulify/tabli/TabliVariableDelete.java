@@ -1,12 +1,12 @@
 package com.tabulify.tabli;
 
+import com.tabulify.Tabular;
+import com.tabulify.conf.ConfManager;
+import com.tabulify.spi.DataPath;
+import com.tabulify.stream.InsertStream;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
-import net.bytle.conf.ConfManager;
-import com.tabulify.Tabular;
-import com.tabulify.spi.DataPath;
-import com.tabulify.stream.InsertStream;
 
 import java.nio.file.Path;
 import java.util.Collections;

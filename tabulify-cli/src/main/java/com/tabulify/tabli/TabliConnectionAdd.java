@@ -1,14 +1,14 @@
 package com.tabulify.tabli;
 
 
+import com.tabulify.Tabular;
+import com.tabulify.conf.ConnectionVault;
+import com.tabulify.connection.Connection;
+import com.tabulify.jdbc.SqlConnectionAttribute;
+import com.tabulify.spi.DataPath;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
-import com.tabulify.Tabular;
-import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionVault;
-import com.tabulify.jdbc.SqlConnectionAttribute;
-import com.tabulify.spi.DataPath;
 import net.bytle.log.Log;
 import net.bytle.log.Logs;
 

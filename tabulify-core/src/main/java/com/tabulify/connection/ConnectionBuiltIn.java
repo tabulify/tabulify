@@ -1,13 +1,12 @@
 package com.tabulify.connection;
 
 import com.tabulify.Tabular;
-import com.tabulify.Vault;
+import com.tabulify.TabularAttribute;
 import com.tabulify.memory.MemoryConnectionProvider;
 import com.tabulify.noop.NoopConnectionProvider;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.IllegalStructure;
-import net.bytle.exception.NoVariableException;
 import net.bytle.fs.Fs;
 import net.bytle.os.Oss;
 import net.bytle.type.Integers;
@@ -51,21 +50,6 @@ public class ConnectionBuiltIn {
    * Create the built-in, internal connections
    */
   public static void loadBuiltInConnections(Tabular tabular) {
-
-    /**
-     * Connection (should be created after the {@link Vault})
-     * Loaded by order of precedence
-     */
-    if (tabular.getProjectConfigurationFile() != null) {
-      String localFileUrl = tabular.getProjectConfigurationFile()
-        .getProjectDirectory()
-        .toAbsolutePath()
-        .normalize()
-        .toUri()
-        .toString();
-      tabular.createRuntimeConnection(ConnectionBuiltIn.PROJECT_CONNECTION, localFileUrl)
-        .setDescription("The project home directory");
-    }
 
     /**
      * Internal datastores
@@ -146,22 +130,20 @@ public class ConnectionBuiltIn {
     UriEnhanced emailUri = UriEnhanced.create()
       .setScheme("smtp");
 
-    String smtpHostKey = "SMTP_HOST";
-    String smtpHost = tabular.getVariableAsStringOrDefault(smtpHostKey, "localhost");
+    String smtpHost = tabular.getVariable(TabularAttribute.SMTP_HOST).getValueOrDefaultAsStringNotNull();
     try {
       emailUri.setHost(smtpHost);
     } catch (IllegalStructure e) {
-      throw IllegalArgumentExceptions.createFromMessage("The environment variable (" + smtpHostKey + ") has a invalid value (" + smtpHost + "). Error: " + e.getMessage(), e);
+      throw IllegalArgumentExceptions.createFromMessage("The variable (" + TabularAttribute.SMTP_HOST + ") has a invalid value (" + smtpHost + "). Error: " + e.getMessage(), e);
     }
-    String smtpPortEnv = "SMTP_PORT";
-    String smtpPort = tabular.getVariableAsStringOrDefault(smtpPortEnv, "25");
+    String smtpPort = tabular.getVariable(TabularAttribute.SMTP_PORT).getValueOrDefaultAsStringNotNull();
     try {
       emailUri.setPort(Integers.createFromObject(smtpPort).toInteger());
     } catch (CastException e) {
-      throw IllegalArgumentExceptions.createFromMessage("The environment variable (" + smtpPortEnv + ") has a invalid value (" + smtpPort + "). Error: " + e.getMessage(), e);
+      throw IllegalArgumentExceptions.createFromMessage("The variable (" + TabularAttribute.SMTP_PORT + ") has a invalid value (" + smtpPort + "). Error: " + e.getMessage(), e);
     }
 
-    String smtpFrom = tabular.getVariableAsStringOrDefault("SMTP_FROM", null);
+    String smtpFrom = (String) tabular.getVariable(TabularAttribute.SMTP_FROM).getValueOrDefaultOrNull();
     if (smtpFrom != null) {
       emailUri.addQueryProperty("from", smtpFrom);
     } else {
@@ -171,42 +153,39 @@ public class ConnectionBuiltIn {
         // oeps
       }
     }
-    String smtpFromName = tabular.getVariableAsStringOrDefault("SMTP_FROM_NAME", null);
+    String smtpFromName = (String) tabular.getVariable(TabularAttribute.SMTP_FROM_NAME).getValueOrDefaultOrNull();
     if (smtpFromName != null) {
       emailUri.addQueryProperty("from-name", smtpFrom);
     }
-    String smtpTo = tabular.getVariableAsStringOrDefault("SMTP_TO", null);
+    String smtpTo = (String) tabular.getVariable(TabularAttribute.SMTP_TO).getValueOrDefaultOrNull();
     if (smtpTo != null) {
       emailUri.addQueryProperty("to", smtpTo);
     }
-    String smtpToNames = tabular.getVariableAsStringOrDefault("SMTP_TO_NAMES", null);
+    String smtpToNames = (String) tabular.getVariable(TabularAttribute.SMTP_TO_NAMES).getValueOrDefaultOrNull();
     if (smtpToNames != null) {
       emailUri.addQueryProperty("to-names", smtpTo);
     }
-    String smtpAuth = tabular.getVariableAsStringOrDefault("SMTP_AUTH", null);
+    String smtpAuth = (String) tabular.getVariable(TabularAttribute.SMTP_AUTH).getValueOrDefaultOrNull();
     if (smtpAuth != null) {
       emailUri.addQueryProperty("auth", smtpAuth);
     }
-    String smtpTls = tabular.getVariableAsStringOrDefault("SMTP_TLS", null);
+    String smtpTls = (String) tabular.getVariable(TabularAttribute.SMTP_TLS).getValueOrDefaultOrNull();
     if (smtpTls != null) {
       emailUri.addQueryProperty("tls", smtpTls);
     }
 
     Connection smtpConnection = Connection.createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.SMTP_CONNECTION, emailUri.toUri().toString())
       .setOrigin(ConnectionOrigin.BUILT_IN);
-    String smtpUser = tabular.getVariableAsStringOrDefault("SMTP_USER", null);
+    String smtpUser = (String) tabular.getVariable(TabularAttribute.SMTP_USER).getValueOrDefaultOrNull();
     if (smtpUser != null) {
       smtpConnection.setUser(smtpUser);
     }
 
-    try {
-      Variable smtpPwd = tabular.getVariable("SMTP_PWD");
-      smtpConnection.setPassword(smtpPwd);
-    } catch (NoVariableException e) {
-      // ok
-    }
+    Variable smtpPwd = tabular.getVariable(TabularAttribute.SMTP_USER);
+    smtpConnection.addVariable(smtpPwd);
 
-    String smtpDebug = tabular.getVariableAsStringOrDefault("SMTP_DEBUG", null);
+
+    String smtpDebug = (String) tabular.getVariable(TabularAttribute.SMTP_USER).getValueOrDefaultOrNull();
     if (smtpDebug != null) {
       emailUri.addQueryProperty("debug", smtpDebug);
     }

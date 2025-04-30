@@ -3,10 +3,10 @@ package com.tabulify.connection;
 import net.bytle.type.AttributeValue;
 
 /**
- * The data type of a date in the case
+ * The datatype of a date in the case
  * that the connection system is not implementing it
- *
- * Ie Used when the database does not supports the SQL DATE and/or TIMESTAMP data type
+ * <p></p>
+ * Ie Used when the database does not support the SQL DATE and/or TIMESTAMP data type
  * (ie SQLite for instance)
  *
  *

@@ -1,14 +1,12 @@
 package com.tabulify.fs;
 
 import com.tabulify.DbLoggers;
-import com.tabulify.TabularAttributes;
+import com.tabulify.TabularAttribute;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataPathAbs;
 import com.tabulify.spi.DataPathAttribute;
 import net.bytle.crypto.Digest;
 import net.bytle.exception.NoParentException;
-import net.bytle.exception.NoValueException;
-import net.bytle.exception.NoVariableException;
 import net.bytle.fs.Fs;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
@@ -131,12 +129,7 @@ public abstract class FsDataPathAbs extends DataPathAbs implements FsDataPath {
 
   @Override
   public FsDataPath getChildAsTabular(String name) {
-    String extension;
-    try {
-      extension = (String) getConnection().getTabular().getVariable(TabularAttributes.DEFAULT_FILE_SYSTEM_TABULAR_TYPE).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
-      extension = "csv";
-    }
+    String extension = getConnection().getTabular().getVariable(TabularAttribute.DEFAULT_FILE_SYSTEM_TABULAR_TYPE).getValueOrDefaultAsStringNotNull();
     Path siblingPath = path.resolve(name + "." + extension);
     return this.getConnection().getDataSystem().getFileManager(siblingPath, MediaTypes.TEXT_CSV).createDataPath(getConnection(), siblingPath);
   }
@@ -173,7 +166,6 @@ public abstract class FsDataPathAbs extends DataPathAbs implements FsDataPath {
 
 
   /**
-   *
    * @return th relative data path
    * Warning use {@link #getAbsoluteNioPath()} if you want to test if the file exists
    */

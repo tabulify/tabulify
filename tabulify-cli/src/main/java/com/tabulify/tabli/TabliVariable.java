@@ -1,10 +1,10 @@
 package com.tabulify.tabli;
 
+import com.tabulify.Tabular;
+import com.tabulify.spi.DataPath;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
-import com.tabulify.Tabular;
-import com.tabulify.spi.DataPath;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -28,7 +28,7 @@ public class TabliVariable {
     CliParser cliParser = childCommand.parse();
     List<DataPath> feedbackDataPaths = null;
     List<CliCommand> subChildCommands = cliParser.getFoundedChildCommands();
-    if (subChildCommands.size() == 0) {
+    if (subChildCommands.isEmpty()) {
       throw new IllegalArgumentException("A known command must be given for the command (" + CliUsage.getFullChainOfCommand(childCommand) + ").");
     } else {
       for (CliCommand subChildCommand : subChildCommands) {

@@ -2,6 +2,7 @@ package com.tabulify.connection;
 
 import com.tabulify.DbLoggers;
 import com.tabulify.Tabular;
+import com.tabulify.conf.ConnectionVault;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.model.SqlDataType;
 import com.tabulify.model.SqlTypes;
@@ -241,7 +242,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setUser(String user) {
     try {
-      Variable userVariable = tabular.getVault().createVariable(ConnectionAttribute.USER, user, INTERNAL);
+      Variable userVariable = tabular.getVault().createVariableWithRawValue(ConnectionAttribute.USER, user, INTERNAL);
       this.addVariable(userVariable);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the user variable", e);
@@ -251,35 +252,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setPassword(String pwd) {
     try {
-      Variable password = tabular.getVault().createVariable(ConnectionAttribute.PASSWORD, pwd, INTERNAL);
-      this.variables.put(password.getAttribute().toString(), password);
-    } catch (Exception e) {
-      throw new RuntimeException("Error while creating the password variable for the connection (" + this + "). Error: " + e.getMessage(), e);
-    }
-    return this;
-  }
-
-  public Connection setPassword(Variable pwd) {
-    try {
-      /**
-       * If the variable comes from a tabulify
-       * store, we make sure that it's encrypted
-       * by calling the {@link #setPassword(String)}
-       * method
-       */
-      Origin origin = pwd.getOrigin();
-      if (origin.isTabulifyStore()) {
-        this.setPassword(pwd.getValueOrDefaultAsStringNotNull());
-      }
-
-
-      /**
-       * pwd comes from the environment such as environment variable,
-       * dot env, ..., we don't check if it's encrypted
-       */
-      Variable password = Variable
-        .create(ConnectionAttribute.PASSWORD, origin)
-        .setOriginalValue(pwd.getValueOrDefaultAsStringNotNull());
+      Variable password = tabular.getVault().createVariableWithClearValue(ConnectionAttribute.PASSWORD, pwd, INTERNAL);
       this.variables.put(password.getAttribute().toString(), password);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the password variable for the connection (" + this + "). Error: " + e.getMessage(), e);
@@ -317,7 +290,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection addVariable(String key, Object value) {
     try {
-      Variable variable = tabular.getVault().createVariable(key, value, Origin.INTERNAL);
+      Variable variable = tabular.getVault().createVariableWithRawValue(key, value, Origin.INTERNAL);
       this.addVariable(variable);
     } catch (Exception e) {
       throw new RuntimeException("Error while adding connection the property " + key + ". Error: " + e.getMessage(), e);
@@ -327,7 +300,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection addVariable(Attribute key, Object value) {
     try {
-      Variable variable = tabular.getVault().createVariable(key, value, INTERNAL);
+      Variable variable = tabular.getVault().createVariableWithRawValue(key, value, INTERNAL);
       this.addVariable(variable);
     } catch (Exception e) {
       throw new RuntimeException("Error while adding connection the property " + key + ". Error: " + e.getMessage(), e);
@@ -825,4 +798,6 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     }
 
   }
+
+
 }

@@ -1,15 +1,18 @@
 package com.tabulify;
 
+import com.tabulify.conf.TabularEnvs;
 import com.tabulify.connection.ConnectionAttribute;
 import net.bytle.crypto.CryptoSymmetricCipher;
 import net.bytle.crypto.Protector;
 import net.bytle.exception.CastException;
+import net.bytle.template.TextTemplate;
 import net.bytle.template.TextTemplateEngine;
 import net.bytle.type.Attribute;
 import net.bytle.type.Casts;
 import net.bytle.type.Origin;
 import net.bytle.type.Variable;
 
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -25,18 +28,25 @@ public class Vault {
    * Don't change this value
    */
   public static final String VAULT_PREFIX = "vault";
-  private final Tabular tabular;
-  private final Map<String, String> templatingVariable;
+  private final Map<String, Object> templatingEnvs;
   private Protector protector;
 
 
-  public Vault(Tabular tabular, String passphrase, Map<String, String> templatingEnv) {
+  public Vault(String passphrase, TabularEnvs tabularEnvs) {
 
     if (passphrase != null) {
       this.protector = Protector.create(passphrase);
     }
-    this.tabular = tabular;
-    this.templatingVariable = templatingEnv;
+
+    if (tabularEnvs != null) {
+      try {
+        templatingEnvs = Casts.castToSameMap(tabularEnvs.getEnvs(), String.class, Object.class);
+      } catch (CastException e) {
+        throw new RuntimeException("Should not happen as we go to object value", e);
+      }
+    } else {
+      templatingEnvs = null;
+    }
 
   }
 
@@ -44,21 +54,28 @@ public class Vault {
    * @param passphrase          - the passphrase
    * @param templatingVariables Free variable used in templating to create clear value from variable
    */
-  public static Vault create(Tabular tabular, String passphrase, Map<String, String> templatingVariables) {
-    return new Vault(tabular, passphrase, templatingVariables);
+  public static Vault create(String passphrase, TabularEnvs templatingVariables) {
+    return new Vault(passphrase, templatingVariables);
+  }
+
+  /**
+   * @param passphrase - the passphrase
+   */
+  public static Vault create(String passphrase) {
+    return new Vault(passphrase, null);
   }
 
 
-  public Variable createVariable(String key, Object value, Origin origin) throws Exception {
+  public Variable createVariableWithRawValue(String key, Object value, Origin origin) throws Exception {
 
     Variable variable = Variable.createWithClass(key, origin, value.getClass());
-    this.setValue(variable, value);
+    this.setRawValue(variable, value);
     return variable;
 
   }
 
 
-  private void setValue(Variable variable, Object value) throws CastException {
+  private void setRawValue(Variable variable, Object value) throws CastException {
 
     variable.setOriginalValue(value);
 
@@ -90,18 +107,17 @@ public class Vault {
 
 
     /*
-     * Template processing if the value has a env variable
+     * Template processing if the value has an env variable
      */
-    Map<String, Object> templatingEnv;
-    try {
-      templatingEnv = Casts.castToSameMap(this.templatingVariable, String.class, Object.class);
-    } catch (CastException e) {
-      throw new RuntimeException("Should not happen as we go to object", e);
-    }
-    String clearValue = TextTemplateEngine
+    TextTemplate textTemplate = TextTemplateEngine
       .getOrCreate()
-      .compile(valueString)
-      .applyVariables(templatingEnv)
+      .compile(valueString);
+    if (!textTemplate.getVariableNames().isEmpty() && templatingEnvs == null) {
+      // should happen only in test
+      throw new RuntimeException("The templating envs are null but the value (" + valueString + ") has a variable");
+    }
+    String clearValue = textTemplate
+      .applyVariables(templatingEnvs)
       .getResult();
     variable.setClearValue(clearValue);
 
@@ -109,10 +125,10 @@ public class Vault {
   }
 
 
-  public Variable createVariable(Attribute attribute, Object value, Origin origin) throws CastException {
+  public Variable createVariableWithRawValue(Attribute attribute, Object value, Origin origin) throws CastException {
 
     Variable variable = Variable.create(attribute, origin);
-    this.setValue(variable, value);
+    this.setRawValue(variable, value);
     return variable;
 
   }
@@ -127,14 +143,20 @@ public class Vault {
 
   public Variable createVariableSafe(ConnectionAttribute attribute, Object value, Origin origin) {
     try {
-      return createVariable(attribute, value, origin);
+      return createVariableWithRawValue(attribute, value, origin);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  public ConfVariable confVariable(TabularAttributes tabularAttributes) {
+  public ConfVariable confVariable(TabularAttribute tabularAttributes) {
     return new ConfVariable(tabularAttributes);
+  }
+
+  public Variable createVariableWithClearValue(Attribute connectionAttribute, String secret, Origin origin) {
+    Variable variable = Variable.create(connectionAttribute, origin);
+    variable.setClearValue(secret);
+    return variable;
   }
 
   /**
@@ -153,14 +175,30 @@ public class Vault {
       return this;
     }
 
-    public Variable build(String value) {
+    /**
+     * build from a conf (ie not an env)
+     */
+    public Variable buildFromRawValue(String value) {
       Variable variable = Variable.create(attribute, origin);
+      if (Arrays.asList(Origin.COMMAND_LINE, Origin.OS, Origin.SYS).contains(origin)) {
+        throw new RuntimeException("A value from a command line, env or sys is considered a clear value");
+      }
       try {
-        setValue(variable, value);
+        setRawValue(variable, value);
       } catch (CastException e) {
         throw new RuntimeException("Error while reading the variable value " + attribute + " from " + origin + ". Error: " + e.getMessage(), e);
       }
-      tabular.addVariable(variable);
+      return variable;
+    }
+
+    /**
+     * Env/Command line argument are clear value
+     * without any raw/original value
+     * We don't want to see any clear value
+     */
+    public Variable buildFromClearValue(String value) {
+      Variable variable = Variable.create(attribute, origin);
+      variable.setClearValue(value);
       return variable;
     }
   }

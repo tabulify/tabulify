@@ -10,7 +10,7 @@ import java.nio.file.Path;
  * All static configuration
  * <p>
  */
-public enum TabularAttributes implements Attribute {
+public enum TabularAttribute implements Attribute {
 
 
   /**
@@ -18,7 +18,7 @@ public enum TabularAttributes implements Attribute {
    */
   APP_NAME("The name of the app", false, "tabli", String.class),
   USER_CONF_DIR_NAME("The user configuration directory name", false, ".tabli", String.class),
-  USER_CONF_DIR_PATH("The user home configuration directory", false, Fs.getUserHome().resolve(TabularAttributes.USER_CONF_DIR_NAME.getDefaultValue().toString()), Path.class),
+  USER_CONF_DIR_PATH("The user home configuration directory", false, Fs.getUserHome().resolve(TabularAttribute.USER_CONF_DIR_NAME.getDefaultValue().toString()), Path.class),
   PROJECT_CONF_DIR_NAME("The project configuration directory name", false, "conf", String.class),
   VARS_FILE_NAME("The variables file name", false, "variables.yml", String.class),
   CONNECTION_VAULT("The path to the connection vault file", false, "connections.ini", String.class),
@@ -40,15 +40,25 @@ public enum TabularAttributes implements Attribute {
 
   // Where to store the sqlite database
   // By default, the user home (trick to not show the user in the path)
-  SQLITE_HOME("Sqlite home", false, null, String.class);
-
+  SQLITE_HOME("Sqlite home", false, null, String.class),
+  SMTP_HOST("Smtp Host Server", true, "localhost", String.class),
+  SMTP_PORT("Smtp Port", true, 25, Integer.class),
+  SMTP_FROM("The default from address if none is provided", true, 25, String.class),
+  SMTP_FROM_NAME("The default name from address if none is provided", true, "", String.class),
+  SMTP_TO("The default to address if none is provided", true, "", String.class),
+  SMTP_TO_NAMES("The default names to address if none is provided", true, "", String.class),
+  SMTP_AUTH("Smtp server authentication required?", true, false, Boolean.class),
+  SMTP_TLS("Smtp Tls communication required", true, false, Boolean.class),
+  SMTP_USER("Smtp Connection User", true, "", String.class),
+  SMTP_PWD("Smtp Connection Password", true, "", String.class),
+  SMTP_DEBUG("Smtp Debug level", true, "", String.class);
 
   private final String description;
   private final Boolean publik;
   private final Class<?> valueClazz;
   private final Object value;
 
-  TabularAttributes(String description, boolean publik, Object defaultValue, Class<?> valueClazz) {
+  TabularAttribute(String description, boolean publik, Object defaultValue, Class<?> valueClazz) {
     this.description = description;
     this.publik = publik;
     this.value = defaultValue;
