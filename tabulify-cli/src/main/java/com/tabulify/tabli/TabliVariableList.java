@@ -68,10 +68,8 @@ public class TabliVariableList {
 
     childCommand.addProperty(TabliWords.TYPE_PROPERTY)
       .setDescription("The type of the configurations to return ('" + String.join(", ", origins) + "' or `all`)")
-      .addDefaultValue(Origin.USER)
-      .addDefaultValue(Origin.PROJECT)
-      .addDefaultValue(Origin.DOTENV)
-      .addDefaultValue(Origin.INTERNAL)
+      .addDefaultValue(Origin.CONF)
+      .addDefaultValue(Origin.RUNTIME)
     ;
 
     childCommand.addArg(TabliWords.NAME_SELECTORS)
@@ -126,7 +124,6 @@ public class TabliVariableList {
     try (InsertStream insertStream = feedbackDataDef.getDataPath().getInsertStream()) {
       tabular
         .getVariables()
-        .values()
         .stream()
         .filter(e -> {
           if (listOrigins.contains(Origin.ALL)) {

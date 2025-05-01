@@ -11,9 +11,6 @@ import com.tabulify.transfer.TransferProperties;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
-import net.bytle.fs.Fs;
-import net.bytle.type.MediaType;
-import net.bytle.type.MediaTypes;
 import net.bytle.type.Variable;
 import org.apache.commons.collections4.bidimap.TreeBidiMap;
 import org.apache.poi.openxml4j.opc.PackageAccess;
@@ -22,9 +19,6 @@ import org.apache.poi.ss.usermodel.Cell;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-
-import static com.tabulify.excel.ExcelManagerProvider.XLS;
-import static com.tabulify.excel.ExcelManagerProvider.XLSX;
 
 public class ExcelDataPath extends FsBinaryDataPath {
 
@@ -128,7 +122,7 @@ public class ExcelDataPath extends FsBinaryDataPath {
 
   public ExcelDataPath setHeaderId(int i) {
     try {
-      this.getVariable(ExcelDataPathAttribute.HEADER_ROW_ID).setOriginalValue(i);
+      this.getVariable(ExcelDataPathAttribute.HEADER_ROW_ID).setPlainValue(i);
       return this;
     } catch (NoVariableException e) {
       throw new InternalException("The HEADER_ROW_ID has already been added in the constructor, it should not happen");

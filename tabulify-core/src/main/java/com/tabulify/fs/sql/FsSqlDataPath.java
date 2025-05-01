@@ -1,6 +1,5 @@
 package com.tabulify.fs.sql;
 
-import com.tabulify.connection.Connection;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.textfile.FsTextDataPath;
 import com.tabulify.model.RelationDef;
@@ -21,7 +20,6 @@ import static com.tabulify.fs.sql.FsSqlParsingModeValue.TEXT;
 public class FsSqlDataPath extends FsTextDataPath {
 
 
-  public static final String FILE_EXTENSION = "sql";
   protected static Set<String> FS_FILE_EXTENSION_OR_MIME = new HashSet<>();
 
 
@@ -29,8 +27,6 @@ public class FsSqlDataPath extends FsTextDataPath {
     FS_FILE_EXTENSION_OR_MIME.add("application/sql");
   }
 
-  @SuppressWarnings("FieldCanBeLocal")
-  private Connection targetConnection;
 
   public FsSqlDataPath(FsConnection fsConnection, Path path) {
 
@@ -49,19 +45,10 @@ public class FsSqlDataPath extends FsTextDataPath {
   }
 
 
-  /**
-   * @param connection the target connection to be able to get the statement separator
-   * @return the path for chaining
-   */
-  public FsSqlDataPath setTargetConnection(Connection connection) {
-    this.targetConnection = connection;
-    return this;
-  }
-
 
   public FsSqlDataPath setParsingMode(FsSqlParsingModeValue parsingMode) {
     try {
-      this.getVariable(FsSqlDataPathAttribute.PARSING_MODE).setOriginalValue(parsingMode);
+      this.getVariable(FsSqlDataPathAttribute.PARSING_MODE).setPlainValue(parsingMode);
     } catch (NoVariableException e) {
       throw new RuntimeException("Internal Error: PARSING_MODE variable was not found. It should not happen");
     }

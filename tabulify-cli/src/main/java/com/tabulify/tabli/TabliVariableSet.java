@@ -1,7 +1,7 @@
 package com.tabulify.tabli;
 
 import com.tabulify.Tabular;
-import com.tabulify.conf.ConfManager;
+import com.tabulify.conf.ConfVault;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
 import net.bytle.cli.CliCommand;
@@ -43,8 +43,10 @@ public class TabliVariableSet {
 
     Path conf = TabliVariable.getVariablesFilePathToModify(tabular, cliParser);
 
-    try (ConfManager fromPath = ConfManager.createFromPath(conf, tabular.getVault())) {
-      fromPath.addVariable(key, value);
+    try {
+      ConfVault.createFromPath(conf, tabular)
+        .addVariable(key, value)
+        .flush(yamlpath);
     } catch (CastException e) {
       throw new RuntimeException(e.getMessage(), e);
     }

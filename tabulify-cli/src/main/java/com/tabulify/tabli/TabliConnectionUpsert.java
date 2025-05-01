@@ -91,7 +91,7 @@ public class TabliConnectionUpsert {
       Connection connection = connectionVault.getConnection(connectionName);
       if (connection == null) {
         connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, urlValue)
-          .setOrigin(ConnectionOrigin.USER);
+          .setOrigin(ConnectionOrigin.CONF);
         connectionVault.put(connection);
         System.out.println("The connection (" + connectionName + ") didn't exist and was created");
       } else {

@@ -41,7 +41,11 @@ public class ConnectionMetadata {
 
   public ConnectionMetadata setBooleanDataType(ConnectionAttValueBooleanDataType connectionAttValueBooleanDataType) {
     try {
-      Variable variable = this.connection.getTabular().createVariable(ConnectionAttribute.BOOLEAN_DATA_TYPE, connectionAttValueBooleanDataType);
+      Variable variable = this.connection.getTabular()
+        .createVariable(
+          ConnectionAttribute.BOOLEAN_DATA_TYPE,
+          connectionAttValueBooleanDataType
+        );
       this.connection.addVariable(variable);
       return this;
     } catch (Exception e) {

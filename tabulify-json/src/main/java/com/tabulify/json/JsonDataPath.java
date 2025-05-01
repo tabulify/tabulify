@@ -80,7 +80,7 @@ public class JsonDataPath extends FsTextDataPath {
     /**
      * Overwrite the default column name
      */
-    Variable variable = Variable.create(FsTextDataPathAttributes.COLUMN_NAME, Origin.INTERNAL).setOriginalValue(JSON_DEFAULT_HEADER_NAME);
+    Variable variable = Variable.create(FsTextDataPathAttributes.COLUMN_NAME, Origin.RUNTIME).setPlainValue(JSON_DEFAULT_HEADER_NAME);
     this.addVariable(variable);
 
   }
@@ -151,7 +151,7 @@ public class JsonDataPath extends FsTextDataPath {
 
 
   public JsonDataPath setStructure(JsonStructure jsonStructure) {
-    Variable variable = Variable.create(JsonATTRIBUTE.STRUCTURE, Origin.INTERNAL).setOriginalValue(jsonStructure);
+    Variable variable = Variable.create(JsonATTRIBUTE.STRUCTURE, Origin.RUNTIME).setPlainValue(jsonStructure);
     this.addVariable(variable);
     return this;
   }

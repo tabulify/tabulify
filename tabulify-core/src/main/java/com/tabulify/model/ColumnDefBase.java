@@ -389,7 +389,7 @@ public class ColumnDefBase implements ColumnDef {
    */
   public ColumnDef addVariablesFromEnumAttributeClass(Class<? extends Attribute> enumClass) {
     Arrays.asList(enumClass.getEnumConstants()).forEach(c -> {
-      Variable variable = Variable.create(c, Origin.INTERNAL);
+      Variable variable = Variable.create(c, Origin.RUNTIME);
       this.variables.put(c.toString(), variable);
     });
     return this;

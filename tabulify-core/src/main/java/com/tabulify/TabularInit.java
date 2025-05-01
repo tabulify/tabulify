@@ -1,6 +1,6 @@
 package com.tabulify;
 
-import com.tabulify.conf.ConfManager;
+import com.tabulify.conf.ConfVault;
 import com.tabulify.conf.TabularEnvs;
 import com.tabulify.connection.ConnectionHowTos;
 import net.bytle.exception.CastException;
@@ -26,10 +26,10 @@ import static com.tabulify.Tabular.TABLI_USER_HOME_PATH;
 public class TabularInit {
 
 
-  static TabularExecEnv determineEnv(TabularExecEnv env, Vault vault, TabularEnvs tabularEnvs, Map<TabularAttribute, Variable> variables, ConfManager confManager) {
+  static TabularExecEnv determineEnv(TabularExecEnv env, Vault vault, TabularEnvs tabularEnvs, Map<TabularAttribute, Variable> variables, ConfVault confVault) {
 
     TabularAttribute attribute = TabularAttribute.ENV;
-    Vault.VariableBuilder configVariable = vault.variableBuilder(attribute);
+    Vault.VariableBuilder configVariable = vault.createVariableBuilderFromAttribute(attribute);
     TabularExecEnv value;
 
     // Env
@@ -37,7 +37,7 @@ public class TabularInit {
       DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Passed as argument " + env);
       Variable variable = configVariable
         .setOrigin(Origin.COMMAND_LINE)
-        .buildFromRawValue(env.toString());
+        .buildSafe(env.toString());
       variables.put((TabularAttribute) variable.getAttribute(), variable);
       return env;
     }
@@ -45,7 +45,7 @@ public class TabularInit {
     /**
      * Conf Manager
      */
-    Variable confVariable = confManager.getVariable(attribute);
+    Variable confVariable = confVault.getVariable(attribute);
     if (confVariable != null) {
       String confEnvValue = confVariable.getValueOrDefaultAsStringNotNull();
       try {
@@ -68,7 +68,7 @@ public class TabularInit {
         value = Casts.cast(envOsValue, TabularExecEnv.class);
         Variable variable = configVariable
           .setOrigin(Origin.OS)
-          .buildFromRawValue(value.toString());
+          .build(value.toString());
         variables.put((TabularAttribute) variable.getAttribute(), variable);
         return value;
       } catch (CastException e) {
@@ -80,8 +80,8 @@ public class TabularInit {
       DbLoggers.LOGGER_TABULAR_START.info("Tabli env: IDE as it's a junit run");
       value = TabularExecEnv.IDE;
       Variable variable = configVariable
-        .setOrigin(Origin.INTERNAL)
-        .buildFromRawValue(value.toString());
+        .setOrigin(Origin.RUNTIME)
+        .buildSafe(value);
       variables.put((TabularAttribute) variable.getAttribute(), variable);
       return value;
     }
@@ -89,8 +89,8 @@ public class TabularInit {
     DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Default to dev");
     value = TabularExecEnv.DEV;
     Variable variable = configVariable
-      .setOrigin(Origin.INTERNAL)
-      .buildFromRawValue(value.toString());
+      .setOrigin(Origin.RUNTIME)
+      .buildSafe(value);
     variables.put((TabularAttribute) variable.getAttribute(), variable);
     return value;
 
@@ -100,15 +100,15 @@ public class TabularInit {
   /**
    * @param homePath the home path from the constructor
    */
-  static Path determineHomePath(Path homePath, TabularExecEnv execEnv, TabularEnvs tabularEnvs, Map<TabularAttribute, Variable> variables, Vault vault, ConfManager confManager) {
+  static Path determineHomePath(Path homePath, TabularExecEnv execEnv, TabularEnvs tabularEnvs, Map<TabularAttribute, Variable> variables, Vault vault, ConfVault confVault) {
 
     TabularAttribute attribute = TabularAttribute.HOME;
-    Vault.VariableBuilder variableBuilder = vault.variableBuilder(attribute);
+    Vault.VariableBuilder variableBuilder = vault.createVariableBuilderFromAttribute(attribute);
 
     if (homePath != null) {
       Variable variable = variableBuilder
         .setOrigin(Origin.COMMAND_LINE)
-        .buildFromClearValue(homePath.toString());
+        .buildSafe(homePath);
       variables.put((TabularAttribute) variable.getAttribute(), variable);
       return homePath;
     }
@@ -116,7 +116,7 @@ public class TabularInit {
     /**
      * Conf Manager
      */
-    Variable confHomeVariable = confManager.getVariable(attribute);
+    Variable confHomeVariable = confVault.getVariable(attribute);
     if (confHomeVariable != null) {
       String confEnvValue = confHomeVariable.getValueOrDefaultAsStringNotNull();
       variables.put((TabularAttribute) confHomeVariable.getAttribute(), confHomeVariable);
@@ -129,7 +129,7 @@ public class TabularInit {
     if (tabliHome != null) {
       Variable variable = variableBuilder
         .setOrigin(Origin.OS)
-        .buildFromClearValue(tabliHome);
+        .buildSafe(tabliHome);
       variables.put((TabularAttribute) variable.getAttribute(), variable);
       return Paths.get(tabliHome);
     }
@@ -146,8 +146,8 @@ public class TabularInit {
       try {
         Path closestHomePath = Fs.closest(Paths.get("."), ".git").getParent();
         Variable variable = variableBuilder
-          .setOrigin(Origin.INTERNAL)
-          .buildFromRawValue(closestHomePath.toString());
+          .setOrigin(Origin.RUNTIME)
+          .buildSafe(closestHomePath);
         variables.put((TabularAttribute) variable.getAttribute(), variable);
         return closestHomePath;
       } catch (FileNotFoundException e) {
@@ -159,8 +159,8 @@ public class TabularInit {
     // in prod, the class are in the jars directory
     Path prodHomePath = Javas.getSourceCodePath(ConnectionHowTos.class).getParent();
     Variable variable = variableBuilder
-      .setOrigin(Origin.INTERNAL)
-      .buildFromRawValue(prodHomePath.toString());
+      .setOrigin(Origin.RUNTIME)
+      .buildSafe(prodHomePath);
     variables.put((TabularAttribute) variable.getAttribute(), variable);
     return prodHomePath;
 
@@ -170,12 +170,12 @@ public class TabularInit {
   static public Path determineProjectHome(Path projectHomePath, Vault vault, Map<TabularAttribute, Variable> variables, TabularEnvs tabularEnvs) {
 
     TabularAttribute attribute = TabularAttribute.PROJECT_HOME;
-    Vault.VariableBuilder confVariable = vault.variableBuilder(attribute);
+    Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(attribute);
 
     if (projectHomePath != null) {
       Variable variable = confVariable
         .setOrigin(Origin.COMMAND_LINE)
-        .buildFromClearValue(projectHomePath.toString());
+        .buildSafe(projectHomePath);
       variables.put((TabularAttribute) variable.getAttribute(), variable);
       return projectHomePath;
     }
@@ -186,25 +186,25 @@ public class TabularInit {
     if (projectHomeFromEnv != null) {
       Variable variable = confVariable
         .setOrigin(Origin.OS)
-        .buildFromClearValue(projectHomeFromEnv);
+        .buildSafe(projectHomeFromEnv);
       variables.put((TabularAttribute) variable.getAttribute(), variable);
       return Paths.get(projectHomeFromEnv);
     }
 
     // Derived
-    confVariable.setOrigin(Origin.INTERNAL);
+    confVariable.setOrigin(Origin.RUNTIME);
     try {
       Path closestProjectHomePath = Fs.closest(Paths.get("."), Tabular.TABLI_CONF_FILE_NAME).getParent();
       if (closestProjectHomePath == null) {
         // to please the linter as getParent may return null ...
         throw new FileNotFoundException();
       }
-      Variable variable = confVariable.buildFromRawValue(closestProjectHomePath.toString());
+      Variable variable = confVariable.buildSafe(closestProjectHomePath.toString());
       variables.put((TabularAttribute) variable.getAttribute(), variable);
       return closestProjectHomePath;
     } catch (FileNotFoundException e) {
       // not a project
-      Variable variable = confVariable.buildFromRawValue(null);
+      Variable variable = confVariable.buildSafe(null);
       variables.put((TabularAttribute) variable.getAttribute(), variable);
       return null;
     }
@@ -212,11 +212,11 @@ public class TabularInit {
 
   static public Path determineConfPath(Path confPath, Vault vault, TabularEnvs tabularEnvs, Path projectHome) {
 
-    Vault.VariableBuilder confVariable = vault.variableBuilder(TabularAttribute.CONF);
+    Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(TabularAttribute.CONF);
     if (confPath != null) {
       confVariable
         .setOrigin(Origin.COMMAND_LINE)
-        .buildFromRawValue(confPath.toString());
+        .buildSafe(confPath.toString());
       return confPath;
     }
 
@@ -225,22 +225,22 @@ public class TabularInit {
     if (confPathString != null) {
       Variable variable = confVariable
         .setOrigin(Origin.OS)
-        .buildFromRawValue(confPathString);
+        .buildSafe(confPathString);
       return Paths.get(variable.getValueOrDefaultAsStringNotNull());
     }
 
     if (projectHome != null) {
       Path resolve = projectHome.resolve(Tabular.TABLI_CONF_FILE_NAME);
       confVariable
-        .setOrigin(Origin.PROJECT)
-        .buildFromRawValue(resolve.toString());
+        .setOrigin(Origin.RUNTIME)
+        .buildSafe(resolve);
       return resolve;
     }
 
     Path resolve = TABLI_USER_HOME_PATH.resolve(Tabular.TABLI_CONF_FILE_NAME);
     confVariable
-      .setOrigin(Origin.INTERNAL)
-      .buildFromRawValue(resolve.toString());
+      .setOrigin(Origin.RUNTIME)
+      .buildSafe(resolve);
     return resolve;
 
   }
@@ -272,19 +272,19 @@ public class TabularInit {
   }
 
 
-  public static void buildSmtpVariables(TabularEnvs tabularEnvs, Map<TabularAttribute, Variable> variables, Vault vault, ConfManager confManager) {
+  public static void buildSmtpVariables(TabularEnvs tabularEnvs, Map<TabularAttribute, Variable> variables, Vault vault, ConfVault confVault) {
 
     List<TabularAttribute> smtpAttributes = Arrays.stream(TabularAttribute.values())
       .filter(a -> a.toString().toLowerCase().startsWith("smtp"))
       .collect(Collectors.toList());
     for (TabularAttribute smtpAttribute : smtpAttributes) {
 
-      Vault.VariableBuilder variableBuilder = vault.variableBuilder(smtpAttribute);
+      Vault.VariableBuilder variableBuilder = vault.createVariableBuilderFromAttribute(smtpAttribute);
 
       /**
        * Conf Manager
        */
-      Variable confHomeVariable = confManager.getVariable(smtpAttribute);
+      Variable confHomeVariable = confVault.getVariable(smtpAttribute);
       if (confHomeVariable != null) {
         variables.put((TabularAttribute) confHomeVariable.getAttribute(), confHomeVariable);
         continue;
@@ -296,15 +296,15 @@ public class TabularInit {
       if (envValue != null) {
         Variable variable = variableBuilder
           .setOrigin(Origin.OS)
-          .buildFromClearValue(envValue);
+          .buildSafe(envValue);
         variables.put((TabularAttribute) variable.getAttribute(), variable);
         continue;
       }
 
       // None
       Variable variable = variableBuilder
-        .setOrigin(Origin.INTERNAL)
-        .buildFromClearValue(null);
+        .setOrigin(Origin.RUNTIME)
+        .buildSafe(null);
       variables.put((TabularAttribute) variable.getAttribute(), variable);
 
     }

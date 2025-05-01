@@ -163,7 +163,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
 
     } catch (NoVariableException e) {
 
-      Variable variable = Variable.create(attribute, Origin.INTERNAL);
+      Variable variable = Variable.create(attribute, Origin.RUNTIME);
       this.addVariable(variable);
       return variable;
 
@@ -824,7 +824,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
    * @return the path for chaining
    */
   public DataPath addVariablesFromEnumAttributeClass(Class<? extends Attribute> enumClass) {
-    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addVariable(Variable.create(c, Origin.INTERNAL)));
+    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addVariable(Variable.create(c, Origin.RUNTIME)));
     return this;
   }
 

@@ -1,12 +1,15 @@
 package com.tabulify.tabli;
 
 import com.tabulify.Tabular;
-import com.tabulify.conf.ConfManager;
+import com.tabulify.TabularAttribute;
+import com.tabulify.conf.ConfVault;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
+import net.bytle.exception.CastException;
+import net.bytle.type.KeyNormalizer;
 
 import java.nio.file.Path;
 import java.util.Collections;
@@ -18,11 +21,11 @@ public class TabliVariableDelete {
 
     // Define the command and its arguments
     childCommand
-      .setDescription("Delete a configuration from the configuration file")
+      .setDescription("Delete a tabulify variable from the conf file")
       .addExample(
-        "To remove the `log-level` configuration, you would use the following command:",
+        "To remove the `log-level` variable, you would use the following command:",
         CliUsage.CODE_BLOCK,
-        CliUsage.getFullChainOfCommand(childCommand) + " log-level",
+        CliUsage.getFullChainOfCommand(childCommand) + " " + KeyNormalizer.create(TabularAttribute.LOG_LEVEL).toKebabCase(),
         CliUsage.CODE_BLOCK
       );
 
@@ -38,11 +41,15 @@ public class TabliVariableDelete {
     final String key = cliParser.getString(TabliWords.KEY);
 
     Path conf = TabliVariable.getVariablesFilePathToModify(tabular, cliParser);
-    ConfManager confManager = ConfManager
-      .createFromPath(conf);
-    Object value = confManager
-      .delete(key);
-    confManager.flush();
+    ConfVault confVault = ConfVault
+      .createFromPath(conf, tabular);
+    Object value;
+    try {
+      value = confVault.deleteVariable(key);
+    } catch (CastException e) {
+      throw new RuntimeException(e.getMessage(), e);
+    }
+    confVault.flush(yamlpath);
 
     DataPath feedbackDataPath = tabular.getMemoryDataStore().getDataPath("configurationDeleted")
       .setDescription("The below configuration was deleted")
@@ -50,8 +57,8 @@ public class TabliVariableDelete {
       .addColumn("key")
       .addColumn("value")
       .getDataPath();
-    try(InsertStream insertStream= feedbackDataPath.getInsertStream()){
-      insertStream.insert(key,value);
+    try (InsertStream insertStream = feedbackDataPath.getInsertStream()) {
+      insertStream.insert(key, value);
     }
 
     return Collections.singletonList(feedbackDataPath);

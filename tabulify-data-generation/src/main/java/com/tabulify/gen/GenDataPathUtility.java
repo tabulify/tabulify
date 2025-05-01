@@ -206,13 +206,13 @@ public class GenDataPathUtility {
       switch (dataGenAttribute) {
         case SIZE_NOT_CAPPED:
           genDataPath.addVariable(
-            Variable.create(dataGenAttribute, Origin.INTERNAL)
+            Variable.create(dataGenAttribute, Origin.RUNTIME)
               .setValueProvider(genDataPath::getSizeNotCapped)
           );
           break;
         case SIZE:
           genDataPath.addVariable(
-            Variable.create(dataGenAttribute, Origin.INTERNAL)
+            Variable.create(dataGenAttribute, Origin.RUNTIME)
               .setValueProvider(genDataPath::getSize)
           );
         default:

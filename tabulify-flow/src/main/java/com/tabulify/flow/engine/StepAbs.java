@@ -107,7 +107,7 @@ public abstract class StepAbs extends StepProvider implements OperationStep {
 
   @SuppressWarnings("unused")
   public StepAbs addArgumentsFromEnumAttributeClass(Class<? extends Attribute> enumClass) {
-    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addArgument(Variable.create(c,Origin.INTERNAL)));
+    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addArgument(Variable.create(c, Origin.RUNTIME)));
     return this;
   }
 
@@ -120,7 +120,7 @@ public abstract class StepAbs extends StepProvider implements OperationStep {
     try {
       return this.getArgument(attribute);
     } catch (NotFoundException e) {
-      Variable argument = Variable.create(attribute, Origin.INTERNAL);
+      Variable argument = Variable.create(attribute, Origin.RUNTIME);
       this.addArgument(argument);
       return argument;
     }

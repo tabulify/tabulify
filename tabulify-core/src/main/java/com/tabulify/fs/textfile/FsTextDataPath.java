@@ -38,7 +38,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
 
   protected FsTextDataPath setColumnName(String name) {
     try {
-      this.getVariable(FsTextDataPathAttributes.COLUMN_NAME).setOriginalValue(name);
+      this.getVariable(FsTextDataPathAttributes.COLUMN_NAME).setPlainValue(name);
     } catch (NoVariableException e) {
       throw new RuntimeException("Internal Error: COLUMN_NAME variable was not found. It should not happen");
     }
@@ -111,7 +111,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
    * @param endOfRecords The strings that are used at the end of a row (default to the system default \r\n for Windows, \n for the other)
    */
   public FsTextDataPath setEndOfRecords(String... endOfRecords) {
-    Variable variable = Variable.create(FsTextDataPathAttributes.END_OF_RECORD, Origin.INTERNAL).setOriginalValue(endOfRecords);
+    Variable variable = Variable.create(FsTextDataPathAttributes.END_OF_RECORD, Origin.RUNTIME).setPlainValue(endOfRecords);
     this.addVariable(variable);
     return this;
   }
@@ -124,7 +124,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
    * @return The {@link FsTextDataPath} instance for chaining initialization
    */
   public FsTextDataPath setCharset(Charset charset) {
-    Variable variable = Variable.create(CHARACTER_SET, Origin.INTERNAL).setOriginalValue(charset);
+    Variable variable = Variable.create(CHARACTER_SET, Origin.RUNTIME).setPlainValue(charset);
     this.addVariable(variable);
     return this;
   }
@@ -167,7 +167,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
     if (characterSet != null) {
       try {
         Charset charset = Casts.cast(characterSet, Charset.class);
-        this.getOrCreateVariable(CHARACTER_SET).setOriginalValue(charset);
+        this.getOrCreateVariable(CHARACTER_SET).setPlainValue(charset);
       } catch (CastException ex) {
         String message = "The string (" + characterSet + ") could not be transformed as characters set";
         if (getConnection().getTabular().isIdeEnv()) {

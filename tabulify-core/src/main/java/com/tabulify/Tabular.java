@@ -1,6 +1,6 @@
 package com.tabulify;
 
-import com.tabulify.conf.ConfManager;
+import com.tabulify.conf.ConfVault;
 import com.tabulify.conf.ConnectionVault;
 import com.tabulify.conf.TabularEnvs;
 import com.tabulify.connection.Connection;
@@ -143,23 +143,23 @@ public class Tabular implements AutoCloseable {
      * to modify a conf file with the cli
      */
     confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, tabularEnvs, projectHomePath);
-    ConfManager confManager = ConfManager.createFromPath(confPath, vault, this);
+    ConfVault confVault = ConfVault.createFromPath(confPath, vault, this);
 
     /**
      * Execution Env
      */
-    this.executionEnv = TabularInit.determineEnv(tabularConfig.execEnv, vault, tabularEnvs, variables, confManager);
+    this.executionEnv = TabularInit.determineEnv(tabularConfig.execEnv, vault, tabularEnvs, variables, confVault);
 
     /**
      * Home Path
      */
-    this.homePath = TabularInit.determineHomePath(tabularConfig.homePath, this.executionEnv, tabularEnvs, variables, vault, confManager);
+    this.homePath = TabularInit.determineHomePath(tabularConfig.homePath, this.executionEnv, tabularEnvs, variables, vault, confVault);
 
 
     /**
      * Smtp Connection
      */
-    TabularInit.buildSmtpVariables(tabularEnvs, variables, vault, confManager);
+    TabularInit.buildSmtpVariables(tabularEnvs, variables, vault, confVault);
 
 
     /**
@@ -836,13 +836,9 @@ public class Tabular implements AutoCloseable {
     return TABLI_NAME;
   }
 
-  public Variable createVariable(String key, Object value) throws Exception {
-    return this.getVault().createVariableWithRawValue(key, value, Origin.INTERNAL);
-  }
 
-  public Variable createVariable(Attribute attribute, Object value) throws Exception {
-    return this.getVault().createVariableWithRawValue(attribute, value, Origin.INTERNAL);
-  }
+
+
 
   public Variable getVariable(TabularAttribute attribute) {
     return this.variables.get(attribute);
@@ -895,8 +891,8 @@ public class Tabular implements AutoCloseable {
     return this.sqliteHome;
   }
 
-  public Map<TabularAttribute, Variable> getVariables() {
-    return this.variables;
+  public Set<Variable> getVariables() {
+    return new HashSet<>(this.variables.values());
   }
 
   public Path getUserConfFilePath() {
@@ -905,6 +901,14 @@ public class Tabular implements AutoCloseable {
 
   public Path getConfPath() {
     return this.confPath;
+  }
+
+  public Variable createVariable(Attribute attribute, Object value) {
+    return this.getVault().createVariable(attribute, value, Origin.RUNTIME);
+  }
+
+  public Variable createVariable(String key, Object value) throws Exception {
+    return this.getVault().createVariable(key, value, Origin.RUNTIME);
   }
 
 

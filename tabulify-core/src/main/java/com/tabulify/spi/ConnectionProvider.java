@@ -130,7 +130,7 @@ public abstract class ConnectionProvider {
    * existing work.
    *
    * @return The sql database
-   * @throws SecurityException If a security manager is installed and it denies an unspecified
+   * @throws SecurityException If a security manager is installed, and it denies an unspecified
    *                           permission.
    */
   public abstract Connection createConnection(Tabular tabular, Variable name, Variable uri);

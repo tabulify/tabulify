@@ -26,7 +26,7 @@ public class JdbcConnectionProvider extends ConnectionProvider {
    * existing work.
    *
    * @return The sql database
-   * @throws SecurityException If a security manager is installed and it denies an unspecified
+   * @throws SecurityException If a security manager is installed, and it denies an unspecified
    *                           permission.
    */
   @Override
@@ -39,7 +39,7 @@ public class JdbcConnectionProvider extends ConnectionProvider {
       }
     }
 
-    // No provider found, return the default data store
+    // No provider found, return the default sql connection
     return new SqlConnection(tabular, name, url);
 
   }

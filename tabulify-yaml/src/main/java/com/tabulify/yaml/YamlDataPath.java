@@ -54,7 +54,7 @@ public class YamlDataPath extends FsTextDataPath {
      * Change the default value
      */
     try {
-      this.getVariable(FsTextDataPathAttributes.COLUMN_NAME).setClearValue(YAML_DEFAULT_HEADER_NAME);
+      this.getVariable(FsTextDataPathAttributes.COLUMN_NAME).setPlainValue(YAML_DEFAULT_HEADER_NAME);
     } catch (NoVariableException e) {
       throw new RuntimeException("Internal Error: COLUMN_NAME variable was not found. It should not happen");
     }
@@ -90,7 +90,7 @@ public class YamlDataPath extends FsTextDataPath {
   }
 
   public YamlDataPath setStructure(YamlStructure yamlStructure) {
-    Variable variable = Variable.create(YamDataPathAttribute.STRUCTURE, Origin.INTERNAL).setOriginalValue(yamlStructure);
+    Variable variable = Variable.create(YamDataPathAttribute.STRUCTURE, Origin.RUNTIME).setPlainValue(yamlStructure);
     this.addVariable(variable);
     return this;
   }
@@ -120,7 +120,7 @@ public class YamlDataPath extends FsTextDataPath {
   }
 
   public YamlDataPath setOutputStyle(YamlStyle yamlStyle) {
-    Variable variable = Variable.create(YamDataPathAttribute.OUTPUT_STYLE, Origin.INTERNAL).setOriginalValue(yamlStyle);
+    Variable variable = Variable.create(YamDataPathAttribute.OUTPUT_STYLE, Origin.RUNTIME).setPlainValue(yamlStyle);
     this.addVariable(variable);
     return this;
   }

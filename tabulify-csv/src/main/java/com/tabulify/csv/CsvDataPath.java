@@ -70,7 +70,7 @@ public class CsvDataPath extends FsTextDataPath {
    */
   public CsvDataPath setCommentCharacter(char commentCharacter) {
     try {
-      this.getVariable(CsvDataPathAttribute.COMMENT_CHARACTER).setOriginalValue(commentCharacter);
+      this.getVariable(CsvDataPathAttribute.COMMENT_CHARACTER).setPlainValue(commentCharacter);
       return this;
     } catch (NoVariableException e) {
       throw new InternalException("The COMMENT_CHARACTER has already a default, it should not happen");
@@ -95,7 +95,7 @@ public class CsvDataPath extends FsTextDataPath {
   public CsvDataPath setIgnoreEmptyLine(boolean ignoreEmptyLine) {
 
     try {
-      this.getVariable(CsvDataPathAttribute.IGNORE_EMPTY_LINE).setOriginalValue(ignoreEmptyLine);
+      this.getVariable(CsvDataPathAttribute.IGNORE_EMPTY_LINE).setPlainValue(ignoreEmptyLine);
       return this;
     } catch (NoVariableException e) {
       throw new InternalException("The IGNORE_EMPTY_LINE has already a default, it should not happen");
@@ -143,7 +143,7 @@ public class CsvDataPath extends FsTextDataPath {
   public CsvDataPath setEscapeCharacter(char escapeCharacter) {
 
     try {
-      this.getVariable(CsvDataPathAttribute.ESCAPE_CHARACTER).setOriginalValue(escapeCharacter);
+      this.getVariable(CsvDataPathAttribute.ESCAPE_CHARACTER).setPlainValue(escapeCharacter);
       return this;
     } catch (NoVariableException e) {
       throw new InternalException("The ESCAPE_CHARACTER has already a default and should be added, it should not happen", e);
@@ -165,7 +165,7 @@ public class CsvDataPath extends FsTextDataPath {
    */
   public CsvDataPath setQuoteCharacter(char quoteCharacter) {
     try {
-      this.getVariable(CsvDataPathAttribute.QUOTE_CHARACTER).setOriginalValue(quoteCharacter);
+      this.getVariable(CsvDataPathAttribute.QUOTE_CHARACTER).setPlainValue(quoteCharacter);
       return this;
     } catch (NoVariableException e) {
       throw new InternalException("The QUOTE_CHARACTER has already a default and should be added, it should not happen", e);
@@ -192,7 +192,7 @@ public class CsvDataPath extends FsTextDataPath {
    */
   public CsvDataPath setDelimiterCharacter(char delimiter) {
     try {
-      this.getVariable(CsvDataPathAttribute.DELIMITER_CHARACTER).setOriginalValue(delimiter);
+      this.getVariable(CsvDataPathAttribute.DELIMITER_CHARACTER).setPlainValue(delimiter);
       return this;
     } catch (NoVariableException e) {
       throw new InternalException("The DELIMITER_CHARACTER has already a default and should be added, it should not happen", e);
@@ -225,7 +225,7 @@ public class CsvDataPath extends FsTextDataPath {
 
   public CsvDataPath setHeaderRowId(int headerRowId) {
     try {
-      this.getVariable(CsvDataPathAttribute.HEADER_ROW_ID).setOriginalValue(headerRowId);
+      this.getVariable(CsvDataPathAttribute.HEADER_ROW_ID).setPlainValue(headerRowId);
       return this;
     } catch (NoVariableException e) {
       throw new InternalException("The HEADER_ROW_ID has already a default and should be added, it should not happen", e);
@@ -249,7 +249,7 @@ public class CsvDataPath extends FsTextDataPath {
       return this;
     }
 
-    Variable variable = Variable.create(csvDataPathAttribute, Origin.INTERNAL).setOriginalValue(value);
+    Variable variable = Variable.create(csvDataPathAttribute, Origin.RUNTIME).setPlainValue(value);
     super.addVariable(variable);
 
     return this;

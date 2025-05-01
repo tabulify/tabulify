@@ -26,7 +26,7 @@ import java.sql.Types;
 import java.time.*;
 import java.util.*;
 
-import static net.bytle.type.Origin.INTERNAL;
+import static net.bytle.type.Origin.RUNTIME;
 
 /**
  * A connection
@@ -146,11 +146,14 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
   /**
-   * Connection Variable
-   * They are a mixed now of our own and of the jdbc driver
-   * so the key identifier is the name
+   * Connection Variable. Variable managed by Tabli
+   * String because each connection may have its own variables
    */
   Map<String, Variable> variables = new MapKeyIndependent<>();
+  /**
+   * Driver Variable. Variable of the driver/library, not from us
+   */
+  Set<Variable> driverVariables = new HashSet<>();
 
   /**
    * Which SQL type do we need to load the value of a java class
@@ -242,7 +245,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setUser(String user) {
     try {
-      Variable userVariable = tabular.getVault().createVariableWithRawValue(ConnectionAttribute.USER, user, INTERNAL);
+      Variable userVariable = tabular.getVault().createVariable(ConnectionAttribute.USER, user, RUNTIME);
       this.addVariable(userVariable);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the user variable", e);
@@ -252,7 +255,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setPassword(String pwd) {
     try {
-      Variable password = tabular.getVault().createVariableWithClearValue(ConnectionAttribute.PASSWORD, pwd, INTERNAL);
+      Variable password = tabular.getVault().createVariable(ConnectionAttribute.PASSWORD, pwd, RUNTIME);
       this.variables.put(password.getAttribute().toString(), password);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the password variable for the connection (" + this + "). Error: " + e.getMessage(), e);
@@ -290,7 +293,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection addVariable(String key, Object value) {
     try {
-      Variable variable = tabular.getVault().createVariableWithRawValue(key, value, Origin.INTERNAL);
+      Variable variable = tabular.getVault().createVariable(key, value, Origin.RUNTIME);
       this.addVariable(variable);
     } catch (Exception e) {
       throw new RuntimeException("Error while adding connection the property " + key + ". Error: " + e.getMessage(), e);
@@ -300,7 +303,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection addVariable(Attribute key, Object value) {
     try {
-      Variable variable = tabular.getVault().createVariableWithRawValue(key, value, INTERNAL);
+      Variable variable = tabular.getVault().createVariable(key, value, RUNTIME);
       this.addVariable(variable);
     } catch (Exception e) {
       throw new RuntimeException("Error while adding connection the property " + key + ". Error: " + e.getMessage(), e);
@@ -383,7 +386,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
         throw new RuntimeException("The data-uri scheme is supported only with file system data uri. The connection " + connectionName + " is not a file system connection but a " + connection.getClass().getSimpleName() + " connection");
       }
       String resolve = connection.getCurrentDataPath().resolve(dataUri.getPath()).getAbsolutePath();
-      variableUri.setClearValue("file://" + "/" + resolve.replace("\\", "/"));
+      variableUri.setPlainValue("file://" + "/" + resolve.replace("\\", "/"));
     }
 
     List<ConnectionProvider> installedProviders = ConnectionProvider.installedProviders();
@@ -702,7 +705,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   public Connection setOrigin(ConnectionOrigin connectionOrigin) {
     try {
       this.getVariable(ConnectionAttribute.ORIGIN)
-        .setClearValue(connectionOrigin);
+        .setPlainValue(connectionOrigin);
     } catch (NoVariableException e) {
       throw new InternalException(e);
     }
@@ -776,7 +779,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   public Connection addVariablesFromEnumAttributeClass(Class<? extends Attribute> enumClass) {
     Arrays.asList(enumClass.getEnumConstants()).forEach(c ->
       {
-        Variable variable = Variable.create(c, INTERNAL);
+        Variable variable = Variable.create(c, RUNTIME);
         if (variable.getAttribute().equals(ConnectionAttribute.NAME)) {
           return;
         }
@@ -800,4 +803,12 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
+  public Set<Variable> getDriverVariables() {
+    return this.driverVariables;
+  }
+
+  public Connection setDriverVariables(Set<Variable> driverVariableMap) {
+    this.driverVariables = driverVariableMap;
+    return this;
+  }
 }

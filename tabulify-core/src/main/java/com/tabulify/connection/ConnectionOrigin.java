@@ -5,12 +5,10 @@ import net.bytle.type.AttributeValue;
 public enum ConnectionOrigin implements AttributeValue {
 
   BUILT_IN("The built-in connections"),
-  USER("The user connections"),
-  PROJECT("The project connections"),
-  COMMAND_LINE("The command line connections"),
+  CONF("The conf file connections"),
   // Runtime data store created on the fly. For instance, with the URL of a {@link Path}
   // or connection added later such as resources for test
-  RUNTIME("Connection created during runtime");
+  RUNTIME("Connection created at runtime");
 
 
   private final String description;

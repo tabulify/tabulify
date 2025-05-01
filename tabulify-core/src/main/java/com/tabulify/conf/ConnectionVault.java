@@ -7,6 +7,7 @@ import com.tabulify.Vault;
 import com.tabulify.connection.Connection;
 import com.tabulify.connection.ConnectionAttribute;
 import com.tabulify.connection.ConnectionHowTos;
+import com.tabulify.connection.ConnectionOrigin;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
 import net.bytle.fs.Fs;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
 
 /**
  * A database store implementation based on an ini file
- * Deprecated for {@link ConfManager}
+ * Deprecated for {@link ConfVault}
  */
 @Deprecated
 public class ConnectionVault implements AutoCloseable {
@@ -130,7 +131,7 @@ public class ConnectionVault implements AutoCloseable {
           String valueToStore;
           if (variable.getAttribute() == ConnectionAttribute.URI) {
             uriFound = true;
-            valueToStore = (String) variable.getOriginalValue();
+            valueToStore = (String) variable.getCipherValue();
             if (valueToStore == null) {
               try {
                 valueToStore = (String) variable.getValueOrDefault();
@@ -139,7 +140,7 @@ public class ConnectionVault implements AutoCloseable {
               }
             }
           } else {
-            Object originalValue = variable.getOriginalValue();
+            Object originalValue = variable.getCipherValue();
             if (originalValue == null) {
               continue;
             }
@@ -264,9 +265,9 @@ public class ConnectionVault implements AutoCloseable {
         try {
 
           if (connectionAttribute == null) {
-            variable = vault.createVariableWithRawValue(propertyName, value, Origin.USER);
+            variable = vault.createVariable(propertyName, value, Origin.CONF);
           } else {
-            variable = vault.createVariableWithRawValue(connectionAttribute, value, Origin.USER);
+            variable = vault.createVariable(connectionAttribute, value, Origin.CONF);
           }
           if (connectionAttribute == ConnectionAttribute.URI) {
             uri = variable;
@@ -289,7 +290,12 @@ public class ConnectionVault implements AutoCloseable {
       // variables map should be in the building of the connection
       // as they may be used for the default values
       connection.setVariables(variableMap);
-      connection.addVariable(vault.createVariableSafe(ConnectionAttribute.ORIGIN, Origin.USER, Origin.INTERNAL));
+      connection.addVariable(vault.createVariable(
+          ConnectionAttribute.ORIGIN,
+          ConnectionOrigin.CONF,
+          Origin.RUNTIME)
+        .setPlainValue(Origin.CONF)
+      );
       connections.put(connectionName, connection);
 
     }

@@ -1,7 +1,6 @@
 package com.tabulify;
 
 import com.tabulify.conf.TabularEnvs;
-import com.tabulify.connection.ConnectionAttribute;
 import net.bytle.crypto.CryptoSymmetricCipher;
 import net.bytle.crypto.Protector;
 import net.bytle.exception.CastException;
@@ -12,7 +11,6 @@ import net.bytle.type.Casts;
 import net.bytle.type.Origin;
 import net.bytle.type.Variable;
 
-import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -74,70 +72,17 @@ public class Vault {
   }
 
 
-  public Variable createVariableWithRawValue(String key, Object value, Origin origin) throws Exception {
+  public Variable createVariable(String key, Object value, Origin origin) throws Exception {
 
-    Variable variable = Variable.createWithClass(key, origin, value.getClass());
-    this.setRawValue(variable, value);
-    return variable;
-
-  }
-
-
-  private void setRawValue(Variable variable, Object value) throws CastException {
-
-    variable.setOriginalValue(value);
-
-    if (!(value instanceof String)) {
-      variable.setClearValue(value);
-      return;
-    }
-
-    String valueString = value.toString();
-    if (valueString.startsWith(Vault.VAULT_PREFIX)) {
-
-      /**
-       * Decrypt
-       */
-      String valueToDecrypt = valueString.substring(Vault.VAULT_PREFIX.length());
-      if (protector == null) {
-        throw new CastException("No passphrase was given, we can't decrypt the vault value (" + valueToDecrypt + ")");
-      }
-      try {
-        variable.setClearValue(protector.decrypt(valueToDecrypt));
-      } catch (Exception exception) {
-        String message = "We were unable to decrypt the value with the given passphrase. Value:" + valueToDecrypt;
-        DbLoggers.LOGGER_DB_ENGINE.severe(message);
-        throw new CastException(message);
-      }
-      // not a template
-      return;
-    }
-
-
-    /*
-     * Template processing if the value has an env variable
-     */
-    TextTemplate textTemplate = TextTemplateEngine
-      .getOrCreate()
-      .compile(valueString);
-    if (!textTemplate.getVariableNames().isEmpty() && templatingEnvs == null) {
-      // should happen only in test
-      throw new RuntimeException("The templating envs are null but the value (" + valueString + ") has a variable");
-    }
-    String clearValue = textTemplate
-      .applyVariables(templatingEnvs)
-      .getResult();
-    variable.setClearValue(clearValue);
-
+    return createVariableBuilderFromName(key)
+      .setOrigin(origin)
+      .build(value);
 
   }
 
+  private VariableBuilder createVariableBuilderFromName(String key) {
 
-  public Variable createVariableWithRawValue(Attribute attribute, Object value, Origin origin) throws CastException {
-
-    Variable variable = Variable.create(attribute, origin);
-    this.setRawValue(variable, value);
-    return variable;
+    return new VariableBuilder(key);
 
   }
 
@@ -149,30 +94,29 @@ public class Vault {
     return VAULT_PREFIX + protector.encrypt(CryptoSymmetricCipher.AES_CBC_PKCS5PADDING, s);
   }
 
-  public Variable createVariableSafe(ConnectionAttribute attribute, Object value, Origin origin) {
-    try {
-      return createVariableWithRawValue(attribute, value, origin);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+
+  public VariableBuilder createVariableBuilderFromAttribute(Attribute attribute) {
+    return new VariableBuilder(attribute);
   }
 
-  public VariableBuilder variableBuilder(TabularAttribute tabularAttributes) {
-    return new VariableBuilder(tabularAttributes);
-  }
-
-  public Variable createVariableWithClearValue(Attribute connectionAttribute, String secret, Origin origin) {
-    Variable variable = Variable.create(connectionAttribute, origin);
-    variable.setClearValue(secret);
-    return variable;
+  public Variable createVariable(Attribute attribute, Object value, Origin origin) {
+    return createVariableBuilderFromAttribute(attribute)
+      .setOrigin(origin)
+      .buildSafe(value);
   }
 
   /**
    * Helper to build a variable
    */
   public class VariableBuilder {
-    private final Attribute attribute;
+
+    private Attribute attribute;
     private Origin origin;
+    private String name;
+
+    public VariableBuilder(String name) {
+      this.name = name;
+    }
 
     public VariableBuilder(Attribute attribute) {
       this.attribute = attribute;
@@ -184,30 +128,108 @@ public class Vault {
     }
 
     /**
-     * build from a conf (ie not an env)
-     */
-    public Variable buildFromRawValue(String value) {
-      Variable variable = Variable.create(attribute, origin);
-      if (Arrays.asList(Origin.COMMAND_LINE, Origin.OS, Origin.SYS).contains(origin)) {
-        throw new RuntimeException("A value from a command line, env or sys is considered a clear value");
-      }
-      try {
-        setRawValue(variable, value);
-      } catch (CastException e) {
-        throw new RuntimeException("Error while reading the variable value " + attribute + " from " + origin + ". Error: " + e.getMessage(), e);
-      }
-      return variable;
-    }
-
-    /**
      * Env/Command line argument are clear value
      * without any raw/original value
      * We don't want to see any clear value
      */
-    public Variable buildFromClearValue(String value) {
+    public Variable build(Object value) throws CastException {
+
+      if (attribute == null) {
+        if (name == null) {
+          throw new RuntimeException("Name and attribute cannot be null together.  A variable needs an identifiant");
+        }
+        attribute = new Attribute() {
+
+          @Override
+          public String getDescription() {
+            return name;
+          }
+
+          @Override
+          public Class<?> getValueClazz() {
+            return value.getClass();
+          }
+
+          @Override
+          public Object getDefaultValue() {
+            return null;
+          }
+
+          /**
+           * @return the unique string identifier (mandatory)
+           */
+          @Override
+          public String toString() {
+            return name;
+          }
+
+        };
+      }
       Variable variable = Variable.create(attribute, origin);
-      variable.setClearValue(value);
-      return variable;
+
+      // Value may be null
+      if (value == null) {
+        return variable;
+      }
+
+      if (!(value instanceof String)) {
+        return variable.setPlainValue(value);
+      }
+
+      String valueString = value.toString();
+      if (valueString.startsWith(Vault.VAULT_PREFIX)) {
+
+        /**
+         * Decrypt
+         */
+        String valueToDecrypt = valueString.substring(Vault.VAULT_PREFIX.length());
+        if (protector == null) {
+          throw new CastException("No passphrase was given, we can't decrypt the vault value (" + valueToDecrypt + ")");
+        }
+        try {
+          return variable
+            .setCipherValue(valueString)
+            .setPlainValue(protector.decrypt(valueToDecrypt));
+        } catch (Exception exception) {
+          String message = "We were unable to decrypt the value with the given passphrase. Value:" + valueToDecrypt;
+          DbLoggers.LOGGER_DB_ENGINE.severe(message);
+          throw new CastException(message);
+        }
+
+      }
+
+      /*
+       * Template processing if the value has an env variable
+       */
+      TextTemplate textTemplate = TextTemplateEngine
+        .getOrCreate()
+        .compile(valueString);
+      if (textTemplate.getVariableNames().isEmpty()) {
+        return variable.setPlainValue(valueString);
+      }
+      if (!textTemplate.getVariableNames().isEmpty() && templatingEnvs == null) {
+        // should happen only in test
+        throw new RuntimeException("The templating envs are null but the value (" + valueString + ") has a variable");
+      }
+      String clearValue = textTemplate
+        .applyVariables(templatingEnvs)
+        .getResult();
+      return variable
+        .setCipherValue(valueString)
+        .setPlainValue(clearValue);
+    }
+
+    public VariableBuilder setName(String name) {
+      this.name = name;
+      return this;
+    }
+
+    public Variable buildSafe(Object value) {
+      try {
+        return build(value);
+      } catch (CastException e) {
+        throw new RuntimeException(e.getMessage(), e);
+      }
     }
   }
 }

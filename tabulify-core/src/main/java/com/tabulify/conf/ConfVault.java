@@ -8,19 +8,19 @@ import com.tabulify.connection.ConnectionAttribute;
 import net.bytle.exception.CastException;
 import net.bytle.fs.Fs;
 import net.bytle.type.*;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * A class that manages a configuration file
  */
-public class ConfManager implements AutoCloseable {
+public class ConfVault {
 
 
   private final Vault vault;
@@ -29,13 +29,17 @@ public class ConfManager implements AutoCloseable {
   private final Map<TabularAttribute, Variable> env = new HashMap<>();
   private final Tabular tabular;
   private final MapKeyIndependent<Connection> connections = new MapKeyIndependent<>();
+  private final KeyCase outputCase = KeyCase.HYPHEN;
 
   /**
    * @param path    - the file
    * @param vault   - the vault to create the variables
    * @param tabular - tabular to create the connection
+   *                All parameters are there to force the initialization order.
+   *                ie Vault is reachable from the tabular global object,
+   *                but it should be created before confManager
    */
-  public ConfManager(Path path, Vault vault, Tabular tabular) {
+  public ConfVault(Path path, Vault vault, Tabular tabular) {
 
     if (path == null) {
       throw new IllegalArgumentException("The configuration file path passed is null");
@@ -59,9 +63,15 @@ public class ConfManager implements AutoCloseable {
 
   }
 
-  public static ConfManager createFromPath(Path confPath, Vault vault, Tabular tabular) {
 
-    return new ConfManager(confPath, vault, tabular);
+  public static ConfVault createFromPath(Path confPath, Vault vault, Tabular tabular) {
+
+    return new ConfVault(confPath, vault, tabular);
+  }
+
+  public static ConfVault createFromPath(Path confPath, Tabular tabular) {
+
+    return new ConfVault(confPath, tabular.getVault(), tabular);
   }
 
   public Variable getVariable(TabularAttribute name) {
@@ -78,6 +88,7 @@ public class ConfManager implements AutoCloseable {
     if (!Files.exists(path)) {
       return;
     }
+
     /*
      * Read the file into yamlDocuments
      */
@@ -112,11 +123,11 @@ public class ConfManager implements AutoCloseable {
       for (Map.Entry<String, Object> rootEntry : confMap.entrySet()) {
 
         String rootName = rootEntry.getKey();
-        ConfManagerRootAttribute rootAttribute;
+        ConfVaultRootAttribute rootAttribute;
         try {
-          rootAttribute = Casts.cast(rootName, ConfManagerRootAttribute.class);
+          rootAttribute = Casts.cast(rootName, ConfVaultRootAttribute.class);
         } catch (CastException e) {
-          throw new CastException("The root name (" + rootName + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(ConfManagerRootAttribute.class), e);
+          throw new CastException("The root name (" + rootName + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(ConfVaultRootAttribute.class), e);
         }
 
         switch (rootAttribute) {
@@ -126,7 +137,7 @@ public class ConfManager implements AutoCloseable {
             try {
               localEnvs = Casts.castToSameMap(rootEntry.getValue(), String.class, String.class);
             } catch (CastException e) {
-              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfManagerRootAttribute.VARIABLES)), e);
+              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfVaultRootAttribute.VARIABLES)), e);
             }
             for (Map.Entry<String, String> localEnv : localEnvs.entrySet()) {
 
@@ -137,7 +148,7 @@ public class ConfManager implements AutoCloseable {
               } catch (ClassCastException e) {
                 throw new CastException("The env name (" + variableName + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttribute.class), e);
               }
-              Variable variable = vault.createVariableWithRawValue(tabularAttribute, localEnv.getValue(), Origin.USER);
+              Variable variable = vault.createVariable(tabularAttribute, localEnv.getValue(), Origin.CONF);
               env.put(tabularAttribute, variable);
 
             }
@@ -149,10 +160,11 @@ public class ConfManager implements AutoCloseable {
             try {
               localConnections = Casts.castToSameMap(rootEntry.getValue(), String.class, Object.class);
             } catch (CastException e) {
-              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfManagerRootAttribute.CONNECTIONS)), e);
+              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfVaultRootAttribute.CONNECTIONS)), e);
             }
             Variable uri = null;
             Set<Variable> variableMap = new SetKeyIndependent<>();
+            Set<Variable> driverVariableMap = new SetKeyIndependent<>();
             for (Map.Entry<String, Object> localConnection : localConnections.entrySet()) {
 
               String connectionName = localConnection.getKey();
@@ -166,14 +178,26 @@ public class ConfManager implements AutoCloseable {
                 } catch (Exception e) {
                   throw new CastException("The connection attribute (" + connectionAttributeAsString + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(ConnectionAttribute.class), e);
                 }
+                // Driver is a special attribute that stores the third party attribute
                 if (connectionAttribute == ConnectionAttribute.DRIVER) {
+
+                  Map<String, String> yamlDriverPropertiesMap = Casts.castToSameMap(confConnectionAttribute.getValue(), String.class, String.class);
+                  for (Map.Entry<String, String> yamlDriverProperty : yamlDriverPropertiesMap.entrySet()) {
+                    Variable driverVariable;
+                    String driverConnectionAttribute = yamlDriverProperty.getKey();
+                    try {
+                      driverVariable = vault.createVariable(driverConnectionAttribute, yamlDriverProperty.getValue(), Origin.CONF);
+                    } catch (Exception e) {
+                      throw new RuntimeException("An error has occurred while reading the driver connection attribute " + driverConnectionAttribute + " value for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
+                    }
+                    driverVariableMap.add(driverVariable);
+                  }
                   continue;
                 }
 
                 Variable variable;
                 try {
-                  variable = vault.createVariableWithRawValue(connectionAttribute, confConnectionAttribute.getValue(), Origin.USER);
-
+                  variable = vault.createVariable(connectionAttribute, confConnectionAttribute.getValue().toString(), Origin.CONF);
                 } catch (Exception e) {
                   throw new RuntimeException("An error has occurred while reading the connection attribute " + connectionAttributeAsString + " value for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
                 }
@@ -195,7 +219,8 @@ public class ConfManager implements AutoCloseable {
               // variables map should be in the building of the connection
               // as they may be used for the default values
               connection.setVariables(variableMap);
-              connection.addVariable(vault.createVariableSafe(ConnectionAttribute.ORIGIN, Origin.USER, Origin.INTERNAL));
+              connection.addVariable(vault.createVariable(ConnectionAttribute.ORIGIN, Origin.CONF, Origin.RUNTIME));
+              connection.setDriverVariables(driverVariableMap);
               connections.put(connectionName, connection);
 
             }
@@ -221,73 +246,101 @@ public class ConfManager implements AutoCloseable {
 
   }
 
-  public void close() {
-
-    this.flush();
-
-  }
-
 
   public void flush() {
-    BufferedWriter outputStream;
+    flush(this.path);
+  }
+
+  public void flush(Path targetPath) {
 
     try {
 
-      if (!Files.exists(path)) {
-        Fs.createEmptyFile(path);
+      if (!Files.exists(targetPath)) {
+        Fs.createEmptyFile(targetPath);
       }
-      /*
-       * Snake YML does not permit to add comments
-       * We are then writing the yaml text file ourselves
-       */
-      outputStream = Files.newBufferedWriter(path);
 
-      Map<String, Object> confMap = new HashMap<>();
-      for (Map.Entry<String, Object> entry : confMap
-        .entrySet()
-        .stream()
-        .sorted(Map.Entry.comparingByKey())
-        .collect(Collectors.toList())) {
-
-        // Value
-        Object value = entry.getValue();
-        if (value instanceof Collection) {
-          outputStream.write(entry.getKey() + ":");
-          outputStream.newLine();
-          Collection<?> collectionValue = (Collection<?>) value;
-          for (Object colValue : collectionValue) {
-            outputStream.write("  - " + colValue);
-            outputStream.newLine();
-          }
-        } else {
-          outputStream.write(entry.getKey() + ": " + entry.getValue());
-          outputStream.newLine();
-        }
-        // Hr
-        outputStream.newLine();
+      Map<String, Object> connectionMap = toConnectionMap();
+      // Configure SnakeYAML settings
+      DumperOptions dumperOptions = new DumperOptions();
+      dumperOptions.setIndent(2);
+      dumperOptions.setPrettyFlow(true);
+      dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+      Yaml yaml = new Yaml(dumperOptions);
+      Map<String, Object> confAsMap = new HashMap<>();
+      confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.CONNECTIONS).toCase(outputCase), toConnectionMap());
+      confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.VARIABLES).toCase(outputCase), toVariables());
+      String yamlString = yaml.dump(confAsMap);
+      // Write to file
+      try (FileWriter writer = new FileWriter(targetPath.toFile())) {
+        writer.write(yamlString);
       }
-      outputStream.flush();
-      outputStream.close();
 
     } catch (IOException e) {
 
-      throw new RuntimeException(e);
+      throw new RuntimeException("Error while writing the configuration file " + targetPath.toAbsolutePath() + ". Error" + e.getMessage(), e);
 
     }
+  }
+
+  private Map<String, Object> toVariables() {
+
+    Map<String, Object> variableMap = new HashMap<>();
+    for (Variable variable : tabular.getVariables()) {
+      dumpVariable(variable, variableMap);
+    }
+    return variableMap;
+  }
+
+  private Map<String, Object> toConnectionMap() {
+
+    List<Connection> connections = new ArrayList<>(this.connections.values());
+    Collections.sort(connections);
+    Map<String, Object> connectionsMap = new HashMap<>();
+    // For whatever reason, we made a name variable
+    List<Attribute> noDumpAttributes = Arrays.asList(ConnectionAttribute.NAME, ConnectionAttribute.ORIGIN);
+    for (Connection connection : connections) {
+      String connectionNameSection = connection.toString();
+      Map<String, Object> connectionMap = new HashMap<>();
+      connectionsMap.put(connectionNameSection, connectionMap);
+
+      for (Variable variable : connection.getVariables()) {
+        if (noDumpAttributes.contains(variable.getAttribute())) {
+          continue;
+        }
+        dumpVariable(variable, connectionMap);
+      }
+
+    }
+
+    return connectionsMap;
+  }
+
+  private void dumpVariable(Variable variable, Map<String, Object> connectionMap) {
+    // Derived value
+    if (variable.isValueProvider()) {
+      return;
+    }
+    String originalValue = (String) variable.getCipherValue();
+    if (originalValue == null || originalValue.isEmpty()) {
+      return;
+    }
+    String key = KeyNormalizer.create(variable.getAttribute()).toCase(outputCase);
+    connectionMap.put(key, originalValue);
   }
 
   /**
    * Used in Tabli
    */
-  public void addVariable(String key, Object value) throws CastException {
+  public ConfVault addVariable(String key, String value) throws CastException {
     TabularAttribute tabularAttribute;
     try {
       tabularAttribute = Casts.cast(key, TabularAttribute.class);
     } catch (CastException e) {
       throw new CastException("Error: the variable name (" + key + " is not a valid variable name. We were expecting one of: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttribute.class));
     }
-    Variable variable = vault.createVariableWithRawValue(tabularAttribute, value, Origin.USER);
+    Variable variable = vault.createVariable(tabularAttribute, value, Origin.CONF);
     env.put(tabularAttribute, variable);
+    return this;
   }
 
   @Override
@@ -297,6 +350,41 @@ public class ConfManager implements AutoCloseable {
 
   public Connection getConnection(String name) {
     return this.connections.get(name);
+  }
+
+  /**
+   * Load the {@link com.tabulify.connection.ConnectionHowTos how-to connections}
+   */
+  public ConfVault loadHowtoConnections() {
+
+    for (Connection connection : this.tabular.getHowtoConnections().values()) {
+      addConnection(connection);
+    }
+
+    return this;
+
+  }
+
+  public ConfVault addConnection(Connection connection) {
+    connections.put(connection.getName(), connection);
+    return this;
+  }
+
+  public Object deleteVariable(String key) throws CastException {
+
+    TabularAttribute tabularAttribute;
+    try {
+      tabularAttribute = Casts.cast(key, TabularAttribute.class);
+    } catch (CastException e) {
+      throw new CastException("Error: the variable name (" + key + " is not a valid variable name. We were expecting one of: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttribute.class));
+    }
+    Variable variable = env.remove(tabularAttribute);
+    return variable.getCipherValue();
+
+  }
+
+  public Set<Variable> getVariables() {
+    return new HashSet<>(this.env.values());
   }
 
 }
