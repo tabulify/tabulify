@@ -3,6 +3,7 @@ package com.tabulify.jdbc;
 import com.tabulify.Tabular;
 import com.tabulify.connection.ConnectionAttValueBooleanDataType;
 import com.tabulify.connection.ConnectionAttValueTimeDataType;
+import com.tabulify.connection.ConnectionAttributeBase;
 import com.tabulify.model.SqlDataType;
 import com.tabulify.noop.NoOpConnection;
 import com.tabulify.spi.DataPath;
@@ -45,13 +46,13 @@ public class SqlConnection extends NoOpConnection {
 
 
   @Override
-  public SqlConnection addVariable(String key, Object value) {
+  public SqlConnection addVariable(String name, Object value) {
 
     SqlConnectionAttribute connectionAttribute;
     try {
-      connectionAttribute = Casts.cast(key, SqlConnectionAttribute.class);
+      connectionAttribute = Casts.cast(name, SqlConnectionAttribute.class);
     } catch (Exception e) {
-      super.addVariable(key, value);
+      super.addVariable(name, value);
       return this;
     }
     if (connectionAttribute.needsConnection()) {
@@ -178,7 +179,7 @@ public class SqlConnection extends NoOpConnection {
    * @return the connection for chaining
    */
   public SqlConnection setDriver(String jdbcDriver) {
-    super.addVariable(SqlConnectionAttribute.DRIVER, jdbcDriver);
+    super.addVariable(ConnectionAttributeBase.JDBC_DRIVER, jdbcDriver);
     return this;
   }
 
@@ -192,8 +193,8 @@ public class SqlConnection extends NoOpConnection {
   public String getDriver() {
 
     try {
-      return super.getVariable(SqlConnectionAttribute.DRIVER).getValueOrDefault().toString();
-    } catch (NoVariableException | NoValueException e) {
+      return super.getVariable(ConnectionAttributeBase.JDBC_DRIVER).getValueOrDefault().toString();
+    } catch (NoValueException e) {
       return "";
     }
 
@@ -203,7 +204,7 @@ public class SqlConnection extends NoOpConnection {
 
     try {
       return (String) super.getVariable(SqlConnectionAttribute.CONNECTION_INIT_SCRIPT).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+    } catch (NoValueException e) {
       throw new NotFoundException();
     }
 
@@ -1159,14 +1160,6 @@ public class SqlConnection extends NoOpConnection {
     return (SqlDataPath) super.getAndCreateRandomDataPath();
   }
 
-
-  public Clob createClob() {
-    try {
-      return this.connection.createClob();
-    } catch (SQLException e) {
-      return SqlClob.create();
-    }
-  }
 
 
   /**

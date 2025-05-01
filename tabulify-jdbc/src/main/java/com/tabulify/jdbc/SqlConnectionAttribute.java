@@ -1,6 +1,6 @@
 package com.tabulify.jdbc;
 
-import net.bytle.type.Attribute;
+import com.tabulify.connection.ConnectionAttribute;
 
 import java.sql.DatabaseMetaData;
 
@@ -10,12 +10,11 @@ import java.sql.DatabaseMetaData;
  *   * {@link DatabaseMetaData#getClientInfoProperties()}
  *
  */
-public enum SqlConnectionAttribute implements Attribute {
+public enum SqlConnectionAttribute implements ConnectionAttribute {
 
 
   CONNECTION_INIT_SCRIPT("A script that runs after a connection has been established",false),
   CONNECTION_CLOSING_SCRIPT("A script that runs before a connection is closed",false),
-  DRIVER("The driver class",false),
   DATABASE_PRODUCT_NAME("The name of the database",true),
   DATABASE_PRODUCT_VERSION("The version of the database",true),
   DATABASE_MAJOR_VERSION("The major version number of the database",true),
@@ -26,8 +25,6 @@ public enum SqlConnectionAttribute implements Attribute {
   DRIVER_NAME("The driver name",true),
   SUPPORT_NAMED_PARAMETERS("If the system supports named parameters in the SQL statement",true),
   SUPPORT_BATCH_UPDATES("If the system supports batch SQL updates",true);
-
-
 
 
   private final String description;

@@ -2,7 +2,6 @@ package com.tabulify.connection;
 
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
-import net.bytle.exception.NoVariableException;
 import net.bytle.type.Variable;
 
 /**
@@ -16,22 +15,7 @@ public class ConnectionMetadata {
    */
   private final Connection connection;
 
-  /**
-   * When the date data type is not supported by the data store
-   * (ie Sqlite)
-   * we store date as sql literal because it's more readable
-   * <p>
-   * The three fields are respectively for:
-   * * DATE
-   * * TIMESTAMP
-   * * TIME
-   */
-  static final ConnectionAttValueTimeDataType DEFAULT_DATE_DATA_TYPE = ConnectionAttValueTimeDataType.NATIVE;
-  private static final ConnectionAttValueTimeDataType DEFAULT_TIMESTAMP_DATA_TYPE = ConnectionAttValueTimeDataType.NATIVE;
-  private static final ConnectionAttValueTimeDataType DEFAULT_TIME_DATA_TYPE = ConnectionAttValueTimeDataType.NATIVE;
 
-
-  private static final ConnectionAttValueBooleanDataType DEFAULT_BOOLEAN_DATA_TYPE = ConnectionAttValueBooleanDataType.Native;
 
 
   public ConnectionMetadata(Connection connection) {
@@ -43,7 +27,7 @@ public class ConnectionMetadata {
     try {
       Variable variable = this.connection.getTabular()
         .createVariable(
-          ConnectionAttribute.BOOLEAN_DATA_TYPE,
+          ConnectionAttributeBase.BOOLEAN_DATA_TYPE,
           connectionAttValueBooleanDataType
         );
       this.connection.addVariable(variable);
@@ -60,7 +44,7 @@ public class ConnectionMetadata {
   public ConnectionMetadata setDateDataType(ConnectionAttValueTimeDataType dateDataType) {
 
     try {
-      Variable variable = this.connection.getTabular().createVariable(ConnectionAttribute.DATE_DATA_TYPE, dateDataType);
+      Variable variable = this.connection.getTabular().createVariable(ConnectionAttributeBase.DATE_DATA_TYPE, dateDataType);
       this.connection.addVariable(variable);
       return this;
     } catch (Exception e) {
@@ -72,7 +56,7 @@ public class ConnectionMetadata {
 
   public ConnectionMetadata setTimestampDataType(ConnectionAttValueTimeDataType timestampDataType) {
     try {
-      Variable variable = this.connection.getTabular().createVariable(ConnectionAttribute.TIMESTAMP_DATA_TYPE, timestampDataType);
+      Variable variable = this.connection.getTabular().createVariable(ConnectionAttributeBase.TIMESTAMP_DATA_TYPE, timestampDataType);
       this.connection.addVariable(variable);
       return this;
     } catch (Exception e) {
@@ -85,8 +69,8 @@ public class ConnectionMetadata {
 
 
     try {
-      return (ConnectionAttValueTimeDataType) this.connection.getVariable(ConnectionAttribute.DATE_DATA_TYPE).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+      return (ConnectionAttValueTimeDataType) this.connection.getVariable(ConnectionAttributeBase.DATE_DATA_TYPE).getValueOrDefault();
+    } catch (NoValueException e) {
       throw new InternalException("The date data type has already a default, it should not happen", e);
     }
 
@@ -96,8 +80,8 @@ public class ConnectionMetadata {
   public ConnectionAttValueTimeDataType getTimestampDataType() {
 
     try {
-      return (ConnectionAttValueTimeDataType) this.connection.getVariable(ConnectionAttribute.TIMESTAMP_DATA_TYPE).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+      return (ConnectionAttValueTimeDataType) this.connection.getVariable(ConnectionAttributeBase.TIMESTAMP_DATA_TYPE).getValueOrDefault();
+    } catch (NoValueException e) {
       throw new InternalException("The TIMESTAMP_DATA_TYPE data type has already a default, it should not happen", e);
     }
 
@@ -107,8 +91,8 @@ public class ConnectionMetadata {
   public ConnectionAttValueTimeDataType getTimeDataType() {
 
     try {
-      return (ConnectionAttValueTimeDataType) this.connection.getVariable(ConnectionAttribute.TIME_DATA_TYPE).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+      return (ConnectionAttValueTimeDataType) this.connection.getVariable(ConnectionAttributeBase.TIME_DATA_TYPE).getValueOrDefault();
+    } catch (NoValueException e) {
       throw new InternalException("The TIME_DATA_TYPE data type has already a default, it should not happen");
     }
 
@@ -116,7 +100,7 @@ public class ConnectionMetadata {
 
   public ConnectionMetadata setTimeDataType(ConnectionAttValueTimeDataType connectionAttValueTimeDataType) {
     try {
-      Variable variable = this.connection.getTabular().createVariable(ConnectionAttribute.TIME_DATA_TYPE, connectionAttValueTimeDataType);
+      Variable variable = this.connection.getTabular().createVariable(ConnectionAttributeBase.TIME_DATA_TYPE, connectionAttValueTimeDataType);
       this.connection.addVariable(variable);
       return this;
     } catch (Exception e) {
@@ -127,8 +111,8 @@ public class ConnectionMetadata {
   public ConnectionAttValueBooleanDataType getBooleanDataType() {
 
     try {
-      return (ConnectionAttValueBooleanDataType) this.connection.getVariable(ConnectionAttribute.BOOLEAN_DATA_TYPE).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+      return (ConnectionAttValueBooleanDataType) this.connection.getVariable(ConnectionAttributeBase.BOOLEAN_DATA_TYPE).getValueOrDefault();
+    } catch (NoValueException e) {
       throw new InternalException("The BOOLEAN_DATA_TYPE data type has already a default, it should not happen");
     }
 

@@ -55,6 +55,7 @@ public class Tabular implements AutoCloseable {
   private final Map<String, Connection> howtoConnections;
   private final TabularExecEnv executionEnv;
   private final Path projectHomePath;
+  private final TabularEnvs tabularEnvs;
 
   // The default connection added to a data URI if it does not have it.
   protected Connection defaultConnection;
@@ -120,7 +121,7 @@ public class Tabular implements AutoCloseable {
 
     // All determine functions utility
     // we don't pass the tabular object so that we have dependency in the function signature
-    TabularEnvs tabularEnvs = new TabularEnvs(tabularConfig.templatingEnv);
+    tabularEnvs = new TabularEnvs(tabularConfig.templatingEnv);
 
     /**
      * Building Helper
@@ -154,12 +155,6 @@ public class Tabular implements AutoCloseable {
      * Home Path
      */
     this.homePath = TabularInit.determineHomePath(tabularConfig.homePath, this.executionEnv, tabularEnvs, variables, vault, confVault);
-
-
-    /**
-     * Smtp Connection
-     */
-    TabularInit.buildSmtpVariables(tabularEnvs, variables, vault, confVault);
 
 
     /**
@@ -909,6 +904,10 @@ public class Tabular implements AutoCloseable {
 
   public Variable createVariable(String key, Object value) throws Exception {
     return this.getVault().createVariable(key, value, Origin.RUNTIME);
+  }
+
+  public TabularEnvs getTabularEnvs() {
+    return this.tabularEnvs;
   }
 
 

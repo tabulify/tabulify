@@ -3,15 +3,21 @@ package com.tabulify.connection;
 import net.bytle.type.AttributeValue;
 
 /**
- * The datatype of a date in the case
- * that the connection system is not implementing it
+ * The datatype of a date in case
+ * the connection system is not implementing it
  * <p></p>
  * Ie Used when the database does not support the SQL DATE and/or TIMESTAMP data type
  * (ie SQLite for instance)
- *
- *
- *
+ * When the date data type is not supported by the data store
+ * (ie Sqlite)
+ * we store date as sql literal because it's more readable
+ * <p>
+ * The three fields are respectively for:
+ * * DATE
+ * * TIMESTAMP
+ * * TIME
  */
+
 public enum ConnectionAttValueTimeDataType implements AttributeValue {
 
   SQL_LITERAL("The sql literal representation of a date (ie YYYY-MM-DD) to the millis"),

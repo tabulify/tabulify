@@ -1,19 +1,15 @@
 package com.tabulify.tpc;
 
-import com.teradata.tpcds.Options;
-import com.teradata.tpcds.Results;
-import com.teradata.tpcds.Session;
-import com.teradata.tpcds.Table;
 import com.tabulify.model.ColumnDef;
-import com.tabulify.model.RelationDef;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.SelectStream;
 import com.tabulify.stream.SelectStreamAbs;
 import com.tabulify.stream.SelectStreamListener;
+import com.teradata.tpcds.Options;
+import com.teradata.tpcds.Results;
+import com.teradata.tpcds.Session;
+import com.teradata.tpcds.Table;
 import net.bytle.exception.NoColumnException;
-import net.bytle.exception.NoVariableException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.List;
@@ -27,7 +23,6 @@ public class TpcdsSelectStream extends SelectStreamAbs {
   private List<String> values;
   private int row = 0;
   private SelectStreamListener selectStreamListener;
-  private final Logger LOGGER = LoggerFactory.getLogger(TpcdsSelectStream.class);
 
 
 
@@ -42,13 +37,7 @@ public class TpcdsSelectStream extends SelectStreamAbs {
 
       // Teradata options
       Options options = new Options();
-      Double scale;
-      try {
-        scale = (Double) this.getDataPath().getConnection().getVariable(TpcConnectionAttribute.SCALE).getValueOrDefaultOrNull();
-      } catch (NoVariableException e) {
-        scale = 0.001;
-      }
-      options.scale = scale;
+      options.scale = (Double) this.getDataPath().getConnection().getVariable(TpcConnectionAttribute.SCALE).getValueOrDefaultOrNull();
       options.noSexism = true;
       Session session = options.toSession();
 
@@ -107,10 +96,6 @@ public class TpcdsSelectStream extends SelectStreamAbs {
     return values.get(columnIndex-1);
   }
 
-  @Override
-  public RelationDef getRuntimeRelationDef() {
-    return this.getDataPath().getOrCreateRelationDef();
-  }
 
   @Override
   public boolean next(Integer timeout, TimeUnit timeUnit) {

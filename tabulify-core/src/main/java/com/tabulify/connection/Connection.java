@@ -2,7 +2,9 @@ package com.tabulify.connection;
 
 import com.tabulify.DbLoggers;
 import com.tabulify.Tabular;
+import com.tabulify.Vault;
 import com.tabulify.conf.ConnectionVault;
+import com.tabulify.conf.TabularEnvs;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.model.SqlDataType;
 import com.tabulify.model.SqlTypes;
@@ -13,7 +15,6 @@ import com.tabulify.uri.DataUriString;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
-import net.bytle.exception.NoVariableException;
 import net.bytle.type.*;
 
 import java.math.BigDecimal;
@@ -52,10 +53,14 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       throw new InternalException("A connection cannot be created without name");
     }
 
-    variables.put(uri.getAttribute().toString(), uri);
-    variables.put(name.getAttribute().toString(), name);
+    /**
+     * We can't add them via addVariable
+     * because they are immutable
+     */
+    this.variables.put((ConnectionAttribute) uri.getAttribute(), uri);
+    this.variables.put((ConnectionAttribute) name.getAttribute(), name);
 
-    this.addVariablesFromEnumAttributeClass(ConnectionAttribute.class);
+    this.addVariablesFromEnumAttributeClass(ConnectionAttributeBase.class);
 
 
     /**
@@ -147,9 +152,9 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   /**
    * Connection Variable. Variable managed by Tabli
-   * String because each connection may have its own variables
+   * Should be a known attribute
    */
-  Map<String, Variable> variables = new MapKeyIndependent<>();
+  Map<ConnectionAttribute, Variable> variables = new HashMap<>();
   /**
    * Driver Variable. Variable of the driver/library, not from us
    */
@@ -192,7 +197,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
 
   public Variable getDescription() {
-    return this.variables.get(ConnectionAttribute.DESCRIPTION.toString());
+    return this.variables.get(ConnectionAttributeBase.DESCRIPTION);
   }
 
 
@@ -208,20 +213,13 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Variable getNameAsVariable() {
 
-    try {
-      return this.getVariable(ConnectionAttribute.NAME);
-    } catch (NoVariableException e) {
-      throw new InternalException("Connection has no name. It should not happen as name is mandatory");
-    }
-
+    return this.getVariable(ConnectionAttributeBase.NAME);
   }
 
   public Variable getUriAsVariable() {
-    try {
-      return this.getVariable(ConnectionAttribute.URI);
-    } catch (NoVariableException e) {
-      throw new InternalException("It should not happen as URI is mandatory");
-    }
+
+    return this.getVariable(ConnectionAttributeBase.URI);
+
   }
 
 
@@ -245,7 +243,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setUser(String user) {
     try {
-      Variable userVariable = tabular.getVault().createVariable(ConnectionAttribute.USER, user, RUNTIME);
+      Variable userVariable = tabular.getVault().createVariable(ConnectionAttributeBase.USER, user, RUNTIME);
       this.addVariable(userVariable);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the user variable", e);
@@ -255,8 +253,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setPassword(String pwd) {
     try {
-      Variable password = tabular.getVault().createVariable(ConnectionAttribute.PASSWORD, pwd, RUNTIME);
-      this.variables.put(password.getAttribute().toString(), password);
+      Variable password = tabular.getVault().createVariable(ConnectionAttributeBase.PASSWORD, pwd, RUNTIME);
+      this.variables.put(ConnectionAttributeBase.PASSWORD, password);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the password variable for the connection (" + this + "). Error: " + e.getMessage(), e);
     }
@@ -265,11 +263,11 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
 
   public Variable getUser() {
-    return this.variables.get(ConnectionAttribute.USER.toString());
+    return this.variables.get(ConnectionAttributeBase.USER);
   }
 
   public Variable getPasswordVariable() {
-    return this.variables.get(ConnectionAttribute.PASSWORD.toString());
+    return this.variables.get(ConnectionAttributeBase.PASSWORD);
   }
 
   @Override
@@ -291,12 +289,24 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public Connection addVariable(String key, Object value) {
+  /**
+   * Add a free form key
+   * Each connection should implement it to add its own attribute
+   * and call super to add the attribute of its parent if the name is unknown
+   */
+  public Connection addVariable(String name, Object value) {
+    ConnectionAttributeBase connectionAttributeBase;
     try {
-      Variable variable = tabular.getVault().createVariable(key, value, Origin.RUNTIME);
+      connectionAttributeBase = Casts.cast(name, ConnectionAttributeBase.class);
+    } catch (CastException e) {
+      throw new RuntimeException("The connection attribute " + name + " is unknown for the connection " + this + ". Error: " + e.getMessage(), e);
+    }
+    try {
+
+      Variable variable = tabular.getVault().createVariable(connectionAttributeBase, value, Origin.RUNTIME);
       this.addVariable(variable);
     } catch (Exception e) {
-      throw new RuntimeException("Error while adding connection the property " + key + ". Error: " + e.getMessage(), e);
+      throw new RuntimeException("Error while adding the variable " + name + " to the connection " + this + ". Error: " + e.getMessage(), e);
     }
     return this;
   }
@@ -312,21 +322,26 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
   public Connection addVariable(Variable variable) {
+    Attribute attribute = variable.getAttribute();
+    if (!(attribute instanceof ConnectionAttribute)) {
+      throw new InternalException("The attribute " + attribute + " is not a connection attribute but a " + attribute.getClass().getSimpleName());
+    }
+    ConnectionAttribute connectionAttribute = (ConnectionAttribute) attribute;
     // uri and name value cannot be changed as they are constructor variable
     // the original may be template so we allow to change the variable if the value are the same
-    if (variable.getAttribute().equals(ConnectionAttribute.NAME) && !variable.getValueOrDefaultAsStringNotNull().equals(this.getName())) {
+    if (attribute.equals(ConnectionAttributeBase.NAME) && !variable.getValueOrDefaultAsStringNotNull().equals(this.getName())) {
       throw new RuntimeException("You can't change the name of this connection from " + this.getName() + " to " + variable.getValueOrDefaultAsStringNotNull());
     }
-    if (variable.getAttribute().equals(ConnectionAttribute.URI) && !variable.getValueOrDefaultAsStringNotNull().equals(this.getUriAsString())) {
+    if (attribute.equals(ConnectionAttributeBase.URI) && !variable.getValueOrDefaultAsStringNotNull().equals(this.getUriAsString())) {
       throw new RuntimeException("You can't change the URI of this connection from " + this.getUriAsString() + " to  " + variable.getValueOrDefaultAsStringNotNull());
     }
-    Variable actualVariable = variables.get(variable.getAttribute().toString());
+    Variable actualVariable = variables.get(connectionAttribute);
     if (actualVariable != null) {
       // overwrite of an actual known attribute
       // we copy the attribute otherwise the description is lost
       variable.setAttribute(actualVariable.getAttribute());
     }
-    variables.put(variable.getAttribute().toString(), variable);
+    variables.put(connectionAttribute, variable);
     return this;
   }
 
@@ -335,8 +350,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     try {
       return createConnectionFromProviderOrDefault(
         tabular,
-        tabular.createVariable(ConnectionAttribute.NAME, variableName),
-        tabular.createVariable(ConnectionAttribute.URI, variableUri)
+        tabular.createVariable(ConnectionAttributeBase.NAME, variableName),
+        tabular.createVariable(ConnectionAttributeBase.URI, variableUri)
       );
     } catch (Exception e) {
       throw new InternalException("Error while creating the main connection variable name/uri. Error: " + e.getMessage(), e);
@@ -496,7 +511,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   public Connection setDescription(String description) {
     Variable descVar;
     try {
-      descVar = tabular.createVariable(ConnectionAttribute.DESCRIPTION, description);
+      descVar = tabular.createVariable(ConnectionAttributeBase.DESCRIPTION, description);
     } catch (Exception e) {
       throw new RuntimeException("Internal error, cannot create description variable", e);
     }
@@ -684,17 +699,6 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public Variable getVariable(String name) throws NoVariableException {
-
-    Variable variable = this.variables.get(name);
-    if (variable == null) {
-      throw new NoVariableException("No attribute found with the name (" + name + ")");
-    }
-    return variable;
-
-  }
-
-
   /**
    * Try to create a connection
    *
@@ -703,19 +707,15 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   public abstract Boolean ping();
 
   public Connection setOrigin(ConnectionOrigin connectionOrigin) {
-    try {
-      this.getVariable(ConnectionAttribute.ORIGIN)
-        .setPlainValue(connectionOrigin);
-    } catch (NoVariableException e) {
-      throw new InternalException(e);
-    }
+    this.getVariable(ConnectionAttributeBase.ORIGIN)
+      .setPlainValue(connectionOrigin);
     return this;
   }
 
   public ConnectionOrigin getOrigin() {
     try {
-      return (ConnectionOrigin) this.getVariable(ConnectionAttribute.ORIGIN).getValueOrDefault();
-    } catch (NoValueException | NoVariableException e) {
+      return (ConnectionOrigin) this.getVariable(ConnectionAttributeBase.ORIGIN).getValueOrDefault();
+    } catch (NoValueException e) {
       throw new InternalException("No Origin found", e);
     }
 
@@ -766,8 +766,16 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     return returnedMap;
   }
 
-  public Variable getVariable(Attribute attribute) throws NoVariableException {
-    return this.getVariable(attribute.toString());
+  public Variable getVariable(ConnectionAttribute attribute) {
+    Variable variable = this.variables.get(attribute);
+    if (variable == null) {
+      /**
+       * connection attribute should be present
+       * added via {@link #addVariablesFromEnumAttributeClass(Class)} in the constructor
+       */
+      throw new RuntimeException("The connection attribute " + attribute + " was not found. Did you add it at construction time");
+    }
+    return variable;
   }
 
   /**
@@ -776,19 +784,39 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * @param enumClass - the class that holds all enum attribute
    * @return the path for chaining
    */
-  public Connection addVariablesFromEnumAttributeClass(Class<? extends Attribute> enumClass) {
-    Arrays.asList(enumClass.getEnumConstants()).forEach(c ->
-      {
-        Variable variable = Variable.create(c, RUNTIME);
-        if (variable.getAttribute().equals(ConnectionAttribute.NAME)) {
-          return;
-        }
-        if (variable.getAttribute().equals(ConnectionAttribute.URI)) {
-          return;
-        }
-        this.addVariable(variable);
+  public Connection addVariablesFromEnumAttributeClass(Class<? extends ConnectionAttribute> enumClass) {
+    for (ConnectionAttribute attribute : enumClass.getEnumConstants()) {
+
+      Vault vault = this.tabular.getVault();
+      Vault.VariableBuilder variableBuilder = vault.createVariableBuilderFromAttribute(attribute);
+
+      // What is fucked up, is fucked up
+      // Name and uri are constructor variable and are therefore already added
+      if (attribute == ConnectionAttributeBase.NAME || attribute == ConnectionAttributeBase.URI) {
+        continue;
       }
-    );
+
+      // Env
+      // We don't look up without the tabli predix because it can cause clashes
+      // for instance, name in os is the name of the computer
+      TabularEnvs tabularEnvs = this.tabular.getTabularEnvs();
+      KeyNormalizer envName = tabularEnvs.getOsTabliEnvName(attribute);
+      String envValue = tabularEnvs.getOsEnvValue(envName);
+      if (envValue != null) {
+        Variable variable = variableBuilder
+          .setOrigin(Origin.OS)
+          .buildSafe(envValue);
+        this.addVariable(variable);
+        continue;
+      }
+
+      // None
+      Variable variable = variableBuilder
+        .setOrigin(Origin.RUNTIME)
+        .buildSafe(null);
+      this.addVariable(variable);
+
+    }
     return this;
   }
 

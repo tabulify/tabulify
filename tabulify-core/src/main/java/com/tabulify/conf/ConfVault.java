@@ -4,7 +4,8 @@ import com.tabulify.Tabular;
 import com.tabulify.TabularAttribute;
 import com.tabulify.Vault;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionAttribute;
+import com.tabulify.connection.ConnectionAttributeBase;
+import com.tabulify.connection.ConnectionOrigin;
 import net.bytle.exception.CastException;
 import net.bytle.fs.Fs;
 import net.bytle.type.*;
@@ -58,7 +59,7 @@ public class ConfVault {
       parseYaml();
     } catch (CastException e) {
       // we cannot recover from that
-      throw new RuntimeException(e.getMessage(), e);
+      throw new RuntimeException("Error while parsing the config vault " + this + ". Error: " + e.getMessage(), e);
     }
 
   }
@@ -172,14 +173,14 @@ public class ConfVault {
               for (Map.Entry<String, Object> confConnectionAttribute : connectionAttributes.entrySet()) {
 
                 String connectionAttributeAsString = confConnectionAttribute.getKey();
-                ConnectionAttribute connectionAttribute;
+                ConnectionAttributeBase connectionAttributeBase;
                 try {
-                  connectionAttribute = Casts.cast(connectionAttributeAsString, ConnectionAttribute.class);
+                  connectionAttributeBase = Casts.cast(connectionAttributeAsString, ConnectionAttributeBase.class);
                 } catch (Exception e) {
-                  throw new CastException("The connection attribute (" + connectionAttributeAsString + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(ConnectionAttribute.class), e);
+                  throw new CastException("The connection attribute (" + connectionAttributeAsString + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(ConnectionAttributeBase.class), e);
                 }
                 // Driver is a special attribute that stores the third party attribute
-                if (connectionAttribute == ConnectionAttribute.DRIVER) {
+                if (connectionAttributeBase == ConnectionAttributeBase.DRIVER) {
 
                   Map<String, String> yamlDriverPropertiesMap = Casts.castToSameMap(confConnectionAttribute.getValue(), String.class, String.class);
                   for (Map.Entry<String, String> yamlDriverProperty : yamlDriverPropertiesMap.entrySet()) {
@@ -197,11 +198,11 @@ public class ConfVault {
 
                 Variable variable;
                 try {
-                  variable = vault.createVariable(connectionAttribute, confConnectionAttribute.getValue().toString(), Origin.CONF);
+                  variable = vault.createVariable(connectionAttributeBase, confConnectionAttribute.getValue().toString(), Origin.CONF);
                 } catch (Exception e) {
                   throw new RuntimeException("An error has occurred while reading the connection attribute " + connectionAttributeAsString + " value for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
                 }
-                if (connectionAttribute == ConnectionAttribute.URI) {
+                if (connectionAttributeBase == ConnectionAttributeBase.URI) {
                   uri = variable;
                   continue;
                 }
@@ -219,7 +220,7 @@ public class ConfVault {
               // variables map should be in the building of the connection
               // as they may be used for the default values
               connection.setVariables(variableMap);
-              connection.addVariable(vault.createVariable(ConnectionAttribute.ORIGIN, Origin.CONF, Origin.RUNTIME));
+              connection.addVariable(vault.createVariable(ConnectionAttributeBase.ORIGIN, ConnectionOrigin.CONF, Origin.RUNTIME));
               connection.setDriverVariables(driverVariableMap);
               connections.put(connectionName, connection);
 
@@ -259,7 +260,6 @@ public class ConfVault {
         Fs.createEmptyFile(targetPath);
       }
 
-      Map<String, Object> connectionMap = toConnectionMap();
       // Configure SnakeYAML settings
       DumperOptions dumperOptions = new DumperOptions();
       dumperOptions.setIndent(2);
@@ -297,7 +297,7 @@ public class ConfVault {
     Collections.sort(connections);
     Map<String, Object> connectionsMap = new HashMap<>();
     // For whatever reason, we made a name variable
-    List<Attribute> noDumpAttributes = Arrays.asList(ConnectionAttribute.NAME, ConnectionAttribute.ORIGIN);
+    List<Attribute> noDumpAttributes = Arrays.asList(ConnectionAttributeBase.NAME, ConnectionAttributeBase.ORIGIN);
     for (Connection connection : connections) {
       String connectionNameSection = connection.toString();
       Map<String, Object> connectionMap = new HashMap<>();
@@ -320,7 +320,7 @@ public class ConfVault {
     if (variable.isValueProvider()) {
       return;
     }
-    String originalValue = (String) variable.getCipherValue();
+    String originalValue = variable.getCipherValue();
     if (originalValue == null || originalValue.isEmpty()) {
       return;
     }

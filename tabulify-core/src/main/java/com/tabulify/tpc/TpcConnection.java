@@ -1,13 +1,17 @@
 package com.tabulify.tpc;
 
 import com.tabulify.Tabular;
+import com.tabulify.connection.Connection;
 import com.tabulify.fs.FsConnectionResourcePath;
 import com.tabulify.noop.NoOpConnection;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataSystem;
 import com.tabulify.spi.ProcessingEngine;
 import com.tabulify.spi.ResourcePath;
+import net.bytle.exception.CastException;
+import net.bytle.type.Casts;
 import net.bytle.type.MediaType;
+import net.bytle.type.Origin;
 import net.bytle.type.Variable;
 
 import static com.tabulify.tpc.TpcDataPath.CURRENT_WORKING_DIRECTORY_NAME;
@@ -73,6 +77,7 @@ public class TpcConnection extends NoOpConnection {
     throw new UnsupportedOperationException("The tpc data source does not have a processing engine");
   }
 
+  @SuppressWarnings("RedundantMethodOverride")
   @Override
   public Boolean ping() {
     return true;
@@ -94,5 +99,20 @@ public class TpcConnection extends NoOpConnection {
      * Because there is no schema, the fs string path works
      */
     return FsConnectionResourcePath.createOf(pathOrName, names);
+  }
+
+  @Override
+  public Connection addVariable(String name, Object value) {
+    try {
+      TpcConnectionAttribute connectionAttribute = Casts.cast(name, TpcConnectionAttribute.class);
+      return addVariable(
+        this
+          .getTabular()
+          .getVault()
+          .createVariable(connectionAttribute, value, Origin.RUNTIME)
+      );
+    } catch (CastException e) {
+      return super.addVariable(name, value);
+    }
   }
 }

@@ -4,9 +4,8 @@ package com.tabulify.tabli;
 import com.tabulify.Tabular;
 import com.tabulify.conf.ConnectionVault;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionAttribute;
+import com.tabulify.connection.ConnectionAttributeBase;
 import com.tabulify.connection.ConnectionOrigin;
-import com.tabulify.jdbc.SqlConnectionAttribute;
 import com.tabulify.spi.DataPath;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
@@ -102,7 +101,7 @@ public class TabliConnectionUpsert {
             .setOrigin(connection.getOrigin())
             .setVariables(connection.getVariables()
               .stream()
-              .filter(v -> v.getAttribute() != ConnectionAttribute.URI)
+              .filter(v -> v.getAttribute() != ConnectionAttributeBase.URI)
               .collect(Collectors.toSet()))
             .setPassword(connection.getPasswordVariable())
             .setUser((String) connection.getUser().getValueOrDefaultOrNull());
@@ -113,7 +112,7 @@ public class TabliConnectionUpsert {
         .setUser(userValue)
         .setPassword(pwdValue);
       if (driverValue != null) {
-        connection.addVariable(SqlConnectionAttribute.DRIVER, driverValue);
+        connection.addVariable(ConnectionAttributeBase.JDBC_DRIVER, driverValue);
       }
       connectionVault.flush();
     }

@@ -1,20 +1,12 @@
 package com.tabulify.connection;
 
 import com.tabulify.Tabular;
-import com.tabulify.TabularAttribute;
 import com.tabulify.memory.MemoryConnectionProvider;
 import com.tabulify.noop.NoopConnectionProvider;
-import net.bytle.exception.CastException;
-import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.fs.Fs;
-import net.bytle.os.Oss;
-import net.bytle.type.Casts;
-import net.bytle.type.Integers;
 import net.bytle.type.UriEnhanced;
-import net.bytle.type.Variable;
 
-import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -128,68 +120,17 @@ public class ConnectionBuiltIn {
     tabular.addConnection(noOp);
 
     // Email
-    UriEnhanced emailUri = UriEnhanced.create()
-      .setScheme("smtp");
-
-    String smtpHost = tabular.getVariable(TabularAttribute.SMTP_HOST).getValueOrDefaultAsStringNotNull();
+    UriEnhanced emailUri;
     try {
-      emailUri.setHost(smtpHost);
+      emailUri = UriEnhanced.create()
+        .setScheme("smtp")
+        .setHost("localhost");
     } catch (IllegalStructure e) {
-      throw IllegalArgumentExceptions.createFromMessage("The variable (" + TabularAttribute.SMTP_HOST + ") has a invalid value (" + smtpHost + "). Error: " + e.getMessage(), e);
+      throw new RuntimeException(e);
     }
-    String smtpPort = tabular.getVariable(TabularAttribute.SMTP_PORT).getValueOrDefaultAsStringNotNull();
-    try {
-      emailUri.setPort(Integers.createFromObject(smtpPort).toInteger());
-    } catch (CastException e) {
-      throw IllegalArgumentExceptions.createFromMessage("The variable (" + TabularAttribute.SMTP_PORT + ") has a invalid value (" + smtpPort + "). Error: " + e.getMessage(), e);
-    }
-
-    String smtpFrom = (String) tabular.getVariable(TabularAttribute.SMTP_FROM).getValueOrDefaultOrNull();
-    if (smtpFrom != null) {
-      emailUri.addQueryProperty("from", smtpFrom);
-    } else {
-      try {
-        emailUri.addQueryProperty("from", Oss.getUser() + "@" + Oss.getFqdn().toStringWithoutRoot());
-      } catch (UnknownHostException e) {
-        // oeps
-      }
-    }
-    String smtpFromName = (String) tabular.getVariable(TabularAttribute.SMTP_FROM_NAME).getValueOrDefaultOrNull();
-    if (smtpFromName != null) {
-      emailUri.addQueryProperty("from-name", smtpFrom);
-    }
-    String smtpTo = (String) tabular.getVariable(TabularAttribute.SMTP_TO).getValueOrDefaultOrNull();
-    if (smtpTo != null) {
-      emailUri.addQueryProperty("to", smtpTo);
-    }
-    String smtpToNames = (String) tabular.getVariable(TabularAttribute.SMTP_TO_NAMES).getValueOrDefaultOrNull();
-    if (smtpToNames != null) {
-      emailUri.addQueryProperty("to-names", smtpTo);
-    }
-    Boolean smtpAuth = (Boolean) tabular.getVariable(TabularAttribute.SMTP_AUTH).getValueOrDefaultOrNull();
-    if (smtpAuth != null) {
-      emailUri.addQueryProperty("auth", Casts.castSafe(smtpAuth, String.class));
-    }
-    Boolean smtpTls = (Boolean) tabular.getVariable(TabularAttribute.SMTP_TLS).getValueOrDefaultOrNull();
-    if (smtpTls != null) {
-      emailUri.addQueryProperty("tls", Casts.castSafe(smtpTls, String.class));
-    }
-
     Connection smtpConnection = Connection.createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.SMTP_CONNECTION, emailUri.toUri().toString())
+      .setDescription("Smtp")
       .setOrigin(ConnectionOrigin.BUILT_IN);
-    String smtpUser = (String) tabular.getVariable(TabularAttribute.SMTP_USER).getValueOrDefaultOrNull();
-    if (smtpUser != null) {
-      smtpConnection.setUser(smtpUser);
-    }
-
-    Variable smtpPwd = tabular.getVariable(TabularAttribute.SMTP_USER);
-    smtpConnection.addVariable(smtpPwd);
-
-
-    String smtpDebug = (String) tabular.getVariable(TabularAttribute.SMTP_USER).getValueOrDefaultOrNull();
-    if (smtpDebug != null) {
-      emailUri.addQueryProperty("debug", smtpDebug);
-    }
     tabular.addConnection(smtpConnection);
 
     // The how-to-files

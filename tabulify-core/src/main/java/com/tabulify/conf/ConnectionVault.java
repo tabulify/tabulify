@@ -5,7 +5,7 @@ import com.tabulify.DbLoggers;
 import com.tabulify.Tabular;
 import com.tabulify.Vault;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionAttribute;
+import com.tabulify.connection.ConnectionAttributeBase;
 import com.tabulify.connection.ConnectionHowTos;
 import com.tabulify.connection.ConnectionOrigin;
 import net.bytle.exception.InternalException;
@@ -121,17 +121,17 @@ public class ConnectionVault implements AutoCloseable {
         boolean uriFound = false;
         List<Variable> connectionVariables = connection.getVariables().stream().sorted().collect(Collectors.toList());
         for (Variable variable : connectionVariables) {
-          if (variable.getAttribute() == ConnectionAttribute.NAME) {
+          if (variable.getAttribute() == ConnectionAttributeBase.NAME) {
             continue;
           }
-          if (variable.getAttribute() == ConnectionAttribute.ORIGIN) {
+          if (variable.getAttribute() == ConnectionAttributeBase.ORIGIN) {
             // origin is an internal
             continue;
           }
           String valueToStore;
-          if (variable.getAttribute() == ConnectionAttribute.URI) {
+          if (variable.getAttribute() == ConnectionAttributeBase.URI) {
             uriFound = true;
-            valueToStore = (String) variable.getCipherValue();
+            valueToStore = variable.getCipherValue();
             if (valueToStore == null) {
               try {
                 valueToStore = (String) variable.getValueOrDefault();
@@ -254,9 +254,9 @@ public class ConnectionVault implements AutoCloseable {
       for (String propertyName : iniSection.keySet()) {
 
         String value = iniSection.get(propertyName);
-        ConnectionAttribute connectionAttribute = null;
+        ConnectionAttributeBase connectionAttributeBase = null;
         try {
-          connectionAttribute = Casts.cast(propertyName, ConnectionAttribute.class);
+          connectionAttributeBase = Casts.cast(propertyName, ConnectionAttributeBase.class);
         } catch (Exception e) {
           // not a standard attribute
           // a specific connection attribute then
@@ -264,12 +264,12 @@ public class ConnectionVault implements AutoCloseable {
         Variable variable;
         try {
 
-          if (connectionAttribute == null) {
+          if (connectionAttributeBase == null) {
             variable = vault.createVariable(propertyName, value, Origin.CONF);
           } else {
-            variable = vault.createVariable(connectionAttribute, value, Origin.CONF);
+            variable = vault.createVariable(connectionAttributeBase, value, Origin.CONF);
           }
-          if (connectionAttribute == ConnectionAttribute.URI) {
+          if (connectionAttributeBase == ConnectionAttributeBase.URI) {
             uri = variable;
           }
         } catch (Exception e) {
@@ -291,7 +291,7 @@ public class ConnectionVault implements AutoCloseable {
       // as they may be used for the default values
       connection.setVariables(variableMap);
       connection.addVariable(vault.createVariable(
-          ConnectionAttribute.ORIGIN,
+          ConnectionAttributeBase.ORIGIN,
           ConnectionOrigin.CONF,
           Origin.RUNTIME)
         .setPlainValue(Origin.CONF)

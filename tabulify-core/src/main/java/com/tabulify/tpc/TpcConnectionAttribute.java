@@ -1,19 +1,22 @@
 package com.tabulify.tpc;
 
-import net.bytle.type.Attribute;
+import com.tabulify.connection.ConnectionAttribute;
 
-public enum TpcConnectionAttribute implements Attribute {
+public enum TpcConnectionAttribute implements ConnectionAttribute {
 
 
-  SCALE("A property in the datastore that give the scale used. The size of the generated data in Gb (works only for tpc schema)", Double.class);
+  SCALE("A property in the datastore that give the scale used. The size of the generated data in Gb (works only for tpc schema)", Double.class, 0.01);
+
 
 
   private final String desc;
   private final Class<?> clazz;
+  private final Object defaultValue;
 
-  TpcConnectionAttribute( String desc, Class<?> clazz) {
+  TpcConnectionAttribute(String desc, Class<?> clazz, Object defaultValue) {
     this.desc = desc;
     this.clazz = clazz;
+    this.defaultValue = defaultValue;
   }
 
   @Override
@@ -28,7 +31,7 @@ public enum TpcConnectionAttribute implements Attribute {
 
   @Override
   public Object getDefaultValue() {
-    return null;
+    return defaultValue;
   }
 
 }

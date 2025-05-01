@@ -1,18 +1,16 @@
 package com.tabulify.tabli;
 
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliUsage;
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionAttribute;
+import com.tabulify.connection.ConnectionAttributeBase;
 import com.tabulify.model.RelationDef;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
 import net.bytle.exception.NoVariableException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,8 +21,6 @@ import java.util.List;
  * <p>
  */
 public class TabliConnectionList {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(TabliConnectionList.class);
 
 
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
@@ -49,8 +45,8 @@ public class TabliConnectionList {
       .setDefaultValue("*");
     childCommand.addProperty(TabliWords.ATTRIBUTE_PROPERTY)
       .setDescription("A connection attribute to add to the output")
-      .addDefaultValue(ConnectionAttribute.NAME)
-      .addDefaultValue(ConnectionAttribute.URI);
+      .addDefaultValue(ConnectionAttributeBase.NAME)
+      .addDefaultValue(ConnectionAttributeBase.URI);
 
 
     CliParser cliParser = childCommand.parse();
