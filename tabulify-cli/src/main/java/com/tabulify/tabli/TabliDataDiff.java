@@ -1,8 +1,5 @@
 package com.tabulify.tabli;
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliUsage;
 import com.tabulify.Tabular;
 import com.tabulify.diff.DataComparisonAttribute;
 import com.tabulify.flow.engine.Pipeline;
@@ -12,6 +9,9 @@ import com.tabulify.flow.step.CompareStepSource;
 import com.tabulify.flow.step.SelectSupplier;
 import com.tabulify.spi.DataPath;
 import com.tabulify.uri.DataUri;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.type.Casts;
@@ -22,14 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static net.bytle.cli.CliUsage.CODE_BLOCK;
 import static com.tabulify.tabli.TabliWords.*;
+import static net.bytle.cli.CliUsage.CODE_BLOCK;
 
 
 /**
  *
  */
-public class TabliDataCompare {
+public class TabliDataDiff {
 
 
   protected static final String UNIQUE_COLUMN_PROPERTY = "--unique-column";

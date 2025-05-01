@@ -1,12 +1,12 @@
 package com.tabulify.tabli;
 
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliUsage;
 import com.tabulify.Tabular;
 import com.tabulify.spi.DataPath;
 import com.tabulify.transfer.TransferOperation;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,6 +53,8 @@ public class TabliData  {
       .setShortName("struct");
     childCommand.addChildCommand(TabliWords.PRINT_COMMAND)
       .setDescription("Print the content of data resources");
+    childCommand.addChildCommand(TabliWords.DIFF_COMMAND)
+      .setDescription("Compare data resources");
     childCommand.addChildCommand(TabliWords.HEAD_COMMAND)
       .setDescription("Print the first content of data resources");
     childCommand.addChildCommand(TabliWords.TAIL_COMMAND)
@@ -66,7 +68,7 @@ public class TabliData  {
       .setShortName("dep");
     childCommand.addChildCommand(INFO_COMMAND)
       .setDescription("Show the attributes of a data resource in a form fashion");
-    childCommand.addChildCommand(COMPARE_COMMAND)
+    childCommand.addChildCommand(DIFF_COMMAND)
       .setDescription("Perform a diff operation against two data resources");
     childCommand.addChildCommand(COPY_COMMAND)
       .setDescription("Copy a data resource");
@@ -92,7 +94,7 @@ public class TabliData  {
      */
     List<DataPath> feedbackDataPaths = new ArrayList<>();
     List<CliCommand> subChildCommands = cliParser.getFoundedChildCommands();
-    if (subChildCommands.size() == 0) {
+    if (subChildCommands.isEmpty()) {
       throw new IllegalArgumentException("A known command must be given for the command (" + CliUsage.getFullChainOfCommand(childCommand) + ").");
     } else {
       for (CliCommand subChildCommand : subChildCommands) {
@@ -134,8 +136,8 @@ public class TabliData  {
           case CREATE_COMMAND:
             feedbackDataPaths = TabliDataCreate.run(tabular, subChildCommand);
             break;
-          case COMPARE_COMMAND:
-            feedbackDataPaths = TabliDataCompare.run(tabular, subChildCommand);
+          case DIFF_COMMAND:
+            feedbackDataPaths = TabliDataDiff.run(tabular, subChildCommand);
             break;
           case QUERY_COMMAND:
             feedbackDataPaths = TabliDataQuery.run(tabular, subChildCommand);

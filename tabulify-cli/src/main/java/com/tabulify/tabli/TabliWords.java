@@ -78,7 +78,7 @@ public class TabliWords {
   // Between two remote system ?
   static final String TRANSFER_COMMAND = "transfer";
 
-  static final String COMPARE_COMMAND = "compare";
+  static final String DIFF_COMMAND = "diff";
   static final String FILL_COMMAND = "fill";
 
   static final String EXECUTE_COMMAND = "execute";
