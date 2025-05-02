@@ -160,58 +160,20 @@ public class ConfVault {
             break;
           case CONNECTIONS:
 
-            Map<String, Object> localConnections;
+            Map<String, Object> yamlConnections;
             try {
-              localConnections = Casts.castToSameMap(rootEntry.getValue(), String.class, Object.class);
+              yamlConnections = Casts.castToSameMap(rootEntry.getValue(), String.class, Object.class);
             } catch (CastException e) {
               throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfVaultRootAttribute.CONNECTIONS)), e);
             }
-            Attribute uri = null;
-            Set<Attribute> attributeMap = new SetKeyIndependent<>();
-            Map<String, Attribute> driverAttributeMap = new HashMap<>();
-            for (Map.Entry<String, Object> localConnection : localConnections.entrySet()) {
 
-              String connectionName = localConnection.getKey();
-              Map<String, Object> connectionAttributes = Casts.castToSameMap(localConnection.getValue(), String.class, Object.class);
-              for (Map.Entry<String, Object> confConnectionAttribute : connectionAttributes.entrySet()) {
 
-                String connectionAttributeAsString = confConnectionAttribute.getKey();
-                ConnectionAttributeBase connectionAttributeBase;
-                try {
-                  connectionAttributeBase = Casts.cast(connectionAttributeAsString, ConnectionAttributeBase.class);
-                } catch (Exception e) {
-                  throw new CastException("The connection attribute (" + connectionAttributeAsString + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(ConnectionAttributeBase.class), e);
-                }
-                // Driver is a special attribute that stores the third party attribute
-                if (connectionAttributeBase == ConnectionAttributeBase.NATIVE_ATTRIBUTES) {
+            for (Map.Entry<String, Object> yamlConnection : yamlConnections.entrySet()) {
 
-                  Map<String, String> yamlDriverPropertiesMap = Casts.castToSameMap(confConnectionAttribute.getValue(), String.class, String.class);
-                  for (Map.Entry<String, String> yamlDriverProperty : yamlDriverPropertiesMap.entrySet()) {
-                    Attribute driverAttribute;
-                    String nativeDriverPropertyName = yamlDriverProperty.getKey();
-                    try {
-                      driverAttribute = vault.createAttribute(nativeDriverPropertyName, yamlDriverProperty.getValue(), Origin.CONF);
-                    } catch (Exception e) {
-                      throw new RuntimeException("An error has occurred while reading the driver connection attribute " + nativeDriverPropertyName + " value for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
-                    }
-                    driverAttributeMap.put(nativeDriverPropertyName, driverAttribute);
-                  }
-                  continue;
-                }
-
-                Attribute attribute;
-                try {
-                  attribute = vault.createAttribute(connectionAttributeBase, confConnectionAttribute.getValue().toString(), Origin.CONF);
-                } catch (Exception e) {
-                  throw new RuntimeException("An error has occurred while reading the connection attribute " + connectionAttributeAsString + " value for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
-                }
-                if (connectionAttributeBase == ConnectionAttributeBase.URI) {
-                  uri = attribute;
-                  continue;
-                }
-                attributeMap.add(attribute);
-              }
-
+              String connectionName = yamlConnection.getKey();
+              Map<KeyNormalizer, Object> yamlConnectionAttributes = Casts.castToNewMap(yamlConnection.getValue(), KeyNormalizer.class, Object.class);
+              KeyNormalizer uriKeyNormalized = KeyNormalizer.create(ConnectionAttributeBase.URI);
+              String uri = (String) yamlConnectionAttributes.get(uriKeyNormalized);
               if (uri == null) {
                 throw new RuntimeException("The uri is a mandatory variable and was not found for the connection (" + connectionName + ") in the conf file (" + this + ")");
               }
@@ -219,12 +181,43 @@ public class ConfVault {
               /**
                * Create the connection
                */
-              Connection connection = Connection.createConnectionFromProviderOrDefault(this.tabular, connectionName, (String) uri.getValueOrDefaultOrNull());
-              // variables map should be in the building of the connection
-              // as they may be used for the default values
-              connection.setAttributes(attributeMap);
-              connection.addAttribute(vault.createAttribute(ConnectionAttributeBase.ORIGIN, ConnectionOrigin.CONF, Origin.RUNTIME));
-              connection.setNativeDriverAttributes(driverAttributeMap);
+              Connection connection = Connection.createConnectionFromProviderOrDefault(this.tabular, connectionName, uri)
+                .addAttribute(vault.createAttribute(ConnectionAttributeBase.ORIGIN, ConnectionOrigin.CONF, Origin.RUNTIME));
+
+              /**
+               * Native Attributes is a special attribute that stores the third party attribute
+               */
+              KeyNormalizer nativeAttributeNormalized = KeyNormalizer.create(ConnectionAttributeBase.NATIVES);
+              Object nativeAttributesAsObject = yamlConnectionAttributes.get(nativeAttributeNormalized);
+              if (nativeAttributesAsObject != null) {
+
+                Map<String, String> yamlDriverPropertiesMap = Casts.castToSameMap(nativeAttributesAsObject, String.class, String.class);
+                for (Map.Entry<String, String> yamlDriverProperty : yamlDriverPropertiesMap.entrySet()) {
+                  Attribute driverAttribute;
+                  String nativeDriverPropertyName = yamlDriverProperty.getKey();
+                  try {
+                    driverAttribute = vault.createAttribute(nativeDriverPropertyName, yamlDriverProperty.getValue(), Origin.CONF);
+                  } catch (Exception e) {
+                    throw new RuntimeException("An error has occurred while reading the driver connection attribute " + nativeDriverPropertyName + " value for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
+                  }
+                  connection.putNativeAttribute(nativeDriverPropertyName, driverAttribute);
+                }
+              }
+
+
+              for (Map.Entry<KeyNormalizer, Object> confConnectionAttribute : yamlConnectionAttributes.entrySet()) {
+
+                KeyNormalizer normalizedConnectionAttribute = confConnectionAttribute.getKey();
+
+                // Already processed
+                if (normalizedConnectionAttribute == uriKeyNormalized || normalizedConnectionAttribute == nativeAttributeNormalized) {
+                  continue;
+                }
+
+                connection.addAttribute(normalizedConnectionAttribute, confConnectionAttribute.getValue(), Origin.CONF);
+
+              }
+
               connections.put(connectionName, connection);
 
             }
@@ -271,7 +264,7 @@ public class ConfVault {
       Yaml yaml = new Yaml(dumperOptions);
       Map<String, Object> confAsMap = new HashMap<>();
       confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.CONNECTIONS).toCase(outputCase), toConnectionMap());
-      confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.GLOBAL).toCase(outputCase), toVariables());
+      confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.GLOBAL).toCase(outputCase), toConfParameters());
       String yamlString = yaml.dump(confAsMap);
       // Write to file
       try (FileWriter writer = new FileWriter(targetPath.toFile())) {
@@ -285,11 +278,13 @@ public class ConfVault {
     }
   }
 
-  private Map<String, Object> toVariables() {
+  private Map<String, Object> toConfParameters() {
 
     Map<String, Object> variableMap = new HashMap<>();
-    for (Attribute attribute : tabular.getAttributes()) {
-      dumpVariable(attribute, variableMap);
+    for (Attribute attribute : getParameters()) {
+      String originalValue = attribute.getRawValue();
+      String key = KeyNormalizer.create(attribute.getAttributeMetadata()).toCase(outputCase);
+      variableMap.put(key, originalValue);
     }
     return variableMap;
   }
@@ -386,7 +381,7 @@ public class ConfVault {
 
   }
 
-  public Set<Attribute> getVariables() {
+  public Set<Attribute> getParameters() {
     return new HashSet<>(this.env.values());
   }
 

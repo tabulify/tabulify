@@ -10,7 +10,9 @@ import com.tabulify.spi.DataSystem;
 import com.tabulify.spi.ProcessingEngine;
 import com.tabulify.spi.ResourcePath;
 import net.bytle.exception.CastException;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.KeyNormalizer;
+import net.bytle.type.MediaType;
 
 import static com.tabulify.tpc.TpcDataPath.CURRENT_WORKING_DIRECTORY_NAME;
 import static com.tabulify.tpc.TpcDataPath.SEPARATOR;
@@ -100,17 +102,17 @@ public class TpcConnection extends NoOpConnection {
   }
 
   @Override
-  public Connection addAttribute(String name, Object value) {
+  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin) {
     try {
       TpcConnectionAttribute connectionAttribute = Casts.cast(name, TpcConnectionAttribute.class);
       return addAttribute(
         this
           .getTabular()
           .getVault()
-          .createAttribute(connectionAttribute, value, Origin.RUNTIME)
+          .createAttribute(connectionAttribute, value, origin)
       );
     } catch (CastException e) {
-      return super.addAttribute(name, value);
+      return super.addAttribute(name, value, origin);
     }
   }
 }

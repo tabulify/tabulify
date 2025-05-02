@@ -19,7 +19,7 @@ public enum ConnectionAttributeBase implements ConnectionAttribute {
   BOOLEAN_DATA_TYPE("Boolean data type used to store boolean values", ConnectionAttValueBooleanDataType.class, ConnectionAttValueBooleanDataType.Native, true),
   MAX_NAME_IN_PATH("The maximum number of names in a path", Integer.class, null, true),
   MAX_CONCURRENT_THREAD("The maximum number of threads that can be created against the system", Integer.class, null, true),
-  NATIVE_ATTRIBUTES("Jdbc Driver attributes", Map.class, null, true),
+  NATIVES("Native Driver attributes (jdbc properties, ...)", Map.class, null, true),
   /**
    * jdbc driver is here and not in the sql connection because
    * we use it in {@link ConnectionHowTos}

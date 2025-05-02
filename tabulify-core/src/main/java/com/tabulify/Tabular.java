@@ -93,7 +93,7 @@ public class Tabular implements AutoCloseable {
    * We may not add derived generated variables.
    * so the key identifier is not a string
    */
-  private final Map<TabularAttribute, com.tabulify.conf.Attribute> attributes = new HashMap<>();
+  private final Map<TabularAttribute, Attribute> attributes = new HashMap<>();
 
   /**
    * Where to store sqlite database by default
@@ -883,7 +883,7 @@ public class Tabular implements AutoCloseable {
     return this.sqliteHome;
   }
 
-  public Set<com.tabulify.conf.Attribute> getAttributes() {
+  public Set<Attribute> getAttributes() {
     return new HashSet<>(this.attributes.values());
   }
 
@@ -907,15 +907,24 @@ public class Tabular implements AutoCloseable {
     return this.tabularEnvs;
   }
 
-  public String toPublicListOfParameters(Class<? extends AttributeParameter> attributeEnumClass) {
-    if (!attributeEnumClass.isEnum()) {
-      throw new InternalException("An enum constant should be passed. " + attributeEnumClass.getSimpleName() + " is not an enum");
+  public String toPublicListOfParameters(Class<? extends AttributeParameter> attributeEnumClasses) {
+    return toPublicListOfParameters(Collections.singletonList(attributeEnumClasses));
+  }
+
+  public String toPublicListOfParameters(List<Class<? extends AttributeParameter>> attributeEnumClasses) {
+    List<AttributeParameter> attributes = new ArrayList<>();
+    for (Class<? extends AttributeParameter> attributeEnumClass : attributeEnumClasses) {
+      if (!attributeEnumClass.isEnum()) {
+        throw new InternalException("An enum constant should be passed. " + attributeEnumClass.getSimpleName() + " is not an enum");
+      }
+      AttributeParameter[] enumConstants = attributeEnumClass.getEnumConstants();
+      if (enumConstants == null) {
+        continue;
+      }
+      attributes.addAll(Arrays.asList(enumConstants));
     }
-    AttributeParameter[] attributes = attributeEnumClass.getEnumConstants();
-    if (attributes == null) {
-      return "";
-    }
-    return Arrays.stream(attributes)
+    return attributes
+      .stream()
       .filter(AttributeParameter::isParameter)
       .map(enumValue -> toPublicName(enumValue.toString()))
       .collect(Collectors.joining(", "));

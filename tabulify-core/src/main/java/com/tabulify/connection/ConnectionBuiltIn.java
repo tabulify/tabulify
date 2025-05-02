@@ -1,10 +1,12 @@
 package com.tabulify.connection;
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Origin;
 import com.tabulify.memory.MemoryConnectionProvider;
 import com.tabulify.noop.NoopConnectionProvider;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.fs.Fs;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.UriEnhanced;
 
 import java.nio.file.Path;
@@ -111,7 +113,7 @@ public class ConnectionBuiltIn {
     // TpcsDs
     Connection tpcDs = Connection.createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.TPCDS_CONNECTION, ConnectionBuiltIn.TPCDS_CONNECTION)
       .setOrigin(ConnectionOrigin.BUILT_IN)
-      .addAttribute("scale", 0.01);
+      .addAttribute(KeyNormalizer.create("scale"), 0.01, Origin.RUNTIME);
     tabular.addConnection(tpcDs);
 
     // NoOp

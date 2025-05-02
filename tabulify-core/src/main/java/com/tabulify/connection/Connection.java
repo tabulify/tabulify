@@ -296,22 +296,32 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * Each connection should implement it to add its own attribute
    * and call super to add the attribute of its parent if the name is unknown
    */
-  public Connection addAttribute(String name, Object value) {
+  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin) {
     ConnectionAttributeBase connectionAttributeBase;
     try {
       connectionAttributeBase = Casts.cast(name, ConnectionAttributeBase.class);
     } catch (CastException e) {
-      throw new RuntimeException("The connection attribute " + name + " is unknown for the connection " + this + ". Error: " + e.getMessage(), e);
+      throw new RuntimeException("The connection attribute " + name + " is unknown for the connection " + this + ". We were expecting one of the following " + tabular.toPublicListOfParameters(this.getAttributeEnums()), e);
     }
     try {
 
-      com.tabulify.conf.Attribute attribute = tabular.getVault().createAttribute(connectionAttributeBase, value, com.tabulify.conf.Origin.RUNTIME);
+      com.tabulify.conf.Attribute attribute = tabular.getVault().createAttribute(connectionAttributeBase, value, origin);
       this.addAttribute(attribute);
     } catch (Exception e) {
       throw new RuntimeException("Error while adding the variable " + name + " to the connection " + this + ". Error: " + e.getMessage(), e);
     }
     return this;
   }
+
+  /**
+   * @return the list of enum class
+   * Typically, a connection would add its own class
+   * This is used to give feedback when an attribute is not recognized when reading a {@link ConfVault config file}
+   */
+  List<Class<? extends AttributeParameter>> getAttributeEnums() {
+    return List.of(ConnectionAttributeBase.class);
+  }
+
 
   public Connection addAttribute(AttributeEnum key, Object value) {
     try {
@@ -825,8 +835,9 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       ));
   }
 
-  public Connection setNativeDriverAttributes(Map<String, Attribute> driverAttributeMap) {
-    this.nativeDriverAttributes = driverAttributeMap;
-    return this;
+
+  public void putNativeAttribute(String name, Attribute attribute) {
+    this.nativeDriverAttributes.put(name, attribute);
   }
+
 }
