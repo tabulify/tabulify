@@ -93,7 +93,7 @@ public class Tabular implements AutoCloseable {
    * We may not add derived generated variables.
    * so the key identifier is not a string
    */
-  private final Map<TabularAttribute, Attribute> attributes = new HashMap<>();
+  private final Map<TabularAttributeEnum, Attribute> attributes = new HashMap<>();
 
   /**
    * Where to store sqlite database by default
@@ -650,7 +650,7 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public <T> T getAttribute(TabularAttribute attribute, Class<T> clazz) throws NoValueException, CastException, NoVariableException {
+  public <T> T getAttribute(TabularAttributeEnum attribute, Class<T> clazz) throws NoValueException, CastException, NoVariableException {
     com.tabulify.conf.Attribute variable = this.attributes.get(attribute);
     if (variable == null) {
       throw new NoValueException("The variable (" + attribute + ") was not found");
@@ -832,7 +832,7 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public com.tabulify.conf.Attribute getAttribute(TabularAttribute attribute) {
+  public com.tabulify.conf.Attribute getAttribute(TabularAttributeEnum attribute) {
     return this.attributes.get(attribute);
   }
 
@@ -907,17 +907,17 @@ public class Tabular implements AutoCloseable {
     return this.tabularEnvs;
   }
 
-  public String toPublicListOfParameters(Class<? extends AttributeParameter> attributeEnumClasses) {
+  public String toPublicListOfParameters(Class<? extends AttributeEnumParameter> attributeEnumClasses) {
     return toPublicListOfParameters(Collections.singletonList(attributeEnumClasses));
   }
 
-  public String toPublicListOfParameters(List<Class<? extends AttributeParameter>> attributeEnumClasses) {
-    List<AttributeParameter> attributes = new ArrayList<>();
-    for (Class<? extends AttributeParameter> attributeEnumClass : attributeEnumClasses) {
+  public String toPublicListOfParameters(List<Class<? extends AttributeEnumParameter>> attributeEnumClasses) {
+    List<AttributeEnumParameter> attributes = new ArrayList<>();
+    for (Class<? extends AttributeEnumParameter> attributeEnumClass : attributeEnumClasses) {
       if (!attributeEnumClass.isEnum()) {
         throw new InternalException("An enum constant should be passed. " + attributeEnumClass.getSimpleName() + " is not an enum");
       }
-      AttributeParameter[] enumConstants = attributeEnumClass.getEnumConstants();
+      AttributeEnumParameter[] enumConstants = attributeEnumClass.getEnumConstants();
       if (enumConstants == null) {
         continue;
       }
@@ -925,7 +925,7 @@ public class Tabular implements AutoCloseable {
     }
     return attributes
       .stream()
-      .filter(AttributeParameter::isParameter)
+      .filter(AttributeEnumParameter::isParameter)
       .map(enumValue -> toPublicName(enumValue.toString()))
       .collect(Collectors.joining(", "));
   }

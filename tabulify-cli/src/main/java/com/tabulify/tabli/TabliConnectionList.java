@@ -3,7 +3,7 @@ package com.tabulify.tabli;
 
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionAttributeBase;
+import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.model.RelationDef;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
@@ -12,7 +12,6 @@ import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
 import net.bytle.exception.CastException;
 import net.bytle.exception.NoValueException;
-import net.bytle.exception.NoVariableException;
 import net.bytle.type.KeyNormalizer;
 
 import java.util.ArrayList;
@@ -50,8 +49,8 @@ public class TabliConnectionList {
       .setDefaultValue("*");
     childCommand.addProperty(TabliWords.ATTRIBUTE_PROPERTY)
       .setDescription("A connection attribute to add to the output")
-      .addDefaultValue(ConnectionAttributeBase.NAME)
-      .addDefaultValue(ConnectionAttributeBase.URI);
+      .addDefaultValue(ConnectionAttributeEnumBase.NAME)
+      .addDefaultValue(ConnectionAttributeEnumBase.URI);
 
 
     CliParser cliParser = childCommand.parse();

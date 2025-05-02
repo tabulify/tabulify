@@ -57,10 +57,10 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
      * We can't add them via addVariable
      * because they are immutable
      */
-    this.attributes.put((ConnectionAttribute) uri.getAttributeMetadata(), uri);
-    this.attributes.put((ConnectionAttribute) name.getAttributeMetadata(), name);
+    this.attributes.put((ConnectionAttributeEnum) uri.getAttributeMetadata(), uri);
+    this.attributes.put((ConnectionAttributeEnum) name.getAttributeMetadata(), name);
 
-    this.addAttributesFromEnumAttributeClass(ConnectionAttributeBase.class);
+    this.addAttributesFromEnumAttributeClass(ConnectionAttributeEnumBase.class);
 
 
     /**
@@ -154,7 +154,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * Connection Variable. Variable managed by Tabli
    * Should be a known attribute
    */
-  Map<ConnectionAttribute, com.tabulify.conf.Attribute> attributes = new HashMap<>();
+  Map<AttributeEnumParameter, Attribute> attributes = new HashMap<>();
   /**
    * Driver Variable. Variable of the driver/library, not from us
    * We use attribute to add vault functionality
@@ -198,8 +198,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public com.tabulify.conf.Attribute getDescription() {
-    return this.attributes.get(ConnectionAttributeBase.DESCRIPTION);
+  public Attribute getDescription() {
+    return this.attributes.get(ConnectionAttributeEnumBase.DESCRIPTION);
   }
 
 
@@ -215,12 +215,12 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public com.tabulify.conf.Attribute getNameAsAttribute() {
 
-    return this.getAttribute(ConnectionAttributeBase.NAME);
+    return this.getAttribute(ConnectionAttributeEnumBase.NAME);
   }
 
   public com.tabulify.conf.Attribute getUriAsVariable() {
 
-    return this.getAttribute(ConnectionAttributeBase.URI);
+    return this.getAttribute(ConnectionAttributeEnumBase.URI);
 
   }
 
@@ -245,7 +245,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setUser(String user) {
     try {
-      com.tabulify.conf.Attribute userAttribute = tabular.getVault().createAttribute(ConnectionAttributeBase.USER, user, RUNTIME);
+      com.tabulify.conf.Attribute userAttribute = tabular.getVault().createAttribute(ConnectionAttributeEnumBase.USER, user, RUNTIME);
       this.addAttribute(userAttribute);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the user variable", e);
@@ -255,8 +255,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setPassword(String pwd) {
     try {
-      com.tabulify.conf.Attribute password = tabular.getVault().createAttribute(ConnectionAttributeBase.PASSWORD, pwd, RUNTIME);
-      this.attributes.put(ConnectionAttributeBase.PASSWORD, password);
+      com.tabulify.conf.Attribute password = tabular.getVault().createAttribute(ConnectionAttributeEnumBase.PASSWORD, pwd, RUNTIME);
+      this.attributes.put(ConnectionAttributeEnumBase.PASSWORD, password);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the password variable for the connection (" + this + "). Error: " + e.getMessage(), e);
     }
@@ -265,11 +265,11 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
 
   public com.tabulify.conf.Attribute getUser() {
-    return this.attributes.get(ConnectionAttributeBase.USER);
+    return this.attributes.get(ConnectionAttributeEnumBase.USER);
   }
 
   public com.tabulify.conf.Attribute getPasswordAttribute() {
-    return this.attributes.get(ConnectionAttributeBase.PASSWORD);
+    return this.attributes.get(ConnectionAttributeEnumBase.PASSWORD);
   }
 
   @Override
@@ -297,9 +297,9 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * and call super to add the attribute of its parent if the name is unknown
    */
   public Connection addAttribute(KeyNormalizer name, Object value, Origin origin) {
-    ConnectionAttributeBase connectionAttributeBase;
+    ConnectionAttributeEnumBase connectionAttributeBase;
     try {
-      connectionAttributeBase = Casts.cast(name, ConnectionAttributeBase.class);
+      connectionAttributeBase = Casts.cast(name, ConnectionAttributeEnumBase.class);
     } catch (CastException e) {
       throw new RuntimeException("The connection attribute " + name + " is unknown for the connection " + this + ". We were expecting one of the following " + tabular.toPublicListOfParameters(this.getAttributeEnums()), e);
     }
@@ -318,12 +318,12 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * Typically, a connection would add its own class
    * This is used to give feedback when an attribute is not recognized when reading a {@link ConfVault config file}
    */
-  List<Class<? extends AttributeParameter>> getAttributeEnums() {
-    return List.of(ConnectionAttributeBase.class);
+  List<Class<? extends AttributeEnumParameter>> getAttributeEnums() {
+    return List.of(ConnectionAttributeEnumBase.class);
   }
 
 
-  public Connection addAttribute(AttributeEnum key, Object value) {
+  public Connection addAttribute(ConnectionAttributeEnum key, Object value) {
     try {
       com.tabulify.conf.Attribute attribute = tabular.getVault().createAttribute(key, value, RUNTIME);
       this.addAttribute(attribute);
@@ -333,27 +333,27 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     return this;
   }
 
-  public Connection addAttribute(com.tabulify.conf.Attribute variable) {
-    AttributeEnum attribute = variable.getAttributeMetadata();
-    if (!(attribute instanceof ConnectionAttribute)) {
-      throw new InternalException("The attribute " + attribute + " is not a connection attribute but a " + attribute.getClass().getSimpleName());
+  public Connection addAttribute(Attribute attribute) {
+    AttributeEnum attributeEnum = attribute.getAttributeMetadata();
+    if (!(attributeEnum instanceof ConnectionAttributeEnum)) {
+      throw new InternalException("The attribute " + attributeEnum + " is not a connection attribute but a " + attributeEnum.getClass().getSimpleName());
     }
-    ConnectionAttribute connectionAttribute = (ConnectionAttribute) attribute;
+    ConnectionAttributeEnum connectionAttribute = (ConnectionAttributeEnum) attributeEnum;
     // uri and name value cannot be changed as they are constructor variable
     // the original may be template so we allow to change the variable if the value are the same
-    if (attribute.equals(ConnectionAttributeBase.NAME) && !variable.getValueOrDefaultAsStringNotNull().equals(this.getName())) {
-      throw new RuntimeException("You can't change the name of this connection from " + this.getName() + " to " + variable.getValueOrDefaultAsStringNotNull());
+    if (attributeEnum.equals(ConnectionAttributeEnumBase.NAME) && !attribute.getValueOrDefaultAsStringNotNull().equals(this.getName())) {
+      throw new RuntimeException("You can't change the name of this connection from " + this.getName() + " to " + attribute.getValueOrDefaultAsStringNotNull());
     }
-    if (attribute.equals(ConnectionAttributeBase.URI) && !variable.getValueOrDefaultAsStringNotNull().equals(this.getUriAsString())) {
-      throw new RuntimeException("You can't change the URI of this connection from " + this.getUriAsString() + " to  " + variable.getValueOrDefaultAsStringNotNull());
+    if (attributeEnum.equals(ConnectionAttributeEnumBase.URI) && !attribute.getValueOrDefaultAsStringNotNull().equals(this.getUriAsString())) {
+      throw new RuntimeException("You can't change the URI of this connection from " + this.getUriAsString() + " to  " + attribute.getValueOrDefaultAsStringNotNull());
     }
-    com.tabulify.conf.Attribute actualAttribute = attributes.get(connectionAttribute);
+    Attribute actualAttribute = attributes.get(connectionAttribute);
     if (actualAttribute != null) {
       // overwrite of an actual known attribute
       // we copy the attribute otherwise the description is lost
-      variable.setAttributeMetadata(actualAttribute.getAttributeMetadata());
+      attribute.setAttributeMetadata(actualAttribute.getAttributeMetadata());
     }
-    attributes.put(connectionAttribute, variable);
+    attributes.put(connectionAttribute, attribute);
     return this;
   }
 
@@ -362,8 +362,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     try {
       return createConnectionFromProviderOrDefault(
         tabular,
-        tabular.createAttribute(ConnectionAttributeBase.NAME, variableName),
-        tabular.createAttribute(ConnectionAttributeBase.URI, variableUri)
+        tabular.createAttribute(ConnectionAttributeEnumBase.NAME, variableName),
+        tabular.createAttribute(ConnectionAttributeEnumBase.URI, variableUri)
       );
     } catch (Exception e) {
       throw new InternalException("Error while creating the main connection variable name/uri. Error: " + e.getMessage(), e);
@@ -491,14 +491,14 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public Set<com.tabulify.conf.Attribute> getAttributes() {
+  public Set<Attribute> getAttributes() {
 
     return new HashSet<>(this.attributes.values());
 
   }
 
 
-  public Connection setAttributes(Set<com.tabulify.conf.Attribute> attributes) {
+  public Connection setAttributes(Set<Attribute> attributes) {
     attributes.forEach(this::addAttribute);
     return this;
   }
@@ -523,7 +523,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   public Connection setDescription(String description) {
     com.tabulify.conf.Attribute descVar;
     try {
-      descVar = tabular.createAttribute(ConnectionAttributeBase.DESCRIPTION, description);
+      descVar = tabular.createAttribute(ConnectionAttributeEnumBase.DESCRIPTION, description);
     } catch (Exception e) {
       throw new RuntimeException("Internal error, cannot create description variable", e);
     }
@@ -719,14 +719,14 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   public abstract Boolean ping();
 
   public Connection setOrigin(ConnectionOrigin connectionOrigin) {
-    this.getAttribute(ConnectionAttributeBase.ORIGIN)
+    this.getAttribute(ConnectionAttributeEnumBase.ORIGIN)
       .setPlainValue(connectionOrigin);
     return this;
   }
 
   public ConnectionOrigin getOrigin() {
     try {
-      return (ConnectionOrigin) this.getAttribute(ConnectionAttributeBase.ORIGIN).getValueOrDefault();
+      return (ConnectionOrigin) this.getAttribute(ConnectionAttributeEnumBase.ORIGIN).getValueOrDefault();
     } catch (NoValueException e) {
       throw new InternalException("No Origin found", e);
     }
@@ -760,7 +760,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public com.tabulify.conf.Attribute getAttribute(ConnectionAttribute attribute) {
+  public com.tabulify.conf.Attribute getAttribute(ConnectionAttributeEnum attribute) {
     com.tabulify.conf.Attribute variable = this.attributes.get(attribute);
     if (variable == null) {
       /**
@@ -778,15 +778,15 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * @param enumClass - the class that holds all enum attribute
    * @return the path for chaining
    */
-  public Connection addAttributesFromEnumAttributeClass(Class<? extends ConnectionAttribute> enumClass) {
-    for (ConnectionAttribute attribute : enumClass.getEnumConstants()) {
+  public Connection addAttributesFromEnumAttributeClass(Class<? extends ConnectionAttributeEnum> enumClass) {
+    for (ConnectionAttributeEnum attribute : enumClass.getEnumConstants()) {
 
       Vault vault = this.tabular.getVault();
       Vault.VariableBuilder variableBuilder = vault.createVariableBuilderFromAttribute(attribute);
 
       // What is fucked up, is fucked up
       // Name and uri are constructor variable and are therefore already added
-      if (attribute == ConnectionAttributeBase.NAME || attribute == ConnectionAttributeBase.URI) {
+      if (attribute == ConnectionAttributeEnumBase.NAME || attribute == ConnectionAttributeEnumBase.URI) {
         continue;
       }
 

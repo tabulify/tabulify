@@ -1,7 +1,7 @@
 package com.tabulify.tabli;
 
 import com.tabulify.Tabular;
-import com.tabulify.TabularAttribute;
+import com.tabulify.TabularAttributeEnum;
 import com.tabulify.conf.ConfVault;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
@@ -25,7 +25,7 @@ public class TabliAttributeDelete {
       .addExample(
         "To remove the `log-level` attribute, you would use the following command:",
         CliUsage.CODE_BLOCK,
-        CliUsage.getFullChainOfCommand(childCommand) + " " + KeyNormalizer.create(TabularAttribute.LOG_LEVEL).toKebabCase(),
+        CliUsage.getFullChainOfCommand(childCommand) + " " + KeyNormalizer.create(TabularAttributeEnum.LOG_LEVEL).toKebabCase(),
         CliUsage.CODE_BLOCK
       );
 

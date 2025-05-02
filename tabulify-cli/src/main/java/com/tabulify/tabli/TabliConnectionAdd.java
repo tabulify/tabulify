@@ -4,7 +4,7 @@ package com.tabulify.tabli;
 import com.tabulify.Tabular;
 import com.tabulify.conf.ConnectionVault;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionAttributeBase;
+import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.spi.DataPath;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
@@ -109,7 +109,7 @@ public class TabliConnectionAdd {
         connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, urlValue)
           .setUser(userValue)
           .setPassword(pwdValue)
-          .addAttribute(ConnectionAttributeBase.DRIVER, driverValue);
+          .addAttribute(ConnectionAttributeEnumBase.DRIVER, driverValue);
       }
       connectionVault
         .add(connection)

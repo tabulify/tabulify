@@ -1,7 +1,7 @@
 package com.tabulify.tabli;
 
 import com.tabulify.Tabular;
-import com.tabulify.TabularAttribute;
+import com.tabulify.TabularAttributeEnum;
 import com.tabulify.TabularExecEnv;
 import com.tabulify.conf.ConnectionVault;
 import com.tabulify.conf.Manifest;
@@ -22,7 +22,6 @@ import net.bytle.regexp.Glob;
 import net.bytle.timer.Timer;
 import net.bytle.type.Casts;
 import net.bytle.type.Enums;
-
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -258,7 +257,7 @@ public class Tabli {
         String logLevel = cliParser.getString(LOG_LEVEL_LONG_OPTION).toLowerCase();
         if (!cliParser.has(LOG_LEVEL_LONG_OPTION)) {
           try {
-            logLevel = tabular.getAttribute(TabularAttribute.LOG_LEVEL, String.class);
+            logLevel = tabular.getAttribute(TabularAttributeEnum.LOG_LEVEL, String.class);
           } catch (NoVariableException | NoValueException e) {
             logLevel = "info";
           } catch (CastException e) {
@@ -551,7 +550,7 @@ public class Tabli {
    */
   public static boolean hasBuildFileInRunningDirectory() {
     /**
-     * Not the same than {@link TabularAttribute.IS_DEV}
+     * Not the same than {@link TabularAttributeEnum.IS_DEV}
      * that checks if there is a `build` directory in the children
      */
     boolean buildFileFound = false;

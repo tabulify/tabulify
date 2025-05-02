@@ -26,9 +26,9 @@ import static com.tabulify.Tabular.TABLI_USER_HOME_PATH;
 public class TabularInit {
 
 
-  static TabularExecEnv determineEnv(TabularExecEnv env, Vault vault, TabularEnvs tabularEnvs, Map<TabularAttribute, com.tabulify.conf.Attribute> variables, ConfVault confVault) {
+  static TabularExecEnv determineEnv(TabularExecEnv env, Vault vault, TabularEnvs tabularEnvs, Map<TabularAttributeEnum, com.tabulify.conf.Attribute> variables, ConfVault confVault) {
 
-    TabularAttribute attribute = TabularAttribute.ENV;
+    TabularAttributeEnum attribute = TabularAttributeEnum.ENV;
     Vault.VariableBuilder configVariable = vault.createVariableBuilderFromAttribute(attribute);
     TabularExecEnv value;
 
@@ -38,7 +38,7 @@ public class TabularInit {
       com.tabulify.conf.Attribute variable = configVariable
         .setOrigin(com.tabulify.conf.Origin.COMMAND_LINE)
         .buildSafe(env.toString());
-      variables.put((TabularAttribute) variable.getAttributeMetadata(), variable);
+      variables.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
       return env;
     }
 
@@ -53,7 +53,7 @@ public class TabularInit {
       } catch (CastException e) {
         throw new RuntimeException("The env value (" + confEnvValue + ") in the conf file is not correct. We were expecting one of: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularExecEnv.class), e);
       }
-      variables.put((TabularAttribute) confAttribute.getAttributeMetadata(), confAttribute);
+      variables.put((TabularAttributeEnum) confAttribute.getAttributeMetadata(), confAttribute);
       return value;
     }
 
@@ -69,7 +69,7 @@ public class TabularInit {
         com.tabulify.conf.Attribute variable = configVariable
           .setOrigin(com.tabulify.conf.Origin.OS)
           .build(value.toString());
-        variables.put((TabularAttribute) variable.getAttributeMetadata(), variable);
+        variables.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
         return value;
       } catch (CastException e) {
         throw new IllegalArgumentException("The os env (" + osEnvName.toEnvName() + ") has a env value (" + envOsValue + ") that is unknown. Possible values: " + Enums.toConstantAsStringCommaSeparated(TabularExecEnv.class), e);
@@ -82,7 +82,7 @@ public class TabularInit {
       com.tabulify.conf.Attribute variable = configVariable
         .setOrigin(com.tabulify.conf.Origin.RUNTIME)
         .buildSafe(value);
-      variables.put((TabularAttribute) variable.getAttributeMetadata(), variable);
+      variables.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
       return value;
     }
 
@@ -91,7 +91,7 @@ public class TabularInit {
     com.tabulify.conf.Attribute variable = configVariable
       .setOrigin(com.tabulify.conf.Origin.RUNTIME)
       .buildSafe(value);
-    variables.put((TabularAttribute) variable.getAttributeMetadata(), variable);
+    variables.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
     return value;
 
   }
@@ -100,16 +100,16 @@ public class TabularInit {
   /**
    * @param homePath the home path from the constructor
    */
-  static Path determineHomePath(Path homePath, TabularExecEnv execEnv, TabularEnvs tabularEnvs, Map<TabularAttribute, com.tabulify.conf.Attribute> variables, Vault vault, ConfVault confVault) {
+  static Path determineHomePath(Path homePath, TabularExecEnv execEnv, TabularEnvs tabularEnvs, Map<TabularAttributeEnum, com.tabulify.conf.Attribute> variables, Vault vault, ConfVault confVault) {
 
-    TabularAttribute attribute = TabularAttribute.HOME;
+    TabularAttributeEnum attribute = TabularAttributeEnum.HOME;
     Vault.VariableBuilder variableBuilder = vault.createVariableBuilderFromAttribute(attribute);
 
     if (homePath != null) {
       com.tabulify.conf.Attribute variable = variableBuilder
         .setOrigin(com.tabulify.conf.Origin.COMMAND_LINE)
         .buildSafe(homePath);
-      variables.put((TabularAttribute) variable.getAttributeMetadata(), variable);
+      variables.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
       return homePath;
     }
 
@@ -119,18 +119,18 @@ public class TabularInit {
     com.tabulify.conf.Attribute confHomeAttribute = confVault.getAttribute(attribute);
     if (confHomeAttribute != null) {
       String confEnvValue = confHomeAttribute.getValueOrDefaultAsStringNotNull();
-      variables.put((TabularAttribute) confHomeAttribute.getAttributeMetadata(), confHomeAttribute);
+      variables.put((TabularAttributeEnum) confHomeAttribute.getAttributeMetadata(), confHomeAttribute);
       return Paths.get(confEnvValue);
     }
 
     // Env
-    KeyNormalizer envName = tabularEnvs.getOsTabliEnvName(TabularAttribute.HOME);
+    KeyNormalizer envName = tabularEnvs.getOsTabliEnvName(TabularAttributeEnum.HOME);
     String tabliHome = tabularEnvs.getOsEnvValue(envName);
     if (tabliHome != null) {
       com.tabulify.conf.Attribute variable = variableBuilder
         .setOrigin(com.tabulify.conf.Origin.OS)
         .buildSafe(tabliHome);
-      variables.put((TabularAttribute) variable.getAttributeMetadata(), variable);
+      variables.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
       return Paths.get(tabliHome);
     }
 
@@ -148,7 +148,7 @@ public class TabularInit {
         com.tabulify.conf.Attribute variable = variableBuilder
           .setOrigin(com.tabulify.conf.Origin.RUNTIME)
           .buildSafe(closestHomePath);
-        variables.put((TabularAttribute) variable.getAttributeMetadata(), variable);
+        variables.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
         return closestHomePath;
       } catch (FileNotFoundException e) {
         // Not found
@@ -161,22 +161,22 @@ public class TabularInit {
     com.tabulify.conf.Attribute variable = variableBuilder
       .setOrigin(com.tabulify.conf.Origin.RUNTIME)
       .buildSafe(prodHomePath);
-    variables.put((TabularAttribute) variable.getAttributeMetadata(), variable);
+    variables.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
     return prodHomePath;
 
   }
 
 
-  static public Path determineProjectHome(Path projectHomePath, Vault vault, Map<TabularAttribute, com.tabulify.conf.Attribute> variables, TabularEnvs tabularEnvs) {
+  static public Path determineProjectHome(Path projectHomePath, Vault vault, Map<TabularAttributeEnum, com.tabulify.conf.Attribute> variables, TabularEnvs tabularEnvs) {
 
-    TabularAttribute attribute = TabularAttribute.PROJECT_HOME;
+    TabularAttributeEnum attribute = TabularAttributeEnum.PROJECT_HOME;
     Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(attribute);
 
     if (projectHomePath != null) {
       com.tabulify.conf.Attribute variable = confVariable
         .setOrigin(com.tabulify.conf.Origin.COMMAND_LINE)
         .buildSafe(projectHomePath);
-      variables.put((TabularAttribute) variable.getAttributeMetadata(), variable);
+      variables.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
       return projectHomePath;
     }
 
@@ -187,7 +187,7 @@ public class TabularInit {
       com.tabulify.conf.Attribute variable = confVariable
         .setOrigin(com.tabulify.conf.Origin.OS)
         .buildSafe(projectHomeFromEnv);
-      variables.put((TabularAttribute) variable.getAttributeMetadata(), variable);
+      variables.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
       return Paths.get(projectHomeFromEnv);
     }
 
@@ -200,19 +200,19 @@ public class TabularInit {
         throw new FileNotFoundException();
       }
       com.tabulify.conf.Attribute variable = confVariable.buildSafe(closestProjectHomePath.toString());
-      variables.put((TabularAttribute) variable.getAttributeMetadata(), variable);
+      variables.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
       return closestProjectHomePath;
     } catch (FileNotFoundException e) {
       // not a project
       com.tabulify.conf.Attribute variable = confVariable.buildSafe(null);
-      variables.put((TabularAttribute) variable.getAttributeMetadata(), variable);
+      variables.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
       return null;
     }
   }
 
   static public Path determineConfPath(Path confPath, Vault vault, TabularEnvs tabularEnvs, Path projectHome) {
 
-    Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(TabularAttribute.CONF);
+    Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(TabularAttributeEnum.CONF);
     if (confPath != null) {
       confVariable
         .setOrigin(com.tabulify.conf.Origin.COMMAND_LINE)
@@ -220,7 +220,7 @@ public class TabularInit {
       return confPath;
     }
 
-    KeyNormalizer osEnvName = tabularEnvs.getOsTabliEnvName(TabularAttribute.CONF);
+    KeyNormalizer osEnvName = tabularEnvs.getOsTabliEnvName(TabularAttributeEnum.CONF);
     String confPathString = tabularEnvs.getOsEnvValue(osEnvName);
     if (confPathString != null) {
       com.tabulify.conf.Attribute attribute = confVariable
@@ -250,7 +250,7 @@ public class TabularInit {
    * Loop over all env and check that attributes were created
    * Not really needed, but it helps with a bad typo
    */
-  public static void checkForEnvNotProcessed(TabularEnvs tabularEnvs, Map<TabularAttribute, com.tabulify.conf.Attribute> variables) {
+  public static void checkForEnvNotProcessed(TabularEnvs tabularEnvs, Map<TabularAttributeEnum, com.tabulify.conf.Attribute> variables) {
     for (Map.Entry<String, String> tabularEnv : tabularEnvs.getEnvs().entrySet()) {
       String key = tabularEnv.getKey();
       String lowerCaseKey = key.toLowerCase();
@@ -258,11 +258,11 @@ public class TabularInit {
         continue;
       }
       String tabularEnvAsString = lowerCaseKey.substring(Tabular.TABLI_NAME.length());
-      TabularAttribute tabularAttributes;
+      TabularAttributeEnum tabularAttributes;
       try {
-        tabularAttributes = Casts.cast(tabularEnvAsString, TabularAttribute.class);
+        tabularAttributes = Casts.cast(tabularEnvAsString, TabularAttributeEnum.class);
       } catch (CastException e) {
-        throw new RuntimeException("The system env variable (" + key + ") is not a valid tabulify env. Only the following values are excepted: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttribute.class), e);
+        throw new RuntimeException("The system env variable (" + key + ") is not a valid tabulify env. Only the following values are excepted: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttributeEnum.class), e);
       }
       com.tabulify.conf.Attribute attribute = variables.get(tabularAttributes);
       if (attribute == null) {

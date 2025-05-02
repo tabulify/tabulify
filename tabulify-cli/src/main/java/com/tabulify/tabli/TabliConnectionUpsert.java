@@ -4,7 +4,7 @@ package com.tabulify.tabli;
 import com.tabulify.Tabular;
 import com.tabulify.conf.ConnectionVault;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionAttributeBase;
+import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.connection.ConnectionOrigin;
 import com.tabulify.spi.DataPath;
 import net.bytle.cli.CliCommand;
@@ -25,7 +25,7 @@ import static com.tabulify.tabli.TabliConnectionAdd.*;
 public class TabliConnectionUpsert {
 
 
-  protected static final String URL_PROPERTY = "--url";
+  protected static final String URI_PROPERTY = "--uri";
 
 
   private static final String CONNECTION_NAME = "name";
@@ -40,7 +40,7 @@ public class TabliConnectionUpsert {
       .addExample(
         "To upsert the information of the connection called `db`",
         CliUsage.CODE_BLOCK,
-        CliUsage.getFullChainOfCommand(childCommand) + " " + URL_PROPERTY + " jdbc:sqlite//%TMP%/db.db db",
+        CliUsage.getFullChainOfCommand(childCommand) + " " + URI_PROPERTY + " jdbc:sqlite//%TMP%/db.db db",
         CliUsage.CODE_BLOCK
       );
 
@@ -49,8 +49,8 @@ public class TabliConnectionUpsert {
       .setDescription("the connection name")
       .setMandatory(true);
 
-    childCommand.addProperty(URL_PROPERTY)
-      .setDescription("The connection url (if the connection doesn't exist, this options is mandatory)")
+    childCommand.addProperty(URI_PROPERTY)
+      .setDescription("The connection uri (if the connection doesn't exist, this options is mandatory)")
       .setMandatory(true);
 
     childCommand.addProperty(USER_PROPERTY)
@@ -69,7 +69,7 @@ public class TabliConnectionUpsert {
 
 
     childCommand.getGroup("Connection Properties")
-      .addWordOf(URL_PROPERTY)
+      .addWordOf(URI_PROPERTY)
       .addWordOf(USER_PROPERTY)
       .addWordOf(PASSWORD_PROPERTY)
       .addWordOf(DRIVER_PROPERTY);
@@ -78,7 +78,7 @@ public class TabliConnectionUpsert {
     CliParser cliParser = childCommand.parse();
 
     final String connectionName = cliParser.getString(CONNECTION_NAME);
-    final String urlValue = cliParser.getString(URL_PROPERTY);
+    final String urlValue = cliParser.getString(URI_PROPERTY);
     final String userValue = cliParser.getString(USER_PROPERTY);
     final String pwdValue = cliParser.getString(PASSWORD_PROPERTY);
     final String driverValue = cliParser.getString(DRIVER_PROPERTY);
@@ -101,7 +101,7 @@ public class TabliConnectionUpsert {
             .setOrigin(connection.getOrigin())
             .setAttributes(connection.getAttributes()
               .stream()
-              .filter(v -> v.getAttributeMetadata() != ConnectionAttributeBase.URI)
+              .filter(v -> v.getAttributeMetadata() != ConnectionAttributeEnumBase.URI)
               .collect(Collectors.toSet()))
             .setPassword(pwdValue)
             .setUser((String) connection.getUser().getValueOrDefaultOrNull());
@@ -112,7 +112,7 @@ public class TabliConnectionUpsert {
         .setUser(userValue)
         .setPassword(pwdValue);
       if (driverValue != null) {
-        connection.addAttribute(ConnectionAttributeBase.DRIVER, driverValue);
+        connection.addAttribute(ConnectionAttributeEnumBase.DRIVER, driverValue);
       }
       connectionVault.flush();
     }

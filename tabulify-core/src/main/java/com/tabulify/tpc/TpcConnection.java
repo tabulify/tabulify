@@ -104,7 +104,7 @@ public class TpcConnection extends NoOpConnection {
   @Override
   public Connection addAttribute(KeyNormalizer name, Object value, Origin origin) {
     try {
-      TpcConnectionAttribute connectionAttribute = Casts.cast(name, TpcConnectionAttribute.class);
+      TpcConnectionAttributeEnum connectionAttribute = Casts.cast(name, TpcConnectionAttributeEnum.class);
       return addAttribute(
         this
           .getTabular()

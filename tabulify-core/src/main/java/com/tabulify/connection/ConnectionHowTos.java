@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.tabulify.connection.ConnectionAttributeBase.DRIVER;
+import static com.tabulify.connection.ConnectionAttributeEnumBase.DRIVER;
 
 /**
  * A class that gives back default connections for how-to demos

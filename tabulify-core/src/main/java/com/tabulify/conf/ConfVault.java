@@ -1,10 +1,11 @@
 package com.tabulify.conf;
 
 import com.tabulify.Tabular;
-import com.tabulify.TabularAttribute;
+import com.tabulify.TabularAttributeEnum;
 import com.tabulify.Vault;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionAttributeBase;
+import com.tabulify.connection.ConnectionAttributeEnum;
+import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.connection.ConnectionOrigin;
 import net.bytle.exception.CastException;
 import net.bytle.fs.Fs;
@@ -27,7 +28,7 @@ public class ConfVault {
   private final Vault vault;
   private final Path path;
 
-  private final Map<TabularAttribute, Attribute> env = new HashMap<>();
+  private final Map<TabularAttributeEnum, Attribute> global = new HashMap<>();
   private final Tabular tabular;
   private final MapKeyIndependent<Connection> connections = new MapKeyIndependent<>();
   private final KeyCase outputCase = KeyCase.HYPHEN;
@@ -75,8 +76,8 @@ public class ConfVault {
     return new ConfVault(confPath, tabular.getVault(), tabular);
   }
 
-  public Attribute getAttribute(TabularAttribute name) {
-    return this.env.get(name);
+  public Attribute getAttribute(TabularAttributeEnum name) {
+    return this.global.get(name);
   }
 
 
@@ -142,18 +143,18 @@ public class ConfVault {
             }
             for (Map.Entry<String, String> localEnv : localEnvs.entrySet()) {
 
-              TabularAttribute tabularAttribute;
+              TabularAttributeEnum tabularAttribute;
               String variableName = localEnv.getKey();
               try {
-                tabularAttribute = Casts.cast(variableName, TabularAttribute.class);
+                tabularAttribute = Casts.cast(variableName, TabularAttributeEnum.class);
               } catch (ClassCastException e) {
-                throw new CastException("The attribute parameter (" + variableName + ") is not valid. We were expecting one of " + tabular.toPublicListOfParameters(TabularAttribute.class), e);
+                throw new CastException("The attribute parameter (" + variableName + ") is not valid. We were expecting one of " + tabular.toPublicListOfParameters(TabularAttributeEnum.class), e);
               }
               if (!tabularAttribute.isParameter()) {
                 throw new CastException("The attribute (" + variableName + ") is not a parameter and cannot be modified.");
               }
               Attribute attribute = vault.createAttribute(tabularAttribute, localEnv.getValue(), Origin.CONF);
-              env.put(tabularAttribute, attribute);
+              global.put(tabularAttribute, attribute);
 
             }
 
@@ -172,7 +173,7 @@ public class ConfVault {
 
               String connectionName = yamlConnection.getKey();
               Map<KeyNormalizer, Object> yamlConnectionAttributes = Casts.castToNewMap(yamlConnection.getValue(), KeyNormalizer.class, Object.class);
-              KeyNormalizer uriKeyNormalized = KeyNormalizer.create(ConnectionAttributeBase.URI);
+              KeyNormalizer uriKeyNormalized = KeyNormalizer.create(ConnectionAttributeEnumBase.URI);
               String uri = (String) yamlConnectionAttributes.get(uriKeyNormalized);
               if (uri == null) {
                 throw new RuntimeException("The uri is a mandatory variable and was not found for the connection (" + connectionName + ") in the conf file (" + this + ")");
@@ -182,12 +183,12 @@ public class ConfVault {
                * Create the connection
                */
               Connection connection = Connection.createConnectionFromProviderOrDefault(this.tabular, connectionName, uri)
-                .addAttribute(vault.createAttribute(ConnectionAttributeBase.ORIGIN, ConnectionOrigin.CONF, Origin.RUNTIME));
+                .addAttribute(vault.createAttribute(ConnectionAttributeEnumBase.ORIGIN, ConnectionOrigin.CONF, Origin.RUNTIME));
 
               /**
                * Native Attributes is a special attribute that stores the third party attribute
                */
-              KeyNormalizer nativeAttributeNormalized = KeyNormalizer.create(ConnectionAttributeBase.NATIVES);
+              KeyNormalizer nativeAttributeNormalized = KeyNormalizer.create(ConnectionAttributeEnumBase.NATIVES);
               Object nativeAttributesAsObject = yamlConnectionAttributes.get(nativeAttributeNormalized);
               if (nativeAttributesAsObject != null) {
 
@@ -295,17 +296,34 @@ public class ConfVault {
     Collections.sort(connections);
     Map<String, Object> connectionsMap = new HashMap<>();
     // For whatever reason, we made a name variable
-    List<AttributeEnum> noDumpAttributes = Arrays.asList(ConnectionAttributeBase.NAME, ConnectionAttributeBase.ORIGIN);
+    List<AttributeEnum> noDumpAttributes = Arrays.asList(ConnectionAttributeEnumBase.NAME, ConnectionAttributeEnumBase.ORIGIN);
     for (Connection connection : connections) {
       String connectionNameSection = connection.toString();
       Map<String, Object> connectionMap = new HashMap<>();
       connectionsMap.put(connectionNameSection, connectionMap);
 
       for (Attribute attribute : connection.getAttributes()) {
-        if (noDumpAttributes.contains(attribute.getAttributeMetadata())) {
+        ConnectionAttributeEnum attributeEnum = (ConnectionAttributeEnum) attribute.getAttributeMetadata();
+        if (noDumpAttributes.contains(attributeEnum)) {
           continue;
         }
-        dumpVariable(attribute, connectionMap);
+        if (!attributeEnum.isParameter()) {
+          continue;
+        }
+        String key = KeyNormalizer.create(attributeEnum).toCase(outputCase);
+        if (attributeEnum.equals(ConnectionAttributeEnumBase.NATIVES)) {
+          Map<String, String> nativeDriverAttributes = connection.getNativeDriverAttributes();
+          if (nativeDriverAttributes.isEmpty()) {
+            continue;
+          }
+          connectionMap.put(key, nativeDriverAttributes);
+          continue;
+        }
+        String originalValue = attribute.getRawValue();
+        if (originalValue == null || originalValue.isEmpty()) {
+          continue;
+        }
+        connectionMap.put(key, originalValue);
       }
 
     }
@@ -313,31 +331,19 @@ public class ConfVault {
     return connectionsMap;
   }
 
-  private void dumpVariable(Attribute attribute, Map<String, Object> connectionMap) {
-    // Derived value
-    if (attribute.isValueProvider()) {
-      return;
-    }
-    String originalValue = attribute.getRawValue();
-    if (originalValue == null || originalValue.isEmpty()) {
-      return;
-    }
-    String key = KeyNormalizer.create(attribute.getAttributeMetadata()).toCase(outputCase);
-    connectionMap.put(key, originalValue);
-  }
 
   /**
    * Used in Tabli
    */
-  public ConfVault addVariable(String key, String value) throws CastException {
-    TabularAttribute tabularAttribute;
+  public ConfVault addAttribute(String key, String value) throws CastException {
+    TabularAttributeEnum tabularAttribute;
     try {
-      tabularAttribute = Casts.cast(key, TabularAttribute.class);
+      tabularAttribute = Casts.cast(key, TabularAttributeEnum.class);
     } catch (CastException e) {
-      throw new CastException("Error: the variable name (" + key + " is not a valid variable name. We were expecting one of: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttribute.class));
+      throw new CastException("Error: the variable name (" + key + " is not a valid variable name. We were expecting one of: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttributeEnum.class));
     }
     Attribute attribute = vault.createAttribute(tabularAttribute, value, Origin.CONF);
-    env.put(tabularAttribute, attribute);
+    global.put(tabularAttribute, attribute);
     return this;
   }
 
@@ -370,19 +376,19 @@ public class ConfVault {
 
   public Object deleteVariable(String key) throws CastException {
 
-    TabularAttribute tabularAttribute;
+    TabularAttributeEnum tabularAttribute;
     try {
-      tabularAttribute = Casts.cast(key, TabularAttribute.class);
+      tabularAttribute = Casts.cast(key, TabularAttributeEnum.class);
     } catch (CastException e) {
-      throw new CastException("Error: the variable name (" + key + " is not a valid variable name. We were expecting one of: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttribute.class));
+      throw new CastException("Error: the variable name (" + key + " is not a valid variable name. We were expecting one of: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttributeEnum.class));
     }
-    Attribute attribute = env.remove(tabularAttribute);
+    Attribute attribute = global.remove(tabularAttribute);
     return attribute.getRawValue();
 
   }
 
   public Set<Attribute> getParameters() {
-    return new HashSet<>(this.env.values());
+    return new HashSet<>(this.global.values());
   }
 
 }

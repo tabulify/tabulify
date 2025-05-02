@@ -5,7 +5,7 @@ import java.util.Map;
 /**
  * All built-in connection attribute
  */
-public enum ConnectionAttributeBase implements ConnectionAttribute {
+public enum ConnectionAttributeEnumBase implements ConnectionAttributeEnum {
 
   NAME("The name of the connection", String.class, null, false),
   ORIGIN("The origin of the connection", ConnectionOrigin.class, null, false),
@@ -32,7 +32,7 @@ public enum ConnectionAttributeBase implements ConnectionAttribute {
   private final boolean isParameter;
 
 
-  ConnectionAttributeBase(String description, Class<?> valueClazz, Object defaultValue, boolean isParameter) {
+  ConnectionAttributeEnumBase(String description, Class<?> valueClazz, Object defaultValue, boolean isParameter) {
     this.description = description;
     this.clazz = valueClazz;
     this.defaultValue = defaultValue;

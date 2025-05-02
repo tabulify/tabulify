@@ -1,6 +1,6 @@
 package com.tabulify;
 
-import com.tabulify.conf.AttributeParameter;
+import com.tabulify.conf.AttributeEnumParameter;
 
 import java.nio.file.Path;
 
@@ -8,7 +8,7 @@ import java.nio.file.Path;
  * All static configuration
  * <p>
  */
-public enum TabularAttribute implements AttributeParameter {
+public enum TabularAttributeEnum implements AttributeEnumParameter {
 
 
   /**
@@ -32,7 +32,7 @@ public enum TabularAttribute implements AttributeParameter {
   private final Class<?> valueClazz;
   private final Object value;
 
-  TabularAttribute(String description, boolean parameter, Object defaultValue, Class<?> valueClazz) {
+  TabularAttributeEnum(String description, boolean parameter, Object defaultValue, Class<?> valueClazz) {
     this.description = description;
     this.parameter = parameter;
     this.value = defaultValue;

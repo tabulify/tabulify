@@ -1,8 +1,8 @@
 package com.tabulify.connection;
 
+import com.tabulify.conf.Attribute;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
-import com.tabulify.conf.Attribute;
 
 /**
  * A class that has all built-in connection attributes
@@ -27,7 +27,7 @@ public class ConnectionMetadata {
     try {
       Attribute attribute = this.connection.getTabular()
         .createAttribute(
-          ConnectionAttributeBase.BOOLEAN_DATA_TYPE,
+          ConnectionAttributeEnumBase.BOOLEAN_DATA_TYPE,
           connectionAttValueBooleanDataType
         );
       this.connection.addAttribute(attribute);
@@ -44,7 +44,7 @@ public class ConnectionMetadata {
   public ConnectionMetadata setDateDataType(ConnectionAttValueTimeDataType dateDataType) {
 
     try {
-      Attribute attribute = this.connection.getTabular().createAttribute(ConnectionAttributeBase.DATE_DATA_TYPE, dateDataType);
+      Attribute attribute = this.connection.getTabular().createAttribute(ConnectionAttributeEnumBase.DATE_DATA_TYPE, dateDataType);
       this.connection.addAttribute(attribute);
       return this;
     } catch (Exception e) {
@@ -56,7 +56,7 @@ public class ConnectionMetadata {
 
   public ConnectionMetadata setTimestampDataType(ConnectionAttValueTimeDataType timestampDataType) {
     try {
-      Attribute attribute = this.connection.getTabular().createAttribute(ConnectionAttributeBase.TIMESTAMP_DATA_TYPE, timestampDataType);
+      Attribute attribute = this.connection.getTabular().createAttribute(ConnectionAttributeEnumBase.TIMESTAMP_DATA_TYPE, timestampDataType);
       this.connection.addAttribute(attribute);
       return this;
     } catch (Exception e) {
@@ -69,7 +69,7 @@ public class ConnectionMetadata {
 
 
     try {
-      return (ConnectionAttValueTimeDataType) this.connection.getAttribute(ConnectionAttributeBase.DATE_DATA_TYPE).getValueOrDefault();
+      return (ConnectionAttValueTimeDataType) this.connection.getAttribute(ConnectionAttributeEnumBase.DATE_DATA_TYPE).getValueOrDefault();
     } catch (NoValueException e) {
       throw new InternalException("The date data type has already a default, it should not happen", e);
     }
@@ -80,7 +80,7 @@ public class ConnectionMetadata {
   public ConnectionAttValueTimeDataType getTimestampDataType() {
 
     try {
-      return (ConnectionAttValueTimeDataType) this.connection.getAttribute(ConnectionAttributeBase.TIMESTAMP_DATA_TYPE).getValueOrDefault();
+      return (ConnectionAttValueTimeDataType) this.connection.getAttribute(ConnectionAttributeEnumBase.TIMESTAMP_DATA_TYPE).getValueOrDefault();
     } catch (NoValueException e) {
       throw new InternalException("The TIMESTAMP_DATA_TYPE data type has already a default, it should not happen", e);
     }
@@ -91,7 +91,7 @@ public class ConnectionMetadata {
   public ConnectionAttValueTimeDataType getTimeDataType() {
 
     try {
-      return (ConnectionAttValueTimeDataType) this.connection.getAttribute(ConnectionAttributeBase.TIME_DATA_TYPE).getValueOrDefault();
+      return (ConnectionAttValueTimeDataType) this.connection.getAttribute(ConnectionAttributeEnumBase.TIME_DATA_TYPE).getValueOrDefault();
     } catch (NoValueException e) {
       throw new InternalException("The TIME_DATA_TYPE data type has already a default, it should not happen");
     }
@@ -100,7 +100,7 @@ public class ConnectionMetadata {
 
   public ConnectionMetadata setTimeDataType(ConnectionAttValueTimeDataType connectionAttValueTimeDataType) {
     try {
-      Attribute attribute = this.connection.getTabular().createAttribute(ConnectionAttributeBase.TIME_DATA_TYPE, connectionAttValueTimeDataType);
+      Attribute attribute = this.connection.getTabular().createAttribute(ConnectionAttributeEnumBase.TIME_DATA_TYPE, connectionAttValueTimeDataType);
       this.connection.addAttribute(attribute);
       return this;
     } catch (Exception e) {
@@ -111,7 +111,7 @@ public class ConnectionMetadata {
   public ConnectionAttValueBooleanDataType getBooleanDataType() {
 
     try {
-      return (ConnectionAttValueBooleanDataType) this.connection.getAttribute(ConnectionAttributeBase.BOOLEAN_DATA_TYPE).getValueOrDefault();
+      return (ConnectionAttValueBooleanDataType) this.connection.getAttribute(ConnectionAttributeEnumBase.BOOLEAN_DATA_TYPE).getValueOrDefault();
     } catch (NoValueException e) {
       throw new InternalException("The BOOLEAN_DATA_TYPE data type has already a default, it should not happen");
     }

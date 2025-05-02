@@ -5,7 +5,7 @@ import com.tabulify.DbLoggers;
 import com.tabulify.Tabular;
 import com.tabulify.Vault;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionAttributeBase;
+import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.connection.ConnectionHowTos;
 import com.tabulify.connection.ConnectionOrigin;
 import net.bytle.exception.InternalException;
@@ -119,15 +119,15 @@ public class ConnectionVault implements AutoCloseable {
         boolean uriFound = false;
         List<Attribute> connectionAttributes = connection.getAttributes().stream().sorted().collect(Collectors.toList());
         for (Attribute attribute : connectionAttributes) {
-          if (attribute.getAttributeMetadata() == ConnectionAttributeBase.NAME) {
+          if (attribute.getAttributeMetadata() == ConnectionAttributeEnumBase.NAME) {
             continue;
           }
-          if (attribute.getAttributeMetadata() == ConnectionAttributeBase.ORIGIN) {
+          if (attribute.getAttributeMetadata() == ConnectionAttributeEnumBase.ORIGIN) {
             // origin is an internal
             continue;
           }
           String valueToStore;
-          if (attribute.getAttributeMetadata() == ConnectionAttributeBase.URI) {
+          if (attribute.getAttributeMetadata() == ConnectionAttributeEnumBase.URI) {
             uriFound = true;
             valueToStore = attribute.getRawValue();
             if (valueToStore == null) {
@@ -252,9 +252,9 @@ public class ConnectionVault implements AutoCloseable {
       for (String propertyName : iniSection.keySet()) {
 
         String value = iniSection.get(propertyName);
-        ConnectionAttributeBase connectionAttributeBase = null;
+        ConnectionAttributeEnumBase connectionAttributeBase = null;
         try {
-          connectionAttributeBase = Casts.cast(propertyName, ConnectionAttributeBase.class);
+          connectionAttributeBase = Casts.cast(propertyName, ConnectionAttributeEnumBase.class);
         } catch (Exception e) {
           // not a standard attribute
           // a specific connection attribute then
@@ -267,7 +267,7 @@ public class ConnectionVault implements AutoCloseable {
           } else {
             attribute = vault.createAttribute(connectionAttributeBase, value, Origin.CONF);
           }
-          if (connectionAttributeBase == ConnectionAttributeBase.URI) {
+          if (connectionAttributeBase == ConnectionAttributeEnumBase.URI) {
             uri = attribute;
           }
         } catch (Exception e) {
@@ -289,7 +289,7 @@ public class ConnectionVault implements AutoCloseable {
       // as they may be used for the default values
       connection.setAttributes(attributeMap);
       connection.addAttribute(vault.createAttribute(
-          ConnectionAttributeBase.ORIGIN,
+          ConnectionAttributeEnumBase.ORIGIN,
           ConnectionOrigin.CONF,
           Origin.RUNTIME)
         .setPlainValue(Origin.CONF)

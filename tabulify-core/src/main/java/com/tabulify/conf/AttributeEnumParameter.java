@@ -1,6 +1,6 @@
 package com.tabulify.conf;
 
-public interface AttributeParameter extends AttributeEnum {
+public interface AttributeEnumParameter extends AttributeEnum {
 
   /**
    * Can this attribute be set by the user

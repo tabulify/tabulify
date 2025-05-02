@@ -2,19 +2,17 @@ package com.tabulify.jdbc;
 
 import com.tabulify.Tabular;
 import com.tabulify.conf.Attribute;
+import com.tabulify.conf.Origin;
 import com.tabulify.connection.ConnectionAttValueBooleanDataType;
 import com.tabulify.connection.ConnectionAttValueTimeDataType;
-import com.tabulify.connection.ConnectionAttributeBase;
+import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.model.SqlDataType;
 import com.tabulify.noop.NoOpConnection;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.ProcessingEngine;
 import net.bytle.exception.*;
 import net.bytle.regexp.Glob;
-import net.bytle.type.Booleans;
-import net.bytle.type.Casts;
-import net.bytle.type.Maps;
-import net.bytle.type.MediaType;
+import net.bytle.type.*;
 import net.bytle.type.time.Date;
 import net.bytle.type.time.Time;
 import net.bytle.type.time.Timestamp;
@@ -50,21 +48,21 @@ public class SqlConnection extends NoOpConnection {
 
 
   @Override
-  public SqlConnection addAttribute(String name, Object value) {
+  public SqlConnection addAttribute(KeyNormalizer name, Object value, Origin origin) {
 
-    SqlConnectionAttribute connectionAttribute;
+    SqlConnectionAttributeEnum connectionAttribute;
     try {
-      connectionAttribute = Casts.cast(name, SqlConnectionAttribute.class);
+      connectionAttribute = Casts.cast(name, SqlConnectionAttributeEnum.class);
     } catch (Exception e) {
-      super.addAttribute(name, value);
+      super.addAttribute(name, value, origin);
       return this;
     }
     if (connectionAttribute.needsConnection()) {
       throw new RuntimeException("The connection attribute (" + connectionAttribute + ") cannot be overwritten as it's a derived attribute");
     }
-    com.tabulify.conf.Attribute attribute;
+    Attribute attribute;
     try {
-      attribute = getTabular().createAttribute(connectionAttribute, value);
+      attribute = getTabular().getVault().createAttribute(connectionAttribute, value, origin);
     } catch (Exception e) {
       throw new RuntimeException("An error has occurred while creating the connection variable (" + connectionAttribute + ") with the value (" + value + ") for the connection (" + this + "). Error: " + e.getMessage(), e);
     }
@@ -124,7 +122,7 @@ public class SqlConnection extends NoOpConnection {
   }
 
   private void initVariable(boolean needsConnection) {
-    for (SqlConnectionAttribute connectionAttribute : SqlConnectionAttribute.values()) {
+    for (SqlConnectionAttributeEnum connectionAttribute : SqlConnectionAttributeEnum.values()) {
       if (connectionAttribute.needsConnection() == needsConnection) {
         continue;
       }
@@ -176,14 +174,12 @@ public class SqlConnection extends NoOpConnection {
 
 
   /**
-   * This is a JDBC connection parameter
-   * It should be threated as {@link #addAttribute(String, Object)}
    *
    * @param jdbcDriver - the driver
    * @return the connection for chaining
    */
   public SqlConnection setDriver(String jdbcDriver) {
-    super.addAttribute(ConnectionAttributeBase.DRIVER, jdbcDriver);
+    super.addAttribute(ConnectionAttributeEnumBase.DRIVER, jdbcDriver);
     return this;
   }
 
@@ -192,7 +188,7 @@ public class SqlConnection extends NoOpConnection {
   public String getDriver() {
 
     try {
-      return super.getAttribute(ConnectionAttributeBase.DRIVER).getValueOrDefault().toString();
+      return super.getAttribute(ConnectionAttributeEnumBase.DRIVER).getValueOrDefault().toString();
     } catch (NoValueException e) {
       return "";
     }
@@ -202,7 +198,7 @@ public class SqlConnection extends NoOpConnection {
   public String getPostConnectionStatement() throws NotFoundException {
 
     try {
-      return (String) super.getAttribute(SqlConnectionAttribute.CONNECTION_INIT_SCRIPT).getValueOrDefault();
+      return (String) super.getAttribute(SqlConnectionAttributeEnum.CONNECTION_INIT_SCRIPT).getValueOrDefault();
     } catch (NoValueException e) {
       throw new NotFoundException();
     }

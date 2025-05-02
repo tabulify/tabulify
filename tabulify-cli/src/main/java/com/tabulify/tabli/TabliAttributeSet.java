@@ -45,7 +45,7 @@ public class TabliAttributeSet {
 
     try {
       ConfVault.createFromPath(conf, tabular)
-        .addVariable(key, value)
+        .addAttribute(key, value)
         .flush();
     } catch (CastException e) {
       throw new RuntimeException(e.getMessage(), e);
