@@ -63,7 +63,7 @@ public class TabliWords {
   protected static final String LIMIT_PROPERTY = "--limit";
 
   // Config file words
-  static final String CONF_VARIABLES_PATH_PROPERTY = "--conf";
+  static final String CONF_PATH_PROPERTY = "--conf";
 
   static final String ENVIRONMENT = "--env";
 
@@ -107,9 +107,9 @@ public class TabliWords {
   static final String INFO_COMMAND = "info";
 
   /**
-   * Environment Variables
+   * Attribute
    */
-  static final String VARIABLE_COMMAND = "variable";
+  static final String ATTRIBUTE_COMMAND = "attribute";
 
   /**
    * The command that print the data structure metadata

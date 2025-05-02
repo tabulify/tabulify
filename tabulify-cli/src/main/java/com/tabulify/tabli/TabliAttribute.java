@@ -13,16 +13,16 @@ import static com.tabulify.tabli.TabliLog.LOGGER_TABLI;
 import static com.tabulify.tabli.TabliWords.*;
 
 
-public class TabliVariable {
+public class TabliAttribute {
 
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
 
     childCommand.addChildCommand(SET_COMMAND)
-      .setDescription("Set a variable");
+      .setDescription("Set a attribute");
     childCommand.addChildCommand(LIST_COMMAND)
-      .setDescription("List the variables");
+      .setDescription("List the attributes");
     childCommand.addChildCommand(DELETE_COMMAND)
-      .setDescription("Delete a variable");
+      .setDescription("Delete a attribute");
 
 
     CliParser cliParser = childCommand.parse();
@@ -35,13 +35,13 @@ public class TabliVariable {
         LOGGER_TABLI.info("The command (" + subChildCommand + ") was found");
         switch (subChildCommand.getName()) {
           case LIST_COMMAND:
-            feedbackDataPaths = TabliVariableList.run(tabular, subChildCommand);
+            feedbackDataPaths = TabliAttributeList.run(tabular, subChildCommand);
             break;
           case SET_COMMAND:
-            feedbackDataPaths = TabliVariableSet.run(tabular, subChildCommand);
+            feedbackDataPaths = TabliAttributeSet.run(tabular, subChildCommand);
             break;
           case DELETE_COMMAND:
-            feedbackDataPaths = TabliVariableDelete.run(tabular, subChildCommand);
+            feedbackDataPaths = TabliAttributeDelete.run(tabular, subChildCommand);
             break;
           default:
             throw new IllegalArgumentException("The sub-command (" + subChildCommand.getName() + ") is unknown for the command (" + CliUsage.getFullChainOfCommand(childCommand) + ")");
@@ -59,15 +59,11 @@ public class TabliVariable {
    * @return the variable file path to modify
    */
   static Path getVariablesFilePathToModify(Tabular tabular, CliParser cliParser) {
-    Path conf = cliParser.getPath(CONF_VARIABLES_PATH_PROPERTY);
-    if (conf == null) {
-      if (tabular.isProjectRun()) {
-        conf = tabular.getProjectConfigurationFile().getVariablesPath();
-      } else {
-        conf = tabular.getEnvVariables().getUserConfigurationFile();
-      }
+    Path conf = cliParser.getPath(CONF_PATH_PROPERTY);
+    if (conf != null) {
+      return conf;
     }
-    return conf;
+    return tabular.getConfPath();
   }
 
 }

@@ -13,7 +13,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
-public class TabliVariableSet {
+public class TabliAttributeSet {
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
 
     // Define the command and its arguments
@@ -41,12 +41,12 @@ public class TabliVariableSet {
     final String key = cliParser.getString(TabliWords.KEY);
     final String value = cliParser.getString(TabliWords.VALUE);
 
-    Path conf = TabliVariable.getVariablesFilePathToModify(tabular, cliParser);
+    Path conf = TabliAttribute.getVariablesFilePathToModify(tabular, cliParser);
 
     try {
       ConfVault.createFromPath(conf, tabular)
         .addVariable(key, value)
-        .flush(yamlpath);
+        .flush();
     } catch (CastException e) {
       throw new RuntimeException(e.getMessage(), e);
     }

@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TabliVariableList {
+public class TabliAttributeList {
 
 
   public static final String DEFAULT_SELECTOR = "*";
@@ -48,15 +48,9 @@ public class TabliVariableList {
         CliUsage.CODE_BLOCK
       )
       .addExample(
-        "List all OS Environment variables",
+        "List all attributes set by OS Environment variables",
         CliUsage.CODE_BLOCK,
         CliUsage.getFullChainOfCommand(childCommand) + " " + TabliWords.TYPE_PROPERTY + " " + Origin.OS,
-        CliUsage.CODE_BLOCK
-      )
-      .addExample(
-        "List all Java configurations",
-        CliUsage.CODE_BLOCK,
-        CliUsage.getFullChainOfCommand(childCommand) + " " + " *java*",
         CliUsage.CODE_BLOCK
       );
 
@@ -99,7 +93,7 @@ public class TabliVariableList {
     ) {
       // no origin given and a name selector given
       listOrigins = Collections.singletonList(Origin.ALL);
-      TabliLog.LOGGER_TABLI.info("The `type` of variable was to `all` because a selector was given (without any type option)");
+      TabliLog.LOGGER_TABLI.info("The `type` of attribute was to `all` because a selector was given (without any type option)");
     } else {
       listOrigins = cliParser.getStrings(TabliWords.TYPE_PROPERTY)
         .stream()

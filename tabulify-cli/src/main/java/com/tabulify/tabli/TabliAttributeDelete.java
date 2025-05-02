@@ -15,15 +15,15 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
-public class TabliVariableDelete {
+public class TabliAttributeDelete {
 
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
 
     // Define the command and its arguments
     childCommand
-      .setDescription("Delete a tabulify variable from the conf file")
+      .setDescription("Delete a tabulify attribute from the conf file")
       .addExample(
-        "To remove the `log-level` variable, you would use the following command:",
+        "To remove the `log-level` attribute, you would use the following command:",
         CliUsage.CODE_BLOCK,
         CliUsage.getFullChainOfCommand(childCommand) + " " + KeyNormalizer.create(TabularAttribute.LOG_LEVEL).toKebabCase(),
         CliUsage.CODE_BLOCK
@@ -40,7 +40,7 @@ public class TabliVariableDelete {
 
     final String key = cliParser.getString(TabliWords.KEY);
 
-    Path conf = TabliVariable.getVariablesFilePathToModify(tabular, cliParser);
+    Path conf = TabliAttribute.getVariablesFilePathToModify(tabular, cliParser);
     ConfVault confVault = ConfVault
       .createFromPath(conf, tabular);
     Object value;
@@ -49,7 +49,7 @@ public class TabliVariableDelete {
     } catch (CastException e) {
       throw new RuntimeException(e.getMessage(), e);
     }
-    confVault.flush(yamlpath);
+    confVault.flush();
 
     DataPath feedbackDataPath = tabular.getMemoryDataStore().getDataPath("configurationDeleted")
       .setDescription("The below configuration was deleted")

@@ -63,8 +63,8 @@ public class Tabli {
     /*
      The options for all command
      */
-    rootCommand.addProperty(TabliWords.CONF_VARIABLES_PATH_PROPERTY)
-      .setDescription("The path to a variables file")
+    rootCommand.addProperty(TabliWords.CONF_PATH_PROPERTY)
+      .setDescription("The path to a configuration file")
       .setValueName("path")
       .setShortName("-vf");
 
@@ -135,7 +135,7 @@ public class Tabli {
       .setDescription("Data operations against data resources (table, file, ...).");
     rootCommand.addChildCommand(TabliWords.CONNECTION_COMMAND)
       .setDescription("Management and configuration of the connections to systems.");
-    rootCommand.addChildCommand(TabliWords.VARIABLE_COMMAND)
+    rootCommand.addChildCommand(TabliWords.ATTRIBUTE_COMMAND)
       .setDescription("Management and configuration of the " + TabliWords.CLI_NAME + " variables environment.");
     rootCommand.addChildCommand(TabliWords.VAULT_COMMAND)
       .setDescription("Encrypt and decrypt sensitive information");
@@ -172,7 +172,7 @@ public class Tabli {
 
 
     // Command line last (higher priority)
-    Path confPath = cliParser.getPath(CONF_VARIABLES_PATH_PROPERTY);
+    Path confPath = cliParser.getPath(CONF_PATH_PROPERTY);
 
 
     String executionEnvironment = cliParser.getString(ENVIRONMENT);
@@ -324,8 +324,8 @@ public class Tabli {
               case TabliWords.DATA_COMMAND:
                 feedbackDataPaths = TabliData.run(tabular, childCommand);
                 break;
-              case TabliWords.VARIABLE_COMMAND:
-                feedbackDataPaths = TabliVariable.run(tabular, childCommand);
+              case TabliWords.ATTRIBUTE_COMMAND:
+                feedbackDataPaths = TabliAttribute.run(tabular, childCommand);
                 break;
               case TabliWords.VAULT_COMMAND:
                 feedbackDataPaths = TabliVault.run(tabular, childCommand);
