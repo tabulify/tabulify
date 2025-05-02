@@ -10,11 +10,16 @@ import com.tabulify.stream.InsertStream;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
+import net.bytle.exception.CastException;
+import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
+import net.bytle.type.KeyNormalizer;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 /**
@@ -68,13 +73,23 @@ public class TabliConnectionList {
     try (InsertStream insertStream = connectionDef.getDataPath().getInsertStream()) {
       for (Connection connection : connections) {
 
+        Map<KeyNormalizer, String> connectionAttributes = connection.getAttributes()
+          .stream()
+          .collect(
+            Collectors.toMap(
+              a -> KeyNormalizer.create(a.getAttributeMetadata()),
+              a -> {
+                try {
+                  return a.getValueOrDefaultCastAs(String.class);
+                } catch (NoValueException | CastException e) {
+                  return "";
+                }
+              }
+            )
+          );
         List<String> row = new ArrayList<>();
-        for (String attribute : attributes) {
-          try {
-            row.add((String) connection.getVariable(attribute).getValueOrDefaultOrNull());
-          } catch (NoVariableException e) {
-            // ok
-          }
+        for (String attributeString : attributes) {
+          row.add(connectionAttributes.get(KeyNormalizer.create(attributeString)));
         }
         insertStream
           .insert(row);

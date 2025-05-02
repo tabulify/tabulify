@@ -3,7 +3,7 @@ package com.tabulify.tpc;
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
 import com.tabulify.spi.ConnectionProvider;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 public class TpcConnectionProvider extends ConnectionProvider {
 
@@ -12,12 +12,12 @@ public class TpcConnectionProvider extends ConnectionProvider {
 
 
   @Override
-  public Connection createConnection(Tabular tabular, Variable name, Variable uri) {
+  public Connection createConnection(Tabular tabular, Attribute name, Attribute uri) {
     return new TpcConnection(tabular, name, uri);
   }
 
   @Override
-  public boolean accept(Variable uri) {
+  public boolean accept(Attribute uri) {
     return uri.getValueOrDefaultAsStringNotNull().toLowerCase().startsWith(TPCDS_SCHEME);
   }
 

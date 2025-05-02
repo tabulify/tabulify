@@ -1,13 +1,13 @@
 package com.tabulify.spi;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public enum DataPathAttribute implements Attribute {
+public enum DataPathAttribute implements AttributeEnum {
 
   /**
    * Internal Properties Key

@@ -2,7 +2,7 @@ package com.tabulify.sqlite;
 
 import com.tabulify.Tabular;
 import com.tabulify.jdbc.SqlDataStoreProvider;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 public class SqliteProvider extends SqlDataStoreProvider {
 
@@ -10,14 +10,14 @@ public class SqliteProvider extends SqlDataStoreProvider {
   public static final String ROOT = "///";
 
   @Override
-  public SqliteConnection getJdbcDataStore(Tabular tabular, Variable name, Variable url) {
+  public SqliteConnection getJdbcDataStore(Tabular tabular, Attribute name, Attribute url) {
 
     return new SqliteConnection(tabular, name, url);
 
   }
 
   @Override
-  public boolean accept(Variable url) {
+  public boolean accept(Attribute url) {
     return url.getValueOrDefaultAsStringNotNull().startsWith(URL_PREFIX);
   }
 

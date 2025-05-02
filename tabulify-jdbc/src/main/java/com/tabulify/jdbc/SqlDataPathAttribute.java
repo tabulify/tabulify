@@ -1,8 +1,8 @@
 package com.tabulify.jdbc;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-public enum SqlDataPathAttribute implements Attribute {
+public enum SqlDataPathAttribute implements AttributeEnum {
 
   /**
    * For now, this attribute is not a global tabular attribute because data and class are not part of the tabular core module

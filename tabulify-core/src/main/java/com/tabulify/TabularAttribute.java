@@ -1,6 +1,6 @@
 package com.tabulify;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
 import java.nio.file.Path;
 
@@ -8,7 +8,7 @@ import java.nio.file.Path;
  * All static configuration
  * <p>
  */
-public enum TabularAttribute implements Attribute {
+public enum TabularAttribute implements AttributeEnum {
 
 
   /**
@@ -23,7 +23,8 @@ public enum TabularAttribute implements Attribute {
   LOG_LEVEL("The tabli log level", true, "info", String.class),
   //
   // By default, the user home (trick to not show the user in the path)
-  SQLITE_HOME("Sqlite home (Where to store the sqlite database)", false, null, String.class);
+  SQLITE_HOME("Sqlite home (Where to store the sqlite database)", false, null, String.class),
+  NATIVE_DRIVER("Native Drivers Properties", false, null, String.class);
 
 
   private final String description;

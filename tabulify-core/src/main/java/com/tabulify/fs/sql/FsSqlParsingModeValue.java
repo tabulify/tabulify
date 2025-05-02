@@ -1,6 +1,6 @@
 package com.tabulify.fs.sql;
 
-import net.bytle.type.AttributeValue;
+import com.tabulify.conf.AttributeValue;
 
 public enum FsSqlParsingModeValue implements AttributeValue {
 

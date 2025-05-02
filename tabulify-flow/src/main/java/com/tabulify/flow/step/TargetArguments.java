@@ -1,11 +1,11 @@
 package com.tabulify.flow.step;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
 /**
  * The arguments used in a {@link TargetFilterStepAbs target operation}
  */
-public enum TargetArguments implements Attribute {
+public enum TargetArguments implements AttributeEnum {
 
   TARGET_DATA_URI( "defines the target data URI destination (Example: [table]@connection). If the target data uri has no name, the name will be the name of the source.", true),
   TARGET_DATA_DEFINITION( "The data definition of the target", false);

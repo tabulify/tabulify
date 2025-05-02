@@ -1,8 +1,8 @@
 package com.tabulify.flow.step;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-public enum DefineStepAttribute implements Attribute {
+public enum DefineStepAttribute implements AttributeEnum {
 
   DATA_RESOURCE("One data resource"),
   DATA_RESOURCES("Multiple data resources"),

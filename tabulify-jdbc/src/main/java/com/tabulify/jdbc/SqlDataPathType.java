@@ -1,5 +1,6 @@
 package com.tabulify.jdbc;
 
+import com.tabulify.conf.AttributeValue;
 import net.bytle.exception.CastException;
 import net.bytle.exception.NotSupportedException;
 import net.bytle.type.*;

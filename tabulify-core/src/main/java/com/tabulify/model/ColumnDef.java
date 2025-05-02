@@ -1,7 +1,7 @@
 package com.tabulify.model;
 
-import net.bytle.type.Attribute;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
 import java.sql.DatabaseMetaData;
 import java.util.Set;
@@ -70,23 +70,23 @@ public interface ColumnDef extends Comparable<ColumnDef> {
    * if the total names are `generator`,`type`
    * this function will return the key `type` in the namespace `generator`
    */
-  Variable getVariable(Attribute attribute);
+  Attribute getVariable(AttributeEnum attribute);
 
 
   /**
    * Function used to pass unknown attribute/properties
    * so that it can be checked by the underlining data path, create an attribute
-   * and use the {@link #setVariable(Attribute, Object)}
+   * and use the {@link #setVariable(AttributeEnum, Object)}
    */
   ColumnDef setVariable(String key, Object value);
 
   /**
    * The main entry to set a variable
    */
-  ColumnDef setVariable(Attribute key, Object value);
+  ColumnDef setVariable(AttributeEnum key, Object value);
 
 
-  Set<Variable> getVariables();
+  Set<Attribute> getVariables();
 
   String getComment();
 

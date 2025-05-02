@@ -17,6 +17,7 @@ import net.bytle.template.flow.TemplateAttributes;
 import net.bytle.template.flow.TemplateEngine;
 import net.bytle.template.flow.TemplateStep;
 import net.bytle.type.Casts;
+import net.bytle.type.KeyNormalizer;
 
 import java.util.List;
 import java.util.Map;
@@ -28,8 +29,6 @@ import static net.bytle.template.flow.TemplateAttributes.TEMPLATE_ENGINE;
 
 
 public class TabliDataTemplate {
-
-
 
 
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
@@ -46,15 +45,14 @@ public class TabliDataTemplate {
       .setValueName("attributeName=value");
 
     String template_options = "Template Options";
-    childCommand.addPropertyFromAttribute(TemplateAttributes.TEMPLATE_SELECTORS)
+    childCommand.addProperty("--" + KeyNormalizer.create(TemplateAttributes.TEMPLATE_SELECTORS).toCliLongOptionName())
       .setGroup(template_options)
       .setMandatory(true)
       .setValueName("pattern@connection");
 
-    childCommand.addPropertyFromAttribute(TEMPLATE_ENGINE)
+    childCommand.addProperty("--" + KeyNormalizer.create(TemplateAttributes.TEMPLATE_ENGINE).toCliLongOptionName())
       .setGroup(template_options)
       .setValueName("templateEngine");
-
 
 
     TabliDataTransferManager.addAllTransferOptions(childCommand, TransferOperation.INSERT);
@@ -67,18 +65,18 @@ public class TabliDataTemplate {
     final DataUri sourceSelector = tabular.createDataUri(cliParser.getString(SOURCE_SELECTOR));
     final DataUri targetUri = tabular.createDataUri(cliParser.getString(TARGET_DATA_URI));
 
-    String templateEngineValue = cliParser.getString(TEMPLATE_ENGINE);
+    String templateEngineValue = cliParser.getString(TEMPLATE_ENGINE.toString());
     final TemplateEngine templateEngine;
     try {
       templateEngine = Casts.cast(templateEngineValue, TemplateEngine.class);
     } catch (CastException e) {
-      throw IllegalArgumentExceptions.createForArgumentValue(templateEngineValue,TEMPLATE_ENGINE,TemplateEngine.class,e);
+      throw IllegalArgumentExceptions.createForArgumentValue(templateEngineValue, TEMPLATE_ENGINE, TemplateEngine.class, e);
     }
 
     final Boolean withDependencies = cliParser.getBoolean(WITH_DEPENDENCIES_PROPERTY);
     Map<String, ?> attributes = cliParser.getProperties(TabliWords.ATTRIBUTE_PROPERTY);
     Set<DataUri> templateSelectors = cliParser
-      .getStrings(TemplateAttributes.TEMPLATE_SELECTORS)
+      .getStrings(TemplateAttributes.TEMPLATE_SELECTORS.toString())
       .stream()
       .map(tabular::createDataUri)
       .collect(Collectors.toSet());

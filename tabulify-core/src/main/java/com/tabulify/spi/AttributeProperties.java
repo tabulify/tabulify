@@ -1,6 +1,6 @@
 package com.tabulify.spi;
 
-import net.bytle.type.AttributeValue;
+import com.tabulify.conf.AttributeValue;
 
 public enum AttributeProperties implements AttributeValue {
 

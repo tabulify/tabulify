@@ -6,9 +6,9 @@ import com.tabulify.connection.ConnectionMetadata;
 import com.tabulify.noop.NoOpConnection;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.ProcessingEngine;
+import com.tabulify.conf.Attribute;
 import net.bytle.type.MediaType;
 import net.bytle.type.Strings;
-import net.bytle.type.Variable;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -21,13 +21,13 @@ public class MemoryConnection extends NoOpConnection {
   private final MemoryDataSystem memoryDataSystem;
 
 
-  public MemoryConnection(Tabular tabular, Variable name, Variable connectionString) {
+  public MemoryConnection(Tabular tabular, Attribute name, Attribute connectionString) {
     super(tabular, name, connectionString);
     this.workingPathNamespace = URI.create(getUriAsString()).getPath();
     this.memoryDataSystem = new MemoryDataSystem(this);
   }
 
-  public static MemoryConnection of(Tabular tabular, Variable name, Variable connectionString) {
+  public static MemoryConnection of(Tabular tabular, Attribute name, Attribute connectionString) {
     return new MemoryConnection(tabular, name, connectionString);
   }
 

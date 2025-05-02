@@ -6,7 +6,7 @@ import com.tabulify.jdbc.SqlDataPath;
 import com.tabulify.jdbc.SqlDataSystem;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.model.SqlDataType;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 import oracle.jdbc.OracleTypes;
 
 import java.sql.Types;
@@ -16,7 +16,7 @@ import java.sql.Types;
  */
 public class OracleConnection extends SqlConnection {
 
-  public OracleConnection(Tabular tabular, Variable name, Variable url) {
+  public OracleConnection(Tabular tabular, Attribute name, Attribute url) {
     super(tabular, name, url);
   }
 

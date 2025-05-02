@@ -2,7 +2,7 @@ package com.tabulify.sqlserver;
 
 import com.tabulify.Tabular;
 import com.tabulify.model.SqlDataType;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 import com.tabulify.jdbc.SqlConnection;
 
 import java.sql.Types;
@@ -19,19 +19,19 @@ import java.util.Set;
 public class SqlServerConnection extends SqlConnection {
 
 
-  public SqlServerConnection(Tabular tabular, Variable name, Variable url) {
+  public SqlServerConnection(Tabular tabular, Attribute name, Attribute url) {
     super(tabular, name, url);
   }
 
   @Override
-  public Set<Variable> getVariables() {
-    Set<Variable> properties = super.getVariables();
+  public Set<Attribute> getAttributes() {
+    Set<Attribute> properties = super.getAttributes();
     // Sql Server
     // https://docs.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-2017
     //https://docs.microsoft.com/en-us/sql/t-sql/functions/context-info-transact-sql?view=sql-server-2017
-    Variable applicationName;
+    Attribute applicationName;
     try {
-      applicationName = getTabular().createVariable("applicationName", " " + this.getName() + " " + getTabular().getName());
+      applicationName = getTabular().createAttribute("applicationName", " " + this.getName() + " " + getTabular().getName());
     } catch (Exception e) {
       // should not happen
       throw new RuntimeException("Error while adding the application name", e);

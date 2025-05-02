@@ -48,7 +48,7 @@ public class EnrichSelectStream extends SelectStreamAbs implements SelectStream 
     } else {
       DataPathAttribute attribute = this.getDataPath().mapColumnNameToDataPathAttribute.get(this.getDataPath().getRelationDef().getColumnDef(columnIndex).getColumnName());
       try {
-        return this.wrappedSelectStream.getDataPath().getVariable(attribute).getValueOrDefault();
+        return this.wrappedSelectStream.getDataPath().getAttribute(attribute).getValueOrDefault();
       } catch (NoVariableException | NoValueException e) {
         return null;
       }

@@ -9,10 +9,10 @@ import com.tabulify.stream.SelectStream;
 import com.tabulify.transfer.TransferProperties;
 import com.tabulify.uri.DataUri;
 import net.bytle.exception.NoParentException;
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 import java.util.HashMap;
 import java.util.List;
@@ -42,11 +42,11 @@ public class EnrichDataPath extends DataPathAbs {
     this.wrappedDataPath = wrappedDataPath;
     /**
      * Variable are build when creating the path
-     * We can't overwrite {@link DataPathAbs#getOrCreateVariable(Attribute)}
+     * We can't overwrite {@link DataPathAbs#getOrCreateVariable(AttributeEnum)}
      * We overwrite the variables below with the variables of the wrapped data path
      */
-    for (Variable variable : this.wrappedDataPath.getVariables()) {
-      this.addVariable(variable);
+    for (Attribute attribute : this.wrappedDataPath.getAttributes()) {
+      this.addAttribute(attribute);
     }
 
     /**

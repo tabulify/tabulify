@@ -1,6 +1,6 @@
 package com.tabulify.flow.step;
 
-import net.bytle.type.AttributeValue;
+import com.tabulify.conf.AttributeValue;
 
 /**
  * The report returned

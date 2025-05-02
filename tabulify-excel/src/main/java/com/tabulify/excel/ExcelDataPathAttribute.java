@@ -1,8 +1,8 @@
 package com.tabulify.excel;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-public enum ExcelDataPathAttribute implements Attribute {
+public enum ExcelDataPathAttribute implements AttributeEnum {
 
 
   HEADER_ROW_ID("The row id of the header row - Only 0 (no header) or 1 are supported",Integer.class,0),

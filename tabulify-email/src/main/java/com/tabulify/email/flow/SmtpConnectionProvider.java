@@ -3,7 +3,7 @@ package com.tabulify.email.flow;
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
 import com.tabulify.spi.ConnectionProvider;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 public class SmtpConnectionProvider extends ConnectionProvider {
 
@@ -11,12 +11,12 @@ public class SmtpConnectionProvider extends ConnectionProvider {
 
 
   @Override
-  public Connection createConnection(Tabular tabular, Variable name, Variable uri) {
+  public Connection createConnection(Tabular tabular, Attribute name, Attribute uri) {
     return new SmtpConnection(tabular, name, uri);
   }
 
   @Override
-  public boolean accept(Variable uri) {
+  public boolean accept(Attribute uri) {
     return uri.getValueOrDefaultAsStringNotNull().startsWith(SMTP_SCHEME);
   }
 

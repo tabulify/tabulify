@@ -1,6 +1,8 @@
 package com.tabulify.flow.engine;
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.AttributeEnum;
+import com.tabulify.conf.Origin;
 import net.bytle.exception.NotFoundException;
 import net.bytle.type.*;
 
@@ -14,7 +16,7 @@ public abstract class StepAbs extends StepProvider implements OperationStep {
   protected String name;
   private String comment;
 
-  private final MapKeyIndependent<Variable> arguments = new MapKeyIndependent<>();
+  private final MapKeyIndependent<com.tabulify.conf.Attribute> arguments = new MapKeyIndependent<>();
 
 
   @Override
@@ -101,34 +103,34 @@ public abstract class StepAbs extends StepProvider implements OperationStep {
   }
 
   @Override
-  public Set<Variable> getArguments() {
+  public Set<com.tabulify.conf.Attribute> getArguments() {
     return new HashSet<>(this.arguments.values());
   }
 
   @SuppressWarnings("unused")
-  public StepAbs addArgumentsFromEnumAttributeClass(Class<? extends Attribute> enumClass) {
-    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addArgument(Variable.create(c, Origin.RUNTIME)));
+  public StepAbs addArgumentsFromEnumAttributeClass(Class<? extends AttributeEnum> enumClass) {
+    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addArgument(com.tabulify.conf.Attribute.create(c, com.tabulify.conf.Origin.RUNTIME)));
     return this;
   }
 
-  private StepAbs addArgument(Variable variable) {
-    this.arguments.put(variable.getAttribute().toString(), variable);
+  private StepAbs addArgument(com.tabulify.conf.Attribute attribute) {
+    this.arguments.put(attribute.getAttributeMetadata().toString(), attribute);
     return this;
   }
 
-  protected Variable getOrCreateArgument(Attribute attribute) {
+  protected com.tabulify.conf.Attribute getOrCreateArgument(AttributeEnum attribute) {
     try {
       return this.getArgument(attribute);
     } catch (NotFoundException e) {
-      Variable argument = Variable.create(attribute, Origin.RUNTIME);
+      com.tabulify.conf.Attribute argument = com.tabulify.conf.Attribute.create(attribute, Origin.RUNTIME);
       this.addArgument(argument);
       return argument;
     }
 
   }
 
-  private Variable getArgument(Attribute attribute) throws NotFoundException {
-    Variable variable = this.arguments.get(attribute.toString());
+  private com.tabulify.conf.Attribute getArgument(AttributeEnum attribute) throws NotFoundException {
+    com.tabulify.conf.Attribute variable = this.arguments.get(attribute.toString());
     if (variable == null) {
       throw new NotFoundException("The argument (" + attribute + ") was not found");
     }

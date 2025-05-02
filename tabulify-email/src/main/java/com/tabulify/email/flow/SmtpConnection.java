@@ -1,7 +1,10 @@
 package com.tabulify.email.flow;
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Attribute;
 import com.tabulify.connection.Connection;
+import com.tabulify.connection.ConnectionAttribute;
+import com.tabulify.connection.ConnectionAttributeBase;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataSystem;
 import com.tabulify.spi.ProcessingEngine;
@@ -35,7 +38,7 @@ public class SmtpConnection extends Connection {
   private List<InternetAddress> defaultBcc = new ArrayList<>();
   private InternetAddress defaultFrom;
 
-  public SmtpConnection(Tabular tabular, Variable name, Variable uri) {
+  public SmtpConnection(Tabular tabular, com.tabulify.conf.Attribute name, com.tabulify.conf.Attribute uri) {
 
     super(tabular, name, uri);
     String uriValue = uri.getValueOrDefaultAsStringNotNull();
@@ -45,14 +48,14 @@ public class SmtpConnection extends Connection {
       throw new IllegalArgumentException("The smtp connection (" + name + ") has an illegal URI value (" + uriValue + "). Error: " + e.getMessage(), e);
     }
 
-    this.addVariablesFromEnumAttributeClass(SmtpConnectionAttribute.class);
+    this.addAttributesFromEnumAttributeClass(SmtpConnectionAttribute.class);
 
-    String smtpUser = (String) this.getVariable(SmtpConnectionAttribute.SMTP_USER).getValueOrDefaultOrNull();
+    String smtpUser = (String) this.getAttribute(ConnectionAttributeBase.USER).getValueOrDefaultOrNull();
     if (smtpUser != null) {
       this.setUser(smtpUser);
     }
 
-    String smtpPwd = (String) this.getVariable(SmtpConnectionAttribute.SMTP_PWD).getValueOrDefaultOrNull();
+    String smtpPwd = (String) this.getAttribute(ConnectionAttributeBase.PASSWORD).getValueOrDefaultOrNull();
     if (smtpUser != null) {
       this.setPassword(smtpPwd);
     }
@@ -63,18 +66,18 @@ public class SmtpConnection extends Connection {
   }
 
   @Override
-  public Connection addVariable(String name, Object value) {
+  public Connection addAttribute(String name, Object value) {
 
     SmtpConnectionAttribute smtpConnectionAttribute;
     try {
       smtpConnectionAttribute = Casts.cast(name, SmtpConnectionAttribute.class);
     } catch (Exception e) {
-      return super.addVariable(name, value);
+      return super.addAttribute(name, value);
     }
 
     try {
-      Variable variable = getTabular().createVariable(smtpConnectionAttribute, value);
-      this.addVariable(variable);
+      Attribute attribute = getTabular().createAttribute(smtpConnectionAttribute, value);
+      this.addAttribute(attribute);
       return this;
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the variable (" + smtpConnectionAttribute + ") with the value (" + value + ") for the connection (" + this + ")", e);
@@ -95,8 +98,8 @@ public class SmtpConnection extends Connection {
 
     try {
       this.defaultTo = BMailAddressStatic.addressAndNamesToListInternetAddress(
-        this.getQueryPropertyOrConnectionPropertyOrNull(BMailSmtpConnectionAttribute.TO.toString()),
-        this.getQueryPropertyOrConnectionPropertyOrNull(BMailSmtpConnectionAttribute.TO_NAMES.toString())
+        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttribute.TO),
+        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttribute.TO_NAMES)
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `to` definition of the smtp connection. Error: " + e.getMessage());
@@ -104,8 +107,8 @@ public class SmtpConnection extends Connection {
 
     try {
       this.defaultCc = BMailAddressStatic.addressAndNamesToListInternetAddress(
-        this.getQueryPropertyOrConnectionPropertyOrNull(BMailSmtpConnectionAttribute.CC.toString()),
-        this.getQueryPropertyOrConnectionPropertyOrNull(BMailSmtpConnectionAttribute.CC_NAMES.toString())
+        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttribute.CC),
+        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttribute.CC_NAMES)
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `cc` definition of the smtp connection. Error: " + e.getMessage());
@@ -113,8 +116,8 @@ public class SmtpConnection extends Connection {
 
     try {
       this.defaultBcc = BMailAddressStatic.addressAndNamesToListInternetAddress(
-        this.getQueryPropertyOrConnectionPropertyOrNull(BMailSmtpConnectionAttribute.BCC.toString()),
-        this.getQueryPropertyOrConnectionPropertyOrNull(BMailSmtpConnectionAttribute.BCC_NAMES.toString())
+        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttribute.BCC),
+        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttribute.BCC_NAMES)
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `cc` definition of the smtp connection. Error: " + e.getMessage());
@@ -123,7 +126,7 @@ public class SmtpConnection extends Connection {
 
   private Boolean getTls() {
     try {
-      return getBooleanProperty(BMailSmtpConnectionAttribute.TLS.toString());
+      return getBooleanProperty(SmtpConnectionAttribute.TLS);
     } catch (NoValueException | NoVariableException e) {
       return BMailSmtpConnectionAttribute.DEFAULTS.TLS;
     } catch (CastException e) {
@@ -134,7 +137,7 @@ public class SmtpConnection extends Connection {
   private Boolean getDebug() {
 
     try {
-      return getBooleanProperty(BMailSmtpConnectionAttribute.DEBUG.toString());
+      return getBooleanProperty(SmtpConnectionAttribute.DEBUG);
     } catch (NoValueException | NoVariableException e) {
       return false;
     } catch (CastException e) {
@@ -144,26 +147,26 @@ public class SmtpConnection extends Connection {
   }
 
   @Nullable
-  private Boolean getBooleanProperty(String propertyKey) throws NoValueException, NoVariableException, CastException {
+  private Boolean getBooleanProperty(SmtpConnectionAttribute propertyKey) throws NoValueException, NoVariableException, CastException {
     String tls = this.uri.getQueryProperty(propertyKey);
     if (tls != null && !tls.trim().isEmpty()) {
       return Booleans.createFromString(tls).toBoolean();
     }
-    return this.getVariable(propertyKey).getValueOrDefaultCastAs(Boolean.class);
+    return this.getAttribute(propertyKey).getValueOrDefaultCastAs(Boolean.class);
   }
 
   private String getSmtpPassword() throws NoValueException {
-    String password = this.uri.getQueryProperty(SmtpConnectionAttribute.SMTP_PWD);
+    String password = this.uri.getQueryProperty(ConnectionAttributeBase.PASSWORD);
     if (password != null) {
       return password;
     }
-    return (String) this.getPasswordVariable().getValueOrDefault();
+    return (String) this.getPasswordAttribute().getValueOrDefault();
 
   }
 
   private String getSmtpUser() throws NoValueException {
 
-    String user = this.uri.getQueryProperty(SmtpConnectionAttribute.SMTP_USER);
+    String user = this.uri.getQueryProperty(ConnectionAttributeBase.USER);
     if (user != null && !user.trim().isEmpty()) {
       return user;
     }
@@ -179,7 +182,7 @@ public class SmtpConnection extends Connection {
       return port;
     }
     try {
-      return (Integer) this.getVariable(SmtpConnectionAttribute.SMTP_PORT).getValueOrDefault();
+      return (Integer) this.getAttribute(SmtpConnectionAttribute.PORT).getValueOrDefault();
     } catch (NoValueException e) {
       throw new RuntimeException("Should not happen");
     }
@@ -295,7 +298,7 @@ public class SmtpConnection extends Connection {
     } catch (NotFoundException e) {
       // no host
     }
-    return (String) this.getVariable(SmtpConnectionAttribute.SMTP_HOST).getValueOrDefaultOrNull();
+    return (String) this.getAttribute(SmtpConnectionAttribute.HOST).getValueOrDefaultOrNull();
 
 
   }
@@ -327,20 +330,17 @@ public class SmtpConnection extends Connection {
       return from;
     }
 
-    return (String) this.getVariable(SmtpConnectionAttribute.SMTP_FROM).getValueOrDefaultOrNull();
+    return (String) this.getAttribute(SmtpConnectionAttribute.FROM).getValueOrDefaultOrNull();
 
   }
 
-  private String getQueryPropertyOrConnectionPropertyOrNull(String name) {
-    String from = this.uri.getQueryProperty(name);
+  private String getQueryPropertyOrConnectionPropertyOrNull(ConnectionAttribute name) {
+    String from = this.uri.getQueryProperty(name.toString().toLowerCase());
     if (from != null) {
       return from;
     }
-    try {
-      return (String) this.getVariable(name).getValueOrDefaultOrNull();
-    } catch (NoVariableException e) {
-      return null;
-    }
+    return (String) this.getAttribute(name).getValueOrDefaultOrNull();
+
   }
 
 

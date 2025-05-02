@@ -1,5 +1,6 @@
 package com.tabulify.flow.step;
 
+import com.tabulify.conf.AttributeValue;
 import com.tabulify.transfer.*;
 import com.tabulify.DbLoggers;
 import com.tabulify.flow.Granularity;
@@ -282,7 +283,7 @@ public class TransferStep extends TargetFilterStepAbs {
   }
 
   @Override
-  public OperationStep setOutput(AttributeValue attribute) {
+  public OperationStep setOutput(com.tabulify.conf.AttributeValue attribute) {
     this.transferOutput = (TransferOutputArgument) attribute;
     return this;
   }
@@ -446,7 +447,7 @@ public class TransferStep extends TargetFilterStepAbs {
 
               Object variableValue;
               try {
-                variableValue = sourceDataPath.getVariable(attributeName);
+                variableValue = sourceDataPath.getAttribute(attributeName);
               } catch (NoVariableException e) {
                 variableValue = selectStream.getObject(attributeName);
               }

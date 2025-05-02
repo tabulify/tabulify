@@ -1,8 +1,8 @@
 package com.tabulify.flow.step;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-public enum HeadFunctionArgument implements Attribute {
+public enum HeadFunctionArgument implements AttributeEnum {
   LIMIT("The limit of records returned", Integer.class,10);
 
   private final Class<?> valueClass;

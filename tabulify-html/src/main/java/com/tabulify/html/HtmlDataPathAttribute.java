@@ -1,8 +1,8 @@
 package com.tabulify.html;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-public enum HtmlDataPathAttribute implements Attribute {
+public enum HtmlDataPathAttribute implements AttributeEnum {
 
 
   TABLE_SELECTOR("The css selector of the context node (by default table)","table"),

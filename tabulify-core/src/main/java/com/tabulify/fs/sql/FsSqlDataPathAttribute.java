@@ -1,8 +1,8 @@
 package com.tabulify.fs.sql;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-public enum FsSqlDataPathAttribute implements Attribute {
+public enum FsSqlDataPathAttribute implements AttributeEnum {
 
   PARSING_MODE("How to parse the SQL files", FsSqlParsingModeValue.SQL, FsSqlParsingModeValue.class);
 

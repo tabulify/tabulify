@@ -34,7 +34,7 @@ public class GenFsDataPath extends FsTextDataPath implements FsDataPath, GenData
      * Default
      */
     try {
-      this.getVariable(DataPathAttribute.LOGICAL_NAME).setValueProvider(()->super.getName().replace(GenDataPathType.DATA_GEN.getExtension(), ""));
+      this.getAttribute(DataPathAttribute.LOGICAL_NAME).setValueProvider(()->super.getName().replace(GenDataPathType.DATA_GEN.getExtension(), ""));
     } catch (NoVariableException e) {
       throw new IllegalStateException("The logical Name is a standard attribute and should exist");
     }

@@ -1,7 +1,9 @@
 package com.tabulify;
 
+import com.tabulify.conf.AttributeEnum;
 import com.tabulify.conf.ConfVault;
 import com.tabulify.conf.ConnectionVault;
+import com.tabulify.conf.Origin;
 import com.tabulify.conf.TabularEnvs;
 import com.tabulify.connection.Connection;
 import com.tabulify.connection.ConnectionBuiltIn;
@@ -46,7 +48,7 @@ public class Tabular implements AutoCloseable {
 
 
   public static final String TABLI_NAME = "tabli";
-  static final String TABLI_CONF_FILE_NAME = "." + TABLI_NAME + ".yml";
+  public static final String TABLI_CONF_FILE_NAME = "." + TABLI_NAME + ".yml";
   public static final Path TABLI_USER_HOME_PATH = Fs.getUserHome().resolve("." + TABLI_NAME);
   public static final Path TABLI_USER_CONF_PATH = TABLI_USER_HOME_PATH.resolve(TABLI_CONF_FILE_NAME);
 
@@ -92,7 +94,7 @@ public class Tabular implements AutoCloseable {
    * We may not add derived generated variables.
    * so the key identifier is not a string
    */
-  private final Map<TabularAttribute, Variable> variables = new HashMap<>();
+  private final Map<TabularAttribute, com.tabulify.conf.Attribute> attributes = new HashMap<>();
 
   /**
    * Where to store sqlite database by default
@@ -131,7 +133,7 @@ public class Tabular implements AutoCloseable {
     /**
      * Project
      */
-    this.projectHomePath = TabularInit.determineProjectHome(tabularConfig.projectHome, vault, variables, tabularEnvs);
+    this.projectHomePath = TabularInit.determineProjectHome(tabularConfig.projectHome, vault, attributes, tabularEnvs);
     if (projectHomePath != null) {
       DbLoggers.LOGGER_TABULAR_START.info("This is a project run (" + projectHomePath + ")");
     } else {
@@ -149,18 +151,18 @@ public class Tabular implements AutoCloseable {
     /**
      * Execution Env
      */
-    this.executionEnv = TabularInit.determineEnv(tabularConfig.execEnv, vault, tabularEnvs, variables, confVault);
+    this.executionEnv = TabularInit.determineEnv(tabularConfig.execEnv, vault, tabularEnvs, attributes, confVault);
 
     /**
      * Home Path
      */
-    this.homePath = TabularInit.determineHomePath(tabularConfig.homePath, this.executionEnv, tabularEnvs, variables, vault, confVault);
+    this.homePath = TabularInit.determineHomePath(tabularConfig.homePath, this.executionEnv, tabularEnvs, attributes, vault, confVault);
 
 
     /**
      * Check for env
      */
-    TabularInit.checkForEnvNotProcessed(tabularEnvs, variables);
+    TabularInit.checkForEnvNotProcessed(tabularEnvs, attributes);
 
 
     /**
@@ -649,8 +651,8 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public <T> T getVariable(TabularAttribute attribute, Class<T> clazz) throws NoValueException, CastException, NoVariableException {
-    Variable variable = this.variables.get(attribute);
+  public <T> T getAttribute(TabularAttribute attribute, Class<T> clazz) throws NoValueException, CastException, NoVariableException {
+    com.tabulify.conf.Attribute variable = this.attributes.get(attribute);
     if (variable == null) {
       throw new NoValueException("The variable (" + attribute + ") was not found");
     }
@@ -735,7 +737,7 @@ public class Tabular implements AutoCloseable {
             for (int i = 1; i < groups.size(); i++) {
               String key = String.valueOf(i);
               String value = groups.get(i);
-              dataPath.addVariable(key, value);
+              dataPath.addAttribute(key, value);
             }
           }
         }
@@ -835,8 +837,8 @@ public class Tabular implements AutoCloseable {
 
 
 
-  public Variable getVariable(TabularAttribute attribute) {
-    return this.variables.get(attribute);
+  public com.tabulify.conf.Attribute getAttribute(TabularAttribute attribute) {
+    return this.attributes.get(attribute);
   }
 
 
@@ -878,16 +880,16 @@ public class Tabular implements AutoCloseable {
     return KeyNormalizer.create(attribute).toCliLongOptionName();
   }
 
-  public String toPublicName(Variable variable) {
-    return toPublicName(variable.getAttribute().toString());
+  public String toPublicName(com.tabulify.conf.Attribute attribute) {
+    return toPublicName(attribute.getAttributeMetadata().toString());
   }
 
   public Path getSqliteHome() {
     return this.sqliteHome;
   }
 
-  public Set<Variable> getVariables() {
-    return new HashSet<>(this.variables.values());
+  public Set<com.tabulify.conf.Attribute> getAttributes() {
+    return new HashSet<>(this.attributes.values());
   }
 
   public Path getUserConfFilePath() {
@@ -898,12 +900,12 @@ public class Tabular implements AutoCloseable {
     return this.confPath;
   }
 
-  public Variable createVariable(Attribute attribute, Object value) {
-    return this.getVault().createVariable(attribute, value, Origin.RUNTIME);
+  public com.tabulify.conf.Attribute createAttribute(AttributeEnum attribute, Object value) {
+    return this.getVault().createAttribute(attribute, value, com.tabulify.conf.Origin.RUNTIME);
   }
 
-  public Variable createVariable(String key, Object value) throws Exception {
-    return this.getVault().createVariable(key, value, Origin.RUNTIME);
+  public com.tabulify.conf.Attribute createAttribute(String key, Object value) throws Exception {
+    return this.getVault().createAttribute(key, value, Origin.RUNTIME);
   }
 
   public TabularEnvs getTabularEnvs() {

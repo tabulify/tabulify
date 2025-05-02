@@ -153,7 +153,7 @@ public class SelectSupplier extends StepAbs implements DataPathSupplier, Operati
         textTemplate.getVariableNames().forEach(
           variableName -> {
             try {
-              map.put(variableName, dataPath.getVariable(variableName).getValueOrDefault());
+              map.put(variableName, dataPath.getAttribute(variableName).getValueOrDefault());
             } catch (NoVariableException | NoValueException e) {
               throw new RuntimeException("The variable name (" + variableName + ") is an attribute without any defined value");
             }

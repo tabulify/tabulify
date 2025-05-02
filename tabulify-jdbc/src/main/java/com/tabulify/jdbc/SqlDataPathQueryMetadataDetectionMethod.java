@@ -1,7 +1,7 @@
 package com.tabulify.jdbc;
 
 import com.tabulify.fs.sql.SqlQueryColumnIdentifierExtractor;
-import net.bytle.type.AttributeValue;
+import com.tabulify.conf.AttributeValue;
 
 enum SqlDataPathQueryMetadataDetectionMethod implements AttributeValue {
 

@@ -1,10 +1,10 @@
 package com.tabulify.gen;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
 import java.util.Map;
 
-public enum GenColumnAttribute implements Attribute {
+public enum GenColumnAttribute implements AttributeEnum {
 
   HIDDEN("Hidden", Boolean.class, false),
   /**

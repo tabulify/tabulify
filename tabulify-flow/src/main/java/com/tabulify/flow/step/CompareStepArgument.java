@@ -1,8 +1,8 @@
 package com.tabulify.flow.step;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-public enum CompareStepArgument implements Attribute {
+public enum CompareStepArgument implements AttributeEnum {
 
   SOURCE("The content source that will be compared",CompareStepSource.class, CompareStepSource.CONTENT),
   REPORT("The type of compare report", CompareStepReportType.class, CompareStepReportType.RESOURCE),

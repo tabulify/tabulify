@@ -4,6 +4,8 @@ import com.tabulify.Tabular;
 import com.tabulify.TabularAttribute;
 import com.tabulify.TabularExecEnv;
 import com.tabulify.conf.ConnectionVault;
+import com.tabulify.conf.Manifest;
+import com.tabulify.conf.ManifestAttribute;
 import com.tabulify.connection.Connection;
 import com.tabulify.memory.MemoryDataPath;
 import com.tabulify.spi.DataPath;
@@ -20,8 +22,7 @@ import net.bytle.regexp.Glob;
 import net.bytle.timer.Timer;
 import net.bytle.type.Casts;
 import net.bytle.type.Enums;
-import net.bytle.type.Manifest;
-import net.bytle.type.ManifestAttribute;
+
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -257,7 +258,7 @@ public class Tabli {
         String logLevel = cliParser.getString(LOG_LEVEL_LONG_OPTION).toLowerCase();
         if (!cliParser.has(LOG_LEVEL_LONG_OPTION)) {
           try {
-            logLevel = tabular.getVariable(TabularAttribute.LOG_LEVEL, String.class);
+            logLevel = tabular.getAttribute(TabularAttribute.LOG_LEVEL, String.class);
           } catch (NoVariableException | NoValueException e) {
             logLevel = "info";
           } catch (CastException e) {

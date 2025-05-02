@@ -1,12 +1,12 @@
 package com.tabulify.fs.textfile;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
 import java.io.BufferedReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-public enum FsTextDataPathAttributes implements Attribute {
+public enum FsTextDataPathAttributes implements AttributeEnum {
 
   END_OF_RECORD("The End Of Record string sequence", DEFAULTS.EOLS, String[].class),
   CHARACTER_SET("The character set of the file", DEFAULTS.CHARSET, Charset.class),

@@ -1,6 +1,6 @@
 package com.tabulify.transfer;
 
-import net.bytle.type.AttributeValue;
+import com.tabulify.conf.AttributeValue;
 
 /**
  * Operation:

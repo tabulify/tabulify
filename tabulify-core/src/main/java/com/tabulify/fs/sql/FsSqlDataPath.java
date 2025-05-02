@@ -48,7 +48,7 @@ public class FsSqlDataPath extends FsTextDataPath {
 
   public FsSqlDataPath setParsingMode(FsSqlParsingModeValue parsingMode) {
     try {
-      this.getVariable(FsSqlDataPathAttribute.PARSING_MODE).setPlainValue(parsingMode);
+      this.getAttribute(FsSqlDataPathAttribute.PARSING_MODE).setPlainValue(parsingMode);
     } catch (NoVariableException e) {
       throw new RuntimeException("Internal Error: PARSING_MODE variable was not found. It should not happen");
     }
@@ -66,7 +66,7 @@ public class FsSqlDataPath extends FsTextDataPath {
 
   private FsSqlParsingModeValue getParsingModeValue() {
     try {
-      return (FsSqlParsingModeValue) this.getVariable(FsSqlDataPathAttribute.PARSING_MODE).getValueOrDefault();
+      return (FsSqlParsingModeValue) this.getAttribute(FsSqlDataPathAttribute.PARSING_MODE).getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       throw new RuntimeException("Internal Error: PARSING_MODE variable was not found. It should not happen");
     }

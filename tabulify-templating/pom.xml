@@ -21,6 +21,10 @@
 
     <!-- Compile -->
     <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-flow</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.eraldy</groupId>
       <artifactId>eraldy-template</artifactId>
     </dependency>
@@ -28,10 +32,7 @@
       <groupId>com.eraldy</groupId>
       <artifactId>eraldy-html</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.tabulify</groupId>
-      <artifactId>tabulify-flow</artifactId>
-    </dependency>
+
 
     <!-- Testing -->
     <dependency>

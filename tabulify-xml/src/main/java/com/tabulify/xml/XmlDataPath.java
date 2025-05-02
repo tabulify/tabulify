@@ -1,5 +1,7 @@
 package com.tabulify.xml;
 
+import com.tabulify.conf.Attribute;
+import com.tabulify.conf.AttributeEnum;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.textfile.FsTextDataPath;
 import com.tabulify.model.RelationDef;
@@ -14,7 +16,7 @@ public class XmlDataPath extends FsTextDataPath {
 
   public static final MediaType MEDIA_TYPE_EXTENSION = MediaTypes.TEXT_XML;
 
-  enum XML_ATTRIBUTE implements Attribute {
+  enum XML_ATTRIBUTE implements AttributeEnum {
 
     COLUMN_NAME("The name of the column when the JSON is returned in one column"),
     ;
@@ -82,24 +84,24 @@ public class XmlDataPath extends FsTextDataPath {
 
 
   @Override
-  public XmlDataPath addVariable(String key, Object value) {
+  public XmlDataPath addAttribute(String key, Object value) {
 
 
     XML_ATTRIBUTE attribute;
     try {
       attribute = Casts.cast(key, XML_ATTRIBUTE.class);
     } catch (Exception e) {
-      super.addVariable(key, value);
+      super.addAttribute(key, value);
       return this;
     }
 
-    Variable variable;
+    Attribute variable;
     try {
-      variable = this.getConnection().getTabular().createVariable(attribute, value);
+      variable = this.getConnection().getTabular().createAttribute(attribute, value);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the variable (" + attribute + ") with the value (" + value + ") for the resource (" + this + ").", e);
     }
-    super.addVariable(variable);
+    super.addAttribute(variable);
     return this;
   }
 }

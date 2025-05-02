@@ -1,8 +1,8 @@
 package com.tabulify.html;
 
+import com.tabulify.conf.Attribute;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.textfile.FsTextDataPath;
-import com.tabulify.fs.textfile.FsTextDataPathAttributes;
 import com.tabulify.model.RelationDef;
 import com.tabulify.model.RelationDefDefault;
 import com.tabulify.stream.SelectStream;
@@ -106,19 +106,19 @@ public class HtmlDataPath extends FsTextDataPath {
   }
 
   @Override
-  public FsTextDataPath addVariable(String key, Object value) {
+  public FsTextDataPath addAttribute(String key, Object value) {
 
 
     HtmlDataPathAttribute htmlDataAttribute = null;
     try {
       htmlDataAttribute = Casts.cast(key, HtmlDataPathAttribute.class);
     } catch (Exception e) {
-      super.addVariable(key, value);
+      super.addAttribute(key, value);
     }
 
     try {
-      Variable variable = getConnection().getTabular().createVariable(htmlDataAttribute, value);
-      this.addVariable(variable);
+      Attribute attribute = getConnection().getTabular().createAttribute(htmlDataAttribute, value);
+      this.addAttribute(attribute);
     } catch (Exception e) {
       throw new RuntimeException("The variable (" + key + ") for the HTML path (" + this + ") could not be created with the value (" + value + ")", e);
     }
@@ -129,7 +129,7 @@ public class HtmlDataPath extends FsTextDataPath {
   public String getTableSelector() {
 
     try {
-      return (String) this.getVariable(HtmlDataPathAttribute.TABLE_SELECTOR).getValue();
+      return (String) this.getAttribute(HtmlDataPathAttribute.TABLE_SELECTOR).getValue();
     } catch (NoVariableException | NoValueException e) {
       throw new InternalException("The TABLE_SELECTOR has already a default and should be added, it should not happen", e);
     }
@@ -138,7 +138,7 @@ public class HtmlDataPath extends FsTextDataPath {
   public String getTableSelectorOrDefault() {
 
     try {
-      return (String) this.getVariable(HtmlDataPathAttribute.TABLE_SELECTOR).getValueOrDefault();
+      return (String) this.getAttribute(HtmlDataPathAttribute.TABLE_SELECTOR).getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       throw new InternalException("The TABLE_SELECTOR has already a default and should be added, it should not happen", e);
     }
@@ -156,7 +156,7 @@ public class HtmlDataPath extends FsTextDataPath {
   public String getHeaderSelector() {
 
     try {
-      return (String) this.getVariable(HtmlDataPathAttribute.HEADER_SELECTOR).getValueOrDefault();
+      return (String) this.getAttribute(HtmlDataPathAttribute.HEADER_SELECTOR).getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       throw new InternalException("The HEADER_SELECTOR has already a default and should be added, it should not happen", e);
     }
@@ -166,7 +166,7 @@ public class HtmlDataPath extends FsTextDataPath {
   public String getRowSelectorOrDefault() {
 
     try {
-      return (String) this.getVariable(HtmlDataPathAttribute.ROW_SELECTOR).getValueOrDefault();
+      return (String) this.getAttribute(HtmlDataPathAttribute.ROW_SELECTOR).getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       throw new InternalException("The ROW_SELECTOR has already a default and should be added, it should not happen", e);
     }
@@ -176,7 +176,7 @@ public class HtmlDataPath extends FsTextDataPath {
   public String getCellSelectorOrDefault() {
 
     try {
-      return (String) this.getVariable(HtmlDataPathAttribute.CELL_SELECTOR).getValueOrDefault();
+      return (String) this.getAttribute(HtmlDataPathAttribute.CELL_SELECTOR).getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       throw new InternalException("The CELL_SELECTOR has already a default and should be added, it should not happen", e);
     }

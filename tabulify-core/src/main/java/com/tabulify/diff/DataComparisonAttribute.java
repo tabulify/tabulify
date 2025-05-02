@@ -1,8 +1,8 @@
 package com.tabulify.diff;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-public enum DataComparisonAttribute implements Attribute {
+public enum DataComparisonAttribute implements AttributeEnum {
 
   COMP_ID("The record id of the comparison report"),
   COMP_ORIGIN("The origin of the record (source or target)"),

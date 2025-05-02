@@ -2,7 +2,7 @@ package com.tabulify.fs;
 
 import com.tabulify.Tabular;
 import com.tabulify.spi.ConnectionProvider;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 import java.net.URI;
 import java.nio.file.spi.FileSystemProvider;
@@ -33,7 +33,7 @@ public class FsConnectionProvider extends ConnectionProvider {
      *                           permission.
      */
     @Override
-    public FsConnection createConnection(Tabular tabular, Variable name, Variable uri) {
+    public FsConnection createConnection(Tabular tabular, Attribute name, Attribute uri) {
 
       return new FsConnection(tabular, name, uri);
 
@@ -44,7 +44,7 @@ public class FsConnectionProvider extends ConnectionProvider {
    * @return true if there is a file system provider that takes into account his url
    */
   @Override
-  public boolean accept(Variable url) {
+  public boolean accept(Attribute url) {
     URI uri = URI.create((String) url.getValueOrDefaultOrNull());
     for (FileSystemProvider fileSystemProvider : FileSystemProvider.installedProviders()) {
       String scheme = uri.getScheme();

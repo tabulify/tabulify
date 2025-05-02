@@ -1,6 +1,8 @@
 package com.tabulify.spi;
 
 import com.tabulify.DbLoggers;
+import com.tabulify.conf.AttributeEnum;
+import com.tabulify.conf.Origin;
 import com.tabulify.connection.Connection;
 import com.tabulify.engine.StreamDependencies;
 import com.tabulify.model.*;
@@ -62,7 +64,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
    * (ie backref of a regexp for instance)
    * So we need string as key identifier
    */
-  private final Map<String, Variable> variables = new MapKeyIndependent<>();
+  private final Map<String, com.tabulify.conf.Attribute> variables = new MapKeyIndependent<>();
 
 
   @Override
@@ -155,16 +157,16 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
 
-  public Variable getOrCreateVariable(Attribute attribute) {
+  public com.tabulify.conf.Attribute getOrCreateVariable(AttributeEnum attribute) {
 
     try {
 
-      return this.getVariable(attribute);
+      return this.getAttribute(attribute);
 
     } catch (NoVariableException e) {
 
-      Variable variable = Variable.create(attribute, Origin.RUNTIME);
-      this.addVariable(variable);
+      com.tabulify.conf.Attribute variable = com.tabulify.conf.Attribute.create(attribute, com.tabulify.conf.Origin.RUNTIME);
+      this.addAttribute(variable);
       return variable;
 
     }
@@ -323,7 +325,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   public String getLogicalName() {
 
     try {
-      return (String) this.getVariable(LOGICAL_NAME).getValueOrDefault();
+      return (String) this.getAttribute(LOGICAL_NAME).getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       return this.getDefaultLogicalName();
     }
@@ -341,17 +343,17 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
     return this.scriptDataPath;
   }
 
-  public Variable getVariable(Attribute attribute) throws NoVariableException {
-    return getVariable(attribute.toString());
+  public com.tabulify.conf.Attribute getAttribute(AttributeEnum attribute) throws NoVariableException {
+    return getAttribute(attribute.toString());
   }
 
   @Override
-  public Variable getVariable(String name) throws NoVariableException {
-    Variable variable = this.variables.get(name);
-    if (variable == null) {
+  public com.tabulify.conf.Attribute getAttribute(String name) throws NoVariableException {
+    com.tabulify.conf.Attribute attribute = this.variables.get(name);
+    if (attribute == null) {
       throw new NoVariableException();
     }
-    return variable;
+    return attribute;
   }
 
   @Override
@@ -424,11 +426,11 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
    * @return the tableDef for initialization chaining
    */
   @Override
-  public DataPath addVariable(String key, Object value) {
+  public DataPath addAttribute(String key, Object value) {
 
     try {
-      Variable variable = getConnection().getTabular().createVariable(key, value);
-      this.addVariable(variable);
+      com.tabulify.conf.Attribute attribute = getConnection().getTabular().createAttribute(key, value);
+      this.addAttribute(attribute);
       return this;
     } catch (Exception e) {
       throw new RuntimeException("Error while creating a variable from an attribute (" + key + ") for the resource (" + this + ")", e);
@@ -437,11 +439,11 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
   @Override
-  public DataPath addVariable(Attribute key, Object value) {
+  public DataPath addAttribute(AttributeEnum key, Object value) {
 
     try {
-      Variable variable = getConnection().getTabular().createVariable(key, value);
-      this.addVariable(variable);
+      com.tabulify.conf.Attribute attribute = getConnection().getTabular().createAttribute(key, value);
+      this.addAttribute(attribute);
       return this;
     } catch (Exception e) {
       throw new RuntimeException("Error while creating a variable from an attribute (" + key + ") for the resource (" + this + ")", e);
@@ -456,14 +458,14 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
    * @return the properties value of this table def
    */
   @Override
-  public Set<Variable> getVariables() {
+  public Set<com.tabulify.conf.Attribute> getAttributes() {
     return new HashSet<>(variables.values());
   }
 
 
   @Override
-  public DataPath mergeDataPathVariablesFrom(DataPath source) {
-    source.getVariables().forEach(this::addVariable);
+  public DataPath mergeDataPathAttributesFrom(DataPath source) {
+    source.getAttributes().forEach(this::addAttribute);
     return this;
   }
 
@@ -544,7 +546,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
         /**
          * This is an attribute, not a built-in attribute
          */
-        this.addVariable(entry.getKey(), entry.getValue());
+        this.addAttribute(entry.getKey(), entry.getValue());
         continue;
       }
       switch (dataPathAttribute) {
@@ -746,13 +748,13 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
 
   @Override
   public DataPath setDataAttributes(Map<String, ?> dataAttributes) {
-    dataAttributes.forEach(this::addVariable);
+    dataAttributes.forEach(this::addAttribute);
     return this;
   }
 
   @Override
   public DataPath mergeDataDefinitionFrom(DataPath mergeFrom) {
-    this.mergeDataPathVariablesFrom(mergeFrom);
+    this.mergeDataPathAttributesFrom(mergeFrom);
     this.getOrCreateRelationDef().mergeDataDef(mergeFrom);
     return this;
   }
@@ -760,8 +762,8 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   @Override
   public DataPath setLogicalName(String logicalName) {
     try {
-      Variable variable = getConnection().getTabular().createVariable(LOGICAL_NAME, logicalName);
-      this.addVariable(variable);
+      com.tabulify.conf.Attribute attribute = getConnection().getTabular().createAttribute(LOGICAL_NAME, logicalName);
+      this.addAttribute(attribute);
       return this;
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -770,7 +772,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
   @Override
-  public DataPath toVariablesDataPath() {
+  public DataPath toAttributesDataPath() {
 
     RelationDef variablesDataPath = this.getConnection().getTabular().getMemoryDataStore()
       .getDataPath(this.getName() + "_variable")
@@ -781,11 +783,11 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
       .addColumn(KeyNormalizer.create(AttributeProperties.DESCRIPTION).toSqlName());
 
     try (InsertStream insertStream = variablesDataPath.getDataPath().getInsertStream()) {
-      for (Variable variable : this.getVariables()) {
+      for (com.tabulify.conf.Attribute attribute : this.getAttributes()) {
         List<Object> row = new ArrayList<>();
-        row.add(KeyNormalizer.create(variable.getAttribute().toString()).toCamelCase());
-        row.add(variable.getValueOrDefaultOrNull());
-        row.add(variable.getAttribute().getDescription());
+        row.add(KeyNormalizer.create(attribute.getAttributeMetadata().toString()).toCamelCase());
+        row.add(attribute.getValueOrDefaultOrNull());
+        row.add(attribute.getAttributeMetadata().getDescription());
         insertStream.insert(row);
       }
     }
@@ -809,10 +811,10 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
   @Override
-  public DataPath addVariable(Variable variable) {
-    this.variables.put(variable.getAttribute().toString(), variable);
+  public DataPath addAttribute(com.tabulify.conf.Attribute attribute) {
+    this.variables.put(attribute.getAttributeMetadata().toString(), attribute);
     if (DbLoggers.LOGGER_DB_ENGINE.getLevel().intValue() <= Level.FINE.intValue()) {
-      DbLoggers.LOGGER_DB_ENGINE.fine("The variable (" + variable + ") for the resource (" + this + ") was set to the value (" + Strings.createFromObjectNullSafe(variable.getValueOrDefaultOrNull()) + ")");
+      DbLoggers.LOGGER_DB_ENGINE.fine("The variable (" + attribute + ") for the resource (" + this + ") was set to the value (" + Strings.createFromObjectNullSafe(attribute.getValueOrDefaultOrNull()) + ")");
     }
     return this;
   }
@@ -823,8 +825,8 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
    * @param enumClass - the class that holds all enum attribute
    * @return the path for chaining
    */
-  public DataPath addVariablesFromEnumAttributeClass(Class<? extends Attribute> enumClass) {
-    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addVariable(Variable.create(c, Origin.RUNTIME)));
+  public DataPath addVariablesFromEnumAttributeClass(Class<? extends AttributeEnum> enumClass) {
+    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addAttribute(com.tabulify.conf.Attribute.create(c, Origin.RUNTIME)));
     return this;
   }
 
@@ -834,12 +836,12 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
   /**
-   * Same as {@link #getVariable(Attribute)} but without compile exception
+   * Same as {@link #getAttribute(AttributeEnum)} but without compile exception
    */
   @Override
-  public Variable getVariableSafe(Attribute sqlDataPathAttribute) {
+  public com.tabulify.conf.Attribute getAttributeSafe(AttributeEnum sqlDataPathAttribute) {
     try {
-      return getVariable(sqlDataPathAttribute);
+      return getAttribute(sqlDataPathAttribute);
     } catch (NoVariableException e) {
       throw new RuntimeException(e);
     }

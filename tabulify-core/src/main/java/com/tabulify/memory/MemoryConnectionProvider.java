@@ -3,7 +3,7 @@ package com.tabulify.memory;
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
 import com.tabulify.spi.ConnectionProvider;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 public class MemoryConnectionProvider extends ConnectionProvider {
 
@@ -33,14 +33,14 @@ public class MemoryConnectionProvider extends ConnectionProvider {
    *                           permission.
    */
   @Override
-  public Connection createConnection(Tabular tabular, Variable name, Variable url) {
+  public Connection createConnection(Tabular tabular, Attribute name, Attribute url) {
 
     return new MemoryConnection(tabular, name, url);
 
   }
 
   @Override
-  public boolean accept(Variable url) {
+  public boolean accept(Attribute url) {
     return url.getValueOrDefaultAsStringNotNull().toLowerCase().startsWith(SCHEME);
   }
 

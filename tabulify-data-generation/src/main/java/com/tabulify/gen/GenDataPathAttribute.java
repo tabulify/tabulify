@@ -1,12 +1,12 @@
 package com.tabulify.gen;
 
 import com.tabulify.spi.DataPath;
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-public enum GenDataPathAttribute implements Attribute {
+public enum GenDataPathAttribute implements AttributeEnum {
 
   /**
-   * The {@link DataPath#getVariable(String)} key giving the maximum number of rows generated
+   * The {@link DataPath#getAttribute(String)} key giving the maximum number of rows generated
    * <p>
    * For now, if you want to move the maximum size higher,
    * you need to truncate the table, you can't just set it higher and rerun a data generation

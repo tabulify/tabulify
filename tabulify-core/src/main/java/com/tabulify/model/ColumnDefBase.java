@@ -1,9 +1,8 @@
 package com.tabulify.model;
 
-import net.bytle.type.Attribute;
-import net.bytle.type.MapKeyIndependent;
-import net.bytle.type.Origin;
-import net.bytle.type.Variable;
+import com.tabulify.conf.AttributeEnum;
+import com.tabulify.conf.Origin;
+import net.bytle.type.*;
 
 import java.sql.DatabaseMetaData;
 import java.util.Arrays;
@@ -38,7 +37,7 @@ public class ColumnDefBase implements ColumnDef {
    * Variables may be generated
    * so the identifier is a string name
    */
-  protected Map<String, Variable> variables = new MapKeyIndependent<>();
+  protected Map<String, com.tabulify.conf.Attribute> variables = new MapKeyIndependent<>();
 
   static {
     allowedNullableValues.add(DatabaseMetaData.columnNoNulls);
@@ -286,11 +285,11 @@ public class ColumnDefBase implements ColumnDef {
     return this;
   }
 
-  public Variable getVariable(Attribute attribute) {
+  public com.tabulify.conf.Attribute getVariable(AttributeEnum attribute) {
     return getVariable(attribute.toString());
   }
 
-  public Variable getVariable(String s) {
+  public com.tabulify.conf.Attribute getVariable(String s) {
     return variables.get(s);
   }
 
@@ -301,14 +300,14 @@ public class ColumnDefBase implements ColumnDef {
   }
 
   @Override
-  public ColumnDef setVariable(Attribute key, Object value) {
-    Variable variable;
+  public ColumnDef setVariable(AttributeEnum key, Object value) {
+    com.tabulify.conf.Attribute attribute;
     try {
-      variable = this.getRelationDef().getDataPath().getConnection().getTabular().createVariable(key, value);
+      attribute = this.getRelationDef().getDataPath().getConnection().getTabular().createAttribute(key, value);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
-    this.variables.put(variable.getAttribute().toString(), variable);
+    this.variables.put(attribute.getAttributeMetadata().toString(), attribute);
     return this;
   }
 
@@ -337,7 +336,7 @@ public class ColumnDefBase implements ColumnDef {
 
 
   @Override
-  public Set<Variable> getVariables() {
+  public Set<com.tabulify.conf.Attribute> getVariables() {
     return new HashSet<>(variables.values());
   }
 
@@ -365,7 +364,7 @@ public class ColumnDefBase implements ColumnDef {
 
   @Override
   public ColumnDef setAllVariablesFrom(ColumnDef source) {
-    source.getVariables().forEach(v -> this.variables.put(v.getAttribute().toString(), v));
+    source.getVariables().forEach(v -> this.variables.put(v.getAttributeMetadata().toString(), v));
     return this;
   }
 
@@ -387,10 +386,10 @@ public class ColumnDefBase implements ColumnDef {
    * @param enumClass - the class that holds all enum attribute
    * @return the column for chaining
    */
-  public ColumnDef addVariablesFromEnumAttributeClass(Class<? extends Attribute> enumClass) {
+  public ColumnDef addVariablesFromEnumAttributeClass(Class<? extends AttributeEnum> enumClass) {
     Arrays.asList(enumClass.getEnumConstants()).forEach(c -> {
-      Variable variable = Variable.create(c, Origin.RUNTIME);
-      this.variables.put(c.toString(), variable);
+      com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(c, Origin.RUNTIME);
+      this.variables.put(c.toString(), attribute);
     });
     return this;
   }

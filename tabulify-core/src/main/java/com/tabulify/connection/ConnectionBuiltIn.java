@@ -111,7 +111,7 @@ public class ConnectionBuiltIn {
     // TpcsDs
     Connection tpcDs = Connection.createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.TPCDS_CONNECTION, ConnectionBuiltIn.TPCDS_CONNECTION)
       .setOrigin(ConnectionOrigin.BUILT_IN)
-      .addVariable("scale", 0.01);
+      .addAttribute("scale", 0.01);
     tabular.addConnection(tpcDs);
 
     // NoOp

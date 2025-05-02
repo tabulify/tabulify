@@ -132,7 +132,7 @@ public class DataGenerator implements AutoCloseable {
      */
     return (GenMemDataPath) this.memoryConnection
       .getTypedDataPath(GenDataPathType.DATA_GEN, dataPath.getLogicalName())
-      .mergeDataPathVariablesFrom(dataPath)
+      .mergeDataPathAttributesFrom(dataPath)
       .getOrCreateRelationDef()
       .mergeStruct(dataPath)
       .getDataPath();

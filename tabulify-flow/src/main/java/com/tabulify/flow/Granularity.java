@@ -1,7 +1,7 @@
 package com.tabulify.flow;
 
 
-import net.bytle.type.AttributeValue;
+import com.tabulify.conf.AttributeValue;
 
 public enum Granularity implements AttributeValue {
 

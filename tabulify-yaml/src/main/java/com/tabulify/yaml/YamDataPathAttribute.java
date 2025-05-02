@@ -1,8 +1,8 @@
 package com.tabulify.yaml;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-enum YamDataPathAttribute implements Attribute {
+enum YamDataPathAttribute implements AttributeEnum {
 
   STRUCTURE("The structure of the returned tabular", YamlStructure.class, YamlStructure.DOCUMENT),
   OUTPUT_STYLE("In which Yaml format a document is returned", YamlStyle.class, YamlStyle.JSON);

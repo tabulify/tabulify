@@ -1,7 +1,6 @@
 package com.tabulify.conf;
 
 import com.tabulify.Tabular;
-import net.bytle.type.Attribute;
 import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MapKeyIndependent;
 
@@ -36,7 +35,7 @@ public class TabularEnvs {
     return this.sysEnv.get(keyNormalize);
   }
 
-  public KeyNormalizer getOsTabliEnvName(Attribute attribute) {
+  public KeyNormalizer getOsTabliEnvName(AttributeEnum attribute) {
     return KeyNormalizer.create(Tabular.TABLI_NAME + "_" + attribute);
   }
 

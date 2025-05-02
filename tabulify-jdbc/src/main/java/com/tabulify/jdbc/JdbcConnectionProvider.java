@@ -3,7 +3,7 @@ package com.tabulify.jdbc;
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
 import com.tabulify.spi.ConnectionProvider;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 /**
  * This is the general provider
@@ -30,7 +30,7 @@ public class JdbcConnectionProvider extends ConnectionProvider {
    *                           permission.
    */
   @Override
-  public Connection createConnection(Tabular tabular, Variable name, Variable url) {
+  public Connection createConnection(Tabular tabular, Attribute name, Attribute url) {
 
     // check installed providers
     for (SqlDataStoreProvider provider : SqlDataStoreProvider.installedProviders()) {
@@ -45,7 +45,7 @@ public class JdbcConnectionProvider extends ConnectionProvider {
   }
 
   @Override
-  public boolean accept(Variable uri) {
+  public boolean accept(Attribute uri) {
     return uri.getValueOrDefaultAsStringNotNull().toLowerCase().startsWith(JDBC_SCHEME);
   }
 

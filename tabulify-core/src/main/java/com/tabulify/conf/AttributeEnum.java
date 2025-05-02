@@ -1,7 +1,8 @@
-package net.bytle.type;
+package com.tabulify.conf;
+
 
 /**
- * An attribute is a name for a {@link Variable variable} with extra properties.
+ * An attribute is a name for a {@link Attribute variable} with extra properties.
  * <p></p>
  * An interface for an attribute that is used against an enum
  * so that we get:
@@ -12,17 +13,16 @@ package net.bytle.type;
  * <p>
  * Attribute and not property because the product is called `tabulify`
  * <p></p>
- * Advantage over {@link AttributeNoEnum}
+ * Advantage over Abstract Class
  * * easy casting
  * * easy switch statement (switch require an enum, object are not allowed)
  * * no need to create a list of all attributes (builtin)
- * Disadvantage over {@link AttributeNoEnum}
+ * Disadvantage over Abstract Class
  * * No inheritance (adding a function in the interface will break all attribute)
  * * No equality for attribute created on the fly (not used though)
  * * No simple get identifier (toString should be implemented right)
  */
-@SuppressWarnings("deprecation")
-public interface Attribute {
+public interface AttributeEnum {
 
 
   /**

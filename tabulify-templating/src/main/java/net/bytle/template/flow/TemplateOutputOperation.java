@@ -1,7 +1,7 @@
 package net.bytle.template.flow;
 
 
-import net.bytle.type.AttributeValue;
+import com.tabulify.conf.AttributeValue;
 
 public enum TemplateOutputOperation implements AttributeValue {
 

@@ -11,7 +11,7 @@ import com.tabulify.transfer.TransferProperties;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 import org.apache.commons.collections4.bidimap.TreeBidiMap;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.ss.usermodel.Cell;
@@ -80,8 +80,8 @@ public class ExcelDataPath extends FsBinaryDataPath {
 
   private String getDefaultDateFormat() {
     try {
-      Variable variable = this.getVariable(ExcelDataPathAttribute.DATE_FORMAT);
-      return (String) variable.getValueOrDefault();
+      Attribute attribute = this.getAttribute(ExcelDataPathAttribute.DATE_FORMAT);
+      return (String) attribute.getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       throw new InternalException("The DATE_FORMAT has already a default, this should not happen", e);
     }
@@ -93,8 +93,8 @@ public class ExcelDataPath extends FsBinaryDataPath {
   public int getHeaderRowId() {
 
     try {
-      Variable variable = this.getVariable(ExcelDataPathAttribute.HEADER_ROW_ID);
-      return (int) variable.getValueOrDefault();
+      Attribute attribute = this.getAttribute(ExcelDataPathAttribute.HEADER_ROW_ID);
+      return (int) attribute.getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       throw new InternalException("The HEADER_ROW_ID has already a default, this should not happen", e);
     }
@@ -108,7 +108,7 @@ public class ExcelDataPath extends FsBinaryDataPath {
   public String getSheetName() {
 
     try {
-      return (String) this.getVariable(ExcelDataPathAttribute.SHEET_NAME).getValueOrDefault();
+      return (String) this.getAttribute(ExcelDataPathAttribute.SHEET_NAME).getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       return null;
     }
@@ -122,7 +122,7 @@ public class ExcelDataPath extends FsBinaryDataPath {
 
   public ExcelDataPath setHeaderId(int i) {
     try {
-      this.getVariable(ExcelDataPathAttribute.HEADER_ROW_ID).setPlainValue(i);
+      this.getAttribute(ExcelDataPathAttribute.HEADER_ROW_ID).setPlainValue(i);
       return this;
     } catch (NoVariableException e) {
       throw new InternalException("The HEADER_ROW_ID has already been added in the constructor, it should not happen");

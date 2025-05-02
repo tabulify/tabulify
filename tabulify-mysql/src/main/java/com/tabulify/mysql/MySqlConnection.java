@@ -5,7 +5,7 @@ import com.tabulify.jdbc.SqlConnection;
 import com.tabulify.jdbc.SqlDataSystem;
 import com.tabulify.model.SqlDataType;
 import net.bytle.exception.NoCatalogException;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 import java.sql.Types;
 import java.util.Properties;
@@ -15,7 +15,7 @@ public class MySqlConnection extends SqlConnection {
   private MySqlMetadata mySqlMetadata;
   private MySqlDataSystem mySqlDataSystem;
 
-  public MySqlConnection(Tabular tabular, Variable name, Variable url) {
+  public MySqlConnection(Tabular tabular, Attribute name, Attribute url) {
     super(tabular, name, url);
   }
 

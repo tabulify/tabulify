@@ -9,7 +9,7 @@ import com.tabulify.spi.DataPathAttribute;
 import com.tabulify.stream.InsertStream;
 import net.bytle.exception.NoValueException;
 import net.bytle.type.KeyNormalizer;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -52,9 +52,9 @@ public class InfoStep extends FilterStepAbs implements Function<Set<DataPath>, D
       .addColumn(KeyNormalizer.create(AttributeProperties.VALUE).toSqlCase())
       .addColumn(KeyNormalizer.create(AttributeProperties.DESCRIPTION).toSqlCase());
 
-    List<Variable> variables = dataPaths
+    List<Attribute> attributes = dataPaths
       .stream()
-      .map(DataPath::getVariables)
+      .map(DataPath::getAttributes)
       .flatMap(Collection::stream)
       .distinct()
       .sorted()
@@ -62,10 +62,10 @@ public class InfoStep extends FilterStepAbs implements Function<Set<DataPath>, D
 
     try (InsertStream insertStream = propertiesDataPath.getDataPath().getInsertStream()) {
       for (DataPath dataPath : dataPaths) {
-        for (Variable variable : variables) {
+        for (Attribute attribute : attributes) {
           Object attributeValue;
           try {
-            attributeValue = variable.getValueOrDefault();
+            attributeValue = attribute.getValueOrDefault();
           } catch (NoValueException e) {
             continue;
           }
@@ -73,9 +73,9 @@ public class InfoStep extends FilterStepAbs implements Function<Set<DataPath>, D
           if (dataPaths.size() > 1) {
             row.add(dataPath.toDataUri().toString());
           }
-          row.add(tabular.toPublicName(variable.getAttribute().toString()));
+          row.add(tabular.toPublicName(attribute.getAttributeMetadata().toString()));
           row.add(attributeValue);
-          row.add(variable.getAttribute().getDescription());
+          row.add(attribute.getAttributeMetadata().getDescription());
           insertStream.insert(row);
         }
       }

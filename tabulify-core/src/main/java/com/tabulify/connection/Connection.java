@@ -3,8 +3,7 @@ package com.tabulify.connection;
 import com.tabulify.DbLoggers;
 import com.tabulify.Tabular;
 import com.tabulify.Vault;
-import com.tabulify.conf.ConnectionVault;
-import com.tabulify.conf.TabularEnvs;
+import com.tabulify.conf.*;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.model.SqlDataType;
 import com.tabulify.model.SqlTypes;
@@ -26,8 +25,9 @@ import java.sql.Ref;
 import java.sql.Types;
 import java.time.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static net.bytle.type.Origin.RUNTIME;
+import static com.tabulify.conf.Origin.RUNTIME;
 
 /**
  * A connection
@@ -42,7 +42,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   private final Random random = new Random();
 
 
-  public Connection(Tabular tabular, Variable name, Variable uri) {
+  public Connection(Tabular tabular, com.tabulify.conf.Attribute name, com.tabulify.conf.Attribute uri) {
 
     this.tabular = tabular;
 
@@ -57,10 +57,10 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
      * We can't add them via addVariable
      * because they are immutable
      */
-    this.variables.put((ConnectionAttribute) uri.getAttribute(), uri);
-    this.variables.put((ConnectionAttribute) name.getAttribute(), name);
+    this.attributes.put((ConnectionAttribute) uri.getAttributeMetadata(), uri);
+    this.attributes.put((ConnectionAttribute) name.getAttributeMetadata(), name);
 
-    this.addVariablesFromEnumAttributeClass(ConnectionAttributeBase.class);
+    this.addAttributesFromEnumAttributeClass(ConnectionAttributeBase.class);
 
 
     /**
@@ -154,11 +154,13 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * Connection Variable. Variable managed by Tabli
    * Should be a known attribute
    */
-  Map<ConnectionAttribute, Variable> variables = new HashMap<>();
+  Map<ConnectionAttribute, com.tabulify.conf.Attribute> attributes = new HashMap<>();
   /**
    * Driver Variable. Variable of the driver/library, not from us
+   * We use attribute to add vault functionality
+   * String is the original property
    */
-  Set<Variable> driverVariables = new HashSet<>();
+  Map<String, Attribute> nativeDriverAttributes = new HashMap<>();
 
   /**
    * Which SQL type do we need to load the value of a java class
@@ -190,35 +192,35 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    */
   @SuppressWarnings("JavadocReference")
   public static Connection of(Connection connection) {
-    return Connection.createConnectionFromProviderOrDefault(connection.getTabular(), connection.getNameAsVariable(), connection.getUriAsVariable())
-      .setVariables(connection.getVariables());
+    return Connection.createConnectionFromProviderOrDefault(connection.getTabular(), connection.getNameAsAttribute(), connection.getUriAsVariable())
+      .setAttributes(connection.getAttributes());
 
   }
 
 
-  public Variable getDescription() {
-    return this.variables.get(ConnectionAttributeBase.DESCRIPTION);
+  public com.tabulify.conf.Attribute getDescription() {
+    return this.attributes.get(ConnectionAttributeBase.DESCRIPTION);
   }
 
 
   public String getName() {
 
     try {
-      return (String) getNameAsVariable().getValueOrDefault();
+      return (String) getNameAsAttribute().getValueOrDefault();
     } catch (NoValueException e) {
       throw new InternalException("It should not happen as name is mandatory");
     }
 
   }
 
-  public Variable getNameAsVariable() {
+  public com.tabulify.conf.Attribute getNameAsAttribute() {
 
-    return this.getVariable(ConnectionAttributeBase.NAME);
+    return this.getAttribute(ConnectionAttributeBase.NAME);
   }
 
-  public Variable getUriAsVariable() {
+  public com.tabulify.conf.Attribute getUriAsVariable() {
 
-    return this.getVariable(ConnectionAttributeBase.URI);
+    return this.getAttribute(ConnectionAttributeBase.URI);
 
   }
 
@@ -243,8 +245,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setUser(String user) {
     try {
-      Variable userVariable = tabular.getVault().createVariable(ConnectionAttributeBase.USER, user, RUNTIME);
-      this.addVariable(userVariable);
+      com.tabulify.conf.Attribute userAttribute = tabular.getVault().createAttribute(ConnectionAttributeBase.USER, user, RUNTIME);
+      this.addAttribute(userAttribute);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the user variable", e);
     }
@@ -253,8 +255,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setPassword(String pwd) {
     try {
-      Variable password = tabular.getVault().createVariable(ConnectionAttributeBase.PASSWORD, pwd, RUNTIME);
-      this.variables.put(ConnectionAttributeBase.PASSWORD, password);
+      com.tabulify.conf.Attribute password = tabular.getVault().createAttribute(ConnectionAttributeBase.PASSWORD, pwd, RUNTIME);
+      this.attributes.put(ConnectionAttributeBase.PASSWORD, password);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the password variable for the connection (" + this + "). Error: " + e.getMessage(), e);
     }
@@ -262,12 +264,12 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public Variable getUser() {
-    return this.variables.get(ConnectionAttributeBase.USER);
+  public com.tabulify.conf.Attribute getUser() {
+    return this.attributes.get(ConnectionAttributeBase.USER);
   }
 
-  public Variable getPasswordVariable() {
-    return this.variables.get(ConnectionAttributeBase.PASSWORD);
+  public com.tabulify.conf.Attribute getPasswordAttribute() {
+    return this.attributes.get(ConnectionAttributeBase.PASSWORD);
   }
 
   @Override
@@ -294,7 +296,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * Each connection should implement it to add its own attribute
    * and call super to add the attribute of its parent if the name is unknown
    */
-  public Connection addVariable(String name, Object value) {
+  public Connection addAttribute(String name, Object value) {
     ConnectionAttributeBase connectionAttributeBase;
     try {
       connectionAttributeBase = Casts.cast(name, ConnectionAttributeBase.class);
@@ -303,26 +305,26 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     }
     try {
 
-      Variable variable = tabular.getVault().createVariable(connectionAttributeBase, value, Origin.RUNTIME);
-      this.addVariable(variable);
+      com.tabulify.conf.Attribute attribute = tabular.getVault().createAttribute(connectionAttributeBase, value, com.tabulify.conf.Origin.RUNTIME);
+      this.addAttribute(attribute);
     } catch (Exception e) {
       throw new RuntimeException("Error while adding the variable " + name + " to the connection " + this + ". Error: " + e.getMessage(), e);
     }
     return this;
   }
 
-  public Connection addVariable(Attribute key, Object value) {
+  public Connection addAttribute(AttributeEnum key, Object value) {
     try {
-      Variable variable = tabular.getVault().createVariable(key, value, RUNTIME);
-      this.addVariable(variable);
+      com.tabulify.conf.Attribute attribute = tabular.getVault().createAttribute(key, value, RUNTIME);
+      this.addAttribute(attribute);
     } catch (Exception e) {
       throw new RuntimeException("Error while adding connection the property " + key + ". Error: " + e.getMessage(), e);
     }
     return this;
   }
 
-  public Connection addVariable(Variable variable) {
-    Attribute attribute = variable.getAttribute();
+  public Connection addAttribute(com.tabulify.conf.Attribute variable) {
+    AttributeEnum attribute = variable.getAttributeMetadata();
     if (!(attribute instanceof ConnectionAttribute)) {
       throw new InternalException("The attribute " + attribute + " is not a connection attribute but a " + attribute.getClass().getSimpleName());
     }
@@ -335,13 +337,13 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     if (attribute.equals(ConnectionAttributeBase.URI) && !variable.getValueOrDefaultAsStringNotNull().equals(this.getUriAsString())) {
       throw new RuntimeException("You can't change the URI of this connection from " + this.getUriAsString() + " to  " + variable.getValueOrDefaultAsStringNotNull());
     }
-    Variable actualVariable = variables.get(connectionAttribute);
-    if (actualVariable != null) {
+    com.tabulify.conf.Attribute actualAttribute = attributes.get(connectionAttribute);
+    if (actualAttribute != null) {
       // overwrite of an actual known attribute
       // we copy the attribute otherwise the description is lost
-      variable.setAttribute(actualVariable.getAttribute());
+      variable.setAttributeMetadata(actualAttribute.getAttributeMetadata());
     }
-    variables.put(connectionAttribute, variable);
+    attributes.put(connectionAttribute, variable);
     return this;
   }
 
@@ -350,15 +352,15 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     try {
       return createConnectionFromProviderOrDefault(
         tabular,
-        tabular.createVariable(ConnectionAttributeBase.NAME, variableName),
-        tabular.createVariable(ConnectionAttributeBase.URI, variableUri)
+        tabular.createAttribute(ConnectionAttributeBase.NAME, variableName),
+        tabular.createAttribute(ConnectionAttributeBase.URI, variableUri)
       );
     } catch (Exception e) {
       throw new InternalException("Error while creating the main connection variable name/uri. Error: " + e.getMessage(), e);
     }
   }
 
-  public static Connection createConnectionFromProviderOrDefault(Tabular tabular, Variable variableName, Variable variableUri) {
+  public static Connection createConnectionFromProviderOrDefault(Tabular tabular, com.tabulify.conf.Attribute attributeName, com.tabulify.conf.Attribute attributeUri) {
 
     /**
      * Name check
@@ -367,16 +369,16 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
      * http://ini4j.sourceforge.net/tutorial/IniTutorial.java.html
      */
     List<String> notAllowedCharacters = Arrays.asList(" ", "/");
-    String nameString = (String) variableName.getValueOrDefaultOrNull();
+    String nameString = (String) attributeName.getValueOrDefaultOrNull();
     notAllowedCharacters.forEach(c -> {
       if (nameString.contains(c)) {
-        throw new RuntimeException("The datastore name (" + variableName + ") contains the character (" + c + ") that is not allowed. To resolve this problem, you should delete it.");
+        throw new RuntimeException("The datastore name (" + attributeName + ") contains the character (" + c + ") that is not allowed. To resolve this problem, you should delete it.");
       }
     });
 
 
     URI uri;
-    String uriStringValue = (String) variableUri.getValueOrDefaultOrNull();
+    String uriStringValue = (String) attributeUri.getValueOrDefaultOrNull();
     if (uriStringValue == null) {
       throw new RuntimeException("The uri of the connection (" + nameString + ") should not be null");
     }
@@ -385,7 +387,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       uri = UriEnhanced.createFromString(uriStringValue).toUri();
 
     } catch (Exception e) {
-      String message = "The uri `" + uriStringValue + "` of the connection (" + variableName + ") is not a valid.";
+      String message = "The uri `" + uriStringValue + "` of the connection (" + attributeName + ") is not a valid.";
       if (uriStringValue.startsWith("\"") || uriStringValue.startsWith("'")) {
         message += " You should delete the character quote.";
       }
@@ -401,20 +403,20 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
         throw new RuntimeException("The data-uri scheme is supported only with file system data uri. The connection " + connectionName + " is not a file system connection but a " + connection.getClass().getSimpleName() + " connection");
       }
       String resolve = connection.getCurrentDataPath().resolve(dataUri.getPath()).getAbsolutePath();
-      variableUri.setPlainValue("file://" + "/" + resolve.replace("\\", "/"));
+      attributeUri.setPlainValue("file://" + "/" + resolve.replace("\\", "/"));
     }
 
     List<ConnectionProvider> installedProviders = ConnectionProvider.installedProviders();
     for (ConnectionProvider connectionProvider : installedProviders) {
-      if (connectionProvider.accept(variableUri)) {
-        return connectionProvider.createConnection(tabular, variableName, variableUri);
+      if (connectionProvider.accept(attributeUri)) {
+        return connectionProvider.createConnection(tabular, attributeName, attributeUri);
       }
     }
 
     // No provider was found
-    final String message = "No provider was found from the connection (" + variableName.getValueOrDefaultOrNull() + ") with the Uri (" + variableUri.getValueOrDefaultOrNull() + ")";
+    final String message = "No provider was found from the connection (" + attributeName.getValueOrDefaultOrNull() + ") with the Uri (" + attributeUri.getValueOrDefaultOrNull() + ")";
     DbLoggers.LOGGER_DB_ENGINE.severe(message);
-    return new NoOpConnection(tabular, variableName, variableUri);
+    return new NoOpConnection(tabular, attributeName, attributeUri);
 
   }
 
@@ -479,15 +481,15 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public Set<Variable> getVariables() {
+  public Set<com.tabulify.conf.Attribute> getAttributes() {
 
-    return new HashSet<>(this.variables.values());
+    return new HashSet<>(this.attributes.values());
 
   }
 
 
-  public Connection setVariables(Set<Variable> variables) {
-    variables.forEach(this::addVariable);
+  public Connection setAttributes(Set<com.tabulify.conf.Attribute> attributes) {
+    attributes.forEach(this::addAttribute);
     return this;
   }
 
@@ -509,13 +511,13 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
 
   public Connection setDescription(String description) {
-    Variable descVar;
+    com.tabulify.conf.Attribute descVar;
     try {
-      descVar = tabular.createVariable(ConnectionAttributeBase.DESCRIPTION, description);
+      descVar = tabular.createAttribute(ConnectionAttributeBase.DESCRIPTION, description);
     } catch (Exception e) {
       throw new RuntimeException("Internal error, cannot create description variable", e);
     }
-    this.addVariable(descVar);
+    this.addAttribute(descVar);
     return this;
   }
 
@@ -707,14 +709,14 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   public abstract Boolean ping();
 
   public Connection setOrigin(ConnectionOrigin connectionOrigin) {
-    this.getVariable(ConnectionAttributeBase.ORIGIN)
+    this.getAttribute(ConnectionAttributeBase.ORIGIN)
       .setPlainValue(connectionOrigin);
     return this;
   }
 
   public ConnectionOrigin getOrigin() {
     try {
-      return (ConnectionOrigin) this.getVariable(ConnectionAttributeBase.ORIGIN).getValueOrDefault();
+      return (ConnectionOrigin) this.getAttribute(ConnectionAttributeBase.ORIGIN).getValueOrDefault();
     } catch (NoValueException e) {
       throw new InternalException("No Origin found", e);
     }
@@ -748,30 +750,12 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  protected Map<String, ?> getVariablesAsKeyValueMap() {
-    Map<String, Object> returnedMap = new HashMap<>();
-    for (Variable variable : this.getVariables()) {
-      Object valueOrDefaultOrNull = variable.getValueOrDefaultOrNull();
-      if (valueOrDefaultOrNull == null) {
-        /**
-         * {@link Properties} does not allow null value
-         */
-        continue;
-      }
-      // lower case because `USER` is not recognized while `user` is
-      // lower case because `PASSWORD` is not recognized while `password` is
-      String key = variable.getAttribute().toString().toLowerCase(Locale.ROOT);
-      returnedMap.put(key, valueOrDefaultOrNull);
-    }
-    return returnedMap;
-  }
-
-  public Variable getVariable(ConnectionAttribute attribute) {
-    Variable variable = this.variables.get(attribute);
+  public com.tabulify.conf.Attribute getAttribute(ConnectionAttribute attribute) {
+    com.tabulify.conf.Attribute variable = this.attributes.get(attribute);
     if (variable == null) {
       /**
        * connection attribute should be present
-       * added via {@link #addVariablesFromEnumAttributeClass(Class)} in the constructor
+       * added via {@link #addAttributesFromEnumAttributeClass(Class)} in the constructor
        */
       throw new RuntimeException("The connection attribute " + attribute + " was not found. Did you add it at construction time");
     }
@@ -784,7 +768,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * @param enumClass - the class that holds all enum attribute
    * @return the path for chaining
    */
-  public Connection addVariablesFromEnumAttributeClass(Class<? extends ConnectionAttribute> enumClass) {
+  public Connection addAttributesFromEnumAttributeClass(Class<? extends ConnectionAttribute> enumClass) {
     for (ConnectionAttribute attribute : enumClass.getEnumConstants()) {
 
       Vault vault = this.tabular.getVault();
@@ -803,18 +787,18 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       KeyNormalizer envName = tabularEnvs.getOsTabliEnvName(attribute);
       String envValue = tabularEnvs.getOsEnvValue(envName);
       if (envValue != null) {
-        Variable variable = variableBuilder
-          .setOrigin(Origin.OS)
+        com.tabulify.conf.Attribute variable = variableBuilder
+          .setOrigin(com.tabulify.conf.Origin.OS)
           .buildSafe(envValue);
-        this.addVariable(variable);
+        this.addAttribute(variable);
         continue;
       }
 
       // None
-      Variable variable = variableBuilder
+      com.tabulify.conf.Attribute variable = variableBuilder
         .setOrigin(Origin.RUNTIME)
         .buildSafe(null);
-      this.addVariable(variable);
+      this.addAttribute(variable);
 
     }
     return this;
@@ -831,12 +815,18 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public Set<Variable> getDriverVariables() {
-    return this.driverVariables;
+  public Map<String, String> getNativeDriverAttributes() {
+    return this.nativeDriverAttributes
+      .entrySet()
+      .stream()
+      .collect(Collectors.toMap(
+        Map.Entry::getKey,
+        e -> e.getValue().getValueOrDefaultAsStringNotNull()
+      ));
   }
 
-  public Connection setDriverVariables(Set<Variable> driverVariableMap) {
-    this.driverVariables = driverVariableMap;
+  public Connection setNativeDriverAttributes(Map<String, Attribute> driverAttributeMap) {
+    this.nativeDriverAttributes = driverAttributeMap;
     return this;
   }
 }

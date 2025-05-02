@@ -94,13 +94,13 @@ public class TabliConnectionInfo {
           /**
            * Database Metadata Object
            */
-          connection.getVariables().stream().sorted().forEach(variable -> {
+          connection.getAttributes().stream().sorted().forEach(attribute -> {
             try {
 
               List<Object> rowAttributes = new ArrayList<>();
-              rowAttributes.add(tabular.toPublicName(variable));
-              rowAttributes.add(variable.getValueOrDefaultOrNull());
-              rowAttributes.add(variable.getAttribute().getDescription());
+              rowAttributes.add(tabular.toPublicName(attribute));
+              rowAttributes.add(attribute.getValueOrDefaultOrNull());
+              rowAttributes.add(attribute.getAttributeMetadata().getDescription());
               insertStream.insert(rowAttributes);
 
             } catch (Exception e) {

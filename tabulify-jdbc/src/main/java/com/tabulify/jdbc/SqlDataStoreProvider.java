@@ -3,7 +3,7 @@ package com.tabulify.jdbc;
 
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -20,7 +20,7 @@ import java.util.*;
  * A service provider is a concrete implementation of this class that
  * implements the abstract methods defined by this class.
  * <p/>
- * A provider is identified by a {@code URI} {@link #accept(Variable)}.
+ * A provider is identified by a {@code URI} {@link #accept(Attribute)}.
  * <p/>
  * A factory method class defines how providers are located
  * and loaded.
@@ -36,7 +36,7 @@ import java.util.*;
  * <p/>
  * A provider is a factory for one or more (service) object instances.
  * Each service is identified by a {@code URI} where the URI's scheme matches
- * the provider's {@link #accept(Variable)}.
+ * the provider's {@link #accept(Attribute)}.
  * <p/>
  * Inspired by {@link java.nio.file.spi.FileSystemProvider}
  */
@@ -128,13 +128,13 @@ public abstract class SqlDataStoreProvider {
    * @param uri the url
    * @return a data store created by the extension
    */
-  public abstract Connection getJdbcDataStore(Tabular tabular, Variable name, Variable uri);
+  public abstract Connection getJdbcDataStore(Tabular tabular, Attribute name, Attribute uri);
 
   /**
    *
    * @param uri
    * @return true if the provider is accepting the URL
    */
-  public abstract boolean accept(Variable uri);
+  public abstract boolean accept(Attribute uri);
 
 }

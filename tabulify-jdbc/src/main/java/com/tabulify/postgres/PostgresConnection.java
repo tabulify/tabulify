@@ -4,12 +4,12 @@ import com.tabulify.Tabular;
 import com.tabulify.jdbc.SqlConnection;
 import com.tabulify.jdbc.SqlConnectionMetadata;
 import com.tabulify.jdbc.SqlDataPath;
+import com.tabulify.conf.Attribute;
 import net.bytle.type.MediaType;
-import net.bytle.type.Variable;
 
 public class PostgresConnection extends SqlConnection {
 
-  public PostgresConnection(Tabular tabular, Variable name, Variable url) {
+  public PostgresConnection(Tabular tabular, Attribute name, Attribute url) {
     super(tabular, name, url);
   }
 

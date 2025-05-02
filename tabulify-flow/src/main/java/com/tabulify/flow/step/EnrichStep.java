@@ -1,5 +1,6 @@
 package com.tabulify.flow.step;
 
+import com.tabulify.conf.AttributeEnum;
 import com.tabulify.enrich.EnrichDataPath;
 import com.tabulify.flow.engine.FilterRunnable;
 import com.tabulify.flow.engine.FilterStepAbs;
@@ -44,7 +45,7 @@ public class EnrichStep extends FilterStepAbs implements Function<Set<DataPath>,
     return this;
   }
 
-  public enum EnrichStepArgument implements Attribute {
+  public enum EnrichStepArgument implements AttributeEnum {
 
     VIRTUAL_COLUMN("The virtual column definition"),
     VIRTUAL_COLUMNS("The virtual columns definitions");

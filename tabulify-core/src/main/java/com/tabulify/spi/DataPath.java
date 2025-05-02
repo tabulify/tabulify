@@ -12,9 +12,9 @@ import net.bytle.dag.Dependency;
 import net.bytle.exception.NoParentException;
 import net.bytle.exception.NoVariableException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.type.Attribute;
+import com.tabulify.conf.Attribute;
+import com.tabulify.conf.AttributeEnum;
 import net.bytle.type.MediaType;
-import net.bytle.type.Variable;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -225,17 +225,17 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
    * @param name the attribute name
    * @return the variable
    * @throws NoVariableException - when the variable was not found
-   *                             Why string and not {@link Attribute} because variable may be created dynamically
+   *                             Why string and not {@link AttributeEnum} because variable may be created dynamically
    *                             (for instance backref of regexp), and therefore may be not known in advance
    */
-  Variable getVariable(String name) throws NoVariableException;
+  Attribute getAttribute(String name) throws NoVariableException;
 
   /**
    * @param attribute - the attribute
    * @return the variable
    * @throws NoVariableException - when the variable was not found
    */
-  Variable getVariable(Attribute attribute) throws NoVariableException;
+  Attribute getAttribute(AttributeEnum attribute) throws NoVariableException;
 
   /**
    * Set an attribute used to define the data structure
@@ -244,13 +244,13 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
    * @param value the value
    * @return the data path for chaining
    */
-  DataPath addVariable(String key, Object value);
+  DataPath addAttribute(String key, Object value);
 
-  DataPath addVariable(Attribute key, Object value);
+  DataPath addAttribute(AttributeEnum key, Object value);
 
-  Set<Variable> getVariables();
+  Set<Attribute> getAttributes();
 
-  DataPath mergeDataPathVariablesFrom(DataPath source);
+  DataPath mergeDataPathAttributesFrom(DataPath source);
 
   DataPath mergeDataDefinitionFromYamlFile(Path dataDefPath);
 
@@ -259,7 +259,7 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
   DataPath setDataAttributes(Map<String, ?> dataAttributes);
 
   /**
-   * Meta = {@link #getVariables() DataPath Properties}  and {@link #getOrCreateRelationDef() Structure}
+   * Meta = {@link #getAttributes() DataPath Properties}  and {@link #getOrCreateRelationDef() Structure}
    *
    * @param mergeFrom the source path
    * @return the path
@@ -285,7 +285,7 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
   /**
    * @return the attributes / properties in a data path format
    */
-  DataPath toVariablesDataPath();
+  DataPath toAttributesDataPath();
 
   /**
    * The size of the data path
@@ -357,12 +357,12 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
    */
   DataPath getScriptDataPath();
 
-  Variable getVariableSafe(Attribute sqlDataPathAttribute);
+  Attribute getAttributeSafe(AttributeEnum sqlDataPathAttribute);
 
   /**
    * Add a variable.
-   * It makes it possible to create a variable with a {@link Variable#setValueProvider(Supplier)}
+   * It makes it possible to create a variable with a {@link Attribute#setValueProvider(Supplier)}
    */
-  DataPath addVariable(Variable variable);
+  DataPath addAttribute(Attribute attribute);
 
 }

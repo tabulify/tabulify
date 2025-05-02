@@ -2,7 +2,7 @@ package com.tabulify.flow.engine;
 
 import com.tabulify.Tabular;
 import net.bytle.type.MapKeyIndependent;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 import java.util.Set;
 
@@ -49,6 +49,6 @@ public interface OperationStep {
    *
    * @return the arguments used
    */
-  Set<Variable> getArguments();
+  Set<Attribute> getArguments();
 
 }

@@ -37,7 +37,7 @@ public class TpcdsSelectStream extends SelectStreamAbs {
 
       // Teradata options
       Options options = new Options();
-      options.scale = (Double) this.getDataPath().getConnection().getVariable(TpcConnectionAttribute.SCALE).getValueOrDefaultOrNull();
+      options.scale = (Double) this.getDataPath().getConnection().getAttribute(TpcConnectionAttribute.SCALE).getValueOrDefaultOrNull();
       options.noSexism = true;
       Session session = options.toSession();
 

@@ -27,7 +27,7 @@ public class ConfVault {
   private final Vault vault;
   private final Path path;
 
-  private final Map<TabularAttribute, Variable> env = new HashMap<>();
+  private final Map<TabularAttribute, Attribute> env = new HashMap<>();
   private final Tabular tabular;
   private final MapKeyIndependent<Connection> connections = new MapKeyIndependent<>();
   private final KeyCase outputCase = KeyCase.HYPHEN;
@@ -75,7 +75,7 @@ public class ConfVault {
     return new ConfVault(confPath, tabular.getVault(), tabular);
   }
 
-  public Variable getVariable(TabularAttribute name) {
+  public Attribute getVariable(TabularAttribute name) {
     return this.env.get(name);
   }
 
@@ -149,8 +149,8 @@ public class ConfVault {
               } catch (ClassCastException e) {
                 throw new CastException("The env name (" + variableName + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttribute.class), e);
               }
-              Variable variable = vault.createVariable(tabularAttribute, localEnv.getValue(), Origin.CONF);
-              env.put(tabularAttribute, variable);
+              Attribute attribute = vault.createAttribute(tabularAttribute, localEnv.getValue(), Origin.CONF);
+              env.put(tabularAttribute, attribute);
 
             }
 
@@ -163,9 +163,9 @@ public class ConfVault {
             } catch (CastException e) {
               throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfVaultRootAttribute.CONNECTIONS)), e);
             }
-            Variable uri = null;
-            Set<Variable> variableMap = new SetKeyIndependent<>();
-            Set<Variable> driverVariableMap = new SetKeyIndependent<>();
+            Attribute uri = null;
+            Set<Attribute> attributeMap = new SetKeyIndependent<>();
+            Map<String,Attribute> driverAttributeMap = new HashMap<>();
             for (Map.Entry<String, Object> localConnection : localConnections.entrySet()) {
 
               String connectionName = localConnection.getKey();
@@ -184,29 +184,29 @@ public class ConfVault {
 
                   Map<String, String> yamlDriverPropertiesMap = Casts.castToSameMap(confConnectionAttribute.getValue(), String.class, String.class);
                   for (Map.Entry<String, String> yamlDriverProperty : yamlDriverPropertiesMap.entrySet()) {
-                    Variable driverVariable;
-                    String driverConnectionAttribute = yamlDriverProperty.getKey();
+                    Attribute driverAttribute;
+                    String nativeDriverPropertyName = yamlDriverProperty.getKey();
                     try {
-                      driverVariable = vault.createVariable(driverConnectionAttribute, yamlDriverProperty.getValue(), Origin.CONF);
+                      driverAttribute = vault.createAttribute(nativeDriverPropertyName, yamlDriverProperty.getValue(), Origin.CONF);
                     } catch (Exception e) {
-                      throw new RuntimeException("An error has occurred while reading the driver connection attribute " + driverConnectionAttribute + " value for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
+                      throw new RuntimeException("An error has occurred while reading the driver connection attribute " + nativeDriverPropertyName + " value for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
                     }
-                    driverVariableMap.add(driverVariable);
+                    driverAttributeMap.put(nativeDriverPropertyName,driverAttribute);
                   }
                   continue;
                 }
 
-                Variable variable;
+                Attribute attribute;
                 try {
-                  variable = vault.createVariable(connectionAttributeBase, confConnectionAttribute.getValue().toString(), Origin.CONF);
+                  attribute = vault.createAttribute(connectionAttributeBase, confConnectionAttribute.getValue().toString(), Origin.CONF);
                 } catch (Exception e) {
                   throw new RuntimeException("An error has occurred while reading the connection attribute " + connectionAttributeAsString + " value for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
                 }
                 if (connectionAttributeBase == ConnectionAttributeBase.URI) {
-                  uri = variable;
+                  uri = attribute;
                   continue;
                 }
-                variableMap.add(variable);
+                attributeMap.add(attribute);
               }
 
               if (uri == null) {
@@ -219,9 +219,9 @@ public class ConfVault {
               Connection connection = Connection.createConnectionFromProviderOrDefault(this.tabular, connectionName, (String) uri.getValueOrDefaultOrNull());
               // variables map should be in the building of the connection
               // as they may be used for the default values
-              connection.setVariables(variableMap);
-              connection.addVariable(vault.createVariable(ConnectionAttributeBase.ORIGIN, ConnectionOrigin.CONF, Origin.RUNTIME));
-              connection.setDriverVariables(driverVariableMap);
+              connection.setAttributes(attributeMap);
+              connection.addAttribute(vault.createAttribute(ConnectionAttributeBase.ORIGIN, ConnectionOrigin.CONF, Origin.RUNTIME));
+              connection.setNativeDriverAttributes(driverAttributeMap);
               connections.put(connectionName, connection);
 
             }
@@ -285,8 +285,8 @@ public class ConfVault {
   private Map<String, Object> toVariables() {
 
     Map<String, Object> variableMap = new HashMap<>();
-    for (Variable variable : tabular.getVariables()) {
-      dumpVariable(variable, variableMap);
+    for (Attribute attribute : tabular.getAttributes()) {
+      dumpVariable(attribute, variableMap);
     }
     return variableMap;
   }
@@ -297,17 +297,17 @@ public class ConfVault {
     Collections.sort(connections);
     Map<String, Object> connectionsMap = new HashMap<>();
     // For whatever reason, we made a name variable
-    List<Attribute> noDumpAttributes = Arrays.asList(ConnectionAttributeBase.NAME, ConnectionAttributeBase.ORIGIN);
+    List<AttributeEnum> noDumpAttributes = Arrays.asList(ConnectionAttributeBase.NAME, ConnectionAttributeBase.ORIGIN);
     for (Connection connection : connections) {
       String connectionNameSection = connection.toString();
       Map<String, Object> connectionMap = new HashMap<>();
       connectionsMap.put(connectionNameSection, connectionMap);
 
-      for (Variable variable : connection.getVariables()) {
-        if (noDumpAttributes.contains(variable.getAttribute())) {
+      for (Attribute attribute : connection.getAttributes()) {
+        if (noDumpAttributes.contains(attribute.getAttributeMetadata())) {
           continue;
         }
-        dumpVariable(variable, connectionMap);
+        dumpVariable(attribute, connectionMap);
       }
 
     }
@@ -315,16 +315,16 @@ public class ConfVault {
     return connectionsMap;
   }
 
-  private void dumpVariable(Variable variable, Map<String, Object> connectionMap) {
+  private void dumpVariable(Attribute attribute, Map<String, Object> connectionMap) {
     // Derived value
-    if (variable.isValueProvider()) {
+    if (attribute.isValueProvider()) {
       return;
     }
-    String originalValue = variable.getCipherValue();
+    String originalValue = attribute.getCipherValue();
     if (originalValue == null || originalValue.isEmpty()) {
       return;
     }
-    String key = KeyNormalizer.create(variable.getAttribute()).toCase(outputCase);
+    String key = KeyNormalizer.create(attribute.getAttributeMetadata()).toCase(outputCase);
     connectionMap.put(key, originalValue);
   }
 
@@ -338,8 +338,8 @@ public class ConfVault {
     } catch (CastException e) {
       throw new CastException("Error: the variable name (" + key + " is not a valid variable name. We were expecting one of: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttribute.class));
     }
-    Variable variable = vault.createVariable(tabularAttribute, value, Origin.CONF);
-    env.put(tabularAttribute, variable);
+    Attribute attribute = vault.createAttribute(tabularAttribute, value, Origin.CONF);
+    env.put(tabularAttribute, attribute);
     return this;
   }
 
@@ -378,12 +378,12 @@ public class ConfVault {
     } catch (CastException e) {
       throw new CastException("Error: the variable name (" + key + " is not a valid variable name. We were expecting one of: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttribute.class));
     }
-    Variable variable = env.remove(tabularAttribute);
-    return variable.getCipherValue();
+    Attribute attribute = env.remove(tabularAttribute);
+    return attribute.getCipherValue();
 
   }
 
-  public Set<Variable> getVariables() {
+  public Set<Attribute> getVariables() {
     return new HashSet<>(this.env.values());
   }
 

@@ -1,20 +1,19 @@
 package com.tabulify;
 
+import com.tabulify.conf.AttributeEnum;
+import com.tabulify.conf.Origin;
 import com.tabulify.conf.TabularEnvs;
 import net.bytle.crypto.CryptoSymmetricCipher;
 import net.bytle.crypto.Protector;
 import net.bytle.exception.CastException;
 import net.bytle.template.TextTemplate;
 import net.bytle.template.TextTemplateEngine;
-import net.bytle.type.Attribute;
-import net.bytle.type.Casts;
-import net.bytle.type.Origin;
-import net.bytle.type.Variable;
+import net.bytle.type.*;
 
 import java.util.Map;
 
 /**
- * An object that instantiate {@link Variable}
+ * An object that instantiate {@link com.tabulify.conf.Attribute}
  * to:
  * - make them secure
  * - conserve the original value in order to write them on disk
@@ -72,7 +71,7 @@ public class Vault {
   }
 
 
-  public Variable createVariable(String key, Object value, Origin origin) throws Exception {
+  public com.tabulify.conf.Attribute createAttribute(String key, Object value, com.tabulify.conf.Origin origin) throws Exception {
 
     return createVariableBuilderFromName(key)
       .setOrigin(origin)
@@ -95,11 +94,11 @@ public class Vault {
   }
 
 
-  public VariableBuilder createVariableBuilderFromAttribute(Attribute attribute) {
+  public VariableBuilder createVariableBuilderFromAttribute(AttributeEnum attribute) {
     return new VariableBuilder(attribute);
   }
 
-  public Variable createVariable(Attribute attribute, Object value, Origin origin) {
+  public com.tabulify.conf.Attribute createAttribute(AttributeEnum attribute, Object value, com.tabulify.conf.Origin origin) {
     return createVariableBuilderFromAttribute(attribute)
       .setOrigin(origin)
       .buildSafe(value);
@@ -110,15 +109,15 @@ public class Vault {
    */
   public class VariableBuilder {
 
-    private Attribute attribute;
-    private Origin origin;
+    private AttributeEnum attribute;
+    private com.tabulify.conf.Origin origin;
     private String name;
 
     public VariableBuilder(String name) {
       this.name = name;
     }
 
-    public VariableBuilder(Attribute attribute) {
+    public VariableBuilder(AttributeEnum attribute) {
       this.attribute = attribute;
     }
 
@@ -132,13 +131,13 @@ public class Vault {
      * without any raw/original value
      * We don't want to see any clear value
      */
-    public Variable build(Object value) throws CastException {
+    public com.tabulify.conf.Attribute build(Object value) throws CastException {
 
-      if (attribute == null) {
+      if (this.attribute == null) {
         if (name == null) {
           throw new RuntimeException("Name and attribute cannot be null together.  A variable needs an identifiant");
         }
-        attribute = new Attribute() {
+        this.attribute = new AttributeEnum() {
 
           @Override
           public String getDescription() {
@@ -165,15 +164,15 @@ public class Vault {
 
         };
       }
-      Variable variable = Variable.create(attribute, origin);
+      com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(this.attribute, origin);
 
       // Value may be null
       if (value == null) {
-        return variable;
+        return attribute;
       }
 
       if (!(value instanceof String)) {
-        return variable.setPlainValue(value);
+        return attribute.setPlainValue(value);
       }
 
       String valueString = value.toString();
@@ -187,7 +186,7 @@ public class Vault {
           throw new CastException("No passphrase was given, we can't decrypt the vault value (" + valueToDecrypt + ")");
         }
         try {
-          return variable
+          return attribute
             .setCipherValue(valueString)
             .setPlainValue(protector.decrypt(valueToDecrypt));
         } catch (Exception exception) {
@@ -205,7 +204,7 @@ public class Vault {
         .getOrCreate()
         .compile(valueString);
       if (textTemplate.getVariableNames().isEmpty()) {
-        return variable.setPlainValue(valueString);
+        return attribute.setPlainValue(valueString);
       }
       if (!textTemplate.getVariableNames().isEmpty() && templatingEnvs == null) {
         // should happen only in test
@@ -214,7 +213,7 @@ public class Vault {
       String clearValue = textTemplate
         .applyVariables(templatingEnvs)
         .getResult();
-      return variable
+      return attribute
         .setCipherValue(valueString)
         .setPlainValue(clearValue);
     }
@@ -224,7 +223,7 @@ public class Vault {
       return this;
     }
 
-    public Variable buildSafe(Object value) {
+    public com.tabulify.conf.Attribute buildSafe(Object value) {
       try {
         return build(value);
       } catch (CastException e) {

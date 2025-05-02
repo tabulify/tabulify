@@ -1,6 +1,6 @@
 package com.tabulify.flow.engine;
 
-import net.bytle.type.AttributeValue;
+import com.tabulify.conf.AttributeValue;
 
 public abstract class FilterStepAbs extends StepAbs implements FilterOperationStep {
 

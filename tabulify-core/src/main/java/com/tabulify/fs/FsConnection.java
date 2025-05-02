@@ -14,7 +14,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.type.Casts;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 import java.io.IOException;
 import java.net.URI;
@@ -32,7 +32,7 @@ public class FsConnection extends NoOpConnection {
   private FileSystem fileSystem;
 
 
-  public FsConnection(Tabular tabular, Variable name, Variable uri) {
+  public FsConnection(Tabular tabular, Attribute name, Attribute uri) {
 
     super(tabular, name, uri);
 
@@ -75,7 +75,7 @@ public class FsConnection extends NoOpConnection {
          */
         fileSystem = FileSystems.getDefault();
       } else {
-        fileSystem = FileSystems.newFileSystem(URI.create(uri), this.getVariablesAsKeyValueMap());
+        fileSystem = FileSystems.newFileSystem(URI.create(uri), this.getNativeDriverAttributes());
       }
 
     } catch (Exception e) {

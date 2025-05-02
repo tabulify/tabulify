@@ -1,8 +1,8 @@
 package com.tabulify.flow.step;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-public enum SelectSupplierArgument implements Attribute {
+public enum SelectSupplierArgument implements AttributeEnum {
 
 
   DATA_SELECTOR("A selector", null, String.class),

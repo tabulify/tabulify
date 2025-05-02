@@ -638,7 +638,7 @@ public class FsDataSystem extends DataSystemAbs {
 
       return connection
         .getDataPath(sourceDataPath.getLogicalName() + "." + FS_DEFAULT_TABULAR_MEDIA_TYPE.getExtension(), FS_DEFAULT_TABULAR_MEDIA_TYPE)
-        .addVariable("header-row-id", 1);
+        .addAttribute("header-row-id", 1);
     }
 
     /**

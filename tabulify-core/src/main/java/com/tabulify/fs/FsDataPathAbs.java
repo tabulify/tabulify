@@ -10,7 +10,7 @@ import net.bytle.exception.NoParentException;
 import net.bytle.fs.Fs;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 import java.io.IOException;
 import java.net.URI;
@@ -68,11 +68,11 @@ public abstract class FsDataPathAbs extends DataPathAbs implements FsDataPath {
   }
 
   @Override
-  public DataPath addVariable(Variable variable) {
+  public DataPath addAttribute(Attribute attribute) {
     try {
 
-      String key = variable.getAttribute().toString();
-      Object valueOrDefaultOrNull = variable.getValueOrDefaultOrNull();
+      String key = attribute.getAttributeMetadata().toString();
+      Object valueOrDefaultOrNull = attribute.getValueOrDefaultOrNull();
       String value;
       if (valueOrDefaultOrNull != null) {
         value = valueOrDefaultOrNull.toString();
@@ -92,7 +92,7 @@ public abstract class FsDataPathAbs extends DataPathAbs implements FsDataPath {
       DbLoggers.LOGGER_DB_ENGINE.warning("Problem while adding a attribute on the file (" + path + "). The file system does not support adding user attributes. Error:" + e.getMessage());
 
     }
-    return super.addVariable(variable);
+    return super.addAttribute(attribute);
   }
 
   public FsDataPathAbs(FsConnection fsConnection, DataPath dataPath) {
@@ -129,7 +129,7 @@ public abstract class FsDataPathAbs extends DataPathAbs implements FsDataPath {
 
   @Override
   public FsDataPath getChildAsTabular(String name) {
-    String extension = getConnection().getTabular().getVariable(TabularAttribute.DEFAULT_FILE_SYSTEM_TABULAR_TYPE).getValueOrDefaultAsStringNotNull();
+    String extension = getConnection().getTabular().getAttribute(TabularAttribute.DEFAULT_FILE_SYSTEM_TABULAR_TYPE).getValueOrDefaultAsStringNotNull();
     Path siblingPath = path.resolve(name + "." + extension);
     return this.getConnection().getDataSystem().getFileManager(siblingPath, MediaTypes.TEXT_CSV).createDataPath(getConnection(), siblingPath);
   }

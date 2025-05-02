@@ -1,6 +1,7 @@
 package com.tabulify.fs.textfile;
 
 import com.tabulify.DbLoggers;
+import com.tabulify.conf.Origin;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.FsDataPath;
 import com.tabulify.fs.binary.FsBinaryDataPath;
@@ -38,7 +39,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
 
   protected FsTextDataPath setColumnName(String name) {
     try {
-      this.getVariable(FsTextDataPathAttributes.COLUMN_NAME).setPlainValue(name);
+      this.getAttribute(FsTextDataPathAttributes.COLUMN_NAME).setPlainValue(name);
     } catch (NoVariableException e) {
       throw new RuntimeException("Internal Error: COLUMN_NAME variable was not found. It should not happen");
     }
@@ -98,7 +99,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
   public String[] getEndOfRecords() {
 
     try {
-      return (String[]) this.getVariable(FsTextDataPathAttributes.END_OF_RECORD).getValueOrDefault();
+      return (String[]) this.getAttribute(FsTextDataPathAttributes.END_OF_RECORD).getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       throw IllegalArgumentExceptions.createFromMessage("This exception should not happen because there is already a default", e);
     }
@@ -111,8 +112,8 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
    * @param endOfRecords The strings that are used at the end of a row (default to the system default \r\n for Windows, \n for the other)
    */
   public FsTextDataPath setEndOfRecords(String... endOfRecords) {
-    Variable variable = Variable.create(FsTextDataPathAttributes.END_OF_RECORD, Origin.RUNTIME).setPlainValue(endOfRecords);
-    this.addVariable(variable);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(FsTextDataPathAttributes.END_OF_RECORD, com.tabulify.conf.Origin.RUNTIME).setPlainValue(endOfRecords);
+    this.addAttribute(attribute);
     return this;
   }
 
@@ -124,8 +125,8 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
    * @return The {@link FsTextDataPath} instance for chaining initialization
    */
   public FsTextDataPath setCharset(Charset charset) {
-    Variable variable = Variable.create(CHARACTER_SET, Origin.RUNTIME).setPlainValue(charset);
-    this.addVariable(variable);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(CHARACTER_SET, Origin.RUNTIME).setPlainValue(charset);
+    this.addAttribute(attribute);
     return this;
   }
 
@@ -184,19 +185,19 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
 
 
   @Override
-  public FsTextDataPath addVariable(String key, Object value) {
+  public FsTextDataPath addAttribute(String key, Object value) {
 
     FsTextDataPathAttributes textAtt;
     try {
       textAtt = Casts.cast(key, FsTextDataPathAttributes.class);
     } catch (Exception e) {
-      super.addVariable(key, value);
+      super.addAttribute(key, value);
       return this;
     }
 
     try {
-      Variable variable = getConnection().getTabular().createVariable(textAtt, value);
-      super.addVariable(variable);
+      com.tabulify.conf.Attribute attribute = getConnection().getTabular().createAttribute(textAtt, value);
+      super.addAttribute(attribute);
       return this;
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the variable (" + textAtt + ") with the value (" + value + ") for the resource (" + this + ")", e);
@@ -286,7 +287,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
   public String getColumnName() {
 
     try {
-      return (String) this.getVariable(FsTextDataPathAttributes.COLUMN_NAME).getValueOrDefault();
+      return (String) this.getAttribute(FsTextDataPathAttributes.COLUMN_NAME).getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       throw new RuntimeException("Internal Error: COLUMN_NAME variable was not found. It should not happen");
     }
@@ -306,7 +307,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
 
   public String getUniqueColumnName() {
     try {
-      return (String) getVariable(FsTextDataPathAttributes.COLUMN_NAME).getValueOrDefault();
+      return (String) getAttribute(FsTextDataPathAttributes.COLUMN_NAME).getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       return FsTextDataPathAttributes.DEFAULTS.HEADER_DEFAULT;
     }

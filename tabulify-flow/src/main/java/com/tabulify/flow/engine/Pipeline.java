@@ -2,6 +2,7 @@ package com.tabulify.flow.engine;
 
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Attribute;
 import com.tabulify.flow.FlowLog;
 import com.tabulify.flow.stream.DataPathSupplier;
 import com.tabulify.json.JsonObject;
@@ -427,9 +428,9 @@ public class Pipeline implements AutoCloseable {
         .addProperty("name", operationStep.getName())
         .addProperty("operation", operationStep.getOperationName());
       JsonObject args = operationJson.createChildObject("args");
-      for (Variable variable : operationStep.getArguments()) {
-        Object value = variable.getValueOrDefaultOrNull();
-        String publicName = tabular.toPublicName(variable.getAttribute().toString());
+      for (Attribute attribute : operationStep.getArguments()) {
+        Object value = attribute.getValueOrDefaultOrNull();
+        String publicName = tabular.toPublicName(attribute.getAttributeMetadata().toString());
         if (value != null) {
           args.addProperty(publicName, value);
         } else {

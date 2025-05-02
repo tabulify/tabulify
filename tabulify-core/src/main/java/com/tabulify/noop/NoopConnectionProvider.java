@@ -2,7 +2,7 @@ package com.tabulify.noop;
 
 import com.tabulify.Tabular;
 import com.tabulify.spi.ConnectionProvider;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 public class NoopConnectionProvider extends ConnectionProvider {
 
@@ -31,7 +31,7 @@ public class NoopConnectionProvider extends ConnectionProvider {
    *                           permission.
    */
   @Override
-  public NoOpConnection createConnection(Tabular tabular, Variable name, Variable uri) {
+  public NoOpConnection createConnection(Tabular tabular, Attribute name, Attribute uri) {
 
     return new NoOpConnection(tabular, name, uri);
 
@@ -41,7 +41,7 @@ public class NoopConnectionProvider extends ConnectionProvider {
    * @return true if there is a file system provider that takes into account his url
    */
   @Override
-  public boolean accept(Variable uri) {
+  public boolean accept(Attribute uri) {
     return uri.getValueOrDefaultAsStringNotNull().equals(NOOP_SCHEME);
   }
 

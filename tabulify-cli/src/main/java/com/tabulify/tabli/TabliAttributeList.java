@@ -11,7 +11,7 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.regexp.Glob;
 import net.bytle.type.Casts;
-import net.bytle.type.Origin;
+import com.tabulify.conf.Origin;
 import net.bytle.type.Strings;
 
 import java.util.Arrays;
@@ -117,7 +117,7 @@ public class TabliAttributeList {
 
     try (InsertStream insertStream = feedbackDataDef.getDataPath().getInsertStream()) {
       tabular
-        .getVariables()
+        .getAttributes()
         .stream()
         .filter(e -> {
           if (listOrigins.contains(Origin.ALL)) {
@@ -126,7 +126,7 @@ public class TabliAttributeList {
           Origin origin = e.getOrigin();
           return listOrigins.contains(origin);
         })
-        .filter(e -> Glob.matchOneOfGlobs(tabular.toPublicName(e.getAttribute().toString()), nameSelectors))
+        .filter(e -> Glob.matchOneOfGlobs(tabular.toPublicName(e.getAttributeMetadata().toString()), nameSelectors))
         .sorted()
         .forEach(e ->
           {
@@ -135,10 +135,10 @@ public class TabliAttributeList {
               .toString();
             Object originalValue = e.getValueOrDefaultAsStringNotNull();
             insertStream.insert(
-              tabular.toPublicName(e.getAttribute().toString()),
+              tabular.toPublicName(e.getAttributeMetadata().toString()),
               originalValue.toString(),
               capitalizedOrigin,
-              e.getAttribute().getDescription()
+              e.getAttributeMetadata().getDescription()
             );
           }
         );

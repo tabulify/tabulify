@@ -22,7 +22,6 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.tabulify.jdbc.SqlDataPathAttribute.QUERY_METADATA_DETECTION;
-import static com.tabulify.jdbc.SqlDataPathQueryMetadataDetectionMethod.PARSING;
 import static com.tabulify.jdbc.SqlDataPathQueryMetadataDetectionMethod.TEMPORARY_VIEW;
 
 
@@ -67,7 +66,7 @@ public class SqlRelationDef extends RelationDefDefault {
            */
           SqlDataPathQueryMetadataDetectionMethod queryMetadataDetectionMethod;
           try {
-            queryMetadataDetectionMethod = dataPath.getVariableSafe(QUERY_METADATA_DETECTION).getValueOrDefaultCastAs(SqlDataPathQueryMetadataDetectionMethod.class);
+            queryMetadataDetectionMethod = dataPath.getAttributeSafe(QUERY_METADATA_DETECTION).getValueOrDefaultCastAs(SqlDataPathQueryMetadataDetectionMethod.class);
           } catch (NoValueException e) {
             // should not
             queryMetadataDetectionMethod = TEMPORARY_VIEW;

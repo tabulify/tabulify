@@ -1,6 +1,6 @@
 package com.tabulify.connection;
 
-import net.bytle.type.AttributeValue;
+import com.tabulify.conf.AttributeValue;
 
 /**
  * The datatype of a date in case

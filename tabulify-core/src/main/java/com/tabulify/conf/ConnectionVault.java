@@ -13,10 +13,7 @@ import net.bytle.exception.NoValueException;
 import net.bytle.fs.Fs;
 import net.bytle.log.Log;
 import net.bytle.regexp.Glob;
-import net.bytle.type.Casts;
-import net.bytle.type.Origin;
-import net.bytle.type.SetKeyIndependent;
-import net.bytle.type.Variable;
+import net.bytle.type.*;
 import org.ini4j.Config;
 import org.ini4j.Ini;
 import org.ini4j.Wini;
@@ -119,34 +116,34 @@ public class ConnectionVault implements AutoCloseable {
          * http://ini4j.sourceforge.net/tutorial/IniTutorial.java.html
          */
         boolean uriFound = false;
-        List<Variable> connectionVariables = connection.getVariables().stream().sorted().collect(Collectors.toList());
-        for (Variable variable : connectionVariables) {
-          if (variable.getAttribute() == ConnectionAttributeBase.NAME) {
+        List<Attribute> connectionAttributes = connection.getAttributes().stream().sorted().collect(Collectors.toList());
+        for (Attribute attribute : connectionAttributes) {
+          if (attribute.getAttributeMetadata() == ConnectionAttributeBase.NAME) {
             continue;
           }
-          if (variable.getAttribute() == ConnectionAttributeBase.ORIGIN) {
+          if (attribute.getAttributeMetadata() == ConnectionAttributeBase.ORIGIN) {
             // origin is an internal
             continue;
           }
           String valueToStore;
-          if (variable.getAttribute() == ConnectionAttributeBase.URI) {
+          if (attribute.getAttributeMetadata() == ConnectionAttributeBase.URI) {
             uriFound = true;
-            valueToStore = variable.getCipherValue();
+            valueToStore = attribute.getCipherValue();
             if (valueToStore == null) {
               try {
-                valueToStore = (String) variable.getValueOrDefault();
+                valueToStore = (String) attribute.getValueOrDefault();
               } catch (NoValueException e) {
                 throw new InternalException("The URI variable has no value for the connection (" + connection + ")");
               }
             }
           } else {
-            Object originalValue = variable.getCipherValue();
+            Object originalValue = attribute.getCipherValue();
             if (originalValue == null) {
               continue;
             }
             valueToStore = originalValue.toString();
           }
-          ini.put(connectionNameSection, tabular.toPublicName(variable.getAttribute().toString()), valueToStore);
+          ini.put(connectionNameSection, tabular.toPublicName(attribute.getAttributeMetadata().toString()), valueToStore);
         }
         if (!uriFound) {
           throw new InternalException("The URI variable was not found for the connection (" + connection + ")");
@@ -249,8 +246,8 @@ public class ConnectionVault implements AutoCloseable {
        * URI is a variable because it needs
        * templating and may be encryption feature
        */
-      Variable uri = null;
-      Set<Variable> variableMap = new SetKeyIndependent<>();
+      Attribute uri = null;
+      Set<Attribute> attributeMap = new SetKeyIndependent<>();
       for (String propertyName : iniSection.keySet()) {
 
         String value = iniSection.get(propertyName);
@@ -261,21 +258,21 @@ public class ConnectionVault implements AutoCloseable {
           // not a standard attribute
           // a specific connection attribute then
         }
-        Variable variable;
+        Attribute attribute;
         try {
 
           if (connectionAttributeBase == null) {
-            variable = vault.createVariable(propertyName, value, Origin.CONF);
+            attribute = vault.createAttribute(propertyName, value, Origin.CONF);
           } else {
-            variable = vault.createVariable(connectionAttributeBase, value, Origin.CONF);
+            attribute = vault.createAttribute(connectionAttributeBase, value, Origin.CONF);
           }
           if (connectionAttributeBase == ConnectionAttributeBase.URI) {
-            uri = variable;
+            uri = attribute;
           }
         } catch (Exception e) {
           throw new RuntimeException("An error has occurred while reading the variable " + propertyName + " for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
         }
-        variableMap.add(variable);
+        attributeMap.add(attribute);
 
       }
 
@@ -289,8 +286,8 @@ public class ConnectionVault implements AutoCloseable {
       Connection connection = Connection.createConnectionFromProviderOrDefault(this.tabular, connectionName, (String) uri.getValueOrDefaultOrNull());
       // variables map should be in the building of the connection
       // as they may be used for the default values
-      connection.setVariables(variableMap);
-      connection.addVariable(vault.createVariable(
+      connection.setAttributes(attributeMap);
+      connection.addAttribute(vault.createAttribute(
           ConnectionAttributeBase.ORIGIN,
           ConnectionOrigin.CONF,
           Origin.RUNTIME)

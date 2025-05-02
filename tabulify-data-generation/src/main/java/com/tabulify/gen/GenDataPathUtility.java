@@ -7,9 +7,9 @@ import com.tabulify.model.PrimaryKeyDef;
 import com.tabulify.model.UniqueKeyDef;
 import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
+import com.tabulify.conf.Attribute;
 import net.bytle.type.Casts;
-import net.bytle.type.Origin;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Origin;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -165,7 +165,7 @@ public class GenDataPathUtility {
    */
   public Long getMaxRecordCount() {
     try {
-      return Casts.castSafe(genDataPath.getVariable(GenDataPathAttribute.MAX_RECORD_COUNT).getValueOrDefault(), Long.class);
+      return Casts.castSafe(genDataPath.getAttribute(GenDataPathAttribute.MAX_RECORD_COUNT).getValueOrDefault(), Long.class);
     } catch (NoVariableException | NoValueException e) {
       return null;
     }
@@ -195,7 +195,7 @@ public class GenDataPathUtility {
   public GenDataPathUtility setMaxRecordCount(Long maxRecordCount) {
     // Just to be able to have this function in a fluent code with a null value
     if (maxRecordCount != null) {
-      genDataPath.getOrCreateRelationDef().getDataPath().addVariable(GenDataPathAttribute.MAX_RECORD_COUNT, maxRecordCount);
+      genDataPath.getOrCreateRelationDef().getDataPath().addAttribute(GenDataPathAttribute.MAX_RECORD_COUNT, maxRecordCount);
     }
     return this;
   }
@@ -205,18 +205,18 @@ public class GenDataPathUtility {
     for (GenDataPathAttribute dataGenAttribute : GenDataPathAttribute.class.getEnumConstants()) {
       switch (dataGenAttribute) {
         case SIZE_NOT_CAPPED:
-          genDataPath.addVariable(
-            Variable.create(dataGenAttribute, Origin.RUNTIME)
+          genDataPath.addAttribute(
+            Attribute.create(dataGenAttribute, Origin.RUNTIME)
               .setValueProvider(genDataPath::getSizeNotCapped)
           );
           break;
         case SIZE:
-          genDataPath.addVariable(
-            Variable.create(dataGenAttribute, Origin.RUNTIME)
+          genDataPath.addAttribute(
+            Attribute.create(dataGenAttribute, Origin.RUNTIME)
               .setValueProvider(genDataPath::getSize)
           );
         default:
-          genDataPath.addVariable(dataGenAttribute, null);
+          genDataPath.addAttribute(dataGenAttribute, null);
       }
     }
 

@@ -1,10 +1,10 @@
 package com.tabulify.email.flow;
 
 import com.tabulify.flow.Granularity;
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 import net.bytle.type.Key;
 
-public enum SendmailStepArgument implements Attribute {
+public enum SendmailStepArgument implements AttributeEnum {
 
   TARGET_URI("The email target connection", String.class, null),
   FROM("The email sender address", String.class, null),

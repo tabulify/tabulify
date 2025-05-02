@@ -74,13 +74,13 @@ public class ConnectionHowTos {
 
     howToDataStoresSet.add(
       Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_CONNECTION_NAME, getSqliteConnectionString(tabular, SQLITE_CONNECTION_NAME))
-        .addVariable(JDBC_DRIVER, "org.sqlite.JDBC")
+        .addAttribute(JDBC_DRIVER, "org.sqlite.JDBC")
         .setDescription("The sqlite default connection")
     );
 
     howToDataStoresSet.add(
       Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_TARGET_CONNECTION_NAME, getSqliteConnectionString(tabular, SQLITE_TARGET_CONNECTION_NAME))
-        .addVariable(JDBC_DRIVER, "org.sqlite.JDBC")
+        .addAttribute(JDBC_DRIVER, "org.sqlite.JDBC")
         .setDescription("The default sqlite target (Sqlite cannot read and write with the same connection)")
     );
 
@@ -90,13 +90,13 @@ public class ConnectionHowTos {
         .setDescription("The default oracle connection")
         .setUser("hr")
         .setPassword("oracle")
-        .addVariable(JDBC_DRIVER, "oracle.jdbc.OracleDriver")
+        .addAttribute(JDBC_DRIVER, "oracle.jdbc.OracleDriver")
     );
 
     howToDataStoresSet.add(
       Connection.createConnectionFromProviderOrDefault(tabular, SQLSERVER_CONNECTION_NAME, "jdbc:sqlserver://localhost:1433;databaseName=AdventureWorks;encrypt=true;trustServerCertificate=true")
         .setDescription("The default sqlserver connection")
-        .addVariable(JDBC_DRIVER, "com.microsoft.sqlserver.jdbc.SQLServerDriver")
+        .addAttribute(JDBC_DRIVER, "com.microsoft.sqlserver.jdbc.SQLServerDriver")
         .setUser("sa")
         .setPassword("TheSecret1!")
     );
@@ -113,7 +113,7 @@ public class ConnectionHowTos {
     howToDataStoresSet.add(
       Connection.createConnectionFromProviderOrDefault(tabular, MYSQL_CONNECTION_NAME, "jdbc:mysql://localhost:3306/" + howToDatabaseName)
         .setDescription("The default mysql data store")
-        .addVariable(JDBC_DRIVER, "com.mysql.jdbc.Driver")
+        .addAttribute(JDBC_DRIVER, "com.mysql.jdbc.Driver")
         .setUser("root")
         .setPassword("my-secret-pw") // from the docker doc - https://hub.docker.com/_/mysql
     );
@@ -122,7 +122,7 @@ public class ConnectionHowTos {
     howToDataStoresSet.add(
       Connection.createConnectionFromProviderOrDefault(tabular, POSTGRESQL_CONNECTION_NAME, "jdbc:postgresql://localhost:5432/postgres")
         .setDescription("The default postgres data store")
-        .addVariable(JDBC_DRIVER, "org.postgresql.Driver")
+        .addAttribute(JDBC_DRIVER, "org.postgresql.Driver")
         .setUser("postgres")
         .setPassword("welcome")
     );

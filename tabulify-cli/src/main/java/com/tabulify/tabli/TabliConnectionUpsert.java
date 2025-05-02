@@ -99,11 +99,11 @@ public class TabliConnectionUpsert {
           connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, urlValue)
             .setDescription((String) connection.getDescription().getValueOrDefaultOrNull())
             .setOrigin(connection.getOrigin())
-            .setVariables(connection.getVariables()
+            .setAttributes(connection.getAttributes()
               .stream()
-              .filter(v -> v.getAttribute() != ConnectionAttributeBase.URI)
+              .filter(v -> v.getAttributeMetadata() != ConnectionAttributeBase.URI)
               .collect(Collectors.toSet()))
-            .setPassword(connection.getPasswordVariable())
+            .setPassword(pwdValue)
             .setUser((String) connection.getUser().getValueOrDefaultOrNull());
           connectionVault.put(connection);
         }
@@ -112,7 +112,7 @@ public class TabliConnectionUpsert {
         .setUser(userValue)
         .setPassword(pwdValue);
       if (driverValue != null) {
-        connection.addVariable(ConnectionAttributeBase.JDBC_DRIVER, driverValue);
+        connection.addAttribute(ConnectionAttributeBase.JDBC_DRIVER, driverValue);
       }
       connectionVault.flush();
     }

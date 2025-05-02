@@ -13,7 +13,7 @@ import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
 import net.bytle.template.TextTemplate;
 import net.bytle.template.TextTemplateEngine;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 import java.net.URI;
 import java.nio.file.Paths;
@@ -145,14 +145,14 @@ public class SourceTargetHelperFunction implements Function<Set<DataPath>, Map<D
           Map<String, Object> map = new HashMap<>();
 
           for (String attributeName : textTemplateEngine.getVariableNames()) {
-            Variable variable;
+            Attribute attribute;
             try {
-              variable = sourceDataPath.getVariable(attributeName);
+              attribute = sourceDataPath.getAttribute(attributeName);
             } catch (NoVariableException e) {
               throw new IllegalStateException("We couldn't calculate the target resource name via backward reference. The variable (" + attributeName + ") in the pattern expression (" + targetPath + ") was not found for the resource (" + sourceDataPath + "). It can happen if this resource was selected as dependency. If this is the case, you should perform select without dependencies.");
             }
             try {
-              map.put(attributeName, variable.getValueOrDefault());
+              map.put(attributeName, attribute.getValueOrDefault());
             } catch (NoValueException e) {
               throw new IllegalStateException("The variable (" + attributeName + ") was found but had no value for the resource (" + sourceDataPath + ")");
             }

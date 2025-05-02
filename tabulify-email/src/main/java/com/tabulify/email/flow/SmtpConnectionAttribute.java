@@ -4,17 +4,19 @@ import com.tabulify.connection.ConnectionAttribute;
 
 public enum SmtpConnectionAttribute implements ConnectionAttribute {
 
-  SMTP_HOST("Smtp Host Server", "localhost", String.class),
-  SMTP_PORT("Smtp Port", 25, Integer.class),
-  SMTP_FROM("The default from address if none is provided", 25, String.class),
-  SMTP_FROM_NAME("The default name from address if none is provided", "", String.class),
-  SMTP_TO("The default to address if none is provided", "", String.class),
-  SMTP_TO_NAMES("The default names to address if none is provided", "", String.class),
-  SMTP_AUTH("Smtp server authentication required?", false, Boolean.class),
-  SMTP_TLS("Smtp Tls communication required", false, Boolean.class),
-  SMTP_DEBUG("Smtp Debug level", "", String.class),
-  SMTP_USER("Smtp User", "", String.class),
-  SMTP_PWD("Smtp Password", "", String.class);
+  HOST("Smtp Host Server", "localhost", String.class),
+  PORT("Smtp Port", 25, Integer.class),
+  FROM("The default from address if none is provided", 25, String.class),
+  FROM_NAME("The default name from address if none is provided", "", String.class),
+  TO("The default to address if none is provided", "", String.class),
+  TO_NAMES("The default names to address if none is provided", "", String.class),
+  CC("The default carbon copy addresses if none is provided", "", String.class),
+  CC_NAMES("The default carbon copy names to address if none is provided", "", String.class),
+  BCC("The blind carbon copy addresses", null, null),
+  BCC_NAMES("The blind carbon copy names", null, null),
+  AUTH("Smtp server authentication required?", false, Boolean.class),
+  TLS("Smtp Tls communication required", false, Boolean.class),
+  DEBUG("Smtp Debug level", "", String.class);
 
   private final String description;
   private final Class<?> clazz;

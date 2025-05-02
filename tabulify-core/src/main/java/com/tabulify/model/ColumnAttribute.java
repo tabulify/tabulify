@@ -1,8 +1,8 @@
 package com.tabulify.model;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-public enum ColumnAttribute implements Attribute {
+public enum ColumnAttribute implements AttributeEnum {
 
   POSITION("The position of the column", Integer.class),
   NAME("The name of the column", String.class),

@@ -3,15 +3,13 @@ package com.tabulify.flow.step;
 import com.tabulify.flow.Granularity;
 import com.tabulify.transfer.TransferOperation;
 import com.tabulify.transfer.TransferProperties;
-import com.tabulify.transfer.TransferResourceOperations;
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public enum TransferArgumentProperty implements Attribute {
+public enum TransferArgumentProperty implements AttributeEnum {
 
   STEP_GRANULARITY(   "defines the granularity of the transfer", Granularity.RESOURCE, Granularity.class),
   STEP_OUTPUT(  "The resource that is passed as output", TransferOutputArgument.SOURCES, TransferOutputArgument.class),

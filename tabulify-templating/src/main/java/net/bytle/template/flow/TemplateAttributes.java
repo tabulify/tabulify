@@ -1,11 +1,11 @@
 package net.bytle.template.flow;
 
 import com.tabulify.flow.Granularity;
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
 import static net.bytle.template.flow.TemplateOutputOperation.EXTENDED_RECORDS;
 
-public enum TemplateAttributes implements Attribute {
+public enum TemplateAttributes implements AttributeEnum {
 
   TEMPLATE_INLINE("Defining an inline template", null, null),
   TEMPLATE_INLINES("Defining several inline template", null, null),

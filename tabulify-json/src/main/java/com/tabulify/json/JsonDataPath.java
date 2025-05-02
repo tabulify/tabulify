@@ -3,6 +3,8 @@ package com.tabulify.json;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.tabulify.conf.AttributeEnum;
+import com.tabulify.conf.Origin;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.textfile.FsTextDataPath;
 import com.tabulify.fs.textfile.FsTextDataPathAttributes;
@@ -28,7 +30,7 @@ public class JsonDataPath extends FsTextDataPath {
 
   public static final MediaType[] ACCEPTED_MEDIA_TYPES = {MediaTypes.TEXT_JSON, MediaTypes.TEXT_JSONL};
 
-  enum JsonATTRIBUTE implements Attribute {
+  enum JsonATTRIBUTE implements AttributeEnum {
 
     STRUCTURE("How to JSON is returned (as one JSON column or as a table with the column being the first level properties", JsonStructure.class, JsonStructure.DOCUMENT);
 
@@ -80,8 +82,8 @@ public class JsonDataPath extends FsTextDataPath {
     /**
      * Overwrite the default column name
      */
-    Variable variable = Variable.create(FsTextDataPathAttributes.COLUMN_NAME, Origin.RUNTIME).setPlainValue(JSON_DEFAULT_HEADER_NAME);
-    this.addVariable(variable);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(FsTextDataPathAttributes.COLUMN_NAME, com.tabulify.conf.Origin.RUNTIME).setPlainValue(JSON_DEFAULT_HEADER_NAME);
+    this.addAttribute(attribute);
 
   }
 
@@ -151,15 +153,15 @@ public class JsonDataPath extends FsTextDataPath {
 
 
   public JsonDataPath setStructure(JsonStructure jsonStructure) {
-    Variable variable = Variable.create(JsonATTRIBUTE.STRUCTURE, Origin.RUNTIME).setPlainValue(jsonStructure);
-    this.addVariable(variable);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(JsonATTRIBUTE.STRUCTURE, Origin.RUNTIME).setPlainValue(jsonStructure);
+    this.addAttribute(attribute);
     return this;
   }
 
   public JsonStructure getStructure() {
 
     try {
-      return (JsonStructure) this.getVariable(JsonATTRIBUTE.STRUCTURE).getValueOrDefault();
+      return (JsonStructure) this.getAttribute(JsonATTRIBUTE.STRUCTURE).getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
       throw new RuntimeException("Internal Error: Structure variable was not found. It should not happen");
     }
@@ -167,19 +169,19 @@ public class JsonDataPath extends FsTextDataPath {
   }
 
   @Override
-  public JsonDataPath addVariable(String key, Object value) {
+  public JsonDataPath addAttribute(String key, Object value) {
 
     JsonATTRIBUTE attribute;
     try {
       attribute = Casts.cast(key, JsonATTRIBUTE.class);
     } catch (Exception e) {
-      super.addVariable(key, value);
+      super.addAttribute(key, value);
       return this;
     }
 
     try {
-      Variable variable = getConnection().getTabular().createVariable(attribute, value);
-      this.addVariable(variable);
+      com.tabulify.conf.Attribute variable = getConnection().getTabular().createAttribute(attribute, value);
+      this.addAttribute(variable);
       return this;
     } catch (Exception e) {
       throw new RuntimeException("An error has occurred while creating the variable (" + attribute + ") with the value (" + value + ") for the resource (" + this + ")", e);

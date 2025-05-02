@@ -8,13 +8,13 @@ import com.tabulify.spi.DataSystem;
 import com.tabulify.spi.ProcessingEngine;
 import com.tabulify.spi.ResourcePath;
 import net.bytle.exception.CastException;
+import com.tabulify.conf.Attribute;
 import net.bytle.type.Casts;
 import net.bytle.type.MediaType;
-import net.bytle.type.Variable;
 
 public class NoOpConnection extends Connection {
 
-  public NoOpConnection(Tabular tabular, Variable name, Variable uri) {
+  public NoOpConnection(Tabular tabular, Attribute name, Attribute uri) {
 
     super(tabular, name, uri);
 

@@ -1,8 +1,8 @@
 package com.tabulify.csv;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-public enum CsvDataPathAttribute implements Attribute {
+public enum CsvDataPathAttribute implements AttributeEnum {
 
   /**
    * The location (id) of the header row in the file (one being the first line)

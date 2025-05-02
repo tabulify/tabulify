@@ -1,8 +1,8 @@
 package com.tabulify.flow.step;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
-public enum DropFunctionArgument implements Attribute {
+public enum DropFunctionArgument implements AttributeEnum {
   WITH_FORCE("Drop with force",Boolean.class,false);
 
   private final String desc;

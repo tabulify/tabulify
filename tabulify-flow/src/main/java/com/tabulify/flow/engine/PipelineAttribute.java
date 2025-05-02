@@ -1,10 +1,10 @@
 package com.tabulify.flow.engine;
 
-import net.bytle.type.Attribute;
+import com.tabulify.conf.AttributeEnum;
 
 import java.util.List;
 
-public enum PipelineAttribute implements Attribute {
+public enum PipelineAttribute implements AttributeEnum {
 
   LOGICAL_NAME("The logical Name", String.class),
   PIPELINE( "The Pipeline attribute", List.class);

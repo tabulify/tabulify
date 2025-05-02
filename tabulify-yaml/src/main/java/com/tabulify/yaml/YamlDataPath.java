@@ -1,5 +1,6 @@
 package com.tabulify.yaml;
 
+import com.tabulify.conf.Origin;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.textfile.FsTextDataPath;
 import com.tabulify.fs.textfile.FsTextDataPathAttributes;
@@ -24,7 +25,7 @@ public class YamlDataPath extends FsTextDataPath {
 
   public YamlStructure getStructure() {
     try {
-      return (YamlStructure) this.getVariable(YamDataPathAttribute.STRUCTURE).getValueOrDefault();
+      return (YamlStructure) this.getAttribute(YamDataPathAttribute.STRUCTURE).getValueOrDefault();
     } catch (NoValueException | NoVariableException e) {
       throw new RuntimeException("Internal Error: Structure variable was not found. It should not happen");
     }
@@ -32,7 +33,7 @@ public class YamlDataPath extends FsTextDataPath {
 
   public YamlStyle getOutputStyle() {
     try {
-      return (YamlStyle) this.getVariable(YamDataPathAttribute.OUTPUT_STYLE).getValueOrDefault();
+      return (YamlStyle) this.getAttribute(YamDataPathAttribute.OUTPUT_STYLE).getValueOrDefault();
     } catch (NoValueException | NoVariableException e) {
       throw new RuntimeException("Internal Error: output style variable was not found. It should not happen");
     }
@@ -54,7 +55,7 @@ public class YamlDataPath extends FsTextDataPath {
      * Change the default value
      */
     try {
-      this.getVariable(FsTextDataPathAttributes.COLUMN_NAME).setPlainValue(YAML_DEFAULT_HEADER_NAME);
+      this.getAttribute(FsTextDataPathAttributes.COLUMN_NAME).setPlainValue(YAML_DEFAULT_HEADER_NAME);
     } catch (NoVariableException e) {
       throw new RuntimeException("Internal Error: COLUMN_NAME variable was not found. It should not happen");
     }
@@ -90,28 +91,28 @@ public class YamlDataPath extends FsTextDataPath {
   }
 
   public YamlDataPath setStructure(YamlStructure yamlStructure) {
-    Variable variable = Variable.create(YamDataPathAttribute.STRUCTURE, Origin.RUNTIME).setPlainValue(yamlStructure);
-    this.addVariable(variable);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(YamDataPathAttribute.STRUCTURE, com.tabulify.conf.Origin.RUNTIME).setPlainValue(yamlStructure);
+    this.addAttribute(attribute);
     return this;
   }
 
 
   @Override
-  public YamlDataPath addVariable(String key, Object value) {
+  public YamlDataPath addAttribute(String key, Object value) {
 
 
     YamDataPathAttribute attribute;
     try {
       attribute = Casts.cast(key, YamDataPathAttribute.class);
     } catch (Exception e) {
-      super.addVariable(key, value);
+      super.addAttribute(key, value);
       return this;
     }
 
-    Variable variable;
+    com.tabulify.conf.Attribute variable;
     try {
-      variable = this.getConnection().getTabular().createVariable(attribute, value);
-      this.addVariable(variable);
+      variable = this.getConnection().getTabular().createAttribute(attribute, value);
+      this.addAttribute(variable);
       return this;
     } catch (Exception e) {
       throw new RuntimeException("The variable (" + attribute + ") with the value (" + value + ") for the resource (" + this + ") returns an error", e);
@@ -120,8 +121,8 @@ public class YamlDataPath extends FsTextDataPath {
   }
 
   public YamlDataPath setOutputStyle(YamlStyle yamlStyle) {
-    Variable variable = Variable.create(YamDataPathAttribute.OUTPUT_STYLE, Origin.RUNTIME).setPlainValue(yamlStyle);
-    this.addVariable(variable);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(YamDataPathAttribute.OUTPUT_STYLE, Origin.RUNTIME).setPlainValue(yamlStyle);
+    this.addAttribute(attribute);
     return this;
   }
 

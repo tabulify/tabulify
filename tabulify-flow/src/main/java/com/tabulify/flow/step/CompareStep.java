@@ -144,9 +144,9 @@ public class CompareStep extends TargetFilterStepAbs {
               FlowLog.LOGGER.info("Attributes Comparison started between the source (" + source + ") and the target (" + target + ")");
               comp =
                 DataPathDataComparison.create(source
-                      .toVariablesDataPath(),
+                      .toAttributesDataPath(),
                     target
-                      .toVariablesDataPath())
+                      .toAttributesDataPath())
                   .setUniqueColumns(AttributeProperties.ATTRIBUTE.toString())
                   .compareData();
               break;

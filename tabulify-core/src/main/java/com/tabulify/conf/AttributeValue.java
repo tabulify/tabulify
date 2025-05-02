@@ -1,4 +1,4 @@
-package net.bytle.type;
+package com.tabulify.conf;
 
 /**
  * An interface that represents an enum value (not a key)

@@ -94,7 +94,7 @@ public class ListCollector extends FilterStepAbs implements Collector<DataPath, 
     List<Object> row = new ArrayList<>();
     for (String attribute : attributes) {
       try {
-        row.add(dp.getVariable(attribute).getValueOrDefault());
+        row.add(dp.getAttribute(attribute).getValueOrDefault());
       } catch (NoVariableException | NoValueException e) {
         // ok
         row.add(null);

@@ -5,13 +5,13 @@ import com.tabulify.jdbc.SqlConnection;
 import com.tabulify.jdbc.SqlConnectionMetadata;
 import com.tabulify.jdbc.SqlDataSystem;
 import com.tabulify.model.SqlDataType;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 import java.sql.Types;
 
 public class HiveConnection extends SqlConnection {
 
-  public HiveConnection(Tabular tabular, Variable name, Variable url) {
+  public HiveConnection(Tabular tabular, Attribute name, Attribute url) {
     super(tabular, name, url);
   }
 

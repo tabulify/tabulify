@@ -3,7 +3,7 @@ package com.tabulify.spi;
 
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -133,14 +133,14 @@ public abstract class ConnectionProvider {
    * @throws SecurityException If a security manager is installed, and it denies an unspecified
    *                           permission.
    */
-  public abstract Connection createConnection(Tabular tabular, Variable name, Variable uri);
+  public abstract Connection createConnection(Tabular tabular, Attribute name, Attribute uri);
 
   /**
    *
    * @param uri the uri variable
    * @return If the data store extension accept this url
    */
-  public abstract boolean accept(Variable uri);
+  public abstract boolean accept(Attribute uri);
 
 
 }

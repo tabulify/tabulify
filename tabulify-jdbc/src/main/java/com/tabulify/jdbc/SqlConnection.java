@@ -1,6 +1,7 @@
 package com.tabulify.jdbc;
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Attribute;
 import com.tabulify.connection.ConnectionAttValueBooleanDataType;
 import com.tabulify.connection.ConnectionAttValueTimeDataType;
 import com.tabulify.connection.ConnectionAttributeBase;
@@ -46,25 +47,25 @@ public class SqlConnection extends NoOpConnection {
 
 
   @Override
-  public SqlConnection addVariable(String name, Object value) {
+  public SqlConnection addAttribute(String name, Object value) {
 
     SqlConnectionAttribute connectionAttribute;
     try {
       connectionAttribute = Casts.cast(name, SqlConnectionAttribute.class);
     } catch (Exception e) {
-      super.addVariable(name, value);
+      super.addAttribute(name, value);
       return this;
     }
     if (connectionAttribute.needsConnection()) {
       throw new RuntimeException("The connection attribute (" + connectionAttribute + ") cannot be overwritten as it's a derived attribute");
     }
-    Variable variable;
+    com.tabulify.conf.Attribute attribute;
     try {
-      variable = getTabular().createVariable(connectionAttribute, value);
+      attribute = getTabular().createAttribute(connectionAttribute, value);
     } catch (Exception e) {
       throw new RuntimeException("An error has occurred while creating the connection variable (" + connectionAttribute + ") with the value (" + value + ") for the connection (" + this + "). Error: " + e.getMessage(), e);
     }
-    super.addVariable(variable);
+    super.addAttribute(attribute);
     return this;
 
 
@@ -104,7 +105,7 @@ public class SqlConnection extends NoOpConnection {
   Map<Integer, SqlDataType> driverDataType = new HashMap<>();
 
 
-  public SqlConnection(Tabular tabular, Variable name, Variable url) {
+  public SqlConnection(Tabular tabular, com.tabulify.conf.Attribute name, com.tabulify.conf.Attribute url) {
     super(tabular, name, url);
 
     this.initVariableWhereConnectionIsNotNeeded();
@@ -161,8 +162,8 @@ public class SqlConnection extends NoOpConnection {
           break;
       }
       try {
-        Variable variable = this.getTabular().createVariable(connectionAttribute, value);
-        this.addVariable(variable);
+        Attribute attribute = this.getTabular().createAttribute(connectionAttribute, value);
+        this.addAttribute(attribute);
       } catch (Exception e) {
         // should not happen as there is no vault encryption
         throw new RuntimeException(e);
@@ -173,19 +174,19 @@ public class SqlConnection extends NoOpConnection {
 
   /**
    * This is a JDBC connection parameter
-   * It should be threated as {@link #addVariable(String, Object)}
+   * It should be threated as {@link #addAttribute(String, Object)}
    *
    * @param jdbcDriver - the driver
    * @return the connection for chaining
    */
   public SqlConnection setDriver(String jdbcDriver) {
-    super.addVariable(ConnectionAttributeBase.JDBC_DRIVER, jdbcDriver);
+    super.addAttribute(ConnectionAttributeBase.JDBC_DRIVER, jdbcDriver);
     return this;
   }
 
 
   public SqlConnection setPostConnectionStatement(String connectionScriptValue) {
-    super.addVariable(SqlConnectionAttribute.CONNECTION_INIT_SCRIPT, connectionScriptValue);
+    super.addAttribute(SqlConnectionAttribute.CONNECTION_INIT_SCRIPT, connectionScriptValue);
     return this;
   }
 
@@ -193,7 +194,7 @@ public class SqlConnection extends NoOpConnection {
   public String getDriver() {
 
     try {
-      return super.getVariable(ConnectionAttributeBase.JDBC_DRIVER).getValueOrDefault().toString();
+      return super.getAttribute(ConnectionAttributeBase.JDBC_DRIVER).getValueOrDefault().toString();
     } catch (NoValueException e) {
       return "";
     }
@@ -203,7 +204,7 @@ public class SqlConnection extends NoOpConnection {
   public String getPostConnectionStatement() throws NotFoundException {
 
     try {
-      return (String) super.getVariable(SqlConnectionAttribute.CONNECTION_INIT_SCRIPT).getValueOrDefault();
+      return (String) super.getAttribute(SqlConnectionAttribute.CONNECTION_INIT_SCRIPT).getValueOrDefault();
     } catch (NoValueException e) {
       throw new NotFoundException();
     }
@@ -384,7 +385,7 @@ public class SqlConnection extends NoOpConnection {
     java.sql.Connection connection;
 
     Properties connectionProperties = this.getDefaultConnectionProperties();
-    connectionProperties.putAll(Maps.toProperties(this.getVariablesAsKeyValueMap()));
+    connectionProperties.putAll(Maps.toProperties(this.getNativeDriverAttributes()));
     SqlLog.LOGGER_DB_JDBC.info("Trying to connect to the connection (" + this.getUriAsVariable() + ")");
     try {
 

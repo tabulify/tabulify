@@ -210,7 +210,7 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
          */
         for (DataPathAttribute envVariablesDataPathAttribute : dataPathAttributesAddedAsEnv) {
           try {
-            envVariables.put(Key.toLongOptionName(envVariablesDataPathAttribute), source.getVariable(envVariablesDataPathAttribute));
+            envVariables.put(Key.toLongOptionName(envVariablesDataPathAttribute), source.getAttribute(envVariablesDataPathAttribute));
           } catch (NoVariableException ex) {
             // ok
           }
@@ -294,7 +294,7 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
             if (templateDataPath != null) {
               for (DataPathAttribute envVariablesDataPathAttribute : envVariablesDataPathAttributes) {
                 try {
-                  envVariables.put(TEMPLATE_PREFIX + KeyNormalizer.create(envVariablesDataPathAttribute).toCliLongOptionName(), templateDataPath.getVariable(envVariablesDataPathAttribute));
+                  envVariables.put(TEMPLATE_PREFIX + KeyNormalizer.create(envVariablesDataPathAttribute).toCliLongOptionName(), templateDataPath.getAttribute(envVariablesDataPathAttribute));
                 } catch (NoVariableException ex) {
                   // ok
                 }
@@ -427,7 +427,7 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
         if (templateOriginDataPath != null) {
           for (DataPathAttribute envVariablesDataPathAttribute : TemplateStep.this.dataPathAttributesAddedAsEnv) {
             try {
-              envVariables.put("template-" + Key.toLongOptionName(envVariablesDataPathAttribute), templateOriginDataPath.getVariable(envVariablesDataPathAttribute).getValueOrDefault());
+              envVariables.put("template-" + Key.toLongOptionName(envVariablesDataPathAttribute), templateOriginDataPath.getAttribute(envVariablesDataPathAttribute).getValueOrDefault());
             } catch (NoVariableException | NoValueException ex) {
               // ok
             }
@@ -492,7 +492,7 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
       if (outputLogicalOutput != null) {
         for (DataPathAttribute e : envVariablesDataPathAttributes) {
           try {
-            envVariables.put(TEMPLATE_PREFIX + Key.toLongOptionName(e), templateDataPath.getVariable(e).getValueOrDefault());
+            envVariables.put(TEMPLATE_PREFIX + Key.toLongOptionName(e), templateDataPath.getAttribute(e).getValueOrDefault());
           } catch (NoVariableException | NoValueException ex) {
             // ok
           }

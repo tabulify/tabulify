@@ -1,6 +1,6 @@
 package com.tabulify.connection;
 
-import net.bytle.type.AttributeValue;
+import com.tabulify.conf.AttributeValue;
 
 public enum ConnectionOrigin implements AttributeValue {
 

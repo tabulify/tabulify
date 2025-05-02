@@ -40,7 +40,7 @@ public class CastStep extends FilterStepAbs implements Function<DataPath, DataPa
         FsTextDataPath casted = FsTextDataPath.create(fsDataPath.getConnection(), fsDataPath.getNioPath());
         for (FsTextDataPathAttributes attribute : FsTextDataPathAttributes.values()) {
           try {
-            casted.addVariable(dataPath.getVariable(attribute));
+            casted.addAttribute(dataPath.getAttribute(attribute));
           } catch (NoVariableException e) {
             // not present
           }

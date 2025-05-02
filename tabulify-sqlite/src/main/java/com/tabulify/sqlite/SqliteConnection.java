@@ -9,7 +9,7 @@ import net.bytle.exception.CastException;
 import net.bytle.fs.Fs;
 import net.bytle.type.Casts;
 import net.bytle.type.MediaType;
-import net.bytle.type.Variable;
+import com.tabulify.conf.Attribute;
 import net.bytle.type.time.Date;
 import net.bytle.type.time.Time;
 import net.bytle.type.time.Timestamp;
@@ -28,7 +28,7 @@ public class SqliteConnection extends SqlConnection {
   private SqliteDataSystem sqliteDataSystem;
   private SqliteConnectionMetadata sqliteFeatures;
 
-  public SqliteConnection(Tabular tabular, Variable name, Variable url) {
+  public SqliteConnection(Tabular tabular, Attribute name, Attribute url) {
 
     super(tabular, name, url);
 

@@ -1,7 +1,10 @@
-package net.bytle.type;
+package com.tabulify.conf;
 
 import net.bytle.exception.CastException;
 import net.bytle.exception.NoValueException;
+import net.bytle.type.Casts;
+import net.bytle.type.KeyNormalizer;
+import net.bytle.type.Strings;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -10,12 +13,12 @@ import java.util.function.Supplier;
  * A super set of a key pair value
  * adding functionality such:
  * * as conf/secret via {@link #setCipherValue(String)} and {@link #setPlainValue(Object)} (Object)}
- * * key case independence (via {@link Attribute} that uses a {@link KeyNormalizer})
+ * * key case independence (via {@link AttributeEnum} that uses a {@link KeyNormalizer})
  */
-public class Variable implements Comparable<Variable> {
+public class Attribute implements Comparable<Attribute> {
 
 
-  private Attribute attribute;
+  private AttributeEnum attributeEnum;
 
   /**
    * Origin of the value
@@ -39,9 +42,9 @@ public class Variable implements Comparable<Variable> {
    */
   private Supplier<?> valueProvider;
 
-  private Variable(Attribute attribute, Origin origin) {
+  private Attribute(AttributeEnum attributeEnum, Origin origin) {
 
-    this.attribute = attribute;
+    this.attributeEnum = attributeEnum;
     if (origin == null) {
       throw new IllegalArgumentException("The origin of the variable (" + this + ") was null, it should not");
     }
@@ -50,7 +53,7 @@ public class Variable implements Comparable<Variable> {
 
   }
 
-  public static Variable create(String name, Origin origin) {
+  public static Attribute create(String name, Origin origin) {
     return createWithClass(name, origin, String.class);
   }
 
@@ -59,7 +62,7 @@ public class Variable implements Comparable<Variable> {
    * Utility class of {@link #createWithClassAndDefault(String, Origin, Class, Object)}
    * where the default value is null
    */
-  public static Variable createWithClass(String name, Origin origin, Class<?> clazz) {
+  public static Attribute createWithClass(String name, Origin origin, Class<?> clazz) {
     return createWithClassAndDefault(name, origin, clazz, null);
   }
 
@@ -70,10 +73,10 @@ public class Variable implements Comparable<Variable> {
    * * dynamic variable such as the backref reference of a regexp $1, ...
    * So we need to be able to create a variable by name
    */
-  public static Variable createWithClassAndDefault(String name, Origin origin, Class<?> clazz, Object defaultValue) {
+  public static Attribute createWithClassAndDefault(String name, Origin origin, Class<?> clazz, Object defaultValue) {
 
 
-    Attribute attributeFromName = new Attribute() {
+    AttributeEnum attributeFromName = new AttributeEnum() {
 
 
       @Override
@@ -101,12 +104,12 @@ public class Variable implements Comparable<Variable> {
 
     };
 
-    return new Variable(attributeFromName, origin);
+    return new Attribute(attributeFromName, origin);
   }
 
-  public static Variable create(Attribute attribute, Origin origin) {
+  public static Attribute create(AttributeEnum attribute, Origin origin) {
 
-    return new Variable(attribute, origin);
+    return new Attribute(attribute, origin);
   }
 
 
@@ -120,13 +123,13 @@ public class Variable implements Comparable<Variable> {
   }
 
   /**
-   * @return the value to be used in the application in clear and cast as specified by the {@link Attribute#getValueClazz()}
+   * @return the value to be used in the application in clear and cast as specified by the {@link AttributeEnum#getValueClazz()}
    */
   public Object getValueOrDefault() throws NoValueException {
 
     Object valueOrDefaultNonCasted = this.getValueOrDefaultNonCasted();
 
-    Class<?> valueClazz = this.attribute.getValueClazz();
+    Class<?> valueClazz = this.attributeEnum.getValueClazz();
 
     try {
       return Casts.cast(valueOrDefaultNonCasted, valueClazz);
@@ -146,7 +149,7 @@ public class Variable implements Comparable<Variable> {
 
     } catch (NoValueException e) {
 
-      Object value = this.attribute.getDefaultValue();
+      Object value = this.attributeEnum.getDefaultValue();
       if (value != null) {
         return value;
       }
@@ -158,16 +161,16 @@ public class Variable implements Comparable<Variable> {
 
 
   @SuppressWarnings("unused")
-  public Variable setPlainValue(Object value) {
-    Class<?> valueClazz = this.attribute.getValueClazz();
+  public Attribute setPlainValue(Object value) {
+    Class<?> valueClazz = this.attributeEnum.getValueClazz();
     if (valueClazz == null) {
-      throw new ClassCastException("The class of the attribute " + this.attribute + " should not be null");
+      throw new ClassCastException("The class of the attribute " + this.attributeEnum + " should not be null");
     }
     try {
       this.plainValue = Casts.cast(value, valueClazz);
     } catch (CastException e) {
       // It's not a secret as it's the original value
-      throw new ClassCastException("The value " + value + " of " + this.getAttribute() + " is not a " + valueClazz);
+      throw new ClassCastException("The value " + value + " of " + this.getAttributeMetadata() + " is not a " + valueClazz);
     }
     return this;
   }
@@ -177,7 +180,7 @@ public class Variable implements Comparable<Variable> {
     /**
      * No clear value in the log
      */
-    return this.attribute.toString() + " = " + Strings.createFromObjectNullSafe(this.cipherValue);
+    return this.attributeEnum.toString() + " = " + Strings.createFromObjectNullSafe(this.cipherValue);
   }
 
 
@@ -185,16 +188,16 @@ public class Variable implements Comparable<Variable> {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    return this.attribute.equals(((Variable) o).attribute);
+    return this.attributeEnum.equals(((Attribute) o).attributeEnum);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(this.attribute.hashCode());
+    return Objects.hash(this.attributeEnum.hashCode());
   }
 
-  public Attribute getAttribute() {
-    return this.attribute;
+  public AttributeEnum getAttributeMetadata() {
+    return this.attributeEnum;
   }
 
   /**
@@ -256,7 +259,7 @@ public class Variable implements Comparable<Variable> {
    *                      such as with external vault)
    * @return the variable
    */
-  public Variable setValueProvider(Supplier<?> valueProvider) {
+  public Attribute setValueProvider(Supplier<?> valueProvider) {
     this.valueProvider = valueProvider;
     return this;
   }
@@ -269,17 +272,17 @@ public class Variable implements Comparable<Variable> {
   }
 
 
-  public void setAttribute(Attribute attribute) {
-    this.attribute = attribute;
+  public void setAttributeMetadata(AttributeEnum attributeEnum) {
+    this.attributeEnum = attributeEnum;
   }
 
 
   @Override
-  public int compareTo(Variable o) {
-    return this.attribute.toString().compareTo(o.attribute.toString());
+  public int compareTo(Attribute o) {
+    return this.attributeEnum.toString().compareTo(o.attributeEnum.toString());
   }
 
-  public Variable setCipherValue(String string) {
+  public Attribute setCipherValue(String string) {
     this.cipherValue = string;
     return this;
   }
