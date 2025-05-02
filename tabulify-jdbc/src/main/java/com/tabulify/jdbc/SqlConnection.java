@@ -11,7 +11,10 @@ import com.tabulify.spi.DataPath;
 import com.tabulify.spi.ProcessingEngine;
 import net.bytle.exception.*;
 import net.bytle.regexp.Glob;
-import net.bytle.type.*;
+import net.bytle.type.Booleans;
+import net.bytle.type.Casts;
+import net.bytle.type.Maps;
+import net.bytle.type.MediaType;
 import net.bytle.type.time.Date;
 import net.bytle.type.time.Time;
 import net.bytle.type.time.Timestamp;
@@ -180,21 +183,16 @@ public class SqlConnection extends NoOpConnection {
    * @return the connection for chaining
    */
   public SqlConnection setDriver(String jdbcDriver) {
-    super.addAttribute(ConnectionAttributeBase.JDBC_DRIVER, jdbcDriver);
+    super.addAttribute(ConnectionAttributeBase.DRIVER, jdbcDriver);
     return this;
   }
 
-
-  public SqlConnection setPostConnectionStatement(String connectionScriptValue) {
-    super.addAttribute(SqlConnectionAttribute.CONNECTION_INIT_SCRIPT, connectionScriptValue);
-    return this;
-  }
 
 
   public String getDriver() {
 
     try {
-      return super.getAttribute(ConnectionAttributeBase.JDBC_DRIVER).getValueOrDefault().toString();
+      return super.getAttribute(ConnectionAttributeBase.DRIVER).getValueOrDefault().toString();
     } catch (NoValueException e) {
       return "";
     }
@@ -611,21 +609,6 @@ public class SqlConnection extends NoOpConnection {
 
   }
 
-  /**
-   * Return an object to be set in a prepared statement (for instance)
-   * Example: if you want to load a double in an Oracle BINARY_DOUBLE, you need to cast it first as a
-   * oracle.sql.BINARY_DOUBLE
-   *
-   * @param targetColumnType the target column type
-   * @param sourceObject     the java object to be loaded
-   * @return the object to load into the target database
-   */
-  public Object getLoadObject(int targetColumnType, Object sourceObject) {
-
-    return sourceObject;
-
-  }
-
 
   @Override
   public ProcessingEngine getProcessingEngine() {
@@ -660,7 +643,6 @@ public class SqlConnection extends NoOpConnection {
   public SqlDataPath getSqlSchemaDataPath(String catalog, String schema) {
     return createSqlDataPath(catalog, schema, null, SqlDataPathType.SCHEMA);
   }
-
 
   /**
    * Return a java sql object to be set in a prepared statement (for instance)
@@ -1034,6 +1016,7 @@ public class SqlConnection extends NoOpConnection {
    * @param catalog the catalog name
    * @return a catalog object path
    */
+  @SuppressWarnings("unused")
   public SqlDataPath getSqlCatalogDataPath(String catalog) {
     return createSqlDataPath(catalog, null, null, SqlDataPathType.CATALOG);
   }

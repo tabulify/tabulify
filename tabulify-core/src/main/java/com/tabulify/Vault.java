@@ -8,7 +8,7 @@ import net.bytle.crypto.Protector;
 import net.bytle.exception.CastException;
 import net.bytle.template.TextTemplate;
 import net.bytle.template.TextTemplateEngine;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
 
 import java.util.Map;
 
@@ -171,11 +171,14 @@ public class Vault {
         return attribute;
       }
 
+
       if (!(value instanceof String)) {
         return attribute.setPlainValue(value);
       }
 
       String valueString = value.toString();
+      attribute.setRawValue(valueString);
+
       if (valueString.startsWith(Vault.VAULT_PREFIX)) {
 
         /**
@@ -186,9 +189,8 @@ public class Vault {
           throw new CastException("No passphrase was given, we can't decrypt the vault value (" + valueToDecrypt + ")");
         }
         try {
-          return attribute
-            .setCipherValue(valueString)
-            .setPlainValue(protector.decrypt(valueToDecrypt));
+          String decrypt = protector.decrypt(valueToDecrypt);
+          return attribute.setPlainValue(decrypt);
         } catch (Exception exception) {
           String message = "We were unable to decrypt the value with the given passphrase. Value:" + valueToDecrypt;
           DbLoggers.LOGGER_DB_ENGINE.severe(message);
@@ -213,9 +215,7 @@ public class Vault {
       String clearValue = textTemplate
         .applyVariables(templatingEnvs)
         .getResult();
-      return attribute
-        .setCipherValue(valueString)
-        .setPlainValue(clearValue);
+      return attribute.setPlainValue(clearValue);
     }
 
     public VariableBuilder setName(String name) {

@@ -112,7 +112,7 @@ public class TabliConnectionUpsert {
         .setUser(userValue)
         .setPassword(pwdValue);
       if (driverValue != null) {
-        connection.addAttribute(ConnectionAttributeBase.JDBC_DRIVER, driverValue);
+        connection.addAttribute(ConnectionAttributeBase.DRIVER, driverValue);
       }
       connectionVault.flush();
     }

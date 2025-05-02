@@ -8,7 +8,9 @@ import net.bytle.exception.CastException;
 import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
 import net.bytle.java.Javas;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.Enums;
+import net.bytle.type.KeyNormalizer;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
@@ -43,7 +45,7 @@ public class TabularInit {
     /**
      * Conf Manager
      */
-    com.tabulify.conf.Attribute confAttribute = confVault.getVariable(attribute);
+    com.tabulify.conf.Attribute confAttribute = confVault.getAttribute(attribute);
     if (confAttribute != null) {
       String confEnvValue = confAttribute.getValueOrDefaultAsStringNotNull();
       try {
@@ -114,7 +116,7 @@ public class TabularInit {
     /**
      * Conf Manager
      */
-    com.tabulify.conf.Attribute confHomeAttribute = confVault.getVariable(attribute);
+    com.tabulify.conf.Attribute confHomeAttribute = confVault.getAttribute(attribute);
     if (confHomeAttribute != null) {
       String confEnvValue = confHomeAttribute.getValueOrDefaultAsStringNotNull();
       variables.put((TabularAttribute) confHomeAttribute.getAttributeMetadata(), confHomeAttribute);

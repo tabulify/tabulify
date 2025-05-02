@@ -1,6 +1,6 @@
 package com.tabulify;
 
-import com.tabulify.conf.AttributeEnum;
+import com.tabulify.conf.AttributeParameter;
 
 import java.nio.file.Path;
 
@@ -8,7 +8,7 @@ import java.nio.file.Path;
  * All static configuration
  * <p>
  */
-public enum TabularAttribute implements AttributeEnum {
+public enum TabularAttribute implements AttributeParameter {
 
 
   /**
@@ -20,7 +20,7 @@ public enum TabularAttribute implements AttributeEnum {
   CONF("The path to the conf file", true, null, Path.class),
   PROJECT_HOME("The project home path", false, null, Path.class),
   PASSPHRASE("The passphrase", false, null, String.class),
-  LOG_LEVEL("The tabli log level", true, "info", String.class),
+  LOG_LEVEL("The log level", true, TabularLogLevel.INFO, TabularLogLevel.class),
   //
   // By default, the user home (trick to not show the user in the path)
   SQLITE_HOME("Sqlite home (Where to store the sqlite database)", false, null, String.class),
@@ -28,13 +28,13 @@ public enum TabularAttribute implements AttributeEnum {
 
 
   private final String description;
-  private final Boolean publik;
+  private final Boolean parameter;
   private final Class<?> valueClazz;
   private final Object value;
 
-  TabularAttribute(String description, boolean publik, Object defaultValue, Class<?> valueClazz) {
+  TabularAttribute(String description, boolean parameter, Object defaultValue, Class<?> valueClazz) {
     this.description = description;
-    this.publik = publik;
+    this.parameter = parameter;
     this.value = defaultValue;
     this.valueClazz = valueClazz;
   }
@@ -43,9 +43,9 @@ public enum TabularAttribute implements AttributeEnum {
   /**
    * @return if this variable can be seen by user
    */
-  @SuppressWarnings("unused")
-  boolean isPublic() {
-    return publik;
+  @Override
+  public boolean isParameter() {
+    return parameter;
   }
 
 

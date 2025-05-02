@@ -75,7 +75,7 @@ public class ConfVault {
     return new ConfVault(confPath, tabular.getVault(), tabular);
   }
 
-  public Attribute getVariable(TabularAttribute name) {
+  public Attribute getAttribute(TabularAttribute name) {
     return this.env.get(name);
   }
 
@@ -132,13 +132,13 @@ public class ConfVault {
         }
 
         switch (rootAttribute) {
-          case VARIABLES:
+          case GLOBAL:
 
             Map<String, String> localEnvs;
             try {
               localEnvs = Casts.castToSameMap(rootEntry.getValue(), String.class, String.class);
             } catch (CastException e) {
-              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfVaultRootAttribute.VARIABLES)), e);
+              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfVaultRootAttribute.GLOBAL)), e);
             }
             for (Map.Entry<String, String> localEnv : localEnvs.entrySet()) {
 
@@ -147,7 +147,10 @@ public class ConfVault {
               try {
                 tabularAttribute = Casts.cast(variableName, TabularAttribute.class);
               } catch (ClassCastException e) {
-                throw new CastException("The env name (" + variableName + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttribute.class), e);
+                throw new CastException("The attribute parameter (" + variableName + ") is not valid. We were expecting one of " + tabular.toPublicListOfParameters(TabularAttribute.class), e);
+              }
+              if (!tabularAttribute.isParameter()) {
+                throw new CastException("The attribute (" + variableName + ") is not a parameter and cannot be modified.");
               }
               Attribute attribute = vault.createAttribute(tabularAttribute, localEnv.getValue(), Origin.CONF);
               env.put(tabularAttribute, attribute);
@@ -165,7 +168,7 @@ public class ConfVault {
             }
             Attribute uri = null;
             Set<Attribute> attributeMap = new SetKeyIndependent<>();
-            Map<String,Attribute> driverAttributeMap = new HashMap<>();
+            Map<String, Attribute> driverAttributeMap = new HashMap<>();
             for (Map.Entry<String, Object> localConnection : localConnections.entrySet()) {
 
               String connectionName = localConnection.getKey();
@@ -180,7 +183,7 @@ public class ConfVault {
                   throw new CastException("The connection attribute (" + connectionAttributeAsString + ") is not valid. We were expecting one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(ConnectionAttributeBase.class), e);
                 }
                 // Driver is a special attribute that stores the third party attribute
-                if (connectionAttributeBase == ConnectionAttributeBase.DRIVER) {
+                if (connectionAttributeBase == ConnectionAttributeBase.NATIVE_ATTRIBUTES) {
 
                   Map<String, String> yamlDriverPropertiesMap = Casts.castToSameMap(confConnectionAttribute.getValue(), String.class, String.class);
                   for (Map.Entry<String, String> yamlDriverProperty : yamlDriverPropertiesMap.entrySet()) {
@@ -191,7 +194,7 @@ public class ConfVault {
                     } catch (Exception e) {
                       throw new RuntimeException("An error has occurred while reading the driver connection attribute " + nativeDriverPropertyName + " value for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
                     }
-                    driverAttributeMap.put(nativeDriverPropertyName,driverAttribute);
+                    driverAttributeMap.put(nativeDriverPropertyName, driverAttribute);
                   }
                   continue;
                 }
@@ -268,7 +271,7 @@ public class ConfVault {
       Yaml yaml = new Yaml(dumperOptions);
       Map<String, Object> confAsMap = new HashMap<>();
       confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.CONNECTIONS).toCase(outputCase), toConnectionMap());
-      confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.VARIABLES).toCase(outputCase), toVariables());
+      confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.GLOBAL).toCase(outputCase), toVariables());
       String yamlString = yaml.dump(confAsMap);
       // Write to file
       try (FileWriter writer = new FileWriter(targetPath.toFile())) {
@@ -320,7 +323,7 @@ public class ConfVault {
     if (attribute.isValueProvider()) {
       return;
     }
-    String originalValue = attribute.getCipherValue();
+    String originalValue = attribute.getRawValue();
     if (originalValue == null || originalValue.isEmpty()) {
       return;
     }
@@ -379,7 +382,7 @@ public class ConfVault {
       throw new CastException("Error: the variable name (" + key + " is not a valid variable name. We were expecting one of: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttribute.class));
     }
     Attribute attribute = env.remove(tabularAttribute);
-    return attribute.getCipherValue();
+    return attribute.getRawValue();
 
   }
 

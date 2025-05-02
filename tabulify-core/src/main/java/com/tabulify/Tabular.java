@@ -1,10 +1,6 @@
 package com.tabulify;
 
-import com.tabulify.conf.AttributeEnum;
-import com.tabulify.conf.ConfVault;
-import com.tabulify.conf.ConnectionVault;
-import com.tabulify.conf.Origin;
-import com.tabulify.conf.TabularEnvs;
+import com.tabulify.conf.*;
 import com.tabulify.connection.Connection;
 import com.tabulify.connection.ConnectionBuiltIn;
 import com.tabulify.connection.ConnectionHowTos;
@@ -19,7 +15,10 @@ import com.tabulify.uri.DataUri;
 import net.bytle.exception.*;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Glob;
-import net.bytle.type.*;
+import net.bytle.type.KeyNormalizer;
+import net.bytle.type.MapKeyIndependent;
+import net.bytle.type.MediaType;
+import net.bytle.type.Strings;
 
 import java.io.IOException;
 import java.net.URI;
@@ -660,7 +659,6 @@ public class Tabular implements AutoCloseable {
   }
 
 
-
   public Set<DataPath> select(Set<DataUri> dataSelectors, boolean isStrict, MediaType mediaType) {
 
     Set<DataPath> dataPathSet = new HashSet<>();
@@ -834,9 +832,6 @@ public class Tabular implements AutoCloseable {
   }
 
 
-
-
-
   public com.tabulify.conf.Attribute getAttribute(TabularAttribute attribute) {
     return this.attributes.get(attribute);
   }
@@ -910,6 +905,20 @@ public class Tabular implements AutoCloseable {
 
   public TabularEnvs getTabularEnvs() {
     return this.tabularEnvs;
+  }
+
+  public String toPublicListOfParameters(Class<? extends AttributeParameter> attributeEnumClass) {
+    if (!attributeEnumClass.isEnum()) {
+      throw new InternalException("An enum constant should be passed. " + attributeEnumClass.getSimpleName() + " is not an enum");
+    }
+    AttributeParameter[] attributes = attributeEnumClass.getEnumConstants();
+    if (attributes == null) {
+      return "";
+    }
+    return Arrays.stream(attributes)
+      .filter(AttributeParameter::isParameter)
+      .map(enumValue -> toPublicName(enumValue.toString()))
+      .collect(Collectors.joining(", "));
   }
 
 

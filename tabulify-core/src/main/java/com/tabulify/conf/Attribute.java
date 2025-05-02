@@ -6,13 +6,14 @@ import net.bytle.type.Casts;
 import net.bytle.type.KeyNormalizer;
 import net.bytle.type.Strings;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
  * A super set of a key pair value
  * adding functionality such:
- * * as conf/secret via {@link #setCipherValue(String)} and {@link #setPlainValue(Object)} (Object)}
+ * * as conf/secret via {@link #setRawValue(String)} and {@link #setPlainValue(Object)} (Object)}
  * * key case independence (via {@link AttributeEnum} that uses a {@link KeyNormalizer})
  */
 public class Attribute implements Comparable<Attribute> {
@@ -26,13 +27,16 @@ public class Attribute implements Comparable<Attribute> {
   private final Origin origin;
 
   /**
-   * A value to decipher (encrypted or env expression)
+   * The value as found in the text file / operating system
+   * so that we can:
+   * * recreate the text file
+   * * send this data to the log / console output (only if it's really needed)
+   * This value is returned as an empty string by {@link #getRawValue()} if it comes from Os and {@link #isOsSecret} is true
    */
-  private String cipherValue;
+  private String rawValue;
 
   /**
-   * A plain value (decrypted if needed).
-   * If this value was decrypted, the {@link #cipherValue} is not null
+   * A plain value (decrypted if needed and casted as {@link AttributeEnum#getValueClazz()})
    */
   private Object plainValue;
 
@@ -42,6 +46,8 @@ public class Attribute implements Comparable<Attribute> {
    */
   private Supplier<?> valueProvider;
 
+  private boolean isOsSecret = false;
+
   private Attribute(AttributeEnum attributeEnum, Origin origin) {
 
     this.attributeEnum = attributeEnum;
@@ -50,6 +56,16 @@ public class Attribute implements Comparable<Attribute> {
     }
     // origin is important for security reason, that's why it is in the constructor
     this.origin = origin;
+
+    if (this.origin == Origin.OS) {
+      String normalizedAttName = this.attributeEnum.toString().toLowerCase();
+      for (String secWord : Arrays.asList("secret", "key", "pwd", "password")) {
+        if (normalizedAttName.contains(secWord)) {
+          isOsSecret = true;
+          break;
+        }
+      }
+    }
 
   }
 
@@ -118,8 +134,11 @@ public class Attribute implements Comparable<Attribute> {
   }
 
 
-  public String getCipherValue() {
-    return this.cipherValue;
+  public String getRawValue() {
+    if (isOsSecret) {
+      return "";
+    }
+    return this.rawValue;
   }
 
   /**
@@ -180,7 +199,7 @@ public class Attribute implements Comparable<Attribute> {
     /**
      * No clear value in the log
      */
-    return this.attributeEnum.toString() + " = " + Strings.createFromObjectNullSafe(this.cipherValue);
+    return this.attributeEnum.toString() + " = " + Strings.createFromObjectNullSafe(this.rawValue);
   }
 
 
@@ -214,8 +233,8 @@ public class Attribute implements Comparable<Attribute> {
     if (this.plainValue != null) {
       return this.plainValue;
     }
-    if (this.cipherValue != null) {
-      return this.cipherValue;
+    if (this.rawValue != null) {
+      return this.rawValue;
     }
     if (this.valueProvider != null) {
       return this.valueProvider.get();
@@ -282,8 +301,9 @@ public class Attribute implements Comparable<Attribute> {
     return this.attributeEnum.toString().compareTo(o.attributeEnum.toString());
   }
 
-  public Attribute setCipherValue(String string) {
-    this.cipherValue = string;
+  public Attribute setRawValue(String string) {
+    this.rawValue = string;
     return this;
   }
+
 }

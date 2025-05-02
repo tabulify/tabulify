@@ -13,7 +13,8 @@ import net.bytle.exception.NoValueException;
 import net.bytle.fs.Fs;
 import net.bytle.log.Log;
 import net.bytle.regexp.Glob;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.SetKeyIndependent;
 import org.ini4j.Config;
 import org.ini4j.Ini;
 import org.ini4j.Wini;
@@ -128,7 +129,7 @@ public class ConnectionVault implements AutoCloseable {
           String valueToStore;
           if (attribute.getAttributeMetadata() == ConnectionAttributeBase.URI) {
             uriFound = true;
-            valueToStore = attribute.getCipherValue();
+            valueToStore = attribute.getRawValue();
             if (valueToStore == null) {
               try {
                 valueToStore = (String) attribute.getValueOrDefault();
@@ -137,7 +138,7 @@ public class ConnectionVault implements AutoCloseable {
               }
             }
           } else {
-            Object originalValue = attribute.getCipherValue();
+            Object originalValue = attribute.getRawValue();
             if (originalValue == null) {
               continue;
             }

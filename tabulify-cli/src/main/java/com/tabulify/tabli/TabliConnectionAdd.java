@@ -109,7 +109,7 @@ public class TabliConnectionAdd {
         connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, urlValue)
           .setUser(userValue)
           .setPassword(pwdValue)
-          .addAttribute(ConnectionAttributeBase.JDBC_DRIVER, driverValue);
+          .addAttribute(ConnectionAttributeBase.DRIVER, driverValue);
       }
       connectionVault
         .add(connection)
