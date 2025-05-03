@@ -3,7 +3,8 @@ package com.tabulify.tabli;
 import com.tabulify.Tabular;
 import com.tabulify.TabularAttributeEnum;
 import com.tabulify.TabularExecEnv;
-import com.tabulify.conf.ConnectionVault;
+import com.tabulify.TabularLogLevel;
+import com.tabulify.conf.ConfVault;
 import com.tabulify.conf.Manifest;
 import com.tabulify.conf.ManifestAttribute;
 import com.tabulify.connection.Connection;
@@ -16,7 +17,6 @@ import com.tabulify.transfer.*;
 import com.tabulify.uri.DataUri;
 import net.bytle.cli.*;
 import net.bytle.exception.*;
-import net.bytle.log.Log;
 import net.bytle.log.Logs;
 import net.bytle.regexp.Glob;
 import net.bytle.timer.Timer;
@@ -85,8 +85,10 @@ public class Tabli {
     rootCommand.addProperty(TabliWords.LOG_LEVEL_LONG_OPTION)
       .setShortName("-l")
       .setDescription("Set the log level")
+      .setEnvName("TABLI_LOG_LEVEL")
       .setValueName("error|warning|tip|info|fine")
-      .setDefaultValue("info");
+      .setDefaultValue("info")
+    ;
 
     rootCommand.addProperty(TabliWords.PASSPHRASE_PROPERTY)
       .setShortName("-pp")
@@ -185,11 +187,24 @@ public class Tabli {
       }
     }
 
+    TabularLogLevel logLevel = null;
+    String logLevelArg = cliParser.getString(LOG_LEVEL_LONG_OPTION);
+    if (logLevelArg != null) {
+      LOGGER_TABLI.info("The log level was set to " + logLevelArg);
+      try {
+        logLevel = Casts.cast(logLevelArg, TabularLogLevel.class);
+      } catch (CastException e) {
+        throw new RuntimeException("The value (" + logLevelArg + ") is not a valid logLevel. Valid value: " + Enums.toConstantAsStringCommaSeparated(TabularLogLevel.class), e);
+      }
+    }
+
+
     try (Tabular tabular = Tabular.tabularConfig()
       .setPassphrase(passphrase)
       .setProjectHome(projectHome)
       .setConf(confPath)
       .setExecEnv(execEnv)
+      .setLogLevel(logLevel)
       .build()
     ) {
 
@@ -202,8 +217,8 @@ public class Tabli {
        * Creation howto connection user vault if it does not exist
        */
       Path userConnectionVaultPath = tabular.getUserConfFilePath();
-      if(!Files.exists(userConnectionVaultPath)){
-        ConnectionVault.create(tabular,userConnectionVaultPath)
+      if (!Files.exists(userConnectionVaultPath)) {
+        ConfVault.createFromPath(userConnectionVaultPath, tabular)
           .loadHowtoConnections()
           .flush();
       }
@@ -253,41 +268,6 @@ public class Tabli {
           Tabli.exit(tabular, 0);
         }
 
-
-        String logLevel = cliParser.getString(LOG_LEVEL_LONG_OPTION).toLowerCase();
-        if (!cliParser.has(LOG_LEVEL_LONG_OPTION)) {
-          try {
-            logLevel = tabular.getAttribute(TabularAttributeEnum.LOG_LEVEL, String.class);
-          } catch (NoVariableException | NoValueException e) {
-            logLevel = "info";
-          } catch (CastException e) {
-            // a string should not give a cast error
-            throw IllegalArgumentExceptions.createFromException(e);
-          }
-        }
-        Level level;
-        switch (logLevel) {
-          case "error":
-            level = Level.SEVERE;
-            break;
-          case "warning":
-            level = Level.WARNING;
-            break;
-          case "tip":
-            level = Log.TIP;
-            break;
-          case "info":
-            level = Level.INFO;
-            break;
-          case "fine":
-            level = Level.FINE;
-            break;
-          default:
-            throw new IllegalArgumentException("The value (" + logLevel + ") is unknown for the property " + CliUsage.getPrintWord(rootCommand.getLocalWord(LOG_LEVEL_LONG_OPTION)));
-        }
-
-        Logs.setLevel(level);
-        LOGGER_TABLI.info("The log level was set to " + level);
 
         LOGGER_TABLI.info("The following arguments were received  (" + String.join(",", args) + ")");
         LOGGER_TABLI.info("The current file system path is " + Paths.get(".").toAbsolutePath());

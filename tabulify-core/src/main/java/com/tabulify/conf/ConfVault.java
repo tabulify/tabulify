@@ -9,6 +9,7 @@ import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.connection.ConnectionOrigin;
 import net.bytle.exception.CastException;
 import net.bytle.fs.Fs;
+import net.bytle.regexp.Glob;
 import net.bytle.type.*;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * A class that manages a configuration file
@@ -400,4 +402,22 @@ public class ConfVault {
   }
 
 
+  /**
+   * @param globName - a glob
+   * @return the deleted connection name
+   */
+  public Set<String> deleteConnection(String globName) {
+
+    Set<String> connectNamesToDelete = connections.keySet()
+      .stream()
+      .filter(connectionName -> Glob.createOf(globName).matches(connectionName))
+      .collect(Collectors.toSet());
+    for (String name : connectNamesToDelete) {
+      connections
+        .remove(name)
+        .close();
+    }
+    return connectNamesToDelete;
+
+  }
 }

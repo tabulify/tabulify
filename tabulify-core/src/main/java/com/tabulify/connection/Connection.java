@@ -187,7 +187,6 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * @param connection the origin connection
    * @return a new reference
    */
-  @SuppressWarnings("JavadocReference")
   public static Connection of(Connection connection) {
     return Connection.createConnectionFromProviderOrDefault(connection.getTabular(), connection.getNameAsAttribute(), connection.getUriAsVariable())
       .setAttributes(connection.getAttributes());
@@ -319,9 +318,9 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public Connection addAttribute(ConnectionAttributeEnum key, Object value) {
+  public Connection addAttribute(ConnectionAttributeEnum key, Object value, Origin origin) {
     try {
-      com.tabulify.conf.Attribute attribute = tabular.getVault().createAttribute(key, value, RUNTIME);
+      com.tabulify.conf.Attribute attribute = tabular.getVault().createAttribute(key, value, origin);
       this.addAttribute(attribute);
     } catch (Exception e) {
       throw new RuntimeException("Error while adding connection the property " + key + ". Error: " + e.getMessage(), e);

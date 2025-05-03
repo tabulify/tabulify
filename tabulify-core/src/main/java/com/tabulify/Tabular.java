@@ -15,6 +15,7 @@ import com.tabulify.uri.DataUri;
 import net.bytle.crypto.Protector;
 import net.bytle.exception.*;
 import net.bytle.fs.Fs;
+import net.bytle.log.Logs;
 import net.bytle.regexp.Glob;
 import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MapKeyIndependent;
@@ -58,6 +59,7 @@ public class Tabular implements AutoCloseable {
   private final TabularExecEnv executionEnv;
   private final Path projectHomePath;
   private final TabularEnvs tabularEnvs;
+  private final Protector protector;
 
   // The default connection added to a data URI if it does not have it.
   protected Connection defaultConnection;
@@ -91,7 +93,7 @@ public class Tabular implements AutoCloseable {
 
 
   /**
-   * We may not add derived generated variables.
+   * We may not add derived generated attributes.
    * so the key identifier is not a string
    */
   private final Map<TabularAttributeEnum, Attribute> attributes = new HashMap<>();
@@ -120,9 +122,10 @@ public class Tabular implements AutoCloseable {
      * Protector
      */
     String passphrase = TabularInit.determinePassphrase(tabularConfig.passphrase);
-    Protector protector = null;
     if (passphrase != null) {
       protector = Protector.create(passphrase);
+    } else {
+      this.protector = null;
     }
 
     /**
@@ -132,11 +135,16 @@ public class Tabular implements AutoCloseable {
      */
     tabularEnvs = new TabularEnvs(tabularConfig.templatingEnv, protector);
 
-
     /**
      * Vault
      */
     this.vault = Vault.create(protector, tabularEnvs);
+
+    /**
+     * Logs
+     */
+    TabularLogLevel logLevel = TabularInit.determineLogLevel(tabularConfig.logLevel, vault, tabularEnvs, attributes);
+    Logs.setLevel(logLevel.getLevel());
 
 
     /**
@@ -211,7 +219,7 @@ public class Tabular implements AutoCloseable {
      * After init
      */
     // Load connections
-    Path sqliteConnectionHome = TabularInit.determineSqliteHome(vault, tabularEnvs);
+    Path sqliteConnectionHome = TabularInit.determineSqliteHome(vault, tabularEnvs, attributes);
     ConnectionBuiltIn.loadBuiltInConnections(this, sqliteConnectionHome);
     if (tabularConfig.confPath != null) {
       throw new RuntimeException("Not yet implemented");
@@ -952,6 +960,10 @@ public class Tabular implements AutoCloseable {
       .collect(Collectors.joining(", "));
   }
 
+  public Protector getProtector() {
+    return this.protector;
+  }
+
 
   public static class TabularConfig {
     private Path homePath;
@@ -960,6 +972,7 @@ public class Tabular implements AutoCloseable {
     private Path confPath;
     private TabularExecEnv execEnv;
     private final Map<String, String> templatingEnv = new HashMap<>();
+    private TabularLogLevel logLevel;
 
     public TabularConfig setPassphrase(String passphrase) {
       this.passphrase = passphrase;
@@ -991,5 +1004,9 @@ public class Tabular implements AutoCloseable {
       return new Tabular(this);
     }
 
+    public TabularConfig setLogLevel(TabularLogLevel logLevel) {
+      this.logLevel = logLevel;
+      return this;
+    }
   }
 }

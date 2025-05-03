@@ -2,19 +2,24 @@ package com.tabulify.tabli;
 
 
 import com.tabulify.Tabular;
-import com.tabulify.conf.ConnectionVault;
+import com.tabulify.Vault;
+import com.tabulify.conf.ConfVault;
+import com.tabulify.conf.Origin;
 import com.tabulify.connection.Connection;
 import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.spi.DataPath;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
+import net.bytle.crypto.Protector;
 import net.bytle.log.Log;
 import net.bytle.log.Logs;
+import net.bytle.type.KeyNormalizer;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.tabulify.tabli.TabliWords.ATTRIBUTE_PROPERTY;
 
@@ -25,7 +30,7 @@ import static com.tabulify.tabli.TabliWords.ATTRIBUTE_PROPERTY;
 public class TabliConnectionAdd {
 
   protected static final String DRIVER_PROPERTY = "--driver";
-  protected static final String URL_ARGUMENT = "url";
+  protected static final String URI_ARGUMENT = "uri";
   protected static final String USER_PROPERTY = "--user";
   protected static final String PASSWORD_PROPERTY = "--password";
 
@@ -50,7 +55,7 @@ public class TabliConnectionAdd {
       .setDescription("the connection name")
       .setMandatory(true);
 
-    childCommand.addArg(URL_ARGUMENT)
+    childCommand.addArg(URI_ARGUMENT)
       .setDescription("The system connection string (a JDBC Url for a database or a file system URL)")
       .setMandatory(true);
 
@@ -77,7 +82,7 @@ public class TabliConnectionAdd {
 
 
     childCommand.getGroup("Connection Properties")
-      .addWordOf(URL_ARGUMENT)
+      .addWordOf(URI_ARGUMENT)
       .addWordOf(USER_PROPERTY)
       .addWordOf(PASSWORD_PROPERTY)
       .addWordOf(DRIVER_PROPERTY)
@@ -86,44 +91,52 @@ public class TabliConnectionAdd {
     // Args control
     CliParser cliParser = childCommand.parse();
     final String connectionName = cliParser.getString(CONNECTION_NAME);
-    final String urlValue = cliParser.getString(URL_ARGUMENT);
+    final String urlValue = cliParser.getString(URI_ARGUMENT);
     final String driverValue = cliParser.getString(DRIVER_PROPERTY);
     final String userValue = cliParser.getString(USER_PROPERTY);
-    final String pwdValue = cliParser.getString(PASSWORD_PROPERTY);
-
+    String pwdValue = cliParser.getString(PASSWORD_PROPERTY);
 
 
     // Main
     Path connectionVaultPath = tabular.getConfPath();
     Connection connection;
-    try (ConnectionVault connectionVault = ConnectionVault.create(tabular, connectionVaultPath)) {
+    ConfVault confVault = ConfVault.createFromPath(connectionVaultPath, tabular);
 
-      connection = connectionVault.getConnection(connectionName);
+    connection = confVault.getConnection(connectionName);
 
-      if (connection != null) {
+    if (connection != null) {
 
-        throw new RuntimeException("The connection (" + connectionName + ") exist already. It can't then be added (Connection vault location: " + connectionVaultPath + ")");
-
-      } else {
-
-        connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, urlValue)
-          .setUser(userValue)
-          .setPassword(pwdValue)
-          .addAttribute(ConnectionAttributeEnumBase.DRIVER, driverValue);
-      }
-      connectionVault
-        .add(connection)
-        .flush();
-      System.out.println("The connection (" + connectionName + ") was saved into the connection vault (" + connectionVaultPath + ")");
+      throw new RuntimeException("The connection (" + connectionName + ") exist already. It can't then be added (Connection vault location: " + connectionVaultPath + ")");
 
     }
+
+    connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, urlValue);
+    // origin must be conf, otherwise it will not be in the flush
+    Origin origin = Origin.CONF;
+    connection.addAttribute(ConnectionAttributeEnumBase.USER, userValue, origin);
+    Protector protector = tabular.getProtector();
+    if (protector != null && !pwdValue.startsWith(Vault.VAULT_PREFIX)) {
+      pwdValue = tabular.getVault().encrypt(pwdValue);
+    }
+    connection.addAttribute(ConnectionAttributeEnumBase.PASSWORD, pwdValue, origin);
+    connection.addAttribute(ConnectionAttributeEnumBase.DRIVER, driverValue, origin);
+
+    for (Map.Entry<String, String> property : cliParser.getProperties(ATTRIBUTE_PROPERTY).entrySet()) {
+      connection.addAttribute(KeyNormalizer.create(property.getKey()), property.getValue(), origin);
+    }
+
+    confVault
+      .addConnection(connection)
+      .flush();
+    System.out.println("The connection (" + connectionName + ") was saved into the connection vault (" + connectionVaultPath + ")");
+
 
     // Ping test ?
     try {
       connection.getDataSystem();
       LOGGER.info("Connection pinged");
     } catch (Exception e) {
-      String msg = "We were unable to make a connection to the datastore" + connectionName;
+      String msg = "We were unable to make a connection to the connection" + connectionName;
       if (!tabular.isStrict()) {
         LOGGER.warning(msg);
       } else {

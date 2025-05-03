@@ -3,6 +3,7 @@ package com.tabulify.tabli;
 
 import com.tabulify.Tabular;
 import com.tabulify.conf.ConnectionVault;
+import com.tabulify.conf.Origin;
 import com.tabulify.connection.Connection;
 import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.connection.ConnectionOrigin;
@@ -50,7 +51,7 @@ public class TabliConnectionUpsert {
       .setMandatory(true);
 
     childCommand.addProperty(URI_PROPERTY)
-      .setDescription("The connection uri (if the connection doesn't exist, this options is mandatory)")
+      .setDescription("The connection uri (if the connection doesn't exist, this option is mandatory)")
       .setMandatory(true);
 
     childCommand.addProperty(USER_PROPERTY)
@@ -112,7 +113,7 @@ public class TabliConnectionUpsert {
         .setUser(userValue)
         .setPassword(pwdValue);
       if (driverValue != null) {
-        connection.addAttribute(ConnectionAttributeEnumBase.DRIVER, driverValue);
+        connection.addAttribute(ConnectionAttributeEnumBase.DRIVER, driverValue, Origin.RUNTIME);
       }
       connectionVault.flush();
     }

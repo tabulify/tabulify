@@ -66,20 +66,6 @@ public class ConnectionVault implements AutoCloseable {
 
   }
 
-  /**
-   * @param tabular             - the tabular
-   * @param connectionVaultPath - the path
-   * @return a connection vault with the tabular vault
-   */
-  public static ConnectionVault create(Tabular tabular, Path connectionVaultPath) {
-    return new ConnectionVault(tabular, connectionVaultPath, tabular.getVault());
-  }
-
-
-  public static ConnectionVault create(Tabular tabular, Path connectionVaultPath, Vault vault) {
-    return new ConnectionVault(tabular, connectionVaultPath, vault);
-  }
-
 
   /**
    * Write the changes to the disk

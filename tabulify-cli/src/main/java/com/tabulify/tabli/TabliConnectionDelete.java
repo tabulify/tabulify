@@ -2,8 +2,7 @@ package com.tabulify.tabli;
 
 
 import com.tabulify.Tabular;
-import com.tabulify.conf.ConnectionVault;
-import com.tabulify.connection.Connection;
+import com.tabulify.conf.ConfVault;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
 import net.bytle.cli.CliCommand;
@@ -11,6 +10,7 @@ import net.bytle.cli.CliParser;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static com.tabulify.tabli.TabliLog.LOGGER_TABLI;
 
@@ -48,27 +48,31 @@ public class TabliConnectionDelete {
       .getDataPath();
 
     final List<String> names = cliParser.getStrings(NAME_OR_GLOB_PATTERN);
-    for (String name : names) {
-      final List<Connection> connections = tabular.selectConnections(name);
-      if (connections.isEmpty()) {
-        tabular.warningOrTerminateIfStrict("There is no connection called (" + name + ")");
-      } else {
-        LOGGER_TABLI.fine(connections.size() + " connections were found");
-      }
 
-      try(
-        InsertStream insertStream = feedbackDataPath.getInsertStream();
-        ConnectionVault connectionVault = ConnectionVault.create(tabular, tabular.getConfPath())
-      ) {
-        for (Connection connection : connections) {
-          connectionVault.deleteConnection(connection.getName());
-          connectionVault.flush();
-          LOGGER_TABLI.fine("The connection (" + connection.getName() + ") was removed");
-          insertStream.insert(connection);
+    ConfVault connectionVault = ConfVault.createFromPath(tabular.getConfPath(), tabular);
+    try (
+      InsertStream insertStream = feedbackDataPath.getInsertStream()
+    ) {
+      for (String name : names) {
+        Set<String> deletedConnections = connectionVault.deleteConnection(name);
+        if (deletedConnections.isEmpty()) {
+          String msg = "The glob name (" + name + ") does not select any connections";
+          if (tabular.isStrict()) {
+            throw new RuntimeException(msg);
+          } else {
+            LOGGER_TABLI.fine(msg);
+          }
+          continue;
         }
-      }
+        for (String deletedConnection : deletedConnections) {
+          LOGGER_TABLI.fine("The connection (" + deletedConnection + ") was removed");
+          insertStream.insert(deletedConnection);
+        }
 
+      }
+      connectionVault.flush();
     }
+
 
     return Collections.singletonList(feedbackDataPath);
   }
