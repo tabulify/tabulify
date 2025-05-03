@@ -20,7 +20,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.Path;
 import java.sql.Ref;
 import java.sql.Types;
 import java.time.*;
@@ -187,8 +186,6 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    *
    * @param connection the origin connection
    * @return a new reference
-   * Used in the {@link ConnectionVault#load(Path)}  datastore vault load function} to create a deep copy of the
-   * internal data stores.
    */
   @SuppressWarnings("JavadocReference")
   public static Connection of(Connection connection) {
@@ -255,7 +252,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setPassword(String pwd) {
     try {
-      com.tabulify.conf.Attribute password = tabular.getVault().createAttribute(ConnectionAttributeEnumBase.PASSWORD, pwd, RUNTIME);
+      Attribute password = tabular.getVault().createAttribute(ConnectionAttributeEnumBase.PASSWORD, pwd, RUNTIME);
       this.attributes.put(ConnectionAttributeEnumBase.PASSWORD, password);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the password variable for the connection (" + this + "). Error: " + e.getMessage(), e);
@@ -264,11 +261,11 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public com.tabulify.conf.Attribute getUser() {
+  public Attribute getUser() {
     return this.attributes.get(ConnectionAttributeEnumBase.USER);
   }
 
-  public com.tabulify.conf.Attribute getPasswordAttribute() {
+  public Attribute getPasswordAttribute() {
     return this.attributes.get(ConnectionAttributeEnumBase.PASSWORD);
   }
 
@@ -304,7 +301,6 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       throw new RuntimeException("The connection attribute " + name + " is unknown for the connection " + this + ". We were expecting one of the following " + tabular.toPublicListOfParameters(this.getAttributeEnums()), e);
     }
     try {
-
       com.tabulify.conf.Attribute attribute = tabular.getVault().createAttribute(connectionAttributeBase, value, origin);
       this.addAttribute(attribute);
     } catch (Exception e) {
@@ -318,7 +314,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * Typically, a connection would add its own class
    * This is used to give feedback when an attribute is not recognized when reading a {@link ConfVault config file}
    */
-  List<Class<? extends AttributeEnumParameter>> getAttributeEnums() {
+  public List<Class<? extends AttributeEnumParameter>> getAttributeEnums() {
     return List.of(ConnectionAttributeEnumBase.class);
   }
 
@@ -357,16 +353,16 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     return this;
   }
 
-  public static Connection createConnectionFromProviderOrDefault(Tabular tabular, String variableName, String variableUri) {
+  public static Connection createConnectionFromProviderOrDefault(Tabular tabular, String connectionName, String uri) {
 
     try {
       return createConnectionFromProviderOrDefault(
         tabular,
-        tabular.createAttribute(ConnectionAttributeEnumBase.NAME, variableName),
-        tabular.createAttribute(ConnectionAttributeEnumBase.URI, variableUri)
+        tabular.createAttribute(ConnectionAttributeEnumBase.NAME, connectionName),
+        tabular.createAttribute(ConnectionAttributeEnumBase.URI, uri)
       );
     } catch (Exception e) {
-      throw new InternalException("Error while creating the main connection variable name/uri. Error: " + e.getMessage(), e);
+      throw new InternalException("Error while creating the connection (" + connectionName + "," + uri + "). Error: " + e.getMessage(), e);
     }
   }
 

@@ -1,6 +1,7 @@
 package com.tabulify.tpc;
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.AttributeEnumParameter;
 import com.tabulify.conf.Origin;
 import com.tabulify.connection.Connection;
 import com.tabulify.fs.FsConnectionResourcePath;
@@ -13,6 +14,9 @@ import net.bytle.exception.CastException;
 import net.bytle.type.Casts;
 import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MediaType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.tabulify.tpc.TpcDataPath.CURRENT_WORKING_DIRECTORY_NAME;
 import static com.tabulify.tpc.TpcDataPath.SEPARATOR;
@@ -103,16 +107,25 @@ public class TpcConnection extends NoOpConnection {
 
   @Override
   public Connection addAttribute(KeyNormalizer name, Object value, Origin origin) {
+    TpcConnectionAttributeEnum connectionAttribute;
     try {
-      TpcConnectionAttributeEnum connectionAttribute = Casts.cast(name, TpcConnectionAttributeEnum.class);
-      return addAttribute(
-        this
-          .getTabular()
-          .getVault()
-          .createAttribute(connectionAttribute, value, origin)
-      );
+      connectionAttribute = Casts.cast(name, TpcConnectionAttributeEnum.class);
     } catch (CastException e) {
       return super.addAttribute(name, value, origin);
     }
+    return addAttribute(
+      this
+        .getTabular()
+        .getVault()
+        .createAttribute(connectionAttribute, value, origin)
+    );
   }
+
+  @Override
+  public List<Class<? extends AttributeEnumParameter>> getAttributeEnums() {
+    List<Class<? extends AttributeEnumParameter>> attributeEnums = new ArrayList<>(super.getAttributeEnums());
+    attributeEnums.add(TpcConnectionAttributeEnum.class);
+    return attributeEnums;
+  }
+
 }

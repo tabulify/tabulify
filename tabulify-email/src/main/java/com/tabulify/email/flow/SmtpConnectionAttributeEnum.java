@@ -4,9 +4,10 @@ import com.tabulify.connection.ConnectionAttributeEnum;
 
 public enum SmtpConnectionAttributeEnum implements ConnectionAttributeEnum {
 
-  HOST("Smtp Host Server", "localhost", String.class, true),
+  // not a parameter, the host should be in the URI
+  HOST("Smtp Host Server", "localhost", String.class, false),
   PORT("Smtp Port", 25, Integer.class, true),
-  FROM("The default from address if none is provided", 25, String.class, true),
+  FROM("The default from address if none is provided", null, String.class, true),
   FROM_NAME("The default name from address if none is provided", "", String.class, true),
   TO("The default to address if none is provided", "", String.class, true),
   TO_NAMES("The default names to address if none is provided", "", String.class, true),
@@ -15,8 +16,8 @@ public enum SmtpConnectionAttributeEnum implements ConnectionAttributeEnum {
   BCC("The blind carbon copy addresses", null, null, true),
   BCC_NAMES("The blind carbon copy names", null, null, true),
   AUTH("Smtp server authentication required?", false, Boolean.class, true),
-  TLS("Smtp Tls communication required", false, Boolean.class, true),
-  DEBUG("Smtp Debug level", "", String.class, true);
+  TLS("Smtp TLS communication required", false, Boolean.class, true),
+  DEBUG("Smtp Debug", false, Boolean.class, true);
 
   private final String description;
   private final Class<?> clazz;

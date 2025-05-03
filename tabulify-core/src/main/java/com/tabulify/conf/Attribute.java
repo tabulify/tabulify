@@ -142,26 +142,9 @@ public class Attribute implements Comparable<Attribute> {
   }
 
   /**
-   * @return the value to be used in the application in clear and cast as specified by the {@link AttributeEnum#getValueClazz()}
+   * @return the value to be used in the application in clear
    */
   public Object getValueOrDefault() throws NoValueException {
-
-    Object valueOrDefaultNonCasted = this.getValueOrDefaultNonCasted();
-
-    Class<?> valueClazz = this.attributeEnum.getValueClazz();
-
-    try {
-      return Casts.cast(valueOrDefaultNonCasted, valueClazz);
-    } catch (CastException e) {
-      /**
-       * TODO: should be when setting the value
-       */
-      throw new ClassCastException(e.getMessage());
-    }
-
-  }
-
-  public Object getValueOrDefaultNonCasted() throws NoValueException {
     try {
 
       return this.getValue();
@@ -233,9 +216,6 @@ public class Attribute implements Comparable<Attribute> {
     if (this.plainValue != null) {
       return this.plainValue;
     }
-    if (this.rawValue != null) {
-      return this.rawValue;
-    }
     if (this.valueProvider != null) {
       return this.valueProvider.get();
     }
@@ -281,13 +261,6 @@ public class Attribute implements Comparable<Attribute> {
   public Attribute setValueProvider(Supplier<?> valueProvider) {
     this.valueProvider = valueProvider;
     return this;
-  }
-
-  /**
-   * @return if the value is derived (ie provided)
-   */
-  public Boolean isValueProvider() {
-    return this.valueProvider != null;
   }
 
 

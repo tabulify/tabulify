@@ -5,8 +5,8 @@ import java.net.URISyntaxException;
 import java.util.logging.Logger;
 
 /**
- * Not all JDBC URL are URI compliants, this class wraps this fact
- *
+ * Not all JDBC URL are URI compliant, this class wraps this fact
+ * Actually they are, the scheme is taken and the rest goes into {@link URI#}
  */
 public class SqlUri {
 

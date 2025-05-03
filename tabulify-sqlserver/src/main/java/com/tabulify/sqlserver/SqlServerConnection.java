@@ -1,18 +1,18 @@
 package com.tabulify.sqlserver;
 
 import com.tabulify.Tabular;
-import com.tabulify.model.SqlDataType;
 import com.tabulify.conf.Attribute;
 import com.tabulify.jdbc.SqlConnection;
+import com.tabulify.model.SqlDataType;
 
 import java.sql.Types;
-import java.util.Set;
+import java.util.Properties;
 
 /**
  * Created by gerard on 28-11-2015.
  * <p>
  * Tracing
- * https://docs.microsoft.com/en-us/sql/connect/jdbc/tracing-driver-operation?view=sql-server-2017
+ * <a href="https://docs.microsoft.com/en-us/sql/connect/jdbc/tracing-driver-operation?view=sql-server-2017">...</a>
  * Logger logger = Logger.getLogger("com.microsoft.sqlserver.jdbc");
  * logger.setLevel(Level.FINE);
  */
@@ -24,22 +24,14 @@ public class SqlServerConnection extends SqlConnection {
   }
 
   @Override
-  public Set<Attribute> getAttributes() {
-    Set<Attribute> properties = super.getAttributes();
+  public Properties getDefaultConnectionProperties() {
     // Sql Server
     // https://docs.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-2017
     //https://docs.microsoft.com/en-us/sql/t-sql/functions/context-info-transact-sql?view=sql-server-2017
-    Attribute applicationName;
-    try {
-      applicationName = getTabular().createAttribute("applicationName", " " + this.getName() + " " + getTabular().getName());
-    } catch (Exception e) {
-      // should not happen
-      throw new RuntimeException("Error while adding the application name", e);
-    }
-    properties.add(applicationName);
+    Properties properties = new Properties();
+    properties.put("applicationName", getTabular().toPublicName(getTabular().getName() + "-" + this.getName()));
     return properties;
   }
-
 
   @Override
   public SqlServerDataSystem getDataSystem() {

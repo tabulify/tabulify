@@ -11,6 +11,7 @@ public enum ConnectionAttributeEnumBase implements ConnectionAttributeEnum {
   ORIGIN("The origin of the connection", ConnectionOrigin.class, null, false),
   URI("The uri of the connection", String.class, null, true),
   USER("The user name to login", String.class, null, true),
+  // password and not pwd because this is the jdbc name
   PASSWORD("The user password to login", String.class, null, true),
   DESCRIPTION("A connection description", String.class, null, true),
   DATE_DATA_TYPE("Date data type used to store date values", ConnectionAttValueTimeDataType.class, ConnectionAttValueTimeDataType.NATIVE, true),

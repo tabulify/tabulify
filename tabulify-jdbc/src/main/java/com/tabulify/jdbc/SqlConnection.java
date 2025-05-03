@@ -174,7 +174,6 @@ public class SqlConnection extends NoOpConnection {
 
 
   /**
-   *
    * @param jdbcDriver - the driver
    * @return the connection for chaining
    */
@@ -182,7 +181,6 @@ public class SqlConnection extends NoOpConnection {
     super.addAttribute(ConnectionAttributeEnumBase.DRIVER, jdbcDriver);
     return this;
   }
-
 
 
   public String getDriver() {
@@ -362,9 +360,11 @@ public class SqlConnection extends NoOpConnection {
    */
   public synchronized java.sql.Connection getNewConnection() {
 
-
-    SqlUri sqlUri = new SqlUri(this.getUriAsString());
-    String driver = sqlUri.getDriver();
+    String driver = getAttribute(ConnectionAttributeEnumBase.DRIVER).getValueOrDefaultAsStringNotNull();
+    if (driver.isEmpty()) {
+      SqlUri sqlUri = new SqlUri(this.getUriAsString());
+      driver = sqlUri.getDriver();
+    }
 
     if (driver != null) {
       try {
@@ -378,8 +378,7 @@ public class SqlConnection extends NoOpConnection {
 
     java.sql.Connection connection;
 
-    Properties connectionProperties = this.getDefaultConnectionProperties();
-    connectionProperties.putAll(Maps.toProperties(this.getNativeDriverAttributes()));
+
     SqlLog.LOGGER_DB_JDBC.info("Trying to connect to the connection (" + this.getUriAsVariable() + ")");
     try {
 
@@ -397,6 +396,16 @@ public class SqlConnection extends NoOpConnection {
 
         // Timeout
         // DriverManager.setLoginTimeout(1);
+        Properties connectionProperties = this.getDefaultConnectionProperties();
+        Object user = this.getUser().getValueOrDefaultOrNull();
+        if (user != null) {
+          connectionProperties.put("user", user);
+        }
+        Object password = this.getPasswordAttribute().getValueOrDefaultOrNull();
+        if (password != null) {
+          connectionProperties.put("password", password);
+        }
+        connectionProperties.putAll(Maps.toProperties(this.getNativeDriverAttributes()));
         connection = DriverManager.getConnection(this.getUriAsString(), connectionProperties);
 
         SqlLog.LOGGER_DB_JDBC.info("Connected !");
@@ -413,7 +422,6 @@ public class SqlConnection extends NoOpConnection {
         } catch (NotFoundException e) {
           // ok
         }
-
 
         return connection;
 
@@ -1139,7 +1147,6 @@ public class SqlConnection extends NoOpConnection {
   public SqlDataPath getAndCreateRandomDataPath() {
     return (SqlDataPath) super.getAndCreateRandomDataPath();
   }
-
 
 
   /**
