@@ -271,4 +271,27 @@ public class TabularInit {
     }
   }
 
+  /**
+   * By default, the user home (trick to not show the user in the path in the doc)
+   */
+  public static Path determineSqliteHome(Vault vault, TabularEnvs tabularEnvs) {
+
+    TabularAttributeEnum sqliteHome = TabularAttributeEnum.SQLITE_HOME;
+    Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(sqliteHome);
+
+    KeyNormalizer osEnvName = tabularEnvs.getOsTabliEnvName(sqliteHome);
+    String confPathString = tabularEnvs.getOsEnvValue(osEnvName);
+    if (confPathString != null) {
+      com.tabulify.conf.Attribute attribute = confVariable
+        .setOrigin(com.tabulify.conf.Origin.OS)
+        .buildSafe(confPathString);
+      return Paths.get(attribute.getValueOrDefaultAsStringNotNull());
+    }
+
+    Path defaultValue = TABLI_USER_HOME_PATH;
+    confVariable
+      .setOrigin(Origin.RUNTIME)
+      .buildSafe(defaultValue);
+    return defaultValue;
+  }
 }

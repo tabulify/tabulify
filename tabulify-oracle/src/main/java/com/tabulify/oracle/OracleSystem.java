@@ -1,16 +1,65 @@
-  package com.tabulify.oracle;
+package com.tabulify.oracle;
 
+import com.tabulify.jdbc.SqlDataPath;
 import com.tabulify.jdbc.SqlDataSystem;
 import com.tabulify.jdbc.SqlMetaDataType;
+import com.tabulify.model.ColumnDef;
+import com.tabulify.model.SqlDataType;
 import oracle.jdbc.OracleTypes;
 
 import java.sql.Types;
+import java.util.List;
 import java.util.Map;
 
 public class OracleSystem extends SqlDataSystem {
 
 
   public static int MAX_VARCHAR2_PRECISION_BYTE = 4000;
+
+  @Override
+  protected List<String> createTruncateStatement(List<SqlDataPath> dataPaths) {
+    // return "truncate from " + dataPath.toSqlStringPath();
+    return super.createTruncateStatement(dataPaths);
+  }
+
+  @Override
+  protected String createDataTypeStatement(ColumnDef columnDef) {
+
+    SqlDataType dataType = columnDef.getDataType();
+    switch (dataType.getTypeCode()) {
+      case Types.INTEGER:
+        return "INTEGER";
+      case OracleTypes.INTERVALDS:
+        return "INTERVAL DAY (" + columnDef.getPrecision() + ") TO SECOND (" + columnDef.getScale() + ")";
+      case OracleTypes.INTERVALYM:
+        return "INTERVAL YEAR (" + columnDef.getPrecision() + ") TO MONTH";
+      case OracleTypes.LONGVARBINARY:
+        return "LONG RAW";
+      case Types.LONGNVARCHAR:
+        return "LONG";
+      case OracleTypes.NUMBER:
+        // Bug ? If the scale is -127, it's a float
+        Integer precision = columnDef.getPrecision();
+        Integer scale = columnDef.getScale();
+        if (scale == -127 && precision != 0) {
+          return "FLOAT(" + precision + ")";
+        }
+        // Default will take over
+        if (precision > 38) {
+          precision = 38;
+        }
+        return "NUMBER(" + precision + "," + scale + ")";
+      case Types.VARBINARY:
+        // Bug in a Oracle driver where precision is null in a resultSet
+        if (columnDef.getPrecision() == 0) {
+          return "RAW(2000)";
+        }
+        return super.createDataTypeStatement(columnDef);
+      default:
+        return super.createDataTypeStatement(columnDef);
+    }
+
+  }
 
   /**
    * 4000 bytes
@@ -44,7 +93,7 @@ public class OracleSystem extends SqlDataSystem {
       .setSqlName("INTERVAL_YEAR_MONTH")
       .setSqlJavaClazz(oracle.sql.INTERVALYM.class);
 
-    sqlDataTypes.computeIfAbsent( OracleTypes.LONGVARBINARY, SqlMetaDataType::new)
+    sqlDataTypes.computeIfAbsent(OracleTypes.LONGVARBINARY, SqlMetaDataType::new)
       .setSqlName("LONG RAW")
       .setSqlJavaClazz(oracle.sql.RAW.class);
 
@@ -52,7 +101,7 @@ public class OracleSystem extends SqlDataSystem {
       .setSqlName("LONG");
 
     // https://docs.oracle.com/cd/B28359_01/server.111/b28285/sqlqr06.htm#CHDJJEEA
-    sqlDataTypes.computeIfAbsent( OracleTypes.NUMBER, SqlMetaDataType::new)
+    sqlDataTypes.computeIfAbsent(OracleTypes.NUMBER, SqlMetaDataType::new)
       .setSqlName("NUMBER")
       .setSqlJavaClazz(oracle.sql.NUMBER.class)
       .setMaxPrecision(38)
@@ -70,17 +119,18 @@ public class OracleSystem extends SqlDataSystem {
 
     /**
      * Oracle Database supports a reliable Unicode datatype through NCHAR, NVARCHAR2, and NCLOB.
-     *
+     * <p></p>
      * These datatypes are guaranteed to be Unicode encoding and always use character length semantics.
      * (ie the maximum size is always in character length semantics)
      */
     String nCharacterSet = this.getConnection().getMetadata().getUnicodeCharacterSet();
-    Integer bytesByNChar = 3;
-    switch (nCharacterSet){
+    int bytesByNChar = 3;
+    switch (nCharacterSet) {
       case "AL16UTF16":
         bytesByNChar = 2; // The AL16UTF16 use 2 bytes to store a character.
         break;
       case "UTF8":
+        //noinspection DataFlowIssue
         bytesByNChar = 3; // UTF 8 - 3
         break;
     }
@@ -99,8 +149,8 @@ public class OracleSystem extends SqlDataSystem {
       .setDefaultPrecision(maxNcharPrecision);
 
     String characterSet = this.getConnection().getMetadata().getCharacterSet();
-    Integer bytesByChar = 3;
-    switch (characterSet){
+    int bytesByChar = 3;
+    switch (characterSet) {
       case "AL32UTF8":
         bytesByChar = 2; // The AL16UTF16 use 2 bytes to store a character.
         break;
@@ -119,7 +169,7 @@ public class OracleSystem extends SqlDataSystem {
       .setDefaultPrecision(maxVarcharPrecision)
       .setPrecisionMandatory(true);
 
-    sqlDataTypes.computeIfAbsent( Types.VARBINARY, SqlMetaDataType::new)
+    sqlDataTypes.computeIfAbsent(Types.VARBINARY, SqlMetaDataType::new)
       .setSqlName("VARBINARY")
       .setSqlJavaClazz(oracle.sql.RAW.class);
 

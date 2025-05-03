@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * A tabular is a global domain that represents the runtime environment
  * <p>
  * It's the entry point of every tabular/data application
- * It has knowledge of the {@link ConnectionVault}
+ * It has knowledge of the {@link ConfVault}
  * and therefore is the main entry to create a data path from an URI
  * * a datastore object
  * * a connection
@@ -95,12 +95,7 @@ public class Tabular implements AutoCloseable {
    */
   private final Map<TabularAttributeEnum, Attribute> attributes = new HashMap<>();
 
-  /**
-   * Where to store sqlite database by default
-   * Trick to not have the username in the output ie C:\Users\Username\...
-   * The env value have a fake account
-   */
-  private Path sqliteHome;
+
   private final Path confPath;
 
 
@@ -120,14 +115,18 @@ public class Tabular implements AutoCloseable {
      */
     Logger.getLogger("oracle.jdbc").setLevel(Level.SEVERE);
 
-    // All determine functions utility
-    // we don't pass the tabular object so that we have dependency in the function signature
+    /**
+     * All determine functions utility
+     * We don't pass the tabular object so that
+     * we have dependency in the function signature
+     */
     tabularEnvs = new TabularEnvs(tabularConfig.templatingEnv);
 
     /**
      * Building Helper
      */
     this.vault = Vault.create(tabularConfig.passphrase, tabularEnvs);
+
 
     /**
      * Project
@@ -157,6 +156,39 @@ public class Tabular implements AutoCloseable {
      */
     this.homePath = TabularInit.determineHomePath(tabularConfig.homePath, this.executionEnv, tabularEnvs, attributes, vault, confVault);
 
+    /**
+     * Other Tabular attributes, not processed
+     */
+    for (TabularAttributeEnum attribute : TabularAttributeEnum.class.getEnumConstants()) {
+
+      if (attributes.containsKey(attribute)) {
+        continue;
+      }
+      Vault.VariableBuilder variableBuilder = vault.createVariableBuilderFromAttribute(attribute);
+
+      // Env
+      // We don't look up without the tabli prefix because it can cause clashes
+      // for instance, name in os is the name of the computer
+      KeyNormalizer envName = tabularEnvs.getOsTabliEnvName(attribute);
+      String envValue = tabularEnvs.getOsEnvValue(envName);
+      if (envValue != null) {
+        attributes.put(attribute,
+          variableBuilder
+            .setOrigin(Origin.OS)
+            .buildSafe(envValue)
+        );
+        continue;
+      }
+
+      // no env
+      attributes.put(attribute,
+        variableBuilder
+          .setOrigin(Origin.RUNTIME)
+          .buildSafe(null)
+      );
+
+    }
+
 
     /**
      * Check for env
@@ -168,7 +200,8 @@ public class Tabular implements AutoCloseable {
      * After init
      */
     // Load connections
-    ConnectionBuiltIn.loadBuiltInConnections(this);
+    Path sqliteConnectionHome = TabularInit.determineSqliteHome(vault, tabularEnvs);
+    ConnectionBuiltIn.loadBuiltInConnections(this, sqliteConnectionHome);
     if (tabularConfig.confPath != null) {
       throw new RuntimeException("Not yet implemented");
       //loadConnections(tabularConfig.connectionVault, ConnectionOrigin.COMMAND_LINE);
@@ -176,6 +209,10 @@ public class Tabular implements AutoCloseable {
 
     // Default Connection
     if (projectHomePath != null) {
+      addConnection(
+        Connection.createConnectionFromProviderOrDefault(this, ConnectionBuiltIn.PROJECT_CONNECTION, projectHomePath.toUri().toString())
+          .setDescription("The project home path")
+      );
       // Default connection is project
       this.setDefaultConnection(ConnectionBuiltIn.PROJECT_CONNECTION);
     } else {
@@ -183,7 +220,7 @@ public class Tabular implements AutoCloseable {
       this.setDefaultConnection(ConnectionBuiltIn.CD_LOCAL_FILE_SYSTEM);
     }
     // How to connection utility
-    this.howtoConnections = ConnectionHowTos.createHowtoConnections(this);
+    this.howtoConnections = ConnectionHowTos.createHowtoConnections(this, sqliteConnectionHome);
 
 
   }
@@ -215,29 +252,6 @@ public class Tabular implements AutoCloseable {
     return Tabular.tabularConfig();
   }
 
-  private void loadConnections(Path path, ConnectionOrigin connectionOrigin) {
-
-
-    try (ConnectionVault connectionVault = ConnectionVault.create(this, path, this.vault)) {
-      connectionVault
-        .getConnections()
-        .stream()
-        .map(c -> c.setOrigin(connectionOrigin))
-        .forEach(c -> {
-          Connection actualConnection = connections.get(c.getName());
-          if (actualConnection != null) {
-            if (actualConnection.getOrigin() == ConnectionOrigin.BUILT_IN) {
-              throw new RuntimeException("You can't redeclare the built-in connection (" + actualConnection + "). Delete it or rename it in the (" + connectionOrigin + ") connection vault.");
-            } else {
-              DbLoggers.LOGGER_DB_ENGINE.warning("The connection (" + actualConnection + ") declared in the vault (" + actualConnection.getOrigin() + ") has been replaced by the connection declared in the vault (" + connectionOrigin + ")");
-            }
-          }
-          this.addConnection(c);
-        });
-    }
-
-  }
-
 
   public Tabular addConnection(Connection connection) {
 
@@ -252,14 +266,14 @@ public class Tabular implements AutoCloseable {
     this.defaultConnection = connection;
   }
 
-  public void setDefaultConnection(String dataStoreName) {
-    Connection connection = getConnection(dataStoreName);
+  public void setDefaultConnection(String connectionName) {
+    Connection connection = getConnection(connectionName);
     if (connection != null) {
       this.defaultConnection = connection;
     } else {
       throw new RuntimeException(
-        Strings.createMultiLineFromStrings("The data store (" + dataStoreName + ") was not found and could not be set as the default one.",
-          "The actual datastore are (" + getConnections().stream().map(Connection::toString).collect(Collectors.joining(", ")) + ")").toString());
+        Strings.createMultiLineFromStrings("The connection (" + connectionName + ") was not found and could not be set as the default one.",
+          "The actual connections are (" + getConnections().stream().map(Connection::toString).collect(Collectors.joining(", ")) + ")").toString());
     }
   }
 
@@ -651,7 +665,7 @@ public class Tabular implements AutoCloseable {
 
 
   public <T> T getAttribute(TabularAttributeEnum attribute, Class<T> clazz) throws NoValueException, CastException, NoVariableException {
-    com.tabulify.conf.Attribute variable = this.attributes.get(attribute);
+    Attribute variable = this.attributes.get(attribute);
     if (variable == null) {
       throw new NoValueException("The variable (" + attribute + ") was not found");
     }
@@ -832,7 +846,7 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public com.tabulify.conf.Attribute getAttribute(TabularAttributeEnum attribute) {
+  public Attribute getAttribute(TabularAttributeEnum attribute) {
     return this.attributes.get(attribute);
   }
 
@@ -875,13 +889,10 @@ public class Tabular implements AutoCloseable {
     return KeyNormalizer.create(attribute).toCliLongOptionName();
   }
 
-  public String toPublicName(com.tabulify.conf.Attribute attribute) {
+  public String toPublicName(Attribute attribute) {
     return toPublicName(attribute.getAttributeMetadata().toString());
   }
 
-  public Path getSqliteHome() {
-    return this.sqliteHome;
-  }
 
   public Set<Attribute> getAttributes() {
     return new HashSet<>(this.attributes.values());
@@ -895,11 +906,11 @@ public class Tabular implements AutoCloseable {
     return this.confPath;
   }
 
-  public com.tabulify.conf.Attribute createAttribute(AttributeEnum attribute, Object value) {
-    return this.getVault().createAttribute(attribute, value, com.tabulify.conf.Origin.RUNTIME);
+  public Attribute createAttribute(AttributeEnum attribute, Object value) {
+    return this.getVault().createAttribute(attribute, value, Origin.RUNTIME);
   }
 
-  public com.tabulify.conf.Attribute createAttribute(String key, Object value) throws Exception {
+  public Attribute createAttribute(String key, Object value) throws Exception {
     return this.getVault().createAttribute(key, value, Origin.RUNTIME);
   }
 
@@ -969,13 +980,5 @@ public class Tabular implements AutoCloseable {
       return new Tabular(this);
     }
 
-    /**
-     * Add a templating env
-     * (Used only in test to inject os/sys env variable
-     */
-    public TabularConfig addTemplatingEnv(String key, String value) {
-      this.templatingEnv.put(key, value);
-      return this;
-    }
   }
 }

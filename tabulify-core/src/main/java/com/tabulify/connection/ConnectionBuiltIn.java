@@ -44,7 +44,7 @@ public class ConnectionBuiltIn {
   /**
    * Create the built-in, internal connections
    */
-  public static void loadBuiltInConnections(Tabular tabular) {
+  public static void loadBuiltInConnections(Tabular tabular, Path sqliteConnectionHome) {
 
     /**
      * Internal datastores
@@ -87,7 +87,7 @@ public class ConnectionBuiltIn {
       .setOrigin(ConnectionOrigin.BUILT_IN);
     tabular.addConnection(user);
 
-    String localLogsUriString = ConnectionHowTos.getSqliteConnectionString(tabular, ConnectionBuiltIn.LOG_LOCAL_CONNECTION);
+    String localLogsUriString = ConnectionHowTos.getSqliteConnectionString(ConnectionBuiltIn.LOG_LOCAL_CONNECTION, sqliteConnectionHome);
     Connection logs = Connection.createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.LOG_LOCAL_CONNECTION, localLogsUriString)
       .setDescription("The tabli logs")
       .setOrigin(ConnectionOrigin.BUILT_IN);
@@ -154,6 +154,7 @@ public class ConnectionBuiltIn {
       Connection.createConnectionFromProviderOrDefault(tabular, TPCDS_QUERY_CONNECTION_NAME, tpcDsQueriesPath.toUri().toString())
         .setDescription("The location of the Tpc Ds queries")
     );
+
 
   }
 

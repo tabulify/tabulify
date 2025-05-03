@@ -48,12 +48,11 @@ public class ConnectionHowTos {
 
   /**
    * @param connectionName the name of the connection
+   * @param sqliteHome     where to store the database (default to tabli user home)
    * @return a JDBC connection string for the default data vault
    */
-  static public String getSqliteConnectionString(Tabular tabular, String connectionName) {
+  static public String getSqliteConnectionString(String connectionName, Path sqliteHome) {
 
-
-    Path sqliteHome = tabular.getSqliteHome();
     if (sqliteHome == null) {
       sqliteHome = Tabular.TABLI_USER_HOME_PATH;
     }
@@ -67,19 +66,19 @@ public class ConnectionHowTos {
   /**
    * @return a map of how's datastore
    */
-  static public Map<String, Connection> createHowtoConnections(Tabular tabular) {
+  static public Map<String, Connection> createHowtoConnections(Tabular tabular, Path sqliteConnectionHome) {
 
 
     Set<Connection> howToDataStoresSet = new HashSet<>();
 
     howToDataStoresSet.add(
-      Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_CONNECTION_NAME, getSqliteConnectionString(tabular, SQLITE_CONNECTION_NAME))
+      Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_CONNECTION_NAME, getSqliteConnectionString(SQLITE_CONNECTION_NAME, sqliteConnectionHome))
         .addAttribute(DRIVER, "org.sqlite.JDBC")
         .setDescription("The sqlite default connection")
     );
 
     howToDataStoresSet.add(
-      Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_TARGET_CONNECTION_NAME, getSqliteConnectionString(tabular, SQLITE_TARGET_CONNECTION_NAME))
+      Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_TARGET_CONNECTION_NAME, getSqliteConnectionString(SQLITE_TARGET_CONNECTION_NAME, sqliteConnectionHome))
         .addAttribute(DRIVER, "org.sqlite.JDBC")
         .setDescription("The default sqlite target (Sqlite cannot read and write with the same connection)")
     );

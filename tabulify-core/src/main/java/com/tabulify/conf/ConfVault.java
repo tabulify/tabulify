@@ -133,13 +133,13 @@ public class ConfVault {
         }
 
         switch (rootAttribute) {
-          case GLOBAL:
+          case GLOBALS:
 
             Map<String, String> localEnvs;
             try {
               localEnvs = Casts.castToSameMap(rootEntry.getValue(), String.class, String.class);
             } catch (CastException e) {
-              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfVaultRootAttribute.GLOBAL)), e);
+              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfVaultRootAttribute.GLOBALS)), e);
             }
             for (Map.Entry<String, String> localEnv : localEnvs.entrySet()) {
 
@@ -263,9 +263,17 @@ public class ConfVault {
       dumperOptions.setPrettyFlow(true);
       dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
       Yaml yaml = new Yaml(dumperOptions);
+
+
       Map<String, Object> confAsMap = new HashMap<>();
-      confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.CONNECTIONS).toCase(outputCase), toConnectionMap());
-      confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.GLOBAL).toCase(outputCase), toConfParameters());
+      Map<String, Object> connectionMap = toConnectionMap();
+      if (!connectionMap.isEmpty()) {
+        confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.CONNECTIONS).toCase(outputCase), connectionMap);
+      }
+      Map<String, Object> confParameters = toConfParameters();
+      if (!confParameters.isEmpty()) {
+        confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.GLOBALS).toCase(outputCase), confParameters);
+      }
       String yamlString = yaml.dump(confAsMap);
       // Write to file
       try (FileWriter writer = new FileWriter(targetPath.toFile())) {
@@ -390,5 +398,6 @@ public class ConfVault {
   public Set<Attribute> getParameters() {
     return new HashSet<>(this.global.values());
   }
+
 
 }
