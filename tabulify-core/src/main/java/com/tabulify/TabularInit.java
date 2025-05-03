@@ -294,4 +294,28 @@ public class TabularInit {
       .buildSafe(defaultValue);
     return defaultValue;
   }
+
+  /**
+   * @param passphrase - tabular signature passphrase
+   */
+  public static String determinePassphrase(String passphrase) {
+
+    if (passphrase != null) {
+      return passphrase;
+    }
+    String normalizedPassphraseName = (Tabular.TABLI_NAME + "_" + TabularAttributeEnum.PASSPHRASE).toLowerCase();
+    for (Map.Entry<String, String> osEnv : System.getenv().entrySet()) {
+
+      String key = osEnv.getKey();
+      if (key.toLowerCase().equals(normalizedPassphraseName)) {
+        String value = osEnv.getValue();
+        if (value.startsWith(Vault.VAULT_PREFIX)) {
+          throw new RuntimeException("The passphrase os env (" + key + ") cannot have an encrypted value");
+        }
+        return value;
+      }
+    }
+    return null;
+  }
+
 }

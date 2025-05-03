@@ -59,7 +59,7 @@ public class Attribute implements Comparable<Attribute> {
 
     if (this.origin == Origin.OS) {
       String normalizedAttName = this.attributeEnum.toString().toLowerCase();
-      for (String secWord : Arrays.asList("secret", "key", "pwd", "password")) {
+      for (String secWord : Arrays.asList("secret", "key", "pwd", "password", "passphrase")) {
         if (normalizedAttName.contains(secWord)) {
           isOsSecret = true;
           break;

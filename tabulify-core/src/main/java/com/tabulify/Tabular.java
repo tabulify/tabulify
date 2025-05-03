@@ -12,6 +12,7 @@ import com.tabulify.memory.MemoryDataPath;
 import com.tabulify.spi.DataPath;
 import com.tabulify.tpc.TpcConnection;
 import com.tabulify.uri.DataUri;
+import net.bytle.crypto.Protector;
 import net.bytle.exception.*;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Glob;
@@ -116,16 +117,26 @@ public class Tabular implements AutoCloseable {
     Logger.getLogger("oracle.jdbc").setLevel(Level.SEVERE);
 
     /**
+     * Protector
+     */
+    String passphrase = TabularInit.determinePassphrase(tabularConfig.passphrase);
+    Protector protector = null;
+    if (passphrase != null) {
+      protector = Protector.create(passphrase);
+    }
+
+    /**
      * All determine functions utility
      * We don't pass the tabular object so that
      * we have dependency in the function signature
      */
-    tabularEnvs = new TabularEnvs(tabularConfig.templatingEnv);
+    tabularEnvs = new TabularEnvs(tabularConfig.templatingEnv, protector);
+
 
     /**
-     * Building Helper
+     * Vault
      */
-    this.vault = Vault.create(tabularConfig.passphrase, tabularEnvs);
+    this.vault = Vault.create(protector, tabularEnvs);
 
 
     /**

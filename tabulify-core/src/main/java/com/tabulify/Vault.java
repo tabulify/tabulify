@@ -26,14 +26,12 @@ public class Vault {
    */
   public static final String VAULT_PREFIX = "vault";
   private final Map<String, Object> templatingEnvs;
-  private Protector protector;
+  private final Protector protector;
 
 
-  public Vault(String passphrase, TabularEnvs tabularEnvs) {
+  public Vault(Protector protector, TabularEnvs tabularEnvs) {
 
-    if (passphrase != null) {
-      this.protector = Protector.create(passphrase);
-    }
+    this.protector = protector;
 
     if (tabularEnvs != null) {
       try {
@@ -48,18 +46,18 @@ public class Vault {
   }
 
   /**
-   * @param passphrase          - the passphrase
+   * @param protector          - the protector
    * @param templatingVariables Free variable used in templating to create clear value from variable
    */
-  public static Vault create(String passphrase, TabularEnvs templatingVariables) {
-    return new Vault(passphrase, templatingVariables);
+  public static Vault create(Protector protector, TabularEnvs templatingVariables) {
+    return new Vault(protector, templatingVariables);
   }
 
   /**
-   * @param passphrase - the passphrase
+   * @param protector - the protector
    */
-  public static Vault create(String passphrase) {
-    return new Vault(passphrase, null);
+  public static Vault create(Protector protector) {
+    return new Vault(protector, null);
   }
 
   /**

@@ -75,9 +75,6 @@ public class ConnectionVault implements AutoCloseable {
     return new ConnectionVault(tabular, connectionVaultPath, tabular.getVault());
   }
 
-  public static ConnectionVault create(Tabular tabular, Path connectionVaultPath, String passphrase) {
-    return new ConnectionVault(tabular, connectionVaultPath, Vault.create(passphrase, null));
-  }
 
   public static ConnectionVault create(Tabular tabular, Path connectionVaultPath, Vault vault) {
     return new ConnectionVault(tabular, connectionVaultPath, vault);
