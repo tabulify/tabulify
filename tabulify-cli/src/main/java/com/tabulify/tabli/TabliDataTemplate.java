@@ -1,7 +1,5 @@
 package com.tabulify.tabli;
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
 import com.tabulify.Tabular;
 import com.tabulify.flow.engine.Pipeline;
 import com.tabulify.flow.step.SelectSupplier;
@@ -11,6 +9,8 @@ import com.tabulify.spi.DataPath;
 import com.tabulify.transfer.TransferOperation;
 import com.tabulify.transfer.TransferProperties;
 import com.tabulify.uri.DataUri;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.template.flow.TemplateAttributes;
@@ -40,7 +40,7 @@ public class TabliDataTemplate {
       );
 
     childCommand.addFlag(WITH_DEPENDENCIES_PROPERTY);
-    childCommand.addProperty(TabliWords.ATTRIBUTE_PROPERTY)
+    childCommand.addProperty(TabliWords.TABLI_ATTRIBUTE)
       .setDescription("Set specific data resource attributes")
       .setValueName("attributeName=value");
 
@@ -74,7 +74,7 @@ public class TabliDataTemplate {
     }
 
     final Boolean withDependencies = cliParser.getBoolean(WITH_DEPENDENCIES_PROPERTY);
-    Map<String, ?> attributes = cliParser.getProperties(TabliWords.ATTRIBUTE_PROPERTY);
+    Map<String, ?> attributes = cliParser.getProperties(TabliWords.TABLI_ATTRIBUTE);
     Set<DataUri> templateSelectors = cliParser
       .getStrings(TemplateAttributes.TEMPLATE_SELECTORS.toString())
       .stream()

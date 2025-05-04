@@ -8,7 +8,6 @@ import com.tabulify.stream.InsertStream;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
-import net.bytle.exception.CastException;
 import net.bytle.type.KeyNormalizer;
 
 import java.nio.file.Path;
@@ -44,11 +43,8 @@ public class TabliAttributeDelete {
     ConfVault confVault = ConfVault
       .createFromPath(conf, tabular);
     Object value;
-    try {
-      value = confVault.deleteVariable(key);
-    } catch (CastException e) {
-      throw new RuntimeException(e.getMessage(), e);
-    }
+    value = confVault.deleteAttributeByGlobName(key);
+
     confVault.flush();
 
     DataPath feedbackDataPath = tabular.getMemoryDataStore().getDataPath("configurationDeleted")

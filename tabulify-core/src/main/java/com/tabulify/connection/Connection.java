@@ -831,8 +831,14 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public void putNativeAttribute(String name, Attribute attribute) {
-    this.nativeDriverAttributes.put(name, attribute);
+  public void putNativeAttribute(String name, String value, Origin origin) {
+    Attribute nativeAttribute;
+    try {
+      nativeAttribute = tabular.getVault().createAttribute(name, value, origin);
+    } catch (Exception e) {
+      throw new RuntimeException("An error has occurred while reading the driver connection attribute " + name + " value for the connection (" + this + "). Error: " + e.getMessage(), e);
+    }
+    this.nativeDriverAttributes.put(name, nativeAttribute);
   }
 
 }

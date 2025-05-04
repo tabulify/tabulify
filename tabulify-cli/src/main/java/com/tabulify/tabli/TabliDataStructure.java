@@ -1,8 +1,6 @@
 package com.tabulify.tabli;
 
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
 import com.tabulify.Tabular;
 import com.tabulify.flow.engine.Pipeline;
 import com.tabulify.flow.step.CastStep;
@@ -11,6 +9,8 @@ import com.tabulify.flow.step.SelectSupplier;
 import com.tabulify.flow.step.StructStep;
 import com.tabulify.spi.DataPath;
 import com.tabulify.uri.DataUri;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +32,7 @@ public class TabliDataStructure {
     childCommand.addFlag(WITH_DEPENDENCIES_PROPERTY);
     childCommand.addProperty(VIRTUAL_COLUMN_PROPERTY);
     childCommand.addFlag(TabliWords.NOT_STRICT_FLAG);
-    childCommand.addProperty(ATTRIBUTE_PROPERTY);
+    childCommand.addProperty(TABLI_ATTRIBUTE);
 
     // Args
     final CliParser cliParser = childCommand.parse();
@@ -50,7 +50,7 @@ public class TabliDataStructure {
     final Boolean withDependencies = cliParser.getBoolean(WITH_DEPENDENCIES_PROPERTY);
 
     Map<String, String> virtualColumns = cliParser.getProperties(VIRTUAL_COLUMN_PROPERTY);
-    Map<String, String> attributes = cliParser.getProperties(ATTRIBUTE_PROPERTY);
+    Map<String, String> attributes = cliParser.getProperties(TABLI_ATTRIBUTE);
     return new ArrayList<>(
       Pipeline
         .createFrom(tabular)

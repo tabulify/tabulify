@@ -54,7 +54,7 @@ public class TabliConnectionDelete {
       InsertStream insertStream = feedbackDataPath.getInsertStream()
     ) {
       for (String name : names) {
-        Set<String> deletedConnections = connectionVault.deleteConnection(name);
+        Set<String> deletedConnections = connectionVault.deleteConnectionByGlobName(name);
         if (deletedConnections.isEmpty()) {
           String msg = "The glob name (" + name + ") does not select any connections";
           if (tabular.isStrict()) {

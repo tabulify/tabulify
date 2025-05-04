@@ -1,9 +1,6 @@
 package com.tabulify.tabli;
 
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliUsage;
 import com.tabulify.Tabular;
 import com.tabulify.flow.engine.Pipeline;
 import com.tabulify.flow.step.ListCollector;
@@ -11,6 +8,9 @@ import com.tabulify.flow.step.SelectSupplier;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataPathAttribute;
 import com.tabulify.uri.DataUri;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +56,7 @@ public class TabliDataList {
     childCommand.addArg(TabliWords.DATA_SELECTORS)
       .setDescription("One or more name data resource selectors (ie pattern[@connection])")
       .setMandatory(true);
-    childCommand.addProperty(TabliWords.ATTRIBUTE_PROPERTY)
+    childCommand.addProperty(TabliWords.TABLI_ATTRIBUTE)
       .setDescription("Set the data resource attributes to show (`path`, `name`,`count`, `size`, `type`, `connection`, ...)")
       .setValueName("attributeName")
       .setDefaultValue(DataPathAttribute.PATH);
@@ -77,7 +77,7 @@ public class TabliDataList {
       .stream()
       .map(tabular::createDataUri)
       .collect(Collectors.toSet());
-    final List<String> attributes = cliParser.getStrings(TabliWords.ATTRIBUTE_PROPERTY);
+    final List<String> attributes = cliParser.getStrings(TabliWords.TABLI_ATTRIBUTE);
     final Boolean withDependencies = cliParser.getBoolean(TabliWords.WITH_DEPENDENCIES_PROPERTY);
 
     /**

@@ -2,34 +2,21 @@ package com.tabulify.tabli;
 
 
 import com.tabulify.Tabular;
-import com.tabulify.conf.ConnectionVault;
-import com.tabulify.conf.Origin;
-import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionAttributeEnumBase;
-import com.tabulify.connection.ConnectionOrigin;
 import com.tabulify.spi.DataPath;
 import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import static com.tabulify.tabli.TabliConnectionAdd.*;
+import static com.tabulify.tabli.TabliConnection.addOrUpsertConnection;
+import static com.tabulify.tabli.TabliWords.UPSERT_COMMAND;
 
 
 /**
  * <p>
  */
 public class TabliConnectionUpsert {
-
-
-  protected static final String URI_PROPERTY = "--uri";
-
-
-  private static final String CONNECTION_NAME = "name";
 
 
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
@@ -41,83 +28,12 @@ public class TabliConnectionUpsert {
       .addExample(
         "To upsert the information of the connection called `db`",
         CliUsage.CODE_BLOCK,
-        CliUsage.getFullChainOfCommand(childCommand) + " " + URI_PROPERTY + " jdbc:sqlite//%TMP%/db.db db",
+        CliUsage.getFullChainOfCommand(childCommand) + " " + TabliConnection.URI_PROPERTY + " jdbc:sqlite//%TMP%/db.db db",
         CliUsage.CODE_BLOCK
       );
 
 
-    childCommand.addArg(CONNECTION_NAME)
-      .setDescription("the connection name")
-      .setMandatory(true);
-
-    childCommand.addProperty(URI_PROPERTY)
-      .setDescription("The connection uri (if the connection doesn't exist, this option is mandatory)")
-      .setMandatory(true);
-
-    childCommand.addProperty(USER_PROPERTY)
-      .setShortName("-u")
-      .setDescription("The login (ie user)");
-
-
-    childCommand.addProperty(PASSWORD_PROPERTY)
-      .setShortName("-p")
-      .setDescription("The user password");
-
-
-    childCommand.addProperty(DRIVER_PROPERTY)
-      .setShortName("-d")
-      .setDescription("The jdbc driver (for a jdbc connection)");
-
-
-    childCommand.getGroup("Connection Properties")
-      .addWordOf(URI_PROPERTY)
-      .addWordOf(USER_PROPERTY)
-      .addWordOf(PASSWORD_PROPERTY)
-      .addWordOf(DRIVER_PROPERTY);
-
-    // Args control
-    CliParser cliParser = childCommand.parse();
-
-    final String connectionName = cliParser.getString(CONNECTION_NAME);
-    final String urlValue = cliParser.getString(URI_PROPERTY);
-    final String userValue = cliParser.getString(USER_PROPERTY);
-    final String pwdValue = cliParser.getString(PASSWORD_PROPERTY);
-    final String driverValue = cliParser.getString(DRIVER_PROPERTY);
-
-
-    // Main
-    Path connectionVaultPath = tabular.getConfPath();
-    try (ConnectionVault connectionVault = ConnectionVault.create(tabular, connectionVaultPath)) {
-      Connection connection = connectionVault.getConnection(connectionName);
-      if (connection == null) {
-        connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, urlValue)
-          .setOrigin(ConnectionOrigin.CONF);
-        connectionVault.put(connection);
-        System.out.println("The connection (" + connectionName + ") didn't exist and was created");
-      } else {
-        System.out.println("The connection (" + connectionName + ") exist already.");
-        if (!connection.getUriAsString().equals(urlValue)) {
-          connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, urlValue)
-            .setDescription((String) connection.getDescription().getValueOrDefaultOrNull())
-            .setOrigin(connection.getOrigin())
-            .setAttributes(connection.getAttributes()
-              .stream()
-              .filter(v -> v.getAttributeMetadata() != ConnectionAttributeEnumBase.URI)
-              .collect(Collectors.toSet()))
-            .setPassword(pwdValue)
-            .setUser((String) connection.getUser().getValueOrDefaultOrNull());
-          connectionVault.put(connection);
-        }
-      }
-      connection
-        .setUser(userValue)
-        .setPassword(pwdValue);
-      if (driverValue != null) {
-        connection.addAttribute(ConnectionAttributeEnumBase.DRIVER, driverValue, Origin.RUNTIME);
-      }
-      connectionVault.flush();
-    }
-    System.out.println("The connection (" + connectionName + ") was upsert-ed in (" + connectionVaultPath + ")");
+    addOrUpsertConnection(tabular, childCommand, UPSERT_COMMAND);
 
     return new ArrayList<>();
   }

@@ -6,7 +6,6 @@ import com.tabulify.flow.step.TargetArguments;
 import com.tabulify.flow.step.TransferArgumentProperty;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
-import net.bytle.type.Key;
 import net.bytle.type.KeyNormalizer;
 
 /**
@@ -21,7 +20,8 @@ public class TabliWords {
   public static final String CLI_NAME = "tabli";
 
 
-  public static final String ATTRIBUTE_PROPERTY = "--attribute";
+  public static final String NATIVE_ATTRIBUTE = "--native-attribute";
+  public static final String TABLI_ATTRIBUTE = "--attribute";
   public static final String SOURCE_ATTRIBUTE = "--source-attribute";
   public static final String TARGET_ATTRIBUTE_PROPERTY = "--target-attribute";
   public static final String LOG_LEVEL_NAME = "log-level";
@@ -58,8 +58,8 @@ public class TabliWords {
 
 
   protected static final String PASSPHRASE_PROPERTY = "--passphrase";
-  protected final static String WITH_DEPENDENCIES_PROPERTY = "--" + Key.toLongOptionName(SelectSupplierArgument.WITH_DEPENDENCIES);
-  protected final static String VIRTUAL_COLUMN_PROPERTY = "--" + Key.toLongOptionName(EnrichStep.EnrichStepArgument.VIRTUAL_COLUMN);
+  protected final static String WITH_DEPENDENCIES_PROPERTY = "--" + KeyNormalizer.create(SelectSupplierArgument.WITH_DEPENDENCIES).toCliLongOptionName();
+  protected final static String VIRTUAL_COLUMN_PROPERTY = "--" + KeyNormalizer.create(EnrichStep.EnrichStepArgument.VIRTUAL_COLUMN).toCliLongOptionName();
   protected static final String LIMIT_PROPERTY = "--limit";
 
   // Config file words
@@ -138,20 +138,20 @@ public class TabliWords {
   static final String OUTPUT_TRANSFER_OPERATION_OPTION = "--output-transfer-operation";
 
   // Transfer Operation
-  static final String TRANSFER_OPERATION_OPTION = CliParser.PREFIX_LONG_OPTION + Key.toLongOptionName(TransferArgumentProperty.TRANSFER_OPERATION);
-  static final String TARGET_OPERATION_OPTION = CliParser.PREFIX_LONG_OPTION + Key.toLongOptionName(TransferArgumentProperty.TARGET_OPERATION);
-  static final String SOURCE_OPERATION_OPTION = CliParser.PREFIX_LONG_OPTION + Key.toLongOptionName(TransferArgumentProperty.SOURCE_OPERATION);
+  static final String TRANSFER_OPERATION_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.TRANSFER_OPERATION).toCliLongOptionName();
+  static final String TARGET_OPERATION_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.TARGET_OPERATION).toCliLongOptionName();
+  static final String SOURCE_OPERATION_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.SOURCE_OPERATION).toCliLongOptionName();
 
 
   // Cross DataStore Transfer options
-  static final String TARGET_WORKER_OPTION = CliParser.PREFIX_LONG_OPTION + Key.toLongOptionName(TransferArgumentProperty.TARGET_WORKER_COUNT);
-  static final String BUFFER_SIZE_OPTION = CliParser.PREFIX_LONG_OPTION + Key.toLongOptionName(TransferArgumentProperty.BUFFER_SIZE);
+  static final String TARGET_WORKER_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.TARGET_WORKER_COUNT).toCliLongOptionName();
+  static final String BUFFER_SIZE_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.BUFFER_SIZE).toCliLongOptionName();
 
-  static final String WITH_BIND_VARIABLES = CliParser.PREFIX_LONG_OPTION + Key.toLongOptionName(TransferArgumentProperty.WITH_BIND_VARIABLES);
-  static final String TARGET_COMMIT_FREQUENCY_OPTION = CliParser.PREFIX_LONG_OPTION + Key.toLongOptionName(TransferArgumentProperty.TARGET_COMMIT_FREQUENCY);
-  static final String TARGET_BATCH_SIZE_OPTION = CliParser.PREFIX_LONG_OPTION + Key.toLongOptionName(TransferArgumentProperty.TARGET_BATCH_SIZE);
-  static final String METRICS_DATA_URI_OPTION = CliParser.PREFIX_LONG_OPTION + Key.toLongOptionName(TransferArgumentProperty.METRICS_DATA_URI);
-  static final String SOURCE_FETCH_SIZE_OPTION = CliParser.PREFIX_LONG_OPTION + Key.toLongOptionName(TransferArgumentProperty.SOURCE_FETCH_SIZE);
+  static final String WITH_BIND_VARIABLES = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.WITH_BIND_VARIABLES).toCliLongOptionName();
+  static final String TARGET_COMMIT_FREQUENCY_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.TARGET_COMMIT_FREQUENCY).toCliLongOptionName();
+  static final String TARGET_BATCH_SIZE_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.TARGET_BATCH_SIZE).toCliLongOptionName();
+  static final String METRICS_DATA_URI_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.METRICS_DATA_URI).toCliLongOptionName();
+  static final String SOURCE_FETCH_SIZE_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.SOURCE_FETCH_SIZE).toCliLongOptionName();
 
 
   static final String OUTPUT_DATA_URI = "--output-data-uri";
@@ -199,7 +199,7 @@ public class TabliWords {
       .setMandatory(true);
 
     String data_definition = "Data Definition Options";
-    cliCommand.addWordToLibrary(TabliWords.ATTRIBUTE_PROPERTY)
+    cliCommand.addWordToLibrary(TabliWords.TABLI_ATTRIBUTE)
       .setTypeAsProperty()
       .setGroup(data_definition)
       .setShortName("-a")

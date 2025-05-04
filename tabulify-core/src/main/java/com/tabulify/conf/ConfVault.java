@@ -196,14 +196,8 @@ public class ConfVault {
 
                 Map<String, String> yamlDriverPropertiesMap = Casts.castToSameMap(nativeAttributesAsObject, String.class, String.class);
                 for (Map.Entry<String, String> yamlDriverProperty : yamlDriverPropertiesMap.entrySet()) {
-                  Attribute driverAttribute;
                   String nativeDriverPropertyName = yamlDriverProperty.getKey();
-                  try {
-                    driverAttribute = vault.createAttribute(nativeDriverPropertyName, yamlDriverProperty.getValue(), Origin.CONF);
-                  } catch (Exception e) {
-                    throw new RuntimeException("An error has occurred while reading the driver connection attribute " + nativeDriverPropertyName + " value for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
-                  }
-                  connection.putNativeAttribute(nativeDriverPropertyName, driverAttribute);
+                  connection.putNativeAttribute(nativeDriverPropertyName, yamlDriverProperty.getValue(), Origin.CONF);
                 }
               }
 
@@ -384,16 +378,17 @@ public class ConfVault {
     return this;
   }
 
-  public Object deleteVariable(String key) throws CastException {
+  public Set<TabularAttributeEnum> deleteAttributeByGlobName(String globName) {
 
-    TabularAttributeEnum tabularAttribute;
-    try {
-      tabularAttribute = Casts.cast(key, TabularAttributeEnum.class);
-    } catch (CastException e) {
-      throw new CastException("Error: the variable name (" + key + " is not a valid variable name. We were expecting one of: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttributeEnum.class));
+    Set<TabularAttributeEnum> tabularAttributeEnums = global.keySet()
+      .stream()
+      .filter(attributeEnum -> Glob.createOf(globName).matches(attributeEnum.toString().toLowerCase()))
+      .collect(Collectors.toSet());
+
+    for (TabularAttributeEnum tabularAttribute : tabularAttributeEnums) {
+      global.remove(tabularAttribute);
     }
-    Attribute attribute = global.remove(tabularAttribute);
-    return attribute.getRawValue();
+    return tabularAttributeEnums;
 
   }
 
@@ -406,7 +401,7 @@ public class ConfVault {
    * @param globName - a glob
    * @return the deleted connection name
    */
-  public Set<String> deleteConnection(String globName) {
+  public Set<String> deleteConnectionByGlobName(String globName) {
 
     Set<String> connectNamesToDelete = connections.keySet()
       .stream()
@@ -419,5 +414,10 @@ public class ConfVault {
     }
     return connectNamesToDelete;
 
+  }
+
+
+  public HashSet<Connection> getConnections() {
+    return new HashSet<>(connections.values());
   }
 }

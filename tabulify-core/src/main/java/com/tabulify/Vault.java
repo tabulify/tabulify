@@ -23,8 +23,9 @@ public class Vault {
   /**
    * This is a passphrase used to encrypt the sample database password
    * Don't change this value
+   * We use tvault and not vault to not confound with hashicorp vault
    */
-  public static final String VAULT_PREFIX = "vault";
+  public static final String VAULT_PREFIX = "tvault";
   private final Map<String, Object> templatingEnvs;
   private final Protector protector;
 
@@ -46,7 +47,7 @@ public class Vault {
   }
 
   /**
-   * @param protector          - the protector
+   * @param protector           - the protector
    * @param templatingVariables Free variable used in templating to create clear value from variable
    */
   public static Vault create(Protector protector, TabularEnvs templatingVariables) {
@@ -100,6 +101,17 @@ public class Vault {
     return createVariableBuilderFromAttribute(attribute)
       .setOrigin(origin)
       .buildSafe(value);
+  }
+
+  /**
+   * @param value - the value to encrypt if possible (passphrase provided)
+   * @return the encrypted value or non ecnrytped if no passphrase
+   */
+  public String encryptIfPossible(String value) {
+    if (protector != null && !value.startsWith(Vault.VAULT_PREFIX)) {
+      return encrypt(value);
+    }
+    return value;
   }
 
   /**

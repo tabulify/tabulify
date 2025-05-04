@@ -1,8 +1,5 @@
 package com.tabulify.tabli;
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliUsage;
 import com.tabulify.Tabular;
 import com.tabulify.flow.engine.Pipeline;
 import com.tabulify.flow.step.CastStep;
@@ -11,6 +8,9 @@ import com.tabulify.flow.step.SelectSupplier;
 import com.tabulify.flow.step.TailFunction;
 import com.tabulify.spi.DataPath;
 import com.tabulify.uri.DataUri;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
 import net.bytle.exception.NullValueException;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
@@ -65,7 +65,7 @@ public class TabliDataTail {
       .setDefaultValue(DEFAULT_LIMIT_VALUE);
     childCommand.addFlag(WITH_DEPENDENCIES_PROPERTY);
     childCommand.addArg(DATA_SELECTORS);
-    childCommand.addProperty(TabliWords.ATTRIBUTE_PROPERTY)
+    childCommand.addProperty(TabliWords.TABLI_ATTRIBUTE)
       .setDescription("Set specific data resource attributes")
       .setValueName("attributeName=value");
     childCommand.addProperty(VIRTUAL_COLUMN_PROPERTY);
@@ -81,7 +81,7 @@ public class TabliDataTail {
       .collect(Collectors.toSet());
     final Boolean withDependencies = cliParser.getBoolean(WITH_DEPENDENCIES_PROPERTY);
 
-    Map<String, ?> attributes = cliParser.getProperties(TabliWords.ATTRIBUTE_PROPERTY);
+    Map<String, ?> attributes = cliParser.getProperties(TabliWords.TABLI_ATTRIBUTE);
     Map<String, String> virtualColumns = cliParser.getProperties(VIRTUAL_COLUMN_PROPERTY);
     MediaType type = null;
     try {

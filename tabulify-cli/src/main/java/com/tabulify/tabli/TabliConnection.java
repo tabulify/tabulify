@@ -2,13 +2,22 @@ package com.tabulify.tabli;
 
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.ConfVault;
+import com.tabulify.conf.Origin;
+import com.tabulify.connection.Connection;
+import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.spi.DataPath;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
+import net.bytle.log.Log;
+import net.bytle.log.Logs;
+import net.bytle.type.KeyNormalizer;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.tabulify.tabli.TabliLog.LOGGER_TABLI;
 import static com.tabulify.tabli.TabliWords.*;
@@ -16,6 +25,11 @@ import static com.tabulify.tabli.TabliWords.*;
 
 public class TabliConnection {
 
+
+  protected static final String URI_PROPERTY = "--uri";
+  private static final String CONNECTION_NAME = "name";
+
+  private static final Log LOGGER = Logs.createFromClazz(TabliConnectionAdd.class);
 
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
 
@@ -73,4 +87,128 @@ public class TabliConnection {
     return feedbackDataPaths;
   }
 
+  /**
+   * Common code on add and upsert command
+   */
+  static void addOrUpsertConnection(Tabular tabular, CliCommand childCommand, String command) {
+
+    childCommand.addArg(CONNECTION_NAME)
+      .setDescription("the connection name")
+      .setMandatory(true);
+
+    String uriDescForUpsertOnly = "";
+    if (command.equals(UPSERT_COMMAND)) {
+      uriDescForUpsertOnly = "\nIf the connection doesn't exist, this option is mandatory.";
+    }
+    childCommand.addArg(TabliConnectionAdd.URI_ARGUMENT)
+      .setDescription("The system connection string (a JDBC Uri for a database or a file system URI)." + uriDescForUpsertOnly)
+      .setMandatory(true);
+
+    childCommand.addProperty(TabliConnectionAdd.USER_PROPERTY)
+      .setShortName("-u")
+      .setDescription("The user name (ie the login name)")
+      .setValueName("user");
+
+    childCommand.addProperty(TABLI_ATTRIBUTE)
+      .setDescription("A tabulify connection attribute")
+      .setValueName("key=value");
+
+    childCommand.addProperty(NATIVE_ATTRIBUTE)
+      .setDescription("A native connection attribute (Example: JDBC driver property")
+      .setValueName("key=value");
+
+
+    childCommand.addProperty(TabliConnectionAdd.PASSWORD_PROPERTY)
+      .setShortName("-p")
+      .setValueName("password")
+      .setDescription("The user password (Clear password is encrypted only if a passphrase is provided)");
+
+
+    childCommand.addProperty(TabliConnectionAdd.DRIVER_PROPERTY)
+      .setShortName("-d")
+      .setDescription("The jdbc driver (JDBC URL only)")
+      .setValueName("tld.package.driverClass");
+
+
+    childCommand.getGroup("Connection Properties")
+      .addWordOf(TabliConnectionAdd.URI_ARGUMENT)
+      .addWordOf(TabliConnectionAdd.USER_PROPERTY)
+      .addWordOf(TabliConnectionAdd.PASSWORD_PROPERTY)
+      .addWordOf(TabliConnectionAdd.DRIVER_PROPERTY)
+      .addWordOf(TABLI_ATTRIBUTE)
+      .addWordOf(NATIVE_ATTRIBUTE)
+    ;
+
+    // Args control
+    CliParser cliParser = childCommand.parse();
+
+    final String connectionName = cliParser.getString(CONNECTION_NAME);
+
+    // Main
+    Path connectionVaultPath = tabular.getConfPath();
+    Connection connection;
+    ConfVault confVault = ConfVault.createFromPath(connectionVaultPath, tabular);
+
+    connection = confVault.getConnection(connectionName);
+    final String uriValue = cliParser.getString(TabliConnectionAdd.URI_ARGUMENT);
+
+    if (connection == null) {
+      connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, uriValue);
+      LOGGER.info("The connection (" + connectionName + ") was created");
+    } else {
+      if (command.equals(ADD_COMMAND)) {
+        throw new RuntimeException("The connection (" + connectionName + ") exist already. It can't then be added, use the upsert command instead. (Connection vault location: " + connectionVaultPath + ")");
+      }
+      LOGGER.info("The connection (" + connectionName + ") was found, updating");
+    }
+
+
+    final String userValue = cliParser.getString(TabliConnectionAdd.USER_PROPERTY);
+
+
+    // origin must be conf, otherwise it will not be in the flush
+    Origin origin = Origin.CONF;
+    if (userValue != null) {
+      connection.addAttribute(ConnectionAttributeEnumBase.USER, userValue, origin);
+    }
+    String pwdValue = cliParser.getString(TabliConnectionAdd.PASSWORD_PROPERTY);
+    if (pwdValue != null) {
+      pwdValue = tabular.getVault().encryptIfPossible(pwdValue);
+      connection.addAttribute(ConnectionAttributeEnumBase.PASSWORD, pwdValue, origin);
+    }
+
+    final String driverValue = cliParser.getString(TabliConnectionAdd.DRIVER_PROPERTY);
+    if (driverValue != null) {
+      connection.addAttribute(ConnectionAttributeEnumBase.DRIVER, driverValue, origin);
+    }
+
+    Map<String, String> tabliAttributes = cliParser.getProperties(TABLI_ATTRIBUTE);
+    for (Map.Entry<String, String> tabliAttribute : tabliAttributes.entrySet()) {
+      connection.addAttribute(KeyNormalizer.create(tabliAttribute.getKey()), tabliAttribute.getValue(), origin);
+    }
+
+    Map<String, String> nativeAttributes = cliParser.getProperties(NATIVE_ATTRIBUTE);
+    for (Map.Entry<String, String> nativeAttribute : nativeAttributes.entrySet()) {
+      connection.putNativeAttribute(nativeAttribute.getKey(), nativeAttribute.getValue(), origin);
+    }
+
+    confVault
+      .addConnection(connection)
+      .flush();
+    LOGGER.info("The connection (" + connectionName + ") was saved into the connection vault (" + connectionVaultPath + ")");
+
+
+    // Ping test ?
+    try {
+      connection.getDataSystem();
+      LOGGER.info("Connection pinged");
+    } catch (Exception e) {
+      String msg = "We were unable to make a connection to the connection" + connectionName;
+      if (!tabular.isStrict()) {
+        LOGGER.warning(msg);
+      } else {
+        throw new RuntimeException(msg);
+      }
+    }
+  }
 }
