@@ -2,6 +2,7 @@ package com.tabulify.tabli;
 
 import com.tabulify.Tabular;
 import com.tabulify.TabularAttributeEnum;
+import com.tabulify.conf.Attribute;
 import com.tabulify.conf.ConfVault;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
@@ -10,9 +11,9 @@ import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
 import net.bytle.type.KeyNormalizer;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class TabliAttributeDelete {
 
@@ -30,7 +31,7 @@ public class TabliAttributeDelete {
 
 
     childCommand.addArg(TabliWords.KEY)
-      .setDescription("the configuration key to delete")
+      .setDescription("The attribute to delete (globbing works too)")
       .setMandatory(true);
 
 
@@ -39,22 +40,28 @@ public class TabliAttributeDelete {
 
     final String key = cliParser.getString(TabliWords.KEY);
 
-    Path conf = TabliAttribute.getVariablesFilePathToModify(tabular, cliParser);
     ConfVault confVault = ConfVault
-      .createFromPath(conf, tabular);
-    Object value;
-    value = confVault.deleteAttributeByGlobName(key);
+      .createFromPath(tabular.getConfPath(), tabular);
+    Set<Attribute> deleteAttributesByGlobName = confVault.deleteAttributesByGlobName(key);
 
-    confVault.flush();
+    if (deleteAttributesByGlobName.isEmpty()) {
+      if (tabular.isStrict()) {
+        throw new RuntimeException("No attribute were found with the glob " + key);
+      }
+    } else {
+      confVault.flush();
+    }
 
     DataPath feedbackDataPath = tabular.getMemoryDataStore().getDataPath("configurationDeleted")
-      .setDescription("The below configuration was deleted")
+      .setDescription("The below global attributes were deleted")
       .createRelationDef()
       .addColumn("key")
       .addColumn("value")
       .getDataPath();
     try (InsertStream insertStream = feedbackDataPath.getInsertStream()) {
-      insertStream.insert(key, value);
+      for (Attribute attribute : deleteAttributesByGlobName) {
+        insertStream.insert(tabular.toPublicName(attribute), attribute.getValueOrDefaultAsStringNotNull());
+      }
     }
 
     return Collections.singletonList(feedbackDataPath);

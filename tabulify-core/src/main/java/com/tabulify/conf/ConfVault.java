@@ -378,17 +378,18 @@ public class ConfVault {
     return this;
   }
 
-  public Set<TabularAttributeEnum> deleteAttributeByGlobName(String globName) {
+  public Set<Attribute> deleteAttributesByGlobName(String globName) {
 
     Set<TabularAttributeEnum> tabularAttributeEnums = global.keySet()
       .stream()
       .filter(attributeEnum -> Glob.createOf(globName).matches(attributeEnum.toString().toLowerCase()))
       .collect(Collectors.toSet());
 
+    Set<Attribute> attributesDeleted = new HashSet<>();
     for (TabularAttributeEnum tabularAttribute : tabularAttributeEnums) {
-      global.remove(tabularAttribute);
+      attributesDeleted.add(global.remove(tabularAttribute));
     }
-    return tabularAttributeEnums;
+    return attributesDeleted;
 
   }
 

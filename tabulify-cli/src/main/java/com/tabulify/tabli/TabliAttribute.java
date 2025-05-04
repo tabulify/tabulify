@@ -6,7 +6,6 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import static com.tabulify.tabli.TabliLog.LOGGER_TABLI;
@@ -53,18 +52,6 @@ public class TabliAttribute {
   }
 
 
-  /**
-   * @param tabular   - the context
-   * @param cliParser - the parser
-   * @return the variable file path to modify
-   */
-  static Path getVariablesFilePathToModify(Tabular tabular, CliParser cliParser) {
-    Path conf = cliParser.getPath(CONF_PATH_PROPERTY);
-    if (conf != null) {
-      return conf;
-    }
-    return tabular.getConfPath();
-  }
 
 }
 

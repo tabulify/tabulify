@@ -56,7 +56,7 @@ public class TabliDataList {
     childCommand.addArg(TabliWords.DATA_SELECTORS)
       .setDescription("One or more name data resource selectors (ie pattern[@connection])")
       .setMandatory(true);
-    childCommand.addProperty(TabliWords.TABLI_ATTRIBUTE)
+    childCommand.addProperty(TabliWords.TABLI_ATTRIBUTE_OPTION)
       .setDescription("Set the data resource attributes to show (`path`, `name`,`count`, `size`, `type`, `connection`, ...)")
       .setValueName("attributeName")
       .setDefaultValue(DataPathAttribute.PATH);
@@ -77,7 +77,7 @@ public class TabliDataList {
       .stream()
       .map(tabular::createDataUri)
       .collect(Collectors.toSet());
-    final List<String> attributes = cliParser.getStrings(TabliWords.TABLI_ATTRIBUTE);
+    final List<String> attributes = cliParser.getStrings(TabliWords.TABLI_ATTRIBUTE_OPTION);
     final Boolean withDependencies = cliParser.getBoolean(TabliWords.WITH_DEPENDENCIES_PROPERTY);
 
     /**

@@ -37,8 +37,8 @@ public class TabliConnectionList {
       )
       .addExample("List all connections that starts with `sql` and add the `name` and `user` connection attributes to the output",
         CliUsage.CODE_BLOCK,
-        CliUsage.getFullChainOfCommand(childCommand) + " " + TabliWords.TABLI_ATTRIBUTE + " name " +
-          TabliWords.TABLI_ATTRIBUTE + " user sql*",
+        CliUsage.getFullChainOfCommand(childCommand) + " " + TabliWords.TABLI_ATTRIBUTE_OPTION + " name " +
+          TabliWords.TABLI_ATTRIBUTE_OPTION + " user sql*",
         CliUsage.CODE_BLOCK
       );
 
@@ -47,7 +47,7 @@ public class TabliConnectionList {
       .setDescription("One ore several glob pattern that select connections by name")
       .setMandatory(false)
       .setDefaultValue("*");
-    childCommand.addProperty(TabliWords.TABLI_ATTRIBUTE)
+    childCommand.addProperty(TabliWords.TABLI_ATTRIBUTE_OPTION)
       .setDescription("A connection attribute to add to the output")
       .addDefaultValue(ConnectionAttributeEnumBase.NAME)
       .addDefaultValue(ConnectionAttributeEnumBase.URI);
@@ -64,7 +64,7 @@ public class TabliConnectionList {
     RelationDef connectionDef = tabular.getAndCreateRandomMemoryDataPath()
       .getOrCreateRelationDef();
 
-    List<String> attributes = cliParser.getStrings(TabliWords.TABLI_ATTRIBUTE);
+    List<String> attributes = cliParser.getStrings(TabliWords.TABLI_ATTRIBUTE_OPTION);
     for (String attribute : attributes) {
       connectionDef.addColumn(attribute);
     }

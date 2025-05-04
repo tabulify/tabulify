@@ -32,7 +32,7 @@ public class TabliDataStructure {
     childCommand.addFlag(WITH_DEPENDENCIES_PROPERTY);
     childCommand.addProperty(VIRTUAL_COLUMN_PROPERTY);
     childCommand.addFlag(TabliWords.NOT_STRICT_FLAG);
-    childCommand.addProperty(TABLI_ATTRIBUTE);
+    childCommand.addProperty(TABLI_ATTRIBUTE_OPTION);
 
     // Args
     final CliParser cliParser = childCommand.parse();
@@ -50,7 +50,7 @@ public class TabliDataStructure {
     final Boolean withDependencies = cliParser.getBoolean(WITH_DEPENDENCIES_PROPERTY);
 
     Map<String, String> virtualColumns = cliParser.getProperties(VIRTUAL_COLUMN_PROPERTY);
-    Map<String, String> attributes = cliParser.getProperties(TABLI_ATTRIBUTE);
+    Map<String, String> attributes = cliParser.getProperties(TABLI_ATTRIBUTE_OPTION);
     return new ArrayList<>(
       Pipeline
         .createFrom(tabular)

@@ -109,7 +109,7 @@ public class TabliConnection {
       .setDescription("The user name (ie the login name)")
       .setValueName("user");
 
-    childCommand.addProperty(TABLI_ATTRIBUTE)
+    childCommand.addProperty(TABLI_ATTRIBUTE_OPTION)
       .setDescription("A tabulify connection attribute")
       .setValueName("key=value");
 
@@ -135,7 +135,7 @@ public class TabliConnection {
       .addWordOf(TabliConnectionAdd.USER_PROPERTY)
       .addWordOf(TabliConnectionAdd.PASSWORD_PROPERTY)
       .addWordOf(TabliConnectionAdd.DRIVER_PROPERTY)
-      .addWordOf(TABLI_ATTRIBUTE)
+      .addWordOf(TABLI_ATTRIBUTE_OPTION)
       .addWordOf(NATIVE_ATTRIBUTE)
     ;
 
@@ -182,7 +182,7 @@ public class TabliConnection {
       connection.addAttribute(ConnectionAttributeEnumBase.DRIVER, driverValue, origin);
     }
 
-    Map<String, String> tabliAttributes = cliParser.getProperties(TABLI_ATTRIBUTE);
+    Map<String, String> tabliAttributes = cliParser.getProperties(TABLI_ATTRIBUTE_OPTION);
     for (Map.Entry<String, String> tabliAttribute : tabliAttributes.entrySet()) {
       connection.addAttribute(KeyNormalizer.create(tabliAttribute.getKey()), tabliAttribute.getValue(), origin);
     }

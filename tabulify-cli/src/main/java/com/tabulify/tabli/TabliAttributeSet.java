@@ -9,7 +9,6 @@ import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
 import net.bytle.exception.CastException;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -41,10 +40,9 @@ public class TabliAttributeSet {
     final String key = cliParser.getString(TabliWords.KEY);
     final String value = cliParser.getString(TabliWords.VALUE);
 
-    Path conf = TabliAttribute.getVariablesFilePathToModify(tabular, cliParser);
 
     try {
-      ConfVault.createFromPath(conf, tabular)
+      ConfVault.createFromPath(tabular.getConfPath(), tabular)
         .addAttribute(key, value)
         .flush();
     } catch (CastException e) {

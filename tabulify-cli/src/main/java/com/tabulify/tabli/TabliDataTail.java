@@ -65,7 +65,7 @@ public class TabliDataTail {
       .setDefaultValue(DEFAULT_LIMIT_VALUE);
     childCommand.addFlag(WITH_DEPENDENCIES_PROPERTY);
     childCommand.addArg(DATA_SELECTORS);
-    childCommand.addProperty(TabliWords.TABLI_ATTRIBUTE)
+    childCommand.addProperty(TabliWords.TABLI_ATTRIBUTE_OPTION)
       .setDescription("Set specific data resource attributes")
       .setValueName("attributeName=value");
     childCommand.addProperty(VIRTUAL_COLUMN_PROPERTY);
@@ -81,7 +81,7 @@ public class TabliDataTail {
       .collect(Collectors.toSet());
     final Boolean withDependencies = cliParser.getBoolean(WITH_DEPENDENCIES_PROPERTY);
 
-    Map<String, ?> attributes = cliParser.getProperties(TabliWords.TABLI_ATTRIBUTE);
+    Map<String, ?> attributes = cliParser.getProperties(TabliWords.TABLI_ATTRIBUTE_OPTION);
     Map<String, String> virtualColumns = cliParser.getProperties(VIRTUAL_COLUMN_PROPERTY);
     MediaType type = null;
     try {

@@ -40,7 +40,7 @@ public class TabliDataTemplate {
       );
 
     childCommand.addFlag(WITH_DEPENDENCIES_PROPERTY);
-    childCommand.addProperty(TabliWords.TABLI_ATTRIBUTE)
+    childCommand.addProperty(TabliWords.TABLI_ATTRIBUTE_OPTION)
       .setDescription("Set specific data resource attributes")
       .setValueName("attributeName=value");
 
@@ -74,7 +74,7 @@ public class TabliDataTemplate {
     }
 
     final Boolean withDependencies = cliParser.getBoolean(WITH_DEPENDENCIES_PROPERTY);
-    Map<String, ?> attributes = cliParser.getProperties(TabliWords.TABLI_ATTRIBUTE);
+    Map<String, ?> attributes = cliParser.getProperties(TabliWords.TABLI_ATTRIBUTE_OPTION);
     Set<DataUri> templateSelectors = cliParser
       .getStrings(TemplateAttributes.TEMPLATE_SELECTORS.toString())
       .stream()

@@ -70,7 +70,7 @@ public class TabliDataHead {
       .setDefaultValue(DEFAULT_LIMIT_VALUE);
     childCommand.addFlag(WITH_DEPENDENCIES_PROPERTY);
     childCommand.addArg(DATA_SELECTORS);
-    childCommand.addProperty(TabliWords.TABLI_ATTRIBUTE)
+    childCommand.addProperty(TabliWords.TABLI_ATTRIBUTE_OPTION)
       .setDescription("Set specific data resource attributes")
       .setValueName("attributeName=value");
     childCommand.addProperty(TYPE_PROPERTY);
@@ -86,7 +86,7 @@ public class TabliDataHead {
       .collect(Collectors.toSet());
     final Boolean withDependencies = cliParser.getBoolean(WITH_DEPENDENCIES_PROPERTY);
 
-    Map<String, ?> attributes = cliParser.getProperties(TabliWords.TABLI_ATTRIBUTE);
+    Map<String, ?> attributes = cliParser.getProperties(TabliWords.TABLI_ATTRIBUTE_OPTION);
     Map<String, String> virtualColumns = cliParser.getProperties(VIRTUAL_COLUMN_PROPERTY);
     MediaType type = null;
     try {

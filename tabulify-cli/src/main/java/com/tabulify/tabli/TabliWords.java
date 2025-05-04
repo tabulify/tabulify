@@ -21,7 +21,7 @@ public class TabliWords {
 
 
   public static final String NATIVE_ATTRIBUTE = "--native-attribute";
-  public static final String TABLI_ATTRIBUTE = "--attribute";
+  public static final String TABLI_ATTRIBUTE_OPTION = "--attribute";
   public static final String SOURCE_ATTRIBUTE = "--source-attribute";
   public static final String TARGET_ATTRIBUTE_PROPERTY = "--target-attribute";
   public static final String LOG_LEVEL_NAME = "log-level";
@@ -199,7 +199,7 @@ public class TabliWords {
       .setMandatory(true);
 
     String data_definition = "Data Definition Options";
-    cliCommand.addWordToLibrary(TabliWords.TABLI_ATTRIBUTE)
+    cliCommand.addWordToLibrary(TabliWords.TABLI_ATTRIBUTE_OPTION)
       .setTypeAsProperty()
       .setGroup(data_definition)
       .setShortName("-a")

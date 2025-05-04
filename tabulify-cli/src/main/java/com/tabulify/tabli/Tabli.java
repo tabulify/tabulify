@@ -85,7 +85,6 @@ public class Tabli {
     rootCommand.addProperty(TabliWords.LOG_LEVEL_LONG_OPTION)
       .setShortName("-l")
       .setDescription("Set the log level")
-      .setEnvName("TABLI_LOG_LEVEL")
       .setValueName("error|warning|tip|info|fine")
       .setDefaultValue("info")
     ;
@@ -565,6 +564,8 @@ public class Tabli {
      * or
      * in dev mode
      */
-    return Logs.getLevel().intValue() <= Level.FINE.intValue() || tabular.isIdeEnv();
+    Boolean ideEnv = tabular.isIdeEnv();
+    Level level = Logs.getLevel();
+    return level.intValue() <= Level.FINE.intValue() || ideEnv;
   }
 }

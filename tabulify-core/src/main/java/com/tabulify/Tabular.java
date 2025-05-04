@@ -164,6 +164,7 @@ public class Tabular implements AutoCloseable {
      */
     confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, tabularEnvs, projectHomePath);
     ConfVault confVault = ConfVault.createFromPath(confPath, vault, this);
+    confVault.getConnections().forEach(this::addConnection);
 
     /**
      * Execution Env
@@ -218,13 +219,8 @@ public class Tabular implements AutoCloseable {
     /**
      * After init
      */
-    // Load connections
     Path sqliteConnectionHome = TabularInit.determineSqliteHome(vault, tabularEnvs, attributes);
     ConnectionBuiltIn.loadBuiltInConnections(this, sqliteConnectionHome);
-    if (tabularConfig.confPath != null) {
-      throw new RuntimeException("Not yet implemented");
-      //loadConnections(tabularConfig.connectionVault, ConnectionOrigin.COMMAND_LINE);
-    }
 
     // Default Connection
     if (projectHomePath != null) {
@@ -958,10 +954,6 @@ public class Tabular implements AutoCloseable {
       .filter(AttributeEnumParameter::isParameter)
       .map(enumValue -> toPublicName(enumValue.toString()))
       .collect(Collectors.joining(", "));
-  }
-
-  public Protector getProtector() {
-    return this.protector;
   }
 
 
