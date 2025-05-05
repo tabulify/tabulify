@@ -1,6 +1,7 @@
 package com.tabulify.fs;
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Attribute;
 import com.tabulify.connection.ConnectionMetadata;
 import com.tabulify.fs.binary.FsBinaryDataPath;
 import com.tabulify.fs.dir.FsDirectoryDataPath;
@@ -14,7 +15,6 @@ import net.bytle.exception.InternalException;
 import net.bytle.type.Casts;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
-import com.tabulify.conf.Attribute;
 
 import java.io.IOException;
 import java.net.URI;
@@ -75,7 +75,8 @@ public class FsConnection extends NoOpConnection {
          */
         fileSystem = FileSystems.getDefault();
       } else {
-        fileSystem = FileSystems.newFileSystem(URI.create(uri), this.getNativeDriverAttributes());
+
+        fileSystem = FileSystems.newFileSystem(URI.create(uri), this.getConnectionProperties());
       }
 
     } catch (Exception e) {

@@ -2,9 +2,11 @@ package com.tabulify.tabli;
 
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Attribute;
 import com.tabulify.conf.ConfVault;
 import com.tabulify.conf.Origin;
 import com.tabulify.connection.Connection;
+import com.tabulify.connection.ConnectionAttributeEnum;
 import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.spi.DataPath;
 import net.bytle.cli.CliCommand;
@@ -97,12 +99,22 @@ public class TabliConnection {
       .setMandatory(true);
 
     String uriDescForUpsertOnly = "";
-    if (command.equals(UPSERT_COMMAND)) {
-      uriDescForUpsertOnly = "\nIf the connection doesn't exist, this option is mandatory.";
+    String uriDesc = "The system connection string (a JDBC Uri for a database or a file system URI).";
+    switch (command) {
+      case ADD_COMMAND:
+        childCommand.addArg(TabliConnectionAdd.URI_ARGUMENT)
+          .setDescription(uriDesc + uriDescForUpsertOnly)
+          .setMandatory(true);
+        break;
+      case UPSERT_COMMAND:
+      default:
+        uriDescForUpsertOnly = "\nIf the connection doesn't exist, this option is mandatory.";
+        childCommand.addProperty(URI_PROPERTY)
+          .setDescription(uriDesc + uriDescForUpsertOnly)
+          .setMandatory(true);
+        break;
     }
-    childCommand.addArg(TabliConnectionAdd.URI_ARGUMENT)
-      .setDescription("The system connection string (a JDBC Uri for a database or a file system URI)." + uriDescForUpsertOnly)
-      .setMandatory(true);
+
 
     childCommand.addProperty(TabliConnectionAdd.USER_PROPERTY)
       .setShortName("-u")
@@ -150,7 +162,19 @@ public class TabliConnection {
     ConfVault confVault = ConfVault.createFromPath(connectionVaultPath, tabular);
 
     connection = confVault.getConnection(connectionName);
-    final String uriValue = cliParser.getString(TabliConnectionAdd.URI_ARGUMENT);
+    String uriValue;
+    switch (command) {
+      case ADD_COMMAND:
+        uriValue = cliParser.getString(TabliConnectionAdd.URI_ARGUMENT);
+        break;
+      case UPSERT_COMMAND:
+      default:
+        uriValue = cliParser.getString(URI_PROPERTY);
+        break;
+    }
+
+    // origin must be conf, otherwise it will not be in the flush
+    Origin confOrigin = Origin.CONF;
 
     if (connection == null) {
       connection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, uriValue);
@@ -160,36 +184,53 @@ public class TabliConnection {
         throw new RuntimeException("The connection (" + connectionName + ") exist already. It can't then be added, use the upsert command instead. (Connection vault location: " + connectionVaultPath + ")");
       }
       LOGGER.info("The connection (" + connectionName + ") was found, updating");
+      if (uriValue != null && !connection.getUriAsString().equals(uriValue)) {
+        // a new uri, means a new connection (normally only for a new scheme but yeah)
+        Connection newConnection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, uriValue);
+        for (Attribute attribute : connection.getAttributes()) {
+          // only conf origin
+          // don't modify the URI attribute as it's the new one
+          if (attribute.getOrigin() != confOrigin || attribute.getAttributeMetadata() == ConnectionAttributeEnumBase.URI) {
+            continue;
+          }
+          newConnection.addAttribute((ConnectionAttributeEnum) attribute.getAttributeMetadata(), attribute.getValueOrNull(), confOrigin, tabular.getVault());
+        }
+        for (Map.Entry<String, Attribute> nativeAttribute : connection.getNativeDriverAttributes().entrySet()) {
+          if (nativeAttribute.getValue().getOrigin() != confOrigin) {
+            continue;
+          }
+          newConnection.addNativeAttribute(nativeAttribute.getKey(), (String) nativeAttribute.getValue().getValueOrNull(), confOrigin, tabular.getVault());
+        }
+        connection = newConnection;
+      }
     }
 
 
     final String userValue = cliParser.getString(TabliConnectionAdd.USER_PROPERTY);
 
 
-    // origin must be conf, otherwise it will not be in the flush
-    Origin origin = Origin.CONF;
     if (userValue != null) {
-      connection.addAttribute(ConnectionAttributeEnumBase.USER, userValue, origin);
+      connection.addAttribute(ConnectionAttributeEnumBase.USER, userValue, confOrigin, tabular.getVault());
     }
     String pwdValue = cliParser.getString(TabliConnectionAdd.PASSWORD_PROPERTY);
     if (pwdValue != null) {
       pwdValue = tabular.getVault().encryptIfPossible(pwdValue);
-      connection.addAttribute(ConnectionAttributeEnumBase.PASSWORD, pwdValue, origin);
+      connection.addAttribute(ConnectionAttributeEnumBase.PASSWORD, pwdValue, confOrigin, tabular.getVault());
     }
 
     final String driverValue = cliParser.getString(TabliConnectionAdd.DRIVER_PROPERTY);
     if (driverValue != null) {
-      connection.addAttribute(ConnectionAttributeEnumBase.DRIVER, driverValue, origin);
+      connection.addAttribute(ConnectionAttributeEnumBase.DRIVER, driverValue, confOrigin, tabular.getVault());
     }
 
     Map<String, String> tabliAttributes = cliParser.getProperties(TABLI_ATTRIBUTE_OPTION);
     for (Map.Entry<String, String> tabliAttribute : tabliAttributes.entrySet()) {
-      connection.addAttribute(KeyNormalizer.create(tabliAttribute.getKey()), tabliAttribute.getValue(), origin);
+      connection.addAttribute(KeyNormalizer.create(tabliAttribute.getKey()), tabliAttribute.getValue(), confOrigin, tabular.getVault());
     }
 
     Map<String, String> nativeAttributes = cliParser.getProperties(NATIVE_ATTRIBUTE);
     for (Map.Entry<String, String> nativeAttribute : nativeAttributes.entrySet()) {
-      connection.putNativeAttribute(nativeAttribute.getKey(), nativeAttribute.getValue(), origin);
+      connection.addNativeAttribute(nativeAttribute.getKey(), nativeAttribute.getValue(), confOrigin, tabular.getVault());
     }
 
     confVault

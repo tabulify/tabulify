@@ -1,6 +1,7 @@
 package com.tabulify.email.flow;
 
 import com.tabulify.Tabular;
+import com.tabulify.Vault;
 import com.tabulify.conf.Attribute;
 import com.tabulify.conf.Origin;
 import com.tabulify.connection.Connection;
@@ -67,13 +68,13 @@ public class SmtpConnection extends Connection {
   }
 
   @Override
-  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin) {
+  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin, Vault vault) {
 
     SmtpConnectionAttributeEnum smtpConnectionAttribute;
     try {
       smtpConnectionAttribute = Casts.cast(name, SmtpConnectionAttributeEnum.class);
     } catch (Exception e) {
-      return super.addAttribute(name, value, origin);
+      return super.addAttribute(name, value, origin, vault);
     }
 
     try {

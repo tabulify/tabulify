@@ -1,6 +1,7 @@
 package com.tabulify.tabli;
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Origin;
 import com.tabulify.model.RelationDef;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
@@ -11,7 +12,6 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.regexp.Glob;
 import net.bytle.type.Casts;
-import com.tabulify.conf.Origin;
 import net.bytle.type.Strings;
 
 import java.util.Arrays;
@@ -76,7 +76,6 @@ public class TabliAttributeList {
 
     List<Glob> nameSelectors = cliParser.getStrings(TabliWords.NAME_SELECTORS)
       .stream()
-      .map(tabular::toPublicName)
       .map(Glob::createOf)
       .collect(Collectors.toList());
 

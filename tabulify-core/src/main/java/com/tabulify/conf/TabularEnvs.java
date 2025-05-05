@@ -1,10 +1,8 @@
 package com.tabulify.conf;
 
-import com.tabulify.DbLoggers;
 import com.tabulify.Tabular;
 import com.tabulify.Vault;
 import net.bytle.crypto.Protector;
-import net.bytle.exception.CastException;
 import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MapKeyIndependent;
 
@@ -27,6 +25,11 @@ public class TabularEnvs {
     this.sysEnv.putAll(initEnvs);
     for (Map.Entry<String, String> osEnv : System.getenv().entrySet()) {
       String key = osEnv.getKey();
+      if (key.equals("_")) {
+        // this is the command being executed (ie /usr/bin/env for shell or /home/admin/.sdkman/candidates/java/11.0.26-tem/bin/java ofr java)
+        // it results in no key so we skip it
+        continue;
+      }
       String originalValue = osEnv.getValue();
       String decryptedValue = originalValue;
       if (originalValue.startsWith(Vault.VAULT_PREFIX)) {

@@ -20,6 +20,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.FileSystems;
+import java.sql.DriverManager;
 import java.sql.Ref;
 import java.sql.Types;
 import java.time.*;
@@ -291,8 +293,10 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * Add a free form key
    * Each connection should implement it to add its own attribute
    * and call super to add the attribute of its parent if the name is unknown
+   *
+   * @param vault - vault is there to be able to pass a vault from {@link ConfVault}
    */
-  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin) {
+  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin, Vault vault) {
     ConnectionAttributeEnumBase connectionAttributeBase;
     try {
       connectionAttributeBase = Casts.cast(name, ConnectionAttributeEnumBase.class);
@@ -300,7 +304,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       throw new RuntimeException("The connection attribute " + name + " is unknown for the connection " + this + ". We were expecting one of the following " + tabular.toPublicListOfParameters(this.getAttributeEnums()), e);
     }
     try {
-      com.tabulify.conf.Attribute attribute = tabular.getVault().createAttribute(connectionAttributeBase, value, origin);
+      com.tabulify.conf.Attribute attribute = vault.createAttribute(connectionAttributeBase, value, origin);
       this.addAttribute(attribute);
     } catch (Exception e) {
       throw new RuntimeException("Error while adding the variable " + name + " to the connection " + this + ". Error: " + e.getMessage(), e);
@@ -318,9 +322,9 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public Connection addAttribute(ConnectionAttributeEnum key, Object value, Origin origin) {
+  public Connection addAttribute(ConnectionAttributeEnum key, Object value, Origin origin, Vault vault) {
     try {
-      com.tabulify.conf.Attribute attribute = tabular.getVault().createAttribute(key, value, origin);
+      com.tabulify.conf.Attribute attribute = vault.createAttribute(key, value, origin);
       this.addAttribute(attribute);
     } catch (Exception e) {
       throw new RuntimeException("Error while adding connection the property " + key + ". Error: " + e.getMessage(), e);
@@ -820,25 +824,52 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public Map<String, String> getNativeDriverAttributes() {
-    return this.nativeDriverAttributes
+  public Map<String, Attribute> getNativeDriverAttributes() {
+    return this.nativeDriverAttributes;
+  }
+
+
+  /**
+   * @param vault - vault is there to be able to pass the vault from {@link ConfVault}
+   */
+  public void addNativeAttribute(String name, String value, Origin origin, Vault vault) {
+    Attribute nativeAttribute;
+    try {
+      nativeAttribute = vault.createAttribute(name, value, origin);
+    } catch (Exception e) {
+      throw new RuntimeException("An error has occurred while reading the driver connection attribute " + name + " value for the connection (" + this + "). Error: " + e.getMessage(), e);
+    }
+    this.nativeDriverAttributes.put(name, nativeAttribute);
+  }
+
+  /**
+   * @return the properties passed to the driver (native properties + tabli properties)
+   * Object because value may be string, or boolean.
+   * Example:
+   * * {@link FileSystems#newFileSystem}
+   * * {@link DriverManager#getConnection(String, Properties)}
+   */
+  public Map<String, Object> getConnectionProperties() {
+    Map<String, Object> connectionProperties = this.getDefaultNativeDriverAttributes();
+    Map<String, String> nativeProperties = this.getNativeDriverAttributes()
       .entrySet()
       .stream()
       .collect(Collectors.toMap(
         Map.Entry::getKey,
         e -> e.getValue().getValueOrDefaultAsStringNotNull()
       ));
+    connectionProperties.putAll(nativeProperties);
+    return connectionProperties;
   }
 
-
-  public void putNativeAttribute(String name, String value, Origin origin) {
-    Attribute nativeAttribute;
-    try {
-      nativeAttribute = tabular.getVault().createAttribute(name, value, origin);
-    } catch (Exception e) {
-      throw new RuntimeException("An error has occurred while reading the driver connection attribute " + name + " value for the connection (" + this + "). Error: " + e.getMessage(), e);
-    }
-    this.nativeDriverAttributes.put(name, nativeAttribute);
+  /**
+   * @return the default native connection properties for the driver
+   * They are recommended but the user can overwrite them.
+   * Example: applicationName for jdbc, ...
+   * The map returns object value because a boolean may be expected not only string
+   */
+  public Map<String, Object> getDefaultNativeDriverAttributes() {
+    return new HashMap<>();
   }
 
 }

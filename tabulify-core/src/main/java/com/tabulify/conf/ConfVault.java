@@ -197,7 +197,7 @@ public class ConfVault {
                 Map<String, String> yamlDriverPropertiesMap = Casts.castToSameMap(nativeAttributesAsObject, String.class, String.class);
                 for (Map.Entry<String, String> yamlDriverProperty : yamlDriverPropertiesMap.entrySet()) {
                   String nativeDriverPropertyName = yamlDriverProperty.getKey();
-                  connection.putNativeAttribute(nativeDriverPropertyName, yamlDriverProperty.getValue(), Origin.CONF);
+                  connection.addNativeAttribute(nativeDriverPropertyName, yamlDriverProperty.getValue(), Origin.CONF, tabular.getVault());
                 }
               }
 
@@ -211,7 +211,7 @@ public class ConfVault {
                   continue;
                 }
 
-                connection.addAttribute(normalizedConnectionAttribute, confConnectionAttribute.getValue(), Origin.CONF);
+                connection.addAttribute(normalizedConnectionAttribute, confConnectionAttribute.getValue(), Origin.CONF, vault);
 
               }
 
@@ -262,7 +262,7 @@ public class ConfVault {
 
 
       Map<String, Object> confAsMap = new HashMap<>();
-      Map<String, Object> connectionMap = toConnectionMap();
+      Map<String, Object> connectionMap = toConnectionMapForDump();
       if (!connectionMap.isEmpty()) {
         confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.CONNECTIONS).toCase(outputCase), connectionMap);
       }
@@ -294,7 +294,10 @@ public class ConfVault {
     return variableMap;
   }
 
-  private Map<String, Object> toConnectionMap() {
+  /**
+   * A map for a dump
+   */
+  private Map<String, Object> toConnectionMapForDump() {
 
     List<Connection> connections = new ArrayList<>(this.connections.values());
     Collections.sort(connections);
@@ -316,7 +319,13 @@ public class ConfVault {
         }
         String key = KeyNormalizer.create(attributeEnum).toCase(outputCase);
         if (attributeEnum.equals(ConnectionAttributeEnumBase.NATIVES)) {
-          Map<String, String> nativeDriverAttributes = connection.getNativeDriverAttributes();
+          Map<String, String> nativeDriverAttributes = connection.getNativeDriverAttributes()
+            .entrySet()
+            .stream()
+            .collect(Collectors.toMap(
+              Map.Entry::getKey,
+              e -> e.getValue().getValueOrDefaultAsStringNotNull()
+            ));
           if (nativeDriverAttributes.isEmpty()) {
             continue;
           }

@@ -6,7 +6,8 @@ import com.tabulify.jdbc.SqlConnection;
 import com.tabulify.model.SqlDataType;
 
 import java.sql.Types;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by gerard on 28-11-2015.
@@ -24,11 +25,11 @@ public class SqlServerConnection extends SqlConnection {
   }
 
   @Override
-  public Properties getDefaultConnectionProperties() {
+  public Map<String, Object> getDefaultNativeDriverAttributes() {
     // Sql Server
     // https://docs.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-2017
     //https://docs.microsoft.com/en-us/sql/t-sql/functions/context-info-transact-sql?view=sql-server-2017
-    Properties properties = new Properties();
+    Map<String, Object> properties = new HashMap<>();
     properties.put("applicationName", getTabular().toPublicName(getTabular().getName() + "-" + this.getName()));
     return properties;
   }

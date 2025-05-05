@@ -1,14 +1,15 @@
 package com.tabulify.mysql;
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Attribute;
 import com.tabulify.jdbc.SqlConnection;
 import com.tabulify.jdbc.SqlDataSystem;
 import com.tabulify.model.SqlDataType;
 import net.bytle.exception.NoCatalogException;
-import com.tabulify.conf.Attribute;
 
 import java.sql.Types;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MySqlConnection extends SqlConnection {
 
@@ -47,8 +48,8 @@ public class MySqlConnection extends SqlConnection {
   }
 
   @Override
-  public Properties getDefaultConnectionProperties() {
-    Properties connectionProperties = new Properties();
+  public Map<String, Object> getDefaultNativeDriverAttributes() {
+    Map<String, Object> connectionProperties = new HashMap<>();
 
     // Should the JDBC driver treat the MySQL type YEAR as a 'java.sql.Date', or as a SHORT?
     // By default, a Date is seen as a year (ie short number)

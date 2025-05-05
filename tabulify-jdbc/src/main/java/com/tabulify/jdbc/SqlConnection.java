@@ -1,6 +1,7 @@
 package com.tabulify.jdbc;
 
 import com.tabulify.Tabular;
+import com.tabulify.Vault;
 import com.tabulify.conf.Attribute;
 import com.tabulify.conf.Origin;
 import com.tabulify.connection.ConnectionAttValueBooleanDataType;
@@ -48,13 +49,13 @@ public class SqlConnection extends NoOpConnection {
 
 
   @Override
-  public SqlConnection addAttribute(KeyNormalizer name, Object value, Origin origin) {
+  public SqlConnection addAttribute(KeyNormalizer name, Object value, Origin origin, Vault vault) {
 
     SqlConnectionAttributeEnum connectionAttribute;
     try {
       connectionAttribute = Casts.cast(name, SqlConnectionAttributeEnum.class);
     } catch (Exception e) {
-      super.addAttribute(name, value, origin);
+      super.addAttribute(name, value, origin, vault);
       return this;
     }
     if (connectionAttribute.needsConnection()) {
@@ -178,7 +179,7 @@ public class SqlConnection extends NoOpConnection {
    * @return the connection for chaining
    */
   public SqlConnection setDriver(String jdbcDriver) {
-    super.addAttribute(ConnectionAttributeEnumBase.DRIVER, jdbcDriver, Origin.RUNTIME);
+    super.addAttribute(ConnectionAttributeEnumBase.DRIVER, jdbcDriver, Origin.RUNTIME, getTabular().getVault());
     return this;
   }
 
@@ -396,16 +397,7 @@ public class SqlConnection extends NoOpConnection {
 
         // Timeout
         // DriverManager.setLoginTimeout(1);
-        Properties connectionProperties = this.getDefaultConnectionProperties();
-        Object user = this.getUser().getValueOrDefaultOrNull();
-        if (user != null) {
-          connectionProperties.put("user", user);
-        }
-        Object password = this.getPasswordAttribute().getValueOrDefaultOrNull();
-        if (password != null) {
-          connectionProperties.put("password", password);
-        }
-        connectionProperties.putAll(Maps.toProperties(this.getNativeDriverAttributes()));
+        Properties connectionProperties = Maps.toProperties(this.getConnectionProperties());
         connection = DriverManager.getConnection(this.getUriAsString(), connectionProperties);
 
         SqlLog.LOGGER_DB_JDBC.info("Connected !");
@@ -440,13 +432,6 @@ public class SqlConnection extends NoOpConnection {
     }
 
 
-  }
-
-  /**
-   * @return the default connection properties for the driver
-   */
-  public Properties getDefaultConnectionProperties() {
-    return new Properties();
   }
 
 
@@ -1181,5 +1166,17 @@ public class SqlConnection extends NoOpConnection {
     }
   }
 
-
+  @Override
+  public Map<String, Object> getConnectionProperties() {
+    Map<String, Object> connectionProperties = super.getConnectionProperties();
+    Object user = this.getUser().getValueOrDefaultOrNull();
+    if (user != null) {
+      connectionProperties.put("user", user.toString());
+    }
+    Object password = this.getPasswordAttribute().getValueOrDefaultOrNull();
+    if (password != null) {
+      connectionProperties.put("password", password.toString());
+    }
+    return connectionProperties;
+  }
 }

@@ -241,6 +241,14 @@ public class Attribute implements Comparable<Attribute> {
     }
   }
 
+  public Object getValueOrNull() {
+    try {
+      return this.getValue();
+    } catch (NoValueException e) {
+      return null;
+    }
+  }
+
 
   /**
    * @return the string value or the empty string if not found

@@ -30,6 +30,9 @@ import static net.bytle.template.flow.TemplateAttributes.TEMPLATE_ENGINE;
 
 public class TabliDataTemplate {
 
+  public final static String TEMPLATE_SELECTOR_PROPERTY = "--" + KeyNormalizer.create(TemplateAttributes.TEMPLATE_SELECTORS).toCliLongOptionName();
+  public static final String TEMPLATE_ENGINE_PROPERTY = "--" + KeyNormalizer.create(TemplateAttributes.TEMPLATE_ENGINE).toCliLongOptionName();
+
 
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
 
@@ -45,12 +48,13 @@ public class TabliDataTemplate {
       .setValueName("attributeName=value");
 
     String template_options = "Template Options";
-    childCommand.addProperty("--" + KeyNormalizer.create(TemplateAttributes.TEMPLATE_SELECTORS).toCliLongOptionName())
+
+    childCommand.addProperty(TEMPLATE_SELECTOR_PROPERTY)
       .setGroup(template_options)
       .setMandatory(true)
       .setValueName("pattern@connection");
 
-    childCommand.addProperty("--" + KeyNormalizer.create(TemplateAttributes.TEMPLATE_ENGINE).toCliLongOptionName())
+    childCommand.addProperty(TEMPLATE_ENGINE_PROPERTY)
       .setGroup(template_options)
       .setValueName("templateEngine");
 
@@ -65,7 +69,7 @@ public class TabliDataTemplate {
     final DataUri sourceSelector = tabular.createDataUri(cliParser.getString(SOURCE_SELECTOR));
     final DataUri targetUri = tabular.createDataUri(cliParser.getString(TARGET_DATA_URI));
 
-    String templateEngineValue = cliParser.getString(TEMPLATE_ENGINE.toString());
+    String templateEngineValue = cliParser.getString(TEMPLATE_ENGINE_PROPERTY);
     final TemplateEngine templateEngine;
     try {
       templateEngine = Casts.cast(templateEngineValue, TemplateEngine.class);
@@ -76,7 +80,7 @@ public class TabliDataTemplate {
     final Boolean withDependencies = cliParser.getBoolean(WITH_DEPENDENCIES_PROPERTY);
     Map<String, ?> attributes = cliParser.getProperties(TabliWords.TABLI_ATTRIBUTE_OPTION);
     Set<DataUri> templateSelectors = cliParser
-      .getStrings(TemplateAttributes.TEMPLATE_SELECTORS.toString())
+      .getStrings(TEMPLATE_SELECTOR_PROPERTY)
       .stream()
       .map(tabular::createDataUri)
       .collect(Collectors.toSet());

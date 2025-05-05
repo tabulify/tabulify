@@ -1,6 +1,7 @@
 package com.tabulify.tpc;
 
 import com.tabulify.Tabular;
+import com.tabulify.Vault;
 import com.tabulify.conf.AttributeEnumParameter;
 import com.tabulify.conf.Origin;
 import com.tabulify.connection.Connection;
@@ -29,6 +30,7 @@ public class TpcConnection extends NoOpConnection {
   public TpcConnection(Tabular tabular, com.tabulify.conf.Attribute name, com.tabulify.conf.Attribute url) {
     super(tabular, name, url);
     tpcDataSystem = new TpcDataSetSystem(this);
+    this.addAttributesFromEnumAttributeClass(TpcConnectionAttributeEnum.class);
   }
 
   @Override
@@ -106,12 +108,12 @@ public class TpcConnection extends NoOpConnection {
   }
 
   @Override
-  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin) {
+  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin, Vault vault) {
     TpcConnectionAttributeEnum connectionAttribute;
     try {
       connectionAttribute = Casts.cast(name, TpcConnectionAttributeEnum.class);
     } catch (CastException e) {
-      return super.addAttribute(name, value, origin);
+      return super.addAttribute(name, value, origin, vault);
     }
     return addAttribute(
       this
