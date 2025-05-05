@@ -2,7 +2,7 @@ package com.tabulify.flow.step;
 
 import com.tabulify.conf.AttributeValue;
 
-public enum CompareStepSource implements AttributeValue {
+public enum DiffStepSource implements AttributeValue {
 
   CONTENT("The compare operation will be performed on the content"),
   STRUCTURE("The compare operation will be performed on the structure"),
@@ -11,7 +11,7 @@ public enum CompareStepSource implements AttributeValue {
 
   private final String description;
 
-  CompareStepSource(String description) {
+  DiffStepSource(String description) {
 
     this.description = description;
   }

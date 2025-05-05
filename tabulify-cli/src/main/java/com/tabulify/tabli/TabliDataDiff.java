@@ -3,9 +3,9 @@ package com.tabulify.tabli;
 import com.tabulify.Tabular;
 import com.tabulify.diff.DataComparisonAttribute;
 import com.tabulify.flow.engine.Pipeline;
-import com.tabulify.flow.step.CompareStep;
-import com.tabulify.flow.step.CompareStepReportType;
-import com.tabulify.flow.step.CompareStepSource;
+import com.tabulify.flow.step.DiffStep;
+import com.tabulify.flow.step.DiffStepReportType;
+import com.tabulify.flow.step.DiffStepSource;
 import com.tabulify.flow.step.SelectSupplier;
 import com.tabulify.spi.DataPath;
 import com.tabulify.uri.DataUri;
@@ -57,14 +57,14 @@ public class TabliDataDiff {
         "  * the column name for a data structure comparison",
         "",
         "With the `" + REPORT_LEVEL_PROPERTY + "` option, you can control the output: ",
-        "  * `" + CompareStepReportType.RESOURCE + "` will return a data comparison reported resource by resource (default), ",
-        "  * `" + CompareStepReportType.RECORD + "` will return a data comparison reported record by record (A diff),",
-        "  * `" + CompareStepReportType.ALL + "` will return them both",
+        "  * `" + DiffStepReportType.RESOURCE + "` will return a data comparison reported resource by resource (default), ",
+        "  * `" + DiffStepReportType.RECORD + "` will return a data comparison reported record by record (A diff),",
+        "  * `" + DiffStepReportType.ALL + "` will return them both",
         "",
         "With the `" + DATA_SOURCE_PROPERTY + "` option, you can control the compared data: ",
-        "  * `" + CompareStepSource.CONTENT + "` will perform a comparison on the content of the data resource, ",
-        "  * `" + CompareStepSource.STRUCTURE + "` will perform a comparison on the structure of the data resource (by attribute name) ",
-        "  * `" + CompareStepSource.ATTRIBUTE + "` will perform a comparison on the attributes of the data resource (by attribute key) ",
+        "  * `" + DiffStepSource.CONTENT + "` will perform a comparison on the content of the data resource, ",
+        "  * `" + DiffStepSource.STRUCTURE + "` will perform a comparison on the structure of the data resource (by attribute name) ",
+        "  * `" + DiffStepSource.ATTRIBUTE + "` will perform a comparison on the attributes of the data resource (by attribute key) ",
         "",
         "Exit:",
         "If there is a non-equality (ie a diff), the process will exist with an error status.",
@@ -108,8 +108,8 @@ public class TabliDataDiff {
     childCommand.addProperty(REPORT_LEVEL_PROPERTY)
       .setDescription("Set the report level returned")
       .setShortName("-rl")
-      .setValueName(Arrays.stream(CompareStepReportType.values()).map(CompareStepReportType::toString).collect(Collectors.joining("|")))
-      .setDefaultValue(CompareStepReportType.RESOURCE);
+      .setValueName(Arrays.stream(DiffStepReportType.values()).map(DiffStepReportType::toString).collect(Collectors.joining("|")))
+      .setDefaultValue(DiffStepReportType.RESOURCE);
 
     /**
      * Data Source
@@ -117,8 +117,8 @@ public class TabliDataDiff {
     childCommand.addProperty(DATA_SOURCE_PROPERTY)
       .setDescription("Set the origin of data to use for the comparison")
       .setShortName("-ds")
-      .setValueName(Arrays.stream(CompareStepSource.values()).map(CompareStepSource::toString).collect(Collectors.joining("|")))
-      .setDefaultValue(CompareStepSource.CONTENT.toString());
+      .setValueName(Arrays.stream(DiffStepSource.values()).map(DiffStepSource::toString).collect(Collectors.joining("|")))
+      .setDefaultValue(DiffStepSource.CONTENT.toString());
 
 
     // Args
@@ -132,19 +132,19 @@ public class TabliDataDiff {
     final Boolean withDependencies = cliParser.getBoolean(WITH_DEPENDENCIES_PROPERTY);
     final Map<String, String> sourceAttributes = cliParser.getProperties(SOURCE_ATTRIBUTE);
     final Map<String, String> targetAttributes = cliParser.getProperties(TARGET_ATTRIBUTE_PROPERTY);
-    final CompareStepReportType report;
+    final DiffStepReportType report;
     String reportLevelValue = cliParser.getString(REPORT_LEVEL_PROPERTY);
     try {
-      report = Casts.cast(reportLevelValue, CompareStepReportType.class);
+      report = Casts.cast(reportLevelValue, DiffStepReportType.class);
     } catch (CastException e) {
-      throw IllegalArgumentExceptions.createForArgumentValue(reportLevelValue,REPORT_LEVEL_PROPERTY,CompareStepReportType.class,e);
+      throw IllegalArgumentExceptions.createForArgumentValue(reportLevelValue, REPORT_LEVEL_PROPERTY, DiffStepReportType.class, e);
     }
     String dataSourceValue = cliParser.getString(DATA_SOURCE_PROPERTY);
-    final CompareStepSource dataSource;
+    final DiffStepSource dataSource;
     try {
-      dataSource = Casts.cast(dataSourceValue, CompareStepSource.class);
+      dataSource = Casts.cast(dataSourceValue, DiffStepSource.class);
     } catch (CastException e) {
-      throw IllegalArgumentExceptions.createForArgumentValue(dataSourceValue,DATA_SOURCE_PROPERTY,CompareStepReportType.class,e);
+      throw IllegalArgumentExceptions.createForArgumentValue(dataSourceValue, DATA_SOURCE_PROPERTY, DiffStepReportType.class, e);
     }
 
     List<String> driverColumns = cliParser.getStrings(UNIQUE_COLUMN_PROPERTY);
@@ -160,7 +160,7 @@ public class TabliDataDiff {
             .setAttributes(sourceAttributes)
         )
         .addStepToGraph(
-          CompareStep.create()
+          DiffStep.create()
             .setDriverColumns(driverColumns)
             .setReport(report)
             .setSource(dataSource)

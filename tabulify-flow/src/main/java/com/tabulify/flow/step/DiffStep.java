@@ -8,7 +8,6 @@ import com.tabulify.spi.AttributeProperties;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
 import net.bytle.exception.CastException;
-import net.bytle.java.JavaEnvs;
 import net.bytle.type.Casts;
 import net.bytle.type.KeyNormalizer;
 
@@ -17,35 +16,33 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import static com.tabulify.flow.step.CompareStepSource.CONTENT;
+import static com.tabulify.flow.step.DiffStepSource.CONTENT;
 
-public class CompareStep extends TargetFilterStepAbs {
+public class DiffStep extends TargetFilterStepAbs {
 
 
   private List<String> driverColumns;
-  private CompareStepReportType report = CompareStepReportType.RESOURCE;
-  private CompareStepSource source = CONTENT;
+  private DiffStepReportType report = DiffStepReportType.RESOURCE;
+  private DiffStepSource source = CONTENT;
 
-  public CompareStep() {
+  public DiffStep() {
 
-    this.getOrCreateArgument(CompareStepArgument.SOURCE).setValueProvider(()->this.source);
-    this.getOrCreateArgument(CompareStepArgument.REPORT).setValueProvider(()->this.report);
-    this.getOrCreateArgument(CompareStepArgument.DRIVER_COLUMNS).setValueProvider(()->this.driverColumns);
+    this.getOrCreateArgument(DiffStepArgument.SOURCE).setValueProvider(() -> this.source);
+    this.getOrCreateArgument(DiffStepArgument.REPORT).setValueProvider(() -> this.report);
+    this.getOrCreateArgument(DiffStepArgument.DRIVER_COLUMNS).setValueProvider(() -> this.driverColumns);
 
 
   }
 
-  public static CompareStep create() {
-    return new CompareStep();
+  public static DiffStep create() {
+    return new DiffStep();
   }
 
   @Override
   public String getOperationName() {
-    return "compare";
+    return "diff";
   }
 
 
@@ -54,17 +51,17 @@ public class CompareStep extends TargetFilterStepAbs {
     return new CompareRunnable(this);
   }
 
-  public CompareStep setDriverColumns(List<String> driverColumns) {
+  public DiffStep setDriverColumns(List<String> driverColumns) {
     this.driverColumns = driverColumns;
     return this;
   }
 
-  public CompareStep setReport(CompareStepReportType report) {
+  public DiffStep setReport(DiffStepReportType report) {
     this.report = report;
     return this;
   }
 
-  public CompareStep setSource(CompareStepSource source) {
+  public DiffStep setSource(DiffStepSource source) {
     this.source = source;
     return this;
   }
@@ -72,12 +69,12 @@ public class CompareStep extends TargetFilterStepAbs {
 
   private class CompareRunnable implements FilterRunnable {
 
-    private final CompareStep compareOperation;
+    private final DiffStep compareOperation;
     private final Set<DataPath> inputs = new HashSet<>();
     private final Set<DataPath> feedbackDataPaths = new HashSet<>();
     private boolean isDone = false;
 
-    public CompareRunnable(CompareStep compareOperation) {
+    public CompareRunnable(DiffStep compareOperation) {
       this.compareOperation = compareOperation;
     }
 
@@ -91,8 +88,8 @@ public class CompareStep extends TargetFilterStepAbs {
 
 
       DataPath comparisonReport = tabular.getMemoryDataStore().getAndCreateRandomDataPath()
-        .setLogicalName("comparison_report")
-        .setDescription("Comparison Report")
+        .setLogicalName("diff_report")
+        .setDescription("Diff Report")
         .createRelationDef()
         .addColumn("Source", Types.VARCHAR)
         .addColumn("Target", Types.VARCHAR)
@@ -112,18 +109,18 @@ public class CompareStep extends TargetFilterStepAbs {
 
             case CONTENT:
 
-              FlowLog.LOGGER.info("Data Comparison started between the source (" + source + ") and the target (" + target + ")");
+              FlowLog.LOGGER.info("Data Diff Comparison started between the source (" + source + ") and the target (" + target + ")");
               comp = DataPathDataComparison.create(source, target);
-              if (driverColumns.size() != 0) {
+              if (!driverColumns.isEmpty()) {
                 comp.setUniqueColumns(driverColumns.toArray(new String[0]));
               }
               comp.compareData();
               break;
 
             case STRUCTURE:
-              FlowLog.LOGGER.info("Structure Comparison started between the source (" + source + ") and the target (" + target + ")");
+              FlowLog.LOGGER.info("Structure Diff Comparison started between the source (" + source + ") and the target (" + target + ")");
               ColumnAttribute driverAttribute = ColumnAttribute.NAME;
-              if (driverColumns.size() != 0) {
+              if (!driverColumns.isEmpty()) {
                 String sourceObject = driverColumns.get(0);
                 try {
                   driverAttribute = Casts.cast(sourceObject, ColumnAttribute.class);
@@ -141,7 +138,7 @@ public class CompareStep extends TargetFilterStepAbs {
                 .compareData();
               break;
             case ATTRIBUTE:
-              FlowLog.LOGGER.info("Attributes Comparison started between the source (" + source + ") and the target (" + target + ")");
+              FlowLog.LOGGER.info("Attributes Diff Comparison started between the source (" + source + ") and the target (" + target + ")");
               comp =
                 DataPathDataComparison.create(source
                       .toAttributesDataPath(),
@@ -154,16 +151,17 @@ public class CompareStep extends TargetFilterStepAbs {
               throw new IllegalArgumentException("The source compare operation (" + this.compareOperation.source + ") should get a processing function associated");
           }
 
-          if (Arrays.asList(CompareStepReportType.ALL, CompareStepReportType.RECORD).contains(report)) {
+          if (Arrays.asList(DiffStepReportType.ALL, DiffStepReportType.RECORD).contains(report)) {
             feedbackDataPaths.add(comp.getResultDataPath());
           }
 
           /*
            * We may test after the execution and
-           * we creating documentation, we get also an error
+           * when creating documentation, we get also an error
            * In dev, no errors if the source and target are not the same
+           * This should be an attribute of the diff
            */
-          if (!comp.areEquals() && !JavaEnvs.isDev(CompareStep.class)) {
+          if (!comp.areEquals() && !tabular.isIdeEnv()) {
             tabular.setExitStatus(1);
           }
 
@@ -171,7 +169,7 @@ public class CompareStep extends TargetFilterStepAbs {
         });
       }
 
-      if (Arrays.asList(CompareStepReportType.ALL, CompareStepReportType.RESOURCE).contains(report)) {
+      if (Arrays.asList(DiffStepReportType.ALL, DiffStepReportType.RESOURCE).contains(report)) {
         feedbackDataPaths.add(comparisonReport);
       }
 
@@ -194,12 +192,13 @@ public class CompareStep extends TargetFilterStepAbs {
     }
 
     @Override
-    public Set<DataPath> get() throws InterruptedException, ExecutionException {
+    public Set<DataPath> get() {
       return feedbackDataPaths;
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
-    public Set<DataPath> get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public Set<DataPath> get(long timeout, TimeUnit unit) {
       return get();
     }
   }
