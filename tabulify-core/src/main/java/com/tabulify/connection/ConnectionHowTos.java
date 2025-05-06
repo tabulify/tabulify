@@ -222,7 +222,7 @@ public class ConnectionHowTos {
         .resolve("src")
         .resolve("main")
         .resolve("sql")
-        .resolve("tpcds")
+        .resolve(ConnectionBuiltIn.TPCDS_QUERY_CONNECTION_NAME)
         .normalize();
       if (!Files.exists(path)) {
         throw new RuntimeException("The tpcds directory path (" + path + ") does not exist for a dev env. Have they moved ?");

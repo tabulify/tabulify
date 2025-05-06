@@ -145,6 +145,7 @@ public class Tabular implements AutoCloseable {
      */
     TabularLogLevel logLevel = TabularInit.determineLogLevel(tabularConfig.logLevel, vault, tabularEnvs, attributes);
     Logs.setLevel(logLevel.getLevel());
+    DbLoggers.LOGGER_TABULAR_START.info("The log level was set to " + logLevel);
 
 
     /**

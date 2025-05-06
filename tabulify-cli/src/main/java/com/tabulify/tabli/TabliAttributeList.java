@@ -62,8 +62,7 @@ public class TabliAttributeList {
 
     childCommand.addProperty(TabliWords.TYPE_PROPERTY)
       .setDescription("The type of the configurations to return ('" + String.join(", ", origins) + "' or `all`)")
-      .addDefaultValue(Origin.CONF)
-      .addDefaultValue(Origin.RUNTIME)
+      .addDefaultValue(Origin.ALL)
     ;
 
     childCommand.addArg(TabliWords.NAME_SELECTORS)

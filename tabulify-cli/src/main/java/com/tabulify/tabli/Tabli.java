@@ -85,9 +85,7 @@ public class Tabli {
     rootCommand.addProperty(TabliWords.LOG_LEVEL_LONG_OPTION)
       .setShortName("-l")
       .setDescription("Set the log level")
-      .setValueName("error|warning|tip|info|fine")
-      .setDefaultValue("info")
-    ;
+      .setValueName("error|warning|tip|info|fine");
 
     rootCommand.addProperty(TabliWords.PASSPHRASE_PROPERTY)
       .setShortName("-pp")
@@ -189,7 +187,6 @@ public class Tabli {
     TabularLogLevel logLevel = null;
     String logLevelArg = cliParser.getString(LOG_LEVEL_LONG_OPTION);
     if (logLevelArg != null) {
-      LOGGER_TABLI.info("The log level was set to " + logLevelArg);
       try {
         logLevel = Casts.cast(logLevelArg, TabularLogLevel.class);
       } catch (CastException e) {

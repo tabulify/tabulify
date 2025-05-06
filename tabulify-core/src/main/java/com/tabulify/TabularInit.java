@@ -105,7 +105,7 @@ public class TabularInit {
       return value;
     }
 
-    DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Default to dev");
+    DbLoggers.LOGGER_TABULAR_START.info("Tabli env: No value found, defaulted to dev");
     value = TabularExecEnv.DEV;
     com.tabulify.conf.Attribute variable = configVariable
       .setOrigin(com.tabulify.conf.Origin.RUNTIME)
@@ -190,7 +190,8 @@ public class TabularInit {
     }
 
     // in prod, the class are in the jars directory
-    Path prodHomePath = Javas.getSourceCodePath(ConnectionHowTos.class).getParent();
+    // First getParent get the jars directory, getParent get the Home
+    Path prodHomePath = Javas.getSourceCodePath(ConnectionHowTos.class).getParent().getParent();
     com.tabulify.conf.Attribute variable = variableBuilder
       .setOrigin(com.tabulify.conf.Origin.RUNTIME)
       .buildSafe(prodHomePath);
@@ -395,7 +396,7 @@ public class TabularInit {
 
     if (logLevel != null) {
       com.tabulify.conf.Attribute attribute = confVariable
-        .setOrigin(com.tabulify.conf.Origin.OS)
+        .setOrigin(Origin.COMMAND_LINE)
         .buildSafe(logLevel);
       attributeMap.put(logLevelAttribute, attribute);
       return logLevel;

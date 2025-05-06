@@ -9,7 +9,7 @@ public enum Origin implements AttributeValue {
   DOTENV("Dot env file"),
   CONF("Conf file"),
   SYS("Java system properties"),
-  RUNTIME("Variables created at runtime"),
+  RUNTIME("Calculated"),
   COMMAND_LINE("Cli options"),
   ALL("All variables"), // just used by the cli to show all
   ;

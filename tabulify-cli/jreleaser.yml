@@ -56,21 +56,27 @@ assemble:
         - input: '.'
           includes:
             - LICENSE.md
+        - input: src/main/howto
+          output: resources/howto
+        - input: ../tabulify-gen-entities/src/main/resources/entity
+          output: resources/entity
+        - input: ../tabulify-jdbc/src/main/sql/tpcds_query
+          output: resources/tpcds_query
       jdeps:
         multiRelease: '11'
         ignoreMissingDeps: true
         targets:
           - 'target/tabulify-cli-{{projectVersion}}.jar'
-      additionalModuleNames:
-        - 'java.rmi'
-        - 'java.security.sasl'
-        - 'java.security.jgss'
-        - 'jdk.crypto.cryptoki'
-        - 'jdk.crypto.ec'
-        - 'jdk.localedata'
-        - 'jdk.net'
-        - 'jdk.security.auth'
-        - 'jdk.security.jgss'
+      #      additionalModuleNames:
+      #        - 'java.rmi'
+      #        - 'java.security.sasl'
+      #        - 'java.security.jgss'
+      #        - 'jdk.crypto.cryptoki'
+      #        - 'jdk.crypto.ec'
+      #        - 'jdk.localedata'
+      #        - 'jdk.net'
+      #        - 'jdk.security.auth'
+      #        - 'jdk.security.jgss'
       targetJdks:
         - path: '{{jdkPathPrefix}}Linux/{{jdkDirectoryName}}'
           platform: 'linux-x86_64'
@@ -84,6 +90,7 @@ assemble:
         - pattern: '{{depsPrefix}}/*.jar'
       swid:
         tagRef: swid-tag
+
 
 distributions:
   # Single Executable Jar
