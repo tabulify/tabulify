@@ -1,0 +1,46 @@
+#!/bin/bash
+
+set -TCEeuo pipefail
+
+
+# Check if arguments are provided
+if [ "$#" -lt 1 ]; then
+    echo "Usage: $(basename "$0") --no-cache globPath"
+    echo "Example: $(basename "$0") howto:glob"
+    exit 1
+fi
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/../.."
+cd "$PROJECT_ROOT/tabulify-cli"
+
+# Extract main class from arguments
+MAIN_CLASS=com.tabulify.doc.DocExec
+
+# Check if pom.xml exists in the current directory
+if [ ! -f "pom.xml" ]; then
+    echo "Error: pom.xml not found in current directory."
+    echo "Please run this script from the root of your Maven project."
+    exit 1
+fi
+
+# Check if Maven is installed
+if ! command -v mvn &> /dev/null; then
+    echo "Maven is not installed. Please install Maven first."
+    exit 1
+fi
+
+echo "Building project with Maven..."
+# Compile the project using Maven
+if ! mvn test-compile > /dev/null; then
+    echo "Maven build failed."
+    exit 1
+fi
+
+echo "Running $MAIN_CLASS..."
+# Run the main class using Maven exec plugin
+# The remaining arguments are passed to the Java application
+# https://www.mojohaus.org/exec-maven-plugin/java-mojo.html
+command="mvn exec:java -Dexec.mainClass=\"$MAIN_CLASS\" -Dexec.classpathScope=\"test\" -Dexec.args=\"$*\""
+echo "$command"
+eval "$command"
