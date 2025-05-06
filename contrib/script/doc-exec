@@ -40,7 +40,8 @@ fi
 echo "Running $MAIN_CLASS..."
 # Run the main class using Maven exec plugin
 # The remaining arguments are passed to the Java application
+# The execution is not forked
 # https://www.mojohaus.org/exec-maven-plugin/java-mojo.html
-command="mvn exec:java -Dexec.mainClass=\"$MAIN_CLASS\" -Dexec.classpathScope=\"test\" -Dexec.args=\"$*\""
+command="TABLI_ENV=dev  mvn exec:java -Dexec.mainClass=\"$MAIN_CLASS\" -Dexec.classpathScope=\"test\" -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Dexec.args=\"$*\""
 echo "$command"
 eval "$command"
