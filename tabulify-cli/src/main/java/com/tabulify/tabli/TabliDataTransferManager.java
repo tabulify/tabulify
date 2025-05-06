@@ -105,12 +105,12 @@ public class TabliDataTransferManager {
     CliWord cliWord;
     if (defaultValue != null) {
       if (defaultValue instanceof Boolean) {
-        cliWord = childCommand.addFlag(CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(transferArgumentProperty).toCliLongOptionName());
+        cliWord = childCommand.addFlag(CliParser.PREFIX_LONG_OPTION + KeyNormalizer.createSafe(transferArgumentProperty).toCliLongOptionName());
       } else {
-        cliWord = childCommand.addProperty(CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(transferArgumentProperty).toCliLongOptionName());
+        cliWord = childCommand.addProperty(CliParser.PREFIX_LONG_OPTION + KeyNormalizer.createSafe(transferArgumentProperty).toCliLongOptionName());
       }
     } else {
-      cliWord = childCommand.addProperty(CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(transferArgumentProperty).toCliLongOptionName());
+      cliWord = childCommand.addProperty(CliParser.PREFIX_LONG_OPTION + KeyNormalizer.createSafe(transferArgumentProperty).toCliLongOptionName());
     }
     String shortOption;
     switch (transferArgumentProperty) {
@@ -123,7 +123,7 @@ public class TabliDataTransferManager {
         shortOption = "out";
         break;
       default:
-        shortOption = KeyNormalizer.create(transferArgumentProperty).toCliShortOptionName();
+        shortOption = KeyNormalizer.createSafe(transferArgumentProperty).toCliShortOptionName();
     }
 
     cliWord.setGroup("Cross Data Transfer Options")

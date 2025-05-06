@@ -225,7 +225,7 @@ public class TabliConnection {
 
     Map<String, String> tabliAttributes = cliParser.getProperties(TABLI_ATTRIBUTE_OPTION);
     for (Map.Entry<String, String> tabliAttribute : tabliAttributes.entrySet()) {
-      connection.addAttribute(KeyNormalizer.create(tabliAttribute.getKey()), tabliAttribute.getValue(), confOrigin, tabular.getVault());
+      connection.addAttribute(KeyNormalizer.createSafe(tabliAttribute.getKey()), tabliAttribute.getValue(), confOrigin, tabular.getVault());
     }
 
     Map<String, String> nativeAttributes = cliParser.getProperties(NATIVE_ATTRIBUTE);

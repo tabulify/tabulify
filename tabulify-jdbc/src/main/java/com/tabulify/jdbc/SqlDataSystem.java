@@ -1561,14 +1561,14 @@ public class SqlDataSystem extends DataSystemAbs {
   public DataPath getTargetFromSource(DataPath sourceDataPath) {
 
     String logicalName = sourceDataPath.getLogicalName();
-    String sqlName = KeyNormalizer.create(logicalName).toSqlName();
+    String sqlName = KeyNormalizer.createSafe(logicalName).toSqlCaseSafe();
     return this.getConnection().getDataPath(sqlName);
 
   }
 
   @Override
   public String toValidName(String name) {
-    return KeyNormalizer.create(name).toSqlName();
+    return KeyNormalizer.createSafe(name).toSqlCaseSafe();
   }
 
   /**

@@ -321,7 +321,7 @@ public abstract class RelationDefAbs implements RelationDef {
     MemoryDataPath structureComparisonDataPath = this.getDataPath().getConnection().getTabular().getMemoryDataStore().getDataPath("structure" + this.getDataPath().getLogicalName());
     RelationDef relationDef = structureComparisonDataPath.getOrCreateRelationDef();
     for (ColumnAttribute columnAttribute : columnAttributes) {
-      relationDef.addColumn(KeyNormalizer.create(columnAttribute).toSqlName(), columnAttribute.getValueClazz());
+      relationDef.addColumn(KeyNormalizer.createSafe(columnAttribute).toSqlCaseSafe(), columnAttribute.getValueClazz());
     }
 
     try (

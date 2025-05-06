@@ -30,8 +30,8 @@ import static net.bytle.template.flow.TemplateAttributes.TEMPLATE_ENGINE;
 
 public class TabliDataTemplate {
 
-  public final static String TEMPLATE_SELECTOR_PROPERTY = "--" + KeyNormalizer.create(TemplateAttributes.TEMPLATE_SELECTORS).toCliLongOptionName();
-  public static final String TEMPLATE_ENGINE_PROPERTY = "--" + KeyNormalizer.create(TemplateAttributes.TEMPLATE_ENGINE).toCliLongOptionName();
+  public final static String TEMPLATE_SELECTOR_PROPERTY = "--" + KeyNormalizer.createSafe(TemplateAttributes.TEMPLATE_SELECTORS).toCliLongOptionName();
+  public static final String TEMPLATE_ENGINE_PROPERTY = "--" + KeyNormalizer.createSafe(TemplateAttributes.TEMPLATE_ENGINE).toCliLongOptionName();
 
 
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {

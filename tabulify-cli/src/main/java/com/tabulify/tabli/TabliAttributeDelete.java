@@ -25,7 +25,7 @@ public class TabliAttributeDelete {
       .addExample(
         "To remove the `log-level` attribute, you would use the following command:",
         CliUsage.CODE_BLOCK,
-        CliUsage.getFullChainOfCommand(childCommand) + " " + KeyNormalizer.create(TabularAttributeEnum.LOG_LEVEL).toKebabCase(),
+        CliUsage.getFullChainOfCommand(childCommand) + " " + KeyNormalizer.createSafe(TabularAttributeEnum.LOG_LEVEL).toKebabCase(),
         CliUsage.CODE_BLOCK
       );
 

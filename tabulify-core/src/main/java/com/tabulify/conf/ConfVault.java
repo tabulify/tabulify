@@ -175,7 +175,7 @@ public class ConfVault {
 
               String connectionName = yamlConnection.getKey();
               Map<KeyNormalizer, Object> yamlConnectionAttributes = Casts.castToNewMap(yamlConnection.getValue(), KeyNormalizer.class, Object.class);
-              KeyNormalizer uriKeyNormalized = KeyNormalizer.create(ConnectionAttributeEnumBase.URI);
+              KeyNormalizer uriKeyNormalized = KeyNormalizer.createSafe(ConnectionAttributeEnumBase.URI);
               String uri = (String) yamlConnectionAttributes.get(uriKeyNormalized);
               if (uri == null) {
                 throw new RuntimeException("The uri is a mandatory variable and was not found for the connection (" + connectionName + ") in the conf file (" + this + ")");
@@ -190,7 +190,7 @@ public class ConfVault {
               /**
                * Native Attributes is a special attribute that stores the third party attribute
                */
-              KeyNormalizer nativeAttributeNormalized = KeyNormalizer.create(ConnectionAttributeEnumBase.NATIVES);
+              KeyNormalizer nativeAttributeNormalized = KeyNormalizer.createSafe(ConnectionAttributeEnumBase.NATIVES);
               Object nativeAttributesAsObject = yamlConnectionAttributes.get(nativeAttributeNormalized);
               if (nativeAttributesAsObject != null) {
 
@@ -264,11 +264,11 @@ public class ConfVault {
       Map<String, Object> confAsMap = new HashMap<>();
       Map<String, Object> connectionMap = toConnectionMapForDump();
       if (!connectionMap.isEmpty()) {
-        confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.CONNECTIONS).toCase(outputCase), connectionMap);
+        confAsMap.put(KeyNormalizer.createSafe(ConfVaultRootAttribute.CONNECTIONS).toCaseSafe(outputCase), connectionMap);
       }
       Map<String, Object> confParameters = toConfParameters();
       if (!confParameters.isEmpty()) {
-        confAsMap.put(KeyNormalizer.create(ConfVaultRootAttribute.GLOBALS).toCase(outputCase), confParameters);
+        confAsMap.put(KeyNormalizer.createSafe(ConfVaultRootAttribute.GLOBALS).toCaseSafe(outputCase), confParameters);
       }
       String yamlString = yaml.dump(confAsMap);
       // Write to file
@@ -288,7 +288,7 @@ public class ConfVault {
     Map<String, Object> variableMap = new HashMap<>();
     for (Attribute attribute : getParameters()) {
       String originalValue = attribute.getRawValue();
-      String key = KeyNormalizer.create(attribute.getAttributeMetadata()).toCase(outputCase);
+      String key = KeyNormalizer.createSafe(attribute.getAttributeMetadata()).toCaseSafe(outputCase);
       variableMap.put(key, originalValue);
     }
     return variableMap;
@@ -317,7 +317,7 @@ public class ConfVault {
         if (!attributeEnum.isParameter()) {
           continue;
         }
-        String key = KeyNormalizer.create(attributeEnum).toCase(outputCase);
+        String key = KeyNormalizer.createSafe(attributeEnum).toCaseSafe(outputCase);
         if (attributeEnum.equals(ConnectionAttributeEnumBase.NATIVES)) {
           Map<String, String> nativeDriverAttributes = connection.getNativeDriverAttributes()
             .entrySet()

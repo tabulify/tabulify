@@ -134,7 +134,7 @@ public class DiffStep extends TargetFilterStepAbs {
                   target
                     .getOrCreateRelationDef()
                     .toColumnsDataPathBy(driverAttribute))
-                .setUniqueColumns(KeyNormalizer.create(driverAttribute).toSqlCase())
+                .setUniqueColumns(KeyNormalizer.createSafe(driverAttribute).toSqlCaseSafe())
                 .compareData();
               break;
             case ATTRIBUTE:

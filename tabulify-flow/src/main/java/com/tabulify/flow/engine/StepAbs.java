@@ -4,7 +4,8 @@ import com.tabulify.Tabular;
 import com.tabulify.conf.AttributeEnum;
 import com.tabulify.conf.Origin;
 import net.bytle.exception.NotFoundException;
-import net.bytle.type.*;
+import net.bytle.type.KeyNormalizer;
+import net.bytle.type.MapKeyIndependent;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -57,7 +58,7 @@ public abstract class StepAbs extends StepProvider implements OperationStep {
     if (operationName == null) {
       throw new IllegalStateException("The `getOperationName` function of the step (" + this.getClass().getSimpleName() + ") should return a command name and not a null value.");
     }
-    return KeyNormalizer.create(commandName).equals(KeyNormalizer.create(operationName));
+    return KeyNormalizer.createSafe(commandName).equals(KeyNormalizer.createSafe(operationName));
   }
 
   @Override

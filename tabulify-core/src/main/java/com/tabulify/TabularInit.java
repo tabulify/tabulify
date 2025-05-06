@@ -59,9 +59,27 @@ public class TabularInit {
     }
 
     /**
+     * Sys
+     */
+    KeyNormalizer osEnvName = tabularEnvs.getNormalizedKey(attribute);
+    String javaSysValue = tabularEnvs.getJavaSysValue(osEnvName);
+    if (javaSysValue != null) {
+      try {
+        DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Found in Java Sys env " + osEnvName + " with the value " + javaSysValue);
+        value = Casts.cast(javaSysValue, TabularExecEnv.class);
+        com.tabulify.conf.Attribute variable = configVariable
+          .setOrigin(Origin.SYS)
+          .build(value.toString());
+        attributeMap.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
+        return value;
+      } catch (CastException e) {
+        throw new IllegalArgumentException("The java sys (" + osEnvName + ") has a value (" + javaSysValue + ") that is unknown. Possible values: " + Enums.toConstantAsStringCommaSeparated(TabularExecEnv.class), e);
+      }
+    }
+
+    /**
      * Os
      */
-    KeyNormalizer osEnvName = tabularEnvs.getOsTabliEnvName(attribute);
     String envOsValue = tabularEnvs.getOsEnvValue(osEnvName);
     if (envOsValue != null) {
       try {
@@ -124,8 +142,22 @@ public class TabularInit {
       return Paths.get(confEnvValue);
     }
 
-    // Env
-    KeyNormalizer envName = tabularEnvs.getOsTabliEnvName(TabularAttributeEnum.HOME);
+    /**
+     * Sys
+     */
+    KeyNormalizer envName = tabularEnvs.getNormalizedKey(TabularAttributeEnum.HOME);
+    String sysTabliHome = tabularEnvs.getJavaSysValue(envName);
+    if (sysTabliHome != null) {
+      com.tabulify.conf.Attribute variable = variableBuilder
+        .setOrigin(Origin.SYS)
+        .buildSafe(sysTabliHome);
+      attributeMap.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
+      return Paths.get(sysTabliHome);
+    }
+
+    /**
+     * Env
+     */
     String tabliHome = tabularEnvs.getOsEnvValue(envName);
     if (tabliHome != null) {
       com.tabulify.conf.Attribute variable = variableBuilder
@@ -170,26 +202,37 @@ public class TabularInit {
 
   static public Path determineProjectHome(Path projectHomePath, Vault vault, Map<TabularAttributeEnum, com.tabulify.conf.Attribute> attributeMap, TabularEnvs tabularEnvs) {
 
-    TabularAttributeEnum attribute = TabularAttributeEnum.PROJECT_HOME;
-    Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(attribute);
+    TabularAttributeEnum attributeEnum = TabularAttributeEnum.PROJECT_HOME;
+    Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(attributeEnum);
 
     if (projectHomePath != null) {
-      com.tabulify.conf.Attribute variable = confVariable
+      com.tabulify.conf.Attribute attribute = confVariable
         .setOrigin(com.tabulify.conf.Origin.COMMAND_LINE)
         .buildSafe(projectHomePath);
-      attributeMap.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
-      return projectHomePath;
+      attributeMap.put((TabularAttributeEnum) attribute.getAttributeMetadata(), attribute);
+      return Paths.get(attribute.getValueOrDefaultAsStringNotNull());
+    }
+
+
+    KeyNormalizer envName = tabularEnvs.getNormalizedKey(attributeEnum);
+    // Sys
+    String sysProjectHomeFromEnv = tabularEnvs.getJavaSysValue(envName);
+    if (sysProjectHomeFromEnv != null) {
+      com.tabulify.conf.Attribute attribute = confVariable
+        .setOrigin(Origin.SYS)
+        .buildSafe(sysProjectHomeFromEnv);
+      attributeMap.put((TabularAttributeEnum) attribute.getAttributeMetadata(), attribute);
+      return Paths.get(attribute.getValueOrDefaultAsStringNotNull());
     }
 
     // Env
-    KeyNormalizer envName = tabularEnvs.getOsTabliEnvName(attribute);
     String projectHomeFromEnv = tabularEnvs.getOsEnvValue(envName);
     if (projectHomeFromEnv != null) {
-      com.tabulify.conf.Attribute variable = confVariable
+      com.tabulify.conf.Attribute attribute = confVariable
         .setOrigin(com.tabulify.conf.Origin.OS)
         .buildSafe(projectHomeFromEnv);
-      attributeMap.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
-      return Paths.get(projectHomeFromEnv);
+      attributeMap.put((TabularAttributeEnum) attribute.getAttributeMetadata(), attribute);
+      return Paths.get(attribute.getValueOrDefaultAsStringNotNull());
     }
 
     // Derived
@@ -221,7 +264,17 @@ public class TabularInit {
       return confPath;
     }
 
-    KeyNormalizer osEnvName = tabularEnvs.getOsTabliEnvName(TabularAttributeEnum.CONF);
+    KeyNormalizer osEnvName = tabularEnvs.getNormalizedKey(TabularAttributeEnum.CONF);
+    // sys
+    String sysConfPathString = tabularEnvs.getJavaSysValue(osEnvName);
+    if (sysConfPathString != null) {
+      com.tabulify.conf.Attribute attribute = confVariable
+        .setOrigin(Origin.SYS)
+        .buildSafe(sysConfPathString);
+      return Paths.get(attribute.getValueOrDefaultAsStringNotNull());
+    }
+
+    // env
     String confPathString = tabularEnvs.getOsEnvValue(osEnvName);
     if (confPathString != null) {
       com.tabulify.conf.Attribute attribute = confVariable
@@ -280,7 +333,17 @@ public class TabularInit {
     TabularAttributeEnum sqliteHome = TabularAttributeEnum.SQLITE_HOME;
     Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(sqliteHome);
 
-    KeyNormalizer osEnvName = tabularEnvs.getOsTabliEnvName(sqliteHome);
+    KeyNormalizer osEnvName = tabularEnvs.getNormalizedKey(sqliteHome);
+    String sysConfPathString = tabularEnvs.getJavaSysValue(osEnvName);
+    if (sysConfPathString != null) {
+      com.tabulify.conf.Attribute attribute = confVariable
+        .setOrigin(Origin.SYS)
+        .buildSafe(sysConfPathString);
+      attributeMap.put(sqliteHome, attribute);
+      return Paths.get(attribute.getValueOrDefaultAsStringNotNull());
+    }
+
+
     String confPathString = tabularEnvs.getOsEnvValue(osEnvName);
     if (confPathString != null) {
       com.tabulify.conf.Attribute attribute = confVariable
@@ -306,6 +369,10 @@ public class TabularInit {
     if (passphrase != null) {
       return passphrase;
     }
+    /**
+     * We determine without using {@link TabularEnvs}
+     * because passphrase is mandatory to initiate a vault
+     */
     String normalizedPassphraseName = (Tabular.TABLI_NAME + "_" + TabularAttributeEnum.PASSPHRASE).toLowerCase();
     for (Map.Entry<String, String> osEnv : System.getenv().entrySet()) {
 
@@ -326,7 +393,6 @@ public class TabularInit {
     TabularAttributeEnum logLevelAttribute = TabularAttributeEnum.LOG_LEVEL;
     Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(logLevelAttribute);
 
-
     if (logLevel != null) {
       com.tabulify.conf.Attribute attribute = confVariable
         .setOrigin(com.tabulify.conf.Origin.OS)
@@ -335,14 +401,27 @@ public class TabularInit {
       return logLevel;
     }
 
+    KeyNormalizer logLevelKeyNormalized = tabularEnvs.getNormalizedKey(logLevelAttribute);
+    String logLevelJavaSys = tabularEnvs.getJavaSysValue(logLevelKeyNormalized);
+    if (logLevelJavaSys != null) {
+      try {
+        logLevel = Casts.cast(logLevelJavaSys, TabularLogLevel.class);
+      } catch (CastException e) {
+        throw new RuntimeException("The log level value " + logLevelJavaSys + " of the java sys env " + logLevelKeyNormalized + " is not a valid value. Valid values are: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularLogLevel.class), e);
+      }
+      Attribute attribute = confVariable
+        .setOrigin(Origin.SYS)
+        .buildSafe(logLevel);
+      attributeMap.put(logLevelAttribute, attribute);
+      return logLevel;
+    }
 
-    KeyNormalizer osEnvName = tabularEnvs.getOsTabliEnvName(logLevelAttribute);
-    String logLevelOs = tabularEnvs.getOsEnvValue(osEnvName);
+    String logLevelOs = tabularEnvs.getOsEnvValue(logLevelKeyNormalized);
     if (logLevelOs != null) {
       try {
         logLevel = Casts.cast(logLevelOs, TabularLogLevel.class);
       } catch (CastException e) {
-        throw new RuntimeException("The log level value " + logLevelOs + " of the os env " + osEnvName + " is not a valid value. Valid values are: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularLogLevel.class), e);
+        throw new RuntimeException("The log level value " + logLevelOs + " of the os env " + logLevelKeyNormalized + " is not a valid value. Valid values are: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularLogLevel.class), e);
       }
       com.tabulify.conf.Attribute attribute = confVariable
         .setOrigin(com.tabulify.conf.Origin.OS)

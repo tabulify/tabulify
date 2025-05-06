@@ -1,5 +1,6 @@
 package com.tabulify.flow.step;
 
+import com.tabulify.conf.Attribute;
 import com.tabulify.flow.engine.FilterRunnable;
 import com.tabulify.flow.engine.FilterStepAbs;
 import com.tabulify.model.RelationDef;
@@ -9,7 +10,6 @@ import com.tabulify.spi.DataPathAttribute;
 import com.tabulify.stream.InsertStream;
 import net.bytle.exception.NoValueException;
 import net.bytle.type.KeyNormalizer;
-import com.tabulify.conf.Attribute;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -45,12 +45,12 @@ public class InfoStep extends FilterStepAbs implements Function<Set<DataPath>, D
       .getOrCreateRelationDef();
 
     if (dataPaths.size() > 1) {
-      propertiesDataPath.addColumn(KeyNormalizer.create(DataPathAttribute.DATA_URI).toSqlCase());
+      propertiesDataPath.addColumn(KeyNormalizer.createSafe(DataPathAttribute.DATA_URI).toSqlCaseSafe());
     }
     propertiesDataPath
-      .addColumn(KeyNormalizer.create(AttributeProperties.ATTRIBUTE).toSqlCase())
-      .addColumn(KeyNormalizer.create(AttributeProperties.VALUE).toSqlCase())
-      .addColumn(KeyNormalizer.create(AttributeProperties.DESCRIPTION).toSqlCase());
+      .addColumn(KeyNormalizer.createSafe(AttributeProperties.ATTRIBUTE).toSqlCaseSafe())
+      .addColumn(KeyNormalizer.createSafe(AttributeProperties.VALUE).toSqlCaseSafe())
+      .addColumn(KeyNormalizer.createSafe(AttributeProperties.DESCRIPTION).toSqlCaseSafe());
 
     List<Attribute> attributes = dataPaths
       .stream()

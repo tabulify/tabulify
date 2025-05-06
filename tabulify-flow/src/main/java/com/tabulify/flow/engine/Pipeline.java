@@ -15,7 +15,10 @@ import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
 import net.bytle.timer.Timer;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.KeyNormalizer;
+import net.bytle.type.MapKeyIndependent;
+import net.bytle.type.Strings;
 import net.bytle.type.yaml.YamlCast;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DirectedAcyclicGraph;
@@ -167,10 +170,10 @@ public class Pipeline implements AutoCloseable {
           throw new IllegalStructure("The attribute (" + key + ") on the step (" + stepName + ") has a null value");
         }
         FlowStepAttribute stepAttribute;
-        KeyNormalizer keyNormalized = KeyNormalizer.create(key);
-        if (keyNormalized.equals(KeyNormalizer.create("args"))) {
+        KeyNormalizer keyNormalized = KeyNormalizer.createSafe(key);
+        if (keyNormalized.equals(KeyNormalizer.createSafe("args"))) {
           stepAttribute = FlowStepAttribute.ARGUMENTS;
-        } else if (keyNormalized.equals(KeyNormalizer.create("op"))) {
+        } else if (keyNormalized.equals(KeyNormalizer.createSafe("op"))) {
           stepAttribute = FlowStepAttribute.OPERATION;
         } else {
           try {
@@ -214,7 +217,7 @@ public class Pipeline implements AutoCloseable {
       }
 
       if (operationString == null) {
-        throw new IllegalStructure("We were unable to find the (" + KeyNormalizer.create(OPERATION).toCliLongOptionName() + ") argument in the " + stepName + " step (Data: " + stepMap + ")");
+        throw new IllegalStructure("We were unable to find the (" + KeyNormalizer.createSafe(OPERATION).toCliLongOptionName() + ") argument in the " + stepName + " step (Data: " + stepMap + ")");
       }
 
 

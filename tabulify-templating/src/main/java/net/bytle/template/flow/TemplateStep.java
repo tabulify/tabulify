@@ -1,6 +1,5 @@
 package net.bytle.template.flow;
 
-import net.bytle.crypto.Digest;
 import com.tabulify.flow.Granularity;
 import com.tabulify.flow.engine.FilterRunnable;
 import com.tabulify.flow.engine.FilterStepAbs;
@@ -14,6 +13,7 @@ import com.tabulify.spi.SelectException;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
 import com.tabulify.uri.DataUri;
+import net.bytle.crypto.Digest;
 import net.bytle.exception.*;
 import net.bytle.html.CssInliner;
 import net.bytle.template.JsonTemplate;
@@ -210,7 +210,7 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
          */
         for (DataPathAttribute envVariablesDataPathAttribute : dataPathAttributesAddedAsEnv) {
           try {
-            envVariables.put(Key.toLongOptionName(envVariablesDataPathAttribute), source.getAttribute(envVariablesDataPathAttribute));
+            envVariables.put(KeyNormalizer.createSafe(envVariablesDataPathAttribute).toCliLongOptionName(), source.getAttribute(envVariablesDataPathAttribute));
           } catch (NoVariableException ex) {
             // ok
           }
@@ -294,7 +294,7 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
             if (templateDataPath != null) {
               for (DataPathAttribute envVariablesDataPathAttribute : envVariablesDataPathAttributes) {
                 try {
-                  envVariables.put(TEMPLATE_PREFIX + KeyNormalizer.create(envVariablesDataPathAttribute).toCliLongOptionName(), templateDataPath.getAttribute(envVariablesDataPathAttribute));
+                  envVariables.put(TEMPLATE_PREFIX + KeyNormalizer.createSafe(envVariablesDataPathAttribute).toCliLongOptionName(), templateDataPath.getAttribute(envVariablesDataPathAttribute));
                 } catch (NoVariableException ex) {
                   // ok
                 }
@@ -427,7 +427,7 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
         if (templateOriginDataPath != null) {
           for (DataPathAttribute envVariablesDataPathAttribute : TemplateStep.this.dataPathAttributesAddedAsEnv) {
             try {
-              envVariables.put("template-" + Key.toLongOptionName(envVariablesDataPathAttribute), templateOriginDataPath.getAttribute(envVariablesDataPathAttribute).getValueOrDefault());
+              envVariables.put("template-" + KeyNormalizer.createSafe(envVariablesDataPathAttribute).toCliLongOptionName(), templateOriginDataPath.getAttribute(envVariablesDataPathAttribute).getValueOrDefault());
             } catch (NoVariableException | NoValueException ex) {
               // ok
             }
@@ -492,7 +492,7 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
       if (outputLogicalOutput != null) {
         for (DataPathAttribute e : envVariablesDataPathAttributes) {
           try {
-            envVariables.put(TEMPLATE_PREFIX + Key.toLongOptionName(e), templateDataPath.getAttribute(e).getValueOrDefault());
+            envVariables.put(TEMPLATE_PREFIX + KeyNormalizer.createSafe(e).toCliLongOptionName(), templateDataPath.getAttribute(e).getValueOrDefault());
           } catch (NoVariableException | NoValueException ex) {
             // ok
           }

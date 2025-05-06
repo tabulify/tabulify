@@ -58,8 +58,8 @@ public class TabliWords {
 
 
   protected static final String PASSPHRASE_PROPERTY = "--passphrase";
-  protected final static String WITH_DEPENDENCIES_PROPERTY = "--" + KeyNormalizer.create(SelectSupplierArgument.WITH_DEPENDENCIES).toCliLongOptionName();
-  protected final static String VIRTUAL_COLUMN_PROPERTY = "--" + KeyNormalizer.create(EnrichStep.EnrichStepArgument.VIRTUAL_COLUMN).toCliLongOptionName();
+  protected final static String WITH_DEPENDENCIES_PROPERTY = "--" + KeyNormalizer.createSafe(SelectSupplierArgument.WITH_DEPENDENCIES).toCliLongOptionName();
+  protected final static String VIRTUAL_COLUMN_PROPERTY = "--" + KeyNormalizer.createSafe(EnrichStep.EnrichStepArgument.VIRTUAL_COLUMN).toCliLongOptionName();
   protected static final String LIMIT_PROPERTY = "--limit";
 
   // Config file words
@@ -138,20 +138,20 @@ public class TabliWords {
   static final String OUTPUT_TRANSFER_OPERATION_OPTION = "--output-transfer-operation";
 
   // Transfer Operation
-  static final String TRANSFER_OPERATION_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.TRANSFER_OPERATION).toCliLongOptionName();
-  static final String TARGET_OPERATION_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.TARGET_OPERATION).toCliLongOptionName();
-  static final String SOURCE_OPERATION_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.SOURCE_OPERATION).toCliLongOptionName();
+  static final String TRANSFER_OPERATION_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.createSafe(TransferArgumentProperty.TRANSFER_OPERATION).toCliLongOptionName();
+  static final String TARGET_OPERATION_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.createSafe(TransferArgumentProperty.TARGET_OPERATION).toCliLongOptionName();
+  static final String SOURCE_OPERATION_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.createSafe(TransferArgumentProperty.SOURCE_OPERATION).toCliLongOptionName();
 
 
   // Cross DataStore Transfer options
-  static final String TARGET_WORKER_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.TARGET_WORKER_COUNT).toCliLongOptionName();
-  static final String BUFFER_SIZE_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.BUFFER_SIZE).toCliLongOptionName();
+  static final String TARGET_WORKER_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.createSafe(TransferArgumentProperty.TARGET_WORKER_COUNT).toCliLongOptionName();
+  static final String BUFFER_SIZE_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.createSafe(TransferArgumentProperty.BUFFER_SIZE).toCliLongOptionName();
 
-  static final String WITH_BIND_VARIABLES = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.WITH_BIND_VARIABLES).toCliLongOptionName();
-  static final String TARGET_COMMIT_FREQUENCY_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.TARGET_COMMIT_FREQUENCY).toCliLongOptionName();
-  static final String TARGET_BATCH_SIZE_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.TARGET_BATCH_SIZE).toCliLongOptionName();
-  static final String METRICS_DATA_URI_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.METRICS_DATA_URI).toCliLongOptionName();
-  static final String SOURCE_FETCH_SIZE_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.create(TransferArgumentProperty.SOURCE_FETCH_SIZE).toCliLongOptionName();
+  static final String WITH_BIND_VARIABLES = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.createSafe(TransferArgumentProperty.WITH_BIND_VARIABLES).toCliLongOptionName();
+  static final String TARGET_COMMIT_FREQUENCY_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.createSafe(TransferArgumentProperty.TARGET_COMMIT_FREQUENCY).toCliLongOptionName();
+  static final String TARGET_BATCH_SIZE_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.createSafe(TransferArgumentProperty.TARGET_BATCH_SIZE).toCliLongOptionName();
+  static final String METRICS_DATA_URI_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.createSafe(TransferArgumentProperty.METRICS_DATA_URI).toCliLongOptionName();
+  static final String SOURCE_FETCH_SIZE_OPTION = CliParser.PREFIX_LONG_OPTION + KeyNormalizer.createSafe(TransferArgumentProperty.SOURCE_FETCH_SIZE).toCliLongOptionName();
 
 
   static final String OUTPUT_DATA_URI = "--output-data-uri";
@@ -162,7 +162,7 @@ public class TabliWords {
   /**
    * Argument
    */
-  public static String TARGET_DATA_URI = KeyNormalizer.create(TargetArguments.TARGET_DATA_URI).toCliLongOptionName();
+  public static String TARGET_DATA_URI = KeyNormalizer.createSafe(TargetArguments.TARGET_DATA_URI).toCliLongOptionName();
   public static String SOURCE_SELECTOR = "source-selector";
   public static String DATA_SELECTORS = "data-selector...";
   public static String NAME_SELECTORS = "name-selector...";

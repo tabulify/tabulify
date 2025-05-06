@@ -52,7 +52,7 @@ public class SqlDataPath extends DataPathAbs {
      * We don't read the content of the script and make a hash id
      * as the resource may not exist
      */
-    String object = KeyNormalizer.create(scriptDataPath.getRelativePath() + "_" + scriptDataPath.getConnection() + "_" + sqlConnection).toSqlCase();
+    String object = KeyNormalizer.createSafe(scriptDataPath.getRelativePath() + "_" + scriptDataPath.getConnection() + "_" + sqlConnection).toSqlCaseSafe();
     this.sqlConnectionResourcePath = SqlConnectionResourcePath
       .createOfCatalogSchemaAndObjectName(this.getConnection(), currentCatalog, schema, object);
 

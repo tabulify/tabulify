@@ -76,7 +76,7 @@ public class TabliConnectionList {
           .stream()
           .collect(
             Collectors.toMap(
-              a -> KeyNormalizer.create(a.getAttributeMetadata()),
+              a -> KeyNormalizer.createSafe(a.getAttributeMetadata()),
               a -> {
                 try {
                   return a.getValueOrDefaultCastAs(String.class);
@@ -88,7 +88,7 @@ public class TabliConnectionList {
           );
         List<String> row = new ArrayList<>();
         for (String attributeString : attributes) {
-          row.add(connectionAttributes.get(KeyNormalizer.create(attributeString)));
+          row.add(connectionAttributes.get(KeyNormalizer.createSafe(attributeString)));
         }
         insertStream
           .insert(row);

@@ -793,7 +793,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       // We don't look up without the tabli predix because it can cause clashes
       // for instance, name in os is the name of the computer
       TabularEnvs tabularEnvs = this.tabular.getTabularEnvs();
-      KeyNormalizer envName = tabularEnvs.getOsTabliEnvName(attribute);
+      KeyNormalizer envName = tabularEnvs.getNormalizedKey(attribute);
       String envValue = tabularEnvs.getOsEnvValue(envName);
       if (envValue != null) {
         com.tabulify.conf.Attribute variable = variableBuilder

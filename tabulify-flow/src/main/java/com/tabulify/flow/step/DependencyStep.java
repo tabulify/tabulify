@@ -1,13 +1,13 @@
 package com.tabulify.flow.step;
 
-import net.bytle.dag.Dependency;
-import com.tabulify.flow.engine.FilterStepAbs;
 import com.tabulify.flow.engine.FilterRunnable;
+import com.tabulify.flow.engine.FilterStepAbs;
 import com.tabulify.flow.engine.OperationStep;
 import com.tabulify.model.RelationDef;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataPathAttribute;
 import com.tabulify.stream.InsertStream;
+import net.bytle.dag.Dependency;
 import net.bytle.type.KeyNormalizer;
 
 import java.sql.Types;
@@ -62,11 +62,11 @@ public class DependencyStep extends FilterStepAbs {
       feedback = tabular.getMemoryDataStore().getAndCreateRandomDataPath()
         .setLogicalName("dependencies")
         .getOrCreateRelationDef();
-      feedback.addColumn(KeyNormalizer.create("Id").toSqlCase(), Types.INTEGER);
+      feedback.addColumn(KeyNormalizer.createSafe("Id").toSqlCaseSafe(), Types.INTEGER);
 
       feedback
-        .addColumn(KeyNormalizer.create(DataPathAttribute.DATA_URI).toSqlCase())
-        .addColumn(KeyNormalizer.create("Dependency").toSqlCase());
+        .addColumn(KeyNormalizer.createSafe(DataPathAttribute.DATA_URI).toSqlCaseSafe())
+        .addColumn(KeyNormalizer.createSafe("Dependency").toSqlCaseSafe());
 
 
       try (

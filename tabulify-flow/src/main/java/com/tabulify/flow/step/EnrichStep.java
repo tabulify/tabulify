@@ -8,7 +8,9 @@ import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataPathAttribute;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.KeyNormalizer;
+import net.bytle.type.MapKeyIndependent;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -105,7 +107,7 @@ public class EnrichStep extends FilterStepAbs implements Function<Set<DataPath>,
   }
 
   public EnrichStep addVirtualColumnFromAttribute(DataPathAttribute dataPathAttribute) {
-    this.virtualColumns.add(new VirtualColumn(KeyNormalizer.create(dataPathAttribute).toSqlCase(), dataPathAttribute));
+    this.virtualColumns.add(new VirtualColumn(KeyNormalizer.createSafe(dataPathAttribute).toSqlCaseSafe(), dataPathAttribute));
     return this;
   }
 
@@ -189,7 +191,7 @@ public class EnrichStep extends FilterStepAbs implements Function<Set<DataPath>,
             String resourceAttribute = null;
 
             for (Map.Entry<String, String> virtualColumnEntry : virtualColumnMap.entrySet()) {
-              String normalizedVirtualkeyEntry = KeyNormalizer.create(virtualColumnEntry.getKey()).toHyphenCase();
+              String normalizedVirtualkeyEntry = KeyNormalizer.createSafe(virtualColumnEntry.getKey()).toHyphenCase();
               switch (normalizedVirtualkeyEntry) {
                 case "name":
                   name = virtualColumnEntry.getValue();

@@ -59,7 +59,6 @@ public class Tabular implements AutoCloseable {
   private final TabularExecEnv executionEnv;
   private final Path projectHomePath;
   private final TabularEnvs tabularEnvs;
-  private final Protector protector;
 
   // The default connection added to a data URI if it does not have it.
   protected Connection defaultConnection;
@@ -122,10 +121,11 @@ public class Tabular implements AutoCloseable {
      * Protector
      */
     String passphrase = TabularInit.determinePassphrase(tabularConfig.passphrase);
+    Protector protector;
     if (passphrase != null) {
       protector = Protector.create(passphrase);
     } else {
-      this.protector = null;
+      protector = null;
     }
 
     /**
@@ -186,10 +186,21 @@ public class Tabular implements AutoCloseable {
       }
       Vault.VariableBuilder variableBuilder = vault.createVariableBuilderFromAttribute(attribute);
 
-      // Env
+      // Name
       // We don't look up without the tabli prefix because it can cause clashes
       // for instance, name in os is the name of the computer
-      KeyNormalizer envName = tabularEnvs.getOsTabliEnvName(attribute);
+      KeyNormalizer envName = tabularEnvs.getNormalizedKey(attribute);
+      // Sys
+      String sysEnvValue = tabularEnvs.getJavaSysValue(envName);
+      if (sysEnvValue != null) {
+        attributes.put(attribute,
+          variableBuilder
+            .setOrigin(Origin.SYS)
+            .buildSafe(sysEnvValue)
+        );
+        continue;
+      }
+      // Env
       String envValue = tabularEnvs.getOsEnvValue(envName);
       if (envValue != null) {
         attributes.put(attribute,
@@ -901,7 +912,7 @@ public class Tabular implements AutoCloseable {
    * @return a key/attribute name in a public format
    */
   public String toPublicName(String attribute) {
-    return KeyNormalizer.create(attribute).toCliLongOptionName();
+    return KeyNormalizer.createSafe(attribute).toCliLongOptionName();
   }
 
   public String toPublicName(Attribute attribute) {

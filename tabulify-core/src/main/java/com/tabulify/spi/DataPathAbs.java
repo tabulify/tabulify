@@ -778,14 +778,14 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
       .getDataPath(this.getName() + "_variable")
       .setDescription("Information about the data resource (" + this + ")")
       .getOrCreateRelationDef()
-      .addColumn(KeyNormalizer.create(AttributeProperties.ATTRIBUTE).toSqlName())
-      .addColumn(KeyNormalizer.create(AttributeProperties.VALUE).toSqlName())
-      .addColumn(KeyNormalizer.create(AttributeProperties.DESCRIPTION).toSqlName());
+      .addColumn(KeyNormalizer.createSafe(AttributeProperties.ATTRIBUTE).toSqlCaseSafe())
+      .addColumn(KeyNormalizer.createSafe(AttributeProperties.VALUE).toSqlCaseSafe())
+      .addColumn(KeyNormalizer.createSafe(AttributeProperties.DESCRIPTION).toSqlCaseSafe());
 
     try (InsertStream insertStream = variablesDataPath.getDataPath().getInsertStream()) {
       for (com.tabulify.conf.Attribute attribute : this.getAttributes()) {
         List<Object> row = new ArrayList<>();
-        row.add(KeyNormalizer.create(attribute.getAttributeMetadata().toString()).toCamelCase());
+        row.add(KeyNormalizer.createSafe(attribute.getAttributeMetadata().toString()).toCamelCase());
         row.add(attribute.getValueOrDefaultOrNull());
         row.add(attribute.getAttributeMetadata().getDescription());
         insertStream.insert(row);

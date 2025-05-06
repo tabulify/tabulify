@@ -58,7 +58,7 @@ public class DefineStep extends StepAbs implements DataPathSupplier {
       .map(CastStep.create())
       .map(dp -> Stream.of(dp).collect(Collectors.toSet()))
       .collect(Collectors.toList());
-    if (dataPaths.size() > 0) {
+    if (!dataPaths.isEmpty()) {
       buildDataPaths.add(dataPaths);
     }
     iterator = buildDataPaths.iterator();
@@ -146,7 +146,7 @@ public class DefineStep extends StepAbs implements DataPathSupplier {
     DataPath dataPath = null;
     List<List<Object>> records = null;
     for (Map.Entry<String, Object> entryDataResource : dataResource.entrySet()) {
-      switch (KeyNormalizer.create(entryDataResource.getKey()).toHyphenCase()) {
+      switch (KeyNormalizer.createSafe(entryDataResource.getKey()).toHyphenCase()) {
         case "data-definition":
         case "data-def":
           Map<String, Object> dataDef;

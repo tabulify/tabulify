@@ -88,7 +88,7 @@ public abstract class TargetFilterStepAbs extends FilterStepAbs {
       }
     }
     if (targetUri == null) {
-      throw new IllegalStateException("The target data uri argument ("+ KeyNormalizer.create(TARGET_DATA_URI).toCliLongOptionName() +") is mandatory for the step (" + this + ") and was not found.");
+      throw new IllegalStateException("The target data uri argument (" + KeyNormalizer.createSafe(TARGET_DATA_URI).toCliLongOptionName() + ") is mandatory for the step (" + this + ") and was not found.");
     }
 
     /*

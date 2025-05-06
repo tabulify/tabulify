@@ -1,8 +1,7 @@
 package com.tabulify.flow.step;
 
-import com.tabulify.conf.AttributeValue;
-import com.tabulify.transfer.*;
 import com.tabulify.DbLoggers;
+import com.tabulify.conf.AttributeValue;
 import com.tabulify.flow.Granularity;
 import com.tabulify.flow.engine.FilterRunnable;
 import com.tabulify.flow.engine.OperationStep;
@@ -10,12 +9,16 @@ import com.tabulify.spi.DataPath;
 import com.tabulify.spi.SelectException;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
+import com.tabulify.transfer.*;
 import net.bytle.exception.CastException;
 import net.bytle.exception.NoPathFoundException;
 import net.bytle.exception.NoVariableException;
 import net.bytle.template.TextTemplate;
 import net.bytle.template.TextTemplateEngine;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.Enums;
+import net.bytle.type.KeyNormalizer;
+import net.bytle.type.MapKeyIndependent;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -52,7 +55,7 @@ public class TransferStep extends TargetFilterStepAbs {
   static {
 
     acceptedNames = Arrays.stream(TransferOperation.values())
-      .map(e -> KeyNormalizer.create(e).toCliLongOptionName())
+      .map(e -> KeyNormalizer.createSafe(e).toCliLongOptionName())
       .collect(Collectors.toSet());
     acceptedNames.add(TRANSFER);
 
@@ -265,7 +268,7 @@ public class TransferStep extends TargetFilterStepAbs {
   @Override
   public Boolean accept(String name) {
 
-    return acceptedNames.contains(KeyNormalizer.create(name).toCliLongOptionName());
+    return acceptedNames.contains(KeyNormalizer.createSafe(name).toCliLongOptionName());
 
   }
 
@@ -412,7 +415,7 @@ public class TransferStep extends TargetFilterStepAbs {
       if (exitStatus != 0) {
         String msg = "Error ! (" + exitStatus + ") errors were seen.";
         DbLoggers.LOGGER_DB_ENGINE.severe(msg);
-        TransferStep.this.getTabular().setExitStatus(Math.toIntExact(exitStatus));
+        tabular.setExitStatus(Math.toIntExact(exitStatus));
       }
 
       this.isDone = true;

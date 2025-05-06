@@ -1,7 +1,7 @@
 package com.tabulify.flow.step;
 
-import com.tabulify.flow.engine.FilterStepAbs;
 import com.tabulify.flow.engine.FilterRunnable;
+import com.tabulify.flow.engine.FilterStepAbs;
 import com.tabulify.model.ColumnAttribute;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.model.PrimaryKeyDef;
@@ -10,10 +10,11 @@ import com.tabulify.stream.InsertStream;
 import net.bytle.type.Arrayss;
 import net.bytle.type.KeyNormalizer;
 
-import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -47,15 +48,15 @@ public class StructStep extends FilterStepAbs implements Function<Set<DataPath>,
         .addColumn("data_uri");
     }
     structDataPath.getOrCreateRelationDef()
-      .addColumn(KeyNormalizer.create(ColumnAttribute.POSITION).toSqlCase())
-      .addColumn(KeyNormalizer.create(ColumnAttribute.NAME).toSqlCase())
-      .addColumn(KeyNormalizer.create(ColumnAttribute.TYPE).toSqlCase())
-      .addColumn(KeyNormalizer.create(ColumnAttribute.PRECISION).toSqlCase())
-      .addColumn(KeyNormalizer.create(ColumnAttribute.SCALE).toSqlCase())
+      .addColumn(KeyNormalizer.createSafe(ColumnAttribute.POSITION).toSqlCaseSafe())
+      .addColumn(KeyNormalizer.createSafe(ColumnAttribute.NAME).toSqlCaseSafe())
+      .addColumn(KeyNormalizer.createSafe(ColumnAttribute.TYPE).toSqlCaseSafe())
+      .addColumn(KeyNormalizer.createSafe(ColumnAttribute.PRECISION).toSqlCaseSafe())
+      .addColumn(KeyNormalizer.createSafe(ColumnAttribute.SCALE).toSqlCaseSafe())
       .addColumn("primary_key")
-      .addColumn(KeyNormalizer.create(ColumnAttribute.NULLABLE).toSqlCase())
-      .addColumn(KeyNormalizer.create(ColumnAttribute.AUTOINCREMENT).toSqlCase())
-      .addColumn(KeyNormalizer.create(ColumnAttribute.COMMENT).toSqlCase());
+      .addColumn(KeyNormalizer.createSafe(ColumnAttribute.NULLABLE).toSqlCaseSafe())
+      .addColumn(KeyNormalizer.createSafe(ColumnAttribute.AUTOINCREMENT).toSqlCaseSafe())
+      .addColumn(KeyNormalizer.createSafe(ColumnAttribute.COMMENT).toSqlCaseSafe());
 
     if (dataPaths.isEmpty()) {
       return structDataPath;
@@ -150,7 +151,7 @@ public class StructStep extends FilterStepAbs implements Function<Set<DataPath>,
     }
 
     @Override
-    public Set<DataPath> get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public Set<DataPath> get(long timeout, TimeUnit unit) {
       return get();
     }
   }

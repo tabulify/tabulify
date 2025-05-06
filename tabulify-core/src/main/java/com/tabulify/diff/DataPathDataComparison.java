@@ -14,7 +14,6 @@ import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
 import net.bytle.exception.NoColumnException;
 import net.bytle.log.Log;
-import net.bytle.type.Key;
 import net.bytle.type.KeyNormalizer;
 import net.bytle.type.Strings;
 
@@ -23,9 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.tabulify.diff.DataComparisonAttribute.*;
-import static com.tabulify.diff.DataPathDataComparison.rowSource.BOTH_DATA_PATH;
-import static com.tabulify.diff.DataPathDataComparison.rowSource.SOURCE_DATA_PATH;
-import static com.tabulify.diff.DataPathDataComparison.rowSource.TARGET_DATA_PATH;
+import static com.tabulify.diff.DataPathDataComparison.rowSource.*;
 
 /**
  * All function to perform a data path comparison
@@ -198,19 +195,19 @@ public class DataPathDataComparison {
      * have the `comp` prefix
      */
     resultDataPath.createRelationDef()
-      .addColumn(KeyNormalizer.create(COMP_ID).toSqlCase())  // Add the id of the row
-      .addColumn(Key.toColumnName(COMP_ORIGIN)) // The origin of the data
-      .addColumn(Key.toColumnName(COMP_COMMENT))
-      .addColumn(Key.toColumnName(COMP_DIFF_ID))
+      .addColumn(KeyNormalizer.createSafe(COMP_ID).toSqlCaseSafe())  // Add the id of the row
+      .addColumn(KeyNormalizer.createSafe(COMP_ORIGIN).toSqlCaseSafe()) // The origin of the data
+      .addColumn(KeyNormalizer.createSafe(COMP_COMMENT).toSqlCaseSafe())
+      .addColumn(KeyNormalizer.createSafe(COMP_DIFF_ID).toSqlCaseSafe())
     ;  //
 
     /*
      * Add the line id if there is no id in the data
      */
-    if (driverColumnsPosition.size() == 0) {
+    if (driverColumnsPosition.isEmpty()) {
       resultDataPath
         .getOrCreateRelationDef()
-        .addColumn(Key.toColumnName(COMP_ORIGIN_ID));
+        .addColumn(KeyNormalizer.createSafe(COMP_ORIGIN_ID).toSqlCaseSafe());
     }
 
     RelationDef sourceDataDef = source.getOrCreateRelationDef();
