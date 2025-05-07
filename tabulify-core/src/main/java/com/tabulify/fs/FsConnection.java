@@ -15,6 +15,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.type.Casts;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
+import net.bytle.type.UriEnhanced;
 
 import java.io.IOException;
 import java.net.URI;
@@ -57,9 +58,9 @@ public class FsConnection extends NoOpConnection {
       return;
     }
 
-    String uri = this.getUriAsString();
+    UriEnhanced uri = this.getUri();
     try {
-      if (uri.startsWith("file:/")) {
+      if (uri.getScheme().equals("file")) {
         /**
          * There can be only one local file system
          * <p>
@@ -76,7 +77,7 @@ public class FsConnection extends NoOpConnection {
         fileSystem = FileSystems.getDefault();
       } else {
 
-        fileSystem = FileSystems.newFileSystem(URI.create(uri), this.getConnectionProperties());
+        fileSystem = FileSystems.newFileSystem(uri.toUri(), this.getConnectionProperties());
       }
 
     } catch (Exception e) {
@@ -170,12 +171,6 @@ public class FsConnection extends NoOpConnection {
     return FsConnectionResourcePath.createOf(this.getCurrentDataPath().getAbsoluteNioPath(), pathOrName, names);
   }
 
-
-  public URI getConnectionUri() {
-
-    return URI.create(this.getUriAsString());
-
-  }
 
   /**
    * @param path      - the nio path
@@ -294,7 +289,7 @@ public class FsConnection extends NoOpConnection {
   }
 
   Path getNioPath() {
-    URI uri = this.getConnectionUri();
+    URI uri = this.getUri().toUri();
     try {
       return Paths.get(uri).normalize().toAbsolutePath();
     } catch (Exception e) {

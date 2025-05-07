@@ -184,7 +184,7 @@ public class TabliConnection {
         throw new RuntimeException("The connection (" + connectionName + ") exist already. It can't then be added, use the upsert command instead. (Connection vault location: " + connectionVaultPath + ")");
       }
       LOGGER.info("The connection (" + connectionName + ") was found, updating");
-      if (uriValue != null && !connection.getUriAsString().equals(uriValue)) {
+      if (uriValue != null && !connection.getUri().toString().equals(uriValue)) {
         // a new uri, means a new connection (normally only for a new scheme but yeah)
         Connection newConnection = Connection.createConnectionFromProviderOrDefault(tabular, connectionName, uriValue);
         for (Attribute attribute : connection.getAttributes()) {

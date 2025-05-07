@@ -3,7 +3,6 @@ package com.tabulify.jdbc;
 import com.tabulify.model.SqlDataType;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -21,7 +20,6 @@ public class SqlDataStoreStatic {
    * Todo: Add {@link DatabaseMetaData#getClientInfoProperties()}
    */
   public static void printDatabaseInformation(SqlConnection jdbcDataStore) {
-
 
 
     System.out.println();
@@ -50,7 +48,7 @@ public class SqlDataStoreStatic {
       System.out.println("Schema Current Connection: " + currentConnection.getSchema());
       System.out.println("Client Info");
       Properties clientInfos = currentConnection.getClientInfo();
-      if (clientInfos != null && clientInfos.size() != 0) {
+      if (clientInfos != null && !clientInfos.isEmpty()) {
         for (String key : clientInfos.stringPropertyNames()) {
           System.out.println("  * (" + key + ") = (" + clientInfos.getProperty(key) + ")");
         }
@@ -59,28 +57,23 @@ public class SqlDataStoreStatic {
       }
 
       System.out.println();
-      URI url;
-      try {
-        url = new URI(jdbcDataStore.getUriAsString());
-        SqlUri sqlUri = new SqlUri(url);
-        System.out.println("URL (" + url + ")");
-        System.out.println("Authority: " + url.getAuthority());
-        System.out.println("Scheme: " + url.getScheme());
-        System.out.println("Scheme Specific Part: " + url.getSchemeSpecificPart());
-        System.out.println("Fragment: " + url.getFragment());
-        System.out.println("Host: " + url.getHost());
-        System.out.println("Path: " + url.getPath());
-        System.out.println("Query: " + url.getQuery());
-        System.out.println("Raw Query: " + url.getRawQuery());
-        System.out.println("Raw Authority: " + url.getRawAuthority());
-        System.out.println("Raw Fragment: " + url.getRawFragment());
-        System.out.println("Raw Path: " + url.getRawPath());
-        System.out.println("Raw Schema Specific Part: " + url.getRawSchemeSpecificPart());
-        System.out.println("Driver: " + sqlUri.getDriver());
-        System.out.println("Server: " + sqlUri.getServer());
-      } catch (URISyntaxException e) {
-        System.out.println("Error while reading the URI information. Message:" + e.getMessage());
-      }
+      URI url = jdbcDataStore.getUri().toUri();
+      SqlUri sqlUri = new SqlUri(url);
+      System.out.println("URL (" + url + ")");
+      System.out.println("Authority: " + url.getAuthority());
+      System.out.println("Scheme: " + url.getScheme());
+      System.out.println("Scheme Specific Part: " + url.getSchemeSpecificPart());
+      System.out.println("Fragment: " + url.getFragment());
+      System.out.println("Host: " + url.getHost());
+      System.out.println("Path: " + url.getPath());
+      System.out.println("Query: " + url.getQuery());
+      System.out.println("Raw Query: " + url.getRawQuery());
+      System.out.println("Raw Authority: " + url.getRawAuthority());
+      System.out.println("Raw Fragment: " + url.getRawFragment());
+      System.out.println("Raw Path: " + url.getRawPath());
+      System.out.println("Raw Schema Specific Part: " + url.getRawSchemeSpecificPart());
+      System.out.println("Driver: " + sqlUri.getDriver());
+      System.out.println("Server: " + sqlUri.getServer());
 
     } catch (SQLException e) {
       throw new RuntimeException(e);
@@ -133,8 +126,6 @@ public class SqlDataStoreStatic {
 
 
   }
-
-
 
 
 }

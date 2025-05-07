@@ -1,10 +1,10 @@
 package com.tabulify.fs;
 
 import com.tabulify.Tabular;
-import com.tabulify.spi.ConnectionProvider;
 import com.tabulify.conf.Attribute;
+import com.tabulify.spi.ConnectionProvider;
+import net.bytle.type.UriEnhanced;
 
-import java.net.URI;
 import java.nio.file.spi.FileSystemProvider;
 
 public class FsConnectionProvider extends ConnectionProvider {
@@ -45,7 +45,7 @@ public class FsConnectionProvider extends ConnectionProvider {
    */
   @Override
   public boolean accept(Attribute url) {
-    URI uri = URI.create((String) url.getValueOrDefaultOrNull());
+    UriEnhanced uri = (UriEnhanced) url.getValueOrDefaultOrNull();
     for (FileSystemProvider fileSystemProvider : FileSystemProvider.installedProviders()) {
       String scheme = uri.getScheme();
       if (scheme==null){

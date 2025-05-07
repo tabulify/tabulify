@@ -42,8 +42,6 @@ public class ConnectionBuiltIn {
 
   /**
    * Create the built-in, internal connections
-   *
-   * @return
    */
   public static MapKeyIndependent<Connection> loadBuiltInConnections(Tabular tabular, Path sqliteConnectionHome) {
 

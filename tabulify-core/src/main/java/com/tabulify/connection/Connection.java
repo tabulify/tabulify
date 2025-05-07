@@ -14,7 +14,10 @@ import com.tabulify.uri.DataUriString;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.KeyNormalizer;
+import net.bytle.type.MediaType;
+import net.bytle.type.UriEnhanced;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -43,7 +46,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   private final Random random = new Random();
 
 
-  public Connection(Tabular tabular, com.tabulify.conf.Attribute name, com.tabulify.conf.Attribute uri) {
+  public Connection(Tabular tabular, Attribute name, Attribute uri) {
 
     this.tabular = tabular;
 
@@ -284,7 +287,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    */
   public String getScheme() {
 
-    return Uris.getScheme((String) getUriAsVariable().getValueOrDefaultOrNull());
+    return getUri().getScheme();
 
   }
 
@@ -343,8 +346,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     if (attributeEnum.equals(ConnectionAttributeEnumBase.NAME) && !attribute.getValueOrDefaultAsStringNotNull().equals(this.getName())) {
       throw new RuntimeException("You can't change the name of this connection from " + this.getName() + " to " + attribute.getValueOrDefaultAsStringNotNull());
     }
-    if (attributeEnum.equals(ConnectionAttributeEnumBase.URI) && !attribute.getValueOrDefaultAsStringNotNull().equals(this.getUriAsString())) {
-      throw new RuntimeException("You can't change the URI of this connection from " + this.getUriAsString() + " to  " + attribute.getValueOrDefaultAsStringNotNull());
+    if (attributeEnum.equals(ConnectionAttributeEnumBase.URI) && !attribute.getValueOrNull().equals(this.getUri())) {
+      throw new RuntimeException("You can't change the URI of this connection from " + this.getUri() + " to  " + attribute.getValueOrDefaultAsStringNotNull());
     }
     Attribute actualAttribute = attributes.get(connectionAttribute);
     if (actualAttribute != null) {
@@ -369,7 +372,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     }
   }
 
-  public static Connection createConnectionFromProviderOrDefault(Tabular tabular, com.tabulify.conf.Attribute attributeName, com.tabulify.conf.Attribute attributeUri) {
+  public static Connection createConnectionFromProviderOrDefault(Tabular tabular, Attribute attributeName, Attribute attributeUri) {
 
     /**
      * Name check
@@ -386,24 +389,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     });
 
 
-    URI uri;
-    String uriStringValue = (String) attributeUri.getValueOrDefaultOrNull();
-    if (uriStringValue == null) {
-      throw new RuntimeException("The uri of the connection (" + nameString + ") should not be null");
-    }
-    try {
-
-      uri = UriEnhanced.createFromString(uriStringValue).toUri();
-
-    } catch (Exception e) {
-      String message = "The uri `" + uriStringValue + "` of the connection (" + attributeName + ") is not a valid.";
-      if (uriStringValue.startsWith("\"") || uriStringValue.startsWith("'")) {
-        message += " You should delete the character quote.";
-      }
-      message += " Error: " + e.getMessage();
-      throw new RuntimeException(message, e);
-    }
-
+    UriEnhanced uri = (UriEnhanced) attributeUri.getValueOrDefaultOrNull();
     if (uri.getScheme() != null && uri.getScheme().equals(DATA_URI_SCHEME)) {
       DataUriString dataUri = DataUriString.createFromString(uri.getSchemeSpecificPart());
       String connectionName = dataUri.getConnectionName();
@@ -695,7 +681,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * @return the service id
    */
   public String getServiceId() {
-    return (String) getUriAsVariable().getValueOrDefaultOrNull();
+    return getUri().toString();
   }
 
 
@@ -789,6 +775,16 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
         continue;
       }
 
+      // Query Properties
+      String prop = this.getUri().getQueryProperty(attribute.toString());
+      if (prop != null) {
+        com.tabulify.conf.Attribute variable = variableBuilder
+          .setOrigin(com.tabulify.conf.Origin.URI)
+          .buildSafe(prop);
+        this.addAttribute(variable);
+        continue;
+      }
+
       // Env
       // We don't look up without the tabli predix because it can cause clashes
       // for instance, name in os is the name of the computer
@@ -813,10 +809,10 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     return this;
   }
 
-  public String getUriAsString() {
+  public UriEnhanced getUri() {
 
     try {
-      return (String) getUriAsVariable().getValueOrDefault();
+      return (UriEnhanced) getUriAsVariable().getValueOrDefault();
     } catch (NoValueException e) {
       throw new InternalException("Uri was not found in the connection (" + this + ")");
     }

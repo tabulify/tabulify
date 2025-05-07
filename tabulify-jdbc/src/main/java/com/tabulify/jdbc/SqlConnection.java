@@ -363,7 +363,7 @@ public class SqlConnection extends NoOpConnection {
 
     String driver = getAttribute(ConnectionAttributeEnumBase.DRIVER).getValueOrDefaultAsStringNotNull();
     if (driver.isEmpty()) {
-      SqlUri sqlUri = new SqlUri(this.getUriAsString());
+      SqlUri sqlUri = new SqlUri(this.getUri().toUri());
       driver = sqlUri.getDriver();
     }
 
@@ -398,7 +398,7 @@ public class SqlConnection extends NoOpConnection {
         // Timeout
         // DriverManager.setLoginTimeout(1);
         Properties connectionProperties = Maps.toProperties(this.getConnectionProperties());
-        connection = DriverManager.getConnection(this.getUriAsString(), connectionProperties);
+        connection = DriverManager.getConnection(this.getUriAsVariable().getRawValue(), connectionProperties);
 
         SqlLog.LOGGER_DB_JDBC.info("Connected !");
 

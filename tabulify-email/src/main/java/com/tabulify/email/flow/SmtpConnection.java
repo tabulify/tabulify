@@ -6,7 +6,6 @@ import com.tabulify.conf.Attribute;
 import com.tabulify.conf.AttributeEnumParameter;
 import com.tabulify.conf.Origin;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionAttributeEnum;
 import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataSystem;
@@ -28,7 +27,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 
 public class SmtpConnection extends Connection {
 
@@ -53,15 +51,6 @@ public class SmtpConnection extends Connection {
 
     this.addAttributesFromEnumAttributeClass(SmtpConnectionAttributeEnum.class);
 
-    String smtpUser = (String) this.getAttribute(ConnectionAttributeEnumBase.USER).getValueOrDefaultOrNull();
-    if (smtpUser != null) {
-      this.setUser(smtpUser);
-    }
-
-    String smtpPwd = (String) this.getAttribute(ConnectionAttributeEnumBase.PASSWORD).getValueOrDefaultOrNull();
-    if (smtpUser != null) {
-      this.setPassword(smtpPwd);
-    }
 
     this.buildDefault();
 
@@ -93,7 +82,7 @@ public class SmtpConnection extends Connection {
     try {
       this.defaultFrom = BMailAddressStatic.addressAndNameToInternetAddress(
         this.getDefaultFromProperty(),
-        this.getDefaultFromNameProperty()
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.FROM_NAME).getValueOrDefaultOrNull()
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `from` definition of the smtp connection with the value (" + this.getDefaultFromProperty() + "). Error: " + e.getMessage(), e);
@@ -101,8 +90,8 @@ public class SmtpConnection extends Connection {
 
     try {
       this.defaultTo = BMailAddressStatic.addressAndNamesToListInternetAddress(
-        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttributeEnum.TO),
-        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttributeEnum.TO_NAMES)
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.TO).getValueOrDefaultOrNull(),
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.TO_NAMES).getValueOrDefaultOrNull()
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `to` definition of the smtp connection. Error: " + e.getMessage());
@@ -110,8 +99,8 @@ public class SmtpConnection extends Connection {
 
     try {
       this.defaultCc = BMailAddressStatic.addressAndNamesToListInternetAddress(
-        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttributeEnum.CC),
-        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttributeEnum.CC_NAMES)
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.CC).getValueOrDefaultOrNull(),
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.CC_NAMES).getValueOrDefaultOrNull()
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `cc` definition of the smtp connection. Error: " + e.getMessage());
@@ -119,8 +108,8 @@ public class SmtpConnection extends Connection {
 
     try {
       this.defaultBcc = BMailAddressStatic.addressAndNamesToListInternetAddress(
-        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttributeEnum.BCC),
-        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttributeEnum.BCC_NAMES)
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.BCC).getValueOrDefaultOrNull(),
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.BCC_NAMES).getValueOrDefaultOrNull()
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `cc` definition of the smtp connection. Error: " + e.getMessage());
@@ -308,6 +297,10 @@ public class SmtpConnection extends Connection {
 
   private String getDefaultFromProperty() {
 
+    String from = (String) this.getAttribute(SmtpConnectionAttributeEnum.FROM).getValueOrDefaultOrNull();
+    if (from != null) {
+      return from;
+    }
     try {
       return Oss.getUser() + "@" + Oss.getFqdn().toStringWithoutRoot();
     } catch (UnknownHostException e) {
@@ -327,24 +320,6 @@ public class SmtpConnection extends Connection {
   }
 
 
-  private String getDefaultFromNameProperty() {
-    String from = this.uri.getQueryProperty(BMailSmtpConnectionAttribute.FROM.toString().toLowerCase(Locale.ROOT));
-    if (from != null) {
-      return from;
-    }
-
-    return (String) this.getAttribute(SmtpConnectionAttributeEnum.FROM).getValueOrDefaultOrNull();
-
-  }
-
-  private String getQueryPropertyOrConnectionPropertyOrNull(ConnectionAttributeEnum name) {
-    String from = this.uri.getQueryProperty(name.toString().toLowerCase());
-    if (from != null) {
-      return from;
-    }
-    return (String) this.getAttribute(name).getValueOrDefaultOrNull();
-
-  }
 
 
   public List<InternetAddress> getDefaultToInternetAddresses() {

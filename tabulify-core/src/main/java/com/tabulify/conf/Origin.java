@@ -12,7 +12,7 @@ public enum Origin implements AttributeValue {
   RUNTIME("Calculated"),
   COMMAND_LINE("Cli options"),
   ALL("All variables"), // just used by the cli to show all
-  ;
+  URI("Connection Uri");
 
 
   private final String description;

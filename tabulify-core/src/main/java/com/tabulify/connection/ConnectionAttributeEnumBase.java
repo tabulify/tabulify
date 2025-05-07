@@ -1,5 +1,7 @@
 package com.tabulify.connection;
 
+import net.bytle.type.UriEnhanced;
+
 import java.util.Map;
 
 /**
@@ -9,7 +11,7 @@ public enum ConnectionAttributeEnumBase implements ConnectionAttributeEnum {
 
   NAME("The name of the connection", String.class, null, false),
   ORIGIN("The origin of the connection", ConnectionOrigin.class, null, false),
-  URI("The uri of the connection", String.class, null, true),
+  URI("The uri of the connection", UriEnhanced.class, null, true),
   USER("The user name to login", String.class, null, true),
   // password and not pwd because this is the jdbc name
   PASSWORD("The user password to login", String.class, null, true),

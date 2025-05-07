@@ -2,15 +2,14 @@ package com.tabulify.memory;
 
 import com.tabulify.DbLoggers;
 import com.tabulify.Tabular;
+import com.tabulify.conf.Attribute;
 import com.tabulify.connection.ConnectionMetadata;
 import com.tabulify.noop.NoOpConnection;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.ProcessingEngine;
-import com.tabulify.conf.Attribute;
 import net.bytle.type.MediaType;
 import net.bytle.type.Strings;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 
@@ -23,7 +22,7 @@ public class MemoryConnection extends NoOpConnection {
 
   public MemoryConnection(Tabular tabular, Attribute name, Attribute connectionString) {
     super(tabular, name, connectionString);
-    this.workingPathNamespace = URI.create(getUriAsString()).getPath();
+    this.workingPathNamespace = getUri().getPath();
     this.memoryDataSystem = new MemoryDataSystem(this);
   }
 
@@ -111,6 +110,7 @@ public class MemoryConnection extends NoOpConnection {
     throw new RuntimeException("A processing engine is not yet supported on memory structure");
   }
 
+  @SuppressWarnings("RedundantMethodOverride")
   @Override
   public Boolean ping() {
     return true;
@@ -131,7 +131,7 @@ public class MemoryConnection extends NoOpConnection {
       if (structProvider.accept(mediaType)) {
         MemoryVariableManager memoryVariableManager = structProvider.getMemoryVariableManager();
         if (memoryVariableManager == null) {
-          String message = "The returned variable manager is null for the provider (" + structProvider.getClass().toString() + ")";
+          String message = "The returned variable manager is null for the provider (" + structProvider.getClass() + ")";
           DbLoggers.LOGGER_DB_ENGINE.severe(message);
           throw new RuntimeException(message);
         } else {

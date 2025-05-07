@@ -2,6 +2,7 @@ package com.tabulify.email.flow;
 
 import com.tabulify.connection.ConnectionAttributeEnum;
 
+
 public enum SmtpConnectionAttributeEnum implements ConnectionAttributeEnum {
 
   // not a parameter, the host should be in the URI
@@ -13,8 +14,8 @@ public enum SmtpConnectionAttributeEnum implements ConnectionAttributeEnum {
   TO_NAMES("The default names to address if none is provided", "", String.class, true),
   CC("The default carbon copy addresses if none is provided", "", String.class, true),
   CC_NAMES("The default carbon copy names to address if none is provided", "", String.class, true),
-  BCC("The blind carbon copy addresses", null, null, true),
-  BCC_NAMES("The blind carbon copy names", null, null, true),
+  BCC("The default blind carbon copy addresses", null, null, true),
+  BCC_NAMES("The default blind carbon copy names", null, null, true),
   AUTH("Smtp server authentication required?", false, Boolean.class, true),
   TLS("Smtp TLS communication required", false, Boolean.class, true),
   DEBUG("Smtp Debug", false, Boolean.class, true);
@@ -44,6 +45,7 @@ public enum SmtpConnectionAttributeEnum implements ConnectionAttributeEnum {
 
   @Override
   public Object getDefaultValue() {
+
     return this.defaultValue;
   }
 
