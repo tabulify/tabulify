@@ -111,7 +111,8 @@ public class TabliDataHead {
             .addVirtualColumns(virtualColumns)
         )
         .addStepToGraph(
-          HeadFunction.create()
+          HeadFunction
+            .create()
             .setLimit(limit)
         )
         .execute()

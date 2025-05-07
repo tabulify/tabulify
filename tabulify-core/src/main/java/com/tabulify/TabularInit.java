@@ -1,9 +1,7 @@
 package com.tabulify;
 
-import com.tabulify.conf.Attribute;
-import com.tabulify.conf.ConfVault;
-import com.tabulify.conf.Origin;
-import com.tabulify.conf.TabularEnvs;
+import com.tabulify.conf.*;
+import com.tabulify.connection.Connection;
 import com.tabulify.connection.ConnectionHowTos;
 import net.bytle.exception.CastException;
 import net.bytle.fs.Fs;
@@ -12,12 +10,16 @@ import net.bytle.java.Javas;
 import net.bytle.type.Casts;
 import net.bytle.type.Enums;
 import net.bytle.type.KeyNormalizer;
+import net.bytle.type.MapKeyIndependent;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import static com.tabulify.DbLoggers.LOGGER_TABULAR_START;
 import static com.tabulify.Tabular.TABLI_USER_HOME_PATH;
 
 /**
@@ -35,7 +37,7 @@ public class TabularInit {
 
     // Env
     if (env != null) {
-      DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Passed as argument " + env);
+      LOGGER_TABULAR_START.info("Tabli env: Passed as argument " + env);
       com.tabulify.conf.Attribute variable = configVariable
         .setOrigin(com.tabulify.conf.Origin.COMMAND_LINE)
         .buildSafe(env.toString());
@@ -65,7 +67,7 @@ public class TabularInit {
     String javaSysValue = tabularEnvs.getJavaSysValue(osEnvName);
     if (javaSysValue != null) {
       try {
-        DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Found in Java Sys env " + osEnvName + " with the value " + javaSysValue);
+        LOGGER_TABULAR_START.info("Tabli env: Found in Java Sys env " + osEnvName + " with the value " + javaSysValue);
         value = Casts.cast(javaSysValue, TabularExecEnv.class);
         com.tabulify.conf.Attribute variable = configVariable
           .setOrigin(Origin.SYS)
@@ -83,7 +85,7 @@ public class TabularInit {
     String envOsValue = tabularEnvs.getOsEnvValue(osEnvName);
     if (envOsValue != null) {
       try {
-        DbLoggers.LOGGER_TABULAR_START.info("Tabli env: Found in OS env " + osEnvName.toEnvName() + " with the value " + envOsValue);
+        LOGGER_TABULAR_START.info("Tabli env: Found in OS env " + osEnvName.toEnvName() + " with the value " + envOsValue);
         value = Casts.cast(envOsValue, TabularExecEnv.class);
         com.tabulify.conf.Attribute variable = configVariable
           .setOrigin(com.tabulify.conf.Origin.OS)
@@ -96,7 +98,7 @@ public class TabularInit {
     }
 
     if (JavaEnvs.isJUnitTest()) {
-      DbLoggers.LOGGER_TABULAR_START.info("Tabli env: IDE as it's a junit run");
+      LOGGER_TABULAR_START.info("Tabli env: IDE as it's a junit run");
       value = TabularExecEnv.IDE;
       com.tabulify.conf.Attribute variable = configVariable
         .setOrigin(com.tabulify.conf.Origin.RUNTIME)
@@ -105,7 +107,7 @@ public class TabularInit {
       return value;
     }
 
-    DbLoggers.LOGGER_TABULAR_START.info("Tabli env: No value found, defaulted to dev");
+    LOGGER_TABULAR_START.info("Tabli env: No value found, defaulted to dev");
     value = TabularExecEnv.DEV;
     com.tabulify.conf.Attribute variable = configVariable
       .setOrigin(com.tabulify.conf.Origin.RUNTIME)
@@ -305,24 +307,56 @@ public class TabularInit {
    * Loop over all env and check that attributes were created
    * Not really needed, but it helps with a bad typo
    */
-  public static void checkForEnvNotProcessed(TabularEnvs tabularEnvs, Map<TabularAttributeEnum, com.tabulify.conf.Attribute> attributeMap) {
+  public static void checkForEnvNotProcessed(TabularEnvs tabularEnvs, Map<TabularAttributeEnum, Attribute> attributeMap, MapKeyIndependent<Connection> connections, Tabular tabular) {
     for (Map.Entry<String, String> tabularEnv : tabularEnvs.getEnvs().entrySet()) {
       String key = tabularEnv.getKey();
       String lowerCaseKey = key.toLowerCase();
       if (!lowerCaseKey.startsWith(Tabular.TABLI_NAME)) {
         continue;
       }
-      String tabularEnvAsString = lowerCaseKey.substring(Tabular.TABLI_NAME.length());
+      List<String> envValueParts;
+      try {
+        envValueParts = KeyNormalizer.create(lowerCaseKey).getParts();
+      } catch (CastException e) {
+        throw new RuntimeException(e);
+      }
       TabularAttributeEnum tabularAttributes;
       try {
-        tabularAttributes = Casts.cast(tabularEnvAsString, TabularAttributeEnum.class);
+        String keyWithoutTabli = envValueParts.stream().skip(1).collect(Collectors.joining("_"));
+        tabularAttributes = Casts.cast(keyWithoutTabli, TabularAttributeEnum.class);
+        com.tabulify.conf.Attribute attribute = attributeMap.get(tabularAttributes);
+        if (attribute == null) {
+          throw new RuntimeException("Internal error: The tabulify attribute (" + tabularAttributes + ") was not initialized");
+        }
       } catch (CastException e) {
-        throw new RuntimeException("The system env variable (" + key + ") is not a valid tabulify env. Only the following values are excepted: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(TabularAttributeEnum.class), e);
+        // not a global/Tabular attribute, a connection one?
+        if (envValueParts.size() < 3) {
+          throw new RuntimeException("The environment variable (" + key + ") is unknown");
+        }
+        String connectionName = envValueParts.get(1);
+        Connection connection = connections.get(connectionName);
+        if (connection == null) {
+          throw new RuntimeException("The environment variable (" + key + ") is unknown");
+        }
+        String keyWithoutTabliAndConnection = envValueParts.stream().skip(2).collect(Collectors.joining("_"));
+        List<Class<? extends AttributeEnumParameter>> attributeEnums = connection.getAttributeEnums();
+        boolean found = false;
+        for (Class<?> clazz : attributeEnums) {
+          try {
+            Casts.cast(keyWithoutTabliAndConnection, clazz);
+            found = true;
+            break;
+          } catch (CastException ex) {
+            // not for this clazz
+          }
+        }
+        if (found) {
+          continue;
+        }
+        throw new RuntimeException("The parameter " + keyWithoutTabliAndConnection + " derived from the environment variable (" + key + ", short) is unknown for the connection " + connectionName + ". We were expecting one of: " + tabular.toPublicListOfParameters(attributeEnums));
+
       }
-      com.tabulify.conf.Attribute attribute = attributeMap.get(tabularAttributes);
-      if (attribute == null) {
-        throw new RuntimeException("Internal error: The tabulify attribute (" + tabularAttributes + ") was not initialized");
-      }
+
     }
   }
 

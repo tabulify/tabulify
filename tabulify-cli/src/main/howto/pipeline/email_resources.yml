@@ -6,7 +6,7 @@ pipeline:
       data-selector: "email/*.csv@howto"
   - name: "Send"
     comment: "Send the selected resources as email attachment"
-    operation: "send"
+    operation: "sendmail"
     args:
       target-uri: "@smtp" # smtp is the default smtp connection and is therefore optional
       to: "support@tabulify.com"

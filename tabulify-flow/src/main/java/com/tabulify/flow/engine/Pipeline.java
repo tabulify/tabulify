@@ -189,7 +189,7 @@ public class Pipeline implements AutoCloseable {
           case OPERATION:
             operationString = value.toString();
             break;
-          case DESCRIPTION:
+          case COMMENT:
             stepDescription = value.toString();
             break;
           case ARGUMENTS:

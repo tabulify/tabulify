@@ -400,7 +400,7 @@ public class SendmailStep extends FilterStepAbs {
              * are not passed to the building of the connection
              * The `to` should be in the URI for now.
              */
-            throw new RuntimeException("A `to` address on the connection (" + connectionRun + ") was not found. \nIn a non-prod environment (Env: " + environment + "), the email step send to the `to` address of the connection. \nSet the environment to production or give a `to` email property to them SMTP connection. \nFor the default, set the SMTP_TO env");
+            throw new RuntimeException("A `to` address on the connection (" + connectionRun + ") was not found. \nIn a non-prod environment (Env: " + environment + "), the email step send to the `to` address of the connection. \nSet the environment to production or give a `to` email property to them SMTP connection. \nFor the default, set the TABLI_SMTP_TO env");
           }
           InternetAddress connectionTo = connectionTos.get(0);
           for (InternetAddress internetAddress : toMessagesAddresses) {

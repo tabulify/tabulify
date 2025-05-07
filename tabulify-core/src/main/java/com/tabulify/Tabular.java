@@ -67,7 +67,7 @@ public class Tabular implements AutoCloseable {
   /**
    * Connections
    */
-  final MapKeyIndependent<Connection> connections = new MapKeyIndependent<>();
+  final MapKeyIndependent<Connection> connections;
 
 
   /**
@@ -165,7 +165,6 @@ public class Tabular implements AutoCloseable {
      */
     confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, tabularEnvs, projectHomePath);
     ConfVault confVault = ConfVault.createFromPath(confPath, vault, this);
-    confVault.getConnections().forEach(this::addConnection);
 
     /**
      * Execution Env
@@ -223,16 +222,17 @@ public class Tabular implements AutoCloseable {
 
 
     /**
-     * Check for env
-     */
-    TabularInit.checkForEnvNotProcessed(tabularEnvs, attributes);
-
-
-    /**
-     * After init
+     * Build tabular Connection
+     * (After init of variables
      */
     Path sqliteConnectionHome = TabularInit.determineSqliteHome(vault, tabularEnvs, attributes);
-    ConnectionBuiltIn.loadBuiltInConnections(this, sqliteConnectionHome);
+    connections = ConnectionBuiltIn.loadBuiltInConnections(this, sqliteConnectionHome);
+    confVault.getConnections().forEach(this::addConnection);
+
+    /**
+     * Check for env
+     */
+    TabularInit.checkForEnvNotProcessed(tabularEnvs, attributes, connections, this);
 
     // Default Connection
     if (projectHomePath != null) {

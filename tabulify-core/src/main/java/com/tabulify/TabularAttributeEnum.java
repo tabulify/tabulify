@@ -20,7 +20,7 @@ public enum TabularAttributeEnum implements AttributeEnumParameter {
   CONF("The path to the conf file", true, null, Path.class),
   PROJECT_HOME("The project home path", false, null, Path.class),
   PASSPHRASE("The passphrase", false, null, String.class),
-  LOG_LEVEL("The log level", true, TabularLogLevel.INFO, TabularLogLevel.class),
+  LOG_LEVEL("The log level", true, TabularLogLevel.WARN, TabularLogLevel.class),
   SQLITE_HOME("Sqlite home (Where to store the sqlite database)", false, null, String.class),
   NATIVE_DRIVER("Native Drivers Properties", false, null, String.class);
 

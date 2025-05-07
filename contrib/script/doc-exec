@@ -6,10 +6,40 @@ set -TCEeuo pipefail
 
 # Check if arguments are provided
 if [ "$#" -lt 1 ]; then
-    echo "Usage: $(basename "$0") --no-cache globPath"
-    echo "Example: $(basename "$0") howto:glob"
+    echo "Usage:"
+    echo ""
+    echo " $(basename "$0") --compile --ide --no-cache globPath"
+    echo ""
+    echo "where:"
+    echo "  * --compile  : recompile the whole project"
+    echo "  * --ide      : runs the Tabli.class instead of the tabli cli"
+    echo "  * --no-cache : disable the doc cache "
+    echo "  * globPath   : a glob path."
+    echo ""
+    echo "Example: $(basename "$0") docs/tabli/**/*.txt"
     exit 1
 fi
+
+MAVEN_COMPILE=false
+IDE_RUN=false
+DOC_EXEC_OPTIONS=();
+while [ $# -gt 0 ]; do
+
+   case "$1" in
+      --compile)
+          MAVEN_COMPILE=true
+          ;;
+      --ide)
+        IDE_RUN=true
+        DOC_EXEC_OPTIONS+=("$1")
+        ;;
+      *)
+        DOC_EXEC_OPTIONS+=("$1")
+   esac
+
+    # Shift to the next argument
+    shift
+done
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 PROJECT_ROOT="$SCRIPT_DIR/../.."
@@ -18,31 +48,38 @@ cd "$PROJECT_ROOT/tabulify-cli"
 # Extract main class from arguments
 MAIN_CLASS=com.tabulify.doc.DocExec
 
-# Check if pom.xml exists in the current directory
-if [ ! -f "pom.xml" ]; then
-    echo "Error: pom.xml not found in current directory."
-    echo "Please run this script from the root of your Maven project."
+if [ "$MAVEN_COMPILE" == "true" ]; then
+  echo "Building project with Maven..."
+  if ! (cd ..; mvn install -DskipTests > /dev/null); then
+    echo "Maven Project build failed."
     exit 1
-fi
-
-# Check if Maven is installed
-if ! command -v mvn &> /dev/null; then
-    echo "Maven is not installed. Please install Maven first."
-    exit 1
-fi
-
-echo "Building project with Maven..."
-# Compile the project using Maven (The class is in test)
-if ! mvn test-compile > /dev/null; then
-    echo "Maven build failed."
-    exit 1
+  fi
+  # Compile the project using Maven (The DocRun class is in test)
+  if ! mvn test-compile > /dev/null; then
+      echo "Maven build failed."
+      exit 1
+  fi
 fi
 
 echo "Running $MAIN_CLASS..."
-# Run the main class using Maven exec plugin
-# The remaining arguments are passed to the Java application
-# The execution is not forked
-# https://www.mojohaus.org/exec-maven-plugin/java-mojo.html
-command="TABLI_ENV=dev TABLI_LOG_LEVEL=warn mvn exec:java -Dexec.mainClass=\"$MAIN_CLASS\" -Dexec.classpathScope=\"test\" -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Dexec.args=\"$*\""
-echo "$command"
-eval "$command"
+
+# Dependency
+CLASSPATH=$(mvn dependency:build-classpath -Dmdep.outputFile=/dev/stdout -q)
+
+# Add the target/classes directory to include your compiled classes
+CLASSPATH="$CLASSPATH:target/classes"
+CLASSPATH="$CLASSPATH:target/test-classes"
+
+export TABLI_ENV="dev";
+if [ "$IDE_RUN" == "true" ]; then
+  # When the code run as ide, tabli does not exit, it will throw
+  # otherwise the doc executor security manager see it as executing and to prevent exit will throw
+  TABLI_ENV="ide"
+fi
+# when sending not in production, it's mandatory
+export TABLI_SMTP_TO=support@tabulify.com
+# the default but yeah
+export TABLI_LOG_LEVEL=warn
+
+# Exec
+java -cp "$CLASSPATH" "$MAIN_CLASS" "${DOC_EXEC_OPTIONS[@]}"

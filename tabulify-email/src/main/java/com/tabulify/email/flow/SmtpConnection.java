@@ -3,6 +3,7 @@ package com.tabulify.email.flow;
 import com.tabulify.Tabular;
 import com.tabulify.Vault;
 import com.tabulify.conf.Attribute;
+import com.tabulify.conf.AttributeEnumParameter;
 import com.tabulify.conf.Origin;
 import com.tabulify.connection.Connection;
 import com.tabulify.connection.ConnectionAttributeEnum;
@@ -365,6 +366,13 @@ public class SmtpConnection extends Connection {
       throw new RuntimeException(e);
     }
     return this;
+  }
+
+  @Override
+  public List<Class<? extends AttributeEnumParameter>> getAttributeEnums() {
+    List<Class<? extends AttributeEnumParameter>> attributeEnums = new ArrayList<>(super.getAttributeEnums());
+    attributeEnums.add(SmtpConnectionAttributeEnum.class);
+    return attributeEnums;
   }
 
   public InternetAddress getDefaultFromInternetAddress() {

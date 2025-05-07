@@ -15,7 +15,9 @@ import com.tabulify.transfer.TransferProperties;
 import com.tabulify.transfer.TransferSourceTarget;
 import net.bytle.exception.*;
 import net.bytle.fs.Fs;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.MediaType;
+import net.bytle.type.MediaTypes;
 
 import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
@@ -237,7 +239,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
       return relationDef;
     }
 
-    if (Files.exists(this.getNioPath())) {
+    if (Files.exists(this.getAbsoluteNioPath())) {
       relationDef = new RelationDefDefault(this)
         .addColumn(this.getUniqueColumnName());
       return relationDef;

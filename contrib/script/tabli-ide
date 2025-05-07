@@ -13,10 +13,13 @@ cd "$PROJECT_ROOT/tabulify-cli"
 # Extract main class from arguments
 MAIN_CLASS=com.tabulify.tabli.Tabli
 
-# Compile and run the main class using Maven exec plugin
-# https://www.mojohaus.org/exec-maven-plugin/examples/example-exec-for-java-programs.html
-command="TABLI_LOG_LEVEL=warn mvn compile exec:exec -Dexec.executable=\"java\" -Dorg.slf4j.simpleLogger.defaultLogLevel=warn  -Dexec.args=\"-classpath %classpath $MAIN_CLASS $*\""
-echo "$command"
+# Dependency
+CLASSPATH=$(mvn dependency:build-classpath -Dmdep.outputFile=/dev/stdout -q)
+
+# Add the target/classes directory to include your compiled classes
+CLASSPATH="$CLASSPATH:target/classes"
+
+command="java -cp \"$CLASSPATH\" \"$MAIN_CLASS\" $*"
 eval "$command"
 
 # Note: exec:java does not work, as it does not add the resources

@@ -7,7 +7,8 @@ public enum FlowStepAttribute implements AttributeValue {
   NAME("The name of the operation"),
   OPERATION("The operation name"),
   ARGUMENTS("The args property name"),
-  DESCRIPTION("A step description"),
+  // comment and not description because this is the name used in a relational database
+  COMMENT("A step description"),
   ;
 
   private final String comment;

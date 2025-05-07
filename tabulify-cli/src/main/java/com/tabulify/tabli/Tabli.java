@@ -150,7 +150,7 @@ public class Tabli {
      * Parse
      * May throw a {@link net.bytle.cli.HelpPrintedException}
      */
-    CliParser cliParser = null;
+    CliParser cliParser;
     try {
       cliParser = rootCommand.parse();
     } catch (HelpPrintedException e) {
