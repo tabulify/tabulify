@@ -15,7 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class TabliAttributeDelete {
+public class TabliEnvAttributeDelete {
 
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
 

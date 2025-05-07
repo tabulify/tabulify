@@ -135,13 +135,13 @@ public class ConfVault {
         }
 
         switch (rootAttribute) {
-          case GLOBALS:
+          case ENV:
 
             Map<String, String> localEnvs;
             try {
               localEnvs = Casts.castToSameMap(rootEntry.getValue(), String.class, String.class);
             } catch (CastException e) {
-              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfVaultRootAttribute.GLOBALS)), e);
+              throw new CastException("Error: " + e.getMessage() + ". " + badMapCast(data, String.valueOf(ConfVaultRootAttribute.ENV)), e);
             }
             for (Map.Entry<String, String> localEnv : localEnvs.entrySet()) {
 
@@ -268,7 +268,7 @@ public class ConfVault {
       }
       Map<String, Object> confParameters = toConfParameters();
       if (!confParameters.isEmpty()) {
-        confAsMap.put(KeyNormalizer.createSafe(ConfVaultRootAttribute.GLOBALS).toCaseSafe(outputCase), confParameters);
+        confAsMap.put(KeyNormalizer.createSafe(ConfVaultRootAttribute.ENV).toCaseSafe(outputCase), confParameters);
       }
       String yamlString = yaml.dump(confAsMap);
       // Write to file

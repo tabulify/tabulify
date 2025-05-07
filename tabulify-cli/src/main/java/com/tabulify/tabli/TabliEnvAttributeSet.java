@@ -12,7 +12,7 @@ import net.bytle.exception.CastException;
 import java.util.Collections;
 import java.util.List;
 
-public class TabliAttributeSet {
+public class TabliEnvAttributeSet {
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
 
     // Define the command and its arguments

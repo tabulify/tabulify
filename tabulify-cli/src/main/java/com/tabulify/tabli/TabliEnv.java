@@ -12,16 +12,18 @@ import static com.tabulify.tabli.TabliLog.LOGGER_TABLI;
 import static com.tabulify.tabli.TabliWords.*;
 
 
-public class TabliAttribute {
+public class TabliEnv {
 
   public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
 
     childCommand.addChildCommand(SET_COMMAND)
-      .setDescription("Set a attribute");
+      .setDescription("Set a global attribute");
     childCommand.addChildCommand(LIST_COMMAND)
-      .setDescription("List the attributes");
+      .setDescription("List the global attributes");
     childCommand.addChildCommand(DELETE_COMMAND)
-      .setDescription("Delete a attribute");
+      .setDescription("Delete a global attribute");
+    childCommand.addChildCommand(DIAGNOSTIC_COMMAND)
+      .setDescription("Print env diagnostic information");
 
 
     CliParser cliParser = childCommand.parse();
@@ -34,13 +36,16 @@ public class TabliAttribute {
         LOGGER_TABLI.info("The command (" + subChildCommand + ") was found");
         switch (subChildCommand.getName()) {
           case LIST_COMMAND:
-            feedbackDataPaths = TabliAttributeList.run(tabular, subChildCommand);
+            feedbackDataPaths = TabliEnvAttributeList.run(tabular, subChildCommand);
             break;
           case SET_COMMAND:
-            feedbackDataPaths = TabliAttributeSet.run(tabular, subChildCommand);
+            feedbackDataPaths = TabliEnvAttributeSet.run(tabular, subChildCommand);
             break;
           case DELETE_COMMAND:
-            feedbackDataPaths = TabliAttributeDelete.run(tabular, subChildCommand);
+            feedbackDataPaths = TabliEnvAttributeDelete.run(tabular, subChildCommand);
+            break;
+          case TabliWords.DIAGNOSTIC_COMMAND:
+            feedbackDataPaths = TabliDiagnostic.run(tabular, childCommand);
             break;
           default:
             throw new IllegalArgumentException("The sub-command (" + subChildCommand.getName() + ") is unknown for the command (" + CliUsage.getFullChainOfCommand(childCommand) + ")");

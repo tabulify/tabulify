@@ -109,7 +109,7 @@ public class TabliWords {
   /**
    * Attribute
    */
-  static final String ATTRIBUTE_COMMAND = "attribute";
+  static final String ENV_COMMAND = "env";
 
   /**
    * The command that print the data structure metadata

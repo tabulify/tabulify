@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TabliAttributeList {
+public class TabliEnvAttributeList {
 
 
   public static final String DEFAULT_SELECTOR = "*";

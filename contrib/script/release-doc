@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Doc test
+# Execute Tabli command in the doc from a cli distribution
+# No change should be seen
+
+# Tabli
+doc-exec docs/tabli/**/*.txt
+
+doc-exec docs/templating/**/*.txt

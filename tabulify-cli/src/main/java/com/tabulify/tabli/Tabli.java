@@ -1,7 +1,6 @@
 package com.tabulify.tabli;
 
 import com.tabulify.Tabular;
-import com.tabulify.TabularAttributeEnum;
 import com.tabulify.TabularExecEnv;
 import com.tabulify.TabularLogLevel;
 import com.tabulify.conf.ConfVault;
@@ -17,14 +16,13 @@ import com.tabulify.transfer.*;
 import com.tabulify.uri.DataUri;
 import net.bytle.cli.*;
 import net.bytle.exception.*;
+import net.bytle.java.JavaEnvs;
 import net.bytle.log.Logs;
 import net.bytle.regexp.Glob;
 import net.bytle.timer.Timer;
 import net.bytle.type.Casts;
 import net.bytle.type.Enums;
 
-import java.io.IOException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -89,7 +87,7 @@ public class Tabli {
 
     rootCommand.addProperty(TabliWords.PASSPHRASE_PROPERTY)
       .setShortName("-pp")
-      .setDescription("A passphrase (master password) to decrypt the encrypted vault values")
+      .setDescription("A passphrase (master password) to decrypt the encrypted vault values (Env: TABLI_PASSPHRASE)")
       .setValueName("passphrase");
 
     rootCommand.addFlag(TabliWords.NOT_STRICT_FLAG);
@@ -122,7 +120,7 @@ public class Tabli {
     rootCommand.addProperty(PROJECT_HOME)
       .setShortName("-ph")
       .setGroup("Project Home")
-      .setDescription("The project home")
+      .setDescription("The project home (default to the " + Tabular.TABLI_CONF_FILE_NAME + " file directory)")
       .setValueName("path");
 
 
@@ -134,26 +132,32 @@ public class Tabli {
       .setDescription("Data operations against data resources (table, file, ...).");
     rootCommand.addChildCommand(TabliWords.CONNECTION_COMMAND)
       .setDescription("Management and configuration of the connections to systems.");
-    rootCommand.addChildCommand(TabliWords.ATTRIBUTE_COMMAND)
-      .setDescription("Management and configuration of the " + TabliWords.CLI_NAME + " variables environment.");
+    rootCommand.addChildCommand(TabliWords.ENV_COMMAND)
+      .setDescription("Management and configuration of the " + TabliWords.CLI_NAME + " execution environment");
     rootCommand.addChildCommand(TabliWords.VAULT_COMMAND)
       .setDescription("Encrypt and decrypt sensitive information");
     rootCommand.addChildCommand(TabliWords.FLOW_COMMAND)
       .setDescription("Execute Flow");
-    rootCommand.addChildCommand(DIAGNOSTIC_COMMAND)
-      .setDescription("Print diagnostic information");
-
-
-    /*
-     * Parse
-     */
-    CliParser cliParser = rootCommand.parse();
 
 
     /*
      * LogLevel
      */
     Logs.setLevel(Level.SEVERE);
+
+
+    /**
+     * Parse
+     * May throw a {@link net.bytle.cli.HelpPrintedException}
+     */
+    CliParser cliParser = null;
+    try {
+      cliParser = rootCommand.parse();
+    } catch (HelpPrintedException e) {
+      handleHelpPrintedException(e);
+      return;
+    }
+
 
     /*
      * Init the context object
@@ -300,17 +304,14 @@ public class Tabli {
               case TabliWords.DATA_COMMAND:
                 feedbackDataPaths = TabliData.run(tabular, childCommand);
                 break;
-              case TabliWords.ATTRIBUTE_COMMAND:
-                feedbackDataPaths = TabliAttribute.run(tabular, childCommand);
+              case TabliWords.ENV_COMMAND:
+                feedbackDataPaths = TabliEnv.run(tabular, childCommand);
                 break;
               case TabliWords.VAULT_COMMAND:
                 feedbackDataPaths = TabliVault.run(tabular, childCommand);
                 break;
               case TabliWords.FLOW_COMMAND:
                 feedbackDataPaths = TabliFlow.run(tabular, childCommand);
-                break;
-              case TabliWords.DIAGNOSTIC_COMMAND:
-                feedbackDataPaths = TabliDiagnostic.run(tabular, childCommand);
                 break;
               default:
                 throw new IllegalArgumentException("The sub-command (" + childCommand.getName() + ") is unknown for the command (" + CliUsage.getFullChainOfCommand(rootCommand) + ")");
@@ -450,20 +451,10 @@ public class Tabli {
         }
 
         if (e instanceof HelpPrintedException) {
-
-          LOGGER_TABLI.fine("Help printed.");
-          LOGGER_TABLI.info("Done. Bye !");
-          /**
-           * Only For the test, we throw it to test it
-           *
-           **/
-          if (Tabli.hasBuildFileInRunningDirectory()) {
-            throw e;
-          }
-
+          handleHelpPrintedException((HelpPrintedException) e);
           return;
-
         }
+
 
         String message = e.getMessage();
         if (!tabular.isStrict()) {
@@ -509,6 +500,26 @@ public class Tabli {
 
   }
 
+  /**
+   * Catch Help Exception
+   */
+  private static boolean handleHelpPrintedException(HelpPrintedException e) {
+
+
+    LOGGER_TABLI.fine("Help printed.");
+    LOGGER_TABLI.info("Done. Bye !");
+    /**
+     * Only For the test, we throw it to test it
+     **/
+    if (JavaEnvs.isJUnitTest()) {
+      throw e;
+    }
+
+    return true;
+
+
+  }
+
   private static void exit(Tabular tabular, int exitStatus) {
     if (tabular.isIdeEnv()) {
       // We need to throw to exit
@@ -516,32 +527,6 @@ public class Tabli {
       throw new TabliExitStatusException(exitStatus);
     }
     System.exit(exitStatus);
-  }
-
-  /**
-   * Because we don't want to throw an error when using the cli or docrun
-   * By checking if the gradle.kts file is on the current directory
-   *
-   * @return if true or false
-   */
-  public static boolean hasBuildFileInRunningDirectory() {
-    /**
-     * Not the same than {@link TabularAttributeEnum.IS_DEV}
-     * that checks if there is a `build` directory in the children
-     */
-    boolean buildFileFound = false;
-    try (DirectoryStream<Path> paths = Files.newDirectoryStream(Paths.get("."))) {
-      for (Path path : paths) {
-        if (path.getFileName().toString().contains("gradle.kts")) {
-          buildFileFound = true;
-          break;
-        }
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    return buildFileFound;
-
   }
 
 

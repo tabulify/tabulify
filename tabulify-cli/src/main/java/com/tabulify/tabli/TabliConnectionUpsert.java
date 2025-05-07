@@ -28,7 +28,7 @@ public class TabliConnectionUpsert {
       .addExample(
         "To upsert the information of the connection called `db`",
         CliUsage.CODE_BLOCK,
-        CliUsage.getFullChainOfCommand(childCommand) + " " + TabliConnection.URI_PROPERTY + " jdbc:sqlite//%TMP%/db.db db",
+        CliUsage.getFullChainOfCommand(childCommand) + " " + TabliConnection.URI_PROPERTY + " jdbc:sqlite///tmp/db.db db",
         CliUsage.CODE_BLOCK
       );
 
