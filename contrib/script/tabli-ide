@@ -1,0 +1,24 @@
+#!/bin/bash
+# Shortcut to run tabli quickly after changing a class
+# It will recompile and run tabli without the need to create a fat jar
+
+set -TCEeuo pipefail
+
+echo "Running Tabli with Mvn" > /dev/stderr
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/../.."
+cd "$PROJECT_ROOT/tabulify-cli"
+
+# Extract main class from arguments
+MAIN_CLASS=com.tabulify.tabli.Tabli
+
+# Compile and run the main class using Maven exec plugin
+# https://www.mojohaus.org/exec-maven-plugin/examples/example-exec-for-java-programs.html
+command="TABLI_LOG_LEVEL=warn mvn compile exec:exec -Dexec.executable=\"java\" -Dorg.slf4j.simpleLogger.defaultLogLevel=warn  -Dexec.args=\"-classpath %classpath $MAIN_CLASS $*\""
+echo "$command"
+eval "$command"
+
+# Note: exec:java does not work, as it does not add the resources
+# exec below will add the jar in the path that contains the services
+# https://www.mojohaus.org/exec-maven-plugin/java-mojo.html
