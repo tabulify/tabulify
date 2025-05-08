@@ -185,7 +185,7 @@ public class ConfVault {
                * Create the connection
                */
               Connection connection = Connection.createConnectionFromProviderOrDefault(this.tabular, connectionName, uri)
-                .addAttribute(vault.createAttribute(ConnectionAttributeEnumBase.ORIGIN, ConnectionOrigin.CONF, Origin.RUNTIME));
+                .addAttribute(vault.createAttribute(ConnectionAttributeEnumBase.ORIGIN, ConnectionOrigin.CONF, Origin.DEFAULT));
 
               /**
                * Native Attributes is a special attribute that stores the third party attribute

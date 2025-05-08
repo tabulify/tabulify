@@ -3,6 +3,8 @@ package com.tabulify;
 import com.tabulify.conf.AttributeEnumParameter;
 
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * All static configuration
@@ -15,14 +17,14 @@ public enum TabularAttributeEnum implements AttributeEnumParameter {
    * Meta directory
    */
   ENV("The execution environment", true, TabularExecEnv.DEV, TabularExecEnv.class),
-  DEFAULT_FILE_SYSTEM_TABULAR_TYPE("The default file extension for tabular data", true, "csv", String.class),
-  HOME("The directory home of the Tabulify installation", true, null, Path.class),
-  CONF("The path to the conf file", true, null, Path.class),
-  PROJECT_HOME("The project home path", false, null, Path.class),
-  PASSPHRASE("The passphrase", false, null, String.class),
+  TABULAR_FILE_TYPE("The default file extension when downloading tabular data", true, "csv", String.class),
+  HOME("The directory of the Tabulify installation", true, null, Path.class),
+  CONF("The conf vault file path", true, null, Path.class),
+  PROJECT_HOME("The project home directory", true, null, Path.class),
+  PASSPHRASE("The passphrase", true, null, String.class),
   LOG_LEVEL("The log level", true, TabularLogLevel.WARN, TabularLogLevel.class),
-  SQLITE_HOME("Sqlite home (Where to store the sqlite database)", false, null, String.class),
-  NATIVE_DRIVER("Native Drivers Properties", false, null, String.class);
+  USER_HOME("User home Directory", true, null, Path.class),
+  NATIVE_DRIVER("Native Drivers Properties", false, new HashMap<>(), Map.class);
 
 
   private final String description;

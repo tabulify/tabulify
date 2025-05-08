@@ -114,7 +114,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
    * @param endOfRecords The strings that are used at the end of a row (default to the system default \r\n for Windows, \n for the other)
    */
   public FsTextDataPath setEndOfRecords(String... endOfRecords) {
-    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(FsTextDataPathAttributes.END_OF_RECORD, com.tabulify.conf.Origin.RUNTIME).setPlainValue(endOfRecords);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(FsTextDataPathAttributes.END_OF_RECORD, com.tabulify.conf.Origin.DEFAULT).setPlainValue(endOfRecords);
     this.addAttribute(attribute);
     return this;
   }
@@ -127,7 +127,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
    * @return The {@link FsTextDataPath} instance for chaining initialization
    */
   public FsTextDataPath setCharset(Charset charset) {
-    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(CHARACTER_SET, Origin.RUNTIME).setPlainValue(charset);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(CHARACTER_SET, Origin.DEFAULT).setPlainValue(charset);
     this.addAttribute(attribute);
     return this;
   }

@@ -50,8 +50,6 @@ public class Tabular implements AutoCloseable {
 
   public static final String TABLI_NAME = "tabli";
   public static final String TABLI_CONF_FILE_NAME = "." + TABLI_NAME + ".yml";
-  public static final Path TABLI_USER_HOME_PATH = Fs.getUserHome().resolve("." + TABLI_NAME);
-  public static final Path TABLI_USER_CONF_PATH = TABLI_USER_HOME_PATH.resolve(TABLI_CONF_FILE_NAME);
 
 
   private final Vault vault;
@@ -158,12 +156,17 @@ public class Tabular implements AutoCloseable {
       DbLoggers.LOGGER_TABULAR_START.info("This is not a project run.");
     }
 
+    Path userHomePath = TabularInit.determineUserHome(vault, tabularEnvs, attributes);
+    if (tabularConfig.cleanEnv) {
+      Fs.deleteIfExists(userHomePath);
+    }
+
     /**
      * Tabli Yaml File
      * confPath is a field because it's used by the cli
      * to modify a conf file with the cli
      */
-    confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, tabularEnvs, projectHomePath);
+    confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, tabularEnvs, projectHomePath, userHomePath, attributes);
     ConfVault confVault = ConfVault.createFromPath(confPath, vault, this);
 
     /**
@@ -214,7 +217,7 @@ public class Tabular implements AutoCloseable {
       // no env
       attributes.put(attribute,
         variableBuilder
-          .setOrigin(Origin.RUNTIME)
+          .setOrigin(Origin.DEFAULT)
           .buildSafe(null)
       );
 
@@ -225,8 +228,7 @@ public class Tabular implements AutoCloseable {
      * Build tabular Connection
      * (After init of variables
      */
-    Path sqliteConnectionHome = TabularInit.determineSqliteHome(vault, tabularEnvs, attributes);
-    connections = ConnectionBuiltIn.loadBuiltInConnections(this, sqliteConnectionHome);
+    connections = ConnectionBuiltIn.loadBuiltInConnections(this, userHomePath);
     confVault.getConnections().forEach(this::addConnection);
 
     /**
@@ -247,7 +249,7 @@ public class Tabular implements AutoCloseable {
       this.setDefaultConnection(ConnectionBuiltIn.CD_LOCAL_FILE_SYSTEM);
     }
     // How to connection utility
-    this.howtoConnections = ConnectionHowTos.createHowtoConnections(this, sqliteConnectionHome);
+    this.howtoConnections = ConnectionHowTos.createHowtoConnections(this, userHomePath);
 
 
   }
@@ -275,8 +277,8 @@ public class Tabular implements AutoCloseable {
   }
 
   public static TabularConfig cleanTabularConfig() {
-    Fs.deleteIfExists(TABLI_USER_CONF_PATH);
-    return Tabular.tabularConfig();
+    return Tabular.tabularConfig()
+      .cleanEnv(true);
   }
 
 
@@ -926,7 +928,7 @@ public class Tabular implements AutoCloseable {
   }
 
   public Path getUserConfFilePath() {
-    return TABLI_USER_HOME_PATH.resolve(TABLI_CONF_FILE_NAME);
+    return (Path) this.getAttribute(TabularAttributeEnum.USER_HOME).getValueOrDefaultOrNull();
   }
 
   public Path getConfPath() {
@@ -934,11 +936,11 @@ public class Tabular implements AutoCloseable {
   }
 
   public Attribute createAttribute(AttributeEnum attribute, Object value) {
-    return this.getVault().createAttribute(attribute, value, Origin.RUNTIME);
+    return this.getVault().createAttribute(attribute, value, Origin.DEFAULT);
   }
 
   public Attribute createAttribute(String key, Object value) throws Exception {
-    return this.getVault().createAttribute(key, value, Origin.RUNTIME);
+    return this.getVault().createAttribute(key, value, Origin.DEFAULT);
   }
 
   public TabularEnvs getTabularEnvs() {
@@ -977,6 +979,8 @@ public class Tabular implements AutoCloseable {
     private TabularExecEnv execEnv;
     private final Map<String, String> envs = new HashMap<>();
     private TabularLogLevel logLevel;
+    // Do we need to clean the env (ie delete the user home directory)
+    private boolean cleanEnv = false;
 
     public TabularConfig setPassphrase(String passphrase) {
       this.passphrase = passphrase;
@@ -1018,6 +1022,14 @@ public class Tabular implements AutoCloseable {
 
     public TabularConfig setLogLevel(TabularLogLevel logLevel) {
       this.logLevel = logLevel;
+      return this;
+    }
+
+    /**
+     * Do we need to clean the env (ie delete the user home directory)
+     */
+    public TabularConfig cleanEnv(boolean clean) {
+      this.cleanEnv = clean;
       return this;
     }
   }

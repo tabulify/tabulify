@@ -110,7 +110,7 @@ public abstract class StepAbs extends StepProvider implements OperationStep {
 
   @SuppressWarnings("unused")
   public StepAbs addArgumentsFromEnumAttributeClass(Class<? extends AttributeEnum> enumClass) {
-    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addArgument(com.tabulify.conf.Attribute.create(c, com.tabulify.conf.Origin.RUNTIME)));
+    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addArgument(com.tabulify.conf.Attribute.create(c, com.tabulify.conf.Origin.DEFAULT)));
     return this;
   }
 
@@ -123,7 +123,7 @@ public abstract class StepAbs extends StepProvider implements OperationStep {
     try {
       return this.getArgument(attribute);
     } catch (NotFoundException e) {
-      com.tabulify.conf.Attribute argument = com.tabulify.conf.Attribute.create(attribute, Origin.RUNTIME);
+      com.tabulify.conf.Attribute argument = com.tabulify.conf.Attribute.create(attribute, Origin.DEFAULT);
       this.addArgument(argument);
       return argument;
     }

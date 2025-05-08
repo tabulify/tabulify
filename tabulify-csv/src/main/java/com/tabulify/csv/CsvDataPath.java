@@ -14,7 +14,8 @@ import com.tabulify.transfer.TransferProperties;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.MediaTypes;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -247,7 +248,7 @@ public class CsvDataPath extends FsTextDataPath {
       return this;
     }
 
-    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(csvDataPathAttribute, Origin.RUNTIME).setPlainValue(value);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(csvDataPathAttribute, Origin.DEFAULT).setPlainValue(value);
     super.addAttribute(attribute);
 
     return this;

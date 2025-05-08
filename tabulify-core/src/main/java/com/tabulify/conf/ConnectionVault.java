@@ -274,7 +274,7 @@ public class ConnectionVault implements AutoCloseable {
       connection.addAttribute(vault.createAttribute(
           ConnectionAttributeEnumBase.ORIGIN,
           ConnectionOrigin.CONF,
-          Origin.RUNTIME)
+          Origin.DEFAULT)
         .setPlainValue(Origin.CONF)
       );
       connections.put(connectionName, connection);

@@ -1,14 +1,59 @@
 #!/usr/bin/env bash
-
 # Install Tabulify locally
-# at TABULIFY_HOME
+# at LOCAL_TABLI_HOME
 
 set -TCEeuo pipefail
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-PROJECT_ROOT="$SCRIPT_DIR/../.."
+find_git_root() {
+  local dir="$PWD"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -d "$dir/.git" ]]; then
+      echo "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  echo "No .git directory found in any parent directory." >&2
+  return 1
+}
 
-# Install the package
+
+# Cli because in IDE mode, TABLI_HOME is the ide project root
+# Cli because TABLI_HOME depends on the context
+# In ide development, TABLI_HOME is the ide project root
+# In cli,             TABLI_HOME is the cli installation root
+TABLI_HOME=${CLI_TABLI_HOME}
+if [ "$TABLI_HOME" == "" ]; then
+  echo "CLI_TABLI_HOME should be set into envrc"
+  exit 1
+fi
+
+# Get, check if the parent directory exists
+parent_dir=$(dirname "${TABLI_HOME}")
+if [[ ! -d "${parent_dir}" ]]; then
+    echo "Error: Parent directory '${parent_dir}' does not exist or is not a directory."
+    exit 1
+fi
+# Get the owner of the parent directory
+# stat gnu first, then stat macos
+if ! path_owner=$(stat -c '%U' "${parent_dir}" 2>/dev/null); then
+    # Try macOS/BSD stat format if Linux format fails
+    if ! path_owner=$(stat -f '%Su' "${parent_dir}" 2>/dev/null); then
+      echo "Error: Unable to determine ownership of parent directory '${parent_dir}'."
+      exit 1
+    fi
+fi
+
+# Compare the owner with the current user
+current_user=$(whoami)
+if [[ "${path_owner}" != "${current_user}" ]]; then
+  echo "Parent directory '${parent_dir}' is owned by '${path_owner}', not by current user '${current_user}'. We can't install and move into it"
+  exit 1
+fi
+
+# Determine the IDE project root
+# and install the archive
+PROJECT_ROOT=$(find_git_root)
 (cd "$PROJECT_ROOT"; mvn install -DskipTests)
 
 # Change context
@@ -19,21 +64,18 @@ cd "$TABULIFY_CLI_DIR"
 # Download the jdk, the deps
 mvn clean package -DskipTests -P release
 
-# Split package
-# rm target/deps/stax-api-1.0.1.jar
-
-# Env
-ARCHIVE_NAME=tabulify-early-access-linux-x86_64
-ASSEMBLY_DIR=target/jreleaser/assemble/tabulify/jlink
-ASSEMBLY_WORK_DIR=work-linux-x86_64
 
 # Clean
 # mkdir first as the tabulify dir should not exists, other the move command will copy the directory into
-mkdir -p "$TABULIFY_HOME" && rm -rf "$TABULIFY_HOME"
+mkdir -p "$TABLI_HOME" && rm -rf "$TABLI_HOME"
+ASSEMBLY_DIR=target/jreleaser/assemble/tabulify/jlink
 rm -rf $ASSEMBLY_DIR
 
 # Generate only for the current platform
 jreleaser assemble --debug --select-current-platform
 
-# No need to unzip - the dir is till there
-mv "${ASSEMBLY_DIR}/${ASSEMBLY_WORK_DIR}/${ARCHIVE_NAME}" "${TABULIFY_HOME}"
+# Move the jlink output
+# No need to unzip - the dir is still there
+ARCHIVE_NAME=tabulify-early-access-linux-x86_64
+ASSEMBLY_WORK_DIR=work-linux-x86_64
+mv "${ASSEMBLY_DIR}/${ASSEMBLY_WORK_DIR}/${ARCHIVE_NAME}" "${TABLI_HOME}"

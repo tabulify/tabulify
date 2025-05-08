@@ -129,7 +129,7 @@ public abstract class FsDataPathAbs extends DataPathAbs implements FsDataPath {
 
   @Override
   public FsDataPath getChildAsTabular(String name) {
-    String extension = getConnection().getTabular().getAttribute(TabularAttributeEnum.DEFAULT_FILE_SYSTEM_TABULAR_TYPE).getValueOrDefaultAsStringNotNull();
+    String extension = getConnection().getTabular().getAttribute(TabularAttributeEnum.TABULAR_FILE_TYPE).getValueOrDefaultAsStringNotNull();
     Path siblingPath = path.resolve(name + "." + extension);
     return this.getConnection().getDataSystem().getFileManager(siblingPath, MediaTypes.TEXT_CSV).createDataPath(getConnection(), siblingPath);
   }

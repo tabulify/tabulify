@@ -1,5 +1,7 @@
 package com.tabulify.gen;
 
+import com.tabulify.conf.Attribute;
+import com.tabulify.conf.Origin;
 import com.tabulify.gen.generator.CollectionGenerator;
 import com.tabulify.gen.generator.SequenceGenerator;
 import com.tabulify.model.ColumnDef;
@@ -7,9 +9,7 @@ import com.tabulify.model.PrimaryKeyDef;
 import com.tabulify.model.UniqueKeyDef;
 import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
-import com.tabulify.conf.Attribute;
 import net.bytle.type.Casts;
-import com.tabulify.conf.Origin;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -206,13 +206,13 @@ public class GenDataPathUtility {
       switch (dataGenAttribute) {
         case SIZE_NOT_CAPPED:
           genDataPath.addAttribute(
-            Attribute.create(dataGenAttribute, Origin.RUNTIME)
+            Attribute.create(dataGenAttribute, Origin.DEFAULT)
               .setValueProvider(genDataPath::getSizeNotCapped)
           );
           break;
         case SIZE:
           genDataPath.addAttribute(
-            Attribute.create(dataGenAttribute, Origin.RUNTIME)
+            Attribute.create(dataGenAttribute, Origin.DEFAULT)
               .setValueProvider(genDataPath::getSize)
           );
         default:

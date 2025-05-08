@@ -179,7 +179,7 @@ public class SqlConnection extends NoOpConnection {
    * @return the connection for chaining
    */
   public SqlConnection setDriver(String jdbcDriver) {
-    super.addAttribute(ConnectionAttributeEnumBase.DRIVER, jdbcDriver, Origin.RUNTIME, getTabular().getVault());
+    super.addAttribute(ConnectionAttributeEnumBase.DRIVER, jdbcDriver, Origin.DEFAULT, getTabular().getVault());
     return this;
   }
 

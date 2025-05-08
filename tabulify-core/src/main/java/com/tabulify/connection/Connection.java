@@ -29,7 +29,7 @@ import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.tabulify.conf.Origin.RUNTIME;
+import static com.tabulify.conf.Origin.DEFAULT;
 
 /**
  * A connection
@@ -244,7 +244,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setUser(String user) {
     try {
-      com.tabulify.conf.Attribute userAttribute = tabular.getVault().createAttribute(ConnectionAttributeEnumBase.USER, user, RUNTIME);
+      com.tabulify.conf.Attribute userAttribute = tabular.getVault().createAttribute(ConnectionAttributeEnumBase.USER, user, DEFAULT);
       this.addAttribute(userAttribute);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the user variable", e);
@@ -254,7 +254,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   public Connection setPassword(String pwd) {
     try {
-      Attribute password = tabular.getVault().createAttribute(ConnectionAttributeEnumBase.PASSWORD, pwd, RUNTIME);
+      Attribute password = tabular.getVault().createAttribute(ConnectionAttributeEnumBase.PASSWORD, pwd, DEFAULT);
       this.attributes.put(ConnectionAttributeEnumBase.PASSWORD, password);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the password variable for the connection (" + this + "). Error: " + e.getMessage(), e);
@@ -824,7 +824,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
       // None
       com.tabulify.conf.Attribute variable = variableBuilder
-        .setOrigin(Origin.RUNTIME)
+        .setOrigin(Origin.DEFAULT)
         .buildSafe(null);
       this.addAttribute(variable);
 

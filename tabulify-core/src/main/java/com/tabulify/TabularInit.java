@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.tabulify.DbLoggers.LOGGER_TABULAR_START;
-import static com.tabulify.Tabular.TABLI_USER_HOME_PATH;
+import static com.tabulify.Tabular.TABLI_NAME;
 
 /**
  * Just a class to store all init procedures
@@ -101,7 +101,7 @@ public class TabularInit {
       LOGGER_TABULAR_START.info("Tabli env: IDE as it's a junit run");
       value = TabularExecEnv.IDE;
       com.tabulify.conf.Attribute variable = configVariable
-        .setOrigin(com.tabulify.conf.Origin.RUNTIME)
+        .setOrigin(com.tabulify.conf.Origin.DEFAULT)
         .buildSafe(value);
       attributeMap.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
       return value;
@@ -110,7 +110,7 @@ public class TabularInit {
     LOGGER_TABULAR_START.info("Tabli env: No value found, defaulted to dev");
     value = TabularExecEnv.DEV;
     com.tabulify.conf.Attribute variable = configVariable
-      .setOrigin(com.tabulify.conf.Origin.RUNTIME)
+      .setOrigin(com.tabulify.conf.Origin.DEFAULT)
       .buildSafe(value);
     attributeMap.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
     return value;
@@ -181,7 +181,7 @@ public class TabularInit {
       try {
         Path closestHomePath = Fs.closest(Paths.get("."), ".git").getParent();
         com.tabulify.conf.Attribute variable = variableBuilder
-          .setOrigin(com.tabulify.conf.Origin.RUNTIME)
+          .setOrigin(com.tabulify.conf.Origin.DEFAULT)
           .buildSafe(closestHomePath);
         attributeMap.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
         return closestHomePath;
@@ -195,7 +195,7 @@ public class TabularInit {
     // First getParent get the jars directory, getParent get the Home
     Path prodHomePath = Javas.getSourceCodePath(ConnectionHowTos.class).getParent().getParent();
     com.tabulify.conf.Attribute variable = variableBuilder
-      .setOrigin(com.tabulify.conf.Origin.RUNTIME)
+      .setOrigin(com.tabulify.conf.Origin.DEFAULT)
       .buildSafe(prodHomePath);
     attributeMap.put((TabularAttributeEnum) variable.getAttributeMetadata(), variable);
     return prodHomePath;
@@ -239,7 +239,7 @@ public class TabularInit {
     }
 
     // Derived
-    confVariable.setOrigin(com.tabulify.conf.Origin.RUNTIME);
+    confVariable.setOrigin(com.tabulify.conf.Origin.DEFAULT);
     try {
       Path closestProjectHomePath = Fs.closest(Paths.get("."), Tabular.TABLI_CONF_FILE_NAME).getParent();
       if (closestProjectHomePath == null) {
@@ -257,24 +257,26 @@ public class TabularInit {
     }
   }
 
-  static public Path determineConfPath(Path confPath, Vault vault, TabularEnvs tabularEnvs, Path projectHome) {
+  static public Path determineConfPath(Path confPath, Vault vault, TabularEnvs tabularEnvs, Path projectHome, Path userHome, Map<TabularAttributeEnum, com.tabulify.conf.Attribute> attributeMap) {
 
     Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(TabularAttributeEnum.CONF);
     if (confPath != null) {
-      confVariable
+      Attribute attribute = confVariable
         .setOrigin(com.tabulify.conf.Origin.COMMAND_LINE)
         .buildSafe(confPath.toString());
-      return confPath;
+      attributeMap.put((TabularAttributeEnum) attribute.getAttributeMetadata(), attribute);
+      return (Path) attribute.getValueOrDefaultOrNull();
     }
 
     KeyNormalizer osEnvName = tabularEnvs.getNormalizedKey(TabularAttributeEnum.CONF);
     // sys
     String sysConfPathString = tabularEnvs.getJavaSysValue(osEnvName);
     if (sysConfPathString != null) {
-      com.tabulify.conf.Attribute attribute = confVariable
+      Attribute attribute = confVariable
         .setOrigin(Origin.SYS)
         .buildSafe(sysConfPathString);
-      return Paths.get(attribute.getValueOrDefaultAsStringNotNull());
+      attributeMap.put((TabularAttributeEnum) attribute.getAttributeMetadata(), attribute);
+      return (Path) attribute.getValueOrDefaultOrNull();
     }
 
     // env
@@ -283,22 +285,25 @@ public class TabularInit {
       com.tabulify.conf.Attribute attribute = confVariable
         .setOrigin(com.tabulify.conf.Origin.OS)
         .buildSafe(confPathString);
-      return Paths.get(attribute.getValueOrDefaultAsStringNotNull());
+      attributeMap.put((TabularAttributeEnum) attribute.getAttributeMetadata(), attribute);
+      return (Path) attribute.getValueOrDefaultOrNull();
     }
 
     if (projectHome != null) {
-      Path resolve = projectHome.resolve(Tabular.TABLI_CONF_FILE_NAME);
-      confVariable
-        .setOrigin(com.tabulify.conf.Origin.RUNTIME)
-        .buildSafe(resolve);
-      return resolve;
+      Path conf = projectHome.resolve(Tabular.TABLI_CONF_FILE_NAME);
+      com.tabulify.conf.Attribute attribute = confVariable
+        .setOrigin(com.tabulify.conf.Origin.DEFAULT)
+        .buildSafe(conf);
+      attributeMap.put((TabularAttributeEnum) attribute.getAttributeMetadata(), attribute);
+      return (Path) attribute.getValueOrDefaultOrNull();
     }
 
-    Path resolve = TABLI_USER_HOME_PATH.resolve(Tabular.TABLI_CONF_FILE_NAME);
-    confVariable
-      .setOrigin(Origin.RUNTIME)
-      .buildSafe(resolve);
-    return resolve;
+    Path conf = userHome.resolve(Tabular.TABLI_CONF_FILE_NAME);
+    com.tabulify.conf.Attribute attribute = confVariable
+      .setOrigin(Origin.DEFAULT)
+      .buildSafe(conf);
+    attributeMap.put((TabularAttributeEnum) attribute.getAttributeMetadata(), attribute);
+    return (Path) attribute.getValueOrDefaultOrNull();
 
   }
 
@@ -311,7 +316,7 @@ public class TabularInit {
     for (Map.Entry<String, String> tabularEnv : tabularEnvs.getEnvs().entrySet()) {
       String key = tabularEnv.getKey();
       String lowerCaseKey = key.toLowerCase();
-      if (!lowerCaseKey.startsWith(Tabular.TABLI_NAME)) {
+      if (!lowerCaseKey.startsWith(TABLI_NAME)) {
         continue;
       }
       List<String> envValueParts;
@@ -363,9 +368,9 @@ public class TabularInit {
   /**
    * By default, the user home (trick to not show the user in the path in the doc)
    */
-  public static Path determineSqliteHome(Vault vault, TabularEnvs tabularEnvs, Map<TabularAttributeEnum, com.tabulify.conf.Attribute> attributeMap) {
+  public static Path determineUserHome(Vault vault, TabularEnvs tabularEnvs, Map<TabularAttributeEnum, com.tabulify.conf.Attribute> attributeMap) {
 
-    TabularAttributeEnum sqliteHome = TabularAttributeEnum.SQLITE_HOME;
+    TabularAttributeEnum sqliteHome = TabularAttributeEnum.USER_HOME;
     Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(sqliteHome);
 
     KeyNormalizer osEnvName = tabularEnvs.getNormalizedKey(sqliteHome);
@@ -388,9 +393,9 @@ public class TabularInit {
       return Paths.get(attribute.getValueOrDefaultAsStringNotNull());
     }
 
-    Path defaultValue = TABLI_USER_HOME_PATH;
+    Path defaultValue = Fs.getUserHome().resolve("." + TABLI_NAME);
     com.tabulify.conf.Attribute attribute = confVariable
-      .setOrigin(Origin.RUNTIME)
+      .setOrigin(Origin.DEFAULT)
       .buildSafe(defaultValue);
     attributeMap.put(sqliteHome, attribute);
     return defaultValue;
@@ -408,7 +413,7 @@ public class TabularInit {
      * We determine without using {@link TabularEnvs}
      * because passphrase is mandatory to initiate a vault
      */
-    String normalizedPassphraseName = (Tabular.TABLI_NAME + "_" + TabularAttributeEnum.PASSPHRASE).toLowerCase();
+    String normalizedPassphraseName = (TABLI_NAME + "_" + TabularAttributeEnum.PASSPHRASE).toLowerCase();
     for (Map.Entry<String, String> osEnv : System.getenv().entrySet()) {
 
       String key = osEnv.getKey();

@@ -1,6 +1,7 @@
 package com.tabulify.tabli;
 
 import com.tabulify.Tabular;
+import com.tabulify.TabularAttributeEnum;
 import com.tabulify.conf.Origin;
 import com.tabulify.model.RelationDef;
 import com.tabulify.spi.DataPath;
@@ -12,9 +13,12 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.regexp.Glob;
 import net.bytle.type.Casts;
+import net.bytle.type.KeyCase;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.Strings;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -108,11 +112,16 @@ public class TabliEnvAttributeList {
     RelationDef feedbackDataDef = tabular.getMemoryDataStore()
       .getDataPath("configuration-list")
       .getOrCreateRelationDef()
-      .addColumn("key")
+      .addColumn("attribute")
       .addColumn("value")
       .addColumn("origin")
       .addColumn("description");
 
+    /**
+     * We put them in env case so that the user
+     * got the fact that it can set them as os env variable
+     */
+    KeyCase attributeCase = KeyCase.SNAKE_UPPER;
     try (InsertStream insertStream = feedbackDataDef.getDataPath().getInsertStream()) {
       tabular
         .getAttributes()
@@ -124,17 +133,27 @@ public class TabliEnvAttributeList {
           Origin origin = e.getOrigin();
           return listOrigins.contains(origin);
         })
-        .filter(e -> Glob.matchOneOfGlobs(tabular.toPublicName(e.getAttributeMetadata().toString()), nameSelectors))
+        .filter(e -> Glob.matchOneOfGlobs(KeyNormalizer.createSafe(e.getAttributeMetadata()).toCaseSafe(attributeCase), nameSelectors))
         .sorted()
         .forEach(e ->
           {
+            /**
+             * Map Skip
+             * (ie {@link TabularAttributeEnum.NATIVE_DRIVER}
+             */
+            if (e.getAttributeMetadata().equals(TabularAttributeEnum.NATIVE_DRIVER)) {
+              return;
+            }
+
             String capitalizedOrigin = Strings.createFromString(e.getOrigin().getDescription())
               .toFirstLetterCapitalCase()
               .toString();
-            Object originalValue = e.getValueOrDefaultAsStringNotNull();
+            Object originalValue = e.getValueOrDefaultOrNull();
+
+
             insertStream.insert(
-              tabular.toPublicName(e.getAttributeMetadata().toString()),
-              originalValue.toString(),
+              KeyNormalizer.createSafe(e.getAttributeMetadata()).toCaseSafe(attributeCase),
+              valuetoString(originalValue),
               capitalizedOrigin,
               e.getAttributeMetadata().getDescription()
             );
@@ -145,5 +164,18 @@ public class TabliEnvAttributeList {
 
     TabliLog.LOGGER_TABLI.tip(tip);
     return Collections.singletonList(feedbackDataDef.getDataPath());
+  }
+
+  private static String valuetoString(Object originalValue) {
+
+    if (originalValue == null) {
+      return "";
+    }
+    boolean isCollection = Collection.class.isAssignableFrom(originalValue.getClass());
+    if (isCollection) {
+      return String.join(", ", Casts.castToCollection(originalValue, String.class));
+    }
+    return originalValue.toString();
+
   }
 }

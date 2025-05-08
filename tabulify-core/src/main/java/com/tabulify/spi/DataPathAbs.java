@@ -165,7 +165,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
 
     } catch (NoVariableException e) {
 
-      com.tabulify.conf.Attribute variable = com.tabulify.conf.Attribute.create(attribute, com.tabulify.conf.Origin.RUNTIME);
+      com.tabulify.conf.Attribute variable = com.tabulify.conf.Attribute.create(attribute, com.tabulify.conf.Origin.DEFAULT);
       this.addAttribute(variable);
       return variable;
 
@@ -826,7 +826,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
    * @return the path for chaining
    */
   public DataPath addVariablesFromEnumAttributeClass(Class<? extends AttributeEnum> enumClass) {
-    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addAttribute(com.tabulify.conf.Attribute.create(c, Origin.RUNTIME)));
+    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addAttribute(com.tabulify.conf.Attribute.create(c, Origin.DEFAULT)));
     return this;
   }
 

@@ -3,6 +3,18 @@
 
 set -TCEeuo pipefail
 
+find_git_root() {
+  local dir="$PWD"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -d "$dir/.git" ]]; then
+      echo "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  echo "No .git directory found in any parent directory." >&2
+  return 1
+}
 
 # Check if arguments are provided
 if [ "$#" -lt 1 ]; then

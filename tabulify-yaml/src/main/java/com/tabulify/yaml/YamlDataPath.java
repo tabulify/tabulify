@@ -13,7 +13,9 @@ import com.tabulify.stream.SelectStream;
 import com.tabulify.transfer.TransferProperties;
 import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.MediaType;
+import net.bytle.type.MediaTypes;
 
 import java.nio.file.Path;
 import java.sql.Types;
@@ -91,7 +93,7 @@ public class YamlDataPath extends FsTextDataPath {
   }
 
   public YamlDataPath setStructure(YamlStructure yamlStructure) {
-    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(YamDataPathAttribute.STRUCTURE, com.tabulify.conf.Origin.RUNTIME).setPlainValue(yamlStructure);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(YamDataPathAttribute.STRUCTURE, com.tabulify.conf.Origin.DEFAULT).setPlainValue(yamlStructure);
     this.addAttribute(attribute);
     return this;
   }
@@ -121,7 +123,7 @@ public class YamlDataPath extends FsTextDataPath {
   }
 
   public YamlDataPath setOutputStyle(YamlStyle yamlStyle) {
-    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(YamDataPathAttribute.OUTPUT_STYLE, Origin.RUNTIME).setPlainValue(yamlStyle);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(YamDataPathAttribute.OUTPUT_STYLE, Origin.DEFAULT).setPlainValue(yamlStyle);
     this.addAttribute(attribute);
     return this;
   }

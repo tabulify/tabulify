@@ -2,7 +2,7 @@ package com.tabulify.model;
 
 import com.tabulify.conf.AttributeEnum;
 import com.tabulify.conf.Origin;
-import net.bytle.type.*;
+import net.bytle.type.MapKeyIndependent;
 
 import java.sql.DatabaseMetaData;
 import java.util.Arrays;
@@ -388,7 +388,7 @@ public class ColumnDefBase implements ColumnDef {
    */
   public ColumnDef addVariablesFromEnumAttributeClass(Class<? extends AttributeEnum> enumClass) {
     Arrays.asList(enumClass.getEnumConstants()).forEach(c -> {
-      com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(c, Origin.RUNTIME);
+      com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(c, Origin.DEFAULT);
       this.variables.put(c.toString(), attribute);
     });
     return this;

@@ -18,8 +18,11 @@ import com.tabulify.transfer.TransferProperties;
 import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
 import net.bytle.fs.Fs;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.MediaType;
+import net.bytle.type.MediaTypes;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -82,7 +85,7 @@ public class JsonDataPath extends FsTextDataPath {
     /**
      * Overwrite the default column name
      */
-    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(FsTextDataPathAttributes.COLUMN_NAME, com.tabulify.conf.Origin.RUNTIME).setPlainValue(JSON_DEFAULT_HEADER_NAME);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(FsTextDataPathAttributes.COLUMN_NAME, com.tabulify.conf.Origin.DEFAULT).setPlainValue(JSON_DEFAULT_HEADER_NAME);
     this.addAttribute(attribute);
 
   }
@@ -106,10 +109,12 @@ public class JsonDataPath extends FsTextDataPath {
         if (!Files.exists(nioPath)) {
           throw new RuntimeException("The file " + nioPath.toAbsolutePath() + " does not exist, we can't read it");
         }
-        if (Fs.getExtension(this.getNioPath()).equalsIgnoreCase("jsonl")) {
-          Files.newBufferedReader(nioPath).lines().forEach(s -> parseColumns(jsonFactory, s));
-        } else {
-          parseColumns(jsonFactory, Files.newBufferedReader(nioPath).lines().collect(Collectors.joining(System.lineSeparator())));
+        try (BufferedReader bufferedReader = Files.newBufferedReader(nioPath)) {
+          if (Fs.getExtension(this.getNioPath()).equalsIgnoreCase("jsonl")) {
+            bufferedReader.lines().forEach(s -> parseColumns(jsonFactory, s));
+          } else {
+            parseColumns(jsonFactory, bufferedReader.lines().collect(Collectors.joining(System.lineSeparator())));
+          }
         }
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -153,7 +158,7 @@ public class JsonDataPath extends FsTextDataPath {
 
 
   public JsonDataPath setStructure(JsonStructure jsonStructure) {
-    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(JsonATTRIBUTE.STRUCTURE, Origin.RUNTIME).setPlainValue(jsonStructure);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(JsonATTRIBUTE.STRUCTURE, Origin.DEFAULT).setPlainValue(jsonStructure);
     this.addAttribute(attribute);
     return this;
   }
