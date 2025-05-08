@@ -42,8 +42,11 @@ public class ConnectionBuiltIn {
 
   /**
    * Create the built-in, internal connections
+   * @param tabliUserHome - the tabli user home
+   * @param osUserHome - the os user home
+   * @param tabliInstallationHome - the installation home
    */
-  public static MapKeyIndependent<Connection> loadBuiltInConnections(Tabular tabular, Path tabliUserHome, Path osUserHome) {
+  public static MapKeyIndependent<Connection> loadBuiltInConnections(Tabular tabular, Path tabliUserHome, Path osUserHome, Path tabliInstallationHome) {
 
     MapKeyIndependent<Connection> connectionList = new MapKeyIndependent<>();
 
@@ -137,18 +140,18 @@ public class ConnectionBuiltIn {
     connectionList.put(smtpConnection.getName(), smtpConnection);
 
     // The how-to-files
-    Path howToFilesPath = ConnectionHowTos.getHowToFilesPath(tabular);
+    Path howToFilesPath = ConnectionHowTos.getHowToFilesPath(tabular, tabliInstallationHome);
     Connection howtoFiles = Connection.createConnectionFromProviderOrDefault(tabular, HOW_TO_FILE_CONNECTION_NAME, howToFilesPath.toUri().toString())
       .setComment("The location of the how to files");
     connectionList.put(howtoFiles.getName(), howtoFiles);
 
     // The entities
-    Path entityRootPath = ConnectionHowTos.getEntitiesRootPath(tabular);
+    Path entityRootPath = ConnectionHowTos.getEntitiesRootPath(tabular, tabliInstallationHome);
     Connection entityFiles = Connection.createConnectionFromProviderOrDefault(tabular, ENTITY_CONNECTION_NAME, entityRootPath.toUri().toString())
       .setComment("The location of the entity files");
     connectionList.put(entityFiles.getName(), entityFiles);
 
-    Path tpcDsQueriesPath = ConnectionHowTos.getTpcDsQueriesPath(tabular);
+    Path tpcDsQueriesPath = ConnectionHowTos.getTpcDsQueriesPath(tabular, tabliInstallationHome);
     Connection tpcdsQuery = Connection.createConnectionFromProviderOrDefault(tabular, TPCDS_QUERY_CONNECTION_NAME, tpcDsQueriesPath.toUri().toString())
       .setComment("The location of the Tpc Ds queries");
     connectionList.put(tpcdsQuery.getName(), tpcdsQuery);

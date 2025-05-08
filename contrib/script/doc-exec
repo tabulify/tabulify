@@ -24,7 +24,7 @@ if [ "$#" -lt 1 ]; then
     echo ""
     echo "where:"
     echo "  * --compile  : recompile the whole project"
-    echo "  * --ide      : runs the Tabli.class instead of the tabli cli"
+    echo "  * --ide      : runs the Tabli.class instead of the tabli cli (way quicker as it stay in the same jvm)"
     echo "  * --no-cache : disable the doc cache "
     echo "  * globPath   : a glob path."
     echo ""
@@ -53,22 +53,25 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-PROJECT_ROOT="$SCRIPT_DIR/../.."
-cd "$PROJECT_ROOT/tabulify-cli"
+
+PROJECT_ROOT=$(find_git_root)
+TABULIFY_CLI_DIR="$PROJECT_ROOT/tabulify-cli"
+cd "$TABULIFY_CLI_DIR"
 
 # Extract main class from arguments
 MAIN_CLASS=com.tabulify.doc.DocExec
 
 if [ "$MAVEN_COMPILE" == "true" ]; then
   echo "Building project with Maven..."
-  if ! (cd ..; mvn install -DskipTests > /dev/null); then
+  if ! OUTPUT=$(cd "$PROJECT_ROOT"; mvn install -DskipTests ); then
     echo "Maven Project build failed."
+    echo "$OUTPUT"
     exit 1
   fi
   # Compile the project using Maven (The DocRun class is in test)
-  if ! mvn test-compile > /dev/null; then
+  if ! OUTPUT=$(mvn test-compile); then
       echo "Maven build failed."
+      echo "$OUTPUT"
       exit 1
   fi
 fi
@@ -79,14 +82,15 @@ echo "Running $MAIN_CLASS..."
 CLASSPATH=$(mvn dependency:build-classpath -Dmdep.outputFile=/dev/stdout -q)
 
 # Add the target/classes directory to include your compiled classes
-CLASSPATH="$CLASSPATH:target/classes"
-CLASSPATH="$CLASSPATH:target/test-classes"
+CLASSPATH="$CLASSPATH:$TABULIFY_CLI_DIR/target/classes"
+CLASSPATH="$CLASSPATH:$TABULIFY_CLI_DIR/target/test-classes"
 
 export TABLI_ENV="dev";
 if [ "$IDE_RUN" == "true" ]; then
   # When the code run as ide, tabli does not exit, it will throw
   # otherwise the doc executor security manager see it as executing and to prevent exit will throw
   TABLI_ENV="ide"
+  export TABLI_HOME="$PROJECT_ROOT"
 fi
 # when sending not in production, it's mandatory
 export TABLI_SMTP_TO=support@tabulify.com
@@ -95,5 +99,11 @@ TABLI_SMTP_HOST=$(pass eraldy/mailpit-hostname)
 export TABLI_SMTP_PORT=465
 # the default but yeah
 export TABLI_LOG_LEVEL=warn
+# to get a consistent cd connection, we go always to the same directory
+if [ "${TABLI_OS_USER_HOME:-}" == "" ]; then
+  echo "TABLI_OS_USER_HOME is unknown. It should be set to /home/tabulify"
+  exit 1
+fi
+cd "$TABLI_OS_USER_HOME"
 # Exec
 java -cp "$CLASSPATH" "$MAIN_CLASS" "${DOC_EXEC_OPTIONS[@]}"

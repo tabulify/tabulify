@@ -26,7 +26,6 @@ import net.bytle.type.Enums;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -286,8 +285,7 @@ public class Tabli {
           .createFromUuid()
           .start();
 
-        List<DataPath> feedbackDataPaths = new ArrayList<>();
-
+        List<DataPath> feedbackDataPaths;
         /*
           Process the command
          */

@@ -51,6 +51,8 @@ public class Tabular implements AutoCloseable {
 
   public static final String TABLI_NAME = "tabli";
   public static final String TABLI_CONF_FILE_NAME = "." + TABLI_NAME + ".yml";
+  // Hack to have a consistent os user home in the documentation
+  public static final String TABLI_OS_USER_HOME = "TABLI_OS_USER_HOME";
 
 
   private final Vault vault;
@@ -87,7 +89,7 @@ public class Tabular implements AutoCloseable {
    */
   private int exitStatus = 0;
   private Path runningPipelineScript;
-  private final Path homePath;
+
 
 
   /**
@@ -175,7 +177,7 @@ public class Tabular implements AutoCloseable {
     /**
      * Home Path
      */
-    this.homePath = TabularInit.determineHomePath(tabularConfig.homePath, this.executionEnv, tabularEnvs, attributes, vault, confVault);
+    Path tabliInstallationHomePath = TabularInit.determineHomePath(tabularConfig.homePath, this.executionEnv, tabularEnvs, attributes, vault, confVault);
 
     /**
      * Other Tabular attributes, not processed
@@ -226,13 +228,13 @@ public class Tabular implements AutoCloseable {
      * Build tabular Connection
      * (After init of variables
      */
-    // Hack to have a consistent os user home in the documentation
     Path osUserHome = Fs.getUserHome();
-    String envValue = tabularEnvs.getOsEnvValue(KeyNormalizer.createSafe("TABLI_OS_USER_HOME"));
+    // Hack to have a consistent os user home in the documentation
+    String envValue = tabularEnvs.getOsEnvValue(KeyNormalizer.createSafe(TABLI_OS_USER_HOME));
     if (envValue != null) {
       osUserHome = Paths.get(envValue);
     }
-    connections = ConnectionBuiltIn.loadBuiltInConnections(this, userHomePath, osUserHome);
+    connections = ConnectionBuiltIn.loadBuiltInConnections(this, userHomePath, osUserHome, tabliInstallationHomePath);
     confVault.getConnections().forEach(this::addConnection);
 
     /**
@@ -646,14 +648,6 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  /**
-   * @return the home directory of the installation
-   */
-  public Path getHomePath() {
-
-    return this.homePath;
-
-  }
 
 
   /**

@@ -191,7 +191,7 @@ public class TabularInit {
 
     }
 
-    // in prod, the class are in the jars directory
+    // In prod, the classes are in the jars directory
     // First getParent get the jars directory, getParent get the Home
     Path prodHomePath = Javas.getSourceCodePath(ConnectionHowTos.class).getParent().getParent();
     com.tabulify.conf.Attribute variable = variableBuilder
@@ -319,11 +319,16 @@ public class TabularInit {
       if (!lowerCaseKey.startsWith(TABLI_NAME)) {
         continue;
       }
+      if (lowerCaseKey.equals(Tabular.TABLI_OS_USER_HOME.toLowerCase())) {
+        // An internal hack to get the same os user home
+        // when creating the documentation
+        continue;
+      }
       List<String> envValueParts;
       try {
         envValueParts = KeyNormalizer.create(lowerCaseKey).getParts();
       } catch (CastException e) {
-        throw new RuntimeException(e);
+        throw new RuntimeException(e.getMessage(), e);
       }
       TabularAttributeEnum tabularAttributes;
       try {
@@ -338,10 +343,18 @@ public class TabularInit {
         if (envValueParts.size() < 3) {
           throw new RuntimeException("The environment variable (" + key + ") is unknown");
         }
-        String connectionName = envValueParts.get(1);
-        Connection connection = connections.get(connectionName);
+        // Get the connection name
+        String connectionName = "";
+        Connection connection = null;
+        for (int i = 1; i < envValueParts.size(); i++) {
+          connectionName = String.join("_", envValueParts.subList(1, i + 1));
+          connection = connections.get(connectionName);
+          if (connection != null) {
+            break;
+          }
+        }
         if (connection == null) {
-          throw new RuntimeException("The environment variable (" + key + ") is unknown");
+          throw new RuntimeException("The environment variable (" + key + ") is unknown. It's not a global or connection attribute environment variable.");
         }
         String keyWithoutTabliAndConnection = envValueParts.stream().skip(2).collect(Collectors.joining("_"));
         List<Class<? extends AttributeEnumParameter>> attributeEnums = connection.getAttributeEnums();

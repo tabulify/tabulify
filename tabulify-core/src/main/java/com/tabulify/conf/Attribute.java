@@ -211,6 +211,20 @@ public class Attribute implements Comparable<Attribute> {
     return Casts.cast(object, clazz);
   }
 
+  /**
+   * Same as {@link #getValueOrDefaultCastAs(Class)} but without compile exception
+   * for the case when we know that there is a value of this type
+   */
+  public <T> T getValueOrDefaultCastAsSafe(Class<T> clazz) {
+
+    try {
+      return getValueOrDefaultCastAs(clazz);
+    } catch (NoValueException | CastException e) {
+      throw new RuntimeException(e);
+    }
+
+  }
+
 
   public Object getValue() throws NoValueException {
     if (this.plainValue != null) {

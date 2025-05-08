@@ -138,14 +138,14 @@ public class ConnectionHowTos {
    * This function takes care of the fact that the code may run
    * in a development setting or in a distribution one
    */
-  protected static Path getHowToFilesPath(Tabular tabular) {
+  protected static Path getHowToFilesPath(Tabular tabular, Path installationHomePath) {
 
     /*
      * Dev environment
      */
     if (tabular.isIdeEnv()) {
       Path path;
-      path = tabular.getHomePath()
+      path = installationHomePath
         .resolve("tabulify-cli")
         .resolve("src")
         .resolve("main")
@@ -162,7 +162,7 @@ public class ConnectionHowTos {
     /*
      * Distribution
      */
-    return tabular.getHomePath()
+    return installationHomePath
       .resolve(DIST_RESOURCE_DIRECTORY)
       .resolve(ConnectionBuiltIn.HOW_TO_FILE_CONNECTION_NAME)
       .toAbsolutePath()
@@ -174,13 +174,13 @@ public class ConnectionHowTos {
    * This function takes care of the fact that the code may run
    * in a development setting or in a distribution one
    */
-  protected static Path getEntitiesRootPath(Tabular tabular) {
+  protected static Path getEntitiesRootPath(Tabular tabular, Path tabliInstallationHome) {
 
     /*
      * Dev environment
      */
     if (tabular.isIdeEnv()) {
-      Path path = tabular.getHomePath()
+      Path path = tabliInstallationHome
         .resolve("tabulify-gen-entities")
         .resolve("src")
         .resolve("main")
@@ -198,7 +198,7 @@ public class ConnectionHowTos {
     /**
      * Distribution
      */
-    return tabular.getHomePath()
+    return tabliInstallationHome
       .resolve(DIST_RESOURCE_DIRECTORY)
       .resolve(ConnectionBuiltIn.ENTITY_CONNECTION_NAME)
       .toAbsolutePath()
@@ -209,13 +209,13 @@ public class ConnectionHowTos {
    * This function takes care of the fact that the code may run
    * in a development setting or in a distribution one
    */
-  protected static Path getTpcDsQueriesPath(Tabular tabular) {
+  protected static Path getTpcDsQueriesPath(Tabular tabular, Path tabliInstallationHome) {
 
     /**
      * Dev environment
      */
     if (tabular.isIdeEnv()) {
-      Path path = tabular.getHomePath()
+      Path path = tabliInstallationHome
         .resolve("tabulify-jdbc")
         .resolve("src")
         .resolve("main")
@@ -232,7 +232,7 @@ public class ConnectionHowTos {
     /**
      * Distribution
      */
-    return tabular.getHomePath()
+    return tabliInstallationHome
       .resolve(DIST_RESOURCE_DIRECTORY)
       .resolve(ConnectionBuiltIn.TPCDS_QUERY_CONNECTION_NAME)
       .toAbsolutePath()
