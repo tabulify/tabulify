@@ -11,7 +11,7 @@ pipeline:
           - [ "bar@tabulify.com", "support@tabulify.com", "Email for bar", "A textual email body", "<html><body><h1>A html email body</h1></body></html>"]
   - name: "Send"
     comment: "Send the email"
-    operation: "send"
+    operation: "sendmail"
     args:
       target-uri: "@smtp" # smtp is the default smtp connection and is therefore optional
-      granularity: "record"
+      step-granularity: "record"

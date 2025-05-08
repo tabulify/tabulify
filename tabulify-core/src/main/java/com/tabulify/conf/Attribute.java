@@ -172,7 +172,7 @@ public class Attribute implements Comparable<Attribute> {
       this.plainValue = Casts.cast(value, valueClazz);
     } catch (CastException e) {
       // It's not a secret as it's the original value
-      throw new ClassCastException("The value " + value + " of " + this.getAttributeMetadata() + " is not a " + valueClazz);
+      throw new ClassCastException("The value " + value + " of " + this.getAttributeMetadata() + " cannot be converted to a " + valueClazz);
     }
     return this;
   }

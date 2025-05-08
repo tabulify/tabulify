@@ -201,7 +201,9 @@ public class ConfVault {
                 }
               }
 
-
+              /**
+               * Tabli Attributes
+               */
               for (Map.Entry<KeyNormalizer, Object> confConnectionAttribute : yamlConnectionAttributes.entrySet()) {
 
                 KeyNormalizer normalizedConnectionAttribute = confConnectionAttribute.getKey();

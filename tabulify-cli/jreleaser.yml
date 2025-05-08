@@ -67,12 +67,15 @@ assemble:
         ignoreMissingDeps: true
         targets:
           - 'target/tabulify-cli-{{projectVersion}}.jar'
-      #      additionalModuleNames:
+      additionalModuleNames:
+        # jdk.crypto.ec is mandatory to avoid handshake_failure on http request
+        # https://stackoverflow.com/questions/55439599/sslhandshakeexception-with-jlink-created-runtime
+        - 'jdk.crypto.ec'
+      # Old one from jreleaser
       #        - 'java.rmi'
       #        - 'java.security.sasl'
       #        - 'java.security.jgss'
       #        - 'jdk.crypto.cryptoki'
-      #        - 'jdk.crypto.ec'
       #        - 'jdk.localedata'
       #        - 'jdk.net'
       #        - 'jdk.security.auth'

@@ -14,10 +14,8 @@ import com.tabulify.uri.DataUriString;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
-import net.bytle.type.Casts;
-import net.bytle.type.KeyNormalizer;
-import net.bytle.type.MediaType;
-import net.bytle.type.UriEnhanced;
+import net.bytle.exception.NotFoundException;
+import net.bytle.type.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -777,7 +775,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
       // Query Properties
       String prop = this.getUri().getQueryProperty(attribute.toString());
-      if (prop != null) {
+      if (prop != null && !prop.trim().isEmpty()) {
         com.tabulify.conf.Attribute variable = variableBuilder
           .setOrigin(com.tabulify.conf.Origin.URI)
           .buildSafe(prop);
@@ -786,10 +784,10 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       }
 
       // Env
-      // We don't look up without the tabli predix because it can cause clashes
+      // We don't look up without the tabli prefix because it can cause clashes
       // for instance, name in os is the name of the computer
       TabularEnvs tabularEnvs = this.tabular.getTabularEnvs();
-      KeyNormalizer envName = tabularEnvs.getNormalizedKey(attribute);
+      KeyNormalizer envName = KeyNormalizer.createSafe(Tabular.TABLI_NAME + "_" + this.getName() + "_" + attribute);
       String envValue = tabularEnvs.getOsEnvValue(envName);
       if (envValue != null) {
         com.tabulify.conf.Attribute variable = variableBuilder
@@ -797,6 +795,31 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
           .buildSafe(envValue);
         this.addAttribute(variable);
         continue;
+      }
+
+      // Host and port
+      // They can be overridden by env
+      if (attribute == ConnectionAttributeEnumBase.HOST) {
+        try {
+          DnsName host = this.getUri().getHost();
+          com.tabulify.conf.Attribute variable = variableBuilder
+            .setOrigin(com.tabulify.conf.Origin.URI)
+            .buildSafe(host);
+          this.addAttribute(variable);
+          continue;
+        } catch (NotFoundException e) {
+          // no host
+        }
+      }
+      if (attribute == ConnectionAttributeEnumBase.PORT) {
+        Integer port = this.getUri().getPort();
+        if (port != null) {
+          com.tabulify.conf.Attribute variable = variableBuilder
+            .setOrigin(com.tabulify.conf.Origin.URI)
+            .buildSafe(port);
+          this.addAttribute(variable);
+          continue;
+        }
       }
 
       // None
@@ -866,6 +889,15 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    */
   public Map<String, Object> getDefaultNativeDriverAttributes() {
     return new HashMap<>();
+  }
+
+  /**
+   * @return a host or null
+   */
+  public DnsName getHost() {
+
+    return (DnsName) this.getAttribute(ConnectionAttributeEnumBase.HOST).getValueOrDefaultOrNull();
+
   }
 
 }

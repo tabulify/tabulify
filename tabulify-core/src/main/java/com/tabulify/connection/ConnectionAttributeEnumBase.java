@@ -1,5 +1,6 @@
 package com.tabulify.connection;
 
+import net.bytle.type.DnsName;
 import net.bytle.type.UriEnhanced;
 
 import java.util.Map;
@@ -12,6 +13,9 @@ public enum ConnectionAttributeEnumBase implements ConnectionAttributeEnum {
   NAME("The name of the connection", String.class, null, false),
   ORIGIN("The origin of the connection", ConnectionOrigin.class, null, false),
   URI("The uri of the connection", UriEnhanced.class, null, true),
+  // Well a parameter, host and port may be in URI (host is mandatory), but it can be overridden by an env
+  HOST("Host Server", DnsName.class, null, true),
+  PORT("Host Port", Integer.class, null, true),
   USER("The user name to login", String.class, null, true),
   // password and not pwd because this is the jdbc name
   PASSWORD("The user password to login", String.class, null, true),

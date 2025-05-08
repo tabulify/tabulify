@@ -5,9 +5,7 @@ import com.tabulify.connection.ConnectionAttributeEnum;
 
 public enum SmtpConnectionAttributeEnum implements ConnectionAttributeEnum {
 
-  // not a parameter, the host should be in the URI
-  HOST("Smtp Host Server", "localhost", String.class, false),
-  PORT("Smtp Port", 25, Integer.class, true),
+
   FROM("The default from address if none is provided", null, String.class, true),
   FROM_NAME("The default name from address if none is provided", "", String.class, true),
   TO("The default to address if none is provided", "", String.class, true),

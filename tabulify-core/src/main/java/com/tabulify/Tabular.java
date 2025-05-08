@@ -133,7 +133,7 @@ public class Tabular implements AutoCloseable {
      * We don't pass the tabular object so that
      * we have dependency in the function signature
      */
-    tabularEnvs = new TabularEnvs(tabularConfig.templatingEnv, protector);
+    tabularEnvs = new TabularEnvs(tabularConfig.envs, protector);
 
     /**
      * Vault
@@ -975,7 +975,7 @@ public class Tabular implements AutoCloseable {
     private Path projectHome;
     private Path confPath;
     private TabularExecEnv execEnv;
-    private final Map<String, String> templatingEnv = new HashMap<>();
+    private final Map<String, String> envs = new HashMap<>();
     private TabularLogLevel logLevel;
 
     public TabularConfig setPassphrase(String passphrase) {
@@ -990,6 +990,14 @@ public class Tabular implements AutoCloseable {
 
     public TabularConfig setConf(Path confPath) {
       this.confPath = confPath;
+      return this;
+    }
+
+    /**
+     * Add an env (to simulate an os env)
+     */
+    public TabularConfig addEnv(String key, String value) {
+      this.envs.put(key, value);
       return this;
     }
 

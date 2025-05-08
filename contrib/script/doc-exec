@@ -78,8 +78,10 @@ if [ "$IDE_RUN" == "true" ]; then
 fi
 # when sending not in production, it's mandatory
 export TABLI_SMTP_TO=support@tabulify.com
+export TABLI_SMTP_HOST
+TABLI_SMTP_HOST=$(pass eraldy/mailpit-hostname)
+export TABLI_SMTP_PORT=465
 # the default but yeah
 export TABLI_LOG_LEVEL=warn
-
 # Exec
 java -cp "$CLASSPATH" "$MAIN_CLASS" "${DOC_EXEC_OPTIONS[@]}"
