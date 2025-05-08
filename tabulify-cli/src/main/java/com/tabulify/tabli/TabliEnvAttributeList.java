@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class TabliEnvAttributeList {
@@ -133,7 +134,7 @@ public class TabliEnvAttributeList {
           Origin origin = e.getOrigin();
           return listOrigins.contains(origin);
         })
-        .filter(e -> Glob.matchOneOfGlobs(KeyNormalizer.createSafe(e.getAttributeMetadata()).toCaseSafe(attributeCase), nameSelectors))
+        .filter(e -> Glob.matchOneOfGlobs(e.getAttributeMetadata().toString().toLowerCase(), nameSelectors, Pattern.CASE_INSENSITIVE))
         .sorted()
         .forEach(e ->
           {

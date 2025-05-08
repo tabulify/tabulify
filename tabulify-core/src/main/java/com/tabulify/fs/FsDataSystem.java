@@ -17,6 +17,7 @@ import net.bytle.fs.Fs;
 import net.bytle.fs.FsShortFileName;
 import net.bytle.regexp.Glob;
 import net.bytle.type.MediaType;
+import net.bytle.type.MediaTypes;
 
 import java.io.IOException;
 import java.net.URI;
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.tabulify.fs.FsConnectionAttribute.FS_DEFAULT_TABULAR_MEDIA_TYPE;
 
 /**
  * A wrapper around a {@link java.nio.file.FileSystem}
@@ -624,21 +624,25 @@ public class FsDataSystem extends DataSystemAbs {
     // For convenience
     FsConnection connection = this.getConnection();
 
-    // Script ?
-    if (sourceDataPath.isScript()) {
-      // a query is anonymous and does not have any name
-      connection.getDataPath(sourceDataPath.getLogicalName());
-    }
-
     // Tabular (ie Sql data)
     if (
       !(sourceDataPath.getConnection() instanceof FsConnection)
         && (sourceDataPath.getOrCreateRelationDef().getColumnsSize() > 0 || sourceDataPath.isScript())
     ) {
+      MediaType mediaType = (MediaType) getConnection().getAttribute(FsConnectionAttribute.TABULAR_FILE_TYPE).getValueOrDefaultOrNull();
+      FsDataPath dataPath = connection.getDataPath(sourceDataPath.getLogicalName() + "." + mediaType.getExtension(), mediaType);
+      // hack
+      if (mediaType == MediaTypes.TEXT_CSV) {
+        dataPath.addAttribute("header-row-id", 1);
+      }
+      return dataPath;
 
-      return connection
-        .getDataPath(sourceDataPath.getLogicalName() + "." + FS_DEFAULT_TABULAR_MEDIA_TYPE.getExtension(), FS_DEFAULT_TABULAR_MEDIA_TYPE)
-        .addAttribute("header-row-id", 1);
+    }
+
+    // Script ?
+    if (sourceDataPath.isScript()) {
+      // a query is anonymous and does not have any name
+      return connection.getDataPath(sourceDataPath.getLogicalName());
     }
 
     /**

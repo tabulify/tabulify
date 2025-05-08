@@ -1,7 +1,6 @@
 package com.tabulify.fs;
 
 import com.tabulify.DbLoggers;
-import com.tabulify.TabularAttributeEnum;
 import com.tabulify.conf.Attribute;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataPathAbs;
@@ -129,9 +128,9 @@ public abstract class FsDataPathAbs extends DataPathAbs implements FsDataPath {
 
   @Override
   public FsDataPath getChildAsTabular(String name) {
-    String extension = getConnection().getTabular().getAttribute(TabularAttributeEnum.TABULAR_FILE_TYPE).getValueOrDefaultAsStringNotNull();
-    Path siblingPath = path.resolve(name + "." + extension);
-    return this.getConnection().getDataSystem().getFileManager(siblingPath, MediaTypes.TEXT_CSV).createDataPath(getConnection(), siblingPath);
+    MediaType mediaType = (MediaType) getConnection().getAttribute(FsConnectionAttribute.TABULAR_FILE_TYPE).getValueOrDefaultOrNull();
+    Path siblingPath = path.resolve(name + "." + mediaType.getExtension());
+    return this.getConnection().getDataSystem().getFileManager(siblingPath, mediaType).createDataPath(getConnection(), siblingPath);
   }
 
   @Override

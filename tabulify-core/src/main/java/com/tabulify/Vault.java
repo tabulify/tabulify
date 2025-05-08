@@ -11,6 +11,7 @@ import net.bytle.template.TextTemplateEngine;
 import net.bytle.type.Casts;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * An object that instantiate {@link com.tabulify.conf.Attribute}
@@ -136,6 +137,12 @@ public class Vault {
       return this;
     }
 
+    public com.tabulify.conf.Attribute build(Supplier<?> valueProvider, Class<?> valueClazz) {
+      com.tabulify.conf.Attribute attribute = builtAttribute(valueClazz);
+      attribute.setValueProvider(valueProvider);
+      return attribute;
+    }
+
     /**
      * Env/Command line argument are clear value
      * without any raw/original value
@@ -143,38 +150,11 @@ public class Vault {
      */
     public com.tabulify.conf.Attribute build(Object value) throws CastException {
 
-      if (this.attribute == null) {
-        if (name == null) {
-          throw new RuntimeException("Name and attribute cannot be null together.  A variable needs an identifiant");
-        }
-        this.attribute = new AttributeEnum() {
-
-          @Override
-          public String getDescription() {
-            return name;
-          }
-
-          @Override
-          public Class<?> getValueClazz() {
-            return value.getClass();
-          }
-
-          @Override
-          public Object getDefaultValue() {
-            return null;
-          }
-
-          /**
-           * @return the unique string identifier (mandatory)
-           */
-          @Override
-          public String toString() {
-            return name;
-          }
-
-        };
+      Class<?> valueClazz = String.class;
+      if (value != null) {
+        valueClazz = value.getClass();
       }
-      com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(this.attribute, origin);
+      com.tabulify.conf.Attribute attribute = builtAttribute(valueClazz);
 
       // Value may be null
       if (value == null) {
@@ -228,6 +208,45 @@ public class Vault {
       return attribute.setPlainValue(clearValue);
     }
 
+    private com.tabulify.conf.Attribute builtAttribute(Class<?> valueClazz) {
+
+      if (this.attribute != null) {
+        return com.tabulify.conf.Attribute.create(this.attribute, origin);
+      }
+
+      if (name == null) {
+        throw new RuntimeException("Name and attribute cannot be null together.  A variable needs an identifiant");
+      }
+      this.attribute = new AttributeEnum() {
+
+        @Override
+        public String getDescription() {
+          return name;
+        }
+
+        @Override
+        public Class<?> getValueClazz() {
+          return valueClazz;
+        }
+
+        @Override
+        public Object getDefaultValue() {
+          return null;
+        }
+
+        /**
+         * @return the unique string identifier (mandatory)
+         */
+        @Override
+        public String toString() {
+          return name;
+        }
+
+      };
+      return com.tabulify.conf.Attribute.create(this.attribute, origin);
+
+    }
+
     public VariableBuilder setName(String name) {
       this.name = name;
       return this;
@@ -240,5 +259,7 @@ public class Vault {
         throw new RuntimeException(e.getMessage(), e);
       }
     }
+
+
   }
 }

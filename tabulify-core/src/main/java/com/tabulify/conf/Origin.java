@@ -9,10 +9,11 @@ public enum Origin implements AttributeValue {
   DOTENV("Dot env file"),
   CONF("Conf file"),
   SYS("Java system properties"),
-  DEFAULT("Default"),
   COMMAND_LINE("Cli options"),
   ALL("All variables"), // just used by the cli to show all
-  URI("Connection Uri");
+  URI("Connection Uri"),
+  // Calculated or added during test
+  DEFAULT("Default");
 
 
   private final String description;

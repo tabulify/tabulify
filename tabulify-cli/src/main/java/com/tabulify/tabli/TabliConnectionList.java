@@ -2,6 +2,7 @@ package com.tabulify.tabli;
 
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Attribute;
 import com.tabulify.connection.Connection;
 import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.model.RelationDef;
@@ -10,15 +11,11 @@ import com.tabulify.stream.InsertStream;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
-import net.bytle.exception.CastException;
-import net.bytle.exception.NoValueException;
 import net.bytle.type.KeyNormalizer;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 
 /**
@@ -64,36 +61,31 @@ public class TabliConnectionList {
     RelationDef connectionDef = tabular.getAndCreateRandomMemoryDataPath()
       .getOrCreateRelationDef();
 
+
     List<String> attributes = cliParser.getStrings(TabliWords.TABLI_ATTRIBUTE_OPTION);
     for (String attribute : attributes) {
-      connectionDef.addColumn(attribute);
+      connectionDef.addColumn(tabular.toPublicName(attribute));
     }
 
     try (InsertStream insertStream = connectionDef.getDataPath().getInsertStream()) {
       for (Connection connection : connections) {
-
-        Map<KeyNormalizer, String> connectionAttributes = connection.getAttributes()
-          .stream()
-          .collect(
-            Collectors.toMap(
-              a -> KeyNormalizer.createSafe(a.getAttributeMetadata()),
-              a -> {
-                try {
-                  return a.getValueOrDefaultCastAs(String.class);
-                } catch (NoValueException | CastException e) {
-                  return "";
-                }
-              }
-            )
-          );
         List<String> row = new ArrayList<>();
         for (String attributeString : attributes) {
-          row.add(connectionAttributes.get(KeyNormalizer.createSafe(attributeString)));
+          KeyNormalizer requestedAttributeNormalized = KeyNormalizer.createSafe(attributeString);
+          // By default, not an attribute of this connection, empty string
+          String value = "";
+          for (Attribute attribute : connection.getAttributes()) {
+            KeyNormalizer connectionAttributeNormalized = KeyNormalizer.createSafe(attribute.getAttributeMetadata());
+            if (requestedAttributeNormalized.equals(connectionAttributeNormalized)) {
+              value = attribute.getValueOrDefaultAsStringNotNull();
+              break;
+            }
+          }
+          row.add(value);
         }
-        insertStream
-          .insert(row);
-
+        insertStream.insert(row);
       }
+
     }
 
 

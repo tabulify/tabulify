@@ -73,19 +73,19 @@ public class ConnectionHowTos {
     howToDataStoresSet.add(
       Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_CONNECTION_NAME, getSqliteConnectionString(SQLITE_CONNECTION_NAME, userHomePath))
         .addAttribute(DRIVER, "org.sqlite.JDBC", Origin.DEFAULT, tabular.getVault())
-        .setDescription("The sqlite default connection")
+        .setComment("The sqlite default connection")
     );
 
     howToDataStoresSet.add(
       Connection.createConnectionFromProviderOrDefault(tabular, SQLITE_TARGET_CONNECTION_NAME, getSqliteConnectionString(SQLITE_TARGET_CONNECTION_NAME, userHomePath))
         .addAttribute(DRIVER, "org.sqlite.JDBC", Origin.DEFAULT, tabular.getVault())
-        .setDescription("The default sqlite target (Sqlite cannot read and write with the same connection)")
+        .setComment("The default sqlite target (Sqlite cannot read and write with the same connection)")
     );
 
 
     howToDataStoresSet.add(
       Connection.createConnectionFromProviderOrDefault(tabular, ORACLE_CONNECTION_NAME, "jdbc:oracle:thin:@localhost:1521/freepdb1")
-        .setDescription("The default oracle connection")
+        .setComment("The default oracle connection")
         .setUser("hr")
         .setPassword("oracle")
         .addAttribute(DRIVER, "oracle.jdbc.OracleDriver", Origin.DEFAULT, tabular.getVault())
@@ -93,7 +93,7 @@ public class ConnectionHowTos {
 
     howToDataStoresSet.add(
       Connection.createConnectionFromProviderOrDefault(tabular, SQLSERVER_CONNECTION_NAME, "jdbc:sqlserver://localhost:1433;databaseName=AdventureWorks;encrypt=true;trustServerCertificate=true")
-        .setDescription("The default sqlserver connection")
+        .setComment("The default sqlserver connection")
         .addAttribute(DRIVER, "com.microsoft.sqlserver.jdbc.SQLServerDriver", Origin.DEFAULT, tabular.getVault())
         .setUser("sa")
         .setPassword("TheSecret1!")
@@ -110,8 +110,8 @@ public class ConnectionHowTos {
     String howToDatabaseName = "howto";
     howToDataStoresSet.add(
       Connection.createConnectionFromProviderOrDefault(tabular, MYSQL_CONNECTION_NAME, "jdbc:mysql://localhost:3306/" + howToDatabaseName)
-        .setDescription("The default mysql data store")
-        .addAttribute(DRIVER, "com.mysql.jdbc.Driver", Origin.DEFAULT, tabular.getVault())
+        .setComment("The default mysql data store")
+        .addAttribute(DRIVER, "com.mysql.cj.jdbc.Driver", Origin.DEFAULT, tabular.getVault())
         .setUser("root")
         .setPassword("my-secret-pw") // from the docker doc - https://hub.docker.com/_/mysql
     );
@@ -119,7 +119,7 @@ public class ConnectionHowTos {
     // jdbc:postgresql://host:port/database?prop=value
     howToDataStoresSet.add(
       Connection.createConnectionFromProviderOrDefault(tabular, POSTGRESQL_CONNECTION_NAME, "jdbc:postgresql://localhost:5432/postgres")
-        .setDescription("The default postgres data store")
+        .setComment("The default postgres data store")
         .addAttribute(DRIVER, "org.postgresql.Driver", Origin.DEFAULT, tabular.getVault())
         .setUser("postgres")
         .setPassword("welcome")

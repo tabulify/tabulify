@@ -263,7 +263,7 @@ public class TabularInit {
     if (confPath != null) {
       Attribute attribute = confVariable
         .setOrigin(com.tabulify.conf.Origin.COMMAND_LINE)
-        .buildSafe(confPath.toString());
+        .buildSafe(confPath);
       attributeMap.put((TabularAttributeEnum) attribute.getAttributeMetadata(), attribute);
       return (Path) attribute.getValueOrDefaultOrNull();
     }
@@ -370,16 +370,16 @@ public class TabularInit {
    */
   public static Path determineUserHome(Vault vault, TabularEnvs tabularEnvs, Map<TabularAttributeEnum, com.tabulify.conf.Attribute> attributeMap) {
 
-    TabularAttributeEnum sqliteHome = TabularAttributeEnum.USER_HOME;
-    Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(sqliteHome);
+    TabularAttributeEnum userHome = TabularAttributeEnum.USER_HOME;
+    Vault.VariableBuilder confVariable = vault.createVariableBuilderFromAttribute(userHome);
 
-    KeyNormalizer osEnvName = tabularEnvs.getNormalizedKey(sqliteHome);
+    KeyNormalizer osEnvName = tabularEnvs.getNormalizedKey(userHome);
     String sysConfPathString = tabularEnvs.getJavaSysValue(osEnvName);
     if (sysConfPathString != null) {
       com.tabulify.conf.Attribute attribute = confVariable
         .setOrigin(Origin.SYS)
         .buildSafe(sysConfPathString);
-      attributeMap.put(sqliteHome, attribute);
+      attributeMap.put(userHome, attribute);
       return Paths.get(attribute.getValueOrDefaultAsStringNotNull());
     }
 
@@ -389,7 +389,7 @@ public class TabularInit {
       com.tabulify.conf.Attribute attribute = confVariable
         .setOrigin(com.tabulify.conf.Origin.OS)
         .buildSafe(confPathString);
-      attributeMap.put(sqliteHome, attribute);
+      attributeMap.put(userHome, attribute);
       return Paths.get(attribute.getValueOrDefaultAsStringNotNull());
     }
 
@@ -397,7 +397,7 @@ public class TabularInit {
     com.tabulify.conf.Attribute attribute = confVariable
       .setOrigin(Origin.DEFAULT)
       .buildSafe(defaultValue);
-    attributeMap.put(sqliteHome, attribute);
+    attributeMap.put(userHome, attribute);
     return defaultValue;
   }
 

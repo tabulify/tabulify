@@ -29,6 +29,7 @@ import java.net.URL;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -94,9 +95,6 @@ public class Tabular implements AutoCloseable {
    * so the key identifier is not a string
    */
   private final Map<TabularAttributeEnum, Attribute> attributes = new HashMap<>();
-
-
-  private final Path confPath;
 
 
   public Tabular(TabularConfig tabularConfig) {
@@ -166,7 +164,7 @@ public class Tabular implements AutoCloseable {
      * confPath is a field because it's used by the cli
      * to modify a conf file with the cli
      */
-    confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, tabularEnvs, projectHomePath, userHomePath, attributes);
+    Path confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, tabularEnvs, projectHomePath, userHomePath, attributes);
     ConfVault confVault = ConfVault.createFromPath(confPath, vault, this);
 
     /**
@@ -228,7 +226,13 @@ public class Tabular implements AutoCloseable {
      * Build tabular Connection
      * (After init of variables
      */
-    connections = ConnectionBuiltIn.loadBuiltInConnections(this, userHomePath);
+    // Hack to have a consistent os user home in the documentation
+    Path osUserHome = Fs.getUserHome();
+    String envValue = tabularEnvs.getOsEnvValue(KeyNormalizer.createSafe("TABLI_OS_USER_HOME"));
+    if (envValue != null) {
+      osUserHome = Paths.get(envValue);
+    }
+    connections = ConnectionBuiltIn.loadBuiltInConnections(this, userHomePath, osUserHome);
     confVault.getConnections().forEach(this::addConnection);
 
     /**
@@ -240,7 +244,7 @@ public class Tabular implements AutoCloseable {
     if (projectHomePath != null) {
       addConnection(
         Connection.createConnectionFromProviderOrDefault(this, ConnectionBuiltIn.PROJECT_CONNECTION, projectHomePath.toUri().toString())
-          .setDescription("The project home path")
+          .setComment("The project home path")
       );
       // Default connection is project
       this.setDefaultConnection(ConnectionBuiltIn.PROJECT_CONNECTION);
@@ -815,9 +819,6 @@ public class Tabular implements AutoCloseable {
     return this.projectHomePath != null;
   }
 
-  public Connection getLogsConnection() {
-    return this.getConnection(ConnectionBuiltIn.LOG_LOCAL_CONNECTION);
-  }
 
   /**
    * The execution environment
@@ -927,12 +928,9 @@ public class Tabular implements AutoCloseable {
     return new HashSet<>(this.attributes.values());
   }
 
-  public Path getUserConfFilePath() {
-    return (Path) this.getAttribute(TabularAttributeEnum.USER_HOME).getValueOrDefaultOrNull();
-  }
 
   public Path getConfPath() {
-    return this.confPath;
+    return (Path) this.getAttribute(TabularAttributeEnum.CONF).getValueOrDefaultOrNull();
   }
 
   public Attribute createAttribute(AttributeEnum attribute, Object value) {
@@ -968,6 +966,10 @@ public class Tabular implements AutoCloseable {
       .filter(AttributeEnumParameter::isParameter)
       .map(enumValue -> toPublicName(enumValue.toString()))
       .collect(Collectors.joining(", "));
+  }
+
+  public Path getUserHome() {
+    return (Path) this.getAttribute(TabularAttributeEnum.USER_HOME).getValueOrDefaultOrNull();
   }
 
 

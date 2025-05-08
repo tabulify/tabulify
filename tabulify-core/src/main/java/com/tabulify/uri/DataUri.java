@@ -99,7 +99,7 @@ public class DataUri implements Comparable<DataUri> {
       FsConnection fsConnection = (FsConnection) tabular.getConnection(name);
       if (fsConnection == null) {
         fsConnection = (FsConnection) tabular.createRuntimeConnection(name, connectionUri.toString())
-          .setDescription("Connection for the connection URI " + connectionUri);
+          .setComment("Connection for the connection URI " + connectionUri);
       }
 
       String relativePath = workingPath.toAbsolutePath().relativize(path).toString();

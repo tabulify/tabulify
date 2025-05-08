@@ -17,7 +17,6 @@ public enum TabularAttributeEnum implements AttributeEnumParameter {
    * Meta directory
    */
   ENV("The execution environment", true, TabularExecEnv.DEV, TabularExecEnv.class),
-  TABULAR_FILE_TYPE("The default file extension when downloading tabular data", true, "csv", String.class),
   HOME("The directory of the Tabulify installation", true, null, Path.class),
   CONF("The conf vault file path", true, null, Path.class),
   PROJECT_HOME("The project home directory", true, null, Path.class),

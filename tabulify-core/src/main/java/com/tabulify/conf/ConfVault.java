@@ -60,7 +60,7 @@ public class ConfVault {
     this.tabular = tabular;
     try {
       parseYaml();
-    } catch (CastException e) {
+    } catch (Exception e) {
       // we cannot recover from that
       throw new RuntimeException("Error while parsing the config vault " + this + ". Error: " + e.getMessage(), e);
     }

@@ -208,6 +208,13 @@ public class Tabli {
       .build()
     ) {
 
+      LOGGER_TABLI.info("The following arguments were received  (" + String.join(",", args) + ")");
+      LOGGER_TABLI.info("The current file system path is " + Paths.get(".").toAbsolutePath());
+      LOGGER_TABLI.info("The default connection was set to: `" + tabular.getDefaultConnection().getName() + "`");
+      if (!tabular.isProjectRun()) {
+        LOGGER_TABLI.info("No project was found.");
+      }
+
       final Boolean isNotStrictPresent = cliParser.getBoolean(NOT_STRICT_FLAG);
       if (isNotStrictPresent) {
         tabular.setStrict(false);
@@ -216,11 +223,14 @@ public class Tabli {
       /**
        * Creation howto connection user vault if it does not exist
        */
-      Path userConnectionVaultPath = tabular.getUserConfFilePath();
-      if (!Files.exists(userConnectionVaultPath)) {
-        ConfVault.createFromPath(userConnectionVaultPath, tabular)
+      Path confVaultPath = tabular.getConfPath();
+      Path userHome = tabular.getUserHome();
+      if (!Files.exists(confVaultPath) && confVaultPath.getParent().equals(userHome)) {
+        LOGGER_TABLI.info("User conf path does not exist. Creating it " + confVaultPath);
+        ConfVault.createFromPath(confVaultPath, tabular)
           .loadHowtoConnections()
           .flush();
+        tabular.loadHowtoConnections();
       }
 
       /**
@@ -269,15 +279,6 @@ public class Tabli {
         }
 
 
-        LOGGER_TABLI.info("The following arguments were received  (" + String.join(",", args) + ")");
-        LOGGER_TABLI.info("The current file system path is " + Paths.get(".").toAbsolutePath());
-
-        LOGGER_TABLI.info("The default connection was set to: `" + tabular.getDefaultConnection().getName() + "`");
-
-        if (!tabular.isProjectRun()) {
-          LOGGER_TABLI.info("No project was found.");
-        }
-
         /*
           Timer
          */
@@ -293,35 +294,32 @@ public class Tabli {
         List<CliCommand> commands = cliParser.getFoundedChildCommands();
         if (commands.isEmpty()) {
           throw new IllegalArgumentException("A known command must be given");
-        } else {
+        }
 
-          for (CliCommand childCommand : commands) {
-            LOGGER_TABLI.info("The command (" + childCommand + ") was found");
-            switch (childCommand.getName()) {
-              case TabliWords.CONNECTION_COMMAND:
-                feedbackDataPaths = TabliConnection.run(tabular, childCommand);
-                break;
-              case TabliWords.DATA_COMMAND:
-                feedbackDataPaths = TabliData.run(tabular, childCommand);
-                break;
-              case TabliWords.ENV_COMMAND:
-                feedbackDataPaths = TabliEnv.run(tabular, childCommand);
-                break;
-              case TabliWords.VAULT_COMMAND:
-                feedbackDataPaths = TabliVault.run(tabular, childCommand);
-                break;
-              case TabliWords.FLOW_COMMAND:
-                feedbackDataPaths = TabliFlow.run(tabular, childCommand);
-                break;
-              default:
-                throw new IllegalArgumentException("The sub-command (" + childCommand.getName() + ") is unknown for the command (" + CliUsage.getFullChainOfCommand(rootCommand) + ")");
-            }
+        for (CliCommand childCommand : commands) {
+          LOGGER_TABLI.info("The command (" + childCommand + ") was found");
+          switch (childCommand.getName()) {
+            case TabliWords.CONNECTION_COMMAND:
+              feedbackDataPaths = TabliConnection.run(tabular, childCommand);
+              break;
+            case TabliWords.DATA_COMMAND:
+              feedbackDataPaths = TabliData.run(tabular, childCommand);
+              break;
+            case TabliWords.ENV_COMMAND:
+              feedbackDataPaths = TabliEnv.run(tabular, childCommand);
+              break;
+            case TabliWords.VAULT_COMMAND:
+              feedbackDataPaths = TabliVault.run(tabular, childCommand);
+              break;
+            case TabliWords.FLOW_COMMAND:
+              feedbackDataPaths = TabliFlow.run(tabular, childCommand);
+              break;
+            default:
+              throw new IllegalArgumentException("The sub-command (" + childCommand.getName() + ") is unknown for the command (" + CliUsage.getFullChainOfCommand(rootCommand) + ")");
           }
-
 
           /**
            * Feedback Data Paths
-           *
            */
           String outputDataUriOption = cliParser.getString(OUTPUT_DATA_URI);
           DataUri outputDataUri = null;
@@ -431,7 +429,7 @@ public class Tabli {
         LOGGER_TABLI.info("Latency Time: " + cliTimer.getResponseTimeInString() + " (hour:minutes:seconds:milli)");
         LOGGER_TABLI.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds");
         LOGGER_TABLI.info("Done. Bye !");
-        LOGGER_TABLI.info("To not see the `info` log, you can set the log level to `tip` with `tabli conf set " + LOG_LEVEL_LONG_OPTION + " tip`");
+        LOGGER_TABLI.info("To not see the `info` log, you can set the log level to `tip` with `tabli " + ENV_COMMAND + " set " + LOG_LEVEL_LONG_OPTION + " tip`");
 
 
       } catch (Exception e) {

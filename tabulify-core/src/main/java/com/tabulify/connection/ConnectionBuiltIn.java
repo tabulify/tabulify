@@ -43,7 +43,7 @@ public class ConnectionBuiltIn {
   /**
    * Create the built-in, internal connections
    */
-  public static MapKeyIndependent<Connection> loadBuiltInConnections(Tabular tabular, Path sqliteConnectionHome) {
+  public static MapKeyIndependent<Connection> loadBuiltInConnections(Tabular tabular, Path tabliUserHome, Path osUserHome) {
 
     MapKeyIndependent<Connection> connectionList = new MapKeyIndependent<>();
 
@@ -61,7 +61,7 @@ public class ConnectionBuiltIn {
       .toString();
     Connection localConnection = Connection
       .createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.CD_LOCAL_FILE_SYSTEM, localFileUrl)
-      .setDescription("The local file system")
+      .setComment("The local file system")
       .setOrigin(ConnectionOrigin.BUILT_IN);
     connectionList.put(localConnection.getName(), localConnection);
 
@@ -73,34 +73,35 @@ public class ConnectionBuiltIn {
       .toUri()
       .toString();
     Connection temp = Connection.createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.TEMP_LOCAL_FILE_SYSTEM, localTempUrl)
-      .setDescription("The local temporary directory of the local file system")
+      .setComment("The local temporary directory of the local file system")
       .setOrigin(ConnectionOrigin.BUILT_IN);
     connectionList.put(temp.getName(), temp);
 
-    // Local temporary Directory
-    String localUserUrl = Fs.getUserHome()
+    // User Home
+    String localUserUrl = osUserHome
       .toAbsolutePath()
       .normalize()
       .toUri()
       .toString();
     Connection user = Connection.createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.HOME_LOCAL_FILE_SYSTEM, localUserUrl)
-      .setDescription("The user home directory of the local file system")
+      .setComment("The user home directory of the local file system")
       .setOrigin(ConnectionOrigin.BUILT_IN);
     connectionList.put(user.getName(), user);
 
-    String localLogsUriString = ConnectionHowTos.getSqliteConnectionString(ConnectionBuiltIn.LOG_LOCAL_CONNECTION, sqliteConnectionHome);
+    String localLogsUriString = tabliUserHome.resolve("logs").toUri().toString();
     Connection logs = Connection.createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.LOG_LOCAL_CONNECTION, localLogsUriString)
-      .setDescription("The tabli logs")
+      .setComment("The tabli logs")
       .setOrigin(ConnectionOrigin.BUILT_IN);
     connectionList.put(logs.getName(), logs);
 
-    String localDesktopUrl = Fs.getUserDesktop()
+    String localDesktopUrl = osUserHome
+      .resolve("Desktop")
       .toAbsolutePath()
       .normalize()
       .toUri()
       .toString();
     Connection desktop = Connection.createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.DESKTOP_LOCAL_FILE_SYSTEM, localDesktopUrl)
-      .setDescription("The user desktop directory of the local file system")
+      .setComment("The user desktop directory of the local file system")
       .setOrigin(ConnectionOrigin.BUILT_IN);
     connectionList.put(desktop.getName(), desktop);
 
@@ -131,25 +132,25 @@ public class ConnectionBuiltIn {
       throw new RuntimeException(e);
     }
     Connection smtpConnection = Connection.createConnectionFromProviderOrDefault(tabular, ConnectionBuiltIn.SMTP_CONNECTION, emailUri.toUri().toString())
-      .setDescription("Smtp")
+      .setComment("Smtp")
       .setOrigin(ConnectionOrigin.BUILT_IN);
     connectionList.put(smtpConnection.getName(), smtpConnection);
 
     // The how-to-files
     Path howToFilesPath = ConnectionHowTos.getHowToFilesPath(tabular);
     Connection howtoFiles = Connection.createConnectionFromProviderOrDefault(tabular, HOW_TO_FILE_CONNECTION_NAME, howToFilesPath.toUri().toString())
-      .setDescription("The location of the how to files");
+      .setComment("The location of the how to files");
     connectionList.put(howtoFiles.getName(), howtoFiles);
 
     // The entities
     Path entityRootPath = ConnectionHowTos.getEntitiesRootPath(tabular);
     Connection entityFiles = Connection.createConnectionFromProviderOrDefault(tabular, ENTITY_CONNECTION_NAME, entityRootPath.toUri().toString())
-      .setDescription("The location of the entity files");
+      .setComment("The location of the entity files");
     connectionList.put(entityFiles.getName(), entityFiles);
 
     Path tpcDsQueriesPath = ConnectionHowTos.getTpcDsQueriesPath(tabular);
     Connection tpcdsQuery = Connection.createConnectionFromProviderOrDefault(tabular, TPCDS_QUERY_CONNECTION_NAME, tpcDsQueriesPath.toUri().toString())
-      .setDescription("The location of the Tpc Ds queries");
+      .setComment("The location of the Tpc Ds queries");
     connectionList.put(tpcdsQuery.getName(), tpcdsQuery);
 
     return connectionList;

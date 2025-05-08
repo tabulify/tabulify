@@ -10,6 +10,8 @@ import com.tabulify.stream.InsertStream;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
+import net.bytle.type.KeyCase;
+import net.bytle.type.KeyNormalizer;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -76,20 +78,11 @@ public class TabliConnectionInfo {
           .addColumn("Value")
           .addColumn("Description");
         feedbackDataPaths.add(feedbackDataDef.getDataPath());
+
+        // Upper snake to show that you can overwrite it with an operating system
+        KeyCase snakeUpper = KeyCase.SNAKE_UPPER;
         try (InsertStream insertStream = feedbackDataDef.getDataPath().getInsertStream()) {
 
-          /**
-           * Connection Object
-           */
-          List<Object> rowConnection = new ArrayList<>();
-          try {
-            rowConnection.add("Working Path");
-            rowConnection.add(connection.getCurrentDataPath().getAbsolutePath());
-            rowConnection.add("Schema for database, directory for file system");
-            insertStream.insert(rowConnection);
-          } catch (Exception e) {
-            // not implemented (smtp for instance)
-          }
 
           /**
            * Database Metadata Object
@@ -98,13 +91,13 @@ public class TabliConnectionInfo {
             try {
 
               List<Object> rowAttributes = new ArrayList<>();
-              rowAttributes.add(tabular.toPublicName(attribute));
+              rowAttributes.add(KeyNormalizer.createSafe(attribute).toCaseSafe(snakeUpper));
               rowAttributes.add(attribute.getValueOrDefaultOrNull());
               rowAttributes.add(attribute.getAttributeMetadata().getDescription());
               insertStream.insert(rowAttributes);
 
             } catch (Exception e) {
-              // If we can't connect for instance
+              // For derived attribute, if we can't connect for instance
               if (!(e.getCause() instanceof SQLException)) {
                 throw e;
               }

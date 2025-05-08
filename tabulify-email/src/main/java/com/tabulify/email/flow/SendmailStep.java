@@ -487,8 +487,8 @@ public class SendmailStep extends FilterStepAbs {
     if (logDataPath != null) {
       return logDataPath;
     }
-    logDataPath = tabular.getLogsConnection().getDataPath("smtp");
-    SendmailStep.this.checkAndOrCreateLogDataPath(logDataPath);
+    logDataPath = tabular.getConnection(ConnectionBuiltIn.LOG_LOCAL_CONNECTION).getCurrentDataPath().getChildAsTabular("smtp");
+    this.checkAndOrCreateLogDataPath(logDataPath);
     return logDataPath;
   }
 

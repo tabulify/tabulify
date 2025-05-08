@@ -198,7 +198,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
 
   public Attribute getDescription() {
-    return this.attributes.get(ConnectionAttributeEnumBase.DESCRIPTION);
+    return this.attributes.get(ConnectionAttributeEnumBase.COMMENT);
   }
 
 
@@ -302,7 +302,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     try {
       connectionAttributeBase = Casts.cast(name, ConnectionAttributeEnumBase.class);
     } catch (CastException e) {
-      throw new RuntimeException("The connection attribute " + name + " is unknown for the connection " + this + ". We were expecting one of the following " + tabular.toPublicListOfParameters(this.getAttributeEnums()), e);
+      throw new RuntimeException("The connection attribute (" + name + ") is unknown for the connection " + this + ". We were expecting one of the following " + tabular.toPublicListOfParameters(this.getAttributeEnums()), e);
     }
     try {
       com.tabulify.conf.Attribute attribute = vault.createAttribute(connectionAttributeBase, value, origin);
@@ -407,8 +407,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     }
 
     // No provider was found
-    final String message = "No provider was found from the connection (" + attributeName.getValueOrDefaultOrNull() + ") with the Uri (" + attributeUri.getValueOrDefaultOrNull() + ")";
-    DbLoggers.LOGGER_DB_ENGINE.severe(message);
+    final String message = "No provider was found for the connection (" + attributeName.getValueOrDefaultOrNull() + ") with the Uri (" + attributeUri.getValueOrDefaultOrNull() + "). Defaulting to the no-operation connection.";
+    DbLoggers.LOGGER_DB_ENGINE.warning(message);
     return new NoOpConnection(tabular, attributeName, attributeUri);
 
   }
@@ -503,10 +503,13 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public Connection setDescription(String description) {
+  /**
+   * Comment and not description because this is the name of the description column in a relational db
+   */
+  public Connection setComment(String description) {
     com.tabulify.conf.Attribute descVar;
     try {
-      descVar = tabular.createAttribute(ConnectionAttributeEnumBase.DESCRIPTION, description);
+      descVar = tabular.createAttribute(ConnectionAttributeEnumBase.COMMENT, description);
     } catch (Exception e) {
       throw new RuntimeException("Internal error, cannot create description variable", e);
     }
@@ -750,7 +753,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
        * connection attribute should be present
        * added via {@link #addAttributesFromEnumAttributeClass(Class)} in the constructor
        */
-      throw new RuntimeException("The connection attribute " + attribute + " was not found. Did you add it at construction time");
+      throw new RuntimeException("Internal: The connection attribute " + attribute + " was not found. Did you add it at construction time?");
     }
     return variable;
   }
@@ -821,6 +824,15 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
           continue;
         }
       }
+
+      if (attribute == ConnectionAttributeEnumBase.WORKING_PATH) {
+        com.tabulify.conf.Attribute variable = variableBuilder
+          .setOrigin(DEFAULT)
+          .build(() -> this.getCurrentDataPath().getAbsolutePath(), String.class);
+        this.addAttribute(variable);
+        continue;
+      }
+
 
       // None
       com.tabulify.conf.Attribute variable = variableBuilder

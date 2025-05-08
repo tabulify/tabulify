@@ -13,13 +13,16 @@ public enum ConnectionAttributeEnumBase implements ConnectionAttributeEnum {
   NAME("The name of the connection", String.class, null, false),
   ORIGIN("The origin of the connection", ConnectionOrigin.class, null, false),
   URI("The uri of the connection", UriEnhanced.class, null, true),
-  // Well a parameter, host and port may be in URI (host is mandatory), but it can be overridden by an env
+  // parameter because host is in URI (mandatory), but it can be overridden by an env
   HOST("Host Server", DnsName.class, null, true),
+  // parameter because port may be in URI, but it can be overridden by an env
   PORT("Host Port", Integer.class, null, true),
-  USER("The user name to login", String.class, null, true),
-  // password and not pwd because this is the jdbc name
-  PASSWORD("The user password to login", String.class, null, true),
-  DESCRIPTION("A connection description", String.class, null, true),
+  USER("The user name", String.class, null, true),
+  WORKING_PATH("The working path (Schema for database, directory for file system)", String.class, null, true),
+  // password and not pwd because this is the jdbc name in connection properties
+  PASSWORD("The user password", String.class, null, true),
+  // comment and not description because comment is the column name in a relational database
+  COMMENT("A connection description", String.class, null, true),
   DATE_DATA_TYPE("Date data type used to store date values", ConnectionAttValueTimeDataType.class, ConnectionAttValueTimeDataType.NATIVE, true),
   TIMESTAMP_DATA_TYPE("Timestamp data type used to store timestamp values", ConnectionAttValueTimeDataType.class, ConnectionAttValueTimeDataType.NATIVE, true),
   TIME_DATA_TYPE("Time format data type to store time values", ConnectionAttValueTimeDataType.class, ConnectionAttValueTimeDataType.NATIVE, true),

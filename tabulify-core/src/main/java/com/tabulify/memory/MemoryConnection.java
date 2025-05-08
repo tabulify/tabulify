@@ -22,8 +22,9 @@ public class MemoryConnection extends NoOpConnection {
 
   public MemoryConnection(Tabular tabular, Attribute name, Attribute connectionString) {
     super(tabular, name, connectionString);
-    this.workingPathNamespace = getUri().getPath();
     this.memoryDataSystem = new MemoryDataSystem(this);
+    this.workingPathNamespace = getUri().getPath();
+
   }
 
   public static MemoryConnection of(Tabular tabular, Attribute name, Attribute connectionString) {

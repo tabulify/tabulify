@@ -2,6 +2,7 @@ package com.tabulify.fs;
 
 import com.tabulify.Tabular;
 import com.tabulify.conf.Attribute;
+import com.tabulify.conf.AttributeEnumParameter;
 import com.tabulify.connection.ConnectionMetadata;
 import com.tabulify.fs.binary.FsBinaryDataPath;
 import com.tabulify.fs.dir.FsDirectoryDataPath;
@@ -20,6 +21,7 @@ import net.bytle.type.UriEnhanced;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -36,9 +38,16 @@ public class FsConnection extends NoOpConnection {
   public FsConnection(Tabular tabular, Attribute name, Attribute uri) {
 
     super(tabular, name, uri);
+    this.addAttributesFromEnumAttributeClass(FsConnectionAttribute.class);
 
   }
 
+  @Override
+  public List<Class<? extends AttributeEnumParameter>> getAttributeEnums() {
+    List<Class<? extends AttributeEnumParameter>> list = new ArrayList<>(super.getAttributeEnums());
+    list.add(FsConnectionAttribute.class);
+    return list;
+  }
 
   protected FileSystem getFileSystem() {
     if (this.fileSystem != null) {
