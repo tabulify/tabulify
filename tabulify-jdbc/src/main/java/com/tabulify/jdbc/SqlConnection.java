@@ -1179,4 +1179,14 @@ public class SqlConnection extends NoOpConnection {
     }
     return connectionProperties;
   }
+
+  @Override
+  public Boolean ping() {
+    try {
+      return this.connection.isValid(5000);
+    } catch (SQLException e) {
+      throw new RuntimeException(e.getMessage(), e);
+    }
+  }
+
 }

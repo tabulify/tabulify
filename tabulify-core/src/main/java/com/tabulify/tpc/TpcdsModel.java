@@ -149,11 +149,9 @@ public class TpcdsModel implements SchemaSample {
   private final TpcConnection tpcConnection;
 
   // A map containing all TPCDS tables
-  private Map<String, DataPath> tables = new HashMap<>();
+  private final Map<String, DataPath> tables = new HashMap<>();
 
-  /**
-   * @param tpcConnection
-   */
+
   private TpcdsModel(TpcConnection tpcConnection) {
 
 
@@ -489,7 +487,7 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("web_market_manager", Types.VARCHAR, 40)
       .addColumn("web_company_id", Types.INTEGER)
       .addColumn("web_company_name", Types.CHAR, 50)
-      .addColumn("web_street_number", Types.CHAR)
+      .addColumn("web_street_number", Types.CHAR, 10)
       .addColumn("web_street_name", Types.VARCHAR, 60)
       .addColumn("web_street_type", Types.CHAR, 15)
       .addColumn("web_suite_number", Types.CHAR, 10)
@@ -1267,7 +1265,6 @@ public class TpcdsModel implements SchemaSample {
   /**
    * Staging table data generation is not yet supported
    *
-   * @return
    */
   public static boolean isStagingTable(DataPath dataPath) {
     return dataPath.getName().startsWith("s_");

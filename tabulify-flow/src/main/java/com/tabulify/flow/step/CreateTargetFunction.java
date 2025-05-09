@@ -8,9 +8,7 @@ import com.tabulify.spi.Tabulars;
 import com.tabulify.stream.InsertStream;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -35,7 +33,6 @@ public class CreateTargetFunction extends TargetFilterStepAbs
 
   /**
    * soure target data path
-   *
    */
   private DataPath toDataPath(Map<DataPath, DataPath> target) {
     try (InsertStream insertStream = tabular.getMemoryDataStore().getAndCreateRandomDataPath()
@@ -45,7 +42,7 @@ public class CreateTargetFunction extends TargetFilterStepAbs
       .addColumn("target")
       .getDataPath()
       .getInsertStream()) {
-      target.forEach((key, value) -> insertStream.insert(value.toDataUri().toString(), key.toDataUri().toString()));
+      target.forEach((key, value) -> insertStream.insert(key.toDataUri().toString(), value.toDataUri().toString()));
       return insertStream.getDataPath();
     }
   }
@@ -102,7 +99,6 @@ public class CreateTargetFunction extends TargetFilterStepAbs
   }
 
 
-
   @Override
   public FilterRunnable createRunnable() {
     return new CreateTargetFilterRunnable(this);
@@ -146,12 +142,12 @@ public class CreateTargetFunction extends TargetFilterStepAbs
     }
 
     @Override
-    public Set<DataPath> get() throws InterruptedException, ExecutionException {
+    public Set<DataPath> get() {
       return Collections.singleton(this.output);
     }
 
     @Override
-    public Set<DataPath> get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public Set<DataPath> get(long timeout, TimeUnit unit) {
       return get();
     }
   }

@@ -85,7 +85,7 @@ assemble:
           platform: 'linux-x86_64'
         - path: '{{jdkPathPrefix}}Windows/{{jdkDirectoryName}}'
           platform: 'windows-x86_64'
-        - path: '{{jdkPathPrefix}}Osx/{{jdkDirectoryName}}'
+        - path: '{{jdkPathPrefix}}Osx/{{jdkDirectoryName}}/Contents/Home'
           platform: 'osx-x86_64'
       mainJar:
         path: 'target/tabulify-cli-{{projectVersion}}.jar'

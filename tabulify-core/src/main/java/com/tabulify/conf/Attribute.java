@@ -19,6 +19,12 @@ import java.util.function.Supplier;
 public class Attribute implements Comparable<Attribute> {
 
 
+  /**
+   * password and passphrase are widely sensitive
+   * We set them by default as secret
+   */
+  private final boolean isTabulifySecretAttribute;
+
   private AttributeEnum attributeEnum;
 
   /**
@@ -36,7 +42,7 @@ public class Attribute implements Comparable<Attribute> {
   private String rawValue;
 
   /**
-   * A plain value (decrypted if needed and casted as {@link AttributeEnum#getValueClazz()})
+   * A plain value (decrypted if needed, and casted as {@link AttributeEnum#getValueClazz()})
    */
   private Object plainValue;
 
@@ -46,7 +52,7 @@ public class Attribute implements Comparable<Attribute> {
    */
   private Supplier<?> valueProvider;
 
-  private boolean isOsSecret = false;
+  private final boolean isOsSecret;
 
   private Attribute(AttributeEnum attributeEnum, Origin origin) {
 
@@ -57,15 +63,28 @@ public class Attribute implements Comparable<Attribute> {
     // origin is important for security reason, that's why it is in the constructor
     this.origin = origin;
 
+    boolean isOsSecretTemp = false;
     if (this.origin == Origin.OS) {
       String normalizedAttName = this.attributeEnum.toString().toLowerCase();
       for (String secWord : Arrays.asList("secret", "key", "pwd", "password", "passphrase")) {
         if (normalizedAttName.contains(secWord)) {
-          isOsSecret = true;
+          isOsSecretTemp = true;
           break;
         }
       }
     }
+    isOsSecret = isOsSecretTemp;
+
+    String normalizedAttName = this.attributeEnum.toString().toLowerCase();
+    boolean isTabulifySecretAttributeTemp = false;
+    for (String secWord : Arrays.asList("password", "passphrase")) {
+      if (normalizedAttName.contains(secWord)) {
+        isTabulifySecretAttributeTemp = true;
+        break;
+      }
+    }
+    isTabulifySecretAttribute = isTabulifySecretAttributeTemp;
+
 
   }
 
@@ -134,9 +153,14 @@ public class Attribute implements Comparable<Attribute> {
   }
 
 
+  /**
+   * Raw value is used to recreate the configuration vault
+   * and in the log.
+   * We can't return a fake value if this is a secret.
+   */
   public String getRawValue() {
     if (isOsSecret) {
-      return "";
+      return "xxx";
     }
     return this.rawValue;
   }

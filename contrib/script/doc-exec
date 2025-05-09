@@ -97,8 +97,8 @@ export TABLI_SMTP_TO=support@tabulify.com
 export TABLI_SMTP_HOST
 TABLI_SMTP_HOST=$(pass eraldy/mailpit-hostname)
 export TABLI_SMTP_PORT=465
-# the default but yeah
-export TABLI_LOG_LEVEL=warn
+# no warning in doc
+export TABLI_LOG_LEVEL=error
 # to get a consistent cd connection, we go always to the same directory
 if [ "${TABLI_OS_USER_HOME:-}" == "" ]; then
   echo "TABLI_OS_USER_HOME is unknown. It should be set to /home/tabulify"

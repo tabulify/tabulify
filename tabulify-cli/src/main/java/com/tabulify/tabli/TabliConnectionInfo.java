@@ -92,7 +92,7 @@ public class TabliConnectionInfo {
 
               List<Object> rowAttributes = new ArrayList<>();
               rowAttributes.add(KeyNormalizer.createSafe(attribute.getAttributeMetadata()).toCaseSafe(snakeUpper));
-              rowAttributes.add(attribute.getValueOrDefaultOrNull());
+              rowAttributes.add(attribute.getRawValue());
               rowAttributes.add(attribute.getAttributeMetadata().getDescription());
               insertStream.insert(rowAttributes);
 
