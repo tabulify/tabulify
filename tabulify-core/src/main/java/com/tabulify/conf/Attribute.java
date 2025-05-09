@@ -215,6 +215,7 @@ public class Attribute implements Comparable<Attribute> {
    * Same as {@link #getValueOrDefaultCastAs(Class)} but without compile exception
    * for the case when we know that there is a value of this type
    */
+  @SuppressWarnings("unused")
   public <T> T getValueOrDefaultCastAsSafe(Class<T> clazz) {
 
     try {
