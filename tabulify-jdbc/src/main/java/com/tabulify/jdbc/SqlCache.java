@@ -46,7 +46,10 @@ public class SqlCache {
       }
     }
     if (nameToDelete == null) {
-      throw new RuntimeException("SqlDataPath " + sqlDataPath + " not found in the cache, but it should have been build first");
+      if (!this.builderCacheEnabled) {
+        return this;
+      }
+      throw new RuntimeException("SqlCache: SqlDataPath " + sqlDataPath + " not found in the cache, but it should have been build first");
     }
     sqlDataPathCache.remove(nameToDelete);
     return this;
