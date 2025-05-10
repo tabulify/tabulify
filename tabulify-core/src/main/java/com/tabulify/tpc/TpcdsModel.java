@@ -1,5 +1,6 @@
 package com.tabulify.tpc;
 
+import com.tabulify.connection.Connection;
 import com.tabulify.sample.SchemaSample;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.Tabulars;
@@ -146,26 +147,26 @@ public class TpcdsModel implements SchemaSample {
   public static final int TOTAL_NUMBERS_OF_TABLES = 46;
   public static final int TOTAL_NUMBERS_OF_DWH_TABLES = 25;
 
-  private final TpcConnection tpcConnection;
+  private final Connection connection;
 
   // A map containing all TPCDS tables
   private final Map<String, DataPath> tables = new HashMap<>();
 
 
-  private TpcdsModel(TpcConnection tpcConnection) {
+  private TpcdsModel(Connection tpcConnection) {
 
 
-    this.tpcConnection = tpcConnection;
+    this.connection = tpcConnection;
 
     // case TPCDS_SCHEMA_DWH:
-    buildDataWarehouseTables(this.tpcConnection);
+    buildDataWarehouseTables();
     // TPCDS_SCHEMA_STG:
     buildStagingTables();
 
   }
 
 
-  public static TpcdsModel of(TpcConnection tpcConnection) {
+  public static TpcdsModel of(Connection tpcConnection) {
     return new TpcdsModel(tpcConnection);
   }
 
@@ -176,21 +177,19 @@ public class TpcdsModel implements SchemaSample {
    * <p>
    * This is equivalent to the file (tpcds.sql)
    *
-   * @param tpcConnection - The schema where to build the datawarehous table
    */
-  void buildDataWarehouseTables(TpcConnection tpcConnection) {
+  void buildDataWarehouseTables() {
 
 
-    final DataPath dbGenTable = TpcDataPath.of(tpcConnection, DBGEN_VERSION);
-    addToTpcdsDataPaths(dbGenTable);
-    dbGenTable.getOrCreateRelationDef()
+    createDataPath(DBGEN_VERSION)
+      .getOrCreateRelationDef()
       .addColumn("dv_version", Types.VARCHAR, 16)
       .addColumn("dv_create_date", Types.DATE)
       .addColumn("dv_create_time", Types.TIME)
       .addColumn("dv_cmdline_args", Types.VARCHAR, 200);
 
 
-    final DataPath customerAddress = TpcDataPath.of(tpcConnection, CUSTOMER_ADDRESS);
+    final DataPath customerAddress = createDataPath(CUSTOMER_ADDRESS);
     addToTpcdsDataPaths(customerAddress);
     customerAddress.getOrCreateRelationDef()
       .addColumn("ca_address_sk", Types.INTEGER, false)
@@ -210,7 +209,7 @@ public class TpcdsModel implements SchemaSample {
       .addUniqueKey("ca_address_id");
 
 
-    final DataPath customerDemographics = TpcDataPath.of(tpcConnection, CUSTOMER_DEMOGRAPHICS);
+    final DataPath customerDemographics = createDataPath(CUSTOMER_DEMOGRAPHICS);
     addToTpcdsDataPaths(customerDemographics);
     customerDemographics.getOrCreateRelationDef()
       .addColumn("cd_demo_sk", Types.INTEGER, false)
@@ -224,7 +223,7 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("cd_dep_college_count", Types.INTEGER)
       .setPrimaryKey("cd_demo_sk");
 
-    final DataPath dateDim = TpcDataPath.of(tpcConnection, DATE_DIM);
+    final DataPath dateDim = createDataPath(DATE_DIM);
     addToTpcdsDataPaths(dateDim);
     dateDim.getOrCreateRelationDef()
       .addColumn("d_date_sk", Types.INTEGER, false)
@@ -258,7 +257,7 @@ public class TpcdsModel implements SchemaSample {
       .setPrimaryKey("d_date_sk")
       .addUniqueKey("d_date_id"); // B for business key
 
-    final DataPath warehouse = TpcDataPath.of(tpcConnection, WAREHOUSE);
+    final DataPath warehouse = createDataPath(WAREHOUSE);
     addToTpcdsDataPaths(warehouse);
     warehouse.getOrCreateRelationDef()
       .addColumn("w_warehouse_sk", Types.INTEGER, false)
@@ -279,7 +278,7 @@ public class TpcdsModel implements SchemaSample {
       .addUniqueKey("w_warehouse_id"); // B as business key
 
 
-    final DataPath shipMode = TpcDataPath.of(tpcConnection, SHIP_MODE);
+    final DataPath shipMode = createDataPath(SHIP_MODE);
     addToTpcdsDataPaths(shipMode);
     shipMode.getOrCreateRelationDef()
       .addColumn("sm_ship_mode_sk", Types.INTEGER, false)
@@ -292,7 +291,7 @@ public class TpcdsModel implements SchemaSample {
       .addUniqueKey("sm_ship_mode_id"); // B for business key
 
 
-    final DataPath timeDim = TpcDataPath.of(tpcConnection, TIME_DIM);
+    final DataPath timeDim = createDataPath(TIME_DIM);
     addToTpcdsDataPaths(timeDim);
     timeDim.getOrCreateRelationDef()
       .addColumn("t_time_sk", Types.INTEGER, false)
@@ -308,7 +307,7 @@ public class TpcdsModel implements SchemaSample {
       .setPrimaryKey("t_time_sk")
       .addUniqueKey("t_time_id"); // B for business key
 
-    final DataPath reason = TpcDataPath.of(tpcConnection, REASON);
+    final DataPath reason = createDataPath(REASON);
     addToTpcdsDataPaths(reason);
     reason.getOrCreateRelationDef()
       .addColumn("r_reason_sk", Types.INTEGER, false)
@@ -317,7 +316,7 @@ public class TpcdsModel implements SchemaSample {
       .setPrimaryKey("r_reason_sk")
       .addUniqueKey("r_reason_id"); // B for business key
 
-    final DataPath incomeBand = TpcDataPath.of(tpcConnection, INCOME_BAND);
+    final DataPath incomeBand = createDataPath(INCOME_BAND);
     addToTpcdsDataPaths(incomeBand);
     incomeBand.getOrCreateRelationDef()
       .addColumn("ib_income_band_sk", Types.INTEGER, false)
@@ -325,7 +324,7 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("ib_upper_bound", Types.INTEGER)
       .setPrimaryKey("ib_income_band_sk");
 
-    final DataPath item = TpcDataPath.of(tpcConnection, ITEM);
+    final DataPath item = createDataPath(ITEM);
     addToTpcdsDataPaths(item);
     item.getOrCreateRelationDef()
       .addColumn("i_item_sk", Types.INTEGER, false)
@@ -353,7 +352,7 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("i_product_name", Types.CHAR, 50)
       .setPrimaryKey("i_item_sk");
 
-    final DataPath store = TpcDataPath.of(tpcConnection, STORE);
+    final DataPath store = createDataPath(STORE);
     addToTpcdsDataPaths(store);
     store.getOrCreateRelationDef()
       .addColumn("s_store_sk", Types.INTEGER, false)
@@ -389,7 +388,7 @@ public class TpcdsModel implements SchemaSample {
       .addUniqueKey("s_store_id") // B (for business key)
       .addForeignKey(dateDim, "s_closed_date_sk");
 
-    final DataPath callCenter = TpcDataPath.of(tpcConnection, CALL_CENTER);
+    final DataPath callCenter = createDataPath(CALL_CENTER);
     addToTpcdsDataPaths(callCenter);
     callCenter.getOrCreateRelationDef()
       .addColumn("cc_call_center_sk", Types.INTEGER, false)
@@ -428,7 +427,7 @@ public class TpcdsModel implements SchemaSample {
       .addForeignKey(dateDim, "cc_closed_date_sk")
       .addForeignKey(dateDim, "cc_open_date_sk");
 
-    DataPath householdDemographics = TpcDataPath.of(tpcConnection, HOUSEHOLD_DEMOGRAPHICS);
+    DataPath householdDemographics = createDataPath(HOUSEHOLD_DEMOGRAPHICS);
     addToTpcdsDataPaths(householdDemographics);
     householdDemographics.getOrCreateRelationDef()
       .addColumn("hd_demo_sk", Types.INTEGER, false)
@@ -439,7 +438,7 @@ public class TpcdsModel implements SchemaSample {
       .setPrimaryKey("hd_demo_sk")
       .addForeignKey(incomeBand, "hd_income_band_sk");
 
-    final DataPath customer = TpcDataPath.of(tpcConnection, CUSTOMER);
+    final DataPath customer = createDataPath(CUSTOMER);
     addToTpcdsDataPaths(customer);
     customer.getOrCreateRelationDef()
       .addColumn("c_customer_sk", Types.INTEGER, false)
@@ -469,7 +468,7 @@ public class TpcdsModel implements SchemaSample {
       .addForeignKey(dateDim, "c_first_sales_date_sk")
       .addForeignKey(dateDim, "c_last_review_date_sk");
 
-    final DataPath webSite = TpcDataPath.of(tpcConnection, WEB_SITE);
+    final DataPath webSite = createDataPath(WEB_SITE);
     addToTpcdsDataPaths(webSite);
     webSite.getOrCreateRelationDef()
       .addColumn("web_site_sk", Types.INTEGER, false)
@@ -503,7 +502,7 @@ public class TpcdsModel implements SchemaSample {
       .addForeignKey(dateDim, "web_open_date_sk")
       .addForeignKey(dateDim, "web_close_date_sk");
 
-    DataPath promotion = TpcDataPath.of(tpcConnection, PROMOTION);
+    DataPath promotion = createDataPath(PROMOTION);
     addToTpcdsDataPaths(promotion);
     promotion.getOrCreateRelationDef()
       .addColumn("p_promo_sk", Types.INTEGER, false)
@@ -531,7 +530,7 @@ public class TpcdsModel implements SchemaSample {
       .addForeignKey(dateDim, "p_end_date_sk")
       .addForeignKey(item, "p_item_sk");
 
-    DataPath storeSales = TpcDataPath.of(tpcConnection, STORE_SALES);
+    DataPath storeSales = createDataPath(STORE_SALES);
     addToTpcdsDataPaths(storeSales);
     storeSales.getOrCreateRelationDef()
       .addColumn("ss_sold_date_sk", Types.INTEGER)
@@ -568,7 +567,7 @@ public class TpcdsModel implements SchemaSample {
       .addForeignKey(store, "ss_store_sk")
       .addForeignKey(promotion, "ss_promo_sk");
 
-    DataPath storeReturns = TpcDataPath.of(tpcConnection, STORE_RETURNS);
+    DataPath storeReturns = createDataPath(STORE_RETURNS);
     addToTpcdsDataPaths(storeReturns);
     storeReturns.getOrCreateRelationDef()
       .addColumn("sr_returned_date_sk", Types.INTEGER)
@@ -603,7 +602,7 @@ public class TpcdsModel implements SchemaSample {
       .addForeignKey(store, "sr_store_sk")
       .addForeignKey(reason, "sr_reason_sk");
 
-    final DataPath webPage = TpcDataPath.of(tpcConnection, WEB_PAGE);
+    final DataPath webPage = createDataPath(WEB_PAGE);
     addToTpcdsDataPaths(webPage);
     webPage.getOrCreateRelationDef()
       .addColumn("wp_web_page_sk", Types.INTEGER, false)
@@ -626,7 +625,7 @@ public class TpcdsModel implements SchemaSample {
       .addForeignKey(dateDim, "wp_access_date_sk")
       .addForeignKey(customer, "wp_customer_sk");
 
-    final DataPath catalogPage = TpcDataPath.of(tpcConnection, CATALOG_PAGE);
+    final DataPath catalogPage = createDataPath(CATALOG_PAGE);
     addToTpcdsDataPaths(catalogPage);
     catalogPage.getOrCreateRelationDef()
       .addColumn("cp_catalog_page_sk", Types.INTEGER, false)
@@ -643,7 +642,7 @@ public class TpcdsModel implements SchemaSample {
       .addForeignKey(dateDim, "cp_start_date_sk")
       .addForeignKey(dateDim, "cp_end_date_sk");
 
-    DataPath inventory = TpcDataPath.of(tpcConnection, INVENTORY);
+    DataPath inventory = createDataPath(INVENTORY);
     addToTpcdsDataPaths(inventory);
     inventory.getOrCreateRelationDef()
       .addColumn("inv_date_sk", Types.INTEGER, false)
@@ -655,7 +654,7 @@ public class TpcdsModel implements SchemaSample {
       .addForeignKey(item, "inv_item_sk")
       .addForeignKey(warehouse, "inv_warehouse_sk");
 
-    DataPath catalogSales = TpcDataPath.of(tpcConnection, CATALOG_SALES);
+    DataPath catalogSales = createDataPath(CATALOG_SALES);
     addToTpcdsDataPaths(catalogSales);
     catalogSales.getOrCreateRelationDef()
       .addColumn("cs_sold_date_sk", Types.INTEGER)
@@ -711,7 +710,7 @@ public class TpcdsModel implements SchemaSample {
       .addForeignKey(item, "cs_item_sk")
       .addForeignKey(promotion, "cs_promo_sk");
 
-    DataPath catalogReturns = TpcDataPath.of(tpcConnection, CATALOG_RETURNS);
+    DataPath catalogReturns = createDataPath(CATALOG_RETURNS);
     addToTpcdsDataPaths(catalogReturns);
     catalogReturns.getOrCreateRelationDef()
       .addColumn("cr_returned_date_sk", Types.INTEGER)
@@ -760,7 +759,7 @@ public class TpcdsModel implements SchemaSample {
       .addForeignKey(warehouse, "cr_warehouse_sk")
       .addForeignKey(reason, "cr_reason_sk");
 
-    DataPath webSales = TpcDataPath.of(tpcConnection, WEB_SALES);
+    DataPath webSales = createDataPath(WEB_SALES);
     addToTpcdsDataPaths(webSales);
     webSales.getOrCreateRelationDef()
       .addColumn("ws_sold_date_sk", Types.INTEGER)
@@ -816,7 +815,7 @@ public class TpcdsModel implements SchemaSample {
       .addForeignKey(warehouse, "ws_warehouse_sk")
       .addForeignKey(promotion, "ws_promo_sk");
 
-    DataPath webReturns = TpcDataPath.of(tpcConnection, WEB_RETURNS);
+    DataPath webReturns = createDataPath(WEB_RETURNS);
     addToTpcdsDataPaths(webReturns);
     webReturns.getOrCreateRelationDef()
       .addColumn("wr_returned_date_sk", Types.INTEGER)
@@ -861,6 +860,19 @@ public class TpcdsModel implements SchemaSample {
 
   }
 
+  /**
+   * @param resourceName - the resource name
+   */
+  private DataPath createDataPath(String resourceName) {
+    if (this.connection instanceof TpcConnection) {
+      TpcDataPath tpcTable = TpcDataPath.of((TpcConnection) this.connection, resourceName);
+      addToTpcdsDataPaths(tpcTable);
+      return tpcTable;
+    }
+    return this.connection.getDataPath(resourceName);
+
+  }
+
 
   /**
    * Build the source table/staging tables.
@@ -871,7 +883,7 @@ public class TpcdsModel implements SchemaSample {
    */
   void buildStagingTables() {
 
-    DataPath sCatalogPage = TpcDataPath.of(tpcConnection, S_CATALOG_PAGE);
+    DataPath sCatalogPage = createDataPath(S_CATALOG_PAGE);
     addToTpcdsDataPaths(sCatalogPage);
     sCatalogPage.getOrCreateRelationDef()
       .addColumn("cpag_catalog_number", Types.INTEGER, false)
@@ -884,13 +896,13 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("cpag_type", Types.VARCHAR, 100);
 
 
-    DataPath sZipToGmt = TpcDataPath.of(tpcConnection, S_ZIP_TO_GMT);
+    DataPath sZipToGmt = createDataPath(S_ZIP_TO_GMT);
     addToTpcdsDataPaths(sZipToGmt);
     sZipToGmt.getOrCreateRelationDef()
       .addColumn("zipg_zip", Types.CHAR, 5, false)
       .addColumn("zipg_gmt_offset", Types.INTEGER, false);
 
-    DataPath sPurchaseLineItem = TpcDataPath.of(tpcConnection, S_PURCHASE_LINEITEM);
+    DataPath sPurchaseLineItem = createDataPath(S_PURCHASE_LINEITEM);
     addToTpcdsDataPaths(sPurchaseLineItem);
     sPurchaseLineItem.getOrCreateRelationDef()
       .addColumn("plin_purchase_id", Types.INTEGER, false)
@@ -902,7 +914,7 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("plin_coupon_amt", Types.NUMERIC, 7, 2)
       .addColumn("plin_comment", Types.VARCHAR, 100);
 
-    DataPath sCustomer = TpcDataPath.of(tpcConnection, S_CUSTOMER);
+    DataPath sCustomer = createDataPath(S_CUSTOMER);
     addToTpcdsDataPaths(sCustomer);
     sCustomer.getOrCreateRelationDef()
       .addColumn("cust_customer_id", Types.CHAR, 16, false)
@@ -944,7 +956,7 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("cust_annual_income", Types.NUMERIC, 9, 2);
 
 
-    DataPath sCustomerAddress = TpcDataPath.of(tpcConnection, S_CUSTOMER_ADDRESS);
+    DataPath sCustomerAddress = createDataPath(S_CUSTOMER_ADDRESS);
     addToTpcdsDataPaths(sCustomerAddress);
     sCustomerAddress.getOrCreateRelationDef()
       .addColumn("cadr_address_id", Types.CHAR, 16, false)
@@ -959,7 +971,7 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("cadr_zip", Types.CHAR, 10)
       .addColumn("cadr_country", Types.CHAR, 20);
 
-    DataPath sPurchase = TpcDataPath.of(tpcConnection, S_PURCHASE);
+    DataPath sPurchase = createDataPath(S_PURCHASE);
     addToTpcdsDataPaths(sPurchase);
     sPurchase.getOrCreateRelationDef()
       .addColumn("purc_purchase_id", Types.INTEGER, false)
@@ -971,7 +983,7 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("purc_clerk_id", Types.INTEGER)
       .addColumn("purc_comment", Types.CHAR, 100);
 
-    DataPath sCatalogOrder = TpcDataPath.of(tpcConnection, S_CATALOG_ORDER);
+    DataPath sCatalogOrder = createDataPath(S_CATALOG_ORDER);
     addToTpcdsDataPaths(sCatalogOrder);
     sCatalogOrder.getOrCreateRelationDef()
       .addColumn("cord_order_id", Types.INTEGER, false)
@@ -983,7 +995,7 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("cord_call_center_id", Types.CHAR, 16)
       .addColumn("cord_order_comments", Types.VARCHAR, 100);
 
-    DataPath sWebOrder = TpcDataPath.of(tpcConnection, S_WEB_ORDER);
+    DataPath sWebOrder = createDataPath(S_WEB_ORDER);
     addToTpcdsDataPaths(sWebOrder);
     sWebOrder.getOrCreateRelationDef()
       .addColumn("word_order_id", Types.INTEGER, false)
@@ -995,7 +1007,7 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("word_web_site_id", Types.CHAR, 16)
       .addColumn("word_order_comments", Types.CHAR, 100);
 
-    DataPath sItem = TpcDataPath.of(tpcConnection, S_ITEM);
+    DataPath sItem = createDataPath(S_ITEM);
     addToTpcdsDataPaths(sItem);
     sItem.getOrCreateRelationDef()
       .addColumn("item_item_id", Types.CHAR, 16, false)
@@ -1010,7 +1022,7 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("item_manager_id", Types.INTEGER)
     ;
 
-    DataPath sCataLogOrderLineItem = TpcDataPath.of(tpcConnection, S_CATALOG_ORDER_LINEITEM);
+    DataPath sCataLogOrderLineItem = createDataPath(S_CATALOG_ORDER_LINEITEM);
     addToTpcdsDataPaths(sCataLogOrderLineItem);
     sCataLogOrderLineItem.getOrCreateRelationDef()
       .addColumn("clin_order_id", Types.INTEGER, false)
@@ -1026,7 +1038,7 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("clin_catalog_page_number", Types.INTEGER)
       .addColumn("clin_ship_cost", Types.NUMERIC, 7, 2);
 
-    addToTpcdsDataPaths(TpcDataPath.of(tpcConnection, S_WEB_ORDER_LINEITEM)
+    createDataPath(S_WEB_ORDER_LINEITEM)
       .getOrCreateRelationDef()
       .addColumn("wlin_order_id", Types.INTEGER, false)
       .addColumn("wlin_line_number", Types.INTEGER, false)
@@ -1039,10 +1051,10 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("wlin_ship_date", Types.CHAR, 10)
       .addColumn("wlin_ship_cost", Types.NUMERIC, 7, 2)
       .addColumn("wlin_web_page_id", Types.CHAR, 16)
-      .getDataPath());
+    ;
 
 
-    addToTpcdsDataPaths(TpcDataPath.of(tpcConnection, S_STORE)
+    createDataPath(S_STORE)
       .getOrCreateRelationDef()
       .addColumn("stor_store_id", Types.CHAR, 1, false)
       .addColumn("stor_closed_date", Types.CHAR, 10)
@@ -1055,9 +1067,9 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("stor_geography_class", Types.CHAR, 100)
       .addColumn("stor_market_manager", Types.CHAR, 40)
       .addColumn("stor_tax_percentage", Types.NUMERIC, 5, 2)
-      .getDataPath());
+    ;
 
-    addToTpcdsDataPaths(TpcDataPath.of(tpcConnection, S_CALL_CENTER)
+    createDataPath(S_CALL_CENTER)
       .getOrCreateRelationDef()
       .addColumn("call_center_id", Types.CHAR, 16, false)
       .addColumn("call_open_date", Types.CHAR, 10)
@@ -1068,11 +1080,10 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("call_center_sq_ft", Types.INTEGER)
       .addColumn("call_center_hours", Types.CHAR, 20)
       .addColumn("call_center_manager", Types.CHAR, 40)
-      .addColumn("call_center_tax_percentage", Types.NUMERIC, 7, 2)
-      .getDataPath());
+      .addColumn("call_center_tax_percentage", Types.NUMERIC, 7, 2);
 
 
-    addToTpcdsDataPaths(TpcDataPath.of(tpcConnection, S_WEB_SITE)
+    createDataPath(S_WEB_SITE)
       .getOrCreateRelationDef()
       .addColumn("wsit_web_site_id", Types.CHAR, 16, false)
       .addColumn("wsit_open_date", Types.CHAR, 10)
@@ -1080,17 +1091,16 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("wsit_site_name", Types.CHAR, 50)
       .addColumn("wsit_site_class", Types.CHAR, 50)
       .addColumn("wsit_site_manager", Types.CHAR, 40)
-      .addColumn("wsit_tax_percentage", Types.DECIMAL, 5, 2)
-      .getDataPath());
+      .addColumn("wsit_tax_percentage", Types.DECIMAL, 5, 2);
 
-    addToTpcdsDataPaths(TpcDataPath.of(tpcConnection, S_WAREHOUSE)
+    createDataPath(S_WAREHOUSE)
       .getOrCreateRelationDef()
       .addColumn("wrhs_warehouse_id", Types.CHAR, 16, false)
       .addColumn("wrhs_warehouse_desc", Types.CHAR, 200)
       .addColumn("wrhs_warehouse_sq_ft", Types.INTEGER)
-      .getDataPath());
+    ;
 
-    addToTpcdsDataPaths(TpcDataPath.of(tpcConnection, S_WEB_PAGE)
+    createDataPath(S_WEB_PAGE)
       .getOrCreateRelationDef()
       .addColumn("wpag_web_page_id", Types.CHAR, 16, false)
       .addColumn("wpag_create_date", Types.CHAR, 10)
@@ -1101,10 +1111,9 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("wpag_char_cnt", Types.INTEGER)
       .addColumn("wpag_link_cnt", Types.INTEGER)
       .addColumn("wpag_image_cnt", Types.INTEGER)
-      .addColumn("wpag_max_ad_cnt", Types.INTEGER)
-      .getDataPath());
+      .addColumn("wpag_max_ad_cnt", Types.INTEGER);
 
-    addToTpcdsDataPaths(TpcDataPath.of(tpcConnection, S_PROMOTION)
+    createDataPath(S_PROMOTION)
       .getOrCreateRelationDef()
       .addColumn("prom_promotion_id", Types.CHAR, 16, false)
       .addColumn("prom_promotion_name", Types.CHAR, 30)
@@ -1123,10 +1132,9 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("prom_channel_details", Types.CHAR, 100)
       .addColumn("prom_purpose", Types.CHAR, 15)
       .addColumn("prom_discount_active", Types.CHAR, 1)
-      .addColumn("prom_discount_pct", Types.NUMERIC, 5, 2)
-      .getDataPath());
+      .addColumn("prom_discount_pct", Types.NUMERIC, 5, 2);
 
-    addToTpcdsDataPaths(TpcDataPath.of(tpcConnection, S_STORE_RETURNS)
+    createDataPath(S_STORE_RETURNS)
       .getOrCreateRelationDef()
       .addColumn("sret_store_id", Types.CHAR, 16)
       .addColumn("sret_purchase_id", Types.CHAR, 16, false)
@@ -1144,10 +1152,9 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("sret_refunded_cash", Types.NUMERIC, 7, 2)
       .addColumn("sret_reversed_charge", Types.NUMERIC, 7, 2)
       .addColumn("sret_store_credit", Types.NUMERIC, 7, 2)
-      .addColumn("sret_reason_id", Types.CHAR, 16)
-      .getDataPath());
+      .addColumn("sret_reason_id", Types.CHAR, 16);
 
-    addToTpcdsDataPaths(TpcDataPath.of(tpcConnection, S_CATALOG_RETURNS)
+    createDataPath(S_CATALOG_RETURNS)
       .getOrCreateRelationDef()
       .addColumn("cret_call_center_id", Types.CHAR, 16)
       .addColumn("cret_order_id", Types.INTEGER, false)
@@ -1169,9 +1176,9 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("cret_shipmode_id", Types.CHAR, 16)
       .addColumn("cret_catalog_page_id", Types.CHAR, 16)
       .addColumn("cret_warehouse_id", Types.CHAR, 16)
-      .getDataPath());
+    ;
 
-    addToTpcdsDataPaths(TpcDataPath.of(tpcConnection, S_WEB_RETURNS)
+    createDataPath(S_WEB_RETURNS)
       .getOrCreateRelationDef()
       .addColumn("wret_web_site_id", Types.CHAR, 16)
       .addColumn("wret_order_id", Types.INTEGER, false)
@@ -1190,15 +1197,14 @@ public class TpcdsModel implements SchemaSample {
       .addColumn("wret_reversed_charge", Types.NUMERIC, 7, 2)
       .addColumn("wret_account_credit", Types.NUMERIC, 7, 2)
       .addColumn("wret_reason_id", Types.CHAR, 16)
-      .getDataPath());
+    ;
 
-    addToTpcdsDataPaths(TpcDataPath.of(tpcConnection, S_INVENTORY)
+    createDataPath(S_INVENTORY)
       .getOrCreateRelationDef()
       .addColumn("invn_warehouse_id", Types.CHAR, 16, false)
       .addColumn("invn_item_id", Types.CHAR, 16, false)
       .addColumn("invn_date", Types.CHAR, 10, false)
-      .addColumn("invn_qty_on_hand", Types.INTEGER)
-      .getDataPath());
+      .addColumn("invn_qty_on_hand", Types.INTEGER);
 
 
   }
@@ -1264,7 +1270,6 @@ public class TpcdsModel implements SchemaSample {
 
   /**
    * Staging table data generation is not yet supported
-   *
    */
   public static boolean isStagingTable(DataPath dataPath) {
     return dataPath.getName().startsWith("s_");

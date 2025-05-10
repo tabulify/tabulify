@@ -57,7 +57,7 @@ public class Pipeline implements AutoCloseable {
    * are global reference in order to be able to send them
    * all inputs
    */
-  private final Map<FilterOperationStep, FilterRunnable> accumulators = new HashMap<>();
+  private final Map<FilterOperationStep, FilterRunnable> filtersStep = new HashMap<>();
 
   /**
    * Data Path produced that were not consumed
@@ -323,6 +323,7 @@ public class Pipeline implements AutoCloseable {
       /**
        * The runner type
        */
+      FlowLog.LOGGER.info("Executing the step " + dataPathSupplier);
       DescendantRunner descendantRunner = createDescendantRunner(dataPathSupplier);
       int run = 0;
       while (dataPathSupplier.hasNext()) {
@@ -335,14 +336,18 @@ public class Pipeline implements AutoCloseable {
       if (run == 0) {
         this.addRunResult(dataPathSupplier, new HashSet<>());
       }
+      FlowLog.LOGGER.info("Step " + dataPathSupplier + " executed");
 
       /**
-       * If we have accumulators step, run them
+       * If we have filter step, run them
        */
-      while (!accumulators.isEmpty()) {
-        for (Map.Entry<FilterOperationStep, FilterRunnable> entry : accumulators.entrySet()) {
-          accumulators.remove(entry.getKey());
-          this.runTraverse(entry.getKey(), entry.getValue());
+      while (!filtersStep.isEmpty()) {
+        for (Map.Entry<FilterOperationStep, FilterRunnable> entry : filtersStep.entrySet()) {
+          FilterOperationStep filterOperationStep = entry.getKey();
+          filtersStep.remove(filterOperationStep);
+          FlowLog.LOGGER.info("Executing the step " + filterOperationStep);
+          this.runTraverse(filterOperationStep, entry.getValue());
+          FlowLog.LOGGER.info("Step " + filterOperationStep + " executed");
         }
       }
 
@@ -557,7 +562,7 @@ public class Pipeline implements AutoCloseable {
 
           FilterRunnable filterRunnable;
           if (descendantStep.isAccumulator()) {
-            filterRunnable = accumulators.computeIfAbsent(descendantStep, FilterOperationStep::createRunnable);
+            filterRunnable = filtersStep.computeIfAbsent(descendantStep, FilterOperationStep::createRunnable);
             filterRunnable.addInput(parentDataPaths);
           } else {
             filterRunnable = descendantStep.createRunnable();

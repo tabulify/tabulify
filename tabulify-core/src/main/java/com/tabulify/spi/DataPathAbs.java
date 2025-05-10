@@ -369,9 +369,9 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   @Override
   public DataUri toDataUri() {
     if (this.scriptDataPath != null) {
-      return DataUri.createFromConnectionAndScriptUri(this.getConnection(), this.scriptDataPath.toDataUri());
+      return DataUri.createFromConnectionAndScriptUri(this.connection, this.scriptDataPath.toDataUri());
     }
-    return DataUri.createFromConnectionAndPath(this.getConnection(), this.relativeConnectionPath);
+    return DataUri.createFromConnectionAndPath(this.connection, this.relativeConnectionPath);
   }
 
 
@@ -813,8 +813,13 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   @Override
   public DataPath addAttribute(com.tabulify.conf.Attribute attribute) {
     this.variables.put(attribute.getAttributeMetadata().toString(), attribute);
-    if (DbLoggers.LOGGER_DB_ENGINE.getLevel().intValue() <= Level.FINE.intValue()) {
-      DbLoggers.LOGGER_DB_ENGINE.fine("The variable (" + attribute + ") for the resource (" + this + ") was set to the value (" + Strings.createFromObjectNullSafe(attribute.getValueOrDefaultOrNull()) + ")");
+    /**
+     * This conditional is for perf/debug reason, as the {@link #toString()}
+     * is pretty expensive (ie the `this` in the string)
+     * The problem with this code is that the code in the string gets executed even if the level is not finest
+     */
+    if (DbLoggers.LOGGER_DB_ENGINE.getLevel().intValue() <= Level.FINEST.intValue()) {
+      DbLoggers.LOGGER_DB_ENGINE.finest("The variable (" + attribute + ") for the resource (" + this + ") was set to the value (" + Strings.createFromObjectNullSafe(attribute.getValueOrDefaultOrNull()) + ")");
     }
     return this;
   }

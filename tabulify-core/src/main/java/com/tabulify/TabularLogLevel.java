@@ -9,8 +9,12 @@ public enum TabularLogLevel {
   ERROR(Level.SEVERE),
   WARN(Level.WARNING),
   TIP(Log.TIP),
+  // Log of cli, step
   INFO(Level.INFO),
-  FINE(Level.FINE);
+  // Log of data path
+  FINE(Level.FINE),
+  // Log of attribute
+  FINEST(Level.FINEST);
 
 
   private final Level level;

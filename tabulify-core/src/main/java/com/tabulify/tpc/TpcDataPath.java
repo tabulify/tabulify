@@ -1,11 +1,11 @@
 package com.tabulify.tpc;
 
-import com.teradata.tpcds.Table;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataPathAbs;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
 import com.tabulify.transfer.TransferProperties;
+import com.teradata.tpcds.Table;
 import net.bytle.type.MediaTypes;
 
 import java.util.Collections;
@@ -17,13 +17,13 @@ public class TpcDataPath extends DataPathAbs {
   public static final String CURRENT_WORKING_DIRECTORY_NAME = "/";
   public static final String SEPARATOR = ".";
 
-  private final TpcConnection dataStore;
+  private final TpcConnection connection;
   private final String name;
 
 
   public TpcDataPath(TpcConnection tpcConnection, String name) {
     super(tpcConnection, name, MediaTypes.SQL_RELATION);
-    this.dataStore = tpcConnection;
+    this.connection = tpcConnection;
     this.name = name;
   }
 
@@ -33,7 +33,7 @@ public class TpcDataPath extends DataPathAbs {
 
   @Override
   public TpcConnection getConnection() {
-    return this.dataStore;
+    return this.connection;
   }
 
   @Override
@@ -93,13 +93,13 @@ public class TpcDataPath extends DataPathAbs {
 
   @Override
   public DataPath getSibling(String name) {
-    return this.dataStore.getDataModel().getAndCreateDataPath(name);
+    return this.connection.getDataModel().getAndCreateDataPath(name);
   }
 
   @Override
   public DataPath getChild(String name) {
     if (this.name.equals(CURRENT_WORKING_DIRECTORY_NAME)) {
-      return this.dataStore.getDataModel().getAndCreateDataPath(name);
+      return this.connection.getDataModel().getAndCreateDataPath(name);
     } else {
       throw new RuntimeException("You can't get a child from the table (" + this.name + ")");
     }
