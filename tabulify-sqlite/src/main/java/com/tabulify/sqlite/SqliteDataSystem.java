@@ -1,8 +1,8 @@
 package com.tabulify.sqlite;
 
 import com.tabulify.jdbc.SqlDataPath;
-import com.tabulify.jdbc.SqlDataPathType;
 import com.tabulify.jdbc.SqlDataSystem;
+import com.tabulify.jdbc.SqlMediaTypeType;
 import com.tabulify.jdbc.SqlMetaDataType;
 import com.tabulify.model.*;
 import com.tabulify.spi.DataPath;
@@ -329,7 +329,7 @@ public class SqliteDataSystem extends SqlDataSystem {
   public void drop(DataPath dataPath) {
     SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
 
-    if (sqlDataPath.getMediaType() == SqlDataPathType.TABLE) {
+    if (sqlDataPath.getMediaType() == SqlMediaTypeType.TABLE) {
       /**
        * Sqlite will still drop the table even if there is a foreign key that references it
        */

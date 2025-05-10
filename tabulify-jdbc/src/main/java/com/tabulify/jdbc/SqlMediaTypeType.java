@@ -3,7 +3,9 @@ package com.tabulify.jdbc;
 import com.tabulify.conf.AttributeValue;
 import net.bytle.exception.CastException;
 import net.bytle.exception.NotSupportedException;
-import net.bytle.type.*;
+import net.bytle.type.Casts;
+import net.bytle.type.Key;
+import net.bytle.type.MediaType;
 
 /**
  * In SQL specification, this type is called a `TABLE_TYPE`
@@ -15,7 +17,7 @@ import net.bytle.type.*;
  * @see <a href="https://docs.oracle.com/javase/7/docs/api/java/sql/DatabaseMetaData.html#getTableTypes()">table type</a>
  * @see <a href=https://calcite.apache.org/docs/model.html#view>The calcite definition</a>
  */
-public enum SqlDataPathType implements AttributeValue, MediaType {
+public enum SqlMediaTypeType implements AttributeValue, MediaType {
 
   // In case there is no schema functionality such as with sqlite,
   // the schema is the empty string
@@ -27,7 +29,9 @@ public enum SqlDataPathType implements AttributeValue, MediaType {
   SYSTEM_TABLE("A system table", false),
   ALIAS("An alias", false),
   SYNONYM("A synonym", false),
-  SCRIPT("A script", false), // Special internal type (runtime table such as query or statement)
+  // Special internal type (runtime table such as query or statement)
+  // It's a sql script with a connection, expected data
+  SCRIPT("A script", false),
   UNKNOWN("Object (Non qualified object, this is start state to not default to null)", false);
 
 
@@ -39,7 +43,7 @@ public enum SqlDataPathType implements AttributeValue, MediaType {
    * @param description the description of the type
    * @param isContainer true if the object is a container of object, false if not
    */
-  SqlDataPathType(String description, boolean isContainer) {
+  SqlMediaTypeType(String description, boolean isContainer) {
     this.description = description;
     this.isContainer = isContainer;
     this.subType = Key.toUriName(this.name());
@@ -54,10 +58,10 @@ public enum SqlDataPathType implements AttributeValue, MediaType {
    * @param typeName the type name
    * @return true if this is a table type data path
    */
-  public static SqlDataPathType getSqlType(String typeName) throws NotSupportedException {
+  public static SqlMediaTypeType getSqlType(String typeName) throws NotSupportedException {
 
     try {
-      return Casts.cast(typeName, SqlDataPathType.class);
+      return Casts.cast(typeName, SqlMediaTypeType.class);
     } catch (CastException e) {
       throw new NotSupportedException("Not a supported table type. "+e.getMessage());
     }

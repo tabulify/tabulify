@@ -46,4 +46,5 @@ public class SqlServerConnection extends SqlConnection {
     }
     return super.getSqlDataTypeFromSourceDataType(sourceSqlDataType);
   }
+
 }

@@ -1,6 +1,5 @@
 package com.tabulify.jdbc;
 
-import net.bytle.crypto.Digest;
 import com.tabulify.DbLoggers;
 import com.tabulify.fs.sql.SqlQuery;
 import com.tabulify.fs.sql.SqlQueryColumnIdentifierExtractor;
@@ -11,6 +10,7 @@ import com.tabulify.model.SqlDataType;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.Tabulars;
 import com.tabulify.stream.SelectStream;
+import net.bytle.crypto.Digest;
 import net.bytle.exception.*;
 import net.bytle.type.Enums;
 
@@ -50,7 +50,7 @@ public class SqlRelationDef extends RelationDefDefault {
       } else {
 
 
-        if (this.getDataPath().getMediaType() == SqlDataPathType.SCRIPT) {
+        if (this.getDataPath().getMediaType() == SqlMediaTypeType.SCRIPT) {
 
           /**
            * Query

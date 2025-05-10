@@ -3,6 +3,7 @@ package com.tabulify.jdbc;
 import com.tabulify.Tabular;
 import com.tabulify.Vault;
 import com.tabulify.conf.Attribute;
+import com.tabulify.conf.AttributeEnumParameter;
 import com.tabulify.conf.Origin;
 import com.tabulify.connection.ConnectionAttValueBooleanDataType;
 import com.tabulify.connection.ConnectionAttValueTimeDataType;
@@ -22,15 +23,19 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.tabulify.connection.ConnectionAttValueTimeDataType.*;
-import static com.tabulify.jdbc.SqlDataPathType.UNKNOWN;
+import static com.tabulify.jdbc.SqlMediaTypeType.UNKNOWN;
 
 /**
  * An object with all meta information about a JDBC data store
  */
 public class SqlConnection extends NoOpConnection {
+
+
+  private final SqlCache sqlCache;
 
   private SqlDataSystem sqlDataSystem;
 
@@ -109,20 +114,32 @@ public class SqlConnection extends NoOpConnection {
 
   public SqlConnection(Tabular tabular, com.tabulify.conf.Attribute name, com.tabulify.conf.Attribute url) {
     super(tabular, name, url);
-
     this.initVariableWhereConnectionIsNotNeeded();
+    this.addAttributesFromEnumAttributeClass(SqlConnectionAttributeEnum.class);
+
+    // Should be after attribute initialization
+    Boolean builderCacheEnabled = (Boolean) this.getAttribute(SqlConnectionAttributeEnum.BUILDER_CACHE_ENABLED).getValueOrDefaultOrNull();
+    this.sqlCache = new SqlCache(builderCacheEnabled);
 
   }
 
+  @Override
+  public List<Class<? extends AttributeEnumParameter>> getAttributeEnums() {
+    ArrayList<Class<? extends AttributeEnumParameter>> enums = new ArrayList<>(super.getAttributeEnums());
+    enums.add(SqlConnectionAttributeEnum.class);
+    return enums;
+  }
+
+
   private void initVariableWhereConnectionIsNotNeeded() {
-    initVariable(true);
+    initDerivedVariable(true);
   }
 
   private void initVariableWhereConnectionIsNeeded() {
-    initVariable(false);
+    initDerivedVariable(false);
   }
 
-  private void initVariable(boolean needsConnection) {
+  private void initDerivedVariable(boolean needsConnection) {
     for (SqlConnectionAttributeEnum connectionAttribute : SqlConnectionAttributeEnum.values()) {
       if (connectionAttribute.needsConnection() == needsConnection) {
         continue;
@@ -237,17 +254,20 @@ public class SqlConnection extends NoOpConnection {
     return getDataPath(pathOrName, UNKNOWN);
   }
 
+  protected Supplier<SqlDataPath> getDataPathSupplier(String pathOrName, MediaType mediaType) {
+    return () -> new SqlDataPath(this, pathOrName, mediaType);
+  }
+
   /**
    * @param pathOrName the path or a name
    * @param mediaType  - the media type is not really needed in Sql
    * @return the path
+   * Connection should not overwrite this function but {@link #getDataPathSupplier(String, MediaType)}
    */
   @Override
   public SqlDataPath getDataPath(String pathOrName, MediaType mediaType) {
 
-
-    return new SqlDataPath(this, pathOrName, mediaType);
-
+    return this.sqlCache.createDataPath(pathOrName, (SqlMediaTypeType) mediaType, getDataPathSupplier(pathOrName, mediaType));
 
   }
 
@@ -279,6 +299,7 @@ public class SqlConnection extends NoOpConnection {
    * (in a file system, it's the current working directory)
    *
    * @return the current sql path
+   * Don't override it, override instead {@link #getCurrentSchema()} and {@link #getCurrentCatalog()}
    */
   @Override
   public SqlDataPath getCurrentDataPath() {
@@ -630,7 +651,7 @@ public class SqlConnection extends NoOpConnection {
    * @param schema  the schema
    */
   public SqlDataPath getSqlSchemaDataPath(String catalog, String schema) {
-    return createSqlDataPath(catalog, schema, null, SqlDataPathType.SCHEMA);
+    return createSqlDataPath(catalog, schema, null, SqlMediaTypeType.SCHEMA);
   }
 
   /**
@@ -864,9 +885,9 @@ public class SqlConnection extends NoOpConnection {
         final String type_name = tableResultSet.getString(tableTypeColumnName);
         final String remarks = tableResultSet.getString(tableRemarksColumnName);
 
-        SqlDataPathType objectType;
+        SqlMediaTypeType objectType;
         try {
-          objectType = SqlDataPathType.getSqlType(type_name);
+          objectType = SqlMediaTypeType.getSqlType(type_name);
         } catch (NotSupportedException e) {
           // the table type is not supported by tabli, we don't add it
           // index for instance
@@ -910,7 +931,7 @@ public class SqlConnection extends NoOpConnection {
 
   }
 
-  public SqlDataPath createSqlDataPath(String catalog, String schema, String objectName, SqlDataPathType mediaType) {
+  public SqlDataPath createSqlDataPath(String catalog, String schema, String objectName, SqlMediaTypeType mediaType) {
 
     SqlConnectionResourcePath resourcePath = SqlConnectionResourcePath
       .createOfCatalogSchemaAndObjectName(this, catalog, schema, objectName)
@@ -1007,7 +1028,7 @@ public class SqlConnection extends NoOpConnection {
    */
   @SuppressWarnings("unused")
   public SqlDataPath getSqlCatalogDataPath(String catalog) {
-    return createSqlDataPath(catalog, null, null, SqlDataPathType.CATALOG);
+    return createSqlDataPath(catalog, null, null, SqlMediaTypeType.CATALOG);
   }
 
 
@@ -1187,6 +1208,10 @@ public class SqlConnection extends NoOpConnection {
     } catch (SQLException e) {
       throw new RuntimeException(e.getMessage(), e);
     }
+  }
+
+  public SqlCache getCache() {
+    return this.sqlCache;
   }
 
 }

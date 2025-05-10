@@ -20,7 +20,7 @@ import java.sql.DatabaseMetaData;
 import java.util.List;
 import java.util.Objects;
 
-import static com.tabulify.jdbc.SqlDataPathType.*;
+import static com.tabulify.jdbc.SqlMediaTypeType.*;
 
 /**
  * A jdbc data path knows only three parts
@@ -74,6 +74,7 @@ public class SqlDataPath extends DataPathAbs {
 
   }
 
+
   private void addBuildVariables() {
     this.addVariablesFromEnumAttributeClass(SqlDataPathAttribute.class);
 
@@ -90,9 +91,9 @@ public class SqlDataPath extends DataPathAbs {
 
 
   @Override
-  public SqlDataPathType getMediaType() {
+  public SqlMediaTypeType getMediaType() {
 
-    return (SqlDataPathType) this.mediaType;
+    return (SqlMediaTypeType) this.mediaType;
 
   }
 
@@ -165,7 +166,7 @@ public class SqlDataPath extends DataPathAbs {
      * An SQL path does not start from the root but from the leaf.
      *    * This function should return the given path to create it (by default a relative path. ie
      *    * mostly the name of the resource (table, view).
-     * An empty path is the special root path {@link SqlDataPathType.ROOT}
+     * An empty path is the special root path {@link SqlMediaTypeType.ROOT}
      */
     super(sqlConnection, path, mediaType);
 
@@ -176,21 +177,21 @@ public class SqlDataPath extends DataPathAbs {
 
   }
 
-  private SqlDataPathType buildMediaType(MediaType mediaType) {
+  private SqlMediaTypeType buildMediaType(MediaType mediaType) {
 
     if (mediaType != null && mediaType != UNKNOWN) {
-      if (mediaType instanceof SqlDataPathType) {
-        return (SqlDataPathType) mediaType;
+      if (mediaType instanceof SqlMediaTypeType) {
+        return (SqlMediaTypeType) mediaType;
       }
       String subType = mediaType.getSubType();
       try {
-        return Casts.cast(subType, SqlDataPathType.class);
+        return Casts.cast(subType, SqlMediaTypeType.class);
       } catch (CastException e) {
-        throw IllegalArgumentExceptions.createFromMessageWithPossibleValues("The sql media type (" + mediaType + ") is incorrect.", SqlDataPathType.class, e);
+        throw IllegalArgumentExceptions.createFromMessageWithPossibleValues("The sql media type (" + mediaType + ") is incorrect.", SqlMediaTypeType.class, e);
       }
     }
 
-    SqlDataPathType resourcePathMediaType = this.sqlConnectionResourcePath.getSqlMediaType();
+    SqlMediaTypeType resourcePathMediaType = this.sqlConnectionResourcePath.getSqlMediaType();
     if (resourcePathMediaType != UNKNOWN) {
       return resourcePathMediaType;
     }
@@ -259,11 +260,14 @@ public class SqlDataPath extends DataPathAbs {
    */
   public SqlDataPath getSchema() throws NoSchemaException {
 
-    return new SqlDataPath(
-      this.getConnection(),
-      this.sqlConnectionResourcePath.getSchemaResourcePath().toString(),
-      SCHEMA
-    );
+    String schemaName = this.sqlConnectionResourcePath.getSchemaResourcePath().toString();
+    SqlConnection connection = this.getConnection();
+    return connection.getCache().createDataPath(schemaName, SCHEMA,
+      () -> new SqlDataPath(
+        connection,
+        schemaName,
+        SCHEMA
+      ));
 
   }
 

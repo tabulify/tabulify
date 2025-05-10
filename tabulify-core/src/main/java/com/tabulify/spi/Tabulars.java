@@ -1,7 +1,5 @@
 package com.tabulify.spi;
 
-import com.tabulify.transfer.*;
-import net.bytle.dag.Dag;
 import com.tabulify.DbLoggers;
 import com.tabulify.connection.Connection;
 import com.tabulify.engine.ForeignKeyDag;
@@ -10,6 +8,8 @@ import com.tabulify.model.ForeignKeyDef;
 import com.tabulify.model.UniqueKeyDef;
 import com.tabulify.stream.SelectStream;
 import com.tabulify.stream.Streams;
+import com.tabulify.transfer.*;
+import net.bytle.dag.Dag;
 import net.bytle.regexp.Glob;
 
 import java.util.ArrayList;
@@ -103,7 +103,7 @@ public class Tabulars {
       allDataPaths.add(dataPath);
       allDataPaths.addAll(Arrays.asList(dataPaths));
 
-      // A dag will build the data def and we may not want want it when dropping only one table
+      // A dag will build the data def, and we may not want it when dropping only one table
       Dag<DataPath> dag = ForeignKeyDag.createFromPaths(allDataPaths);
       for (DataPath orderedDataPath : dag.getDropOrdered()) {
         dataPath.getConnection().getDataSystem().drop(orderedDataPath);

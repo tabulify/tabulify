@@ -160,7 +160,7 @@ public class TpcdsModel implements SchemaSample {
 
     // case TPCDS_SCHEMA_DWH:
     buildDataWarehouseTables();
-    assert tables.size() == TOTAL_NUMBERS_OF_DWH_TABLES;
+    assert tables.size() == TOTAL_NUMBERS_OF_DWH_TABLES : "Dwh Table size was not " + TOTAL_NUMBERS_OF_DWH_TABLES + " but " + tables.size();
     // TPCDS_SCHEMA_STG:
     buildStagingTables();
     assert tables.size() == TOTAL_NUMBERS_OF_TABLES;
@@ -868,12 +868,14 @@ public class TpcdsModel implements SchemaSample {
    * @param resourceName - the resource name
    */
   private DataPath createAndAddDataPath(String resourceName) {
+    DataPath dataPath;
     if (this.connection instanceof TpcConnection) {
-      TpcDataPath tpcTable = TpcDataPath.of((TpcConnection) this.connection, resourceName);
-      tables.put(tpcTable.getName(), tpcTable);
-      return tpcTable;
+      dataPath = TpcDataPath.of((TpcConnection) this.connection, resourceName);
+    } else {
+      dataPath = this.connection.getDataPath(resourceName);
     }
-    return this.connection.getDataPath(resourceName);
+    tables.put(dataPath.getName(), dataPath);
+    return dataPath;
 
   }
 

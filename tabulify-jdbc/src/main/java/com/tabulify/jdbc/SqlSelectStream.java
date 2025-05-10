@@ -90,7 +90,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
     // Just for debugging purpose, in order to see the query that created this stream
     String query;
-    if (this.jdbcDataPath.getMediaType() == SqlDataPathType.SCRIPT) {
+    if (this.jdbcDataPath.getMediaType() == SqlMediaTypeType.SCRIPT) {
       query = this.jdbcDataPath.getQuery();
     } else {
       //noinspection SqlDialectInspection

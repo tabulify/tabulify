@@ -1,11 +1,13 @@
 package com.tabulify.postgres;
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Attribute;
 import com.tabulify.jdbc.SqlConnection;
 import com.tabulify.jdbc.SqlConnectionMetadata;
 import com.tabulify.jdbc.SqlDataPath;
-import com.tabulify.conf.Attribute;
 import net.bytle.type.MediaType;
+
+import java.util.function.Supplier;
 
 public class PostgresConnection extends SqlConnection {
 
@@ -21,14 +23,13 @@ public class PostgresConnection extends SqlConnection {
 
 
   @Override
-  public SqlDataPath getDataPath(String path, MediaType mediaType) {
-
-    return new PostgresDataPath(this, path, mediaType);
-
+  protected Supplier<SqlDataPath> getDataPathSupplier(String pathOrName, MediaType mediaType) {
+    return () -> new PostgresDataPath(this, pathOrName, mediaType);
   }
 
   @Override
   public SqlConnectionMetadata getMetadata() {
     return new PostgresFeatures(this);
   }
+
 }

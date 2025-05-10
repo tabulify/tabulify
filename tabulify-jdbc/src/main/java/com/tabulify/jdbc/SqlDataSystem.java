@@ -19,7 +19,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.tabulify.jdbc.SqlDataPathType.TABLE;
+import static com.tabulify.jdbc.SqlMediaTypeType.TABLE;
 import static com.tabulify.transfer.TransferOperation.COPY;
 
 
@@ -29,6 +29,7 @@ import static com.tabulify.transfer.TransferOperation.COPY;
  * operations and supporting functions
  */
 public class SqlDataSystem extends DataSystemAbs {
+
 
 
   /**
@@ -178,7 +179,7 @@ public class SqlDataSystem extends DataSystemAbs {
   public Boolean exists(DataPath dataPath) {
 
     SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
-    SqlDataPathType sqlType = sqlDataPath.getMediaType();
+    SqlMediaTypeType sqlType = sqlDataPath.getMediaType();
 
     String catalog;
     try {
@@ -249,7 +250,7 @@ public class SqlDataSystem extends DataSystemAbs {
    */
   protected String createFromClause(SqlDataPath sqlDataPath) {
     String fromClause = sqlDataPath.toSqlStringPath();
-    if (sqlDataPath.getMediaType() == SqlDataPathType.SCRIPT) {
+    if (sqlDataPath.getMediaType() == SqlMediaTypeType.SCRIPT) {
       /**
        * The alias is mandatory for postgres
        */
@@ -445,6 +446,13 @@ public class SqlDataSystem extends DataSystemAbs {
         throw new UnsupportedOperationException("The local load operation (" + loadOperation + ") is not yet implemented");
     }
 
+    /**
+     * Drop them from the cache
+     */
+    this.getConnection().getCache()
+      .drop(sqlSource)
+      .drop(sqlTarget);
+
     return transferListener;
 
   }
@@ -491,7 +499,7 @@ public class SqlDataSystem extends DataSystemAbs {
    * Return the query if the data path is a query or create the select statement
    */
   protected String createOrGetQuery(SqlDataPath source) {
-    if (source.getMediaType() == SqlDataPathType.SCRIPT) {
+    if (source.getMediaType() == SqlMediaTypeType.SCRIPT) {
       return source.getQuery();
     } else {
       return createSelectStatement(source);
@@ -526,7 +534,7 @@ public class SqlDataSystem extends DataSystemAbs {
 
     SqlConnectionResourcePath sqlResourcePath = SqlConnectionResourcePath.createOfConnectionPath(this.getConnection(), globNameOrPath);
 
-    SqlDataPathType type = sqlResourcePath.getSqlMediaType();
+    SqlMediaTypeType type = sqlResourcePath.getSqlMediaType();
     String escapeCharacter = sqlConnection.getMetadata().getEscapeCharacter();
 
     Glob objectPattern = null;
@@ -783,7 +791,7 @@ public class SqlDataSystem extends DataSystemAbs {
     StringBuilder dropConstraintStatement = new StringBuilder();
     dropConstraintStatement.append("alter ");
     SqlDataPath table = (SqlDataPath) constraint.getRelationDef().getDataPath();
-    SqlDataPathType type = table.getMediaType();
+    SqlMediaTypeType type = table.getMediaType();
     //noinspection SwitchStatementWithTooFewBranches
     switch (type) {
       case TABLE:
@@ -848,8 +856,8 @@ public class SqlDataSystem extends DataSystemAbs {
 
     SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
 
-    SqlDataPathType enumObjectType = sqlDataPath.getMediaType();
-    if (enumObjectType == SqlDataPathType.UNKNOWN) {
+    SqlMediaTypeType enumObjectType = sqlDataPath.getMediaType();
+    if (enumObjectType == SqlMediaTypeType.UNKNOWN) {
       enumObjectType = TABLE;
     }
 
@@ -906,7 +914,7 @@ public class SqlDataSystem extends DataSystemAbs {
 
       SqlLog.LOGGER_DB_JDBC.info("Table (" + dataPath + ") created");
 
-    } else if (enumObjectType == SqlDataPathType.SCRIPT) {
+    } else if (enumObjectType == SqlMediaTypeType.SCRIPT) {
 
       this.execute(createViewStatement(sqlDataPath));
       SqlLog.LOGGER_DB_JDBC.info("View (" + dataPath + ") created from query");
@@ -1385,7 +1393,7 @@ public class SqlDataSystem extends DataSystemAbs {
   public void drop(DataPath dataPath) {
 
     SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
-    SqlDataPathType type = sqlDataPath.getMediaType();
+    SqlMediaTypeType type = sqlDataPath.getMediaType();
     switch (type) {
       case TABLE:
       case VIEW:
@@ -1408,8 +1416,10 @@ public class SqlDataSystem extends DataSystemAbs {
 
       SqlLog.LOGGER_DB_JDBC.fine("Trying to drop " + type + " " + dataPath);
       statement.execute(dropTableStatement);
+      this.getConnection().getCache().drop(sqlDataPath);
       String typeCamelCased = Strings.createFromString(type.toString()).toFirstLetterCapitalCase().toString();
-      SqlLog.LOGGER_DB_JDBC.info(typeCamelCased + " (" + dataPath + ") dropped.");
+      SqlLog.LOGGER_DB_JDBC.fine(typeCamelCased + " (" + dataPath + ") dropped.");
+
 
     } catch (SQLException e) {
       String msg = Strings.createMultiLineFromStrings("Dropping of the data path (" + sqlDataPath + ") was not successful with the statement `" + dropTableStatement + "`"
@@ -1423,7 +1433,7 @@ public class SqlDataSystem extends DataSystemAbs {
   protected String createDropTableStatement(SqlDataPath sqlDataPath) {
     StringBuilder dropTableStatement = new StringBuilder();
     dropTableStatement.append("drop ");
-    SqlDataPathType enumObjectType = sqlDataPath.getMediaType();
+    SqlMediaTypeType enumObjectType = sqlDataPath.getMediaType();
     switch (enumObjectType) {
       case TABLE:
         dropTableStatement.append("table ");
@@ -1518,7 +1528,7 @@ public class SqlDataSystem extends DataSystemAbs {
   public List<SqlDataPath> getChildrenDataPath(DataPath dataPath) {
 
     SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
-    SqlDataPathType type = sqlDataPath.getMediaType();
+    SqlMediaTypeType type = sqlDataPath.getMediaType();
     switch (type) {
       case SCHEMA:
         String schema;
@@ -1807,7 +1817,7 @@ public class SqlDataSystem extends DataSystemAbs {
      * From
      */
     update.append(" from ");
-    if (source.getMediaType() == SqlDataPathType.SCRIPT) {
+    if (source.getMediaType() == SqlMediaTypeType.SCRIPT) {
       update.append("( ")
         .append(source.getQuery())
         .append(" ) ")
@@ -1858,7 +1868,7 @@ public class SqlDataSystem extends DataSystemAbs {
    * Create a view statement from a query data path
    */
   public String createViewStatement(SqlDataPath dataPath) {
-    if (dataPath.getMediaType() == SqlDataPathType.SCRIPT) {
+    if (dataPath.getMediaType() == SqlMediaTypeType.SCRIPT) {
       String query = createOrGetQuery(dataPath);
       return "create view " + dataPath.toSqlStringPathWithNameValidation() + " as " + query;
     } else {
@@ -2054,7 +2064,7 @@ public class SqlDataSystem extends DataSystemAbs {
       .append(" from ");
 
     SqlDataPath sourceDataPath = (SqlDataPath) transferSourceTarget.getSourceDataPath();
-    SqlDataPathType enumObjectType = sourceDataPath.getMediaType();
+    SqlMediaTypeType enumObjectType = sourceDataPath.getMediaType();
     switch (enumObjectType) {
       case TABLE:
         delete
@@ -2166,7 +2176,7 @@ public class SqlDataSystem extends DataSystemAbs {
    * because this function will return true for a query
    * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    */
-  public SqlDataPathType getObjectMediaTypeOrDefault(String catalog, String schema, String objectName) {
+  public SqlMediaTypeType getObjectMediaTypeOrDefault(String catalog, String schema, String objectName) {
 
 
     try {
@@ -2188,7 +2198,7 @@ public class SqlDataSystem extends DataSystemAbs {
            */
           String table_type = tableResultSet.getString("TABLE_TYPE");
           try {
-            return SqlDataPathType.getSqlType(table_type);
+            return SqlMediaTypeType.getSqlType(table_type);
           } catch (NotSupportedException e) {
             // should not happen
             throw new InternalException("The table type (" + table_type + ") from the database is not a supported table type");

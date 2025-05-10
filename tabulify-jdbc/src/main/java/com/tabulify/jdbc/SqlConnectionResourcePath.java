@@ -2,8 +2,10 @@ package com.tabulify.jdbc;
 
 import com.tabulify.spi.ConnectionResourcePathAbs;
 import com.tabulify.uri.DataUri;
-import net.bytle.exception.*;
-import net.bytle.type.KeyNormalizer;
+import net.bytle.exception.InternalException;
+import net.bytle.exception.NoCatalogException;
+import net.bytle.exception.NoObjectException;
+import net.bytle.exception.NoSchemaException;
 import net.bytle.type.Strings;
 
 import java.util.ArrayList;
@@ -11,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.tabulify.jdbc.SqlDataPathType.*;
+import static com.tabulify.jdbc.SqlMediaTypeType.*;
 
 /**
  * This is the representation of an addressable path
@@ -36,7 +38,7 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
   private final String schemaPart; // A shortcut to retrieve easily the schema name
   private final String objectPart; // A shortcut to retrieve easily the schema name
 
-  private final SqlDataPathType mediaType;
+  private final SqlMediaTypeType mediaType;
   private final boolean absolute;
 
 
@@ -368,7 +370,7 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
       .collect(Collectors.joining(getPathSeparator()));
   }
 
-  public SqlDataPathType getSqlMediaType() {
+  public SqlMediaTypeType getSqlMediaType() {
     return this.mediaType;
   }
 

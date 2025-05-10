@@ -1,7 +1,11 @@
 package com.tabulify.sqlite;
 
 import com.tabulify.Tabular;
-import com.tabulify.jdbc.*;
+import com.tabulify.conf.Attribute;
+import com.tabulify.jdbc.SqlConnection;
+import com.tabulify.jdbc.SqlConnectionMetadata;
+import com.tabulify.jdbc.SqlConnectionResourcePath;
+import com.tabulify.jdbc.SqlDataPath;
 import com.tabulify.model.SqlDataType;
 import com.tabulify.spi.DataPath;
 import com.tabulify.uri.DataUri;
@@ -9,7 +13,6 @@ import net.bytle.exception.CastException;
 import net.bytle.fs.Fs;
 import net.bytle.type.Casts;
 import net.bytle.type.MediaType;
-import com.tabulify.conf.Attribute;
 import net.bytle.type.time.Date;
 import net.bytle.type.time.Time;
 import net.bytle.type.time.Timestamp;
@@ -17,6 +20,7 @@ import net.bytle.type.time.Timestamp;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.function.Supplier;
 
 import static com.tabulify.connection.ConnectionAttValueTimeDataType.EPOCH_MS;
 import static com.tabulify.connection.ConnectionAttValueTimeDataType.EPOCH_SEC;
@@ -54,18 +58,20 @@ public class SqliteConnection extends SqlConnection {
 
 
   @Override
-  public SqliteDataPath getCurrentDataPath() {
-
-    return getDataPath(DataUri.CURRENT_CONNECTION_PATH, SqlDataPathType.SCHEMA);
+  public String getCurrentSchema() {
+    return DataUri.CURRENT_CONNECTION_PATH;
   }
 
   @Override
-  public SqliteDataPath getDataPath(String pathOrName, MediaType mediaType) {
-
-    return new SqliteDataPath(this, pathOrName, mediaType);
-
+  public SqliteDataPath getCurrentDataPath() {
+    return (SqliteDataPath) super.getCurrentDataPath();
   }
 
+
+  @Override
+  protected Supplier<SqlDataPath> getDataPathSupplier(String pathOrName, MediaType mediaType) {
+    return () -> new SqliteDataPath(this, pathOrName, mediaType);
+  }
 
   @Override
   public SqliteDataSystem getDataSystem() {

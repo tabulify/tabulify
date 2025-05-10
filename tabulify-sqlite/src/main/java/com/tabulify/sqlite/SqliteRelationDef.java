@@ -1,7 +1,7 @@
 package com.tabulify.sqlite;
 
-import com.tabulify.jdbc.SqlDataPathType;
 import com.tabulify.jdbc.SqlLog;
+import com.tabulify.jdbc.SqlMediaTypeType;
 import com.tabulify.jdbc.SqlMetaForeignKey;
 import com.tabulify.jdbc.SqlRelationDef;
 import com.tabulify.model.SqlDataType;
@@ -101,7 +101,7 @@ public class SqliteRelationDef extends SqlRelationDef {
   }
 
   private void processPragmaTableInfoException(SQLException e) {
-    if (this.getDataPath().getMediaType() == SqlDataPathType.VIEW) {
+    if (this.getDataPath().getMediaType() == SqlMediaTypeType.VIEW) {
       /**
        * Sqlite is so versatile that you can store a bad view
        */
