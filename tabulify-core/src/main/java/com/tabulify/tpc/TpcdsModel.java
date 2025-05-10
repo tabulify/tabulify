@@ -142,7 +142,7 @@ public class TpcdsModel implements SchemaSample {
     STORE_SALES
   );
   /**
-   * An utility field to old the number of tables
+   * A utility field to old the number of tables
    */
   public static final int TOTAL_NUMBERS_OF_TABLES = 46;
   public static final int TOTAL_NUMBERS_OF_DWH_TABLES = 25;
@@ -160,8 +160,10 @@ public class TpcdsModel implements SchemaSample {
 
     // case TPCDS_SCHEMA_DWH:
     buildDataWarehouseTables();
+    assert tables.size() == TOTAL_NUMBERS_OF_DWH_TABLES;
     // TPCDS_SCHEMA_STG:
     buildStagingTables();
+    assert tables.size() == TOTAL_NUMBERS_OF_TABLES;
 
   }
 
