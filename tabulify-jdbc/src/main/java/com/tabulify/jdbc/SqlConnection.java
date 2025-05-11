@@ -259,10 +259,11 @@ public class SqlConnection extends NoOpConnection {
   }
 
   /**
+   * The main entry point to create a data path,
+   * Due to the {@link SqlCache}, Connection should not overwrite this function but {@link #getDataPathSupplier(String, MediaType)}
    * @param pathOrName the path or a name
    * @param mediaType  - the media type is not really needed in Sql
    * @return the path
-   * Connection should not overwrite this function but {@link #getDataPathSupplier(String, MediaType)}
    */
   @Override
   public SqlDataPath getDataPath(String pathOrName, MediaType mediaType) {

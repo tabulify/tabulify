@@ -277,21 +277,20 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
       catalog = null;
     }
 
-    if (catalog != null) {
+    boolean hasCatalog = catalog != null && !catalog.isEmpty();
+    if (hasCatalog) {
       tabliSqlPaths.add(catalog);
     }
-    if (schema != null) {
+    boolean hasSchema = schema != null && !schema.isEmpty();
+    if (hasSchema) {
       tabliSqlPaths.add(schema);
     } else {
-      if (catalog != null) {
+      if (hasCatalog) {
+        // building the path
         tabliSqlPaths.add("");
       }
     }
-    if (objectName != null) {
-      tabliSqlPaths.add(objectName);
-    } else {
-      tabliSqlPaths.add("");
-    }
+    tabliSqlPaths.add(Objects.requireNonNullElse(objectName, ""));
 
     String tabliSqlStringPath = String.join(".", tabliSqlPaths);
 

@@ -41,12 +41,10 @@ public class SqliteDataSystem extends SqlDataSystem {
       throw new InternalException("This data path is not a sqlite data path. " + dataPath);
     }
     SqliteDataPath sqliteDataPath = (SqliteDataPath) dataPath;
-    if (sqliteDataPath.getName() == null) {
-      // Schema
+    if (sqliteDataPath.getMediaType() == SqlMediaType.SCHEMA) {
       return true;
-    } else {
-      return super.exists(dataPath);
     }
+    return super.exists(dataPath);
   }
 
 

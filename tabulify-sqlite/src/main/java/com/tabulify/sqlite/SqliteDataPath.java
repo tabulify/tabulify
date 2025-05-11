@@ -1,6 +1,7 @@
 package com.tabulify.sqlite;
 
 import com.tabulify.jdbc.SqlDataPath;
+import com.tabulify.jdbc.SqlMediaType;
 import com.tabulify.spi.DataPath;
 import net.bytle.exception.NoCatalogException;
 import net.bytle.exception.NoSchemaException;
@@ -62,11 +63,12 @@ public class SqliteDataPath extends SqlDataPath implements DataPath {
 
   @Override
   public SqliteDataPath getChild(String name) {
-    if (super.getName() == null) {
-      return this.getConnection().createSqlDataPath(null, null, name);
-    } else {
-      throw new RuntimeException("You can't ask a children from a table. You are asking a children from the table (" + this + ")");
+    if (this.getMediaType() != SqlMediaType.SCHEMA) {
+      throw new RuntimeException("In Sqlite, you can't ask a children only from a schema. You are asking a children from the " + SqlMediaType.SCHEMA + " (" + this + ")");
     }
+
+    return this.getConnection().createSqlDataPath(null, null, name);
+
   }
 
 

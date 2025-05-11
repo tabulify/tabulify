@@ -28,6 +28,7 @@ public class PostgresDataSystem extends SqlDataSystem {
     return super.createDataTypeStatement(columnDef);
   }
 
+
   @Override
   public List<SqlMetaColumn> getMetaColumns(SqlDataPath dataPath) {
     List<SqlMetaColumn> columnsMeta = super.getMetaColumns(dataPath);
@@ -96,7 +97,6 @@ public class PostgresDataSystem extends SqlDataSystem {
    * The driver returns the alias
    * <a href="https://www.postgresql.org/docs/7.4/datatype.html#DATATYPE-TABLE">...</a>
    *
-   * @return
    */
   @Override
   public Map<Integer, SqlMetaDataType> getMetaDataTypes() {
@@ -106,7 +106,8 @@ public class PostgresDataSystem extends SqlDataSystem {
     // in place of bpchar ("blank-padded char", the internal name of the character data type)
     sqlDataTypes.computeIfAbsent(Types.CHAR, SqlMetaDataType::new)
       .setSqlName("char")
-      .setDefaultPrecision(1);
+      .setDefaultPrecision(1)
+      .setMaxPrecision(MAX_PRECISION_VARCHAR);
 
     // the precision of the driver was not the same than taken from the meta (10485760)
     sqlDataTypes.computeIfAbsent(Types.VARCHAR, SqlMetaDataType::new)
