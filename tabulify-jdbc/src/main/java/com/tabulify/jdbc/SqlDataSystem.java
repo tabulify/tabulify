@@ -1623,6 +1623,7 @@ public class SqlDataSystem extends DataSystemAbs {
 
   /**
    * Build the metadata type
+   * (by default from the driver ie {@link DatabaseMetaData#getTypeInfo()}
    */
   public Map<Integer, SqlMetaDataType> getMetaDataTypes() {
 
@@ -1670,6 +1671,7 @@ public class SqlDataSystem extends DataSystemAbs {
   }
 
   /**
+   * The metadata read from columns
    * @param dataPath - the data path
    * @return the list of meta columns ordered by position (asc)
    */

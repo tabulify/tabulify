@@ -1,26 +1,31 @@
 package com.tabulify.jdbc;
 
 import com.tabulify.DbLoggers;
+import net.bytle.exception.InternalException;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static com.tabulify.jdbc.SqlMediaType.SCRIPT;
 
 /**
- * A cache
+ * A cache for perf
  * <p></p>
- * Note
- * * Due to foreign key, building of dag, building a data path may take a very long time
- * * Schema does not change as object
+ * Why?
+ * * Build time of a data path may take a very long time due:
+ * * to foreign key (we need the foreign constraint and the columns),
+ * * building of dag to get a `create/drop` order or just dependencies
+ * * Schema does not change as object and are used quiet heavily
  * <p></p>
- * Object are added on creation and deleted on deletion.
- * If a property of an object such as a constraint, column is deleted,
- * the cache will not see it, you need to delete it on the in-memory object as wel as on the sql system
- * for consistency. If you don't want, you can drop it from the cache, but you also need to drop
- * any reference to your data path variable.
+ * Note:
+ * * Object are:
+ * * added on creation
+ * * and deleted on deletion.
+ * * If a property of an object such as a constraint, column is deleted, the cache will not see it,
+ * you need to delete it on the in-memory object as wel as on the sql system
+ * for consistency.
  */
 public class SqlCache {
 
@@ -31,9 +36,13 @@ public class SqlCache {
     this.builderCacheEnabled = builderCacheEnabled;
   }
 
-  private final Map<String, SqlDataPath> sqlDataPathCache = new ConcurrentHashMap<>();
+  /**
+   * Relative Path is the identifier
+   */
+  private Map<String, SqlDataPath> sqlDataPathCache = new HashMap<>();
 
-  public synchronized SqlDataPath createDataPath(String pathOrName, SqlMediaType sqlMediaType, Supplier<SqlDataPath> mappingFunction) {
+  public synchronized SqlDataPath createDataPath(String relativePath, SqlMediaType sqlMediaType, Supplier<SqlDataPath> mappingFunction) {
+
 
     /**
      * Schema are always cached because they do not change as object
@@ -43,20 +52,28 @@ public class SqlCache {
     if (!builderCacheEnabled && sqlMediaType != SqlMediaType.SCHEMA) {
       return mappingFunction.get();
     }
-    SqlDataPath sqlDataPath = sqlDataPathCache.get(pathOrName);
+
+    /**
+     * Check
+     */
+    if (sqlMediaType == SCRIPT) {
+      throw new InternalException("This should not be a script as this is the signature for an non-script data resource");
+    }
+
+    SqlDataPath sqlDataPath = sqlDataPathCache.get(relativePath);
     if (sqlDataPath != null) {
       // schema may have an empty path, and we hit schema pretty often
-      if (!pathOrName.isEmpty()) {
-        DbLoggers.LOGGER_DB_ENGINE.finest("Cache Hit " + pathOrName);
+      if (!relativePath.isEmpty()) {
+        DbLoggers.LOGGER_DB_ENGINE.finest("Cache Hit " + relativePath);
       }
       return sqlDataPath;
     }
 
-    if (!pathOrName.isEmpty()) {
-      DbLoggers.LOGGER_DB_ENGINE.finest("Cache Added " + pathOrName);
+    if (!relativePath.isEmpty()) {
+      DbLoggers.LOGGER_DB_ENGINE.finest("Cache Added " + relativePath);
     }
     SqlDataPath value = mappingFunction.get();
-    sqlDataPathCache.put(pathOrName, value);
+    sqlDataPathCache.put(relativePath, value);
     return value;
 
   }
@@ -93,9 +110,7 @@ public class SqlCache {
   }
 
   public void empty() {
-    for (String key : sqlDataPathCache.keySet()) {
-      sqlDataPathCache.remove(key);
-    }
+    sqlDataPathCache = new HashMap<>();
   }
 
   public Boolean inCache(SqlDataPath sqlDataPath) {

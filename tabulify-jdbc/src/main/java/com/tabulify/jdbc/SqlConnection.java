@@ -101,7 +101,7 @@ public class SqlConnection extends NoOpConnection {
   }
 
   // Current connection
-  private java.sql.Connection connection;
+  private java.sql.Connection driverConnection;
 
   public static final String DB_HIVE = "Apache Hive";
 
@@ -224,7 +224,7 @@ public class SqlConnection extends NoOpConnection {
 
   @Override
   public boolean isOpen() {
-    return this.connection != null;
+    return this.driverConnection != null;
   }
 
   @Override
@@ -325,9 +325,10 @@ public class SqlConnection extends NoOpConnection {
   @Override
   public void close() {
     try {
-      if (this.connection != null) {
+      if (this.driverConnection != null) {
 
-        this.connection.close();
+        this.driverConnection.close();
+        this.driverConnection = null;
         SqlLog.LOGGER_DB_JDBC.info("The connection of the database (" + this.getName() + ") was closed.");
 
       }
@@ -355,19 +356,19 @@ public class SqlConnection extends NoOpConnection {
 
     try {
 
-      if (this.connection != null) {
-        if (!this.connection.isClosed()) {
-          return this.connection;
+      if (this.driverConnection != null) {
+        if (!this.driverConnection.isClosed()) {
+          return this.driverConnection;
         }
         // With the database id being the database name, this is not true anymore ?
         // throw new RuntimeException("The connection was closed ! We cannot reopen it otherwise the object id will not be the same anymore");
         SqlLog.LOGGER_DB_JDBC.warning("The database connection was closed ! We recreate it.");
       }
 
-      this.connection = getNewConnection();
+      this.driverConnection = getNewJdbcConnection();
       initVariableWhereConnectionIsNeeded();
 
-      return this.connection;
+      return this.driverConnection;
 
     } catch (SQLException e) {
       throw new RuntimeException(e);
@@ -380,7 +381,7 @@ public class SqlConnection extends NoOpConnection {
    *
    * @return return a new connection object
    */
-  public synchronized java.sql.Connection getNewConnection() {
+  public synchronized java.sql.Connection getNewJdbcConnection() {
 
     String driver = getAttribute(ConnectionAttributeEnumBase.DRIVER).getValueOrDefaultAsStringNotNull();
     if (driver.isEmpty()) {
@@ -458,7 +459,7 @@ public class SqlConnection extends NoOpConnection {
 
   public int getDatabaseMajorVersion() {
     try {
-      return this.connection.getMetaData().getDatabaseMajorVersion();
+      return this.driverConnection.getMetaData().getDatabaseMajorVersion();
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -466,7 +467,7 @@ public class SqlConnection extends NoOpConnection {
 
   public int getDatabaseMinorVersion() {
     try {
-      return this.connection.getMetaData().getDatabaseMinorVersion();
+      return this.driverConnection.getMetaData().getDatabaseMinorVersion();
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -672,7 +673,7 @@ public class SqlConnection extends NoOpConnection {
     Class<?> sqlClass = targetColumnType.getSqlClass();
     if (sqlClass.equals(java.sql.SQLXML.class)) {
       try {
-        SQLXML xmlVal = this.connection.createSQLXML();
+        SQLXML xmlVal = this.driverConnection.createSQLXML();
         xmlVal.setString(sourceObject.toString());
         return xmlVal;
       } catch (SQLException e) {
@@ -1204,7 +1205,7 @@ public class SqlConnection extends NoOpConnection {
   @Override
   public Boolean ping() {
     try {
-      return this.connection.isValid(5000);
+      return this.driverConnection.isValid(5000);
     } catch (SQLException e) {
       throw new RuntimeException(e.getMessage(), e);
     }
@@ -1224,4 +1225,6 @@ public class SqlConnection extends NoOpConnection {
     sqlCache = new SqlCache(bool);
     return this;
   }
+
+
 }

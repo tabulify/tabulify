@@ -1,5 +1,7 @@
 package com.tabulify.spi;
 
+import com.tabulify.conf.Attribute;
+import com.tabulify.conf.AttributeEnum;
 import com.tabulify.connection.Connection;
 import com.tabulify.engine.StreamDependencies;
 import com.tabulify.model.RelationDef;
@@ -12,8 +14,6 @@ import net.bytle.dag.Dependency;
 import net.bytle.exception.NoParentException;
 import net.bytle.exception.NoVariableException;
 import net.bytle.exception.NotFoundException;
-import com.tabulify.conf.Attribute;
-import com.tabulify.conf.AttributeEnum;
 import net.bytle.type.MediaType;
 
 import java.io.IOException;
@@ -73,6 +73,8 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
 
   /**
    * @return the relative path in the data system
+   * This is an identifier for all path type except for script
+   * The real identifier is {@link #getId}
    */
   String getRelativePath();
 

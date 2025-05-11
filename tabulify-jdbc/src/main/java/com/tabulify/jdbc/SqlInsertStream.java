@@ -279,7 +279,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
     if (targetDataPath.getConnection().getMetadata().getMaxWriterConnection() == 1) {
       connection = targetDataPath.getConnection().getCurrentConnection();
     } else {
-      connection = targetDataPath.getConnection().getNewConnection();
+      connection = targetDataPath.getConnection().getNewJdbcConnection();
     }
 
     try {

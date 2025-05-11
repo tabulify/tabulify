@@ -3,18 +3,14 @@ package com.tabulify.mysql;
 import com.tabulify.jdbc.*;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.model.SqlDataType;
-import com.tabulify.model.SqlTypes;
 import com.tabulify.model.UniqueKeyDef;
 import com.tabulify.transfer.TransferSourceTarget;
-import net.bytle.exception.NoCatalogException;
 import net.bytle.exception.NoSchemaException;
-import net.bytle.type.KeyNormalizer;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static java.sql.DatabaseMetaData.typeNoNulls;
@@ -24,7 +20,7 @@ public class MySqlDataSystem extends SqlDataSystem {
 
   /**
    * VARCHAR column that uses the utf8 character set can be declared to be a maximum of 21,844 characters.
-   * https://dev.mysql.com/doc/refman/5.6/en/string-type-syntax.html
+   * <a href="https://dev.mysql.com/doc/refman/5.6/en/string-type-syntax.html">...</a>
    */
   public static final Integer VARCHAR_MAX_LENGTH = 21844;
   public static final Integer VARCHAR_MAX_LENGTH_PSCALE = 16383;

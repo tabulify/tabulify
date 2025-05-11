@@ -12,9 +12,11 @@ import java.util.Map;
 
 public class PostgresDataSystem extends SqlDataSystem {
 
-  private static final Integer MAX_PRECISION_NUMERIC = 1000;
-  private static final Integer MAX_SCALE_NUMERIC = 1000;
-  private static final Integer MAX_PRECISION_VARCHAR = 10485760;
+  protected static final Integer MAX_PRECISION_NUMERIC = 1000;
+  protected static final Integer MAX_SCALE_NUMERIC = 1000;
+  // https://www.postgresql.org/docs/current/datatype-character.html
+  // If specified, the length n must be greater than zero and cannot exceed 10,485,760.
+  public static final Integer MAX_PRECISION_VARCHAR = 10485760;
 
   public PostgresDataSystem(SqlConnection sqlConnection) {
     super(sqlConnection);
@@ -92,7 +94,7 @@ public class PostgresDataSystem extends SqlDataSystem {
 
   /**
    * The driver returns the alias
-   * https://www.postgresql.org/docs/7.4/datatype.html#DATATYPE-TABLE
+   * <a href="https://www.postgresql.org/docs/7.4/datatype.html#DATATYPE-TABLE">...</a>
    *
    * @return
    */
@@ -231,9 +233,6 @@ public class PostgresDataSystem extends SqlDataSystem {
     return sqlDataTypes;
 
   }
-
-
-
 
 
 }

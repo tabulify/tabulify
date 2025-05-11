@@ -6,7 +6,7 @@ import com.tabulify.jdbc.SqlConnectionMetadata;
 /**
  * Not used for now, just to add the below link:
  * <p></p>
- * https://www.postgresql.org/docs/current/features.html
+ * <a href="https://www.postgresql.org/docs/current/features.html">...</a>
  *
  *
  */
