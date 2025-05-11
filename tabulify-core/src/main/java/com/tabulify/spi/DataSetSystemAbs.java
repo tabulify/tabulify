@@ -24,7 +24,6 @@ public abstract class DataSetSystemAbs extends DataSystemAbs implements DataSyst
   public abstract Boolean exists(DataPath dataPath);
 
 
-
   public void create(DataPath dataPath) {
     throw new RuntimeException("A data set cannot create a data path. It can only read it");
   }
@@ -72,7 +71,6 @@ public abstract class DataSetSystemAbs extends DataSystemAbs implements DataSyst
   public TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
     throw new RuntimeException("A data set cannot copy (write) data. It can only read them");
   }
-
 
 
   /**

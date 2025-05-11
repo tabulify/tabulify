@@ -50,7 +50,7 @@ public class SqlRelationDef extends RelationDefDefault {
       } else {
 
 
-        if (this.getDataPath().getMediaType() == SqlMediaTypeType.SCRIPT) {
+        if (this.getDataPath().getMediaType() == SqlMediaType.SCRIPT) {
 
           /**
            * Query

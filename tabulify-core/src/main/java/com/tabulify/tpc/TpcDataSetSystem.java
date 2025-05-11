@@ -46,7 +46,7 @@ public class TpcDataSetSystem extends DataSetSystemAbs {
   @Override
   public List<DataPath> getChildrenDataPath(DataPath dataPath) {
     if (dataPath.getRelativePath().equals(TpcDataPath.CURRENT_WORKING_DIRECTORY_NAME)) {
-      return ((TpcConnection) dataPath.getConnection()).getDataModel().getAndCreateDataPaths();
+      return ((TpcConnection) dataPath.getConnection()).getDataModel().createDataPaths();
     } else {
       return new ArrayList<>();
     }
@@ -99,7 +99,7 @@ public class TpcDataSetSystem extends DataSetSystemAbs {
   @Override
   public List<ForeignKeyDef> getForeignKeysThatReference(DataPath dataPath) {
     TpcDataPath tpcDataPath = (TpcDataPath) dataPath;
-    return tpcDataPath.getConnection().getDataModel().getAndCreateDataPaths().stream()
+    return tpcDataPath.getConnection().getDataModel().createDataPaths().stream()
       .flatMap(s -> s.getOrCreateRelationDef()
         .getForeignKeys().stream())
       .filter(d -> d.getForeignPrimaryKey().getRelationDef().getDataPath().equals(dataPath))

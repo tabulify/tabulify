@@ -48,17 +48,17 @@ public class BytleSchema implements SchemaSample {
     , TABLE_DATE_NAME
   );
 
-  private final Connection datastore;
+  private final Connection connection;
 
   private Map<String, DataPath> bytleTables = new HashMap<>();
 
 
   public BytleSchema(Connection connection) {
-    this.datastore = connection;
+    this.connection = connection;
     buildTables();
   }
 
-  public static BytleSchema createFromDataStore(Connection connection) {
+  public static BytleSchema create(Connection connection) {
     return new BytleSchema(connection);
   }
 
@@ -66,22 +66,22 @@ public class BytleSchema implements SchemaSample {
   void buildTables() {
 
     // Dim Cat Table
-    final DataPath catTable = datastore.getDataPath(TABLE_CATEGORY_NAME);
+    final DataPath catTable = connection.getDataPath(TABLE_CATEGORY_NAME);
     bytleTables.put(TABLE_CATEGORY_NAME, catTable);
     catTable.createRelationDef()
       .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
-      .addColumn(COLUMN_CATEGORY_DESC_NAME, Types.VARCHAR,30)
+      .addColumn(COLUMN_CATEGORY_DESC_NAME, Types.VARCHAR, 30)
       .addColumn(COLUMN_CATEGORY_LOAD_TIMESTAMP, Types.TIMESTAMP)
       .setPrimaryKey(COLUMN_CATEGORY_ID)
       .addUniqueKey(COLUMN_CATEGORY_DESC_NAME);
 
 
     // Dim timeTable
-    final DataPath timeTable = datastore.getDataPath(TABLE_DATE_NAME);
+    final DataPath timeTable = connection.getDataPath(TABLE_DATE_NAME);
     bytleTables.put(TABLE_DATE_NAME, timeTable);
     timeTable.createRelationDef()
       .addColumn(COLUMN_DATE_ID, Types.DATE)
-      .addColumn(COLUMN_DATE_NAME, Types.CHAR,10)
+      .addColumn(COLUMN_DATE_NAME, Types.CHAR, 10)
       .addColumn(COLUMN_MONTH_ID, Types.VARCHAR, 6)
       .addColumn(COLUMN_MONTH_NUMBER, Types.INTEGER)
       .addColumn(COLUMN_MONTH_NAME, Types.VARCHAR, 20)
@@ -93,7 +93,7 @@ public class BytleSchema implements SchemaSample {
 
 
     // Fact Table
-    final DataPath factTable = datastore.getDataPath(TABLE_FACT_NAME);
+    final DataPath factTable = connection.getDataPath(TABLE_FACT_NAME);
     bytleTables.put(TABLE_FACT_NAME, factTable);
     factTable.createRelationDef()
       .addColumn(COLUMN_FACT_ID, Types.INTEGER)
@@ -110,7 +110,7 @@ public class BytleSchema implements SchemaSample {
 
 
   @Override
-  public List<DataPath> getAndCreateDataPaths() {
+  public List<DataPath> createDataPaths() {
     List<DataPath> dataPaths = getDataPaths();
     Tabulars.createIfNotExist(dataPaths);
     return dataPaths;
@@ -138,18 +138,18 @@ public class BytleSchema implements SchemaSample {
    */
   public void dropAllAndCreateDataPaths() {
     dropAll();
-    getAndCreateDataPaths();
+    createDataPaths();
   }
 
   public List<DataPath> getDataPaths() {
     return new ArrayList<>(bytleTables.values());
   }
 
-  public DataPath getCategoryTable(){
+  public DataPath getCategoryTable() {
     return getDataPath(TABLE_CATEGORY_NAME);
   }
 
-  public DataPath getFactTable(){
+  public DataPath getFactTable() {
     return getDataPath(TABLE_FACT_NAME);
   }
 
@@ -157,7 +157,14 @@ public class BytleSchema implements SchemaSample {
    * Just a utility function to drop all
    */
   public void dropAll() {
-    Tabulars.dropIfExists(Tabulars.getChildren(datastore.getCurrentDataPath()));
+
+    // Delete all
+    Tabulars.dropIfExists(Tabulars.getChildren(connection.getCurrentDataPath()));
+
+    // Otherwise the Bytle schema may be not dropped from the cache
+    // if they were not in the database
+    Tabulars.dropIfExists(this.getDataPaths());
+
   }
 
   public DataPath getDateTable() {

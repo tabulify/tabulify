@@ -376,7 +376,8 @@ public class ConfVault {
    */
   public ConfVault loadHowtoConnections() {
 
-    for (Connection connection : this.tabular.getHowtoConnections().values()) {
+
+    for (Connection connection : this.tabular.getHowtoConnections()) {
       addConnection(connection);
     }
 

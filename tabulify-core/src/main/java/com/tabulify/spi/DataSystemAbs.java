@@ -1,5 +1,6 @@
 package com.tabulify.spi;
 
+import com.tabulify.DbLoggers;
 import com.tabulify.connection.Connection;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.model.ForeignKeyDef;
@@ -55,6 +56,15 @@ public abstract class DataSystemAbs implements DataSystem {
   @Override
   public String toValidName(String name) {
     return name;
+  }
+
+  @Override
+  public void dropIfExist(DataPath dataPath) {
+    if (exists(dataPath)) {
+      drop(dataPath);
+    } else {
+      DbLoggers.LOGGER_DB_ENGINE.info("The data resource (" + dataPath + ") does not exist and was not dropped");
+    }
   }
 
 }

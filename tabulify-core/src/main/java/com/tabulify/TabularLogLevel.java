@@ -13,7 +13,7 @@ public enum TabularLogLevel {
   INFO(Level.INFO),
   // Log of data path operation (drop, ...)
   FINE(Level.FINE),
-  // Log of attribute
+  // Log of attribute, cache
   FINEST(Level.FINEST);
 
 

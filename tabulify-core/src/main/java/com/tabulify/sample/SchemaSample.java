@@ -10,7 +10,7 @@ public interface SchemaSample {
     /**
      * @return all tables
      */
-    List<DataPath> getAndCreateDataPaths();
+    List<DataPath> createDataPaths();
 
     /**
      * @param tableName

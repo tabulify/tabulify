@@ -20,7 +20,7 @@ import java.sql.DatabaseMetaData;
 import java.util.List;
 import java.util.Objects;
 
-import static com.tabulify.jdbc.SqlMediaTypeType.*;
+import static com.tabulify.jdbc.SqlMediaType.*;
 
 /**
  * A jdbc data path knows only three parts
@@ -91,9 +91,9 @@ public class SqlDataPath extends DataPathAbs {
 
 
   @Override
-  public SqlMediaTypeType getMediaType() {
+  public SqlMediaType getMediaType() {
 
-    return (SqlMediaTypeType) this.mediaType;
+    return (SqlMediaType) this.mediaType;
 
   }
 
@@ -166,7 +166,7 @@ public class SqlDataPath extends DataPathAbs {
      * An SQL path does not start from the root but from the leaf.
      *    * This function should return the given path to create it (by default a relative path. ie
      *    * mostly the name of the resource (table, view).
-     * An empty path is the special root path {@link SqlMediaTypeType.ROOT}
+     * An empty path is the special root path {@link SqlMediaType.ROOT}
      */
     super(sqlConnection, path, mediaType);
 
@@ -177,21 +177,21 @@ public class SqlDataPath extends DataPathAbs {
 
   }
 
-  private SqlMediaTypeType buildMediaType(MediaType mediaType) {
+  private SqlMediaType buildMediaType(MediaType mediaType) {
 
     if (mediaType != null && mediaType != UNKNOWN) {
-      if (mediaType instanceof SqlMediaTypeType) {
-        return (SqlMediaTypeType) mediaType;
+      if (mediaType instanceof SqlMediaType) {
+        return (SqlMediaType) mediaType;
       }
       String subType = mediaType.getSubType();
       try {
-        return Casts.cast(subType, SqlMediaTypeType.class);
+        return Casts.cast(subType, SqlMediaType.class);
       } catch (CastException e) {
-        throw IllegalArgumentExceptions.createFromMessageWithPossibleValues("The sql media type (" + mediaType + ") is incorrect.", SqlMediaTypeType.class, e);
+        throw IllegalArgumentExceptions.createFromMessageWithPossibleValues("The sql media type (" + mediaType + ") is incorrect.", SqlMediaType.class, e);
       }
     }
 
-    SqlMediaTypeType resourcePathMediaType = this.sqlConnectionResourcePath.getSqlMediaType();
+    SqlMediaType resourcePathMediaType = this.sqlConnectionResourcePath.getSqlMediaType();
     if (resourcePathMediaType != UNKNOWN) {
       return resourcePathMediaType;
     }

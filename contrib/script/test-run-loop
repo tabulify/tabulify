@@ -1,0 +1,50 @@
+#!/bin/bash
+# An utility to run a test in a loop to see if this is a state problem
+
+find_git_root() {
+  local dir="$PWD"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -d "$dir/.git" ]]; then
+      echo "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  echo "No .git directory found in any parent directory." >&2
+  return 1
+}
+
+# Specify your test class/method
+# Example
+# com.tabulify.jdbc.Sql_21_PrimaryKeyConstraintTest
+# com.tabulify.jdbc.Sql_21_PrimaryKeyConstraintTest#Method
+TEST_CLASS="$1"
+
+# Compile
+PROJECT_ROOT=$(find_git_root)
+if ! OUTPUT=$(cd "$PROJECT_ROOT"; mvn compile); then
+  echo "Compilation error"
+  echo "$OUTPUT"
+  exit 1;
+fi
+
+# Loop 10 times
+for i in {1..10}; do
+    echo "-------------------------------"
+    echo "Running test iteration $i of 10"
+    echo "-------------------------------"
+
+    # Run the specific test with Maven
+    if ! mvn test -DskipCompile -Dtest="$TEST_CLASS"; then
+      echo "Bad iteration $i"
+      exit 1;
+    fi
+
+    # Optional: Add a small delay between runs
+    # sleep 1
+
+    # Optional: Store results separately
+    # mvn test -Dtest=$TEST_CLASS > results_run_$i.log 2>&1
+done
+
+echo "All test runs completed"

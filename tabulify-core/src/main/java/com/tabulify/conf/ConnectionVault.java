@@ -6,7 +6,6 @@ import com.tabulify.Tabular;
 import com.tabulify.Vault;
 import com.tabulify.connection.Connection;
 import com.tabulify.connection.ConnectionAttributeEnumBase;
-import com.tabulify.connection.ConnectionHowTos;
 import com.tabulify.connection.ConnectionOrigin;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
@@ -190,19 +189,6 @@ public class ConnectionVault implements AutoCloseable {
         .anyMatch(gp -> Glob.createOf(gp).matches(ds.getName()))
       )
       .collect(Collectors.toList());
-  }
-
-  /**
-   * Load the {@link ConnectionHowTos how-to connections}
-   */
-  public ConnectionVault loadHowtoConnections() {
-
-    for (Connection connection : this.tabular.getHowtoConnections().values()) {
-      connections.put(connection.getName(), connection);
-    }
-
-    return this;
-
   }
 
   /**

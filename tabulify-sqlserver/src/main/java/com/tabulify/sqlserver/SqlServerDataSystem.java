@@ -250,7 +250,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
 
   @Override
   protected String createDropTableStatement(SqlDataPath sqlDataPath) {
-    if (sqlDataPath.getMediaType() == SqlMediaTypeType.VIEW) {
+    if (sqlDataPath.getMediaType() == SqlMediaType.VIEW) {
       // 'DROP VIEW' does not allow specifying the database name as a prefix to the object name.
       return "drop view " + sqlDataPath.toSqlStringPath(2);
 
@@ -388,7 +388,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
   @Override
   public String createViewStatement(SqlDataPath dataPath) {
 
-    if (dataPath.getMediaType() == SqlMediaTypeType.SCRIPT) {
+    if (dataPath.getMediaType() == SqlMediaType.SCRIPT) {
       String query = createOrGetQuery(dataPath);
       // A view in sql server have only one name
       // Otherwise, error !

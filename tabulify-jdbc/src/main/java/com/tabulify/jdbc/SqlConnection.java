@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.tabulify.connection.ConnectionAttValueTimeDataType.*;
-import static com.tabulify.jdbc.SqlMediaTypeType.UNKNOWN;
+import static com.tabulify.jdbc.SqlMediaType.UNKNOWN;
 
 /**
  * An object with all meta information about a JDBC data store
@@ -35,7 +35,7 @@ import static com.tabulify.jdbc.SqlMediaTypeType.UNKNOWN;
 public class SqlConnection extends NoOpConnection {
 
 
-  private final SqlCache sqlCache;
+  private SqlCache sqlCache;
 
   private SqlDataSystem sqlDataSystem;
 
@@ -267,7 +267,7 @@ public class SqlConnection extends NoOpConnection {
   @Override
   public SqlDataPath getDataPath(String pathOrName, MediaType mediaType) {
 
-    return this.sqlCache.createDataPath(pathOrName, (SqlMediaTypeType) mediaType, getDataPathSupplier(pathOrName, mediaType));
+    return this.sqlCache.createDataPath(pathOrName, (SqlMediaType) mediaType, getDataPathSupplier(pathOrName, mediaType));
 
   }
 
@@ -361,7 +361,7 @@ public class SqlConnection extends NoOpConnection {
         }
         // With the database id being the database name, this is not true anymore ?
         // throw new RuntimeException("The connection was closed ! We cannot reopen it otherwise the object id will not be the same anymore");
-        SqlLog.LOGGER_DB_JDBC.severe("The database connection was closed ! We recreate it.");
+        SqlLog.LOGGER_DB_JDBC.warning("The database connection was closed ! We recreate it.");
       }
 
       this.connection = getNewConnection();
@@ -651,7 +651,7 @@ public class SqlConnection extends NoOpConnection {
    * @param schema  the schema
    */
   public SqlDataPath getSqlSchemaDataPath(String catalog, String schema) {
-    return createSqlDataPath(catalog, schema, null, SqlMediaTypeType.SCHEMA);
+    return createSqlDataPath(catalog, schema, null, SqlMediaType.SCHEMA);
   }
 
   /**
@@ -885,9 +885,9 @@ public class SqlConnection extends NoOpConnection {
         final String type_name = tableResultSet.getString(tableTypeColumnName);
         final String remarks = tableResultSet.getString(tableRemarksColumnName);
 
-        SqlMediaTypeType objectType;
+        SqlMediaType objectType;
         try {
-          objectType = SqlMediaTypeType.getSqlType(type_name);
+          objectType = SqlMediaType.getSqlType(type_name);
         } catch (NotSupportedException e) {
           // the table type is not supported by tabli, we don't add it
           // index for instance
@@ -931,7 +931,7 @@ public class SqlConnection extends NoOpConnection {
 
   }
 
-  public SqlDataPath createSqlDataPath(String catalog, String schema, String objectName, SqlMediaTypeType mediaType) {
+  public SqlDataPath createSqlDataPath(String catalog, String schema, String objectName, SqlMediaType mediaType) {
 
     SqlConnectionResourcePath resourcePath = SqlConnectionResourcePath
       .createOfCatalogSchemaAndObjectName(this, catalog, schema, objectName)
@@ -1028,7 +1028,7 @@ public class SqlConnection extends NoOpConnection {
    */
   @SuppressWarnings("unused")
   public SqlDataPath getSqlCatalogDataPath(String catalog) {
-    return createSqlDataPath(catalog, null, null, SqlMediaTypeType.CATALOG);
+    return createSqlDataPath(catalog, null, null, SqlMediaType.CATALOG);
   }
 
 
@@ -1214,4 +1214,14 @@ public class SqlConnection extends NoOpConnection {
     return this.sqlCache;
   }
 
+  public SqlConnection setEnabledCache(boolean bool) {
+    Attribute attribute = this.getAttribute(SqlConnectionAttributeEnum.BUILDER_CACHE_ENABLED);
+    Boolean cached = (Boolean) attribute.getValueOrDefaultOrNull();
+    if (bool == cached) {
+      return this;
+    }
+    attribute.setPlainValue(bool);
+    sqlCache = new SqlCache(bool);
+    return this;
+  }
 }

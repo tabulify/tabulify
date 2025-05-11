@@ -56,14 +56,12 @@ public class Tabulars {
    * Create all data object if they don't exist
    * taking into account the foreign key constraints
    * <p>
-   *
-   * @param dataPaths
    */
   public static void createIfNotExist(List<DataPath> dataPaths) {
 
-    Dag dag = ForeignKeyDag.createFromPaths(dataPaths);
-    dataPaths = dag.getCreateOrdered();
-    for (DataPath dataPath : dataPaths) {
+    Dag<DataPath> dag = ForeignKeyDag.createFromPaths(dataPaths);
+    List<DataPath> orderedDataPaths = dag.getCreateOrdered();
+    for (DataPath dataPath : orderedDataPaths) {
       createIfNotExist(dataPath);
     }
 
@@ -76,21 +74,16 @@ public class Tabulars {
   }
 
   /**
-   * Create the table in the database if it doesn't exist
-   *
-   * @param dataPath
+   * Create the data resource in the system if it doesn't exist
    */
   public static void createIfNotExist(DataPath dataPath) {
 
-    if (!exists(dataPath)) {
-
-      create(dataPath);
-
-    } else {
-
-      DbLoggers.LOGGER_DB_ENGINE.fine("The data object (" + dataPath.toString() + ") already exist.");
-
+    if (exists(dataPath)) {
+      DbLoggers.LOGGER_DB_ENGINE.fine("The data resource (" + dataPath + ") already exist.");
+      return;
     }
+    create(dataPath);
+
 
   }
 
@@ -105,19 +98,22 @@ public class Tabulars {
 
       // A dag will build the data def, and we may not want it when dropping only one table
       Dag<DataPath> dag = ForeignKeyDag.createFromPaths(allDataPaths);
-      for (DataPath orderedDataPath : dag.getDropOrdered()) {
+      List<DataPath> dropOrdered = dag.getDropOrdered();
+      for (DataPath orderedDataPath : dropOrdered) {
         dataPath.getConnection().getDataSystem().drop(orderedDataPath);
       }
+      return;
 
-    } else {
-      /**
-       * Needed when we manipulate only one table
-       * (If we delete several at once, we need to update the data def (data structure)
-       * and if we just want to drop it, we may get side effect due
-       * to update of the metadata
-       */
-      dataPath.getConnection().getDataSystem().drop(dataPath);
     }
+
+    /**
+     * Needed when we manipulate only one table
+     * (If we delete several at once, we need to update the data def (data structure)
+     * and if we just want to drop it, we may get side effect due
+     * to update of the metadata
+     */
+    dataPath.getConnection().getDataSystem().drop(dataPath);
+
 
   }
 
@@ -131,13 +127,17 @@ public class Tabulars {
    * @param dataPaths - The tables to drop
    */
   public static void drop(List<DataPath> dataPaths) {
-    if (dataPaths.size() != 0) {
-      DataPath[] moreDataPath = {};
-      if (dataPaths.size() > 1) {
-        moreDataPath = dataPaths.subList(1, dataPaths.size()).toArray(new DataPath[0]);
-      }
-      drop(dataPaths.get(0), moreDataPath);
+
+    if (dataPaths.isEmpty()) {
+      return;
     }
+
+    DataPath[] moreDataPath = {};
+    if (dataPaths.size() > 1) {
+      moreDataPath = dataPaths.subList(1, dataPaths.size()).toArray(new DataPath[0]);
+    }
+    drop(dataPaths.get(0), moreDataPath);
+
 
   }
 
@@ -178,8 +178,6 @@ public class Tabulars {
   /**
    * Drop the table from the database if exist
    * and drop the table from the cache
-   *
-   * @param dataPaths
    */
   public static void dropIfExists(List<DataPath> dataPaths) {
 
@@ -187,21 +185,18 @@ public class Tabulars {
     // Because the getDropOrderedTables will build the dependency
     if (dataPaths.size() == 1) {
       DataPath dataPath = dataPaths.get(0);
-      if (exists(dataPath)) {
-        drop(dataPath);
-      } else {
-        DbLoggers.LOGGER_DB_ENGINE.info("The data resource (" + dataPath + ") does not exist and was not dropped");
-      }
-    } else {
-      List<DataPath> dropOrdered = ForeignKeyDag.createFromPaths(dataPaths).getDropOrdered();
-      for (DataPath dataPath : dropOrdered) {
-        if (exists(dataPath)) {
-          drop(dataPath);
-        } else {
-          DbLoggers.LOGGER_DB_ENGINE.info("The data resource (" + dataPath + ") does not exist and was not dropped");
-        }
-      }
+      dataPath.getConnection().getDataSystem().dropIfExist(dataPath);
+      return;
     }
+
+    /**
+     * Multiple drop, we need a dag
+     */
+    List<DataPath> dropOrdered = ForeignKeyDag.createFromPaths(dataPaths).getDropOrdered();
+    for (DataPath dataPath : dropOrdered) {
+      dataPath.getConnection().getDataSystem().dropIfExist(dataPath);
+    }
+
 
   }
 

@@ -17,7 +17,7 @@ import net.bytle.type.MediaType;
  * @see <a href="https://docs.oracle.com/javase/7/docs/api/java/sql/DatabaseMetaData.html#getTableTypes()">table type</a>
  * @see <a href=https://calcite.apache.org/docs/model.html#view>The calcite definition</a>
  */
-public enum SqlMediaTypeType implements AttributeValue, MediaType {
+public enum SqlMediaType implements AttributeValue, MediaType {
 
   // In case there is no schema functionality such as with sqlite,
   // the schema is the empty string
@@ -43,7 +43,7 @@ public enum SqlMediaTypeType implements AttributeValue, MediaType {
    * @param description the description of the type
    * @param isContainer true if the object is a container of object, false if not
    */
-  SqlMediaTypeType(String description, boolean isContainer) {
+  SqlMediaType(String description, boolean isContainer) {
     this.description = description;
     this.isContainer = isContainer;
     this.subType = Key.toUriName(this.name());
@@ -58,10 +58,10 @@ public enum SqlMediaTypeType implements AttributeValue, MediaType {
    * @param typeName the type name
    * @return true if this is a table type data path
    */
-  public static SqlMediaTypeType getSqlType(String typeName) throws NotSupportedException {
+  public static SqlMediaType getSqlType(String typeName) throws NotSupportedException {
 
     try {
-      return Casts.cast(typeName, SqlMediaTypeType.class);
+      return Casts.cast(typeName, SqlMediaType.class);
     } catch (CastException e) {
       throw new NotSupportedException("Not a supported table type. "+e.getMessage());
     }

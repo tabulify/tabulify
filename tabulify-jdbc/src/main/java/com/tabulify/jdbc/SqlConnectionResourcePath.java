@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.tabulify.jdbc.SqlMediaTypeType.*;
+import static com.tabulify.jdbc.SqlMediaType.*;
 
 /**
  * This is the representation of an addressable path
@@ -38,7 +38,7 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
   private final String schemaPart; // A shortcut to retrieve easily the schema name
   private final String objectPart; // A shortcut to retrieve easily the schema name
 
-  private final SqlMediaTypeType mediaType;
+  private final SqlMediaType mediaType;
   private final boolean absolute;
 
 
@@ -370,7 +370,7 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
       .collect(Collectors.joining(getPathSeparator()));
   }
 
-  public SqlMediaTypeType getSqlMediaType() {
+  public SqlMediaType getSqlMediaType() {
     return this.mediaType;
   }
 

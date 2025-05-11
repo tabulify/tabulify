@@ -223,7 +223,7 @@ public class Tabli {
        * Creation howto connection user vault if it does not exist
        */
       Path confVaultPath = tabular.getConfPath();
-      Path userHome = tabular.getUserHome();
+      Path userHome = tabular.getTabliUserHome();
       if (!Files.exists(confVaultPath) && confVaultPath.getParent().equals(userHome)) {
         LOGGER_TABLI.info("User conf path does not exist. Creating it " + confVaultPath);
         ConfVault.createFromPath(confVaultPath, tabular)
@@ -457,11 +457,6 @@ public class Tabli {
           message += "\nTry to run in non-strict mode with the flag " + TabliWords.NOT_STRICT_FLAG;
         }
 
-        /**
-         * Catch not planned exception
-         * and illegal argument one
-         */
-        LOGGER_TABLI.severe("Fatal Exception: " + message);
 
         /**
          * Bad argument, no data selection,
@@ -469,25 +464,19 @@ public class Tabli {
          * print the usage
          */
         if (e instanceof IllegalArgumentException) {
+          LOGGER_TABLI.severe(message);
           CliUsage.print(CliTree.getActiveLeafCommand(rootCommand));
+          Tabli.exit(tabular, 1);
+          return;
         }
 
         /**
-         * In a development mode, we want to see the stack,
-         * we then throw the exception again
+         * Catch not planned exception
          */
-        if (throwFinalException(tabular)) {
-          System.out.println(); // layout
-          LOGGER_TABLI.severe("Stack Trace:");
-          throw e;
-        }
-
-        /**
-         * Always returns a +1 and let the
-         * calling script or user handle it.
-         */
-        Tabli.exit(tabular, 1);
-
+        LOGGER_TABLI.severe("Fatal Exception: " + message);
+        System.err.println(); // layout
+        LOGGER_TABLI.severe("Stack Trace:");
+        throw e;
 
       }
 
@@ -526,24 +515,4 @@ public class Tabli {
   }
 
 
-  /**
-   * @return true:
-   * * if this is a dev mode, we throw all exceptions
-   * * in fine level to debug
-   * <p>
-   * We throw
-   * * for the tests (example: to check that a help was asked)
-   * * and to see the stack
-   */
-  private static Boolean throwFinalException(Tabular tabular) {
-    /**
-     * The stack trace is given
-     * when we are below a fine level
-     * or
-     * in dev mode
-     */
-    Boolean ideEnv = tabular.isIdeEnv();
-    Level level = Logs.getLevel();
-    return level.intValue() <= Level.FINE.intValue() || ideEnv;
-  }
 }

@@ -22,7 +22,7 @@ public enum TabularAttributeEnum implements AttributeEnumParameter {
   PROJECT_HOME("The project home directory", true, null, Path.class),
   PASSPHRASE("The passphrase", true, null, String.class),
   LOG_LEVEL("The log level", true, TabularLogLevel.WARN, TabularLogLevel.class),
-  USER_HOME("User home Directory", true, null, Path.class),
+  USER_HOME("Tabulify User home Directory", true, null, Path.class),
   NATIVE_DRIVER("Native Drivers Properties", false, new HashMap<>(), Map.class);
 
 

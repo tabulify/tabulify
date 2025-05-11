@@ -1213,17 +1213,17 @@ public class TpcdsModel implements SchemaSample {
 
     switch (schemaName) {
       case TPCDS_SCHEMA:
-        return getAndCreateDataPaths();
+        return createDataPaths();
       case TPCDS_SCHEMA_DWH:
-        return getAndCreateDataPaths().stream()
+        return createDataPaths().stream()
           .filter(s -> DWH_TABLES.contains(s.getName()))
           .collect(Collectors.toList());
       case TPCDS_SCHEMA_STG:
-        return getAndCreateDataPaths().stream()
+        return createDataPaths().stream()
           .filter(s -> stagingTables.contains(s.getName()))
           .collect(Collectors.toList());
       case TPCDS_SCHEMA_STORE_SALES:
-        return Tabulars.atomic(getAndCreateDataPaths().stream()
+        return Tabulars.atomic(createDataPaths().stream()
           .filter(s -> storeSalesTables.contains(s.getName()))
           .collect(Collectors.toList())
         );
@@ -1237,7 +1237,7 @@ public class TpcdsModel implements SchemaSample {
   /**
    * @return all tables
    */
-  public List<DataPath> getAndCreateDataPaths() {
+  public List<DataPath> createDataPaths() {
 
     return new ArrayList<>(tables.values());
 

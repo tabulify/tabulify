@@ -43,11 +43,11 @@ public class Dag<T extends Dependency> {
 
     // Building the graph
     graph = new DefaultDirectedGraph<>(DefaultEdge.class);
-
     for (T relation : relationalList) {
       addTableToVertex(relation);
     }
 
+    // Cycle Check
     CycleDetector<T, DefaultEdge> cycleDetector = new CycleDetector<>(graph);
     if (cycleDetector.detectCycles()) {
 
@@ -79,41 +79,46 @@ public class Dag<T extends Dependency> {
   /**
    * Add one table to the vertex
    *
-   * @param dependency recursive function
+   * @param relation recursive function
    */
-  private void addTableToVertex(T dependency) {
+  private void addTableToVertex(T relation) {
 
-    // Add the vertex
-    if (!graph.containsVertex(dependency)) {
-      graph.addVertex(dependency);
+    // Add the vertex (A vertex is just an element)
+    if (!graph.containsVertex(relation)) {
+      graph.addVertex(relation);
     }
 
     // Add the edges
-    @SuppressWarnings("unchecked") Set<T> dependencies = (Set<T>) dependency.getDependencies();
+    //noinspection unchecked
+    Set<T> dependencies = (Set<T>) relation.getDependencies();
+    for (T dependency : dependencies) {
 
-    for (T parent : dependencies) {
+      // Only if the table is in the list, or we take also the parent
+      boolean relationListContainsParent = false;
 
-      // Only if the table is in the list
-      // or we take also the parent
-      boolean relationContainsParent = false;
-      for (T relation : relationalList) {
-        if (parent.equals(relation)) {
-          // We get the original object as it may have other specific attribute
-          // Example: the backref group value as attribute for data path resource when selected via glob
-          parent = relation;
-          relationContainsParent = true;
+      // We get the original object as it may have other specific attribute
+      // Example: the backref group value as attribute for data path resource when selected via glob
+      for (T aRelation : relationalList) {
+        if (dependency.equals(aRelation)) {
+          dependency = aRelation;
+          relationListContainsParent = true;
           break;
         }
       }
-      if (relationContainsParent || withDependency) {
 
-        addTableToVertex(parent);
+      /**
+       * Do we add the dependency to the graph
+       * (ie do we create an edge in the graph)
+       */
+      if (relationListContainsParent || withDependency) {
+
+        // Recursive
+        addTableToVertex(dependency);
 
         // Add Edge
-        graph.addEdge(parent, dependency);
+        graph.addEdge(dependency, relation);
 
       }
-
 
     }
 
@@ -122,7 +127,7 @@ public class Dag<T extends Dependency> {
 
   /**
    * If set to true, the dag will add the parent table
-   * (DataPathable defined in a foreign key)
+   * (DataPath defined in a foreign key)
    *
    * @return the dag for chaining initialization
    */
@@ -141,7 +146,6 @@ public class Dag<T extends Dependency> {
 
   /**
    * Return an ordered list of tables ready to be loaded
-   *
    */
   public List<T> getCreateOrdered() {
 
@@ -149,40 +153,46 @@ public class Dag<T extends Dependency> {
       build();
     }
 
-    T currentDependency;
+    T currentRelation;
     T previousDependency = null;
-    List<T> dependencies = new ArrayList<>();
+
+    List<T> relations = new ArrayList<>();
+
+    // Topologically is the mathematical term for dependency-first order
+    // if a dimension depends on a fact, the dimension should be first
+    // if a table has a foreign key table, the table should be first
     TopologicalOrderIterator<T, DefaultEdge> orderIterator = new TopologicalOrderIterator<>(graph);
+
 
     // Because of the algorithm, we may have a table with a parent between table without parent
     // Little trick with on slot
     while (orderIterator.hasNext()) {
-      currentDependency = orderIterator.next();
 
-      final Set<? extends Dependency> parents = currentDependency.getDependencies();
+      currentRelation = orderIterator.next();
+
+      final Set<? extends Dependency> parents = currentRelation.getDependencies();
       if (parents.isEmpty()) {
-        dependencies.add(currentDependency);
+        relations.add(currentRelation);
       } else {
         if (previousDependency != null) {
-          dependencies.add(previousDependency);
-          dependencies.add(currentDependency);
+          relations.add(previousDependency);
+          relations.add(currentRelation);
           previousDependency = null;
         } else {
-          previousDependency = currentDependency;
+          previousDependency = currentRelation;
         }
       }
     }
     // Add the last one
     if (previousDependency != null) {
-      dependencies.add(previousDependency);
+      relations.add(previousDependency);
     }
-    return dependencies;
+    return relations;
 
   }
 
   /**
    * Return an ordered list of tables ready to be dropped
-   *
    */
   public List<T> getDropOrdered() {
 

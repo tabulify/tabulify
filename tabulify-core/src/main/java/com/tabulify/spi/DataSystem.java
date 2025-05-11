@@ -1,11 +1,11 @@
 package com.tabulify.spi;
 
-import net.bytle.type.MediaType;
 import com.tabulify.connection.Connection;
 import com.tabulify.model.Constraint;
 import com.tabulify.model.ForeignKeyDef;
 import com.tabulify.transfer.TransferListener;
 import com.tabulify.transfer.TransferProperties;
+import net.bytle.type.MediaType;
 
 import java.util.List;
 
@@ -37,6 +37,7 @@ public interface DataSystem {
   boolean isContainer(DataPath dataPath);
 
   void create(DataPath dataPath);
+
 
   void drop(DataPath dataPath);
 
@@ -159,4 +160,10 @@ public interface DataSystem {
    */
   String toValidName(String name);
 
+  /**
+   * @param dataPath - the data path to drop
+   *                 This function is not only in Tabulars
+   *                 because the drop may be needed in a cache in the data system
+   */
+  void dropIfExist(DataPath dataPath);
 }

@@ -56,10 +56,10 @@ public class Tabular implements AutoCloseable {
 
 
   private final Vault vault;
-  private final Map<String, Connection> howtoConnections;
   private final TabularExecEnv executionEnv;
   private final Path projectHomePath;
   private final TabularEnvs tabularEnvs;
+  private final ConnectionHowTos howtoConnections;
 
   // The default connection added to a data URI if it does not have it.
   protected Connection defaultConnection;
@@ -89,7 +89,6 @@ public class Tabular implements AutoCloseable {
    */
   private int exitStatus = 0;
   private Path runningPipelineScript;
-
 
 
   /**
@@ -648,8 +647,6 @@ public class Tabular implements AutoCloseable {
   }
 
 
-
-
   /**
    * @param msg - terminate if the run is strict or print a warning message
    */
@@ -886,22 +883,12 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public Connection getHowtoConnection(String name) {
-
-    return this.howtoConnections.get(name);
-
-  }
-
-  public Map<String, Connection> getHowtoConnections() {
-    return this.howtoConnections;
-  }
-
   /**
    * Load the howto connection in this tabular
    * (used in test mostly)
    */
   public Tabular loadHowtoConnections() {
-    this.connections.putAll(this.howtoConnections);
+    this.connections.putAll(this.howtoConnections.getAll());
     return this;
   }
 
@@ -962,8 +949,16 @@ public class Tabular implements AutoCloseable {
       .collect(Collectors.joining(", "));
   }
 
-  public Path getUserHome() {
+  public Path getTabliUserHome() {
     return (Path) this.getAttribute(TabularAttributeEnum.USER_HOME).getValueOrDefaultOrNull();
+  }
+
+  public Connection getHowtoConnection(String connectionName) {
+    return this.howtoConnections.get(connectionName);
+  }
+
+  public Collection<? extends Connection> getHowtoConnections() {
+    return this.howtoConnections.getAll().values();
   }
 
 
