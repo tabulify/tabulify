@@ -1616,6 +1616,11 @@ public class SqlDataSystem extends DataSystemAbs {
    */
   public String createQuotedName(String word) {
 
+    Boolean quotingEnabled = this.getConnection().getAttribute(SqlConnectionAttributeEnum.NAME_QUOTING_ENABLED).getValueOrDefaultCastAsSafe(Boolean.class);
+    if (!quotingEnabled) {
+      return word;
+    }
+
     String identifierQuoteString = sqlConnection.getMetadata().getIdentifierQuote();
     return identifierQuoteString + word + identifierQuoteString;
 
@@ -1674,6 +1679,7 @@ public class SqlDataSystem extends DataSystemAbs {
 
   /**
    * The metadata read from columns
+   *
    * @param dataPath - the data path
    * @return the list of meta columns ordered by position (asc)
    * For type returned by the driver, see {@link #getMetaDataTypes()}

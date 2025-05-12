@@ -6,9 +6,8 @@ import java.sql.DatabaseMetaData;
 
 /**
  * Attributes that comes from:
- *   * {@link DatabaseMetaData}
- *   * {@link DatabaseMetaData#getClientInfoProperties()}
- *
+ * * {@link DatabaseMetaData}
+ * * {@link DatabaseMetaData#getClientInfoProperties()}
  */
 public enum SqlConnectionAttributeEnum implements ConnectionAttributeEnum {
 
@@ -25,7 +24,8 @@ public enum SqlConnectionAttributeEnum implements ConnectionAttributeEnum {
   DRIVER_NAME("The driver name", true, false, null, String.class),
   SUPPORT_NAMED_PARAMETERS("If the system supports named parameters in the SQL statement", true, false, null, String.class),
   SUPPORT_BATCH_UPDATES("If the system supports batch SQL updates", true, false, null, String.class),
-  BUILDER_CACHE_ENABLED("Enable or disable the builder cache", false, true, true, Boolean.class);
+  BUILDER_CACHE_ENABLED("Enable or disable the builder cache", false, true, true, Boolean.class),
+  NAME_QUOTING_ENABLED("Enable quoting of names", false, true, true, Boolean.class);
 
 
   private final String description;
@@ -51,10 +51,9 @@ public enum SqlConnectionAttributeEnum implements ConnectionAttributeEnum {
 
   }
 
-  boolean needsConnection(){
+  boolean needsConnection() {
     return this.needsConnection;
   }
-
 
 
   @Override

@@ -2,6 +2,7 @@ package com.tabulify.oracle;
 
 import com.tabulify.jdbc.SqlDataPath;
 import com.tabulify.jdbc.SqlDataSystem;
+import com.tabulify.jdbc.SqlMetaColumn;
 import com.tabulify.jdbc.SqlMetaDataType;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.model.RelationDef;
@@ -34,7 +35,11 @@ public class OracleSystem extends SqlDataSystem {
     SqlDataType dataType = columnDef.getDataType();
     switch (dataType.getTypeCode()) {
       case Types.INTEGER:
-        return "INTEGER";
+        // Integer does not really exist
+        // Specify an integer using the following form:
+        // NUMBER(p)
+        // https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html#GUID-7690645A-0EE3-46CA-90DE-C96DF5A01F8F
+        return "NUMBER(" + columnDef.getPrecisionOrMax() + ")";
       case OracleTypes.INTERVALDS:
         return "INTERVAL DAY (" + columnDef.getPrecision() + ") TO SECOND (" + columnDef.getScale() + ")";
       case OracleTypes.INTERVALYM:
@@ -319,5 +324,26 @@ public class OracleSystem extends SqlDataSystem {
     return getMergeStatement(transferSourceTarget, true);
 
   }
+
+  @Override
+  public List<SqlMetaColumn> getMetaColumns(SqlDataPath dataPath) {
+    List<SqlMetaColumn> sqlMetaColumns = super.getMetaColumns(dataPath);
+
+    for (SqlMetaColumn metaColumn : sqlMetaColumns) {
+      // bug, date is returned as timestamp (93) instead of date (91)
+      if (metaColumn.getTypeName().equals("DATE")) {
+        metaColumn.setTypeCode(Types.DATE);
+      }
+      // https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html#GUID-7690645A-0EE3-46CA-90DE-C96DF5A01F8F
+      // Specify an integer using the following form:
+      // NUMBER(p)
+      // ie scale is zero
+      if (metaColumn.getTypeCode().equals(Types.NUMERIC) && metaColumn.getScale().equals(0)) {
+        metaColumn.setTypeCode(Types.INTEGER);
+      }
+    }
+    return sqlMetaColumns;
+  }
+
 
 }
