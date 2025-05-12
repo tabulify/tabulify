@@ -67,6 +67,11 @@
       <version>1.20.6</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-data-generation</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 </project>

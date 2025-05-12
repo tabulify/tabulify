@@ -73,7 +73,7 @@ public class SqlDataStoreStatic {
       System.out.println("Raw Path: " + url.getRawPath());
       System.out.println("Raw Schema Specific Part: " + url.getRawSchemeSpecificPart());
       System.out.println("Driver: " + sqlUri.getDriver());
-      System.out.println("Server: " + sqlUri.getServer());
+      System.out.println("Server: " + sqlUri.getSqlScheme());
 
     } catch (SQLException e) {
       throw new RuntimeException(e);
