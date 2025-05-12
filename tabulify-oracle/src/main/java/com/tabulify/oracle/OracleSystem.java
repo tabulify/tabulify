@@ -4,7 +4,10 @@ import com.tabulify.jdbc.SqlDataPath;
 import com.tabulify.jdbc.SqlDataSystem;
 import com.tabulify.jdbc.SqlMetaDataType;
 import com.tabulify.model.ColumnDef;
+import com.tabulify.model.RelationDef;
 import com.tabulify.model.SqlDataType;
+import com.tabulify.model.UniqueKeyDef;
+import com.tabulify.transfer.TransferSourceTarget;
 import oracle.jdbc.OracleTypes;
 
 import java.sql.Types;
@@ -14,6 +17,9 @@ import java.util.Map;
 public class OracleSystem extends SqlDataSystem {
 
 
+  public static final int MAX_PRECISION_NUMERIC = 38;
+  public static final int MAXIMUM_SCALE_NUMERIC = 127;
+  public static final int MINIMUM_SCALE_NUMERIC = -84;
   public static int MAX_VARCHAR2_PRECISION_BYTE = 4000;
 
   @Override
@@ -79,7 +85,13 @@ public class OracleSystem extends SqlDataSystem {
     super(oracleConnection);
   }
 
-  // https://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#CNCPT313
+  /**
+   * Driver Data Type
+   * <p>General Info</p>
+   * <a href="https://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#CNCPT313">...</a>
+   * To Java Class
+   * <a href="https://docs.oracle.com/cd/E11882_01/java.112/e16548/apxref.htm#JJDBC28906">...</a>
+   */
   @Override
   public Map<Integer, SqlMetaDataType> getMetaDataTypes() {
 
@@ -100,22 +112,27 @@ public class OracleSystem extends SqlDataSystem {
     sqlDataTypes.computeIfAbsent(Types.LONGVARCHAR, SqlMetaDataType::new)
       .setSqlName("LONG");
 
-    // https://docs.oracle.com/cd/B28359_01/server.111/b28285/sqlqr06.htm#CHDJJEEA
-    sqlDataTypes.computeIfAbsent(OracleTypes.NUMBER, SqlMetaDataType::new)
+    // oracle.sql.NUMBER.class
+    // We don't set the native class: oracle.sql.NUMBER.class
+    // because the generator does not know it
+
+    /**
+     * Same as {@link OracleTypes.NUMBER}
+     */
+    sqlDataTypes.computeIfAbsent(Types.NUMERIC, SqlMetaDataType::new)
       .setSqlName("NUMBER")
-      .setSqlJavaClazz(oracle.sql.NUMBER.class)
-      .setMaxPrecision(38)
-      .setMaximumScale(127)
-      .setMinimumScale(-84);
+      .setMaxPrecision(MAX_PRECISION_NUMERIC)
+      .setMaximumScale(MAXIMUM_SCALE_NUMERIC)
+      .setMinimumScale(MINIMUM_SCALE_NUMERIC);
 
     // https://docs.oracle.com/cd/B28359_01/server.111/b28285/sqlqr06.htm#CHDJJEEA
+    // We don't use the class oracle.sql.NUMBER.class
+    // because the generator does not know it
     sqlDataTypes.computeIfAbsent(Types.DOUBLE, SqlMetaDataType::new)
       .setSqlName("NUMBER")
-      .setSqlJavaClazz(oracle.sql.NUMBER.class)
-      .setMaxPrecision(38)
-      .setMaximumScale(127)
-      .setMinimumScale(-84);
-
+      .setMaxPrecision(MAX_PRECISION_NUMERIC)
+      .setMaximumScale(MAXIMUM_SCALE_NUMERIC)
+      .setMinimumScale(MINIMUM_SCALE_NUMERIC);
 
     /**
      * Oracle Database supports a reliable Unicode datatype through NCHAR, NVARCHAR2, and NCLOB.
@@ -189,5 +206,118 @@ public class OracleSystem extends SqlDataSystem {
     return (OracleConnection) super.getConnection();
   }
 
+
+  /**
+   * Called a merge
+   * <a href="https://docs.oracle.com/cd/E11882_01/server.112/e41084/statements_9016.htm#SQLRF01606">...</a>
+   * MERGE INTO bonuses D
+   * USING (SELECT employee_id, salary, department_id FROM employees
+   * WHERE department_id = 80) S
+   * ON (D.employee_id = S.employee_id)
+   * WHEN MATCHED THEN UPDATE SET D.bonus = D.bonus + S.salary*.01
+   * DELETE WHERE (S.salary > 8000)
+   * WHEN NOT MATCHED THEN INSERT (D.employee_id, D.bonus)
+   * VALUES (S.employee_id, S.salary*.01)
+   * WHERE (S.salary <= 8000);
+   */
+  private String getMergeStatement(TransferSourceTarget transferSourceTarget, boolean sqlBindFormat) {
+
+
+    List<UniqueKeyDef> targetUniqueKeysFoundInSourceColumns = getTargetUniqueKeysFoundInSourceColumns(transferSourceTarget);
+    if (targetUniqueKeysFoundInSourceColumns.isEmpty()) {
+      if (sqlBindFormat) {
+        return createInsertStatementWithBindVariables(transferSourceTarget);
+      }
+      return createInsertStatementWithPrintfExpressions(transferSourceTarget);
+    }
+
+    transferSourceTarget.checkBeforeInsert();
+
+    RelationDef target = transferSourceTarget.getTargetDataPath().getOrCreateRelationDef();
+    final SqlDataPath targetDataPath = (SqlDataPath) target.getDataPath();
+    StringBuilder mergeStatement = new StringBuilder();
+    String targetAlias = "target";
+    mergeStatement.append("merge into ")
+      .append(targetDataPath.toSqlStringPath())
+      .append(" ") // as does not exist on oracle
+      .append(targetAlias);
+    String sourceAlias = "source";
+    String values = createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, sqlBindFormat, true);
+    mergeStatement.append(" using (select ")
+      .append(values)
+      .append(" from dual) ") // no `as` please, not supported by oracle
+      .append(sourceAlias);
+
+    // on
+    mergeStatement.append(" on (");
+    List<ColumnDef> uniqueKeyColumns = targetUniqueKeysFoundInSourceColumns.get(0).getColumns();
+    for (int i = 0; i < uniqueKeyColumns.size(); i++) {
+      ColumnDef uniqueKeyColumnDef = uniqueKeyColumns.get(i);
+      mergeStatement
+        .append(sourceAlias).append(".").append(this.createQuotedName(uniqueKeyColumnDef.getColumnName()))
+        .append(" = ")
+        .append(targetAlias).append(".").append(this.createQuotedName(uniqueKeyColumnDef.getColumnName()));
+      if (i != uniqueKeyColumns.size() - 1) {
+        mergeStatement.append(",");
+      }
+    }
+    mergeStatement.append(")");
+
+    // WHEN MATCHED THEN update
+    mergeStatement.append(" WHEN MATCHED THEN UPDATE SET ");
+    List<ColumnDef> sourceNonUniqueColumnsForTarget = transferSourceTarget.getSourceNonUniqueColumnsForTarget();
+    for (int i = 0; i < sourceNonUniqueColumnsForTarget.size(); i++) {
+      ColumnDef updateColumn = sourceNonUniqueColumnsForTarget.get(i);
+      mergeStatement
+        .append(targetAlias)
+        .append(".")
+        .append(this.createQuotedName(updateColumn.getColumnName()))
+        .append(" = ")
+        .append(sourceAlias)
+        .append(".")
+        .append(this.createQuotedName(updateColumn.getColumnName()));
+      if (i != sourceNonUniqueColumnsForTarget.size() - 1) {
+        mergeStatement.append(",");
+      }
+    }
+
+    // WHEN not MATCHED THEN insert
+    mergeStatement.append(" WHEN NOT MATCHED THEN INSERT (");
+    List<? extends ColumnDef> targetColumnsToLoad = transferSourceTarget.getSourceColumnsInInsertStatement();
+    for (int i = 0; i < targetColumnsToLoad.size(); i++) {
+      ColumnDef targetInsertColumn = targetColumnsToLoad.get(i);
+      mergeStatement.append(this.createQuotedName(targetInsertColumn.getColumnName()));
+      if (i != targetColumnsToLoad.size() - 1) {
+        mergeStatement.append(",");
+      }
+    }
+    mergeStatement.append(") VALUES (");
+    for (int i = 0; i < targetColumnsToLoad.size(); i++) {
+      ColumnDef targetInsertColumn = targetColumnsToLoad.get(i);
+      mergeStatement
+        .append(sourceAlias)
+        .append(".")
+        .append(this.createQuotedName(targetInsertColumn.getColumnName()));
+      if (i != targetColumnsToLoad.size() - 1) {
+        mergeStatement.append(",");
+      }
+    }
+    mergeStatement.append(")");
+
+    return mergeStatement.toString();
+  }
+
+  @Override
+  public String createUpsertStatementWithPrintfExpressions(TransferSourceTarget transferSourceTarget) {
+    return getMergeStatement(transferSourceTarget, false);
+  }
+
+
+  @Override
+  public String createUpsertStatementWithBindVariables(TransferSourceTarget transferSourceTarget) {
+
+    return getMergeStatement(transferSourceTarget, true);
+
+  }
 
 }

@@ -24,7 +24,7 @@ public class SqlMetaDataType {
   private Boolean caseSensitive;
   private Short searchable;
   private Boolean unsignedAttribute;
-  private Boolean fixedPrecScale;
+  private Boolean fixedPrecisionScale;
   private Boolean autoIncrement;
   private String localTypeName;
   private Integer minimumScale;
@@ -84,7 +84,7 @@ public class SqlMetaDataType {
   }
 
   public SqlMetaDataType setFixedPrecisionScale(Boolean fixedPrecScale) {
-    this.fixedPrecScale = fixedPrecScale;
+    this.fixedPrecisionScale = fixedPrecScale;
     return this;
   }
 
@@ -141,7 +141,7 @@ public class SqlMetaDataType {
   }
 
   public Boolean getFixedPrecisionScale() {
-    return this.fixedPrecScale;
+    return this.fixedPrecisionScale;
   }
 
   public String getLiteralPrefix() {

@@ -138,7 +138,8 @@ public class SqlDataSystem extends DataSystemAbs {
         if (withAlias) {
           valuesListStatement
             .append(" as ")
-            .append(sourceColumnDef.getColumnName())
+            // we quote because it's mandatory by oracle (a column without quote and with quote is the same)
+            .append(createQuotedName(sourceColumnDef.getColumnName()))
           ;
         }
       }

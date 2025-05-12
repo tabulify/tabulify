@@ -18,6 +18,7 @@ import net.bytle.type.time.Date;
 import net.bytle.type.time.Timestamp;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -151,14 +152,15 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
     Object start;
     Number offset = 0;
     Number step;
+    int numberStart = 1;
     if (clazz == Integer.class) {
-      start = 1;
+      start = numberStart;
       step = 1;
     } else if (clazz == Double.class) {
-      start = 1.0;
+      start = (double) numberStart;
       step = 1.0;
     } else if (clazz == Float.class) {
-      start = (float) 1.0;
+      start = (float) numberStart;
       step = (float) 1.0;
     } else if (clazz == java.sql.Date.class) {
       start = Date.createFromNow().toSqlDate();
@@ -168,7 +170,8 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
       start = Timestamp.createFromNowLocalSystem().toSqlTimestamp();
       step = DEFAULT_TIMESTAMP_STEP; // ms
     } else if (clazz == BigDecimal.class) {
-      start = new BigDecimal(0);
+      // all number start at 1
+      start = new BigDecimal(numberStart);
       step = 1;
     } else if (clazz == String.class) {
       // Supported to support generation of unique data in a string column
@@ -598,6 +601,10 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
         return clazz.cast(Casts.castSafe(ticks - 1, Float.class) * Casts.castSafe(stepSize, Float.class) + Casts.castSafe(start, Float.class));
       } else if (clazz == Double.class) {
         return clazz.cast(Casts.castSafe(ticks - 1, Double.class) * Casts.castSafe(stepSize, Double.class) + Casts.castSafe(start, Double.class));
+      } else if (clazz == BigInteger.class) {
+        return clazz.cast(Casts.castSafe(ticks - 1, BigInteger.class).multiply(Casts.castSafe(stepSize, BigInteger.class)).add(Casts.castSafe(start, BigInteger.class)));
+      } else if (clazz == BigDecimal.class) {
+        return clazz.cast(Casts.castSafe(ticks - 1, BigDecimal.class).multiply(Casts.castSafe(stepSize, BigDecimal.class)).add(Casts.castSafe(start, BigDecimal.class)));
       } else {
         throw new RuntimeException("The domain max for the data of clazz type (" + clazz + ") is not yet implemented");
       }

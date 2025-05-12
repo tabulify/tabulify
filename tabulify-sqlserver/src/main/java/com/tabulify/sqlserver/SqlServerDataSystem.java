@@ -338,7 +338,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
     }
 
     // WHEN MATCHED THEN update
-    mergeStatement.append("WHEN MATCHED THEN UPDATE SET ");
+    mergeStatement.append(" WHEN MATCHED THEN UPDATE SET ");
     List<ColumnDef> sourceNonUniqueColumnsForTarget = transferSourceTarget.getSourceNonUniqueColumnsForTarget();
     for (int i = 0; i < sourceNonUniqueColumnsForTarget.size(); i++) {
       ColumnDef updateColumn = sourceNonUniqueColumnsForTarget.get(i);
@@ -356,7 +356,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
     }
 
     // WHEN not MATCHED THEN insert
-    mergeStatement.append("WHEN NOT MATCHED THEN INSERT (");
+    mergeStatement.append(" WHEN NOT MATCHED THEN INSERT (");
     List<? extends ColumnDef> targetColumnsToLoad = transferSourceTarget.getSourceColumnsInInsertStatement();
     for (int i = 0; i < targetColumnsToLoad.size(); i++) {
       ColumnDef targetInsertColumn = targetColumnsToLoad.get(i);
