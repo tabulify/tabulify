@@ -32,7 +32,7 @@ public class MemoryDataSystem extends DataSystemAbs {
    * into another data path that have foreign key relationships
    * <p>
    */
-  Map<String, MemoryDataPath> storageMemDataPaths = new HashMap<>();
+  private Map<String, MemoryDataPath> storageMemDataPaths = new HashMap<>();
 
   private final MemoryConnection memoryConnection;
 
@@ -172,7 +172,7 @@ public class MemoryDataSystem extends DataSystemAbs {
     // Create the structure
     ((MemoryDataPath) dataPath).create();
     // Add it
-    storageMemDataPaths.put(dataPath.getRelativePath(), (MemoryDataPath) dataPath);
+    addInStore((MemoryDataPath) dataPath);
 
   }
 
@@ -190,4 +190,16 @@ public class MemoryDataSystem extends DataSystemAbs {
   }
 
 
+  public void addInStore(MemoryDataPath memoryDataPath) {
+    // Add it
+    storageMemDataPaths.put(memoryDataPath.getRelativePath(), memoryDataPath);
+  }
+
+  public MemoryDataPath getFromStore(String path) {
+    return storageMemDataPaths.get(path);
+  }
+
+  public void emptyStore() {
+    storageMemDataPaths = new HashMap<>();
+  }
 }

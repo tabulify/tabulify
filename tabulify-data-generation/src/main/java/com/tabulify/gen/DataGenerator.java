@@ -269,7 +269,7 @@ public class DataGenerator implements AutoCloseable {
         /**
          * Merge the data def and create primary keys
          */
-        sourceDataPath.getOrCreateRelationDef().mergeDataDef(targetDataPath);
+        sourceDataPath.getOrCreateRelationDef().mergeDataDef(targetDataPath, targetSources);
         /**
          * Build primary key generator
          * if missing
@@ -313,13 +313,8 @@ public class DataGenerator implements AutoCloseable {
               .orElse(null);
             assert sourceForeignColumn != null : "The foreign column (" + targetForeignTableName + "." + targetForeignColumn + ") was not found in the source data paths to transfer.";
 
-            // Try to get the primary table generator
-            final String primaryKeyTableName = targetForeignKey.getForeignPrimaryKey().getRelationDef().getDataPath().getName();
-            GenDataPath sourcePrimaryTable = targetSources.values()
-              .stream()
-              .filter(dp -> dp.getName().equals(primaryKeyTableName))
-              .findFirst()
-              .orElse(null);
+            // Get the primary table generator
+            GenDataPath sourcePrimaryTable = targetSources.get(targetForeignKey.getForeignPrimaryKey().getRelationDef().getDataPath());
 
             // The primary column (used in the two block of the if statement below)
             ColumnDef targetPrimaryColumn = targetForeignKey.getForeignPrimaryKey().getColumns().get(0);

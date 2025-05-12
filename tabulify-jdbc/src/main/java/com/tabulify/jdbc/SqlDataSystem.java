@@ -189,13 +189,14 @@ public class SqlDataSystem extends DataSystemAbs {
       catalog = null;
     }
 
+    String name = sqlDataPath.getLogicalName();
     switch (sqlType) {
 
       case CATALOG:
         throw new RuntimeException("Catalog exists is not yet supported");
       case SCHEMA:
 
-        final String schemaPattern = sqlDataPath.getLogicalName();
+        final String schemaPattern = name;
 
         List<SqlDataPath> schemas = this.getConnection().getSchemas(catalog, schemaPattern);
         switch (schemas.size()) {
@@ -218,8 +219,7 @@ public class SqlDataSystem extends DataSystemAbs {
           }
 
           String[] allTypes = null; // null  means all types
-          //noinspection ConstantConditions
-          try (ResultSet tableResultSet = this.sqlConnection.getCurrentConnection().getMetaData().getTables(catalog, schema, sqlDataPath.getLogicalName(), allTypes)) {
+          try (ResultSet tableResultSet = this.sqlConnection.getCurrentConnection().getMetaData().getTables(catalog, schema, name, allTypes)) {
             return tableResultSet.next(); // For TYPE_FORWARD_ONLY
           }
 
@@ -229,6 +229,34 @@ public class SqlDataSystem extends DataSystemAbs {
     }
 
 
+  }
+
+  /**
+   * When names are not quoted, Oracle stores them as UPPERCASE
+   * to make them case-insensitive
+   * <a href="https://docs.oracle.com/en/database/oracle/oracle-database/18/sqlrf/Database-Object-Names-and-Qualifiers.html">...</a>
+   *
+   * @return a normalized name to use in jdbc call
+   */
+  protected String createNormalizedName(String name) {
+    if (name == null) {
+      return null;
+    }
+    Boolean quotingEnabled = this.getConnection().getAttribute(SqlConnectionAttributeEnum.NAME_QUOTING_ENABLED).getValueOrDefaultCastAsSafe(Boolean.class);
+    if (quotingEnabled) {
+      return name;
+    }
+    SqlNameCaseNormalization normalization = this.getConnection().getAttribute(SqlConnectionAttributeEnum.NAME_QUOTING_DISABLED_CASE).getValueOrDefaultCastAsSafe(SqlNameCaseNormalization.class);
+    switch (normalization) {
+      case UPPERCASE:
+        return name.toUpperCase();
+      case LOWERCASE:
+        return name.toLowerCase();
+      case NONE:
+        return name;
+      default:
+        throw new InternalException("The name/identifier normalization casing (" + normalization + ") is unknown");
+    }
   }
 
 

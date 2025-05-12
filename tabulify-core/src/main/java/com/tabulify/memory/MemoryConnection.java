@@ -10,7 +10,6 @@ import com.tabulify.spi.ProcessingEngine;
 import net.bytle.type.MediaType;
 import net.bytle.type.Strings;
 
-import java.util.HashMap;
 import java.util.List;
 
 public class MemoryConnection extends NoOpConnection {
@@ -82,10 +81,10 @@ public class MemoryConnection extends NoOpConnection {
           "If you don't want to specify a name, use the getRandomDataPath function").toString());
     }
     String path = String.join("/", parts);
-    MemoryDataPath memoryDataPath = this.memoryDataSystem.storageMemDataPaths.get(path);
+    MemoryDataPath memoryDataPath = this.memoryDataSystem.getFromStore(path);
     if (memoryDataPath == null) {
       memoryDataPath = getManager(mediaType).createDataPath(this, path);
-      this.memoryDataSystem.storageMemDataPaths.put(memoryDataPath.getRelativePath(), memoryDataPath);
+      this.memoryDataSystem.addInStore(memoryDataPath);
     }
     return memoryDataPath;
   }
@@ -122,7 +121,7 @@ public class MemoryConnection extends NoOpConnection {
   public void close() {
     super.close();
     // Delete all data paths
-    this.memoryDataSystem.storageMemDataPaths = new HashMap<>();
+    this.memoryDataSystem.emptyStore();
   }
 
   public MemoryVariableManager getManager(MediaType mediaType) {

@@ -495,6 +495,23 @@ public abstract class RelationDefAbs implements RelationDef {
     return this;
   }
 
+  @Override
+  public <D1 extends DataPath, D2 extends DataPath, D3 extends DataPath> RelationDef mergeDataDef(D1 targetDataPath, Map<D2, D3> targetSources) {
+
+    /**
+     * The structure
+     */
+    mergeStruct(targetDataPath);
+
+    /**
+     * Add the foreign keys
+     */
+    copyForeignKeysFrom(targetDataPath, targetSources);
+
+    return this;
+
+  }
+
   /**
    * The signature is the data path because this is the most used level
    * and not a data def
@@ -505,41 +522,47 @@ public abstract class RelationDefAbs implements RelationDef {
   @Override
   public RelationDef mergeDataDef(DataPath fromDataPath) {
 
-    /**
-     * The structure
-     */
-    mergeStruct(fromDataPath);
-
-    /**
-     * Add the foreign keys
-     */
-    copyForeignKeysFrom(fromDataPath);
-
-    return this;
+    return mergeDataDef(fromDataPath, null);
 
   }
 
   @Override
-  public RelationDef copyForeignKeysFrom(DataPath source) {
-    final List<ForeignKeyDef> foreignKeyDefs = source.getRelationDef().getForeignKeys();
-    for (ForeignKeyDef foreignKeyDef : foreignKeyDefs) {
-      DataPath sourceForeignDataPath = foreignKeyDef.getForeignPrimaryKey().getRelationDef().getDataPath();
+  public <D1 extends DataPath, D2 extends DataPath, D3 extends DataPath> RelationDef copyForeignKeysFrom(D1 targetDataPath, Map<D2, D3> targetSource) {
+    if (targetSource == null) {
+      targetSource = new HashMap<>();
+    }
+    final List<ForeignKeyDef> targetForeignKeyDefs = targetDataPath.getRelationDef().getForeignKeys();
+    for (ForeignKeyDef targetForeignKeyDef : targetForeignKeyDefs) {
+      DataPath targetForeignDataPath = targetForeignKeyDef.getForeignPrimaryKey().getRelationDef().getDataPath();
+
+      DataPath sourceForeignDataPath = null;
       DataPath target = this.getDataPath();
-      DataPath targetForeignDataPath = target.getSibling(sourceForeignDataPath.getName());
+      if (!targetSource.isEmpty()) {
+        // In case of cross system metadata copy, the name of the foreign key table
+        // may be not the same as the source table
+        // example: d_cat and D_CAT, it happens when quote are disabled on oracle as Oracle will put all non-quoted name in UPPERCASE
+        //noinspection SuspiciousMethodCalls
+        sourceForeignDataPath = targetSource.get(targetForeignDataPath);
+      }
+      if (sourceForeignDataPath == null) {
+        String targetName = targetForeignDataPath.getName();
+        sourceForeignDataPath = target.getSibling(targetName);
+      }
+
       // Does the table exist in the target
-      if (Tabulars.exists(targetForeignDataPath)) {
-        PrimaryKeyDef targetPrimaryKey = targetForeignDataPath.getOrCreateRelationDef().getPrimaryKey();
-        assert targetPrimaryKey != null : "Foreign Key not copied from (" + source + ") to (" + target + "): The foreign data path (" + targetForeignDataPath + ") exists but does not have any primary key. There is a inconsistency bug somewhere.";
+      if (Tabulars.exists(sourceForeignDataPath)) {
+        PrimaryKeyDef targetPrimaryKey = sourceForeignDataPath.getOrCreateRelationDef().getPrimaryKey();
+        assert targetPrimaryKey != null : "Foreign Key not copied from (" + targetDataPath + ") to (" + target + "): The foreign data path (" + sourceForeignDataPath + ") exists but does not have any primary key. There is a inconsistency bug somewhere.";
         List<String> targetForeignPrimaryKeyColumns = targetPrimaryKey.
           getColumns().stream()
           .map(ColumnDef::getColumnName)
           .collect(Collectors.toList());
-        List<String> sourceForeignPrimaryKeyColumns = sourceForeignDataPath.getRelationDef().getPrimaryKey().getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
+        List<String> sourceForeignPrimaryKeyColumns = targetForeignDataPath.getRelationDef().getPrimaryKey().getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
         // Do they have the same primary key columns
         if (targetForeignPrimaryKeyColumns.equals(sourceForeignPrimaryKeyColumns)) {
           // Create it then
-          target.getRelationDef().addForeignKey(targetForeignDataPath,
-            foreignKeyDef.getChildColumns().stream()
+          target.getRelationDef().addForeignKey(sourceForeignDataPath,
+            targetForeignKeyDef.getChildColumns().stream()
               .map(ColumnDef::getColumnName)
               .toArray(String[]::new)
           );
@@ -547,10 +570,15 @@ public abstract class RelationDefAbs implements RelationDef {
           DbLoggers.LOGGER_DB_ENGINE.warning("Foreign Key not copied: The primary columns of the source (" + sourceForeignPrimaryKeyColumns + ") are not the same than the target (" + targetForeignPrimaryKeyColumns);
         }
       } else {
-        DbLoggers.LOGGER_DB_ENGINE.warning("Foreign Key not copied: The target data path (" + targetForeignDataPath + ") does not exist");
+        DbLoggers.LOGGER_DB_ENGINE.warning("Foreign Key not copied: The target data path (" + sourceForeignDataPath + ") does not exist");
       }
     }
     return this;
+  }
+
+  @Override
+  public RelationDef copyForeignKeysFrom(DataPath fromDataPath) {
+    return copyForeignKeysFrom(fromDataPath, null);
   }
 
   /**

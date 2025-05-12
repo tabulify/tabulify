@@ -3,10 +3,13 @@ package com.tabulify.model;
 
 import com.tabulify.spi.DataPath;
 import net.bytle.exception.NoColumnException;
+import net.bytle.type.MapKeyIndependent;
 
 import java.sql.DatabaseMetaData;
 import java.sql.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -23,7 +26,12 @@ import java.util.stream.Collectors;
 public class RelationDefDefault extends RelationDefAbs {
 
 
-  protected Map<String, ColumnDef> columnDefByName = new HashMap<>();
+  /**
+   * But Oracle by default put all name in uppercase when quoting is disabled
+   * we should apply the same transform but RelationDef is system independent
+   * so we make it case independent here
+   */
+  protected MapKeyIndependent<ColumnDef> columnDefByName = new MapKeyIndependent<>();
 
   public <T extends DataPath> RelationDefDefault(T DataPath) {
     super(DataPath);
@@ -238,7 +246,7 @@ public class RelationDefDefault extends RelationDefAbs {
 
   @Override
   public RelationDefDefault dropAll() {
-    columnDefByName = new HashMap<>();
+    columnDefByName = new MapKeyIndependent<>();
     return this;
   }
 

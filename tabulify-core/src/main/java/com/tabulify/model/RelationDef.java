@@ -5,6 +5,7 @@ import com.tabulify.spi.DataPath;
 import net.bytle.exception.NoColumnException;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a relational structure
@@ -142,9 +143,29 @@ public interface RelationDef {
 
   RelationDef copyPrimaryKeyFrom(DataPath from);
 
+  /**
+   * Merge structure
+   *
+   * @param targetDataPath - the data path to merge from (the target)
+   * @param targetSources  - an optional mapping of target source in case of cross system
+   *                       (ie if the target and the source does not have the same name)
+   *                       It happens with transfer between oracle (uppercase by default) and any other database
+   *                       Example: d_cat in the source would become D_CAT in Oracle
+   */
+  <D1 extends DataPath, D2 extends DataPath, D3 extends DataPath> RelationDef mergeDataDef(D1 targetDataPath, Map<D2, D3> targetSources);
+
   RelationDef mergeDataDef(DataPath fromDataPath);
 
-  RelationDef copyForeignKeysFrom(DataPath source);
+  /**
+   * @param targetDataPath - the data path to copy the foreign key from (ie the target)
+   * @param targetSources  - an optional mapping of target source in case of cross system metadata copy
+   *                       (ie if the target and the source does not have the same name)
+   *                       It happens with transfer between oracle (uppercase by default) and any other database
+   *                       Example: d_cat in the source would become D_CAT in Oracle
+   */
+  <D1 extends DataPath, D2 extends DataPath, D3 extends DataPath> RelationDef copyForeignKeysFrom(D1 targetDataPath, Map<D2, D3> targetSources);
+
+  RelationDef copyForeignKeysFrom(DataPath fromDataPath);
 
   RelationDef mergeStruct(DataPath fromDataPath);
 

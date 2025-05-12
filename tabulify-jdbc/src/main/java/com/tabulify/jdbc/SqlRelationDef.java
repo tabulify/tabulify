@@ -339,7 +339,7 @@ public class SqlRelationDef extends RelationDefDefault {
         .map(s -> s.get(column_name))
         .collect(Collectors.toList());
 
-      if (columns.size() > 0) {
+      if (!columns.isEmpty()) {
         this.primaryKeyOf(columns.toArray(new String[0]))
           .setName(pkName);
       }

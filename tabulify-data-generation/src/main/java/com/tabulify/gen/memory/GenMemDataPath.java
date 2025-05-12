@@ -15,7 +15,7 @@ import com.tabulify.transfer.TransferProperties;
  * <p>
  * If you use a file, use the {@link GenDataPath}
  */
-public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath, GenDataPath {
+public class GenMemDataPath extends MemoryDataPathAbs implements DataPath, MemoryDataPath, GenDataPath {
 
 
   private final GenDataPathUtility genDataPathUtility;

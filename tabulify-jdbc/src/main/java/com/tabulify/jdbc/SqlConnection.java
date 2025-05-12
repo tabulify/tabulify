@@ -268,6 +268,7 @@ public class SqlConnection extends NoOpConnection {
   @Override
   public SqlDataPath getDataPath(String pathOrName, MediaType mediaType) {
 
+    pathOrName = this.getDataSystem().createNormalizedName(pathOrName);
     return this.sqlCache.createDataPath(pathOrName, (SqlMediaType) mediaType, getDataPathSupplier(pathOrName, mediaType));
 
   }
