@@ -64,4 +64,9 @@ public class RegexpGenerator<T> extends CollectionGeneratorAbs<T> {
     return DataGenType.REGEXP;
   }
 
+  @Override
+  public Boolean isNullable() {
+    return false;
+  }
+
 }

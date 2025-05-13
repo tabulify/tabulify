@@ -116,4 +116,9 @@ public class DataSetColumnGenerator<T> extends CollectionGeneratorAbs<T> {
     return DataGenType.DATA_SET_COLUMN;
   }
 
+  @Override
+  public Boolean isNullable() {
+    return entityColumn.isNullable();
+  }
+
 }

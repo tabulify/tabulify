@@ -799,4 +799,9 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
     return DataGenType.SEQUENCE;
   }
 
+  @Override
+  public Boolean isNullable() {
+    return false;
+  }
+
 }

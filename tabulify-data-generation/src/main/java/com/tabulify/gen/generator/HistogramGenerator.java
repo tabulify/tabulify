@@ -149,6 +149,16 @@ public class HistogramGenerator<T> extends CollectionGeneratorAbs<T> implements 
     return new HashSet<>();
   }
 
+  @Override
+  public Boolean isNullable() {
+    return values
+      .stream()
+      .filter(Objects::isNull)
+      .map(v -> true)
+      .findFirst()
+      .orElse(false);
+  }
+
 
   @Override
   public long getCount() {

@@ -236,4 +236,10 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
     return DataGenType.EXPRESSION;
   }
 
+  @Override
+  public Boolean isNullable() {
+    // not sure if you could return null
+    return false;
+  }
+
 }

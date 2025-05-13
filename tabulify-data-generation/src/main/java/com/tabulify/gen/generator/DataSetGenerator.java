@@ -48,7 +48,7 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
   /**
    * The column index where there is a weight (ie a probability)
    */
-  private Integer entityWeigthColumnIndex = null;
+  private Integer entityWeightColumnIndex = null;
 
   /**
    * The actual value
@@ -67,7 +67,7 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
   /**
    * The column name searched for the factor
    */
-  public static final List<String> WEIGTH_COLUMN_NAMES = Arrays.asList("probability", "weight", "factor");
+  public static final List<String> WEIGHT_COLUMN_NAMES = Arrays.asList("probability", "weight", "factor");
 
   /**
    * A memory representation of the entity
@@ -115,7 +115,7 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
      * Do we have a probability column
      */
     ColumnDef columnProb = null;
-    for (String columnName : WEIGTH_COLUMN_NAMES) {
+    for (String columnName : WEIGHT_COLUMN_NAMES) {
       try {
         columnProb = entityPath.getOrCreateRelationDef().getColumnDef(columnName);
         break;
@@ -125,7 +125,7 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
 
     }
     if (columnProb != null) {
-      entityWeigthColumnIndex = columnProb.getColumnPosition();
+      entityWeightColumnIndex = columnProb.getColumnPosition();
     }
 
 
@@ -216,8 +216,8 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
             long rowNum = selectStream.getRow();
             this.entitySet.put(rowNum, selectStream.getObjects());
             Double probability = 1.0;
-            if (entityWeigthColumnIndex != null) {
-              Double probabilityEntity = selectStream.getDouble(entityWeigthColumnIndex);
+            if (entityWeightColumnIndex != null) {
+              Double probabilityEntity = selectStream.getDouble(entityWeightColumnIndex);
               if (probabilityEntity != null) {
                 probability = probabilityEntity;
               }
@@ -242,8 +242,8 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
              * Build the histogram
              */
             Double probability = 1.0;
-            if (entityWeigthColumnIndex != null) {
-              Double probabilityEntity = selectStream.getDouble(entityWeigthColumnIndex);
+            if (entityWeightColumnIndex != null) {
+              Double probabilityEntity = selectStream.getDouble(entityWeightColumnIndex);
               if (probabilityEntity != null) {
                 probability = probabilityEntity;
               }
@@ -371,6 +371,11 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
   @Override
   public DataGenType getGeneratorType() {
     return DataGenType.DATA_SET;
+  }
+
+  @Override
+  public Boolean isNullable() {
+    return false;
   }
 
 }

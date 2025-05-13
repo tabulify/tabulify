@@ -300,4 +300,9 @@ public class RandomGenerator<T> extends CollectionGeneratorAbs<T> implements Col
     return DataGenType.RANDOM;
   }
 
+  @Override
+  public Boolean isNullable() {
+    return false;
+  }
+
 }

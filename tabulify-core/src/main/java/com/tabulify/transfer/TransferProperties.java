@@ -63,10 +63,11 @@ public class TransferProperties {
   /**
    * How the column mapping of the transfer is done
    * <p>
-   * This is by position because you don't need
-   * the target structure to match.
+   * Fight of the default:
+   * * name: more human and logical in a sql context (a name is easier to match than an integer position)
+   * * position: you don't need the target structure to match
    */
-  private TransferColumnMapping columnMappingMethod = TransferColumnMapping.POSITION;
+  private TransferColumnMapping columnMappingMethod = TransferColumnMapping.NAME;
 
 
   /**
@@ -129,7 +130,7 @@ public class TransferProperties {
 
 
   /**
-   * The variable that holds the custom column mapping that was set by {@link #withColumnMappingByPositionalMap(Map)}
+   * The variable that holds the custom column mapping that was set by {@link #setColumnMappingByPositionalMap(Map)}
    */
   private MapBiDirectional<Integer, Integer> columnMappingByMapPosition = new MapBiDirectional<>();
   /**
@@ -335,7 +336,7 @@ public class TransferProperties {
    * @param columnMapping - A map of the source {@link ColumnDefBase#getColumnPosition() column position} against the target {@link ColumnDefBase#getColumnPosition() column position}
    * @return the object for chaining
    */
-  public TransferProperties withColumnMappingByPositionalMap(Map<Integer, Integer> columnMapping) {
+  public TransferProperties setColumnMappingByPositionalMap(Map<Integer, Integer> columnMapping) {
     this.columnMappingMethod = TransferColumnMapping.MAP_BY_POSITION;
     // Reset the data to empty map
     this.columnMappingByMapPosition = new MapBiDirectional<>();
@@ -349,7 +350,7 @@ public class TransferProperties {
    *
    * @return the object for chaining
    */
-  public TransferProperties withColumnMappingByPosition() {
+  public TransferProperties setColumnMappingByPosition() {
     this.columnMappingMethod = TransferColumnMapping.POSITION;
     return this;
   }
@@ -376,11 +377,11 @@ public class TransferProperties {
    * The column mapping will be done by {@link ColumnDefBase#getColumnName() column name}
    * <p>
    * By default, the column mapping is done by column position.
-   * You can also give a custom column mapping relationship with the {@link #withColumnMappingByPositionalMap(Map)} function
+   * You can also give a custom column mapping relationship with the {@link #setColumnMappingByPositionalMap(Map)} function
    *
    * @return the object for chaining
    */
-  public TransferProperties withColumnMappingByName() {
+  public TransferProperties setColumnMappingByName() {
     this.columnMappingMethod = TransferColumnMapping.NAME;
     return this;
   }
@@ -390,7 +391,7 @@ public class TransferProperties {
     return this.columnMappingByMapPosition;
   }
 
-  public boolean withBindVariablesStatement() {
+  public boolean setWithBindVariablesStatement() {
     return this.withBindVariablesStatement;
   }
 
@@ -399,7 +400,7 @@ public class TransferProperties {
   }
 
 
-  public TransferProperties withColumnMappingByNamedMap(Map<String, String> mappingByName) {
+  public TransferProperties setColumnMappingByNamedMap(Map<String, String> mappingByName) {
     this.columnMappingMethod = TransferColumnMapping.MAP_BY_NAME;
     // Reset the data to empty map
     this.columnMappingByMapName = new MapBiDirectional<>();

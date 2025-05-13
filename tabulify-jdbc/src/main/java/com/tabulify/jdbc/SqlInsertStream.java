@@ -90,7 +90,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
     }
     this.sourceMetaDef = sourceDataPath.getOrCreateRelationDef();
     this.dataSystem = targetDataPath.getConnection().getDataSystem();
-    this.withSqlParameters = transferProperties.withBindVariablesStatement();
+    this.withSqlParameters = transferProperties.setWithBindVariablesStatement();
 
     if (transferProperties.getOperation() == null) {
       transferOperation = this.dataSystem.getDefaultTransferOperation();
@@ -451,7 +451,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
 
   /**
-   * This function is called with {@link TransferProperties#withBindVariablesStatement()} is true
+   * This function is called with {@link TransferProperties#setWithBindVariablesStatement()} is true
    */
   private void createPreparedStatement() {
     // Named parameters / bind variables
@@ -498,7 +498,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
   }
 
   /**
-   * This function is called with {@link TransferProperties#withBindVariablesStatement()} is false
+   * This function is called with {@link TransferProperties#setWithBindVariablesStatement()} is false
    */
   private void createStatement() {
     try {

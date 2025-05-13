@@ -181,4 +181,9 @@ public class ForeignColumnGenerator<T> extends CollectionGeneratorAbs<T> impleme
     return DataGenType.FOREIGN_COLUMN;
   }
 
+  @Override
+  public Boolean isNullable() {
+    return this.generator.isNullable();
+  }
+
 }

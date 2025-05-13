@@ -123,10 +123,10 @@ public class TransferStep extends TargetFilterStepAbs {
           }
           switch (transferMappingMethod) {
             case NAME:
-              transferProperties.withColumnMappingByName();
+              transferProperties.setColumnMappingByName();
               break;
             case POSITION:
-              transferProperties.withColumnMappingByPosition();
+              transferProperties.setColumnMappingByPosition();
               break;
             case MAP:
               // map is given in the other variable
@@ -147,11 +147,11 @@ public class TransferStep extends TargetFilterStepAbs {
           }
           try {
             Map<String, String> mapByName = Casts.castToSameMap(argumentString, String.class, String.class);
-            transferProperties.withColumnMappingByNamedMap(mapByName);
+            transferProperties.setColumnMappingByNamedMap(mapByName);
           } catch (Exception e) {
             try {
               Map<Integer, Integer> mapByPosition = Casts.castToSameMap(argumentString, Integer.class, Integer.class);
-              transferProperties.withColumnMappingByPositionalMap(mapByPosition);
+              transferProperties.setColumnMappingByPositionalMap(mapByPosition);
             } catch (Exception ex) {
               throw new RuntimeException("The mapping column value should be a map of name or a name of number. This value (" + argumentString + ") is not");
             }

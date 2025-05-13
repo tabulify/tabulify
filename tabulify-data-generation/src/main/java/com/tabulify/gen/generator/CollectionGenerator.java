@@ -103,4 +103,9 @@ public interface CollectionGenerator<T> extends Dependency, Supplier<T> {
 
   CollectionGenerator<?> setColumnDef(GenColumnDef genColumnDef);
 
+  /**
+   * @return if this generator may return null value
+   */
+  Boolean isNullable();
+
 }

@@ -539,12 +539,14 @@ public class TransferSourceTarget {
 
     /**
      * Not null column check
+     * (Not sure if a database can check if a sql script returns not null)
      */
-    for (ColumnDef targetColumn : target.getOrCreateRelationDef().getColumnDefs()) {
+    for (Map.Entry<ColumnDef, ColumnDef> sourceTargetColumn : localSourceTargetColumnMap.entrySet()) {
+      ColumnDef targetColumn = sourceTargetColumn.getValue();
       if (!targetColumn.isNullable()) {
-        ColumnDef sourceColumn = localSourceTargetColumnMap.getKey(targetColumn);
-        if (sourceColumn == null) {
-          throw new RuntimeException("The source data resource (" + source + ") does not contain a column named (" + targetColumn.getColumnName() + "). This is mandatory because in the target (" + target + "), this column is not null.");
+        ColumnDef sourceColumn = sourceTargetColumn.getKey();
+        if (sourceColumn.isNullable()) {
+          throw new RuntimeException("The target column " + targetColumn + " is not nullable but it's source is (" + sourceColumn + ").");
         }
       }
     }

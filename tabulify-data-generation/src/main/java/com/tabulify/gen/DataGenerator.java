@@ -170,7 +170,7 @@ public class DataGenerator implements AutoCloseable {
           TransferProperties
             .create()
             .setOperation(TransferOperation.UPSERT)
-            .withColumnMappingByName()
+            .setColumnMappingByName()
         );
         transferManager.addTransfer(transferSourceTarget);
       }

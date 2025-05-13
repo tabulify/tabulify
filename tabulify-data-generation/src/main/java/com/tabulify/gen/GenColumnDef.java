@@ -31,7 +31,7 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
   private final GenRelationDef genDataDef;
   private CollectionGenerator<?> generator;
   // Attribute value may be string, map or list
-  private Map<DataGenAttribute, Object> generatorObj;
+  private Map<DataGenAttribute, Object> dataGeneratorMetaData;
 
 
   /**
@@ -86,7 +86,7 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
     // When read from a data definition file into the column property
 
     try {
-      this.generatorObj = Casts.castToNewMap(
+      this.dataGeneratorMetaData = Casts.castToNewMap(
         dataGeneratorAsObject,
         DataGenAttribute.class,
         Object.class
@@ -96,7 +96,7 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
     }
 
     DataGenType dataGenType;
-    String dataGenTypeAsString = (String) generatorObj.get(DataGenAttribute.TYPE);
+    String dataGenTypeAsString = (String) dataGeneratorMetaData.get(DataGenAttribute.TYPE);
     try {
       dataGenType = Casts.cast(dataGenTypeAsString, DataGenType.class);
     } catch (CastException e) {
@@ -410,15 +410,30 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
   }
 
   public Object getDataGeneratorValue(DataGenAttribute dataGenAttribute) {
-    return this.generatorObj.get(dataGenAttribute);
+    return this.dataGeneratorMetaData.get(dataGenAttribute);
   }
 
   public <T> T getDataGeneratorValue(DataGenAttribute dataGenAttribute, Class<T> aClass) throws CastException {
-    Object value = this.generatorObj.get(dataGenAttribute);
+    Object value = this.dataGeneratorMetaData.get(dataGenAttribute);
     if (value == null) {
       return null;
     }
     return Casts.cast(value, aClass);
+  }
+
+  @Override
+  public Boolean isNullable() {
+    /**
+     * may be null with a direct cast such as
+     * List<GenDataPath> genDataPaths = fsDataPaths
+     *   .stream()
+     *   .map(GenFsDataPath.class::cast)
+     *   .collect(Collectors.toList());
+     */
+    if (generator == null) {
+      generator = getOrCreateGenerator(clazz);
+    }
+    return generator.isNullable();
   }
 
 }
