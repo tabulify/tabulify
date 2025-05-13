@@ -465,7 +465,7 @@ public abstract class RelationDefAbs implements RelationDef {
     int columnCount = from.getOrCreateRelationDef().getColumnsSize();
     for (int i = 1; i <= columnCount; i++) {
       ColumnDef columnDef = from.getRelationDef().getColumnDef(i);
-      SqlDataType targetDataType = from.getOrCreateRelationDef().getDataPath().getConnection().getSqlDataType(columnDef.getDataType().getTypeCode());
+      SqlDataType targetDataType = this.getDataPath().getConnection().getSqlDataTypeFromSourceDataType(columnDef.getDataType());
       this.getOrCreateColumn(columnDef.getColumnName(), targetDataType, targetDataType.getSqlClass())
         .precision(columnDef.getPrecision())
         .scale(columnDef.getScale())

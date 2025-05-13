@@ -2,11 +2,11 @@ package com.tabulify.transfer;
 
 import com.tabulify.DbLoggers;
 import com.tabulify.exception.DataResourceNotEmptyException;
-import com.tabulify.fs.FsDataPath;
 import com.tabulify.fs.textfile.FsTextDataPath;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.model.ColumnDefBase;
 import com.tabulify.model.PrimaryKeyDef;
+import com.tabulify.model.RelationDef;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.Tabulars;
 import net.bytle.exception.InternalException;
@@ -37,6 +37,8 @@ public class TransferSourceTarget {
   private final DataPath target;
   private final DataPath source;
   private final TransferProperties transferProperties;
+  // column mapping by position
+  private MapBiDirectional<ColumnDef, ColumnDef> sourceTargetColumnMap;
 
 
   public TransferSourceTarget(DataPath sourceDataPath, DataPath targetDataPath, TransferProperties transferProperties) {
@@ -79,70 +81,81 @@ public class TransferSourceTarget {
    * by the mapping strategy (position or name)
    * @throws IllegalArgumentException if the column mapping given is not good
    */
-  public Map<Integer, Integer> getTransferColumnMapping() {
+  public MapBiDirectional<ColumnDef, ColumnDef> getTransferSourceTargetColumnMapping() {
+    if (sourceTargetColumnMap != null) {
+      return sourceTargetColumnMap;
+    }
     List<? extends ColumnDef> sourceColumns = source.getOrCreateRelationDef().getColumnDefs();
-    Map<Integer, Integer> columnMappings;
+
     TransferColumnMapping columnMappingMethod = transferProperties.getColumnMappingMethod();
+    RelationDef targetRelationDef = target.getOrCreateRelationDef();
+    RelationDef sourceRelationDef = source.getRelationDef();
     switch (columnMappingMethod) {
       case POSITION:
         /**
          * one on one (1=1, 2=2, ...)
          * or 1=1 2=1 (transfer to a text file) {@link com.tabulify.fs.textfile.FsTextDataPath}
          */
-        columnMappings = new HashMap<>();
-        int targetColumnsSize = target.getOrCreateRelationDef().getColumnsSize();
+        sourceTargetColumnMap = new MapBiDirectional<>();
+        int targetColumnsSize = targetRelationDef.getColumnsSize();
         for (ColumnDef sourceColumn : sourceColumns) {
           Integer sourceColumnPosition = sourceColumn.getColumnPosition();
-          columnMappings.put(sourceColumnPosition, sourceColumnPosition);
           if (sourceColumnPosition > targetColumnsSize) {
             if (!(target instanceof FsTextDataPath)) {
               throw new RuntimeException("The target column with the position (" + sourceColumnPosition + ") does not exist. The target (" + target + ") has only " + targetColumnsSize + " columns.");
             }
-            columnMappings.put(sourceColumnPosition, targetColumnsSize);
+            sourceColumnPosition = targetColumnsSize;
           }
+          ColumnDef targetColumn = targetRelationDef.getColumnDef(sourceColumnPosition);
+          sourceTargetColumnMap.put(sourceColumn, targetColumn);
+
         }
         break;
       case NAME:
         // You can't map one column to another
-        columnMappings = new MapBiDirectional<>();
+        sourceTargetColumnMap = new MapBiDirectional<>();
         for (ColumnDef sourceColumn : sourceColumns) {
           Integer columnPosition = sourceColumn.getColumnPosition();
           ColumnDef targetColumn;
           try {
-            targetColumn = target.getOrCreateRelationDef().getColumnDef(sourceColumn.getColumnName());
+            targetColumn = targetRelationDef.getColumnDef(sourceColumn.getColumnName());
           } catch (NoColumnException e) {
             throw new RuntimeException("Error during the mapping of the source and target columns (by name), a column with the name (" + sourceColumn.getColumnName() + ") could not be found in the target (" + target + ")");
           }
-          Integer targetColumnPosition = targetColumn.getColumnPosition();
-          columnMappings.put(columnPosition, targetColumnPosition);
+          sourceTargetColumnMap.put(sourceColumn, targetColumn);
         }
         break;
       case MAP_BY_POSITION:
-        columnMappings = transferProperties.getColumnMappingByMapPosition();
-        // Check that the columns are existing
-        int sourceSize = source.getRelationDef().getColumnsSize();
-        int targetSize = target.getRelationDef().getColumnsSize();
-        for (Map.Entry<Integer, Integer> columnMapping : columnMappings.entrySet()) {
+        sourceTargetColumnMap = new MapBiDirectional<>();
+        MapBiDirectional<Integer, Integer> transferPropertiesSourceTargetColumnMap = transferProperties.getColumnMappingByMapPosition();
+        for (Map.Entry<Integer, Integer> columnMapping : transferPropertiesSourceTargetColumnMap.entrySet()) {
           Integer sourceColumnPosition = columnMapping.getKey();
-          if (sourceColumnPosition > sourceSize) {
+          ColumnDef sourceColumn;
+          try {
+            sourceColumn = sourceRelationDef.getColumnDef(sourceColumnPosition);
+          } catch (Exception e) {
             throw new IllegalArgumentException("The column mapping given for the transfer (" + this + ") is not good. The source column (" + sourceColumnPosition + ") does not exists");
           }
           Integer targetColumnPosition = columnMapping.getValue();
-          if (targetColumnPosition > targetSize) {
+          ColumnDef targetColumn;
+          try {
+            targetColumn = targetRelationDef.getColumnDef(targetColumnPosition);
+          } catch (Exception e) {
             throw new IllegalArgumentException("The column mapping given for the transfer (" + this + ") is not good. The target column (" + targetColumnPosition + ") does not exists");
           }
+          sourceTargetColumnMap.put(sourceColumn, targetColumn);
         }
         break;
       case MAP_BY_NAME:
         // You can't map one column to another
-        columnMappings = new MapBiDirectional<>();
+        sourceTargetColumnMap = new MapBiDirectional<>();
         MapBiDirectional<String, String> columnMappingsByName = transferProperties.getColumnMappingByMapNamed();
         // Check that the columns are existing and transform the map in a positional map
         for (Map.Entry<String, String> columnMapping : columnMappingsByName.entrySet()) {
           String sourceColumnName = columnMapping.getKey();
           ColumnDef sourceColumn;
           try {
-            sourceColumn = source.getRelationDef().getColumnDef(sourceColumnName);
+            sourceColumn = sourceRelationDef.getColumnDef(sourceColumnName);
           } catch (NoColumnException e) {
             throw new IllegalArgumentException("The column mapping (" + columnMapping + ") given for the transfer (" + this + ") is not good. The source column (" + sourceColumnName + ") does not exists in the source (" + source + ")");
           }
@@ -153,13 +166,13 @@ public class TransferSourceTarget {
           } catch (NoColumnException e) {
             throw new IllegalArgumentException("The column mapping (" + columnMapping + ") given for the transfer (" + this + ") is not good. The target column (" + targetColumnName + ") does not exists in the target (" + target + ")");
           }
-          columnMappings.put(sourceColumn.getColumnPosition(), targetColumn.getColumnPosition());
+          sourceTargetColumnMap.put(sourceColumn, targetColumn);
         }
         break;
       default:
         throw new RuntimeException("Mapping method (" + columnMappingMethod + ") was not implemented. This is a internal bug.");
     }
-    return columnMappings;
+    return sourceTargetColumnMap;
 
   }
 
@@ -201,30 +214,20 @@ public class TransferSourceTarget {
       getSourceColumnsInInsertStatement().forEach(c -> sourceColumnPositionInStatementOrder.add(c.getColumnPosition()));
       return sourceColumnPositionInStatementOrder;
 
-    } else {
-      /**
-       * Code that was created when we wanted to have a mapping by position and not by name
-       *
-       */
-      Map<Integer, Integer> columnMapping = getTransferColumnMapping();
-      return columnMapping
-        .values()
-        .stream()
-        .sorted()
-        .map(v -> {
-          if (columnMapping instanceof MapBiDirectional) {
-            return ((MapBiDirectional<Integer, Integer>) columnMapping).getKey(v);
-          }
-          return columnMapping
-            .entrySet()
-            .stream()
-            .filter(e -> e.getValue().equals(v))
-            .map(Map.Entry::getKey)
-            .findFirst()
-            .orElseThrow();
-        })
-        .collect(Collectors.toList());
     }
+
+    MapBiDirectional<ColumnDef, ColumnDef> columnMapping = getTransferSourceTargetColumnMapping();
+    List<Integer> sourceColumnPosition = new ArrayList<>();
+    for (int i = 1; i <= target.getRelationDef().getColumnsSize(); i++) {
+      ColumnDef targetColumn = target.getRelationDef().getColumnDef(i);
+      ColumnDef sourceColumn = columnMapping.getKey(targetColumn);
+      if (sourceColumn == null) {
+        // target column not in the transfer
+        continue;
+      }
+      sourceColumnPosition.add(sourceColumn.getColumnPosition());
+    }
+    return sourceColumnPosition;
 
   }
 
@@ -390,15 +393,15 @@ public class TransferSourceTarget {
 
     /**
      * Column Mapping check
-     * This function will check that the {@link #getTransferColumnMapping() column mapping}
+     * This function will check that the {@link #getTransferSourceTargetColumnMapping() column mapping}
      * More particularly that the target data type must be able to receive the source data
      * Log on an info level because the cast mechanism can transform it before loading.
      * See SqlDataStore#toSqlObject that uses {@link net.bytle.type.Casts#cast(Object, Class)}
      */
-    Map<Integer, Integer> columnMapping = getTransferColumnMapping();
+    Map<ColumnDef, ColumnDef> columnMapping = getTransferSourceTargetColumnMapping();
     columnMapping.entrySet().forEach(c -> {
-      ColumnDef sourceColumn = source.getOrCreateRelationDef().getColumnDef(c.getKey());
-      ColumnDef targetColumn = target.getOrCreateRelationDef().getColumnDef(c.getValue());
+      ColumnDef sourceColumn = c.getKey();
+      ColumnDef targetColumn = c.getValue();
       if (sourceColumn.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {
         String message = Strings.createMultiLineFromStrings(
           "There is a potential problem with a data loading mapping between two columns",
@@ -516,12 +519,8 @@ public class TransferSourceTarget {
     /**
      * Source Columns
      */
-    List<String> sourceColumnNames = source
-      .getOrCreateRelationDef()
-      .getColumnDefs()
-      .stream()
-      .map(ColumnDef::getColumnName)
-      .collect(Collectors.toList());
+    MapBiDirectional<ColumnDef, ColumnDef> localSourceTargetColumnMap = getTransferSourceTargetColumnMapping();
+
 
     /**
      * Primary key check
@@ -531,7 +530,8 @@ public class TransferSourceTarget {
     PrimaryKeyDef targetPrimaryKey = target.getOrCreateRelationDef().getPrimaryKey();
     if (targetPrimaryKey != null) {
       for (ColumnDef targetPrimaryColumn : targetPrimaryKey.getColumns()) {
-        if (!sourceColumnNames.contains(targetPrimaryColumn.getColumnName())) {
+        ColumnDef sourceColumn = localSourceTargetColumnMap.getKey(targetPrimaryColumn);
+        if (sourceColumn == null) {
           throw new RuntimeException("The source data resource (" + source + ") does not contain a column named (" + targetPrimaryColumn.getColumnName() + "). This is mandatory because the target (" + target + ") has a primary key with this column name.");
         }
       }
@@ -542,7 +542,8 @@ public class TransferSourceTarget {
      */
     for (ColumnDef targetColumn : target.getOrCreateRelationDef().getColumnDefs()) {
       if (!targetColumn.isNullable()) {
-        if (!sourceColumnNames.contains(targetColumn.getColumnName())) {
+        ColumnDef sourceColumn = localSourceTargetColumnMap.getKey(targetColumn);
+        if (sourceColumn == null) {
           throw new RuntimeException("The source data resource (" + source + ") does not contain a column named (" + targetColumn.getColumnName() + "). This is mandatory because in the target (" + target + "), this column is not null.");
         }
       }
@@ -555,18 +556,12 @@ public class TransferSourceTarget {
   public List<ColumnDef> getSourceColumnsInInsertStatement() {
 
 
-    List<Integer> sourceColumnPositions = this.getTransferColumnMapping()
+    return this.getTransferSourceTargetColumnMapping()
       .keySet()
       .stream()
-      .sorted()
+      .sorted(Comparator.comparing(ColumnDef::getColumnPosition))
       .collect(Collectors.toList());
 
-    List<ColumnDef> sourceColumnDefs = new ArrayList<>();
-    for (Integer position : sourceColumnPositions) {
-      sourceColumnDefs.add(source.getRelationDef().getColumnDef(position));
-    }
-
-    return sourceColumnDefs;
 
   }
 
@@ -606,7 +601,7 @@ public class TransferSourceTarget {
   }
 
   /**
-   * @return the source column names that are unique in the target
+   * @return the source column that are unique in the target
    */
   public List<ColumnDef> getSourceUniqueColumnsForTarget() {
     return getTargetUniqueColumns()

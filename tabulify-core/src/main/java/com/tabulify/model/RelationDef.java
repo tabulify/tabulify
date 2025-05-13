@@ -29,6 +29,7 @@ public interface RelationDef {
   /**
    * @param columnIndex the column index
    * @return a column def by its index (starting at 0)
+   * @throws IllegalArgumentException if the column was not found
    */
   ColumnDef getColumnDef(Integer columnIndex);
 

@@ -1004,7 +1004,7 @@ public class SqlDataSystem extends DataSystemAbs {
 
       } catch (Exception e) {
 
-        throw new RuntimeException(e + "\nException: The Column Statement build until now is:\n" + statementColumnPart, e);
+        throw new RuntimeException(e + "\nException: The Column Statement build until now for the data path (" + dataPath + ") is:\n" + statementColumnPart, e);
 
       }
 

@@ -241,7 +241,7 @@ public class SqlDataPath extends DataPathAbs {
 
     Objects.requireNonNull(stringPath);
     String path = this.getSqlConnectionResourcePath().resolve(stringPath).toString();
-    return new SqlDataPath(this.getConnection(), path, UNKNOWN);
+    return this.getConnection().getDataPath(path, UNKNOWN);
 
   }
 

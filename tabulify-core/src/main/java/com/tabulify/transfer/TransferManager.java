@@ -250,12 +250,7 @@ public class TransferManager {
         transferListenerStream.setMethod(targetInsertStream.getMethod());
         transferListenerStream.addInsertListener(targetInsertStream.getInsertStreamListener());
 
-        List<Integer> sourceColumnPositionsInOrder = transferSourceTarget
-          .getTransferColumnMapping()
-          .keySet()
-          .stream()
-          .sorted()
-          .collect(Collectors.toList());
+        List<Integer> sourceColumnPositionsInOrder = transferSourceTarget.getSourceColumnPositionInStatementOrder();
         // Run
         while (sourceSelectStream.next()) {
           List<Object> objects = new ArrayList<>();

@@ -21,6 +21,7 @@ public class OracleSystem extends SqlDataSystem {
   public static final int MAX_PRECISION_NUMERIC = 38;
   public static final int MAXIMUM_SCALE_NUMERIC = 127;
   public static final int MINIMUM_SCALE_NUMERIC = -84;
+  public static final int MAX_NUMERIC_PRECISION = 38;
   public static int MAX_VARCHAR2_PRECISION_BYTE = 4000;
 
   @Override
@@ -48,16 +49,24 @@ public class OracleSystem extends SqlDataSystem {
         return "LONG RAW";
       case Types.LONGNVARCHAR:
         return "LONG";
-      case OracleTypes.NUMBER:
+      case Types.NUMERIC:
+        //case OracleTypes.NUMBER:
         // Bug ? If the scale is -127, it's a float
         Integer precision = columnDef.getPrecision();
+        if (precision == null) {
+          return "NUMBER(" + MAX_NUMERIC_PRECISION + ")";
+        }
         Integer scale = columnDef.getScale();
+        if (scale == null) {
+          // should have been an integer
+          return "NUMBER(" + precision + ")";
+        }
         if (scale == -127 && precision != 0) {
           return "FLOAT(" + precision + ")";
         }
         // Default will take over
-        if (precision > 38) {
-          precision = 38;
+        if (precision > MAX_NUMERIC_PRECISION) {
+          precision = MAX_NUMERIC_PRECISION;
         }
         return "NUMBER(" + precision + "," + scale + ")";
       case Types.VARBINARY:
@@ -138,6 +147,12 @@ public class OracleSystem extends SqlDataSystem {
       .setMaxPrecision(MAX_PRECISION_NUMERIC)
       .setMaximumScale(MAXIMUM_SCALE_NUMERIC)
       .setMinimumScale(MINIMUM_SCALE_NUMERIC);
+
+    // Integer does not exit, but it's a
+    // NUMERIC(precision)
+    sqlDataTypes.computeIfAbsent(Types.INTEGER, SqlMetaDataType::new)
+      .setSqlName("NUMBER")
+      .setMaxPrecision(MAX_PRECISION_NUMERIC);
 
     /**
      * Oracle Database supports a reliable Unicode datatype through NCHAR, NVARCHAR2, and NCLOB.
