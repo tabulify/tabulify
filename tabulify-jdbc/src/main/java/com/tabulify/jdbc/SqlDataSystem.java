@@ -986,13 +986,14 @@ public class SqlDataSystem extends DataSystemAbs {
 
   /**
    * @param dataPath : The target schema
-   * @return the column string part of a create statement
+   * @return the column string part of a `create` statement
    */
   protected String createColumnsStatement(DataPath dataPath) {
 
 
     StringBuilder statementColumnPart = new StringBuilder();
     RelationDef dataDef = dataPath.getOrCreateRelationDef();
+    // columns are stored by position
     for (int i = 1; i <= dataDef.getColumnsSize(); i++) {
 
       try {
@@ -1023,7 +1024,7 @@ public class SqlDataSystem extends DataSystemAbs {
 
   /**
    * @param columnDef - The column definition (column may be from another database)
-   * @return The statement is the create data type statement that should be compliant
+   * @return The statement is the `create` data type statement that should be compliant
    * with the actual connection.
    */
   protected String createDataTypeStatement(ColumnDef columnDef) {
@@ -1197,10 +1198,7 @@ public class SqlDataSystem extends DataSystemAbs {
   protected String createColumnStatement(ColumnDef columnDef) {
 
 
-    String dataTypeCreateStatement;
-
-    dataTypeCreateStatement = createDataTypeStatement(columnDef);
-
+    String dataTypeCreateStatement = createDataTypeStatement(columnDef);
 
     // NOT NULL / Optionality
     String notNullStatement = "";
@@ -1646,7 +1644,7 @@ public class SqlDataSystem extends DataSystemAbs {
 
     Boolean quotingEnabled = this.getConnection().getAttribute(SqlConnectionAttributeEnum.NAME_QUOTING_ENABLED).getValueOrDefaultCastAsSafe(Boolean.class);
     if (!quotingEnabled) {
-      return word;
+      return createNormalizedName(word);
     }
 
     String identifierQuoteString = sqlConnection.getMetadata().getIdentifierQuote();

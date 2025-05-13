@@ -250,4 +250,7 @@ public class SqlConnectionMetadata extends ConnectionMetadata {
   }
 
 
+  public Boolean isQuotingEnabled() {
+    return this.getConnection().getAttribute(SqlConnectionAttributeEnum.NAME_QUOTING_ENABLED).getValueOrDefaultCastAsSafe(Boolean.class);
+  }
 }
