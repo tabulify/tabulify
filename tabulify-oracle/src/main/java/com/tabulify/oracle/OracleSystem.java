@@ -1,19 +1,14 @@
 package com.tabulify.oracle;
 
-import com.tabulify.jdbc.SqlDataPath;
-import com.tabulify.jdbc.SqlDataSystem;
-import com.tabulify.jdbc.SqlMetaColumn;
-import com.tabulify.jdbc.SqlMetaDataType;
-import com.tabulify.model.ColumnDef;
-import com.tabulify.model.RelationDef;
-import com.tabulify.model.SqlDataType;
-import com.tabulify.model.UniqueKeyDef;
-import com.tabulify.transfer.TransferSourceTarget;
+import com.tabulify.jdbc.*;
+import com.tabulify.model.*;
+import com.tabulify.spi.DropTruncateAttribute;
+import com.tabulify.transfer.TransferSourceTargetOrder;
 import oracle.jdbc.OracleTypes;
 
 import java.sql.Types;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 public class OracleSystem extends SqlDataSystem {
 
@@ -22,7 +17,27 @@ public class OracleSystem extends SqlDataSystem {
   public static final int MAXIMUM_SCALE_NUMERIC = 127;
   public static final int MINIMUM_SCALE_NUMERIC = -84;
   public static final int MAX_NUMERIC_PRECISION = 38;
-  public static int MAX_VARCHAR2_PRECISION_BYTE = 4000;
+
+  /**
+   * Ref: You can omit size from the column definition. The default value is 1.
+   * <a href="https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html">...</a>
+   */
+  public static final int CHAR_DEFAULT_PRECISION = 1;
+  // The AL32UTF8 character set implements the UTF-8 encoding form and supports the latest version of the Unicode standard.
+  // It encodes characters in one, two, three, or four bytes. Supplementary characters require four bytes. It is for ASCII-based platforms.
+  // https://docs.oracle.com/database/121/NLSPG/ch6unicode.htm
+  // ```
+  public static final int AL32UTF8_MAX_BYTES_BY_CHAR = 4;
+  /**
+   * The NCHAR default value is 1
+   * Ref: <a href="https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html#SQLRF-GUID-FE15E51B-52C6-45D7-9883-4DF477">...</a>16A17D
+   */
+  static final int NCHAR_DEFAULT_PRECISION = 1;
+  public static final int AL16UTF16_MAX_BYTES_BY_CHAR = 2;
+  /**
+   * Max precision is unit independent (then in byte)
+   */
+  public static int VARCHAR2_MAX_PRECISION_BYTE = 4000;
 
   @Override
   protected List<String> createTruncateStatement(List<SqlDataPath> dataPaths) {
@@ -31,10 +46,37 @@ public class OracleSystem extends SqlDataSystem {
   }
 
   @Override
-  protected String createDataTypeStatement(ColumnDef columnDef) {
+  protected String createDataTypeStatement(ColumnDef<?> columnDef) {
 
-    SqlDataType dataType = columnDef.getDataType();
-    switch (dataType.getTypeCode()) {
+    SqlDataType<?> dataType = columnDef.getDataType();
+
+    /**
+     * Date is a timestamp/datetime type but without precision
+     * We take over to return the `date` without any precision at all (Driver returns 7)
+     * https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html#GUID-A3C0D836-BADB-44E5-A5D4-265BA5968483__GUID-0EA41E53-451F-4ECE-8523-5FC4C5A37977
+     */
+    if (dataType.toKeyNormalizer().equals(SqlDataTypeAnsi.DATE.toKeyNormalizer())) {
+      return "date";
+    }
+
+    int precision = columnDef.getPrecision();
+    int defaultPrecision = dataType.getDefaultPrecision();
+    switch (dataType.getVendorTypeNumber()) {
+      case Types.CHAR:
+      case Types.VARCHAR:
+        /**
+         * Adding the char qualifier
+         * (ie varchar2(3 char))
+         * No unit length specifier for NCHAR and NVARCHAR
+         * (ie nchar(3), not nchar(3 byte) or nchar(3 char)
+         */
+        if (precision == 0) {
+          precision = defaultPrecision;
+        }
+        if (precision == defaultPrecision && !dataType.getIsSpecifierMandatory()) {
+          return columnDef.getDataType().toKeyNormalizer().toSqlTypeCase();
+        }
+        return columnDef.getDataType().toKeyNormalizer().toSqlTypeCase() + "(" + columnDef.getPrecisionOrMax() + " char)";
       case Types.INTEGER:
         // Integer does not really exist
         // Specify an integer using the following form:
@@ -52,16 +94,15 @@ public class OracleSystem extends SqlDataSystem {
       case Types.NUMERIC:
         //case OracleTypes.NUMBER:
         // Bug ? If the scale is -127, it's a float
-        Integer precision = columnDef.getPrecision();
-        if (precision == null) {
+        if (precision == 0) {
           return "NUMBER(" + MAX_NUMERIC_PRECISION + ")";
         }
-        Integer scale = columnDef.getScale();
-        if (scale == null) {
+        int scale = columnDef.getScale();
+        if (scale == 0) {
           // should have been an integer
           return "NUMBER(" + precision + ")";
         }
-        if (scale == -127 && precision != 0) {
+        if (scale == -127) {
           return "FLOAT(" + precision + ")";
         }
         // Default will take over
@@ -70,7 +111,7 @@ public class OracleSystem extends SqlDataSystem {
         }
         return "NUMBER(" + precision + "," + scale + ")";
       case Types.VARBINARY:
-        // Bug in a Oracle driver where precision is null in a resultSet
+        // Bug in an Oracle driver where precision is null in a resultSet
         if (columnDef.getPrecision() == 0) {
           return "RAW(2000)";
         }
@@ -89,135 +130,135 @@ public class OracleSystem extends SqlDataSystem {
    * if UTF8      -> 1 char = 3 bytes
    */
   public static final int MAX_NVARCHAR_PRECISION_BYTE = 4000;
-  protected static final int MAX_NCHAR_PRECISION_BYTE = 2000;
+  protected static final int NCHAR_MAX_PRECISION_BYTE = 2000;
 
   // https://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#i1960
-  // max precision is 2000 in char or bytes
+  // max precision is 2000 (not unit dependent ie in char or bytes)
   protected static final int MAX_CHAR_PRECISION_BYTE_OR_CHAR = 2000;
 
   public OracleSystem(OracleConnection oracleConnection) {
     super(oracleConnection);
   }
 
+
+  @Override
+  public Set<SqlDataTypeVendor> getSqlDataTypeVendors() {
+    return Set.of(OracleSqlType.values());
+  }
+
   /**
    * Driver Data Type
    * <p>General Info</p>
+   * <a href="https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html">SQL Reference</a>
    * <a href="https://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#CNCPT313">...</a>
    * To Java Class
    * <a href="https://docs.oracle.com/cd/E11882_01/java.112/e16548/apxref.htm#JJDBC28906">...</a>
    */
   @Override
-  public Map<Integer, SqlMetaDataType> getMetaDataTypes() {
+  public void dataTypeBuildingMain(SqlDataTypeManager typeManager) {
 
-    Map<Integer, SqlMetaDataType> sqlDataTypes = super.getMetaDataTypes();
-
-    sqlDataTypes.computeIfAbsent(OracleTypes.INTERVALDS, SqlMetaDataType::new)
-      .setSqlName("INTERVALDS")
-      .setSqlJavaClazz(oracle.sql.INTERVALDS.class);
-
-    sqlDataTypes.computeIfAbsent(OracleTypes.INTERVALYM, SqlMetaDataType::new)
-      .setSqlName("INTERVAL_YEAR_MONTH")
-      .setSqlJavaClazz(oracle.sql.INTERVALYM.class);
-
-    sqlDataTypes.computeIfAbsent(OracleTypes.LONGVARBINARY, SqlMetaDataType::new)
-      .setSqlName("LONG RAW")
-      .setSqlJavaClazz(oracle.sql.RAW.class);
-
-    sqlDataTypes.computeIfAbsent(Types.LONGVARCHAR, SqlMetaDataType::new)
-      .setSqlName("LONG");
-
-    // oracle.sql.NUMBER.class
-    // We don't set the native class: oracle.sql.NUMBER.class
-    // because the generator does not know it
+    super.dataTypeBuildingMain(typeManager);
 
     /**
-     * Same as {@link OracleTypes.NUMBER}
+     * Date/timestamp and Date/time are in the driver
+     * but not date/date
      */
-    sqlDataTypes.computeIfAbsent(Types.NUMERIC, SqlMetaDataType::new)
-      .setSqlName("NUMBER")
-      .setMaxPrecision(MAX_PRECISION_NUMERIC)
-      .setMaximumScale(MAXIMUM_SCALE_NUMERIC)
-      .setMinimumScale(MINIMUM_SCALE_NUMERIC);
-
-    // https://docs.oracle.com/cd/B28359_01/server.111/b28285/sqlqr06.htm#CHDJJEEA
-    // We don't use the class oracle.sql.NUMBER.class
-    // because the generator does not know it
-    sqlDataTypes.computeIfAbsent(Types.DOUBLE, SqlMetaDataType::new)
-      .setSqlName("NUMBER")
-      .setMaxPrecision(MAX_PRECISION_NUMERIC)
-      .setMaximumScale(MAXIMUM_SCALE_NUMERIC)
-      .setMinimumScale(MINIMUM_SCALE_NUMERIC);
-
-    // Integer does not exit, but it's a
-    // NUMERIC(precision)
-    sqlDataTypes.computeIfAbsent(Types.INTEGER, SqlMetaDataType::new)
-      .setSqlName("NUMBER")
-      .setMaxPrecision(MAX_PRECISION_NUMERIC);
+    typeManager.createTypeBuilder(OracleSqlType.DATE_DATE)
+      .setAnsiType(OracleSqlType.DATE_DATE.getAnsiType());
 
     /**
+     * Driver returns 11 for max precision, clearly error
+     */
+    typeManager.getTypeBuilder(OracleSqlType.TIMESTAMP)
+      .setMaxPrecision(OracleSqlType.TIMESTAMP.getMaxPrecision());
+
+    /**
+     * Real and double are not Oracle Data Type (is not in the list return by the driver)
+     * but they can be used because of the ANSI data type mapping
+     * https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html#GUID-0BC16006-32F1-42B1-B45E-F27A494963FF
+     */
+    typeManager.createTypeBuilder(SqlDataTypeAnsi.REAL)
+      .setDescription("ANSI data type converted to Oracle Float(63)");
+    typeManager.createTypeBuilder(SqlDataTypeAnsi.DOUBLE_PRECISION)
+      .setDescription("ANSI data type converted to Oracle Float(126)");
+
+
+    /**
+     * The max precision is unit independent given in byte, we transform it in character
+     * <p>
+     * Ref: The maximum value of size is 2000, which means 2000 bytes or characters (code points), depending on the selected length semantics.
+     * https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html#GUID-1BABC478-FB47-4962-9B0C-8B8BD059E733
+     * <p>
      * Oracle Database supports a reliable Unicode datatype through NCHAR, NVARCHAR2, and NCLOB.
      * <p></p>
      * These datatypes are guaranteed to be Unicode encoding and always use character length semantics.
      * (ie the maximum size is always in character length semantics)
      */
     String nCharacterSet = this.getConnection().getMetadata().getUnicodeCharacterSet();
-    int bytesByNChar = 3;
+    int bytesByNChar;
+    // Ref
+    // https://docs.oracle.com/database/121/NLSPG/ch6unicode.htm#NLSPG-GUID-6B549B3B-90DE-478B-A183-553D1A018996
     switch (nCharacterSet) {
       case "AL16UTF16":
-        bytesByNChar = 2; // The AL16UTF16 use 2 bytes to store a character.
+        // The AL16UTF16 use 2 bytes to store a character.
+        // Ref:
+        // When the national character set is AL16UTF16, the maximum number of characters never occupies more bytes than the maximum capacity, as each character (in an Oracle sense) occupies exactly 2 bytes.
+        // https://docs.oracle.com/database/121/NLSPG/ch6unicode.htm#NLSPG-GUID-6B549B3B-90DE-478B-A183-553D1A018996
+        bytesByNChar = AL16UTF16_MAX_BYTES_BY_CHAR;
         break;
       case "UTF8":
-        //noinspection DataFlowIssue
-        bytesByNChar = 3; // UTF 8 - 3
+        // The UTF8 character set implements the CESU-8 encoding form and encodes characters in one, two, or three bytes.
+        // Ref: https://docs.oracle.com/database/121/NLSPG/ch6unicode.htm
+        bytesByNChar = 3;
+        break;
+      default:
+        // Ref:
+        // If you want national character set columns to be able to hold the declared number of characters in any national character set, do not declare NCHAR columns longer than 2000/3=666 characters and NVARCHAR2 columns longer than 4000/3=1333 or 32767/3=10922 characters, depending on the MAX_STRING_SIZE initialization parameter.
+        // https://docs.oracle.com/database/121/NLSPG/ch6unicode.htm#NLSPG-GUID-6B549B3B-90DE-478B-A183-553D1A018996
+        bytesByNChar = 3;
         break;
     }
+
     int maxNvarcharPrecision = MAX_NVARCHAR_PRECISION_BYTE / bytesByNChar;
-    sqlDataTypes.computeIfAbsent(Types.NVARCHAR, SqlMetaDataType::new)
-      .setSqlName("NVARCHAR2")
+    typeManager.getTypeBuilder(OracleSqlType.NVARCHAR2)
       .setMaxPrecision(maxNvarcharPrecision)
-      .setPrecisionMandatory(true)
       .setDefaultPrecision(maxNvarcharPrecision);
 
-    int maxNcharPrecision = MAX_NCHAR_PRECISION_BYTE / bytesByNChar;
-    sqlDataTypes.computeIfAbsent(Types.NCHAR, SqlMetaDataType::new)
-      .setSqlName("NCHAR")
+    int maxNcharPrecision = NCHAR_MAX_PRECISION_BYTE / bytesByNChar;
+    typeManager.getTypeBuilder(OracleSqlType.NCHAR)
       .setMaxPrecision(maxNcharPrecision)
-      .setPrecisionMandatory(true)
-      .setDefaultPrecision(maxNcharPrecision);
+      .setDefaultPrecision(NCHAR_DEFAULT_PRECISION);
+
 
     String characterSet = this.getConnection().getMetadata().getCharacterSet();
-    int bytesByChar = 3;
+    int maxBytesByChar;
     switch (characterSet) {
       case "AL32UTF8":
-        bytesByChar = 2; // The AL16UTF16 use 2 bytes to store a character.
+        // With a max of 2000, we get 500
+        // It's what oracle recommend
+        // ```
+        // If you want a CHAR column to be always able to store size characters in any database character set, use a value of size that is
+        // less than or equal to 500.
+        // Ref: https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html#GUID-1BABC478-FB47-4962-9B0C-8B8BD059E733
+        maxBytesByChar = AL32UTF8_MAX_BYTES_BY_CHAR;
+        break;
+      default:
+        maxBytesByChar = 3;
         break;
     }
 
+    typeManager.getTypeBuilder(OracleSqlType.CHAR)
+      .setMaxPrecision(MAX_CHAR_PRECISION_BYTE_OR_CHAR / maxBytesByChar)
+      .setDefaultPrecision(CHAR_DEFAULT_PRECISION);
 
-    sqlDataTypes.computeIfAbsent(Types.CHAR, SqlMetaDataType::new)
-      .setSqlName("CHAR")
-      .setMaxPrecision(MAX_CHAR_PRECISION_BYTE_OR_CHAR)
-      .setDefaultPrecision(1);
-
-    int maxVarcharPrecision = MAX_VARCHAR2_PRECISION_BYTE / bytesByChar;
-    sqlDataTypes.computeIfAbsent(Types.VARCHAR, SqlMetaDataType::new)
-      .setSqlName("VARCHAR2")
+    int maxVarcharPrecision = VARCHAR2_MAX_PRECISION_BYTE / maxBytesByChar;
+    typeManager.getTypeBuilder(OracleSqlType.VARCHAR2)
       .setMaxPrecision(maxVarcharPrecision)
       .setDefaultPrecision(maxVarcharPrecision)
-      .setPrecisionMandatory(true);
+      .setPriority(SqlDataTypePriority.TOP)
+      .setMandatorySpecifier(true);
 
-    sqlDataTypes.computeIfAbsent(Types.VARBINARY, SqlMetaDataType::new)
-      .setSqlName("VARBINARY")
-      .setSqlJavaClazz(oracle.sql.RAW.class);
 
-    /**
-     * https://docs.oracle.com/javadb/10.10.1.2/ref/rrefclob.html
-     */
-    sqlDataTypes.computeIfAbsent(Types.CLOB, SqlMetaDataType::new)
-      .setSqlName("CLOB")
-      .setMaxPrecision(null); // no precision
-
-    return sqlDataTypes;
   }
 
 
@@ -240,7 +281,7 @@ public class OracleSystem extends SqlDataSystem {
    * VALUES (S.employee_id, S.salary*.01)
    * WHERE (S.salary <= 8000);
    */
-  private String getMergeStatement(TransferSourceTarget transferSourceTarget, boolean sqlBindFormat) {
+  private String getMergeStatement(TransferSourceTargetOrder transferSourceTarget, boolean sqlBindFormat) {
 
 
     List<UniqueKeyDef> targetUniqueKeysFoundInSourceColumns = getTargetUniqueKeysFoundInSourceColumns(transferSourceTarget);
@@ -270,9 +311,9 @@ public class OracleSystem extends SqlDataSystem {
 
     // on
     mergeStatement.append(" on (");
-    List<ColumnDef> uniqueKeyColumns = targetUniqueKeysFoundInSourceColumns.get(0).getColumns();
+    List<ColumnDef<?>> uniqueKeyColumns = targetUniqueKeysFoundInSourceColumns.get(0).getColumns();
     for (int i = 0; i < uniqueKeyColumns.size(); i++) {
-      ColumnDef uniqueKeyColumnDef = uniqueKeyColumns.get(i);
+      ColumnDef<?> uniqueKeyColumnDef = uniqueKeyColumns.get(i);
       mergeStatement
         .append(sourceAlias).append(".").append(this.createQuotedName(uniqueKeyColumnDef.getColumnName()))
         .append(" = ")
@@ -285,9 +326,9 @@ public class OracleSystem extends SqlDataSystem {
 
     // WHEN MATCHED THEN update
     mergeStatement.append(" WHEN MATCHED THEN UPDATE SET ");
-    List<ColumnDef> sourceNonUniqueColumnsForTarget = transferSourceTarget.getSourceNonUniqueColumnsForTarget();
+    List<ColumnDef<?>> sourceNonUniqueColumnsForTarget = transferSourceTarget.getSourceNonUniqueColumnsForTarget();
     for (int i = 0; i < sourceNonUniqueColumnsForTarget.size(); i++) {
-      ColumnDef updateColumn = sourceNonUniqueColumnsForTarget.get(i);
+      ColumnDef<?> updateColumn = sourceNonUniqueColumnsForTarget.get(i);
       mergeStatement
         .append(targetAlias)
         .append(".")
@@ -303,9 +344,9 @@ public class OracleSystem extends SqlDataSystem {
 
     // WHEN not MATCHED THEN insert
     mergeStatement.append(" WHEN NOT MATCHED THEN INSERT (");
-    List<? extends ColumnDef> targetColumnsToLoad = transferSourceTarget.getSourceColumnsInInsertStatement();
+    List<? extends ColumnDef<?>> targetColumnsToLoad = transferSourceTarget.getTargetColumnInInsertStatement();
     for (int i = 0; i < targetColumnsToLoad.size(); i++) {
-      ColumnDef targetInsertColumn = targetColumnsToLoad.get(i);
+      ColumnDef<?> targetInsertColumn = targetColumnsToLoad.get(i);
       mergeStatement.append(this.createQuotedName(targetInsertColumn.getColumnName()));
       if (i != targetColumnsToLoad.size() - 1) {
         mergeStatement.append(",");
@@ -313,7 +354,7 @@ public class OracleSystem extends SqlDataSystem {
     }
     mergeStatement.append(") VALUES (");
     for (int i = 0; i < targetColumnsToLoad.size(); i++) {
-      ColumnDef targetInsertColumn = targetColumnsToLoad.get(i);
+      ColumnDef<?> targetInsertColumn = targetColumnsToLoad.get(i);
       mergeStatement
         .append(sourceAlias)
         .append(".")
@@ -328,37 +369,61 @@ public class OracleSystem extends SqlDataSystem {
   }
 
   @Override
-  public String createUpsertStatementWithPrintfExpressions(TransferSourceTarget transferSourceTarget) {
+  public String createUpsertMergeStatementWithPrintfExpressions(TransferSourceTargetOrder transferSourceTarget) {
     return getMergeStatement(transferSourceTarget, false);
   }
 
 
   @Override
-  public String createUpsertStatementWithBindVariables(TransferSourceTarget transferSourceTarget) {
+  public String createUpsertMergeStatementWithParameters(TransferSourceTargetOrder transferSourceTarget) {
 
     return getMergeStatement(transferSourceTarget, true);
 
   }
 
+
   @Override
   public List<SqlMetaColumn> getMetaColumns(SqlDataPath dataPath) {
-    List<SqlMetaColumn> sqlMetaColumns = super.getMetaColumns(dataPath);
-
-    for (SqlMetaColumn metaColumn : sqlMetaColumns) {
-      // bug, date is returned as timestamp (93) instead of date (91)
-      if (metaColumn.getTypeName().equals("DATE")) {
-        metaColumn.setTypeCode(Types.DATE);
+    List<SqlMetaColumn> metaColumns = super.getMetaColumns(dataPath);
+    for (SqlMetaColumn sqlMetaColumn : metaColumns) {
+      // Timestamp correction
+      // Unfortunately, the type in the table column is with precision (ie "TIMESTAMP(3)" and not "TIMESTAMP")
+      sqlMetaColumn.setTypeName(OracleSqlUtil.normalizeTimestampType(sqlMetaColumn.getTypeName()));
+      // The driver sends us the type numeric/type code integer
+      // but does not make the conversion when reading columns
+      // we do it here
+      if (sqlMetaColumn.getTypeCode() == Types.NUMERIC) {
+        if (sqlMetaColumn.getDecimalDigits() == 0) {
+          if (sqlMetaColumn.getColumnSize() <= 1) {
+            sqlMetaColumn.setTypeCode(Types.BIT);
+          } else if (sqlMetaColumn.getColumnSize() <= 3) {
+            sqlMetaColumn.setTypeCode(Types.TINYINT);
+          } else if (sqlMetaColumn.getColumnSize() <= 5) {
+            sqlMetaColumn.setTypeCode(Types.SMALLINT);
+          } else if (sqlMetaColumn.getColumnSize() <= 10) {
+            sqlMetaColumn.setTypeCode(Types.INTEGER);
+          } else {
+            sqlMetaColumn.setTypeCode(Types.BIGINT);
+          }
+        }
       }
-      // https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Data-Types.html#GUID-7690645A-0EE3-46CA-90DE-C96DF5A01F8F
-      // Specify an integer using the following form:
-      // NUMBER(p)
-      // ie scale is zero
-      if (metaColumn.getTypeCode().equals(Types.NUMERIC) && metaColumn.getScale().equals(0)) {
-        metaColumn.setTypeCode(Types.INTEGER);
+      if (sqlMetaColumn.getTypeCode() == Types.TIMESTAMP && sqlMetaColumn.getTypeName().equals("DATE")) {
+        sqlMetaColumn.setDecimalDigits(0);
       }
     }
-    return sqlMetaColumns;
+    return metaColumns;
   }
 
-
+  @Override
+  protected List<String> createDropStatement(List<SqlDataPath> sqlDataPaths, Set<DropTruncateAttribute> dropAttributes) {
+    SqlMediaType enumObjectType = sqlDataPaths.get(0).getMediaType();
+    return SqlDropStatement.builder()
+      .setType(enumObjectType)
+      .setIsCascadeSupported(true)
+      .setCascadeWord("cascade constraints")
+      .setIfExistsSupported(true)
+      .setMultipleSqlObjectSupported(false)
+      .build()
+      .getStatements(sqlDataPaths, dropAttributes);
+  }
 }

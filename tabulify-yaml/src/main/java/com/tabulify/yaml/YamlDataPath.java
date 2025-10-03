@@ -6,19 +6,17 @@ import com.tabulify.fs.textfile.FsTextDataPath;
 import com.tabulify.fs.textfile.FsTextDataPathAttributes;
 import com.tabulify.model.RelationDef;
 import com.tabulify.model.RelationDefDefault;
-import com.tabulify.model.SqlTypes;
-import com.tabulify.spi.DataPath;
-import com.tabulify.stream.InsertStream;
+import com.tabulify.model.SqlDataTypeAnsi;
 import com.tabulify.stream.SelectStream;
-import com.tabulify.transfer.TransferProperties;
-import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
 import net.bytle.type.Casts;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
 
 import java.nio.file.Path;
-import java.sql.Types;
+
+import static com.tabulify.conf.Origin.DEFAULT;
 
 public class YamlDataPath extends FsTextDataPath {
 
@@ -28,19 +26,19 @@ public class YamlDataPath extends FsTextDataPath {
   public YamlStructure getStructure() {
     try {
       return (YamlStructure) this.getAttribute(YamDataPathAttribute.STRUCTURE).getValueOrDefault();
-    } catch (NoValueException | NoVariableException e) {
+    } catch (NoVariableException e) {
       throw new RuntimeException("Internal Error: Structure variable was not found. It should not happen");
     }
   }
 
+
   public YamlStyle getOutputStyle() {
     try {
-      return (YamlStyle) this.getAttribute(YamDataPathAttribute.OUTPUT_STYLE).getValueOrDefault();
-    } catch (NoValueException | NoVariableException e) {
+      return (YamlStyle) this.getAttribute(YamDataPathAttribute.STYLE).getValueOrDefault();
+    } catch (NoVariableException e) {
       throw new RuntimeException("Internal Error: output style variable was not found. It should not happen");
     }
   }
-
 
 
   public YamlDataPath(FsConnection fsConnection, Path path) {
@@ -82,10 +80,6 @@ public class YamlDataPath extends FsTextDataPath {
     return new YamlSelectStream(this);
   }
 
-  @Override
-  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
-    return super.getInsertStream(source, transferProperties);
-  }
 
   @Override
   public MediaType getMediaType() {
@@ -100,7 +94,7 @@ public class YamlDataPath extends FsTextDataPath {
 
 
   @Override
-  public YamlDataPath addAttribute(String key, Object value) {
+  public YamlDataPath addAttribute(KeyNormalizer key, Object value) {
 
 
     YamDataPathAttribute attribute;
@@ -113,7 +107,7 @@ public class YamlDataPath extends FsTextDataPath {
 
     com.tabulify.conf.Attribute variable;
     try {
-      variable = this.getConnection().getTabular().createAttribute(attribute, value);
+      variable = this.getConnection().getTabular().getVault().createAttribute(attribute, value, DEFAULT);
       this.addAttribute(variable);
       return this;
     } catch (Exception e) {
@@ -123,19 +117,18 @@ public class YamlDataPath extends FsTextDataPath {
   }
 
   public YamlDataPath setOutputStyle(YamlStyle yamlStyle) {
-    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(YamDataPathAttribute.OUTPUT_STYLE, Origin.DEFAULT).setPlainValue(yamlStyle);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(YamDataPathAttribute.STYLE, Origin.DEFAULT).setPlainValue(yamlStyle);
     this.addAttribute(attribute);
     return this;
   }
 
   private void buildColumnName() {
 
-    int type = Types.VARCHAR;
+    /**
+     * JSON
+     */
+    this.relationDef.addColumn(getColumnName(), SqlDataTypeAnsi.JSON);
 
-    if (this.getOutputStyle() == YamlStyle.JSON) {
-      type = SqlTypes.JSON;
-    }
-    this.relationDef.addColumn(getColumnName(), type);
   }
 
 }

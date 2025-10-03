@@ -51,7 +51,7 @@ public class SelectStreamListener extends ThreadListenerAbs implements ThreadLis
 
 
     public Long getRowCount() {
-        return selectStream.getRow();
+        return selectStream.getRecordId();
     }
 
     public SelectStream getSelectStream() {

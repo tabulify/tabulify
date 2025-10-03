@@ -2,14 +2,13 @@ package com.tabulify.excel;
 
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.InsertStreamAbs;
-import com.tabulify.transfer.TransferProperties;
+import com.tabulify.transfer.TransferPropertiesCross;
+import com.tabulify.transfer.TransferPropertiesSystem;
 import net.bytle.exception.CastException;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Row;
 
-import java.io.IOException;
 import java.util.List;
 
 public class ExcelInsertStream extends InsertStreamAbs implements InsertStream {
@@ -17,7 +16,7 @@ public class ExcelInsertStream extends InsertStreamAbs implements InsertStream {
 
   private final ExcelSheet excelSheet;
 
-  public ExcelInsertStream(ExcelDataPath fsDataPath, TransferProperties transferProperties) {
+  public ExcelInsertStream(ExcelDataPath fsDataPath, TransferPropertiesSystem transferPropertiesSystem) {
 
     super(fsDataPath);
     this.excelSheet = fsDataPath.getExcelSheet(PackageAccess.READ_WRITE);
@@ -37,7 +36,6 @@ public class ExcelInsertStream extends InsertStreamAbs implements InsertStream {
     this.insertStreamListener.addRows(1);
     int lastRowNum = excelSheet.getSheet().getLastRowNum();
     Row row = this.excelSheet.getSheet().createRow(lastRowNum + 1);
-    CreationHelper creationHelper = this.excelSheet.getWorkbook().getCreationHelper();
     for (int i = 0; i < values.size(); i++) {
       // Create a cell and put a value in it.
       Cell cell = row.createCell(i);
@@ -62,7 +60,9 @@ public class ExcelInsertStream extends InsertStreamAbs implements InsertStream {
    */
   @Override
   public void close() {
+
     this.excelSheet.close();
+
   }
 
   @Override

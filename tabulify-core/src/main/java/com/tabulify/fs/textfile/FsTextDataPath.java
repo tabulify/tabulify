@@ -1,7 +1,7 @@
 package com.tabulify.fs.textfile;
 
 import com.tabulify.DbLoggers;
-import com.tabulify.conf.Origin;
+import com.tabulify.conf.Attribute;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.FsDataPath;
 import com.tabulify.fs.binary.FsBinaryDataPath;
@@ -11,11 +11,15 @@ import com.tabulify.model.RelationDefDefault;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
-import com.tabulify.transfer.TransferProperties;
-import com.tabulify.transfer.TransferSourceTarget;
-import net.bytle.exception.*;
+import com.tabulify.transfer.TransferPropertiesSystem;
+import com.tabulify.transfer.TransferSourceTargetOrder;
+import net.bytle.exception.IllegalArgumentExceptions;
+import net.bytle.exception.NoVariableException;
 import net.bytle.fs.Fs;
+import net.bytle.fs.FsTextDetectedCharsetNotSupported;
+import net.bytle.fs.FsTextFile;
 import net.bytle.type.Casts;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
 
@@ -25,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 
+import static com.tabulify.conf.Origin.DEFAULT;
 import static com.tabulify.fs.textfile.FsTextDataPathAttributes.CHARACTER_SET;
 
 /**
@@ -72,14 +77,22 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
 
   public static FsTextDataPath create(FsConnection fsConnection, Path path) {
 
+    if (path.isAbsolute()) {
+      Path nioPath = fsConnection.getNioPath();
+      try {
+        path = Fs.relativize(path, nioPath);
+      } catch (Exception e) {
+        throw new IllegalArgumentException("The path " + path + " cannot be relativized from the connection path " + nioPath, e);
+      }
+    }
     return new FsTextDataPath(fsConnection, path);
 
   }
 
 
   @Override
-  public FsTextDataPath setDescription(String description) {
-    super.setDescription(description);
+  public FsTextDataPath setComment(String description) {
+    super.setComment(description);
     return this;
   }
 
@@ -102,7 +115,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
 
     try {
       return (String[]) this.getAttribute(FsTextDataPathAttributes.END_OF_RECORD).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+    } catch (NoVariableException e) {
       throw IllegalArgumentExceptions.createFromMessage("This exception should not happen because there is already a default", e);
     }
 
@@ -114,7 +127,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
    * @param endOfRecords The strings that are used at the end of a row (default to the system default \r\n for Windows, \n for the other)
    */
   public FsTextDataPath setEndOfRecords(String... endOfRecords) {
-    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(FsTextDataPathAttributes.END_OF_RECORD, com.tabulify.conf.Origin.DEFAULT).setPlainValue(endOfRecords);
+    Attribute attribute = Attribute.create(FsTextDataPathAttributes.END_OF_RECORD, DEFAULT).setPlainValue(endOfRecords);
     this.addAttribute(attribute);
     return this;
   }
@@ -127,7 +140,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
    * @return The {@link FsTextDataPath} instance for chaining initialization
    */
   public FsTextDataPath setCharset(Charset charset) {
-    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(CHARACTER_SET, Origin.DEFAULT).setPlainValue(charset);
+    Attribute attribute = Attribute.create(CHARACTER_SET, DEFAULT).setPlainValue(charset);
     this.addAttribute(attribute);
     return this;
   }
@@ -138,12 +151,8 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
    */
   public Charset getCharset() {
 
-
-    try {
-      return (Charset) this.getOrCreateVariable(CHARACTER_SET).getValueOrDefault();
-    } catch (NoValueException e) {
-      throw new InternalException("At minimal, the character set should have the default");
-    }
+    // should not return null as character set as a default
+    return (Charset) this.getOrCreateVariable(CHARACTER_SET).getValueOrDefault();
 
   }
 
@@ -166,28 +175,29 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
       return FsTextDataPathAttributes.DEFAULTS.CHARSET;
     }
 
-    String characterSet = Fs.detectCharacterSet(path);
-    if (characterSet != null) {
-      try {
-        Charset charset = Casts.cast(characterSet, Charset.class);
-        this.getOrCreateVariable(CHARACTER_SET).setPlainValue(charset);
-      } catch (CastException ex) {
-        String message = "The string (" + characterSet + ") could not be transformed as characters set";
-        if (getConnection().getTabular().isIdeEnv()) {
-          throw new IllegalArgumentException(message);
-        } else {
-          DbLoggers.LOGGER_DB_ENGINE.warning(message);
-        }
+    Charset characterSet = null;
+    try {
+      characterSet = FsTextFile.builder(path).detectCharacterSet();
+    } catch (FsTextDetectedCharsetNotSupported e) {
+      // character set detected but the name is not supported
+      String message = "The character set detected for the resource (" + this + ") is not supported on this operating system. Error: " + e.getMessage();
+      if (getConnection().getTabular().isStrictExecution()) {
+        throw new IllegalArgumentException(message, e);
+      } else {
+        DbLoggers.LOGGER_DB_ENGINE.warning(message);
       }
-
     }
+    if (characterSet != null) {
+      this.getOrCreateVariable(CHARACTER_SET).setPlainValue(characterSet);
+    }
+
     return FsTextDataPathAttributes.DEFAULTS.CHARSET;
 
   }
 
 
   @Override
-  public FsTextDataPath addAttribute(String key, Object value) {
+  public FsTextDataPath addAttribute(KeyNormalizer key, Object value) {
 
     FsTextDataPathAttributes textAtt;
     try {
@@ -196,9 +206,8 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
       super.addAttribute(key, value);
       return this;
     }
-
     try {
-      com.tabulify.conf.Attribute attribute = getConnection().getTabular().createAttribute(textAtt, value);
+      Attribute attribute = getConnection().getTabular().getVault().createAttribute(textAtt, value, DEFAULT);
       super.addAttribute(attribute);
       return this;
     } catch (Exception e) {
@@ -223,7 +232,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
   }
 
   @Override
-  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
+  public InsertStream getInsertStream(DataPath source, TransferPropertiesSystem transferProperties) {
     return FsTextInsertStream.create(this);
   }
 
@@ -234,20 +243,17 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
 
 
   @Override
-  public RelationDef getOrCreateRelationDef() {
-    if (relationDef != null) {
-      return relationDef;
-    }
-
-    if (Files.exists(this.getAbsoluteNioPath())) {
-      relationDef = new RelationDefDefault(this)
-        .addColumn(this.getUniqueColumnName());
-      return relationDef;
-    }
+  public RelationDef createRelationDef() {
 
     /**
+     * A text data path is the only free form structure
+     * Meaning that this is the only structure that allows a many-to-one insertion
+     * ie many columns to only one line.
+     * <p>
+     * The transfer manages therefore the structure and is aware of this fact
+     * <p>
      * A data path needs at minimum a column in a cross system transfer (ie fs to relation)
-     * {@link TransferSourceTarget#sourcePreChecks()}
+     * {@link TransferSourceTargetOrder#sourcePreChecks()}
      * but it's created at runtime
      * <p>
      * Why ? for 2 reasons.
@@ -279,9 +285,14 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
      * pass the value
      * and the {@link FsTextInsertStream} correct the column structure at {@link FsTextInsertStream#close()} close
      * time
+     * <p>
      *
+     * 3 - when the file already exists, the transfer into a text file may be many to one
+     * (ie many column creating one line)
      */
     relationDef = new RelationDefDefault(this);
+    String uniqueColumnName = this.getColumnName();
+    relationDef.addColumn(uniqueColumnName);
     return relationDef;
 
   }
@@ -290,7 +301,7 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
 
     try {
       return (String) this.getAttribute(FsTextDataPathAttributes.COLUMN_NAME).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+    } catch (NoVariableException e) {
       throw new RuntimeException("Internal Error: COLUMN_NAME variable was not found. It should not happen");
     }
 
@@ -303,14 +314,14 @@ public class FsTextDataPath extends FsBinaryDataPath implements FsDataPath {
    */
   public String getText() throws NoSuchFileException {
 
-    return Fs.getFileContent(this.getNioPath(), this.getCharset());
+    return Fs.getFileContent(this.getAbsoluteNioPath(), this.getCharset());
 
   }
 
   public String getUniqueColumnName() {
     try {
       return (String) getAttribute(FsTextDataPathAttributes.COLUMN_NAME).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+    } catch (NoVariableException e) {
       return FsTextDataPathAttributes.DEFAULTS.HEADER_DEFAULT;
     }
   }

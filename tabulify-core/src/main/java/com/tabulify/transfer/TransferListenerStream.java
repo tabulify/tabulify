@@ -2,9 +2,9 @@ package com.tabulify.transfer;
 
 import com.tabulify.engine.ThreadListener;
 import com.tabulify.stream.InsertStream;
+import com.tabulify.stream.InsertStreamListener;
 import com.tabulify.stream.SelectStream;
 import com.tabulify.stream.Stream;
-import com.tabulify.stream.InsertStreamListener;
 
 /**
  *
@@ -23,7 +23,7 @@ public class TransferListenerStream extends TransferListenerAbs implements Threa
   private InsertStreamListener insertListener;
 
 
-  public TransferListenerStream(TransferSourceTarget transferSourceTarget) {
+  public TransferListenerStream(TransferSourceTargetOrder transferSourceTarget) {
     super(transferSourceTarget);
   }
 

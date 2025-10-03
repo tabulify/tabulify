@@ -1,0 +1,32 @@
+kind: generator
+spec:
+  MaxRecordCount: 10
+  Columns:
+    # Generate 10 days sequentially
+    - name: d_date
+      comment: A date
+      Type: date
+      data-supplier:
+        type: sequence
+        arguments:
+          start: 2025-06-06 # by default, today
+    # Generate the month of the year from the date with an expression
+    - name: d_moy
+      comment: the month number in year
+      Type: Integer
+      data-supplier:
+        type: expression
+        arguments:
+          column-variable: d_date
+          expression: "d_date.getMonth()+1"
+    # Generate the year from the date with an expression
+    - name: d_year
+      comment: The year number
+      Type: Varchar
+      Precision: 4
+      data-supplier:
+        type: expression
+        arguments:
+          column-variable: d_date
+          expression: "d_date.getFullYear()"
+

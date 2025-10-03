@@ -1,0 +1,3 @@
+com.tabulify.gen.flow.enrich.EnrichPipelineStep
+com.tabulify.gen.flow.generate.GeneratePipelineStep
+com.tabulify.gen.flow.fill.FillPipelineStep

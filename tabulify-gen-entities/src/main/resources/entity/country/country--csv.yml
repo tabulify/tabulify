@@ -1,0 +1,19 @@
+kind: csv
+spec:
+  data-def:
+    columns:
+      - name: country
+        type: varchar
+        precision: 100
+      - name: code2
+        type: varchar
+        precision: 2
+      - name: code3
+        type: varchar
+        precision: 3
+      - name: coden
+        type: integer
+      - name: region_code
+        type: integer
+      - name: subregion_code
+        type: integer

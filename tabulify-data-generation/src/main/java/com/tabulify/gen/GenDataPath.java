@@ -11,15 +11,28 @@ public interface GenDataPath extends DataPath {
 
   GenDataPath setMaxRecordCount(Long maxRecordCount);
 
+  /**
+   * The maximum number of record generated
+   */
   Long getMaxRecordCount();
 
+
+  /**
+   * The number of record created in a stream
+   * May be null
+   */
+  Long getStreamRecordCount();
+
+
+  GenDataPath setStreamRecordCount(Long streamRecordCount);
 
   GenDataPathUtility getGenDataPathUtility();
 
   @Override
   GenRelationDef getOrCreateRelationDef();
 
-
+  @Override
+  GenRelationDef createEmptyRelationDef();
 
   @Override
   GenRelationDef createRelationDef();

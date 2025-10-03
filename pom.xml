@@ -9,6 +9,7 @@
   <artifactId>tabulify</artifactId>
   <name>Tabulify</name>
   <packaging>pom</packaging>
+  <version>0.1.0-SNAPSHOT</version>
 
   <parent>
     <groupId>com.eraldy</groupId>
@@ -20,7 +21,7 @@
   <!-- https://maven.apache.org/maven-release/maven-release-plugin/usage.html -->
   <!-- https://maven.apache.org/scm/git.html -->
   <scm>
-    <developerConnection>scm:git://github.com:EraldyHq/tabulify.git</developerConnection>
+    <developerConnection>scm:git://github.com:tabulify/tabulify.git</developerConnection>
   </scm>
 
   <properties>
@@ -34,6 +35,7 @@
     <jdk.distribution>temurin</jdk.distribution>
 
     <jreleaser.version>1.17.0</jreleaser.version>
+    <parent.parent.version>0.1.0-SNAPSHOT</parent.parent.version>
   </properties>
 
 
@@ -55,6 +57,8 @@
     <module>tabulify-oracle</module>
     <module>tabulify-sqlserver</module>
     <module>tabulify-mysql</module>
+    <module>tabulify-docker</module>
+    <module>tabulify-zip</module>
   </modules>
 
   <!-- The rest of dependencies management is in core  -->
@@ -83,6 +87,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>tabulify-sqlite</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-docker</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -140,13 +149,87 @@
         <artifactId>tabulify-mysql</artifactId>
         <version>${project.version}</version>
       </dependency>
-      <!-- from https://jdbc.postgresql.org/download.html-->
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-zip</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <!-- Eraldy -->
+      <dependency>
+        <groupId>com.eraldy</groupId>
+        <artifactId>eraldy-log</artifactId>
+        <version>${parent.parent.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.eraldy</groupId>
+        <artifactId>eraldy-core</artifactId>
+        <version>${parent.parent.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.eraldy</groupId>
+        <artifactId>eraldy-niofs-http</artifactId>
+        <version>${parent.parent.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.eraldy</groupId>
+        <artifactId>eraldy-docker</artifactId>
+        <version>${parent.parent.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.eraldy</groupId>
+        <artifactId>eraldy-test</artifactId>
+        <version>${parent.parent.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.eraldy</groupId>
+        <artifactId>eraldy-template</artifactId>
+        <version>${parent.parent.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.eraldy</groupId>
+        <artifactId>eraldy-html</artifactId>
+        <version>${parent.parent.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.eraldy</groupId>
+        <artifactId>eraldy-xml</artifactId>
+        <version>${parent.parent.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.eraldy</groupId>
+        <artifactId>eraldy-email</artifactId>
+        <version>${parent.parent.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.eraldy</groupId>
+        <artifactId>eraldy-smtp-client</artifactId>
+        <classifier>tests</classifier>
+        <type>test-jar</type>
+        <scope>test</scope>
+        <version>${parent.parent.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.eraldy</groupId>
+        <artifactId>eraldy-smtp-client</artifactId>
+        <version>${parent.parent.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.eraldy</groupId>
+        <artifactId>eraldy-cli</artifactId>
+        <version>${parent.parent.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.eraldy</groupId>
+        <artifactId>eraldy-doc-exec</artifactId>
+        <version>${parent.parent.version}</version>
+      </dependency>
+      <!-- from https://jdbc.postgresql.org/download.html -->
       <!-- 42.2.16 is the current version of the driver. This is the driver you should be using.-->
       <!-- It supports PostgreSQL 8.2 or newer and requires Java 6 or newer. It contains support for SSL and the javax.sql package.-->
       <dependency>
         <groupId>org.postgresql</groupId>
         <artifactId>postgresql</artifactId>
-        <version>42.2.16</version>
+        <version>42.7.8</version>
       </dependency>
       <!-- ojdbc8 means certified with jdk8 -->
       <!-- https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc8/ -->
@@ -160,7 +243,7 @@
       <dependency>
         <groupId>com.microsoft.sqlserver</groupId>
         <artifactId>mssql-jdbc</artifactId>
-        <version>12.10.0.jre11</version>
+        <version>13.2.0.jre11</version>
       </dependency>
       <!-- https://mvnrepository.com/artifact/com.mysql/mysql-connector-j -->
       <dependency>

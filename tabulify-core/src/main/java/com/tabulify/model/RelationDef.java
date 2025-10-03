@@ -1,8 +1,11 @@
 package com.tabulify.model;
 
-import com.tabulify.diff.DataPathDataComparison;
+import com.tabulify.diff.DataPathDiffResult;
 import com.tabulify.spi.DataPath;
+import com.tabulify.stream.SelectStream;
 import net.bytle.exception.NoColumnException;
+import net.bytle.type.KeyInterface;
+import net.bytle.type.KeyNormalizer;
 
 import java.util.List;
 import java.util.Map;
@@ -14,6 +17,10 @@ import java.util.Map;
  * * A `relation` is a combination of the columns and the local constraints (Unique keys and Primary Key)
  * * A `relationWithForeignKey` is the whole object (ie a `relation` and the foreign Keys)
  * * A `relationWithoutLocalConstraint` is the columns only
+ * <p>
+ * For merge, copy, the argument should be a relation def because of all executable, the relation def structure
+ * is known after execution at {@link SelectStream#getRuntimeRelationDef()}
+ * <p>
  *
  * @see <a href=https://calcite.apache.org/docs/model.html#table>Calcite table</a>
  */
@@ -24,14 +31,14 @@ public interface RelationDef {
    * @param columnName the column name
    * @return a column def by its name or null if it does not exist
    */
-  ColumnDef getColumnDef(String columnName) throws NoColumnException;
+  ColumnDef<?> getColumnDef(String columnName) throws NoColumnException;
 
   /**
    * @param columnIndex the column index
    * @return a column def by its index (starting at 0)
    * @throws IllegalArgumentException if the column was not found
    */
-  ColumnDef getColumnDef(Integer columnIndex);
+  ColumnDef<?> getColumnDef(Integer columnIndex);
 
   /**
    * Get or create column
@@ -39,26 +46,23 @@ public interface RelationDef {
    * This is the unique factory method that create the column object
    * All other add method call this method
    *
-   * @param columnName the column name
-   * @param clazz       - to have a minimal compile type checking
+   * @param columnName  the column name
    * @param sqlDataType the type
    */
-  ColumnDef getOrCreateColumn(String columnName, SqlDataType sqlDataType, Class<?> clazz);
+  <T> ColumnDef<T> getOrCreateColumn(String columnName, SqlDataType<T> sqlDataType);
 
 
   /**
    * @param columnName - The column name
-   * @param clazz      - The type of the column (Java needs the type to be a sort of type safe)
    * @return a new columnDef even if the column already existed
    */
-  ColumnDef createColumn(String columnName, SqlDataType sqlDataType, Class<?> clazz);
+  <T> ColumnDef<T> createColumn(String columnName, SqlDataType<T> sqlDataType);
 
   /**
    * An utility function that create a column from a Java Clazz
    * This is to implement a sort of type control mostly on generation function
-   *
    */
-  ColumnDef getOrCreateColumn(String columnName, Class<?> clazz);
+  <T> ColumnDef<T> getOrCreateColumn(String columnName, Class<T> clazz);
 
 
   PrimaryKeyDef getPrimaryKey();
@@ -92,34 +96,35 @@ public interface RelationDef {
    */
   int getColumnsSize();
 
-  RelationDef addColumn(String s);
+  RelationDef addColumn(String columnName);
 
-  RelationDef addColumn(String columnName, Integer typeCode);
+  RelationDef addColumn(String columnName, SqlDataTypeAnsi typeCode);
+
 
   RelationDef addColumn(String columnName, Class<?> clazz);
 
-  RelationDef addColumn(String columnName, Integer typeCode, Boolean nullable);
+  RelationDef addColumn(String columnName, SqlDataTypeAnsi typeCode, Boolean nullable);
 
-  RelationDef addColumn(String columnName, Integer typeCode, Integer precision);
+  RelationDef addColumn(String columnName, SqlDataTypeAnsi typeCode, int precision);
 
-  RelationDef addColumn(String columnName, Integer typeCode, Integer precision, Boolean nullable);
+  RelationDef addColumn(String columnName, SqlDataTypeAnsi typeCode, int precision, Boolean nullable);
 
-  RelationDef addColumn(String columnName, Integer typeCode, Integer precision, Integer scale);
+  RelationDef addColumn(String columnName, SqlDataTypeAnsi typeCode, int precision, int scale);
 
-  RelationDef addColumn(String columnName, Integer typeCode, Integer precision, Integer scale, Boolean nullable, String comment);
+  RelationDef addColumn(String columnName, SqlDataTypeAnsi typeCode, int precision, int scale, Boolean nullable, String comment);
 
   /**
    * The column definition by their position
-   *
    */
-  <D extends ColumnDef> List<D> getColumnDefs();
+  <D extends ColumnDef<?>> List<D> getColumnDefs();
 
 
   /**
-   * Drop all columns
+   * Drop all.
+   * Drop all meta columns and constraint
    * This function is used principally in test
    * to be sure that there is no columns that comes from the backend metadata store
-   *
+   * You may also use {@link DataPath#createEmptyRelationDef()}
    */
   RelationDef dropAll();
 
@@ -129,32 +134,54 @@ public interface RelationDef {
 
   RelationDef removeAllMetadataUniqueKeys();
 
-  DataPathDataComparison compareData(DataPath target);
-
+  DataPathDiffResult diff(DataPath target);
 
   /**
-   * So much used that we shortcut it
-   *
+   * The data path
    */
   DataPath getDataPath();
 
-  RelationDef mergeStructWithoutConstraints(DataPath fromDataPath);
-
-  RelationDefAbs copyStruct(DataPath from);
-
-  RelationDef copyPrimaryKeyFrom(DataPath from);
+  /**
+   * Merge the columns definition
+   * A relation def and not a data path because
+   * the final relation def of executable is known only at runtime
+   * (ie {@link SelectStream#getRuntimeRelationDef()}
+   */
+  RelationDef mergeColumns(RelationDef relationDef);
 
   /**
-   * Merge structure
+   * Copy columns and constraints (struct)
+   */
+  RelationDefAbs copyStruct(DataPath sourceDataPath);
+
+  RelationDef copyPrimaryKeyFrom(RelationDef relationDef);
+
+  /**
+   * Merge all local constraints (ie all constraint except the foreign key)
+   */
+  RelationDef mergeLocalConstraints(RelationDef relationDef);
+
+  RelationDef copyUniqueKeysFrom(RelationDef relationDef);
+
+  /**
+   * Merge the data def (ie struct (cols + constraints) + foreign keys)
    *
-   * @param targetDataPath - the data path to merge from (the target)
-   * @param targetSources  - an optional mapping of target source in case of cross system
+   * @param sourceDataPath - the data path to merge from (the source of the meta)
+   * @param sourceTargets  - an optional mapping of source/target in case of cross system
    *                       (ie if the target and the source does not have the same name)
-   *                       It happens with transfer between oracle (uppercase by default) and any other database
+   *                       It happens with transfer
+   *                       * between oracle (uppercase by default)
+   *                       * or with templating (Glob Backreference $0 or attribute ${name})
+   *                       and any other database
+   *                       * or with a system without store (ie memory)
    *                       Example: d_cat in the source would become D_CAT in Oracle
    */
-  <D1 extends DataPath, D2 extends DataPath, D3 extends DataPath> RelationDef mergeDataDef(D1 targetDataPath, Map<D2, D3> targetSources);
+  <D1 extends DataPath, D2 extends DataPath, D3 extends DataPath> RelationDef mergeDataDef(D1 sourceDataPath, Map<D2, D3> sourceTargets);
 
+  /**
+   * Merge the data def (ie struct + foreign keys)
+   * Utility Call {@link #mergeDataDef(DataPath, Map)}
+   */
   RelationDef mergeDataDef(DataPath fromDataPath);
 
   /**
@@ -166,19 +193,66 @@ public interface RelationDef {
    */
   <D1 extends DataPath, D2 extends DataPath, D3 extends DataPath> RelationDef copyForeignKeysFrom(D1 targetDataPath, Map<D2, D3> targetSources);
 
-  RelationDef copyForeignKeysFrom(DataPath fromDataPath);
+  /**
+   * Copy the foreign keys
+   */
+  RelationDef copyForeignKeysFrom(DataPath sourceDataPath);
 
-  RelationDef mergeStruct(DataPath fromDataPath);
+  /**
+   * Merge struct (columns + local constraints, no foreign keys)
+   * To merge also the foreign keys, see {@link #mergeDataDef(DataPath, Map)}
+   * The argument is a relation def because for all executable, the relation def structure
+   * is known after execution at {@link SelectStream#getRuntimeRelationDef()}
+   */
+  RelationDef mergeStruct(RelationDef relationDef);
 
+  /**
+   * Copy the data def (struct (columns + constraints) and foreign keys)
+   * To copy also the foreign keys, see {@link #copyDataDef(DataPath, Map)}
+   */
   RelationDef copyDataDef(DataPath fromDataPath);
 
   /**
-   * Get the columns list in a relational data path format
+   * Copy the data def (struct (columns + constraints) and foreign keys)
    *
+   * @param sourceDataPath  - the source of the meta
+   * @param sourceTargetMap - the source target map
+   */
+  RelationDef copyDataDef(DataPath sourceDataPath, Map<DataPath, DataPath> sourceTargetMap);
+
+  /**
+   * Get the columns list in a relational data path format
    */
   DataPath toColumnsDataPathBy(ColumnAttribute columnOrder, ColumnAttribute... columnAttributes);
 
 
   boolean hasColumn(String columnName);
 
+  boolean hasColumn(KeyNormalizer columnName);
+
+
+  RelationDef setPrimaryKey(ColumnDef<?>... primaryColumn);
+
+
+  ColumnDef<?> getColumnDef(KeyNormalizer name);
+
+
+  RelationDef addColumn(String columnName, SqlDataType<?> dataType);
+
+
+  RelationDef addColumn(String columnName, KeyNormalizer typeName);
+
+  /**
+   * Function added to type check the column class returned
+   * (ie the column with the name columnName should have the same clazz)
+   */
+  <T> ColumnDef<T> getColumnDef(String columnName, Class<T> clazz);
+
+  RelationDef addColumn(String columnName, SqlDataTypeKeyInterface typeKeyInterface);
+
+  RelationDef addColumn(String columnName, KeyInterface typeName);
+
+  RelationDef addColumn(String columnName, SqlDataType<?> sqlDataType, int precision, int scale, Boolean nullable, String comment);
+
+  ColumnDef<?> getColumnDefSafe(String columnName);
 }

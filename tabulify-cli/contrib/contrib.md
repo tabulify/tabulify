@@ -10,7 +10,7 @@ task release-install
 ```
 * Run it ([envrc](../../.envrc) adds it to the path)
 ```bash
-tabli
+tabul
 ```
 
 ### With fat jar
@@ -28,9 +28,9 @@ Build:
 ```bash
 # Then
 cd ..
-docker build -f db-cli/Dockerfile -t ghcr.io/gerardnico/tabli .
+docker build -f db-cli/Dockerfile -t ghcr.io/gerardnico/tabulify .
 # run
-docker run --rm ghcr.io/gerardnico/tabli
+docker run --rm ghcr.io/gerardnico/tabulify
 ```
 
 Push:
@@ -38,7 +38,7 @@ Push:
 ```bash
 # login with a github token
 echo $DOCKER_GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
-docker push ghcr.io/gerardnico/tabli
+docker push ghcr.io/gerardnico/tabulify
 ```
 
 

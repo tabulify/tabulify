@@ -3,8 +3,6 @@ package com.tabulify;
 import com.tabulify.conf.AttributeEnumParameter;
 
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * All static configuration
@@ -16,14 +14,18 @@ public enum TabularAttributeEnum implements AttributeEnumParameter {
   /**
    * Meta directory
    */
-  ENV("The execution environment", true, TabularExecEnv.DEV, TabularExecEnv.class),
+  EXEC_ENV("The execution environment", true, TabularExecEnv.DEV, TabularExecEnv.class),
   HOME("The directory of the Tabulify installation", true, null, Path.class),
   CONF("The conf vault file path", true, null, Path.class),
-  PROJECT_HOME("The project home directory", true, null, Path.class),
+  APP_HOME("The app home directory (default to the " + Tabular.TABUL_CONF_FILE_NAME + " file directory)", true, null, Path.class),
   PASSPHRASE("The passphrase", true, null, String.class),
   LOG_LEVEL("The log level", true, TabularLogLevel.WARN, TabularLogLevel.class),
   USER_HOME("Tabulify User home Directory", true, null, Path.class),
-  NATIVE_DRIVER("Native Drivers Properties", false, new HashMap<>(), Map.class);
+  /**
+   * Strict is when there is a discrepancy with what we expect and that's not an error
+   * We throw then but gives the user the possibility to bypass it
+   */
+  STRICT_EXECUTION("Strict mode (Fail ambiguous situation)", true, true, Boolean.class);
 
 
   private final String description;

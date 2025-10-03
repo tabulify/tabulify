@@ -1,77 +1,78 @@
 package com.tabulify.gen;
 
+import com.tabulify.gen.fs.GenManifestDataPath;
+import com.tabulify.gen.generator.CollectionGenerator;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.model.RelationDefDefault;
 import com.tabulify.model.SqlDataType;
+import com.tabulify.model.SqlDataTypeAnsi;
 import com.tabulify.spi.DataPath;
 import net.bytle.exception.NoColumnException;
 
-import java.sql.Types;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class GenRelationDef extends RelationDefDefault {
 
 
-  public static final int DEFAULT_DATA_TYPE = Types.VARCHAR;
-
+  /**
+   * @param DataPath may be {@link GenDataPath} or {@link com.tabulify.gen.flow.enrich.EnrichDataPath}
+   */
   public <T extends DataPath> GenRelationDef(T DataPath) {
     super(DataPath);
   }
 
 
   public GenRelationDef addColumn(String columnName) {
-    this.addColumn(columnName, Types.VARCHAR, null, null, null, null);
+    this.addColumn(columnName, DEFAULT_DATA_TYPE, 0, 0, null, null);
     return this;
   }
 
   @Override
-  public GenRelationDef addColumn(String columnName, Integer typeCode) {
-    this.addColumn(columnName, typeCode, null, null, null, null);
+  public GenRelationDef addColumn(String columnName, SqlDataTypeAnsi typeCode) {
+    this.addColumn(columnName, typeCode, 0, 0, null, null);
     return this;
   }
 
-  public GenRelationDef addColumn(String columnName, int typeCode) {
-    this.addColumn(columnName, typeCode, null, null, null, null);
+  @Override
+  public GenRelationDef addColumn(String columnName, SqlDataTypeAnsi type, int precision) {
+    this.addColumn(columnName, type, precision, 0, null, null);
     return this;
   }
 
-  public GenRelationDef addColumn(String columnName, Integer type, Integer precision) {
-    this.addColumn(columnName, type, precision, null, null, null);
+  @Override
+  public GenRelationDef addColumn(String columnName, SqlDataTypeAnsi type, Boolean nullable) {
+    this.addColumn(columnName, type, 0, 0, nullable, null);
     return this;
   }
 
-  public GenRelationDef addColumn(String columnName, Integer type, Boolean nullable) {
-    this.addColumn(columnName, type, null, null, nullable, null);
-    return this;
-  }
-
-  public GenRelationDef addColumn(String columnName, Integer type, Integer precision, Integer scale) {
+  @Override
+  public GenRelationDef addColumn(String columnName, SqlDataTypeAnsi type, int precision, int scale) {
     this.addColumn(columnName, type, precision, scale, null, null);
     return this;
   }
 
-  public GenRelationDef addColumn(String columnName, Integer type, Integer precision, Integer scale, Boolean nullable) {
+  @Override
+  public GenRelationDef addColumn(String columnName, SqlDataTypeAnsi type, int precision, int scale, Boolean nullable) {
     this.addColumn(columnName, type, precision, scale, nullable, null);
     return this;
   }
 
 
-  public GenRelationDef addColumn(String columnName, Integer type, Integer precision, Integer scale, Boolean nullable, String comment) {
+  public GenRelationDef addColumn(String columnName, SqlDataTypeAnsi type, int precision, int scale, Boolean nullable, String comment) {
 
-    if (type == null) {
-      type = DEFAULT_DATA_TYPE;
-    }
 
-    SqlDataType dataType = this.getDataPath().getConnection().getSqlDataType(type);
+    SqlDataType<?> dataType = this.getDataPath().getConnection().getSqlDataType(type);
     if (this.hasColumn(columnName)) {
       GenLog.LOGGER.warning("The column (" + columnName + ") was already defined, you can't add it");
       return this;
     }
 
-    createColumn(columnName, dataType, dataType.getSqlClass())
-      .precision(precision)
-      .scale(scale)
+    createColumn(columnName, dataType)
+      .setPrecision(precision)
+      .setScale(scale)
       .setNullable(nullable)
       .setComment(comment);
 
@@ -80,14 +81,15 @@ public class GenRelationDef extends RelationDefDefault {
   }
 
   @Override
-  public GenColumnDef createColumn(String columnName, SqlDataType sqlDataType, Class<?> clazz) {
+  public <T> GenColumnDef<T> createColumn(String columnName, SqlDataType<T> sqlDataType) {
 
 
     // This assert is to catch when object are passed
     // to string function, the length is bigger than the assertion and make it fails
     assert columnName.length() < 100;
-    GenColumnDef columnDef = GenColumnDef.createOf(this, columnName, sqlDataType, clazz);
-    ColumnDef oldColumn = columnDefByName.get(columnName);
+    GenColumnDef<T> columnDef = GenColumnDef.createOf(this, columnName, sqlDataType);
+
+    ColumnDef<?> oldColumn = columnDefByName.get(columnDef.getColumnNameNormalized());
     if (oldColumn == null) {
       /**
        * It's important to use the function {@link #getColumnsSize()}
@@ -101,25 +103,26 @@ public class GenRelationDef extends RelationDefDefault {
     } else {
       columnDef.setColumnPosition(oldColumn.getColumnPosition());
     }
-    super.columnDefByName.put(columnName, columnDef);
+    super.columnDefByName.put(columnDef.getColumnNameNormalized(), columnDef);
 
     return columnDef;
 
   }
 
   @Override
-  public List<GenColumnDef> getColumnDefs() {
+  public List<GenColumnDef<?>> getColumnDefs() {
     return super.getColumnDefs()
       .stream()
-      .map(e -> (GenColumnDef) e)
+      .map(e -> (GenColumnDef<?>) e)
       .filter(GenColumnDef::isNotHidden)
       .sorted()
       .collect(Collectors.toList());
   }
 
 
-  public GenRelationDef addColumn(String columnName, Integer type, Integer precision, Boolean nullable) {
-    this.addColumn(columnName, type, precision, null, nullable, null);
+  @Override
+  public GenRelationDef addColumn(String columnName, SqlDataTypeAnsi type, int precision, Boolean nullable) {
+    this.addColumn(columnName, type, precision, 0, nullable, null);
     return this;
   }
 
@@ -136,38 +139,32 @@ public class GenRelationDef extends RelationDefDefault {
     return this;
   }
 
-  @Override
-  public GenDataPath getDataPath() {
 
-    return (GenDataPath) super.getDataPath();
+  @Override
+  public GenColumnDef<?> getColumnDef(String columnName) throws NoColumnException {
+    return (GenColumnDef<?>) super.getColumnDef(columnName);
+  }
+
+  @Override
+  public <T> GenColumnDef<T> getOrCreateColumn(String columnName, Class<T> clazz) {
+
+    return (GenColumnDef<T>) super.getOrCreateColumn(columnName, clazz);
 
   }
 
   @Override
-  public GenColumnDef getColumnDef(String columnName) throws NoColumnException {
-    return (GenColumnDef) super.getColumnDef(columnName);
+  public GenColumnDef<?> getColumnDef(Integer columnIndex) {
+    return (GenColumnDef<?>) super.getColumnDef(columnIndex);
   }
 
   @Override
-  public GenColumnDef getOrCreateColumn(String columnName, Class<?> clazz) {
-
-    return (GenColumnDef) super.getOrCreateColumn(columnName, clazz);
-
-  }
-
-  @Override
-  public GenColumnDef getColumnDef(Integer columnIndex) {
-    return (GenColumnDef) super.getColumnDef(columnIndex);
-  }
-
-  @Override
-  public GenColumnDef getOrCreateColumn(String columnName, SqlDataType sqlDataType, Class<?> clazz) {
+  public <T> GenColumnDef<T> getOrCreateColumn(String columnName, SqlDataType<T> sqlDataType) {
 
     if (this.hasColumn(columnName)) {
       throw new RuntimeException("The column (" + columnName + ") is already defined");
     }
 
-    return createColumn(columnName, sqlDataType, clazz);
+    return createColumn(columnName, sqlDataType);
 
   }
 
@@ -183,10 +180,10 @@ public class GenRelationDef extends RelationDefDefault {
   /**
    * We do this for the {@link GenColumnDef#setIsHidden(boolean) hidden column feature }
    */
-  public List<GenColumnDef> getAllColumnDefs() {
+  public List<? extends GenColumnDef<?>> getAllColumnDefs() {
 
     //noinspection unchecked
-    return (List<GenColumnDef>) super.getColumnDefs();
+    return (List<? extends GenColumnDef<?>>) super.getColumnDefs();
 
   }
 
@@ -196,8 +193,79 @@ public class GenRelationDef extends RelationDefDefault {
   }
 
   @Override
-  public GenColumnDef getOrCreateColumn(String columnName) {
-    return (GenColumnDef) super.getOrCreateColumn(columnName);
+  public GenColumnDef<String> getOrCreateColumn(String columnName) {
+    return (GenColumnDef<String>) super.getOrCreateColumn(columnName);
+  }
+
+
+  /**
+   * @param collectionGenerators - collection of generators that comes from {@link #buildGeneratorInCreateOrder()}
+   *                             and may be cached
+   * @return a row for all DataPath that uses GenRelationDef
+   * ie {@link GenManifestDataPath} {@link com.tabulify.gen.flow.enrich.EnrichDataPath}
+   * and {@link com.tabulify.gen.memory.GenMemDataPath}
+   */
+  public Map<ColumnDef<?>, Object> buildRowFromGenerators(List<CollectionGenerator<?>> collectionGenerators) {
+    Map<ColumnDef<?>, Object> row = new HashMap<>();
+    for (CollectionGenerator<?> c : collectionGenerators) {
+      GenColumnDef<?> columnDef = c.getColumnDef();
+      Object newValue = c.getNewValue();
+      row.put(columnDef, newValue);
+    }
+    return row;
+
+  }
+
+  /**
+   * Build/Rebuild the generator and return them in create order
+   * (Generator may have parent and therefore the parent value
+   * should be generated first)
+   *
+   * @return the generator in create order
+   * (No data path builder proof as this should have been created in a builder)
+   */
+  public List<CollectionGenerator<?>> buildGeneratorInCreateOrder() {
+
+    /**
+     * Hack: We delete the generators
+     * Why? They are for now created recursively by each column if the
+     * parent generator of a column does not exist
+     * Not best but yeah
+     */
+    for (GenColumnDef<?> columnDef : this.getColumnDefs()) {
+      Object value = columnDef.getVariable(GenColumnAttribute.DATA_SUPPLIER).getValueOrNull();
+      if (value == null) {
+        // No data supplier metadata, we can't recreate the
+        // generator, we don't delete it then
+        continue;
+      }
+      columnDef.deleteGenerator();
+    }
+
+    List<? extends CollectionGenerator<?>> generators = this
+      .getAllColumnDefs()
+      .stream()
+      .map(c -> {
+          /**
+           * Flaw Generator may be created recursively by each column
+           * ie a column that does not have a parent will create it
+           * ie {@link GenColumnDef#createGenerator(Class)} may return null
+           */
+        return (CollectionGenerator<?>) c.getOrCreateGenerator();
+        }
+      )
+      .collect(Collectors.toList());
+
+    return CollectionGenerator
+      .createDag()
+      .addRelations(generators)
+      .getCreateOrdered();
+
+
+  }
+
+  public <T> GenColumnDef<T> getColumnDef(String columnName, Class<T> clazz) {
+    return (GenColumnDef<T>) super.getColumnDef(columnName, clazz);
   }
 
 }

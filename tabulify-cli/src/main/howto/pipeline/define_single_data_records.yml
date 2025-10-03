@@ -1,0 +1,18 @@
+kind: pipeline
+spec:
+  steps:
+    - name: "Define"
+      comment: "This operation define the tabular data resource named 'colors' with two columns"
+      operation: "define"
+      args:
+        data-resource:
+          data-def:
+            logicalName: "colors"
+            columns: [ "id", "color" ]
+          data-records:
+            - [ "1", "blue" ]
+            - [ "2", "red" ]
+            - [ "3", "yellow" ]
+    - name: "Print"
+      comment: "Print the colors resource"
+      operation: "print"

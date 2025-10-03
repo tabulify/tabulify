@@ -1,0 +1,13 @@
+steps:
+  - name: "Define"
+    operation: "define"
+    args:
+      data-resource:
+        media-type: "html"
+        data-uri: "https://en.wikipedia.org/wiki/List_of_countries_and_dependencies_by_population"
+        data-def:
+          logical-name: "countries"
+          columns: [ "id","color" ]
+  - name: "Print"
+    comment: "Print the colors resource"
+    operation: "print"

@@ -2,9 +2,10 @@ package com.tabulify.csv;
 
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.FsDataPath;
-import com.tabulify.model.ColumnDef;
 import com.tabulify.fs.textfile.FsTextManager;
+import com.tabulify.model.ColumnDef;
 import net.bytle.fs.Fs;
+import net.bytle.type.MediaType;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
@@ -23,9 +24,9 @@ public class CsvManagerFs extends FsTextManager {
   }
 
   @Override
-  public CsvDataPath createDataPath(FsConnection fsConnection, Path path) {
+  public CsvDataPath createDataPath(FsConnection fsConnection, Path relativePath, MediaType mediaType) {
 
-    return new CsvDataPath(fsConnection, path);
+    return new CsvDataPath(fsConnection, relativePath);
 
   }
 

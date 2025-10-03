@@ -1,12 +1,8 @@
 package com.tabulify.fs;
 
 
-import net.bytle.exception.NullValueException;
-import net.bytle.fs.Fs;
 import net.bytle.type.MediaType;
-import net.bytle.type.MediaTypes;
 
-import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -121,9 +117,11 @@ public abstract class FsFileManagerProvider {
   }
 
   /**
-   * @return true if the file manager accepts the media type
+   * @param mediaType - a parse media type so that the provider does not need to do it
+   * @return true if the file manager accepts the media type or null
    * If you want to create your own type, you need to implement
    * a {@link java.nio.file.spi.FileTypeDetector}
+   * Note for implementer, if you want to check equality on enum, you need to use {@link net.bytle.type.MediaTypes#equals(MediaType, MediaType)}
    */
   public abstract Boolean accept(MediaType mediaType);
 

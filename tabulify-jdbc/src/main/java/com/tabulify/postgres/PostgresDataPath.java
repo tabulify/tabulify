@@ -1,6 +1,7 @@
 package com.tabulify.postgres;
 
-import com.tabulify.fs.sql.SqlPlusLexer;
+import com.tabulify.fs.sql.SqlLexer;
+import com.tabulify.fs.sql.SqlStatement;
 import com.tabulify.jdbc.SqlConnection;
 import com.tabulify.jdbc.SqlDataPath;
 import com.tabulify.spi.DataPath;
@@ -19,7 +20,7 @@ public class PostgresDataPath extends SqlDataPath {
 
 
   public PostgresDataPath(SqlConnection jdbcDataStore, String path, MediaType sqlType) {
-    super(jdbcDataStore, path, sqlType);
+    super(jdbcDataStore, path, null, sqlType);
   }
 
   /**
@@ -44,11 +45,13 @@ public class PostgresDataPath extends SqlDataPath {
      */
     Set<DataPath> dependencies = new HashSet<>();
     String script = Strings.createFromResource(PostgresDataPath.class, "/sql/postgresQueryDependencies.sql").toString();
-    String queryDependencies;
-    try (SqlPlusLexer fromString = SqlPlusLexer.createFromString(script)) {
-      queryDependencies = fromString.getSqlStatements().get(0);
-    }
-    try (PreparedStatement statement = this.getConnection().getCurrentConnection().prepareStatement(queryDependencies)) {
+    String queryDependencies = SqlLexer.parseFromString(script)
+      .stream()
+      .filter(s -> s.getKind().isSelect())
+      .map(SqlStatement::getStatement)
+      .findFirst()
+      .orElseThrow();
+    try (PreparedStatement statement = this.getConnection().getCurrentJdbcConnection().prepareStatement(queryDependencies)) {
       String tableName = this.getLogicalName();
       statement.setString(1, tableName);
       String schemaName;

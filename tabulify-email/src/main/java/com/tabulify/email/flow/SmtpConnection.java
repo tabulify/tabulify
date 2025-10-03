@@ -1,11 +1,10 @@
 package com.tabulify.email.flow;
 
 import com.tabulify.Tabular;
-import com.tabulify.Vault;
 import com.tabulify.conf.Attribute;
-import com.tabulify.conf.AttributeEnumParameter;
 import com.tabulify.conf.Origin;
 import com.tabulify.connection.Connection;
+import com.tabulify.connection.ConnectionAttributeEnum;
 import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataSystem;
@@ -50,13 +49,13 @@ public class SmtpConnection extends Connection {
   }
 
   @Override
-  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin, Vault vault) {
+  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin) {
 
     SmtpConnectionAttributeEnum smtpConnectionAttribute;
     try {
       smtpConnectionAttribute = Casts.cast(name, SmtpConnectionAttributeEnum.class);
     } catch (Exception e) {
-      return super.addAttribute(name, value, origin, vault);
+      return super.addAttribute(name, value, origin);
     }
 
     try {
@@ -74,7 +73,7 @@ public class SmtpConnection extends Connection {
     try {
       this.defaultFrom = BMailAddressStatic.addressAndNameToInternetAddress(
         this.getDefaultFromProperty(),
-        (String) this.getAttribute(SmtpConnectionAttributeEnum.FROM_NAME).getValueOrDefaultOrNull()
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.FROM_NAME).getValueOrDefault()
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `from` definition of the smtp connection with the value (" + this.getDefaultFromProperty() + "). Error: " + e.getMessage(), e);
@@ -82,8 +81,8 @@ public class SmtpConnection extends Connection {
 
     try {
       this.defaultTo = BMailAddressStatic.addressAndNamesToListInternetAddress(
-        (String) this.getAttribute(SmtpConnectionAttributeEnum.TO).getValueOrDefaultOrNull(),
-        (String) this.getAttribute(SmtpConnectionAttributeEnum.TO_NAMES).getValueOrDefaultOrNull()
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.TO).getValueOrDefault(),
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.TO_NAMES).getValueOrDefault()
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `to` definition of the smtp connection. Error: " + e.getMessage());
@@ -91,8 +90,8 @@ public class SmtpConnection extends Connection {
 
     try {
       this.defaultCc = BMailAddressStatic.addressAndNamesToListInternetAddress(
-        (String) this.getAttribute(SmtpConnectionAttributeEnum.CC).getValueOrDefaultOrNull(),
-        (String) this.getAttribute(SmtpConnectionAttributeEnum.CC_NAMES).getValueOrDefaultOrNull()
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.CC).getValueOrDefault(),
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.CC_NAMES).getValueOrDefault()
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `cc` definition of the smtp connection. Error: " + e.getMessage());
@@ -100,8 +99,8 @@ public class SmtpConnection extends Connection {
 
     try {
       this.defaultBcc = BMailAddressStatic.addressAndNamesToListInternetAddress(
-        (String) this.getAttribute(SmtpConnectionAttributeEnum.BCC).getValueOrDefaultOrNull(),
-        (String) this.getAttribute(SmtpConnectionAttributeEnum.BCC_NAMES).getValueOrDefaultOrNull()
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.BCC).getValueOrDefault(),
+        (String) this.getAttribute(SmtpConnectionAttributeEnum.BCC_NAMES).getValueOrDefault()
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `cc` definition of the smtp connection. Error: " + e.getMessage());
@@ -110,20 +109,20 @@ public class SmtpConnection extends Connection {
 
   private Boolean getTls() {
 
-    return (Boolean) getAttribute(SmtpConnectionAttributeEnum.TLS).getValueOrDefaultOrNull();
+    return (Boolean) getAttribute(SmtpConnectionAttributeEnum.TLS).getValueOrDefault();
 
   }
 
   private Boolean getDebug() {
 
-    return (Boolean) getAttribute(SmtpConnectionAttributeEnum.DEBUG).getValueOrDefaultOrNull();
+    return (Boolean) getAttribute(SmtpConnectionAttributeEnum.DEBUG).getValueOrDefault();
 
   }
 
 
   private String getSmtpPassword() throws NoValueException {
 
-    return (String) this.getPasswordAttribute().getValueOrDefault();
+    return this.getPassword();
 
   }
 
@@ -134,13 +133,9 @@ public class SmtpConnection extends Connection {
 
   }
 
-  private Integer getPort() {
+  public Integer getPort() {
 
-    try {
-      return (Integer) this.getAttribute(ConnectionAttributeEnumBase.PORT).getValueOrDefault();
-    } catch (NoValueException e) {
-      return 25;
-    }
+    return (Integer) this.getAttribute(ConnectionAttributeEnumBase.PORT).getValueOrDefault();
 
   }
 
@@ -176,12 +171,12 @@ public class SmtpConnection extends Connection {
 
   @Override
   public DataPath getCurrentDataPath() {
-    throw new RuntimeException("The smtp does not have any data system implemented");
+    return null;
   }
 
 
   @Override
-  public DataPath createScriptDataPath(DataPath dataPath) {
+  public DataPath getRuntimeDataPath(DataPath dataPath, MediaType mediaType) {
     throw new RuntimeException("Smtp does not support scripting");
   }
 
@@ -194,9 +189,9 @@ public class SmtpConnection extends Connection {
   public Boolean ping() {
     try {
       this.getSmtpServer().pingHello();
-      return false;
-    } catch (MessagingException e) {
       return true;
+    } catch (MessagingException e) {
+      return false;
     }
   }
 
@@ -248,7 +243,7 @@ public class SmtpConnection extends Connection {
 
   private String getDefaultFromProperty() {
 
-    String from = (String) this.getAttribute(SmtpConnectionAttributeEnum.FROM).getValueOrDefaultOrNull();
+    String from = (String) this.getAttribute(SmtpConnectionAttributeEnum.FROM).getValueOrDefault();
     if (from != null) {
       return from;
     }
@@ -293,8 +288,8 @@ public class SmtpConnection extends Connection {
   }
 
   @Override
-  public List<Class<? extends AttributeEnumParameter>> getAttributeEnums() {
-    List<Class<? extends AttributeEnumParameter>> attributeEnums = new ArrayList<>(super.getAttributeEnums());
+  public List<Class<? extends ConnectionAttributeEnum>> getAttributeEnums() {
+    List<Class<? extends ConnectionAttributeEnum>> attributeEnums = new ArrayList<>(super.getAttributeEnums());
     attributeEnums.add(SmtpConnectionAttributeEnum.class);
     return attributeEnums;
   }

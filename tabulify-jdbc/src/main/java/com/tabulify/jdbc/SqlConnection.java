@@ -1,14 +1,15 @@
 package com.tabulify.jdbc;
 
 import com.tabulify.Tabular;
-import com.tabulify.Vault;
 import com.tabulify.conf.Attribute;
-import com.tabulify.conf.AttributeEnumParameter;
 import com.tabulify.conf.Origin;
 import com.tabulify.connection.ConnectionAttValueBooleanDataType;
 import com.tabulify.connection.ConnectionAttValueTimeDataType;
+import com.tabulify.connection.ConnectionAttributeEnum;
 import com.tabulify.connection.ConnectionAttributeEnumBase;
+import com.tabulify.model.ColumnDef;
 import com.tabulify.model.SqlDataType;
+import com.tabulify.model.SqlDataTypeAnsi;
 import com.tabulify.noop.NoOpConnection;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.ProcessingEngine;
@@ -27,7 +28,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.tabulify.connection.ConnectionAttValueTimeDataType.*;
-import static com.tabulify.jdbc.SqlMediaType.UNKNOWN;
 
 /**
  * An object with all meta information about a JDBC data store
@@ -54,13 +54,13 @@ public class SqlConnection extends NoOpConnection {
 
 
   @Override
-  public SqlConnection addAttribute(KeyNormalizer name, Object value, Origin origin, Vault vault) {
+  public SqlConnection addAttribute(KeyNormalizer name, Object value, Origin origin) {
 
     SqlConnectionAttributeEnum connectionAttribute;
     try {
       connectionAttribute = Casts.cast(name, SqlConnectionAttributeEnum.class);
     } catch (Exception e) {
-      super.addAttribute(name, value, origin, vault);
+      super.addAttribute(name, value, origin);
       return this;
     }
     if (connectionAttribute.needsConnection()) {
@@ -108,9 +108,6 @@ public class SqlConnection extends NoOpConnection {
   // Jdbc
   private SqlDataProcessingEngine processingEngine;
 
-  // Driver
-  Map<Integer, SqlDataType> driverDataType = new HashMap<>();
-
 
   public SqlConnection(Tabular tabular, com.tabulify.conf.Attribute name, com.tabulify.conf.Attribute url) {
     super(tabular, name, url);
@@ -118,14 +115,14 @@ public class SqlConnection extends NoOpConnection {
     this.addAttributesFromEnumAttributeClass(SqlConnectionAttributeEnum.class);
 
     // Should be after attribute initialization
-    Boolean builderCacheEnabled = (Boolean) this.getAttribute(SqlConnectionAttributeEnum.BUILDER_CACHE_ENABLED).getValueOrDefaultOrNull();
+    Boolean builderCacheEnabled = (Boolean) this.getAttribute(SqlConnectionAttributeEnum.BUILDER_CACHE_ENABLED).getValueOrDefault();
     this.sqlCache = new SqlCache(builderCacheEnabled);
 
   }
 
   @Override
-  public List<Class<? extends AttributeEnumParameter>> getAttributeEnums() {
-    ArrayList<Class<? extends AttributeEnumParameter>> enums = new ArrayList<>(super.getAttributeEnums());
+  public List<Class<? extends ConnectionAttributeEnum>> getAttributeEnums() {
+    ArrayList<Class<? extends ConnectionAttributeEnum>> enums = new ArrayList<>(super.getAttributeEnums());
     enums.add(SqlConnectionAttributeEnum.class);
     return enums;
   }
@@ -181,7 +178,7 @@ public class SqlConnection extends NoOpConnection {
           break;
       }
       try {
-        Attribute attribute = this.getTabular().createAttribute(connectionAttribute, value);
+        Attribute attribute = this.getTabular().getVault().createAttribute(connectionAttribute, value, Origin.DEFAULT);
         this.addAttribute(attribute);
       } catch (Exception e) {
         // should not happen as there is no vault encryption
@@ -196,28 +193,29 @@ public class SqlConnection extends NoOpConnection {
    * @return the connection for chaining
    */
   public SqlConnection setDriver(String jdbcDriver) {
-    super.addAttribute(ConnectionAttributeEnumBase.DRIVER, jdbcDriver, Origin.DEFAULT, getTabular().getVault());
+    super.addAttribute(SqlConnectionAttributeEnum.DRIVER, jdbcDriver, Origin.DEFAULT);
     return this;
   }
 
 
   public String getDriver() {
 
-    try {
-      return super.getAttribute(ConnectionAttributeEnumBase.DRIVER).getValueOrDefault().toString();
-    } catch (NoValueException e) {
-      return "";
-    }
+    return super.getAttribute(SqlConnectionAttributeEnum.DRIVER).getValueOrDefault().toString();
 
   }
 
-  public String getPostConnectionStatement() throws NotFoundException {
+  public String getLoginStatements() {
 
-    try {
-      return (String) super.getAttribute(SqlConnectionAttributeEnum.CONNECTION_INIT_SCRIPT).getValueOrDefault();
-    } catch (NoValueException e) {
-      throw new NotFoundException();
-    }
+    return (String) super.getAttribute(SqlConnectionAttributeEnum.LOGIN_STATEMENTS).getValueOrDefault();
+
+
+  }
+
+  public SqlConnection setLoginStatements(String postConnectionStatement) {
+
+    super.getAttribute(SqlConnectionAttributeEnum.LOGIN_STATEMENTS).setPlainValue(postConnectionStatement);
+    return this;
+
 
   }
 
@@ -251,16 +249,20 @@ public class SqlConnection extends NoOpConnection {
 
   @Override
   public SqlDataPath getDataPath(String pathOrName) {
-    return getDataPath(pathOrName, UNKNOWN);
+    return getDataPath(pathOrName, (MediaType) null);
   }
 
-  protected Supplier<SqlDataPath> getDataPathSupplier(String pathOrName, MediaType mediaType) {
-    return () -> new SqlDataPath(this, pathOrName, mediaType);
+  /**
+   * A data path supplier sot that we can implement the {@link SqlCache}
+   */
+  protected Supplier<SqlDataPath> getDataPathSupplier(String pathOrName, SqlMediaType mediaType) {
+    return () -> new SqlDataPath(this, pathOrName, null, mediaType);
   }
 
   /**
    * The main entry point to create a data path,
-   * Due to the {@link SqlCache}, Connection should not overwrite this function but {@link #getDataPathSupplier(String, MediaType)}
+   * Due to the {@link SqlCache}, Connection should not overwrite this function but {@link #getDataPathSupplier(String, SqlMediaType)}
+   *
    * @param pathOrName the path or a name
    * @param mediaType  - the media type is not really needed in Sql
    * @return the path
@@ -269,7 +271,13 @@ public class SqlConnection extends NoOpConnection {
   public SqlDataPath getDataPath(String pathOrName, MediaType mediaType) {
 
     pathOrName = this.getDataSystem().createNormalizedName(pathOrName);
-    return this.sqlCache.createDataPath(pathOrName, (SqlMediaType) mediaType, getDataPathSupplier(pathOrName, mediaType));
+    SqlMediaType sqlMediaType;
+    if (mediaType == null) {
+      sqlMediaType = SqlMediaType.OBJECT;
+    } else {
+      sqlMediaType = SqlMediaType.castsToSqlType(mediaType);
+    }
+    return this.sqlCache.createDataPath(pathOrName, sqlMediaType, getDataPathSupplier(pathOrName, sqlMediaType));
 
   }
 
@@ -314,9 +322,9 @@ public class SqlConnection extends NoOpConnection {
     return getSqlSchemaDataPath(currentCatalog, getCurrentSchema());
   }
 
-  public String getProductName() {
+  public String getDatabaseName() {
     try {
-      return getCurrentConnection().getMetaData().getDatabaseProductName();
+      return getCurrentJdbcConnection().getMetaData().getDatabaseProductName();
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -341,20 +349,35 @@ public class SqlConnection extends NoOpConnection {
 
 
   @Override
-  public SqlDataPath createScriptDataPath(DataPath dataPath) {
-    return new SqlDataPath(this, dataPath);
+  public SqlRequest getRuntimeDataPath(DataPath dataPath, MediaType mediaType) {
+
+    return SqlRequest.builder()
+      .setExecutableDataPath(this, dataPath)
+      .build();
+
   }
 
+  @Override
+  public SqlRequest getRuntimeDataPath(String code) {
+    return SqlRequest
+      .builder()
+      .setSql(this, code)
+      .build();
+  }
+
+  public java.sql.Connection getCurrentJdbcConnection() {
+    return getCurrentJdbcConnection(WAIT_TIME_BEFORE_NEXT_CONNECTION_ATTEMPT_SECOND);
+  }
 
   /**
    * Return the current Connection
    *
+   * @param prisonDurationInSec - the time in second that a new attempt should not be executed after a try
    * @return the current connection or null (if no URL)
    * <p>
    * The current connection is the first connection created
    */
-  public java.sql.Connection getCurrentConnection() {
-
+  public java.sql.Connection getCurrentJdbcConnection(long prisonDurationInSec) {
 
     try {
 
@@ -367,7 +390,7 @@ public class SqlConnection extends NoOpConnection {
         SqlLog.LOGGER_DB_JDBC.warning("The database connection was closed ! We recreate it.");
       }
 
-      this.driverConnection = getNewJdbcConnection();
+      this.driverConnection = getNewJdbcConnection(prisonDurationInSec);
       initVariableWhereConnectionIsNeeded();
 
       return this.driverConnection;
@@ -378,17 +401,22 @@ public class SqlConnection extends NoOpConnection {
 
   }
 
+  public synchronized java.sql.Connection getNewJdbcConnection() {
+    return getNewJdbcConnection(WAIT_TIME_BEFORE_NEXT_CONNECTION_ATTEMPT_SECOND);
+  }
+
   /**
    * synchronized because it's used within thread
    *
+   * @param maxPrisonDurationInSec - the amount in sec before trying to connect a new time. If set to zero, disable any error message if the connection is unsuccessful
    * @return return a new connection object
    */
-  public synchronized java.sql.Connection getNewJdbcConnection() {
+  public synchronized java.sql.Connection getNewJdbcConnection(long maxPrisonDurationInSec) {
 
-    String driver = getAttribute(ConnectionAttributeEnumBase.DRIVER).getValueOrDefaultAsStringNotNull();
+    String driver = getAttribute(SqlConnectionAttributeEnum.DRIVER).getValueOrDefaultAsStringNotNull();
     if (driver.isEmpty()) {
-      SqlUri sqlUri = new SqlUri(this.getUri().toUri());
-      driver = sqlUri.getDriver();
+      JdbcUri jdbcUri = new JdbcUri(this.getUri().toUri());
+      driver = jdbcUri.getDriver();
     }
 
     if (driver != null) {
@@ -408,10 +436,10 @@ public class SqlConnection extends NoOpConnection {
     try {
 
       boolean connectionTryInPrison = false;
-      long durationInPrison = 0;
-      if (this.failConnectionAttemptAt != null) {
-        durationInPrison = ChronoUnit.SECONDS.between(this.failConnectionAttemptAt, LocalDateTime.now());
-        if (durationInPrison > WAIT_TIME_BEFORE_NEXT_CONNECTION_ATTEMPT_SECOND) {
+      long actualDurationInPrison = 0;
+      if (maxPrisonDurationInSec > 0 && this.failConnectionAttemptAt != null) {
+        actualDurationInPrison = ChronoUnit.SECONDS.between(this.failConnectionAttemptAt, LocalDateTime.now());
+        if (actualDurationInPrison > maxPrisonDurationInSec) {
           this.failConnectionAttemptAt = null;
         } else {
           connectionTryInPrison = true;
@@ -422,33 +450,33 @@ public class SqlConnection extends NoOpConnection {
         // Timeout
         // DriverManager.setLoginTimeout(1);
         Properties connectionProperties = Maps.toProperties(this.getConnectionProperties());
-        connection = DriverManager.getConnection(this.getUriAsVariable().getRawValue(), connectionProperties);
+        connection = DriverManager.getConnection(this.getAttribute(ConnectionAttributeEnumBase.URI).getValueOrDefaultAsStringNotNull(), connectionProperties);
 
         SqlLog.LOGGER_DB_JDBC.info("Connected !");
 
         // Post Connection statement (such as alter session set current_schema)
-        try {
-          String postConnectionStatement = this.getPostConnectionStatement();
+        String postConnectionStatement = this.getLoginStatements();
+        if (postConnectionStatement != null && !postConnectionStatement.isEmpty()) {
           try (CallableStatement callableStatement = connection.prepareCall(postConnectionStatement)) {
             callableStatement.execute();
             SqlLog.LOGGER_DB_JDBC.info("Post statement connection executed (" + postConnectionStatement + ")");
           } catch (SQLException e) {
-            throw new RuntimeException("Post Connection error occurs: " + e.getMessage(), e);
+            throw new IllegalArgumentException("Post Connection Login Statements error occurs: " + e.getMessage(), e);
           }
-        } catch (NotFoundException e) {
-          // ok
         }
 
         return connection;
 
       } else {
-        long waitTime = WAIT_TIME_BEFORE_NEXT_CONNECTION_ATTEMPT_SECOND - durationInPrison;
-        throw new SQLException("The connection last attempt was " + durationInPrison + " seconds ago, waiting " + waitTime + " second before a new attempt.");
+        long waitTime = maxPrisonDurationInSec - actualDurationInPrison;
+        throw new SQLException("The connection last attempt was " + actualDurationInPrison + " seconds ago, waiting " + waitTime + " second before a new attempt.");
       }
 
     } catch (SQLException e) {
-      String msg = "Unable to connect to the database (" + this.getName() + ") with the following URL (" + this.getUriAsVariable() + "). Error: " + e.getMessage();
-      SqlLog.LOGGER_DB_JDBC.severe(msg);
+      if (maxPrisonDurationInSec != 0) {
+        String msg = "Unable to connect to the database (" + this.getName() + ") with the following URL (" + this.getUriAsVariable() + "). Error: " + e.getMessage();
+        SqlLog.LOGGER_DB_JDBC.severe(msg);
+      }
       if (this.failConnectionAttemptAt == null) {
         this.failConnectionAttemptAt = LocalDateTime.now();
       }
@@ -479,9 +507,9 @@ public class SqlConnection extends NoOpConnection {
     try {
 
       if (this.getMetadata().isSchemaSeenAsCatalog()) {
-        return this.getCurrentConnection().getCatalog();
+        return this.getCurrentJdbcConnection().getCatalog();
       } else {
-        return this.getCurrentConnection().getSchema();
+        return this.getCurrentJdbcConnection().getSchema();
       }
 
     } catch (SQLException e) {
@@ -498,14 +526,14 @@ public class SqlConnection extends NoOpConnection {
       }
 
       /**
-       * Postgres supports a fictif catalog called `postgres`
+       * Postgres supports a fictive catalog called `postgres`
        * We don't use it as it has no added value
        */
       if (!this.getMetadata().supportsCatalogsInSqlStatementPath()) {
         throw new NoCatalogException("Catalog is not supported");
       }
 
-      String catalog = this.getCurrentConnection().getCatalog();
+      String catalog = this.getCurrentJdbcConnection().getCatalog();
       if (catalog == null || (catalog.isEmpty())) {
         throw new NoCatalogException("Catalog is not supported");
       }
@@ -514,112 +542,6 @@ public class SqlConnection extends NoOpConnection {
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  @Override
-  public Set<SqlDataType> getSqlDataTypes() {
-    updateSqlDataTypeIfNeeded();
-    return new HashSet<>(driverDataType.values());
-  }
-
-  @Override
-  public SqlDataType getSqlDataType(Integer typeCode) {
-    updateSqlDataTypeIfNeeded();
-    SqlDataType sqlDataType = driverDataType.get(typeCode);
-    if (sqlDataType != null) {
-      return sqlDataType;
-    }
-    return super.getSqlDataType(typeCode);
-  }
-
-  @Override
-  public SqlDataType getSqlDataType(Class<?> clazz) {
-    return super.getSqlDataType(clazz);
-  }
-
-  @Override
-  public SqlDataType getSqlDataType(String sqlName) {
-    updateSqlDataTypeIfNeeded();
-    SqlDataType sqlDataType = driverDataType
-      .values()
-      .stream()
-      .filter(dt -> dt.getSqlName().equalsIgnoreCase(sqlName))
-      .findFirst()
-      .orElse(null);
-    if (sqlDataType != null) {
-      /**
-       * Even if we could return it back directly
-       * we don't because, there is
-       * some processing that occurs such as the class
-       * in the function {@link #getSqlDataType(Integer)}
-       */
-      return getSqlDataType(sqlDataType.getTypeCode());
-    }
-    return super.getSqlDataType(sqlName);
-
-  }
-
-  // A breaker to not update the data type each time
-  Boolean sqlDataTypeWereUpdated = false;
-
-  /**
-   * As soon as we have the connection, we update the sql data type
-   * This is because the credential are needed, and they are not given at the constructor level
-   * because they are not always mandatory
-   */
-  private void updateSqlDataTypeIfNeeded() {
-
-    if (sqlDataTypeWereUpdated) {
-      return;
-    }
-
-    /**
-     * Because of alias (ie NUMERIC=REAL for instance), we are looping
-     * on the type code in order to create the data type and this alias
-     * as two different {@link SqlDataType}
-     */
-    Map<Integer, SqlMetaDataType> systemType = this.getDataSystem().getMetaDataTypes();
-    for (Integer typeCode : systemType.keySet()) {
-      SqlMetaDataType sqlMetaDataType = systemType.get(typeCode);
-      SqlDataType sqlDataType = driverDataType.computeIfAbsent(typeCode, type -> SqlDataType.creationOf(this, type));
-      // Clazz mapping cannot be null
-      if (sqlMetaDataType.getSqlClass() != null) {
-        sqlDataType.setSqlJavaClazz(sqlMetaDataType.getSqlClass());
-      } else {
-        SqlDataType superSqlDataType = super.getSqlDataType(sqlMetaDataType.getTypeCode());
-        if (superSqlDataType != null && superSqlDataType.getSqlClass() != null) {
-          sqlDataType.setSqlJavaClazz(superSqlDataType.getSqlClass());
-        }
-      }
-      Boolean mandatoryPrecision = sqlMetaDataType.getMandatoryPrecision();
-      if (mandatoryPrecision != null) {
-        sqlDataType.setMandatoryPrecision(mandatoryPrecision);
-      }
-      Integer maxPrecision = sqlMetaDataType.getMaxPrecision();
-      if (maxPrecision != null) {
-        sqlDataType.setMaxPrecision(maxPrecision);
-      }
-      sqlDataType
-        .setDriverTypeCode(sqlMetaDataType.getDriverTypeCode())
-        .setSqlName(sqlMetaDataType.getTypeName())
-        .setMaximumScale(sqlMetaDataType.getMaximumScale())
-        .setAutoIncrement(sqlMetaDataType.getAutoIncrement())
-        .setMinimumScale(sqlMetaDataType.getMinimumScale())
-        .setCaseSensitive(sqlMetaDataType.getCaseSensitive())
-        .setCreateParams(sqlMetaDataType.getCreateParams())
-        .setFixedPrecisionScale(sqlMetaDataType.getFixedPrecisionScale())
-        .setLiteralPrefix(sqlMetaDataType.getLiteralPrefix())
-        .setLiteralSuffix(sqlMetaDataType.getLiteralSuffix())
-        .setNullable(sqlMetaDataType.getNullable())
-        .setLocalTypeName(sqlMetaDataType.getLocalTypeName())
-        .setSearchable(sqlMetaDataType.getSearchable())
-        .setUnsignedAttribute(sqlMetaDataType.getUnsignedAttribute())
-        .setDefaultPrecision(sqlMetaDataType.getDefaultPrecision());
-
-    }
-
-    sqlDataTypeWereUpdated = true;
-
   }
 
 
@@ -662,24 +584,28 @@ public class SqlConnection extends NoOpConnection {
    * before insertion
    * <p>
    * Example:
-   * * if you want to load a double in an Oracle BINARY_DOUBLE, you need to cast it first as a oracle.sql.BINARY_DOUBLE
+   * * if you want to load a double in an Oracle BINARY_DOUBLE, you need to cast it first as an oracle.sql.BINARY_DOUBLE
    * * if you want to load a string into a bigint, you need to transform it
    *
    * @param targetColumnType the target column type
    * @return an Java SQL object to be loaded in a prepared statement
    * @throws CastException - We throw because we don't have any context
-   * @see #toSqlString(Object, SqlDataType) the string representation
+   * @see #toSqlString(Object, ColumnDef) the string representation
    */
-  public Object toSqlObject(Object sourceObject, SqlDataType targetColumnType) throws CastException {
+  public Object toSqlObject(Object sourceObject, SqlDataType<?> targetColumnType) throws CastException {
 
-    Class<?> sqlClass = targetColumnType.getSqlClass();
+    if (sourceObject == null) {
+      return null;
+    }
+
+    Class<?> sqlClass = targetColumnType.getValueClass();
     if (sqlClass.equals(java.sql.SQLXML.class)) {
       try {
         SQLXML xmlVal = this.driverConnection.createSQLXML();
         xmlVal.setString(sourceObject.toString());
         return xmlVal;
       } catch (SQLException e) {
-        throw new RuntimeException("We cannot create a SQLXML for the datastore (" + this + ")", e);
+        throw new RuntimeException("We cannot create a SQLXML for the connection (" + this + ")", e);
       }
     }
 
@@ -695,88 +621,96 @@ public class SqlConnection extends NoOpConnection {
      * when passing a java.sql.Date or java.sql.Timestamp
      *
      */
-
-    if (targetColumnType.getTypeCode() == Types.DATE) {
-      ConnectionAttValueTimeDataType dateDataType = this.getMetadata().getDateDataTypeOrDefault();
-      switch (dateDataType) {
-        case NATIVE:
-          return Date.createFromObject(sourceObject).toSqlDate();
-        case SQL_LITERAL:
-          return Date.createFromObject(sourceObject).toSqlDate().toString();
-        case EPOCH_MS:
-          if (sourceObject instanceof Integer || sourceObject instanceof Long) {
-            return sourceObject;
-          } else {
+    switch (targetColumnType.getVendorTypeNumber()) {
+      case Types.DATE:
+        ConnectionAttValueTimeDataType dateDataType = this.getMetadata().getDateDataTypeOrDefault();
+        switch (dateDataType) {
+          case NATIVE:
+            return Date.createFromObject(sourceObject).toSqlDate();
+          case SQL_LITERAL:
+            return Date.createFromObject(sourceObject).toSqlDate().toString();
+          case EPOCH_MS:
+            if (sourceObject instanceof Integer || sourceObject instanceof Long) {
+              return sourceObject;
+            }
             return Date.createFromObject(sourceObject).toEpochMillis();
-          }
-        case EPOCH_SEC:
-          if (sourceObject instanceof Integer || sourceObject instanceof Long) {
-            return sourceObject;
-          } else {
+          case EPOCH_SEC:
+            if (sourceObject instanceof Integer || sourceObject instanceof Long) {
+              return sourceObject;
+            }
             return Date.createFromObject(sourceObject).toEpochSec();
-          }
-        case EPOCH_DAY:
-          if (sourceObject instanceof Integer || sourceObject instanceof Long) {
-            return sourceObject;
-          } else {
+          case EPOCH_DAY:
+            if (sourceObject instanceof Integer || sourceObject instanceof Long) {
+              return sourceObject;
+            }
             return Date.createFromObject(sourceObject).toEpochDay();
-          }
-      }
-    } else if (targetColumnType.getTypeCode() == Types.TIMESTAMP) {
-      ConnectionAttValueTimeDataType timestampDataType = this.getMetadata().getTimestampDataType();
-      switch (timestampDataType) {
-        case NATIVE:
-          return Timestamp.createFromObject(sourceObject).toSqlTimestamp();
-        case SQL_LITERAL:
-          return Timestamp.createFromObject(sourceObject).toSqlTimestamp().toString();
-        case EPOCH_MS:
-          if (sourceObject instanceof Integer || sourceObject instanceof Long) {
-            return sourceObject;
-          } else {
+          default:
+            throw new MissingSwitchBranch("dateDataType", dateDataType);
+        }
+      case Types.TIMESTAMP:
+        ConnectionAttValueTimeDataType timestampDataType = this.getMetadata().getTimestampDataType();
+        switch (timestampDataType) {
+          case NATIVE:
+            return Timestamp.createFromObject(sourceObject).toSqlTimestamp();
+          case SQL_LITERAL:
+            return Timestamp.createFromObject(sourceObject).toSqlTimestamp().toString();
+          case EPOCH_MS:
+            if (sourceObject instanceof Integer || sourceObject instanceof Long) {
+              return sourceObject;
+            }
             return Timestamp.createFromObject(sourceObject).toEpochMilli();
-          }
-        case EPOCH_SEC:
-          if (sourceObject instanceof Integer || sourceObject instanceof Long) {
-            return sourceObject;
-          } else {
+          case EPOCH_SEC:
+            if (sourceObject instanceof Integer || sourceObject instanceof Long) {
+              return sourceObject;
+            }
             return Timestamp.createFromObject(sourceObject).toEpochSec();
-          }
-      }
-    } else if (targetColumnType.getTypeCode() == Types.TIME) {
-      ConnectionAttValueTimeDataType timeDataType = this.getMetadata().getTimeDataType();
-      switch (timeDataType) {
-        case NATIVE:
-          return Time.createFromObject(sourceObject).toSqlTime();
-        case SQL_LITERAL:
-          return Time.createFromObject(sourceObject).toSqlTime().toString();
-        case EPOCH_MS:
-          if (sourceObject instanceof Integer || sourceObject instanceof Long) {
-            return sourceObject;
-          } else {
+          case EPOCH_DAY:
+            if (sourceObject instanceof Integer || sourceObject instanceof Long) {
+              return sourceObject;
+            }
+            return Date.createFromObject(sourceObject).toEpochDay();
+          default:
+            throw new MissingSwitchBranch("timestampDataType", timestampDataType);
+        }
+      case Types.TIME:
+        ConnectionAttValueTimeDataType timeDataType = this.getMetadata().getTimeDataType();
+        switch (timeDataType) {
+          case NATIVE:
+            return Time.createFromObject(sourceObject).toSqlTime();
+          case SQL_LITERAL:
+            return Time.createFromObject(sourceObject).toSqlTime().toString();
+          case EPOCH_MS:
+            if (sourceObject instanceof Integer || sourceObject instanceof Long) {
+              return sourceObject;
+            }
             return Time.createFromObject(sourceObject).toEpochMilli();
-          }
-        case EPOCH_SEC:
-          if (sourceObject instanceof Integer || sourceObject instanceof Long) {
-            return sourceObject;
-          } else {
+          case EPOCH_SEC:
+            if (sourceObject instanceof Integer || sourceObject instanceof Long) {
+              return sourceObject;
+            }
             return Time.createFromObject(sourceObject).toEpochSec();
-          }
-      }
-    } else if (targetColumnType.getTypeCode() == Types.BOOLEAN) {
-
-      ConnectionAttValueBooleanDataType dateDataType = this.getMetadata().getBooleanDataType();
-      switch (dateDataType) {
-        case Native:
-          return Booleans.createFromObject(sourceObject).toBoolean();
-        case Binary:
-          try {
-            return Booleans.createFromObject(sourceObject).toInteger();
-          } catch (NullValueException e) {
-            return null;
-          }
-      }
-
-
+          case EPOCH_DAY:
+            throw new IllegalArgumentException("You can't choose " + EPOCH_DAY + " time storage for the time type.");
+          default:
+            throw new MissingSwitchBranch("timeDataType", timeDataType);
+        }
+      case Types.BOOLEAN:
+        ConnectionAttValueBooleanDataType boolDataType = this.getMetadata().getBooleanDataType();
+        switch (boolDataType) {
+          case Native:
+            return Booleans.createFromObject(sourceObject).toBoolean();
+          case Binary:
+            try {
+              return Booleans.createFromObject(sourceObject).toInteger();
+            } catch (NullValueException e) {
+              return null;
+            }
+          default:
+            throw new MissingSwitchBranch("boolDataType", boolDataType);
+        }
+      case Types.BIT:
+        // boolean (We don't support bit array)
+        return Booleans.createFromObject(sourceObject).toBoolean();
     }
 
     return Casts.cast(sourceObject, sqlClass);
@@ -816,7 +750,7 @@ public class SqlConnection extends NoOpConnection {
       /**
        * Default driver Jdbc call
        */
-      return this.getTablesJdbc(catalogPattern, schemaPattern, tableNamePattern);
+      return this.getSqlTableFromJdbc(catalogPattern, schemaPattern, tableNamePattern);
     }
 
     /**
@@ -825,9 +759,9 @@ public class SqlConnection extends NoOpConnection {
      * does not allow filtering on catalog pattern
      * we implement it below
      */
-    List<SqlDataPath> jdbcDataPaths = new ArrayList<>();
+    List<SqlDataPath> sqlDataPathsSelected = new ArrayList<>();
     try {
-      ResultSet catalogsResultSet = this.getCurrentConnection().getMetaData().getCatalogs();
+      ResultSet catalogsResultSet = this.getCurrentJdbcConnection().getMetaData().getCatalogs();
       /**
        * The column name may be uppercase or lowercase
        * We catch that by asking the column name
@@ -837,30 +771,31 @@ public class SqlConnection extends NoOpConnection {
       while (catalogsResultSet.next()) {
         String catName = catalogsResultSet.getString(catalogColumnName);
         if (schemaGlob.matches(catName)) {
-          jdbcDataPaths.addAll(this.getTablesJdbc(catName, null, tableNamePattern));
+          List<SqlDataPath> sqlDataPath = this.getSqlTableFromJdbc(catName, null, tableNamePattern);
+          sqlDataPathsSelected.addAll(sqlDataPath);
         }
       }
     } catch (SQLException throwable) {
       throw new RuntimeException(throwable);
     }
-    return jdbcDataPaths;
+    return sqlDataPathsSelected;
 
   }
 
   /**
    * The JDBC driver getTables where the catalog is not a patter
    *
-   * @param catalogSearchName the catalog (not a patter)
+   * @param catalogSearchName the catalog (not a pattern)
    * @param schemaPattern     the schema pattern to search
    * @param tableNamePattern  the table pattern to search
    * @return a list of sql path
    */
-  private List<SqlDataPath> getTablesJdbc(String catalogSearchName, String schemaPattern, String tableNamePattern) {
+  private List<SqlDataPath> getSqlTableFromJdbc(String catalogSearchName, String schemaPattern, String tableNamePattern) {
 
     List<SqlDataPath> jdbcDataPaths = new ArrayList<>();
     try {
 
-      ResultSet tableResultSet = this.getCurrentConnection().getMetaData().getTables(
+      ResultSet tableResultSet = this.getCurrentJdbcConnection().getMetaData().getTables(
         catalogSearchName,
         schemaPattern,
         tableNamePattern,
@@ -890,7 +825,7 @@ public class SqlConnection extends NoOpConnection {
 
         SqlMediaType objectType;
         try {
-          objectType = SqlMediaType.getSqlType(type_name);
+          objectType = SqlMediaType.castsToSqlType(type_name);
         } catch (NotSupportedException e) {
           // the table type is not supported by tabli, we don't add it
           // index for instance
@@ -917,10 +852,23 @@ public class SqlConnection extends NoOpConnection {
           }
         }
 
-
+        /**
+         * Create the data path
+         */
+        if (this.getMetadata().isSchemaSeenAsCatalog()) {
+          if (schema_name != null) {
+            throw new InternalException("Catalog is seen as schema but the schema name is not null");
+          }
+          schema_name = cat_name;
+          cat_name = null;
+        }
         SqlDataPath childDataPath = (SqlDataPath) this
           .createSqlDataPath(cat_name, schema_name, table_name, objectType)
-          .setDescription(remarks);
+          .setComment(remarks);
+
+        /**
+         * Add
+         */
         jdbcDataPaths.add(childDataPath);
 
 
@@ -936,10 +884,11 @@ public class SqlConnection extends NoOpConnection {
 
   public SqlDataPath createSqlDataPath(String catalog, String schema, String objectName, SqlMediaType mediaType) {
 
-    SqlConnectionResourcePath resourcePath = SqlConnectionResourcePath
+    String compactPath = SqlConnectionResourcePath
       .createOfCatalogSchemaAndObjectName(this, catalog, schema, objectName)
-      .toRelative();
-    return getDataPath(resourcePath.toString(), mediaType);
+      .toRelative()
+      .toString();
+    return getDataPath(compactPath, mediaType);
 
   }
 
@@ -954,7 +903,7 @@ public class SqlConnection extends NoOpConnection {
        * Schema is not seen as a catalog
        */
       if (!this.getMetadata().isSchemaSeenAsCatalog()) {
-        ResultSet tableResultSet = this.getCurrentConnection().getMetaData().getSchemas(
+        ResultSet tableResultSet = this.getCurrentJdbcConnection().getMetaData().getSchemas(
           catalogSqlPattern,
           schemaSqlPattern);
         /**
@@ -993,7 +942,7 @@ public class SqlConnection extends NoOpConnection {
        * Schema is null for the driver
        * Catalog is seen as schema
        */
-      ResultSet catalogsResultSet = this.getCurrentConnection().getMetaData().getCatalogs();
+      ResultSet catalogsResultSet = this.getCurrentJdbcConnection().getMetaData().getCatalogs();
       /**
        * The column name may be uppercase or lowercase
        * We catch that by asking the column name
@@ -1037,17 +986,19 @@ public class SqlConnection extends NoOpConnection {
 
   /**
    * @param objectInserted the object to insert
-   * @param targetDataType the target data type
+   * @param columnDef      the target column
    * @return a sql string representation of the object that will be used in an insert statement
    * @see #toSqlObject(Object, SqlDataType) - the sql object representation
    */
-  public String toSqlString(Object objectInserted, SqlDataType targetDataType) {
+  public String toSqlString(Object objectInserted, ColumnDef<?> columnDef) {
 
     if (objectInserted == null) {
       return null;
     }
-    switch (targetDataType.getTypeCode()) {
-      case Types.DATE:
+
+    SqlDataTypeAnsi ansiType = columnDef.getAnsiType();
+    switch (ansiType) {
+      case DATE:
 
         ConnectionAttValueTimeDataType dateDataType = this.getMetadata().getDateDataTypeOrDefault();
         switch (dateDataType) {
@@ -1081,7 +1032,7 @@ public class SqlConnection extends NoOpConnection {
         }
 
 
-      case Types.TIMESTAMP:
+      case TIMESTAMP:
         ConnectionAttValueTimeDataType timestampDataType = this.getMetadata().getTimestampDataType();
         switch (timestampDataType) {
           case SQL_LITERAL:
@@ -1111,7 +1062,7 @@ public class SqlConnection extends NoOpConnection {
             throw new IllegalStateException("The date data type storage (" + timestampDataType + ") has no processing. A developer should add one.");
         }
 
-      case Types.TIME:
+      case TIME:
         ConnectionAttValueTimeDataType timeDataType = this.getMetadata().getTimeDataType();
         switch (timeDataType) {
           case SQL_LITERAL:
@@ -1134,7 +1085,7 @@ public class SqlConnection extends NoOpConnection {
           default:
             throw new IllegalStateException("The time data type storage (" + timeDataType + ") has no processing. A developer should add one.");
         }
-      case Types.BOOLEAN:
+      case BOOLEAN:
         ConnectionAttValueBooleanDataType booleanDataType = this.getMetadata().getBooleanDataType();
         switch (booleanDataType) {
           case Native:
@@ -1166,25 +1117,27 @@ public class SqlConnection extends NoOpConnection {
    * @param columnNames    - the column to add in the select
    * @return the sql path
    */
-  public SqlDataPath createSelectDataPath(SqlDataPath sourceDataPath, String[] columnNames, String whereClause, String
-    orderBy) {
+  public SqlDataPath createSelectDataPath(SqlDataPath sourceDataPath,
+                                          String[] columnNames, String whereClause, String
+                                            orderBy) {
 
+    String query = "select " + Arrays.stream(columnNames)
+      .map(sourceDataPath.getConnection().getDataSystem()::createQuotedName)
+      .collect(Collectors.joining(", "))
+      + " from " + sourceDataPath.toSqlStringPath()
+      + (whereClause != null ? " where " + whereClause : "")
+      + (orderBy != null ? " order by " + orderBy : "")
+      + ";";
     DataPath scriptDataPath = this.getTabular().getAndCreateRandomMemoryDataPath()
-      .setContent("select " + Arrays.stream(columnNames)
-        .map(sourceDataPath.getConnection().getDataSystem()::createQuotedName)
-        .collect(Collectors.joining(", "))
-        + " from " + sourceDataPath.toSqlStringPath()
-        + (whereClause != null ? " where " + whereClause : "")
-        + (orderBy != null ? " order by " + orderBy : "")
-        + ";");
-    return createScriptDataPath(scriptDataPath);
+      .setContent(query);
+    return this.getRuntimeDataPath(scriptDataPath, null);
 
   }
 
 
   protected String getURL() {
     try {
-      return this.getCurrentConnection().getMetaData().getURL();
+      return this.getCurrentJdbcConnection().getMetaData().getURL();
     } catch (SQLException throwable) {
       throw new RuntimeException(throwable);
     }
@@ -1193,11 +1146,11 @@ public class SqlConnection extends NoOpConnection {
   @Override
   public Map<String, Object> getConnectionProperties() {
     Map<String, Object> connectionProperties = super.getConnectionProperties();
-    Object user = this.getUser().getValueOrDefaultOrNull();
+    Object user = this.getUser().getValueOrDefault();
     if (user != null) {
       connectionProperties.put("user", user.toString());
     }
-    Object password = this.getPasswordAttribute().getValueOrDefaultOrNull();
+    Object password = this.getPassword();
     if (password != null) {
       connectionProperties.put("password", password.toString());
     }
@@ -1207,9 +1160,9 @@ public class SqlConnection extends NoOpConnection {
   @Override
   public Boolean ping() {
     try {
-      return this.driverConnection.isValid(5000);
-    } catch (SQLException e) {
-      throw new RuntimeException(e.getMessage(), e);
+      return this.getCurrentJdbcConnection(0).isValid(0);
+    } catch (Exception e) {
+      return false;
     }
   }
 
@@ -1219,13 +1172,27 @@ public class SqlConnection extends NoOpConnection {
 
   public SqlConnection setEnabledCache(boolean bool) {
     Attribute attribute = this.getAttribute(SqlConnectionAttributeEnum.BUILDER_CACHE_ENABLED);
-    Boolean cached = (Boolean) attribute.getValueOrDefaultOrNull();
+    Boolean cached = (Boolean) attribute.getValueOrDefault();
     if (bool == cached) {
       return this;
     }
     attribute.setPlainValue(bool);
     sqlCache = new SqlCache(bool);
     return this;
+  }
+
+  /**
+   * Hook to overwrite the driver on resultSet retrieval
+   * Why
+   * * The resultSet and the clazz? SQL Server even with an XML data type default to returning a LONGVARCHAR if we don't give the clazz in the {@link ResultSet#getObject(int)}, so we need to pass the clazz
+   * * Correcting value: Sqlite driver returns false for empty string
+   */
+  public <T> T getObjectFromResulSet(ResultSet resultSet, ColumnDef<?> columnDef, Class<T> clazz) {
+    try {
+      return resultSet.getObject(columnDef.getColumnPosition(), clazz);
+    } catch (SQLException ex) {
+      throw new RuntimeException(ex);
+    }
   }
 
 

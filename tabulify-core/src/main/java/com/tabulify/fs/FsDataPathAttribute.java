@@ -3,6 +3,7 @@ package com.tabulify.fs;
 import com.tabulify.conf.AttributeEnum;
 
 public enum FsDataPathAttribute implements AttributeEnum {
+
   URI("The URI of the file",java.net.URI.class);
 
   private final String desc;

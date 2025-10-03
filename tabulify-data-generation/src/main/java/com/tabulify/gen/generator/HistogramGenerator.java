@@ -1,7 +1,6 @@
 package com.tabulify.gen.generator;
 
 
-import com.tabulify.gen.DataGenAttribute;
 import com.tabulify.gen.GenColumnDef;
 import net.bytle.exception.CastException;
 import net.bytle.type.Casts;
@@ -93,7 +92,8 @@ public class HistogramGenerator<T> extends CollectionGeneratorAbs<T> implements 
    */
   public static <T> HistogramGenerator<T> createFromProperties(Class<T> clazz, GenColumnDef genColumnDef) {
 
-    Object objectBucket = genColumnDef.getDataGeneratorValue(DataGenAttribute.BUCKETS);
+    Map<HistogramArgument, Object> argumentMap = genColumnDef.getDataSupplierArgument(HistogramArgument.class);
+    Object objectBucket = argumentMap.get(HistogramArgument.BUCKETS);
     if (objectBucket == null) {
       throw new RuntimeException("The buckets column property is mandatory and was not found for the column (" + genColumnDef + ")");
     }
@@ -103,13 +103,14 @@ public class HistogramGenerator<T> extends CollectionGeneratorAbs<T> implements 
         // Strict: ie
         // Key: 2.0 on an integer clazz will return an error (ie strictKey = true)
         // Values: 2 should return an error as it's not a Double, but we do not as it's the castToNewMap and not castToSameMap
-        boolean strictKey = true;
+        // time is not a yaml format
+        boolean strictKey = !clazz.equals(java.sql.Time.class);
         buckets = Casts.castToNewMap(objectBucket, clazz, Double.class, strictKey);
       } catch (CastException e) {
         throw new RuntimeException("The data generator buckets column property for the column (" + genColumnDef + ") is not a map of " + clazz.getSimpleName() + ", Double. Error: " + e.getMessage(), e);
       }
     } else if (objectBucket instanceof Collection) {
-      buckets = Casts.castToListSafe(objectBucket, clazz)
+      buckets = Casts.castToNewListSafe(objectBucket, clazz)
         .stream()
         .collect(Collectors.toMap(
           s -> s,

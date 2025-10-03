@@ -1,60 +1,74 @@
 package com.tabulify.flow.engine;
 
-import java.util.ArrayList;
-import java.util.List;
+import net.bytle.type.KeyNormalizer;
 
-public abstract class PipelineStepAbs implements PipelineStep {
 
-  /**
-   * This functions will get the sources that have failed
-   *
-   * If this is the load of a file:
-   *   * you may want to move them
-   *   * Send a error message
-   *
-   * Just a series of action for instance:
-   *   * collect the list of files in a list
-   *   * save it in excel format
-   *   * and send it via an email
-   */
-  List<PipelineStep> postFailedOperations = new ArrayList<>();
+public abstract class PipelineStepAbs extends ExecutionNodeAbs implements PipelineStep {
 
-  /**
-   * All this functions will get the sources that have succeeded
-   *
-   * If this is the load of a file:
-   *   * you may want to delete it (ie free the resources)
-   *   * send a tracing event
-   */
-  List<PipelineStep> postCompleteOperations = new ArrayList<>();
 
-  /**
-   * The output of the step is send to one or more
-   * play step, forming a tree
-   * If this is only a series of step, this forms a pipeline
-   */
-  List<PipelineStep> downStreamSteps;
+  private final PipelineStepBuilder stepBuilder;
+
+
+  public PipelineStepAbs(PipelineStepBuilder stepBuilder) {
+    super(stepBuilder);
+    this.stepBuilder = stepBuilder;
+  }
 
 
   @Override
-  public List<PipelineStep> getOnFailedOperations() {
+  public String toString() {
+    return this.stepBuilder.getNodeName() + " (" + getOperationName() + ")";
+  }
 
-    return this.postFailedOperations;
 
+  @Override
+  public KeyNormalizer getOperationName() {
+    return stepBuilder.getOperationName();
+  }
+
+
+  @Override
+  public Integer getNodeId() {
+    return getPipelineStepId();
   }
 
   @Override
-  public List<PipelineStep> getOnCompletedOperations() {
+  public Pipeline getPipeline() {
+    return stepBuilder.getPipeline();
+  }
 
-    return this.postCompleteOperations;
 
+  @Override
+  public Integer getPipelineStepId() {
+    return stepBuilder.getPipelineStepId();
   }
 
   @Override
-  public List<PipelineStep> getDownStreamSteps() {
+  public String getNodeType() {
 
-    return this.downStreamSteps;
-
+    if (this instanceof PipelineStepRoot) {
+      return "Supplier";
+    }
+    if (this instanceof PipelineStepIntermediateMap) {
+      if (this instanceof PipelineStepIntermediateMapNullable) {
+        /**
+         * One to null
+         */
+        return "Filter";
+      }
+      /**
+       * One to one
+       */
+      return "Map";
+    }
+    if (this instanceof PipelineStepIntermediateOneToMany) {
+      return "Split";
+    }
+    if (this instanceof PipelineStepIntermediateManyToManyAbs) {
+      return "Collector";
+    }
+    return super.getNodeType();
   }
+
 
 }

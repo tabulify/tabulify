@@ -37,8 +37,8 @@ public interface StreamDependencies {
    * should be executed after a
    *    ParentSelectStream.getRow
    * because:
-   *    * the data is generated in tandem (as TPCDS does for instance, it generate the returns at the same time that the sales)
-   *    * of we are loading an tree like file (xml, ..) that contains several data path in one file.
+   *    * the data is generated in tandem (as TPCDS does for instance, it generates the returns at the same time that the sales)
+   *    * of we are loading a tree like file (xml, ..) that contains several data path in one file.
    */
   DataPath getSelectStreamDependency() throws NotFoundException;
 

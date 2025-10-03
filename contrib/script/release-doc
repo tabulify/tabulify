@@ -1,9 +1,107 @@
 #!/usr/bin/env bash
 # Doc test
-# Execute Tabli command in the doc from a cli distribution
-# No change should be seen
+# Execute Tabul command in the doc from a cli distribution
+#
+# * Doc should be deterministic (ie don't change between unit run)
+#     No change should be seen between run
+# * If you want to get a clean environment, you need to delete .tabul.yml in the doc (tabul data drop --not-strict .tabul/.tabul.yml@home)
+#   Why?
+#    * The documentation writer is the driver of the env:
+#       * the getting started guide should be cleaned only at first page, not the subsequent one
+#       * other page should have a cleaned env
+#    * We don't recreate the env each time (.tabul.yml)
+#    * The env stay the same as when any error occurs
 
-# Tabli
-doc-exec docs/tabli/**/*.txt
+set -TCEeuo pipefail
 
-doc-exec docs/templating/**/*.txt
+find_git_root() {
+  local dir="$PWD"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -d "$dir/.git" ]]; then
+      echo "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  echo "No .git directory found in any parent directory." >&2
+  return 1
+}
+
+
+
+resume_use_cache=true
+resume_from=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --resume-from)
+            # By default, we restart from the beginning
+            # You can set the doc module path (ie path/child) to skip all previous
+            # Ex: release-doc --resume-from howto/getting_started
+            resume_from="$2"
+            shift 2
+            ;;
+        --resume-no-cache)
+            # By default, the first resumed module use the cache
+            # this option permits to disable that
+            # Ex: release-doc --resume-no-cache --resume-from howto/getting_started
+            resume_use_cache=false
+            shift 1
+            ;;
+        *)
+            echo "Error: Multiple directories specified"
+            exit 1
+            ;;
+    esac
+done
+
+# task install-cli
+# or doc-exec --install-cli --no-cache docs/**/*.txt
+base_dir="$(find_git_root)/tabulify-cli/src/main/tabulify.com/data/pages"  # Use current directory if no argument provided
+
+# Check if the base directory exists
+if [[ ! -d "$base_dir" ]]; then
+    echo "Error: Directory '$base_dir' does not exist"
+    exit 1
+fi
+
+# Find directories at exactly level 2 (2 levels deep from base_dir)
+# Dirs is an array
+# shellcheck disable=SC2207
+dirs=($(find "$base_dir" -mindepth 2 -maxdepth 2 -type d | sort))
+
+
+# For each directory, count the files and display the result
+for dir in "${dirs[@]}"; do
+
+    # Remove the base directory prefix to show relative path from base_dir
+    module_path="${dir#"$base_dir/"}"
+    # Remove leading "./" from path if present (when base_dir is ".")
+    module_path="${module_path#./}"
+
+    # If resume_from is specified, skip directories that are not greater than it
+    if [[ -n "$resume_from" && "$module_path" < "$resume_from" ]]; then
+        printf "Skipping %s\n" "$module_path"
+        continue
+    fi
+
+    use_cache_arg="--no-cache"
+    # When resuming the cache is used on the resumed module
+    if [[ -n "$resume_from" && "$module_path" = "$resume_from" && "$resume_use_cache" = true ]]; then
+       use_cache_arg=""
+    fi
+
+    # Just info
+    file_count=$(find "$dir" -maxdepth 1 -type f | wc -l)
+
+    # Print and execute
+    printf "Executing %-40s %d files\n" "$module_path" "$file_count"
+    command="doc-exec $use_cache_arg '$module_path/**/*.txt'"
+    echo " Executing: $command"
+    if ! eval "$command"; then
+      echo "Execution of $module_path failed"
+      exit 1
+    fi
+done
+
+
+

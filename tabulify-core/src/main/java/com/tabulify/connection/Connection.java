@@ -5,27 +5,18 @@ import com.tabulify.Tabular;
 import com.tabulify.Vault;
 import com.tabulify.conf.*;
 import com.tabulify.fs.FsConnection;
-import com.tabulify.model.SqlDataType;
-import com.tabulify.model.SqlTypes;
+import com.tabulify.memory.MemoryDataPath;
+import com.tabulify.model.*;
 import com.tabulify.noop.NoOpConnection;
 import com.tabulify.spi.*;
-import com.tabulify.uri.DataUri;
-import com.tabulify.uri.DataUriString;
-import net.bytle.exception.CastException;
-import net.bytle.exception.InternalException;
-import net.bytle.exception.NoValueException;
-import net.bytle.exception.NotFoundException;
+import com.tabulify.uri.DataUriNode;
+import com.tabulify.uri.DataUriStringNode;
+import net.bytle.exception.*;
 import net.bytle.type.*;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.net.URI;
-import java.net.URL;
 import java.nio.file.FileSystems;
 import java.sql.DriverManager;
-import java.sql.Ref;
-import java.sql.Types;
-import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,21 +27,31 @@ import static com.tabulify.conf.Origin.DEFAULT;
  */
 public abstract class Connection implements Comparable<Connection>, AutoCloseable {
 
-  public static final String DATA_URI_SCHEME = "data-uri";
+  public static final String ALIAS_SCHEME = "alias";
 
-  // The connection name
+  public static final String CONNECTION = "connection";
+
   private final Tabular tabular;
 
   private final Random random = new Random();
+  private final Vault vault;
+  protected final SqlDataTypeManager sqlDataTypeManager;
 
 
+  /**
+   * @param tabular - the global context
+   * @param name    - the connection name (Why an attribute, no particular reason, what fucked up is fucked up, except that we will have it in the attributes)
+   * @param uri     -  the URI attribute (it's an attribute and not a URI because it may change by environment)
+   *                Example: Sqlite URI is not the same as the path is not the same on Linux and Windows
+   */
   public Connection(Tabular tabular, Attribute name, Attribute uri) {
 
     this.tabular = tabular;
+    this.vault = tabular.getVault();
 
     try {
       // name check
-      name.getValueOrDefault();
+      name.getValue();
     } catch (NoValueException e) {
       throw new InternalException("A connection cannot be created without name");
     }
@@ -64,124 +65,26 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
     this.addAttributesFromEnumAttributeClass(ConnectionAttributeEnumBase.class);
 
-
     /**
-     * Creation of the SQL Data Type
+     * Init
      */
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.ARRAY).setSqlName("array").setSqlJavaClazz(java.sql.Array.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.BIGINT).setSqlName("bigint").setSqlJavaClazz(BigInteger.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.BINARY).setSqlName("binary").setSqlJavaClazz(byte[].class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.BIT).setSqlName("bit").setSqlJavaClazz(Boolean.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.BLOB).setSqlName("blob").setSqlJavaClazz(java.sql.Blob.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.BOOLEAN).setSqlName("boolean").setSqlJavaClazz(Boolean.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.CHAR).setSqlName("char").setSqlJavaClazz(String.class).setDefaultPrecision(1));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.CLOB).setSqlName("clob").setSqlJavaClazz(java.sql.Clob.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.DATALINK).setSqlName("datalink").setSqlJavaClazz(java.net.URL.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.DATE).setSqlName("date").setSqlJavaClazz(java.sql.Date.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.DECIMAL).setSqlName("decimal").setSqlJavaClazz(java.math.BigDecimal.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.DISTINCT).setSqlName("distinct"));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.DOUBLE).setSqlName("double").setSqlJavaClazz(Double.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.FLOAT).setSqlName("float").setSqlJavaClazz(Float.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.INTEGER).setSqlName("integer").setSqlJavaClazz(Integer.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, SqlTypes.JSON).setSqlName("json").setSqlJavaClazz(String.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.JAVA_OBJECT).setSqlName("java_object").setSqlJavaClazz(Object.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.LONGNVARCHAR).setSqlName("longnvarchar").setSqlJavaClazz(String.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.LONGVARBINARY).setSqlName("longvarbinary").setSqlJavaClazz(byte[].class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.LONGVARCHAR).setSqlName("longvarchar").setSqlJavaClazz(String.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.NCHAR).setSqlName("nchar").setSqlJavaClazz(String.class).setDescription("setNString depending on the argument's size relative to the driver's limits on NVARCHAR"));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.NCLOB).setSqlName("nclob").setSqlJavaClazz(java.sql.NClob.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.NULL).setSqlName("null"));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.NUMERIC).setSqlName("numeric").setSqlJavaClazz(java.math.BigDecimal.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.NVARCHAR).setSqlName("nvarchar").setSqlJavaClazz(String.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.OTHER).setSqlName("other"));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.REAL).setSqlName("real").setSqlJavaClazz(Float.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.REF).setSqlName("ref").setSqlJavaClazz(Ref.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.ROWID).setSqlName("rowid").setSqlJavaClazz(java.sql.RowId.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.SMALLINT).setSqlName("smallint").setSqlJavaClazz(Integer.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.SQLXML).setSqlName("sqlxml").setSqlJavaClazz(java.sql.SQLXML.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.STRUCT).setSqlName("struct").setSqlJavaClazz(java.sql.Struct.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.TIME).setSqlName("time").setSqlJavaClazz(java.sql.Time.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.TIME_WITH_TIMEZONE).setSqlName("time with time zone").setSqlJavaClazz(OffsetTime.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.TIMESTAMP).setSqlName("timestamp").setSqlJavaClazz(java.sql.Timestamp.class)); // java.sql.Timestamp is based on UTC
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.TIMESTAMP_WITH_TIMEZONE).setSqlName("timestamp with time zone").setSqlJavaClazz(OffsetDateTime.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.TINYINT).setSqlName("tinyint").setSqlJavaClazz(Integer.class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.VARBINARY).setSqlName("varbinary").setSqlJavaClazz(byte[].class));
-    addToStaticTypeMapping(SqlDataType.creationOf(this, Types.VARCHAR).setSqlName("varchar").setSqlJavaClazz(String.class));
-
-    /**
-     * See page `Mapping from Java Type to Sql Type`
-     * <a href="https://docs.oracle.com/javase/6/docs/technotes/guides/jdbc/getstart/mapping.html">mapping</a>
-     * or
-     * <a href="https://www.cis.upenn.edu/~bcpierce/courses/629/jdkdocs/guide/jdbc/getstart/mapping.doc.html">mapping</a>
-     */
-    sqlDataTypeByJavaClass.put(java.sql.Array.class, new Integer[]{Types.ARRAY});
-    sqlDataTypeByJavaClass.put(java.sql.Blob.class, new Integer[]{Types.BLOB});
-    sqlDataTypeByJavaClass.put(boolean.class, new Integer[]{Types.BOOLEAN}); // No Boolean
-    sqlDataTypeByJavaClass.put(Boolean.class, new Integer[]{Types.BOOLEAN}); // No Boolean
-    sqlDataTypeByJavaClass.put(byte.class, new Integer[]{Types.TINYINT});
-    sqlDataTypeByJavaClass.put(Byte.class, new Integer[]{Types.TINYINT});
-    sqlDataTypeByJavaClass.put(byte[].class, new Integer[]{Types.LONGVARBINARY}); // No Binary of varbinary
-    sqlDataTypeByJavaClass.put(Byte[].class, new Integer[]{Types.LONGVARBINARY}); // No Binary of varbinary
-    sqlDataTypeByJavaClass.put(BigDecimal.class, new Integer[]{Types.NUMERIC}); // Of Decimal ?
-    sqlDataTypeByJavaClass.put(java.sql.Clob.class, new Integer[]{Types.CLOB});
-    sqlDataTypeByJavaClass.put(java.sql.Date.class, new Integer[]{Types.DATE}); // And no Float
-    sqlDataTypeByJavaClass.put(double.class, new Integer[]{Types.DOUBLE}); // And no Float
-    sqlDataTypeByJavaClass.put(Double.class, new Integer[]{Types.DOUBLE}); // And no Float
-    sqlDataTypeByJavaClass.put(float.class, new Integer[]{Types.REAL});
-    sqlDataTypeByJavaClass.put(Float.class, new Integer[]{Types.REAL});
-    sqlDataTypeByJavaClass.put(int.class, new Integer[]{Types.INTEGER}); // And not small int, tinyInt
-    sqlDataTypeByJavaClass.put(Integer.class, new Integer[]{Types.INTEGER}); // And not small int, tinyInt
-    sqlDataTypeByJavaClass.put(LocalDate.class, new Integer[]{Types.DATE});
-    sqlDataTypeByJavaClass.put(LocalDateTime.class, new Integer[]{Types.TIMESTAMP}); // TIMESTAMP [ WITHOUT TIMEZONE ]
-    sqlDataTypeByJavaClass.put(LocalTime.class, new Integer[]{Types.TIME}); // TIME [ WITHOUT TIMEZONE ]
-    sqlDataTypeByJavaClass.put(long.class, new Integer[]{Types.BIGINT});
-    sqlDataTypeByJavaClass.put(Long.class, new Integer[]{Types.BIGINT});
-    sqlDataTypeByJavaClass.put(Object.class, new Integer[]{Types.JAVA_OBJECT});
-    sqlDataTypeByJavaClass.put(OffsetTime.class, new Integer[]{Types.TIME_WITH_TIMEZONE}); // TIME [ WITH TIMEZONE ]
-    sqlDataTypeByJavaClass.put(OffsetDateTime.class, new Integer[]{Types.TIMESTAMP_WITH_TIMEZONE}); // TIMESTAMP [ WITH TIMEZONE ]
-    sqlDataTypeByJavaClass.put(java.sql.Ref.class, new Integer[]{Types.REF});
-    sqlDataTypeByJavaClass.put(short.class, new Integer[]{Types.SMALLINT});
-    sqlDataTypeByJavaClass.put(Short.class, new Integer[]{Types.SMALLINT});
-    sqlDataTypeByJavaClass.put(java.sql.SQLXML.class, new Integer[]{Types.SQLXML});
-    sqlDataTypeByJavaClass.put(java.sql.Struct.class, new Integer[]{Types.STRUCT});
-    sqlDataTypeByJavaClass.put(java.sql.Time.class, new Integer[]{Types.TIME});
-    sqlDataTypeByJavaClass.put(java.sql.Timestamp.class, new Integer[]{Types.TIMESTAMP});
-    sqlDataTypeByJavaClass.put(String.class, new Integer[]{Types.VARCHAR, Types.CHAR, Types.LONGVARCHAR}); // No char of varchar, LongNVarchar, nchar, nvarchar
-    sqlDataTypeByJavaClass.put(URL.class, new Integer[]{Types.DATALINK});
+    this.sqlDataTypeManager = new SqlDataTypeManager(this);
 
 
   }
+
 
   /**
    * Connection Variable. Variable managed by Tabli
    * Should be a known attribute
    */
-  Map<AttributeEnumParameter, Attribute> attributes = new HashMap<>();
+  Map<ConnectionAttributeEnum, Attribute> attributes = new HashMap<>();
   /**
    * Driver Variable. Variable of the driver/library, not from us
    * We use attribute to add vault functionality
    * String is the original property
    */
   Map<String, Attribute> nativeDriverAttributes = new HashMap<>();
-
-  /**
-   * Which SQL type do we need to load the value of a java class
-   */
-  private final Map<Class<?>, Integer[]> sqlDataTypeByJavaClass = new HashMap<>();
-  /**
-   * Our Standard datatype by {@link Types type code}
-   */
-  private final Map<Integer, SqlDataType> sqlDataTypesByCode = new HashMap<>();
-
-
-  /**
-   * A utility tool to create the map
-   *
-   * @param sqlDataType the sql data type
-   */
-  private void addToStaticTypeMapping(SqlDataType sqlDataType) {
-    sqlDataTypesByCode.put(sqlDataType.getTypeCode(), sqlDataType);
-  }
 
 
   /**
@@ -202,10 +105,10 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public String getName() {
+  public KeyNormalizer getName() {
 
     try {
-      return (String) getNameAsAttribute().getValueOrDefault();
+      return (KeyNormalizer) getNameAsAttribute().getValue();
     } catch (NoValueException e) {
       throw new InternalException("It should not happen as name is mandatory");
     }
@@ -226,7 +129,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
   @Override
   public String toString() {
-    return this.getName();
+    return this.getName().toCliLongOptionName();
   }
 
   @Override
@@ -267,8 +170,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     return this.attributes.get(ConnectionAttributeEnumBase.USER);
   }
 
-  public Attribute getPasswordAttribute() {
-    return this.attributes.get(ConnectionAttributeEnumBase.PASSWORD);
+  public String getPassword() {
+    return (String) this.attributes.get(ConnectionAttributeEnumBase.PASSWORD).getValueOrDefault();
   }
 
   @Override
@@ -294,15 +197,14 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * Add a free form key
    * Each connection should implement it to add its own attribute
    * and call super to add the attribute of its parent if the name is unknown
-   *
-   * @param vault - vault is there to be able to pass a vault from {@link ConfVault}
    */
-  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin, Vault vault) {
+  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin) {
     ConnectionAttributeEnumBase connectionAttributeBase;
     try {
       connectionAttributeBase = Casts.cast(name, ConnectionAttributeEnumBase.class);
     } catch (CastException e) {
-      throw new RuntimeException("The connection attribute (" + name + ") is unknown for the connection " + this + ". We were expecting one of the following " + tabular.toPublicListOfParameters(this.getAttributeEnums()), e);
+      List<Class<? extends AttributeEnumParameter>> connectionEnumParameters = this.getAttributeEnums().stream().map(enumClass -> (Class<? extends AttributeEnumParameter>) enumClass).collect(Collectors.toList());
+      throw new RuntimeException("The connection attribute (" + name + ") is unknown for the connection " + this + ". We were expecting one of the following " + tabular.toPublicListOfParameters(connectionEnumParameters), e);
     }
     try {
       com.tabulify.conf.Attribute attribute = vault.createAttribute(connectionAttributeBase, value, origin);
@@ -318,12 +220,18 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * Typically, a connection would add its own class
    * This is used to give feedback when an attribute is not recognized when reading a {@link ConfVault config file}
    */
-  public List<Class<? extends AttributeEnumParameter>> getAttributeEnums() {
+  public List<Class<? extends ConnectionAttributeEnum>> getAttributeEnums() {
     return List.of(ConnectionAttributeEnumBase.class);
   }
 
 
-  public Connection addAttribute(ConnectionAttributeEnum key, Object value, Origin origin, Vault vault) {
+  /**
+   * Shortcut for code
+   * <code>
+   * connection.addAttribute(vault.createAttribute(Attribute, Origin.CONF, Origin.DEFAULT))
+   * </code>
+   */
+  public Connection addAttribute(ConnectionAttributeEnum key, Object value, Origin origin) {
     try {
       com.tabulify.conf.Attribute attribute = vault.createAttribute(key, value, origin);
       this.addAttribute(attribute);
@@ -341,7 +249,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     ConnectionAttributeEnum connectionAttribute = (ConnectionAttributeEnum) attributeEnum;
     // uri and name value cannot be changed as they are constructor variable
     // the original may be template so we allow to change the variable if the value are the same
-    if (attributeEnum.equals(ConnectionAttributeEnumBase.NAME) && !attribute.getValueOrDefaultAsStringNotNull().equals(this.getName())) {
+    if (attributeEnum.equals(ConnectionAttributeEnumBase.NAME) && !attribute.getValueOrDefault().equals(this.getName())) {
       throw new RuntimeException("You can't change the name of this connection from " + this.getName() + " to " + attribute.getValueOrDefaultAsStringNotNull());
     }
     if (attributeEnum.equals(ConnectionAttributeEnumBase.URI) && !attribute.getValueOrNull().equals(this.getUri())) {
@@ -357,45 +265,46 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     return this;
   }
 
-  public static Connection createConnectionFromProviderOrDefault(Tabular tabular, String connectionName, String uri) {
+  public static Connection createConnectionFromProviderOrDefault(Tabular tabular, KeyNormalizer connectionName, String uri) {
 
     try {
       return createConnectionFromProviderOrDefault(
         tabular,
-        tabular.createAttribute(ConnectionAttributeEnumBase.NAME, connectionName),
-        tabular.createAttribute(ConnectionAttributeEnumBase.URI, uri)
+        tabular.getVault().createAttribute(ConnectionAttributeEnumBase.NAME, connectionName, DEFAULT),
+        tabular.getVault().createAttribute(ConnectionAttributeEnumBase.URI, uri, DEFAULT)
       );
     } catch (Exception e) {
-      throw new InternalException("Error while creating the connection (" + connectionName + "," + uri + "). Error: " + e.getMessage(), e);
+      throw ExceptionWrapper.builder(e, "Error while creating the connection (" + connectionName + "," + uri + ").")
+        .setPosition(ExceptionWrapper.ContextPosition.FIRST)
+        .buildAsRuntimeException();
     }
   }
 
   public static Connection createConnectionFromProviderOrDefault(Tabular tabular, Attribute attributeName, Attribute attributeUri) {
 
-    /**
-     * Name check
-     * <p>
-     * `/` are not supported because in ini file they may define a hierarchy and create then several datastore
-     * http://ini4j.sourceforge.net/tutorial/IniTutorial.java.html
-     */
-    List<String> notAllowedCharacters = Arrays.asList(" ", "/");
-    String nameString = (String) attributeName.getValueOrDefaultOrNull();
-    notAllowedCharacters.forEach(c -> {
-      if (nameString.contains(c)) {
-        throw new RuntimeException("The datastore name (" + attributeName + ") contains the character (" + c + ") that is not allowed. To resolve this problem, you should delete it.");
+    UriEnhanced uri = (UriEnhanced) attributeUri.getValueOrDefault();
+    if (uri.getScheme() != null && uri.getScheme().equals(ALIAS_SCHEME)) {
+      String schemeSpecificPart = uri.getSchemeSpecificPart();
+      DataUriStringNode dataUriString;
+      try {
+        dataUriString = DataUriStringNode.createFromString(schemeSpecificPart);
+      } catch (CastException e) {
+        throw new IllegalArgumentException("The scheme (" + schemeSpecificPart + ") of the uri (" + uri + ") is not valid data uri string. Error: " + e.getMessage(), e);
       }
-    });
-
-
-    UriEnhanced uri = (UriEnhanced) attributeUri.getValueOrDefaultOrNull();
-    if (uri.getScheme() != null && uri.getScheme().equals(DATA_URI_SCHEME)) {
-      DataUriString dataUri = DataUriString.createFromString(uri.getSchemeSpecificPart());
-      String connectionName = dataUri.getConnectionName();
+      KeyNormalizer connectionName = dataUriString.getConnection();
       Connection connection = tabular.getConnection(connectionName);
-      if (connection.getClass() != FsConnection.class) {
-        throw new RuntimeException("The data-uri scheme is supported only with file system data uri. The connection " + connectionName + " is not a file system connection but a " + connection.getClass().getSimpleName() + " connection");
+      if (connection == null) {
+        String message = "The connection is unknown.";
+        if (connectionName.equals(ConnectionBuiltIn.APP_CONNECTION)) {
+          message = "Tabulify does not have detected any app.";
+        }
+        message += " In the alias uri (" + uri + "), the connection (" + connectionName + ") is unknown.";
+        throw new IllegalArgumentException(message);
       }
-      String resolve = connection.getCurrentDataPath().resolve(dataUri.getPath()).getAbsolutePath();
+      if (connection.getClass() != FsConnection.class) {
+        throw new IllegalArgumentException("The " + ALIAS_SCHEME + " scheme is supported only with file system data uri. The connection " + connectionName + " is not a file system connection but a " + connection.getClass().getSimpleName() + " connection");
+      }
+      String resolve = connection.getCurrentDataPath().resolve(dataUriString.getPath()).getAbsolutePath();
       attributeUri.setPlainValue("file://" + "/" + resolve.replace("\\", "/"));
     }
 
@@ -407,7 +316,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     }
 
     // No provider was found
-    final String message = "No provider was found for the connection (" + attributeName.getValueOrDefaultOrNull() + ") with the Uri (" + attributeUri.getValueOrDefaultOrNull() + "). Defaulting to the no-operation connection.";
+    final String message = "No provider was found for the connection (" + attributeName.getValueOrDefault() + ") with the Uri (" + attributeUri.getValueOrDefault() + "). Defaulting to the no-operation connection.";
     DbLoggers.LOGGER_DB_ENGINE.warning(message);
     return new NoOpConnection(tabular, attributeName, attributeUri);
 
@@ -418,10 +327,12 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
 
   /**
+   * This is the main public function to get a data path
+   *
    * @param pathOrName - the pathOrName
    *                   * a {@link ResourcePath string path } if the second argument names is null,
    *                   * otherwise a {@link ResourcePath#getNames() name part} of the path string
-   * @param mediaType  - the names
+   * @param mediaType  - the media type or null for automatic detection or default
    * @return a data path
    * * from the current working directory
    * * if the first string is not an absolute path string
@@ -432,6 +343,19 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * and {@link #getParentPathCharacters() parent characters}
    */
   public abstract DataPath getDataPath(String pathOrName, MediaType mediaType);
+
+
+  /**
+   * @param pathOrName a path
+   * @param mediaType  a media type not null
+   */
+  public DataPath getDataPath(String pathOrName, String mediaType) {
+    try {
+      return getDataPath(pathOrName, MediaTypes.parse(mediaType));
+    } catch (NullValueException e) {
+      throw new RuntimeException("A media type should not be null or empty", e);
+    }
+  }
 
 
   public abstract DataPath getDataPath(String pathOrName);
@@ -464,7 +388,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   public abstract String getSeparator();
 
   /**
-   * @return the current/working path of this data store
+   * @return the current/working path of this connection
+   * return null if not supported (ie {@link NoOpConnection} or smtp
    */
   public abstract DataPath getCurrentDataPath();
 
@@ -509,7 +434,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   public Connection setComment(String description) {
     com.tabulify.conf.Attribute descVar;
     try {
-      descVar = tabular.createAttribute(ConnectionAttributeEnumBase.COMMENT, description);
+      descVar = tabular.getVault().createAttribute(ConnectionAttributeEnumBase.COMMENT, description, DEFAULT);
     } catch (Exception e) {
       throw new RuntimeException("Internal error, cannot create description variable", e);
     }
@@ -548,51 +473,72 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
 
-  public abstract DataPath createScriptDataPath(DataPath dataPath);
+  /**
+   * @param executableDataPath - the executable data path
+   * @param mediaType          - the media type of the returned data path
+   */
+  public abstract DataPath getRuntimeDataPath(DataPath executableDataPath, MediaType mediaType);
 
   /**
    * @return all data types
    */
-  public Set<SqlDataType> getSqlDataTypes() {
+  public Set<SqlDataType<?>> getSqlDataTypes() {
 
-    return new HashSet<>(sqlDataTypesByCode.values());
-
-  }
-
-  /**
-   * @param query - the query
-   * @return a data path query
-   */
-  public DataPath createScriptDataPath(String query) {
-
-    return createScriptDataPath(
-      this.getTabular()
-        .getAndCreateRandomMemoryDataPath()
-        .setContent(query)
-    );
+    return this.sqlDataTypeManager.getSqlDataTypes();
 
   }
 
   /**
-   * @param typeCode - the code type
-   * @return the data type for one type
+   * Utility function to create an executable from a content
+   *
+   * @param code - the code
+   * @return an executable
    */
-  public SqlDataType getSqlDataType(Integer typeCode) {
-    return sqlDataTypesByCode.get(typeCode);
+  public DataPath getRuntimeDataPath(String code) {
+
+    MemoryDataPath dataPath = this.getTabular()
+      .getAndCreateRandomMemoryDataPath()
+      .setContent(code);
+    return getRuntimeDataPath(dataPath, null);
+
+  }
+
+
+  /**
+   * @deprecated set/add a new SqlDataTpe with {@link DataSystem#dataTypeBuildingMain(SqlDataTypeManager)} to overwrite the default
+   * with the data of the driver or from the documentation
+   */
+  public SqlDataType<?> getDefaultSqlDataType(Integer typeCode) {
+
+    return this.sqlDataTypeManager.getSqlDataType(typeCode);
+
   }
 
   /**
    * @param typeName - the type name
+   * @param typeCode - the type code
    * @return the data type from a sql type name
    */
-  public SqlDataType getSqlDataType(String typeName) {
-    return sqlDataTypesByCode
-      .values()
-      .stream()
-      .filter(dt -> dt.getSqlName().equalsIgnoreCase(typeName))
-      .findFirst()
-      .orElse(null);
+  public SqlDataType<?> getSqlDataType(KeyNormalizer typeName, int typeCode) {
+
+    return this.sqlDataTypeManager.getSqlDataType(typeName, typeCode);
   }
+
+  public SqlDataType<?> getSqlDataType(String typeName, int typeCode) {
+
+    return this.sqlDataTypeManager.getSqlDataType(KeyNormalizer.createSafe(typeName), typeCode);
+
+  }
+
+  public SqlDataType<?> getSqlDataType(KeyNormalizer typeName, SqlDataTypeAnsi ansiType) {
+
+    if (ansiType == null) {
+      return this.sqlDataTypeManager.getSqlDataType(typeName);
+    }
+    return this.sqlDataTypeManager.getSqlDataType(typeName, ansiType.getVendorTypeNumber());
+
+  }
+
 
   /**
    * @param clazz - the java class
@@ -601,42 +547,58 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * * The class of the SQL Data Type are the class needed by the driver to load the data type
    * * The class below is just a java class.
    */
-  public SqlDataType getSqlDataType(Class<?> clazz) {
+  public SqlDataType<?> getSqlDataType(Class<?> clazz) {
 
-    Integer typeCode = Arrays.stream(sqlDataTypeByJavaClass.get(clazz))
-      .findFirst()
-      .orElse(null);
-    return getSqlDataType(typeCode);
+    return this.sqlDataTypeManager.getSqlDataType(clazz);
 
   }
 
   public abstract ProcessingEngine getProcessingEngine();
 
   /**
+   * Short Utility to call {@link #getAndCreateRandomDataPath(String, String, MediaType)}
+   * with only the prefix
+   */
+  public DataPath getAndCreateRandomDataPath(String prefix) {
+    return getAndCreateRandomDataPath(prefix, null, null);
+  }
+
+  /**
    * Sort of temporary data path
    *
    * @return a default typed data path with a UUID v4 name
    */
-  public DataPath getAndCreateRandomDataPath(MediaType mediaType) {
+  public DataPath getAndCreateRandomDataPath(String prefix, String suffix, MediaType mediaType) {
     // We take only the first characters to only have alphabetic characters, no letter minus and
     // character that SQL or other system would not take
-    String smallUid = UUID.randomUUID().toString().substring(0, 8);
-    char randomChar = (char) ('a' + random.nextInt(26));
+    StringBuilder name = new StringBuilder();
+    // prefix
+    if (prefix != null) {
+      name.append(prefix);
+    }
     // Hack, Sql name should start with a letter
     // It's a hack because name is for now immutable
-    String name = randomChar + smallUid;
-    return getDataPath(name, mediaType);
+    name.append((char) ('a' + random.nextInt(26)));
+    // uuid part
+    name.append(UUID.randomUUID().toString(), 0, 8);
+    // suffix, generally extension
+    if (suffix != null) {
+      name.append(suffix);
+    }
+    return getDataPath(name.toString(), mediaType);
   }
 
   public DataPath getAndCreateRandomDataPath() {
-    return getAndCreateRandomDataPath(null);
+    return getAndCreateRandomDataPath(null, null, null);
   }
 
   /**
    * Transform a value object into the desired clazz
+   * with our cast system
    * <p>
-   * For instance, this function in sql is used
-   * in select stream to take over the {@link java.sql.ResultSet#getObject(String, Class)}
+   * For instance, this function is used in sql
+   * in select stream, to take over the {@link java.sql.ResultSet#getObject(String, Class)}
+   * in insert stream, to transform `yes` to `true` for a boolean
    *
    * @param valueObject - the value object created by the connection that that should be cast
    * @param clazz       - the class
@@ -660,7 +622,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    *
    * @param pathOrName - if names is null, this is path otherwise it's considered as a path name
    * @param names      - other names (utility to give a path without knowing the separator)
-   * @return a string path object to manipulate the string version of the path of a {@link DataUri#getPath()}
+   * @return a string path object to manipulate the string version of the path of a {@link DataUriNode#getPath()}
    */
   public ResourcePath createStringPath(String pathOrName, String... names) {
 
@@ -669,7 +631,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   }
 
   /**
-   * Two data store may point to the same service
+   * Two connection may point to the same service
    * with two different current directory
    * <p>
    * This is the case with connection that:
@@ -677,7 +639,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * * but as two different local directory connection
    * <p>
    * When the service id is the same, the transfer will transfer the file
-   * using remote command to the service and not using pull and push.
+   * using remote command to the service (ie rename mostly) and not using pull and push.
    *
    * @return the service id
    */
@@ -689,30 +651,94 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   /**
    * Translate a sql data type from one connection to another
    *
-   * @param sourceSqlDataType the source data type
+   * @param columnDef the source column def to get the data type and the column precision/scale
    * @return the data type in the target connection
    */
-  public SqlDataType getSqlDataTypeFromSourceDataType(SqlDataType sourceSqlDataType) {
-    return this.getSqlDataType(sourceSqlDataType.getTypeCode());
+  public SqlDataType<?> getSqlDataTypeFromSourceColumn(ColumnDef<?> columnDef) {
+
+    SqlDataType<?> sourceSqlDataType = columnDef.getDataType();
+    if (sourceSqlDataType.getConnection().equals(this)) {
+      return sourceSqlDataType;
+    }
+
+    /**
+     * Translation based on name
+     */
+    SqlDataType<?> translatedType = this.getSqlDataType(sourceSqlDataType.toKeyNormalizer(), sourceSqlDataType.getVendorTypeNumber());
+    if (translatedType != null) {
+      // name is not enough
+      // for instance,
+      // * timestamp in sql server is a binary
+      // * int identity in sql server is an integer but autoincrement
+      if (
+        translatedType.getAnsiType() == sourceSqlDataType.getAnsiType() &&
+          translatedType.getAutoIncrement() == sourceSqlDataType.getAutoIncrement() &&
+          translatedType.getUnsignedAttribute() == sourceSqlDataType.getUnsignedAttribute()
+      ) {
+        return translatedType;
+      }
+    }
+
+    /**
+     * Unsigned Integer
+     */
+    if (sourceSqlDataType.isInteger() && sourceSqlDataType.getUnsignedAttribute()) {
+      SqlDataType<?> targetType = this.sqlDataTypeManager.getSqlDataTypes()
+        .stream()
+        .filter(d -> d.getUnsignedAttribute() && d.getAnsiType() == sourceSqlDataType.getAnsiType())
+        .findFirst()
+        .orElse(null);
+      if (targetType != null) {
+        return targetType;
+      }
+      // The database does not support unsigned type
+      // taking the next integer in precision order
+      try {
+        return this.sqlDataTypeManager.getUpperUnsignedIntegerType(sourceSqlDataType.getAnsiType());
+      } catch (CastException e) {
+        throw new RuntimeException("We couldn't convert the unsigned integer data type " + sourceSqlDataType + " from the column (" + columnDef + ") to the target system (" + this + "). Error:" + e.getMessage(), e);
+      }
+    }
+
+    /**
+     * Translation based on ansi type
+     * (Note: We should have more filter based on precision and scale for number)
+     */
+    translatedType = this.getSqlDataType(sourceSqlDataType.getAnsiType());
+    if (translatedType != null) {
+      return translatedType;
+    }
+
+    /**
+     * On Class
+     */
+    translatedType = this.getSqlDataType(sourceSqlDataType.getValueClass());
+    if (translatedType != null) {
+      return translatedType;
+    }
+
+    /**
+     * It can happen on custom tabulify added sql type
+     * with -100 and below
+     */
+    return sourceSqlDataType;
   }
 
 
   /**
-   * Try to create a connection
-   *
    * @return true if the connection was pinged
    */
   public abstract Boolean ping();
 
-  public Connection setOrigin(ConnectionOrigin connectionOrigin) {
+  public Connection setOrigin(ObjectOrigin connectionOrigin) {
     this.getAttribute(ConnectionAttributeEnumBase.ORIGIN)
       .setPlainValue(connectionOrigin);
     return this;
   }
 
-  public ConnectionOrigin getOrigin() {
+  public ObjectOrigin getOrigin() {
     try {
-      return (ConnectionOrigin) this.getAttribute(ConnectionAttributeEnumBase.ORIGIN).getValueOrDefault();
+      return (ObjectOrigin) this.getAttribute(ConnectionAttributeEnumBase.ORIGIN).getValue();
     } catch (NoValueException e) {
       throw new InternalException("No Origin found", e);
     }
@@ -736,13 +762,19 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * @param uri - the URI
    * @return a valid connection name
    */
-  public static String getConnectionNameFromUri(URI uri) {
+  public static KeyNormalizer getConnectionNameFromUri(URI uri) {
+    String scheme = uri.getScheme();
     String host = uri.getHost();
     String name = "";
     if (host != null) {
       name = host;
     }
-    return (name + uri.getPath()).replace("/", "\\");
+    String finalValue = scheme + "-" + (name + uri.getPath()).replace("/", "\\");
+    try {
+      return KeyNormalizer.create(finalValue);
+    } catch (CastException e) {
+      throw new RuntimeException("The derived connection name (" + finalValue + ") for the URI (" + uri + ") is not valid. Error: " + e.getMessage(), e);
+    }
   }
 
 
@@ -765,6 +797,14 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    * @return the path for chaining
    */
   public Connection addAttributesFromEnumAttributeClass(Class<? extends ConnectionAttributeEnum> enumClass) {
+
+    UriEnhanced connectionUri = this.getUri();
+    JdbcUri jdbcUri = null;
+    String scheme = connectionUri.getScheme();
+    if (scheme != null && scheme.equals("jdbc")) {
+      jdbcUri = new JdbcUri(connectionUri.toUri());
+    }
+
     for (ConnectionAttributeEnum attribute : enumClass.getEnumConstants()) {
 
       Vault vault = this.tabular.getVault();
@@ -777,7 +817,8 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       }
 
       // Query Properties
-      String prop = this.getUri().getQueryProperty(attribute.toString());
+
+      String prop = connectionUri.getQueryProperty(attribute.toString());
       if (prop != null && !prop.trim().isEmpty()) {
         com.tabulify.conf.Attribute variable = variableBuilder
           .setOrigin(com.tabulify.conf.Origin.URI)
@@ -790,7 +831,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       // We don't look up without the tabli prefix because it can cause clashes
       // for instance, name in os is the name of the computer
       TabularEnvs tabularEnvs = this.tabular.getTabularEnvs();
-      KeyNormalizer envName = KeyNormalizer.createSafe(Tabular.TABLI_NAME + "_" + this.getName() + "_" + attribute);
+      KeyNormalizer envName = KeyNormalizer.createSafe(Tabular.TABUL_NAME + "_" + OsEnvType.CONNECTION + "_" + this.getName() + "_" + attribute);
       String envValue = tabularEnvs.getOsEnvValue(envName);
       if (envValue != null) {
         com.tabulify.conf.Attribute variable = variableBuilder
@@ -804,7 +845,10 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       // They can be overridden by env
       if (attribute == ConnectionAttributeEnumBase.HOST) {
         try {
-          DnsName host = this.getUri().getHost();
+          DnsName host = connectionUri.getHost();
+          if (jdbcUri != null) {
+            host = jdbcUri.getHost();
+          }
           com.tabulify.conf.Attribute variable = variableBuilder
             .setOrigin(com.tabulify.conf.Origin.URI)
             .buildSafe(host);
@@ -815,8 +859,12 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
         }
       }
       if (attribute == ConnectionAttributeEnumBase.PORT) {
-        Integer port = this.getUri().getPort();
-        if (port != null) {
+        Integer port = connectionUri.getPort();
+        if (jdbcUri != null) {
+          port = jdbcUri.getPort();
+        }
+        // port may be -1 ( as it's an int)
+        if (port != null && port > 0) {
           com.tabulify.conf.Attribute variable = variableBuilder
             .setOrigin(com.tabulify.conf.Origin.URI)
             .buildSafe(port);
@@ -828,7 +876,14 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
       if (attribute == ConnectionAttributeEnumBase.WORKING_PATH) {
         com.tabulify.conf.Attribute variable = variableBuilder
           .setOrigin(DEFAULT)
-          .build(() -> this.getCurrentDataPath().getAbsolutePath(), String.class);
+          .build(() -> {
+              DataPath currentDataPath = this.getCurrentDataPath();
+              if (currentDataPath == null) {
+                return "";
+              }
+              return currentDataPath.getAbsolutePath();
+            }
+            , String.class);
         this.addAttribute(variable);
         continue;
       }
@@ -847,9 +902,9 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
   public UriEnhanced getUri() {
 
     try {
-      return (UriEnhanced) getUriAsVariable().getValueOrDefault();
+      return (UriEnhanced) getUriAsVariable().getValue();
     } catch (NoValueException e) {
-      throw new InternalException("Uri was not found in the connection (" + this + ")");
+      throw new InternalException("Uri was not found in the connection (" + this + ") but is mandatory for construction");
     }
 
   }
@@ -872,6 +927,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     }
     this.nativeDriverAttributes.put(name, nativeAttribute);
   }
+
 
   /**
    * @return the properties passed to the driver (native properties + tabli properties)
@@ -908,7 +964,38 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
    */
   public DnsName getHost() {
 
-    return (DnsName) this.getAttribute(ConnectionAttributeEnumBase.HOST).getValueOrDefaultOrNull();
+    return (DnsName) this.getAttribute(ConnectionAttributeEnumBase.HOST).getValueOrDefault();
+
+  }
+
+  /**
+   * @return the port
+   */
+  public Integer getPort() {
+    return (Integer) this.getAttribute(ConnectionAttributeEnumBase.PORT).getValueOrDefault();
+  }
+
+
+  public SqlDataType<?> getSqlDataType(SqlDataTypeAnsi ansi) {
+
+    return this.sqlDataTypeManager.getSqlDataType(ansi);
+
+  }
+
+  public SqlDataType<?> getSqlDataType(KeyNormalizer typeName) {
+    return this.sqlDataTypeManager.getSqlDataType(typeName);
+  }
+
+  public SqlDataType<?> getSqlDataType(SqlDataTypeKeyInterface type) {
+
+    if (type instanceof SqlDataTypeAnsi) {
+
+    }
+    Integer vendorTypeNumber = type.getVendorTypeNumber();
+    if (vendorTypeNumber != 0) {
+      return this.sqlDataTypeManager.getSqlDataType(type.toKeyNormalizer(), vendorTypeNumber);
+    }
+    return this.sqlDataTypeManager.getSqlDataType(type.toKeyNormalizer());
 
   }
 

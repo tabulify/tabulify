@@ -1,6 +1,7 @@
 package com.tabulify.memory.queue;
 
 import com.tabulify.memory.MemoryDataPathType;
+import com.tabulify.model.ColumnDef;
 import com.tabulify.model.RelationDef;
 import com.tabulify.stream.SelectStream;
 import com.tabulify.stream.SelectStreamAbs;
@@ -15,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectStream {
 
-  private final ArrayBlockingQueue<List<Object>> tabular;
+  private final ArrayBlockingQueue<List<Object>> recordQueue;
   private final MemoryQueueDataPath memoryQueueDataPath;
 
   // Index is used for a list for a queue
@@ -25,7 +26,7 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
   MemoryQueueSelectStream(MemoryQueueDataPath memoryQueueDataPath) {
     super(memoryQueueDataPath);
     this.memoryQueueDataPath = memoryQueueDataPath;
-    this.tabular = memoryQueueDataPath.getValues();
+    this.recordQueue = memoryQueueDataPath.getValues();
   }
 
 
@@ -52,7 +53,7 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
     assert timeUnit != null : "The time unit  should not be null for a queue";
     try {
 
-      currentRow = tabular.poll(timeout, timeUnit);
+      currentRow = recordQueue.poll(timeout, timeUnit);
       if (currentRow != null) {
         rowIndex++;
         return true;
@@ -64,11 +65,6 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
       this.selectStreamListener.addException(e);
       throw new RuntimeException(e);
     }
-
-  }
-
-  @Override
-  public void close() {
 
   }
 
@@ -90,14 +86,14 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
 
 
   @Override
-  public long getRow() {
+  public long getRecordId() {
     return rowIndex + 1;
   }
 
 
   @Override
-  public Object getObject(int columnIndex) {
-    return currentRow.get(columnIndex);
+  public Object getObject(ColumnDef columnDef) {
+    return currentRow.get(columnDef.getColumnPosition());
   }
 
   @Override
@@ -127,7 +123,7 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
   }
 
   @Override
-  public List<?> getObjects() {
+  public List<Object> getObjects() {
     return currentRow;
   }
 
@@ -136,6 +132,18 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
 
     throw new RuntimeException("The Type (" + memoryQueueDataPath.getMediaType() + ") of the data path (" + memoryQueueDataPath + ") does not support going back to the first argument");
 
+  }
+
+  private boolean isClosed = false;
+
+  @Override
+  public void close() {
+    this.isClosed = true;
+  }
+
+  @Override
+  public boolean isClosed() {
+    return this.isClosed;
   }
 
 

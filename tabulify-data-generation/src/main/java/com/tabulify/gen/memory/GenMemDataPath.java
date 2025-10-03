@@ -7,13 +7,13 @@ import com.tabulify.memory.MemoryDataPathAbs;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
-import com.tabulify.transfer.TransferProperties;
+import com.tabulify.transfer.TransferPropertiesSystem;
+import net.bytle.type.KeyNormalizer;
 
 /**
- * A path specifically created for test
- * when the data gen path is created without a file
- * <p>
- * If you use a file, use the {@link GenDataPath}
+ * A gen path
+ * * used when the data gen path is created without a file
+ * * used as target of {@link com.tabulify.gen.fs.GenManifestDataPath} because {@link DataGenerator#toGenMemDataPath(DataPath, DataPath)}
  */
 public class GenMemDataPath extends MemoryDataPathAbs implements DataPath, MemoryDataPath, GenDataPath {
 
@@ -24,12 +24,11 @@ public class GenMemDataPath extends MemoryDataPathAbs implements DataPath, Memor
    * !!!!
    * Create a genMemDataPath with {@link DataGenerator#createGenDataPath(String)}
    * !!!
-   *
    */
   public GenMemDataPath(MemoryConnection memoryConnection, String path) {
-    super(memoryConnection, path, GenDataPathType.DATA_GEN);
+    super(memoryConnection, path, GeneratorMediaType.DATA_GEN);
     this.genDataPathUtility = new GenDataPathUtility(this);
-    this.genDataPathUtility.initVariables();
+    this.genDataPathUtility.initAttributes();
   }
 
 
@@ -42,6 +41,17 @@ public class GenMemDataPath extends MemoryDataPathAbs implements DataPath, Memor
   @Override
   public Long getMaxRecordCount() {
     return this.genDataPathUtility.getMaxRecordCount();
+  }
+
+  @Override
+  public Long getStreamRecordCount() {
+    return this.genDataPathUtility.getStreamRecordCount();
+  }
+
+  @Override
+  public GenMemDataPath setStreamRecordCount(Long streamRecordCount) {
+    this.genDataPathUtility.setStreamRecordCount(streamRecordCount);
+    return this;
   }
 
   @Override
@@ -63,6 +73,11 @@ public class GenMemDataPath extends MemoryDataPathAbs implements DataPath, Memor
   }
 
   @Override
+  public GenRelationDef createEmptyRelationDef() {
+    return createRelationDef();
+  }
+
+  @Override
   public GenRelationDef createRelationDef() {
     this.relationDef = new GenRelationDef(this);
     return (GenRelationDef) this.relationDef;
@@ -70,7 +85,7 @@ public class GenMemDataPath extends MemoryDataPathAbs implements DataPath, Memor
 
   @Override
   public Long getSizeNotCapped() {
-    return this.genDataPathUtility.getMaxSizeFromGenerators();
+    return this.genDataPathUtility.getMaxCountFromGenerators();
   }
 
 
@@ -91,7 +106,7 @@ public class GenMemDataPath extends MemoryDataPathAbs implements DataPath, Memor
 
 
   @Override
-  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
+  public InsertStream getInsertStream(DataPath source, TransferPropertiesSystem transferProperties) {
     throw new RuntimeException("You can't insert in a generator data resource");
   }
 
@@ -110,5 +125,16 @@ public class GenMemDataPath extends MemoryDataPathAbs implements DataPath, Memor
     return false;
   }
 
+  @Override
+  public DataPath addAttribute(KeyNormalizer key, Object value) {
+    /**
+     * In GenMem, we allow setting of common data attributes
+     * for generator attribute use the setter
+     * This is not an object that receive manifest data
+     * so we don't care about attributes
+     * They are taken into account in the {@link com.tabulify.gen.fs.GenManifestDataPath#addAttribute(KeyNormalizer, Object)}
+     */
+    return super.addAttribute(key, value);
+  }
 
 }

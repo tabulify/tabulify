@@ -22,12 +22,10 @@
       <groupId>com.tabulify</groupId>
       <artifactId>tabulify-flow</artifactId>
     </dependency>
-    <!-- For the log -->
     <dependency>
       <groupId>com.tabulify</groupId>
-      <artifactId>tabulify-sqlite</artifactId>
+      <artifactId>tabulify-docker</artifactId>
     </dependency>
-
     <dependency>
       <groupId>com.eraldy</groupId>
       <artifactId>eraldy-smtp-client</artifactId>
@@ -48,7 +46,6 @@
       <groupId>com.eraldy</groupId>
       <artifactId>eraldy-smtp-client</artifactId>
       <classifier>tests</classifier>
-      <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

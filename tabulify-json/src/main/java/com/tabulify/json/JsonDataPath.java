@@ -3,24 +3,20 @@ package com.tabulify.json;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.tabulify.conf.AttributeEnum;
 import com.tabulify.conf.Origin;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.textfile.FsTextDataPath;
 import com.tabulify.fs.textfile.FsTextDataPathAttributes;
 import com.tabulify.model.RelationDef;
 import com.tabulify.model.RelationDefDefault;
-import com.tabulify.model.SqlTypes;
-import com.tabulify.spi.DataPath;
-import com.tabulify.stream.InsertStream;
+import com.tabulify.model.SqlDataType;
+import com.tabulify.model.SqlDataTypeAnsi;
 import com.tabulify.stream.SelectStream;
-import com.tabulify.transfer.TransferProperties;
-import net.bytle.exception.NoValueException;
+import net.bytle.exception.InternalException;
 import net.bytle.exception.NoVariableException;
-import net.bytle.fs.Fs;
 import net.bytle.type.Casts;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MediaType;
-import net.bytle.type.MediaTypes;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,56 +27,17 @@ import java.util.stream.Collectors;
 public class JsonDataPath extends FsTextDataPath {
 
 
-  public static final MediaType[] ACCEPTED_MEDIA_TYPES = {MediaTypes.TEXT_JSON, MediaTypes.TEXT_JSONL};
-
-  enum JsonATTRIBUTE implements AttributeEnum {
-
-    STRUCTURE("How to JSON is returned (as one JSON column or as a table with the column being the first level properties", JsonStructure.class, JsonStructure.DOCUMENT);
-
-
-    private final String description;
-    private final Class<?> clazz;
-    private final Object defaultValue;
-
-    JsonATTRIBUTE(String description, Class<?> clazz, Object defaultValue) {
-
-      this.description = description;
-      this.clazz = clazz;
-      this.defaultValue = defaultValue;
-
-    }
-
-
-    @Override
-    public String getDescription() {
-      return this.description;
-    }
-
-    @Override
-    public Class<?> getValueClazz() {
-      return this.clazz;
-    }
-
-    @Override
-    public Object getDefaultValue() {
-      return this.defaultValue;
-    }
-
-
-  }
-
-
   public static final String JSON_DEFAULT_HEADER_NAME = "json";
 
 
   public JsonDataPath(FsConnection fsConnection, Path path, MediaType mediaType) {
 
-    super(fsConnection, path, mediaType);
+    super(fsConnection, path, JsonMediaType.castSafe(mediaType));
 
     /**
      * Populate the default
      */
-    this.addVariablesFromEnumAttributeClass(JsonATTRIBUTE.class);
+    this.addVariablesFromEnumAttributeClass(JsonDataAttributes.class);
 
     /**
      * Overwrite the default column name
@@ -91,36 +48,44 @@ public class JsonDataPath extends FsTextDataPath {
   }
 
   @Override
-  public RelationDef getOrCreateRelationDef() {
-    if (getRelationDef() == null) {
-
-      this.relationDef = new RelationDefDefault(this);
-      buildColumnNamesIfNeeded();
-
-    }
-    return super.getOrCreateRelationDef();
+  public RelationDef createRelationDef() {
+    this.relationDef = new RelationDefDefault(this);
+    buildColumnNamesIfNeeded();
+    return this.relationDef;
   }
 
   private void buildColumnNamesIfNeeded() {
-    if (this.getStructure() == JsonStructure.PROPERTIES) {
-      try {
-        JsonFactory jsonFactory = new JsonFactory();
-        Path nioPath = getNioPath();
-        if (!Files.exists(nioPath)) {
-          throw new RuntimeException("The file " + nioPath.toAbsolutePath() + " does not exist, we can't read it");
-        }
-        try (BufferedReader bufferedReader = Files.newBufferedReader(nioPath)) {
-          if (Fs.getExtension(this.getNioPath()).equalsIgnoreCase("jsonl")) {
-            bufferedReader.lines().forEach(s -> parseColumns(jsonFactory, s));
-          } else {
+    Path nioPath = getAbsoluteNioPath();
+    if (!Files.exists(nioPath)) {
+      // empty file, no structure to derived
+      return;
+    }
+    switch (this.getStructure()) {
+      case PROPERTIES: {
+        try {
+          JsonFactory jsonFactory = new JsonFactory();
+          try (BufferedReader bufferedReader = Files.newBufferedReader(nioPath)) {
+            if (this.getMediaType() == JsonMediaType.JSONL) {
+              bufferedReader.lines().forEach(s -> parseColumns(jsonFactory, s));
+              return;
+            }
             parseColumns(jsonFactory, bufferedReader.lines().collect(Collectors.joining(System.lineSeparator())));
           }
+          return;
+        } catch (IOException e) {
+          throw new RuntimeException(e);
         }
-      } catch (IOException e) {
-        throw new RuntimeException(e);
       }
-    } else {
-      this.relationDef.addColumn(getColumnName(), SqlTypes.JSON);
+      case DOCUMENT: {
+        SqlDataType<?> jsonDataType = this.getConnection().getSqlDataType(SqlDataTypeAnsi.JSON);
+        if (jsonDataType == null) {
+          jsonDataType = this.getConnection().getSqlDataType(SqlDataTypeAnsi.CHARACTER_VARYING);
+        }
+        this.relationDef.addColumn(getColumnName(), jsonDataType);
+        return;
+      }
+      default:
+        throw new InternalException("The structure type " + this.getStructure() + " should have been processed");
     }
   }
 
@@ -151,14 +116,9 @@ public class JsonDataPath extends FsTextDataPath {
     return new JsonSelectStream(this);
   }
 
-  @Override
-  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
-    return super.getInsertStream(source, transferProperties);
-  }
-
 
   public JsonDataPath setStructure(JsonStructure jsonStructure) {
-    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(JsonATTRIBUTE.STRUCTURE, Origin.DEFAULT).setPlainValue(jsonStructure);
+    com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(JsonDataAttributes.STRUCTURE, Origin.DEFAULT).setPlainValue(jsonStructure);
     this.addAttribute(attribute);
     return this;
   }
@@ -166,26 +126,26 @@ public class JsonDataPath extends FsTextDataPath {
   public JsonStructure getStructure() {
 
     try {
-      return (JsonStructure) this.getAttribute(JsonATTRIBUTE.STRUCTURE).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+      return (JsonStructure) this.getAttribute(JsonDataAttributes.STRUCTURE).getValueOrDefault();
+    } catch (NoVariableException e) {
       throw new RuntimeException("Internal Error: Structure variable was not found. It should not happen");
     }
 
   }
 
   @Override
-  public JsonDataPath addAttribute(String key, Object value) {
+  public JsonDataPath addAttribute(KeyNormalizer key, Object value) {
 
-    JsonATTRIBUTE attribute;
+    JsonDataAttributes attribute;
     try {
-      attribute = Casts.cast(key, JsonATTRIBUTE.class);
+      attribute = Casts.cast(key, JsonDataAttributes.class);
     } catch (Exception e) {
       super.addAttribute(key, value);
       return this;
     }
 
     try {
-      com.tabulify.conf.Attribute variable = getConnection().getTabular().createAttribute(attribute, value);
+      com.tabulify.conf.Attribute variable = getConnection().getTabular().getVault().createAttribute(attribute, value, Origin.DEFAULT);
       this.addAttribute(variable);
       return this;
     } catch (Exception e) {

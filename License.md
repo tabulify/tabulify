@@ -6,7 +6,7 @@ FSL without Future License
 
 ## Notice
 
-Copyright Inc. Eraldy.com
+Copyright Inc. Tabulify.com
 
 ## Terms and Conditions
 

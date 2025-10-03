@@ -4,9 +4,10 @@ import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.FsDataPath;
 import com.tabulify.fs.FsDataPathAbs;
 import com.tabulify.spi.DataPath;
+import com.tabulify.spi.SchemaType;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
-import com.tabulify.transfer.TransferProperties;
+import com.tabulify.transfer.TransferPropertiesSystem;
 import net.bytle.type.MediaTypes;
 
 import java.io.IOException;
@@ -14,7 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * A basic directory manager
+ * A directory
  */
 public class FsDirectoryDataPath extends FsDataPathAbs implements FsDataPath {
 
@@ -65,7 +66,7 @@ public class FsDirectoryDataPath extends FsDataPathAbs implements FsDataPath {
   }
 
   @Override
-  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
+  public InsertStream getInsertStream(DataPath source, TransferPropertiesSystem transferProperties) {
     throw new IllegalArgumentException("You can't insert into a directory");
   }
 
@@ -78,4 +79,10 @@ public class FsDirectoryDataPath extends FsDataPathAbs implements FsDataPath {
   public boolean hasHeaderInContent() {
     return false;
   }
+
+  @Override
+  public SchemaType getSchemaType() {
+    return SchemaType.STRICT;
+  }
+
 }

@@ -1,0 +1,7 @@
+kind: archive-entry
+spec:
+  # The data uri of the archive
+  data-uri: https://downloads.mysql.com/docs/world-db.tar.gz
+  data-def:
+    # The path of the file in the archive
+    entry-path: world-db/world.sql

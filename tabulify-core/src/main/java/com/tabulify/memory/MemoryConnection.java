@@ -6,9 +6,12 @@ import com.tabulify.conf.Attribute;
 import com.tabulify.connection.ConnectionMetadata;
 import com.tabulify.noop.NoOpConnection;
 import com.tabulify.spi.DataPath;
+import com.tabulify.spi.DataPathAttribute;
 import com.tabulify.spi.ProcessingEngine;
+import net.bytle.exception.InternalException;
 import net.bytle.type.MediaType;
 import net.bytle.type.Strings;
+import net.bytle.type.time.Timestamp;
 
 import java.util.List;
 
@@ -71,22 +74,33 @@ public class MemoryConnection extends NoOpConnection {
    * This function permits to redirect the creation of the in-memory data resources
    *
    * @param mediaType the media type
-   * @param parts the path part
+   * @param parts     the path part
    * @return the memory data path
    */
   public MemoryDataPath getTypedDataPath(MediaType mediaType, String... parts) {
     if (parts.length == 0) {
-      throw new RuntimeException(
+      throw new InternalException(
         Strings.createMultiLineFromStrings("You can't create a data path without name",
           "If you don't want to specify a name, use the getRandomDataPath function").toString());
     }
     String path = String.join("/", parts);
-    MemoryDataPath memoryDataPath = this.memoryDataSystem.getFromStore(path);
-    if (memoryDataPath == null) {
-      memoryDataPath = getManager(mediaType).createDataPath(this, path);
-      this.memoryDataSystem.addInStore(memoryDataPath);
+
+    MemoryDataPath dataPath = getManager(mediaType).createDataPath(this, path);
+    dataPath.addAttribute(DataPathAttribute.CREATION_TIME, Timestamp.createFromNowUtc().toSqlTimestamp());
+
+    // Extension delete for the logical name
+    // delete the extension (ie all parts after the first point)
+    // to be in sync with the file system rules
+    // when a user gives a file name
+    String filename = parts[parts.length - 1];
+    int endIndex = filename.indexOf('.');
+    if (endIndex != -1) {
+      dataPath.setLogicalName(filename.substring(0, endIndex));
     }
-    return memoryDataPath;
+
+    return dataPath;
+
+
   }
 
   @Override
@@ -96,7 +110,7 @@ public class MemoryConnection extends NoOpConnection {
 
 
   @Override
-  public DataPath createScriptDataPath(DataPath dataPath) {
+  public DataPath getRuntimeDataPath(DataPath dataPath, MediaType mediaType) {
     throw new UnsupportedOperationException("Scripting is not yet supported on memory structure");
   }
 
@@ -120,8 +134,6 @@ public class MemoryConnection extends NoOpConnection {
   @Override
   public void close() {
     super.close();
-    // Delete all data paths
-    this.memoryDataSystem.emptyStore();
   }
 
   public MemoryVariableManager getManager(MediaType mediaType) {

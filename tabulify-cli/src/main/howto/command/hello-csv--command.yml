@@ -1,0 +1,11 @@
+kind: command
+spec:
+  # the runtime data uri
+  data-uri: (command/hello-csv@howto)@tmp
+  # The data definition (attributes)
+  data-def:
+    # A list of arguments passed to the command
+    arguments:
+      - 3 # The first argument, the number of lines
+    # Create a file with the CSV extension
+    stdout-data-uri: 'execute/${execution_start_time}-${executable_logical_name}.csv@tmp'

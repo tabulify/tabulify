@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# The first argument is the number of lines generated, default to 1
+LINES=${1:-1}
+
+# Print CSV headers
+echo "Id;Greeting"
+
+# Generate the lines
+for ((i=1; i<=LINES; i++)); do
+  if [ "$i" -gt 1 ]; then
+    echo "$i;Hello World $i times"
+    continue
+  fi
+  echo "$i;Hello World $i time"
+done

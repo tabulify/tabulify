@@ -1,18 +1,17 @@
 package com.tabulify.fs.binary;
 
 import com.tabulify.fs.FsConnection;
+import com.tabulify.fs.FsConnectionAttribute;
 import com.tabulify.fs.FsDataPath;
 import com.tabulify.fs.FsDataPathAbs;
-import com.tabulify.fs.textfile.FsTextDataPath;
-import com.tabulify.fs.textfile.FsTextLogger;
 import com.tabulify.spi.DataPath;
+import com.tabulify.spi.SchemaType;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
-import com.tabulify.transfer.TransferProperties;
+import com.tabulify.transfer.TransferPropertiesSystem;
 import net.bytle.type.MediaType;
 
 import java.io.IOException;
-import java.nio.charset.MalformedInputException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -25,10 +24,6 @@ public class FsBinaryDataPath extends FsDataPathAbs implements FsDataPath {
 
   public FsBinaryDataPath(FsConnection fsConnection, Path path, MediaType mediaType) {
     super(fsConnection, path, mediaType);
-  }
-
-  public FsBinaryDataPath(FsConnection fsConnection, DataPath dataPath) {
-    super(fsConnection, dataPath);
   }
 
 
@@ -56,7 +51,7 @@ public class FsBinaryDataPath extends FsDataPathAbs implements FsDataPath {
     }
 
     long i = 0;
-    try (SelectStream selectStream = getSelectStream()) {
+    try (SelectStream selectStream = getSelectStreamSafe()) {
       while (selectStream.next()) {
         i++;
       }
@@ -65,18 +60,25 @@ public class FsBinaryDataPath extends FsDataPathAbs implements FsDataPath {
   }
 
   @Override
-  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
-    throw new UnsupportedOperationException("The insertion in " + this.getClass().getSimpleName() + " file is not yet supported. File (" + getAbsoluteNioPath() + ")");
+  public InsertStream getInsertStream(DataPath source, TransferPropertiesSystem transferProperties) {
+    /**
+     * Note that when we download a memory or relation database,
+     * the file calculated should use the {@link com.tabulify.fs.FsConnectionAttribute#TABULAR_FILE_TYPE}
+     * and we should not come here
+     */
+    MediaType tabularMediaType = (MediaType) getConnection().getAttribute(FsConnectionAttribute.TABULAR_FILE_TYPE).getValueOrDefault();
+    throw new UnsupportedOperationException("No data insertion can be done in a binary file. The resource (" + this + ") has been detected as a binary file (" + mediaType + "). If this file is the target of a sql or memory resource, Tabulify should have created a file with the media type (" + tabularMediaType + ") defined in the connection parameter (" + this.getConnection() + FsConnectionAttribute.TABULAR_FILE_TYPE + ")");
   }
 
-  @Override
-  public SelectStream getSelectStream() {
-    throw new UnsupportedOperationException("The loop of this " + this.getClass().getSimpleName() + " file is not implemented. File (" + getAbsoluteNioPath() + ")");
-  }
 
   @Override
   public boolean hasHeaderInContent() {
     return false;
+  }
+
+  @Override
+  public SchemaType getSchemaType() {
+    return SchemaType.LOOSE;
   }
 
 }

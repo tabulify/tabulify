@@ -25,7 +25,7 @@ public class SqlDataProcessingEngine extends ProcessingEngine {
 
     SqlDataSystem dataSystem = jdbcDataStore.getDataSystem();
     @SuppressWarnings("SqlDialectInspection") String statementString = "select max(" + dataSystem.createQuotedName(columnDef.getColumnName()) + ") from " + ((SqlDataPath) columnDef.getRelationDef().getDataPath()).toSqlStringPath();
-    try (Statement statement = this.jdbcDataStore.getCurrentConnection().createStatement()) {
+    try (Statement statement = this.jdbcDataStore.getCurrentJdbcConnection().createStatement()) {
       ResultSet resultSet = statement.executeQuery(statementString);
       Object returnValue = null;
       if (resultSet.next()) {
@@ -51,13 +51,13 @@ public class SqlDataProcessingEngine extends ProcessingEngine {
     SqlDataSystem sqlDataSystem = (SqlDataSystem) columnDef.getRelationDef().getDataPath().getConnection().getDataSystem();
     String statementString = "select min(" + sqlDataSystem.createQuotedName(columnDef.getColumnName()) + ") from " + ((SqlDataPath) columnDef.getRelationDef().getDataPath()).toSqlStringPath();
 
-    try (Statement statement = this.jdbcDataStore.getCurrentConnection().createStatement()) {
+    try (Statement statement = this.jdbcDataStore.getCurrentJdbcConnection().createStatement()) {
       ResultSet resultSet = statement.executeQuery(statementString);
       Object returnValue = null;
 
       if (resultSet.next()) {
         //noinspection SwitchStatementWithTooFewBranches
-        switch (columnDef.getDataType().getTypeCode()) {
+        switch (columnDef.getDataType().getVendorTypeNumber()) {
           case Types.DATE:
             // In sqllite, getting a date object returns a long
             returnValue = resultSet.getDate(1);

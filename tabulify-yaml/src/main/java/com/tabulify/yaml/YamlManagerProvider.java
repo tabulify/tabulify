@@ -12,10 +12,6 @@ public class YamlManagerProvider extends FsFileManagerProvider {
   @Override
   public Boolean accept(MediaType mediaType) {
 
-    /**
-     * Media type can be application/yaml; charset=utf-8
-     */
-
     return mediaType.getSubType().equals(MediaTypes.TEXT_YAML.getSubType());
 
   }

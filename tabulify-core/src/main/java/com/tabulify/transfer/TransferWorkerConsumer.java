@@ -16,21 +16,19 @@ public class TransferWorkerConsumer implements Runnable {
 
   private final DataPath buffer;
   private final AtomicBoolean producerWorkIsDone;
-  private final TransferSourceTarget transferSourceTarget;
   private final TransferListenerStream transferListenerStream;
-  private final TransferProperties transferProperties;
+  private final TransferPropertiesSystem transferProperties;
   private final DataPath target;
 
 
   public TransferWorkerConsumer(
-    TransferSourceTarget transferSourceTarget,
+    TransferSourceTargetOrder transferSourceTarget,
     AtomicBoolean producerWorkIsDone,
     TransferWorkerMetricsViewer transferWorkerMetricsViewer
   ) {
     this.buffer = transferSourceTarget.getSourceDataPath();
     this.target = transferSourceTarget.getTargetDataPath();
     this.transferProperties = transferSourceTarget.getTransferProperties();
-    this.transferSourceTarget = transferSourceTarget;
     this.producerWorkIsDone = producerWorkIsDone;
     this.transferListenerStream = new TransferListenerStream(transferSourceTarget);
     transferListenerStream.setType(TransferType.THREAD_CROSS);

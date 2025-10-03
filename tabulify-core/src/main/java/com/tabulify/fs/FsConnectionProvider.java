@@ -29,7 +29,7 @@ public class FsConnectionProvider extends ConnectionProvider {
      * existing work.
      *
      * @return The table system
-     * @throws SecurityException If a security manager is installed and it denies an unspecified
+     * @throws SecurityException If a security manager is installed, and it denies an unspecified
      *                           permission.
      */
     @Override
@@ -45,7 +45,7 @@ public class FsConnectionProvider extends ConnectionProvider {
    */
   @Override
   public boolean accept(Attribute url) {
-    UriEnhanced uri = (UriEnhanced) url.getValueOrDefaultOrNull();
+    UriEnhanced uri = (UriEnhanced) url.getValueOrDefault();
     for (FileSystemProvider fileSystemProvider : FileSystemProvider.installedProviders()) {
       String scheme = uri.getScheme();
       if (scheme==null){

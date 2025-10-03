@@ -3,6 +3,7 @@ package com.tabulify.json;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.tabulify.model.ColumnDef;
 import com.tabulify.model.RelationDef;
 import com.tabulify.stream.SelectStream;
 import com.tabulify.stream.SelectStreamAbs;
@@ -92,23 +93,26 @@ public class JsonSelectStream extends SelectStreamAbs {
 
   }
 
+  private boolean isClosed = false;
   @Override
   public void close() {
-
-  }
-
-  private String getColumnName(int columnIndex) {
-    return jsonDataPath.getOrCreateRelationDef().getColumnDef(columnIndex).getColumnName();
+    this.isClosed = true;
   }
 
   @Override
-  public long getRow() {
+  public boolean isClosed() {
+    return this.isClosed;
+  }
+
+  @Override
+  public long getRecordId() {
     return lineNumber;
   }
 
+
   @Override
-  public Object getObject(int columnIndex) {
-    return currentRecordKeyValue.get(getColumnName(columnIndex));
+  public Object getObject(ColumnDef columnDef) {
+    return currentRecordKeyValue.get(columnDef.getColumnName());
   }
 
 

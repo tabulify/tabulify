@@ -1,12 +1,12 @@
 package com.tabulify.gen.generator;
 
 
-import com.tabulify.gen.DataGenAttribute;
 import com.tabulify.gen.DataGenType;
 import com.tabulify.gen.GenColumnDef;
 import com.tabulify.gen.GenDataPath;
 import com.tabulify.model.PrimaryKeyDef;
 import com.tabulify.model.UniqueKeyDef;
+import com.tabulify.spi.DataPath;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoColumnException;
@@ -48,7 +48,7 @@ import java.util.function.Supplier;
  * * For integer and date, it will calculate the new value from the start value plus or minValue the step
  * <p>
  * <p>
- * * start (may be a date, a number) - default to 0 / current date
+ * * start (maybe a date, a number) - default to 0 / current date
  * * step  integer (number or number of day) - default to +1
  * * maxValue  only active if the step is positive
  * * minValue  only active if the step is negative
@@ -57,6 +57,9 @@ import java.util.function.Supplier;
 public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements CollectionGeneratorScale<T>, CollectionGenerator<T>, Supplier<T> {
 
 
+  /**
+   * Second step, this is the precision of the {@link RandomGenerator}
+   */
   public static final int DEFAULT_TIMESTAMP_STEP = -10000;
 
   /**
@@ -91,6 +94,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
    * <p>
    * Generally:
    * * 1 for numeric and char
+   * * 0.25 for double, float
    * * -1 for date
    */
 
@@ -133,6 +137,12 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
    */
   private boolean reset = false;
 
+  /**
+   * Do we generate data for a case-sensitive column
+   */
+  private Boolean caseSensitive = false;
+  private StringGenerator sequenceStringGenerator;
+
 
   /**
    * @param clazz type of data to generate
@@ -167,7 +177,9 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
       step = -1;
       offset = -1;
     } else if (clazz == java.sql.Timestamp.class) {
-      start = Timestamp.createFromNowLocalSystem().toSqlTimestamp();
+      java.sql.Timestamp startTimeStamp = Timestamp.createFromNowLocalSystem().toSqlTimestamp();
+      startTimeStamp.setNanos(0);
+      start = startTimeStamp;
       step = DEFAULT_TIMESTAMP_STEP; // ms
     } else if (clazz == BigDecimal.class) {
       // all number start at 1
@@ -196,19 +208,22 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
   }
 
   /**
-   * This is the function that's called recursively at the function {@link GenColumnDef#getOrCreateGenerator(Class)}
+   * This is the function that's called recursively at the function {@link GenColumnDef#getOrCreateGenerator()}
    * Don't delete
    */
-  public static <T> SequenceGenerator<T> createFromProperties(Class<T> clazz, GenColumnDef columnDef) {
+  public static <T> SequenceGenerator<T> createFromArguments(Class<T> clazz, GenColumnDef<T> columnDef) {
 
     SequenceGenerator<T> sequenceGenerator = (SequenceGenerator<T>) create(clazz)
       .setColumnDef(columnDef);
 
-    final Integer stepObj;
+    Map<SequenceGeneratorArgument, Object> argumentMap = columnDef.getDataSupplierArgument(SequenceGeneratorArgument.class);
+
+
+    final Number stepObj;
     try {
-      stepObj = columnDef.getDataGeneratorValue(DataGenAttribute.STEP, Integer.class);
+      stepObj = Casts.cast(argumentMap.get(SequenceGeneratorArgument.STEP), Number.class);
     } catch (CastException e) {
-      throw new RuntimeException("The data generator " + DataGenAttribute.STEP + " value of the column " + columnDef + " is not a valid integer. Error: " + e.getMessage(), e);
+      throw new RuntimeException("The data generator " + SequenceGeneratorArgument.STEP + " value of the column " + columnDef + " is not a valid number. Error: " + e.getMessage(), e);
     }
     if (stepObj != null) {
       sequenceGenerator.setStep(stepObj);
@@ -223,9 +238,9 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
     }
     final Integer offset;
     try {
-      offset = columnDef.getDataGeneratorValue(DataGenAttribute.OFFSET, Integer.class);
+      offset = Casts.cast(argumentMap.get(SequenceGeneratorArgument.OFFSET), Integer.class);
     } catch (CastException e) {
-      throw new RuntimeException("The data generator " + DataGenAttribute.OFFSET + " value of the column " + columnDef + " is not a valid integer. Error: " + e.getMessage(), e);
+      throw new RuntimeException("The data generator " + SequenceGeneratorArgument.OFFSET + " value of the column " + columnDef + " is not a valid integer. Error: " + e.getMessage(), e);
     }
     if (offset != null) {
       sequenceGenerator.setOffset(offset);
@@ -233,29 +248,39 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
 
     final T startObj;
     try {
-      startObj = columnDef.getDataGeneratorValue(DataGenAttribute.START, clazz);
+      startObj = Casts.cast(argumentMap.get(SequenceGeneratorArgument.START), clazz);
     } catch (CastException e) {
-      throw new RuntimeException("The data generator " + DataGenAttribute.START + " value of the column " + columnDef + " is not a valid " + clazz.getSimpleName() + ". Error: " + e.getMessage(), e);
+      throw new RuntimeException("The data generator " + SequenceGeneratorArgument.START + " value of the column " + columnDef + " is not a valid " + clazz.getSimpleName() + ". Error: " + e.getMessage(), e);
     }
     if (startObj != null) {
       sequenceGenerator.setStart(startObj);
     }
 
+    final Boolean caseSensitiveObj;
+    try {
+      caseSensitiveObj = Casts.cast(argumentMap.get(SequenceGeneratorArgument.CASE_SENSITIVE), Boolean.class);
+    } catch (CastException e) {
+      throw new RuntimeException("The data generator " + SequenceGeneratorArgument.CASE_SENSITIVE + " value of the column " + columnDef + " is not a valid boolean. Error: " + e.getMessage(), e);
+    }
+    if (caseSensitiveObj != null) {
+      sequenceGenerator.setCaseSensitive(caseSensitiveObj);
+    }
+
     final Boolean reset;
     try {
-      reset = columnDef.getDataGeneratorValue(DataGenAttribute.RESET, Boolean.class);
+      reset = Casts.cast(argumentMap.get(SequenceGeneratorArgument.RESET), Boolean.class);
     } catch (CastException e) {
-      throw new RuntimeException("The data generator " + DataGenAttribute.RESET + " value of the column " + columnDef + " is not a valid boolean. Error: " + e.getMessage(), e);
+      throw new RuntimeException("The data generator " + SequenceGeneratorArgument.RESET + " value of the column " + columnDef + " is not a valid boolean. Error: " + e.getMessage(), e);
     }
     if (reset != null) {
       sequenceGenerator.setReset(reset);
     }
 
-    Object valuesProperty = columnDef.getDataGeneratorValue(DataGenAttribute.VALUES);
+    Object valuesProperty = argumentMap.get(SequenceGeneratorArgument.VALUES);
     if (valuesProperty != null) {
       List<T> valuesList;
       if (valuesProperty instanceof List) {
-        valuesList = Casts.castToListSafe(valuesProperty, clazz);
+        valuesList = Casts.castToNewListSafe(valuesProperty, clazz);
       } else {
         throw new RuntimeException("The values (" + valuesProperty + ") of the sequence generator for the column (" + columnDef + ") are not a list but are a " + valuesProperty.getClass() + ". A list should be provided");
       }
@@ -263,7 +288,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
     }
     Long maxTickProperty;
     try {
-      maxTickProperty = columnDef.getDataGeneratorValue(DataGenAttribute.MAX_TICK, Long.class);
+      maxTickProperty = Casts.cast(argumentMap.get(SequenceGeneratorArgument.MAX_TICK), Long.class);
     } catch (CastException e) {
       throw new RuntimeException("The max tick property for the data generator of the column (" + columnDef.getFullyQualifiedName() + ") is not an long. Error: " + e.getMessage(), e);
     }
@@ -271,13 +296,18 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
       sequenceGenerator.setMaxTick(maxTickProperty);
     }
 
-    Object tickerFor = columnDef.getDataGeneratorValue(DataGenAttribute.TICKER_FOR);
+    Object tickerFor = argumentMap.get(SequenceGeneratorArgument.TICKER_FOR);
     if (tickerFor != null) {
       sequenceGenerator.setTickerFor(tickerFor.toString());
     }
 
     return sequenceGenerator;
 
+  }
+
+  private SequenceGenerator<T> setCaseSensitive(Boolean caseSensitiveObj) {
+    this.caseSensitive = caseSensitiveObj;
+    return this;
   }
 
 
@@ -298,13 +328,13 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
    *
    * @param columnDefs - the series of columns
    */
-  public static void createOdometer(List<GenColumnDef> columnDefs) {
+  public static void createOdometer(List<GenColumnDef<?>> columnDefs) {
     int index = 0;
-    for (GenColumnDef genColumnDef : columnDefs) {
+    for (GenColumnDef<?> genColumnDef : columnDefs) {
       if (index == 0) {
-        genColumnDef.addSequenceGenerator(genColumnDef.getClazz());
+        genColumnDef.addSequenceGenerator();
       } else {
-        genColumnDef.addSequenceGenerator(genColumnDef.getClazz())
+        genColumnDef.addSequenceGenerator()
           .setTickerFor(columnDefs.get(index - 1).getColumnName());
       }
       index++;
@@ -325,7 +355,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
 
     if (value instanceof Collection || value.getClass().isArray()) {
       if (values.length == 0) {
-        return setValues(Casts.castToListSafe(value, this.clazz));
+        return setValues(Casts.castToNewListSafe(value, this.clazz));
       } else {
         throw new RuntimeException("The first value is a collection and the section vargs values are not empty. This is not permitted");
       }
@@ -370,14 +400,15 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
         localValue = Timestamp.createFromObjectSafeCast(start).afterMillis(Casts.castSafe(offset, Integer.class) + (long) tickCounter * Casts.castSafe(stepSize, Integer.class)).toSqlTimestamp();
       } else if (getColumnDef().getClazz() == BigDecimal.class) {
         localValue = ((BigDecimal) (start)).add(BigDecimal.valueOf(Casts.castSafe(offset, Double.class))).add(BigDecimal.valueOf(Casts.castSafe(stepSize, Double.class)).multiply(new BigDecimal(tickCounter)));
-        Integer scale = this.getColumnDef().getScale();
-        if (scale != null) {
+        int scale = this.getColumnDef().getScale();
+        if (scale != 0) {
           localValue = ((BigDecimal) localValue).setScale(scale, RoundingMode.HALF_DOWN);
         }
       } else if (getColumnDef().getClazz() == String.class) {
-        int startI = SequenceStringGeneratorHelper.toInt((String) start);
-        int codePoint = (startI) + Casts.castSafe(offset, Integer.class) + this.tickCounter * Casts.castSafe(stepSize, Integer.class);
-        localValue = SequenceStringGeneratorHelper.toString(codePoint);
+        StringGenerator sequenceStringHelper = this.getSequenceStringGenerator();
+        long startI = sequenceStringHelper.toInt((String) start);
+        long codePoint = (startI) + Casts.castSafe(offset, Long.class) + this.tickCounter * Casts.castSafe(stepSize, Long.class);
+        localValue = sequenceStringHelper.toString(codePoint);
       } else {
         throw new RuntimeException("The data type (" + getColumnDef().getClazz() + ") is not yet implemented for a sequence generator");
       }
@@ -473,7 +504,7 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
 
   /**
    * This is generally:
-   * * +1 for number and list
+   * * +1 or +0.25 for number and list
    * * -1 for date
    *
    * @param step - the step value
@@ -506,16 +537,17 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
      * ie a precision of 3
      */
     Long maxPrecisionSize = null;
-    GenColumnDef columnDef = getColumnDef();
+    GenColumnDef<?> columnDef = getColumnDef();
     if (clazz == Integer.class || clazz == BigDecimal.class || clazz == Double.class) {
-      Integer precisionOrMax = columnDef != null ? columnDef.getPrecisionOrMax() : null;
-      maxPrecisionSize = precisionOrMax != null ?
+      int precisionOrMax = columnDef != null ? columnDef.getPrecisionOrMax() : 0;
+      maxPrecisionSize = precisionOrMax != 0 ?
         Double.valueOf(Math.pow(10, precisionOrMax)).longValue() - 1
         : MAX_NUMBER_PRECISION;
     } else if (clazz == String.class) {
-      Integer precisionOrMax = columnDef != null ? columnDef.getPrecisionOrMax() : null;
-      maxPrecisionSize = precisionOrMax != null ?
-        Double.valueOf(Math.pow(SequenceStringGeneratorHelper.MAX_RADIX, precisionOrMax)).longValue()
+
+      int precisionOrMax = columnDef != null ? columnDef.getPrecisionOrMax() : 0;
+      maxPrecisionSize = precisionOrMax != 0 ?
+        Double.valueOf(Math.pow(this.getSequenceStringGenerator().getMaxRadix(), precisionOrMax)).longValue()
         : MAX_STRING_PRECISION;
     }
 
@@ -567,6 +599,23 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
 
     return maxSize;
 
+  }
+
+  /**
+   * The sequence string generator
+   */
+  public StringGenerator getSequenceStringGenerator() {
+    /**
+     * Late init, should be not needed with a proper builder
+     */
+    if (this.sequenceStringGenerator != null) {
+      return this.sequenceStringGenerator;
+    }
+    this.sequenceStringGenerator = StringGenerator
+      .builder()
+      .setCaseSensitivity(this.caseSensitive)
+      .build();
+    return this.sequenceStringGenerator;
   }
 
   @Override
@@ -655,9 +704,12 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
    */
   private long getCountCapped() {
     long size = getCount();
-    Long maxRecordCount = this.getRelationDef().getDataPath().getMaxRecordCount();
-    if (maxRecordCount != null && size > maxRecordCount) {
-      return maxRecordCount;
+    DataPath dataPath = this.getColumnDef().getGenRelationDef().getDataPath();
+    if (dataPath instanceof GenDataPath) {
+      Long maxRecordCount = ((GenDataPath) dataPath).getMaxRecordCount();
+      if (maxRecordCount != null && size > maxRecordCount) {
+        return maxRecordCount;
+      }
     }
     return size;
   }
@@ -714,13 +766,13 @@ public class SequenceGenerator<T> extends CollectionGeneratorAbs<T> implements C
    */
   public SequenceGenerator<T> setTickerFor(String tickedColumnName) {
 
-    GenColumnDef columnDef;
+    GenColumnDef<?> columnDef;
     try {
-      columnDef = this.getRelationDef().getColumnDef(tickedColumnName);
+      columnDef = this.getColumnDef().getGenRelationDef().getColumnDef(tickedColumnName);
     } catch (NoColumnException e) {
-      throw new IllegalStateException("The ticked column (" + tickedColumnName + ") could not be found in the data path (" + this.getRelationDef().getDataPath() + ")");
+      throw new IllegalStateException("The ticked column (" + tickedColumnName + ") could not be found in the data path (" + this.getColumnDef().getRelationDef().getDataPath() + ")");
     }
-    CollectionGenerator<?> parentGenerator = columnDef.getOrCreateGenerator(columnDef.getClazz());
+    CollectionGenerator<?> parentGenerator = columnDef.getOrCreateGenerator();
     if (parentGenerator instanceof SequenceGenerator) {
       this.tickerFor = (SequenceGenerator<?>) parentGenerator;
       this.tickerFor.addTickedBy(this);

@@ -1,2 +1,5 @@
 ### The out path of the play
 src/test/resources/out/*
+### A class to create debug command session with cli
+### See doc TabulTmpTest.md
+src/test/java/com/tabulify/tabul/TabulTmpTest.java

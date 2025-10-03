@@ -1,6 +1,6 @@
 package com.tabulify.gen.memory;
 
-import com.tabulify.gen.GenDataPathType;
+import com.tabulify.gen.GeneratorMediaType;
 import com.tabulify.memory.MemoryVariableManager;
 import com.tabulify.memory.MemoryVariableManagerProvider;
 import net.bytle.type.MediaType;
@@ -11,7 +11,7 @@ public class GenMemManagerProvider extends MemoryVariableManagerProvider {
 
   @Override
   public Boolean accept(MediaType type) {
-    return GenDataPathType.DATA_GEN.toString().equals(type.toString());
+    return GeneratorMediaType.DATA_GEN.toString().equals(type.toString());
   }
 
   @Override

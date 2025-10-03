@@ -32,14 +32,21 @@ tasks:
   # the root `install` command install the jars
   install-cli:
     cmds:
-      - contrib/script/install-cli
-  # Start a whole test cycle
-  # Restart with: mvn install --resume-from tabulify-data-generation
-  install-test:
+      - |
+        {{.TASKFILE_DIR}}/contrib/script/install-cli
+  # Install the jars in the cli
+  install-cli-jars:
     cmds:
-      - mvn install
+      - |
+        {{.TASKFILE_DIR}}/contrib/script/install-cli-jars
+  # Just copy the howto resources to the client
+  install-cli-resources:
+    cmds:
+      - |
+        cp -r {{.TASKFILE_DIR}}/tabulify-cli/src/main/howto $CLI_TABUL_HOME/resources
+        cp -r {{.TASKFILE_DIR}}/tabulify-gen-entities/src/main/resources/entity $CLI_TABUL_HOME/resources
   # Start the documentation website
-  start-web:
+  site-start:
     cmds:
       - |
         docker run \
@@ -55,4 +62,28 @@ tasks:
         -e DOKU_DOCKER_BASE_URL='http://localhost:8081' \
         -v {{.TASKFILE_DIR}}/tabulify-cli/src/main/tabulify.com:/var/www/html \
         ghcr.io/combostrap/dokuwiki:php8.3-latest
-
+          docker start site-com-combostrap
+  # Broken links
+  site-broken:
+    cmds:
+      - |
+        docker exec -it site-com-tabulify php ./bin/plugin.php combo broken-links
+  site-sync:
+    # indexer will catch the double id, canonical problem
+    # clear is mandatory otherwise you hit the cache
+    # q just delete the normal output
+    cmds:
+      - |
+        docker exec -it site-com-tabulify php ./bin/indexer.php --clear -q
+        docker exec -it site-com-tabulify php ./bin/plugin.php combo sync :
+  # Dump Front-matter into pages
+  site-frontmatter:
+    cmds:
+      - |
+        docker exec -it site-com-tabulify php ./bin/plugin.php combo metadata-to-frontmatter :
+  # Unfortunately, JetBrains cannot read sqlite database
+  # from wsl
+  cp-sqlite:
+    cmds:
+      - |
+        cp /home/admin/.tabul/sqlite.sqlite3 /mnt/c/tmp/tabul.db

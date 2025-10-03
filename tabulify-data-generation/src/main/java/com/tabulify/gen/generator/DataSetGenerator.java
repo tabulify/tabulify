@@ -4,8 +4,8 @@ import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
 import com.tabulify.connection.ConnectionBuiltIn;
 import com.tabulify.csv.CsvDataPath;
-import com.tabulify.gen.DataGenAttribute;
 import com.tabulify.gen.DataGenType;
+import com.tabulify.gen.DataSupplierAttribute;
 import com.tabulify.gen.GenColumnDef;
 import com.tabulify.gen.GenLog;
 import com.tabulify.model.ColumnDef;
@@ -13,6 +13,8 @@ import com.tabulify.spi.DataPath;
 import com.tabulify.spi.SelectException;
 import com.tabulify.spi.Tabulars;
 import com.tabulify.stream.SelectStream;
+import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 import net.bytle.exception.NoColumnException;
 import net.bytle.type.Casts;
 import net.bytle.type.MediaType;
@@ -31,19 +33,19 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
 
 
   /**
-   * The CSV file where the list of entities are stored
+   * The file (CSV, ...) where the data is taken from
    */
-  private final DataPath entityPath;
+  private final DataPath dataSetPath;
 
   /**
    * The entity column that holds the value to return
    */
-  private final ColumnDef entityValueColumn;
+  private final ColumnDef valueColumn;
 
   /**
    * A build object where the sub histogram generator are stored
    */
-  private final Map<String, HistogramGenerator<?>> nameStreams = new HashMap<>();
+  private final Map<String, HistogramGenerator<?>> histogramsByDependentValue = new HashMap<>();
 
   /**
    * The column index where there is a weight (ie a probability)
@@ -70,9 +72,10 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
   public static final List<String> WEIGHT_COLUMN_NAMES = Arrays.asList("probability", "weight", "factor");
 
   /**
-   * A memory representation of the entity
+   * A memory representation of the data set
+   * Long is the row number
    */
-  private final Map<Long, List<?>> entitySet = new HashMap<>();
+  private final Map<Long, List<?>> dataSetMemory = new HashMap<>();
 
 
   /**
@@ -82,42 +85,41 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
 
   /**
    * The actual row
-   * It can be passed to a {@link DataSetColumnGenerator}
+   * It can be passed to a {@link DataSetMetaColumnGenerator}
    */
   private List<?> actualRow;
 
   /**
    * @param clazz           - the column def that will select the value
-   * @param entityPath      - the path to the csv file that contains the data set
+   * @param dataSetPath     - the path to the csv file that contains the data set
    * @param valueColumnName - the name of the column in the entity file that contains the value
    */
-  public DataSetGenerator(Class<T> clazz, DataPath entityPath, String valueColumnName) {
+  public DataSetGenerator(Class<T> clazz, DataPath dataSetPath, String valueColumnName) {
 
     super(clazz);
-    this.entityPath = entityPath;
+    this.dataSetPath = dataSetPath;
 
 
     /**
      * Which column to return
      */
-
     if (valueColumnName == null) {
-      this.entityValueColumn = entityPath.getOrCreateRelationDef().getColumnDef(1);
+      this.valueColumn = dataSetPath.getOrCreateRelationDef().getColumnDef(1);
     } else {
       try {
-        this.entityValueColumn = entityPath.getOrCreateRelationDef().getColumnDef(valueColumnName);
+        this.valueColumn = dataSetPath.getOrCreateRelationDef().getColumnDef(valueColumnName);
       } catch (NoColumnException e) {
-        throw new IllegalStateException("The column (" + valueColumnName + ") was not found not exist in the columns (" + entityPath.getOrCreateRelationDef().getColumnDefs().stream().map(ColumnDef::getColumnName).collect(Collectors.joining(", ")) + ") data resource (" + entityPath + "). We cannot create the entity generator.");
+        throw new IllegalStateException("The column (" + valueColumnName + ") was not found not exist in the columns (" + dataSetPath.getOrCreateRelationDef().getColumnDefs().stream().map(ColumnDef::getColumnName).collect(Collectors.joining(", ")) + ") data resource (" + dataSetPath + "). We cannot create the entity generator.");
       }
     }
 
     /**
      * Do we have a probability column
      */
-    ColumnDef columnProb = null;
+    ColumnDef<?> columnProb = null;
     for (String columnName : WEIGHT_COLUMN_NAMES) {
       try {
-        columnProb = entityPath.getOrCreateRelationDef().getColumnDef(columnName);
+        columnProb = dataSetPath.getOrCreateRelationDef().getColumnDef(columnName);
         break;
       } catch (NoColumnException e) {
         //
@@ -137,34 +139,100 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
 
 
   /**
-   * This function is called via recursion by the function {@link GenColumnDef#getOrCreateGenerator(Class)}
+   * This function is called via recursion by the function {@link GenColumnDef#getOrCreateGenerator()}
    * Don't delete
-   *
    */
-  public static <T> DataSetGenerator<T> createFromProperties(Class<T> clazz, GenColumnDef genColumnDef) {
-    String valueColumnName = (String) genColumnDef.getDataGeneratorValue(DataGenAttribute.COLUMN);
-    String entity = (String) genColumnDef.getDataGeneratorValue(DataGenAttribute.ENTITY);
-    String locale = (String) genColumnDef.getDataGeneratorValue(DataGenAttribute.LOCALE);
+  public static <T> DataSetGenerator<T> createFromArguments(Class<T> clazz, GenColumnDef<T> genColumnDef) {
+    String type = (String) genColumnDef.getDataSupplierAttributeValue(DataSupplierAttribute.TYPE);
     Tabular tabular = genColumnDef.getRelationDef().getDataPath().getConnection().getTabular();
+    DataGenType dataGenType = Casts.castSafe(type, DataGenType.class);
+
     DataPath dataPath;
-    if (entity != null) {
-      dataPath = getEntityPath(tabular, entity, locale);
-    } else {
-      String dataUri = (String) genColumnDef.getDataGeneratorValue(DataGenAttribute.DATA_URI);
-      if (dataUri != null) {
+    String valueColumnName;
+    Object metaColumnsObjects;
+    switch (dataGenType) {
+      case ENTITY:
+        Map<DataSetEntityArgument, Object> entityArgumentMap = genColumnDef.getDataSupplierArgument(DataSetEntityArgument.class);
+        String locale = (String) entityArgumentMap.get(DataSetEntityArgument.LOCALE);
+        if (locale == null) {
+          locale = "en";
+        }
+        // Entity
+        String entity = (String) entityArgumentMap.get(DataSetEntityArgument.NAME);
+        if (entity == null) {
+          entity = genColumnDef.getColumnName();
+        }
+        // Column
+        valueColumnName = (String) entityArgumentMap.get(DataSetEntityArgument.COLUMN);
+        if (valueColumnName == null) {
+          valueColumnName = entity;
+        }
+        dataPath = getEntityPath(tabular, entity, locale);
+        // Meta columns
+        metaColumnsObjects = entityArgumentMap.get(DataSetEntityArgument.META_COLUMNS);
+        break;
+      case DATA_SET:
+        Map<DataSetArgument, Object> argumentMap = genColumnDef.getDataSupplierArgument(DataSetArgument.class);
+        // Data Uri
+        String dataUri = (String) argumentMap.get(DataSetArgument.DATA_URI);
+        if (dataUri == null) {
+          throw new IllegalArgumentException("The " + DataSetArgument.DATA_URI + " attribute on the column " + genColumnDef + " is mandatory for a data set generator and was not found. It specifies the data set to use.");
+        }
         dataPath = tabular.getDataPath(dataUri);
-      } else {
-        throw new RuntimeException("The data generation definition of the column (" + genColumnDef + ") does not have an `" + DataGenAttribute.ENTITY + "` or `" + DataGenAttribute.DATA_URI + "` key that defines the data set.");
-      }
+        if (!Tabulars.exists(dataPath)) {
+          throw new IllegalArgumentException("The " + DataSetArgument.DATA_URI + " attribute on the column " + genColumnDef + " specifies a data resource (" + dataUri + ") that does not exists.");
+        }
+        // Column
+        valueColumnName = (String) argumentMap.get(DataSetArgument.COLUMN);
+        if (valueColumnName == null) {
+          valueColumnName = genColumnDef.getColumnName();
+        }
+        // Meta columns
+        metaColumnsObjects = argumentMap.get(DataSetArgument.META_COLUMNS);
+        break;
+      default:
+        throw new InternalException(dataGenType + " is not a data set type");
     }
-    return (DataSetGenerator<T>) (new DataSetGenerator<>(clazz, dataPath, valueColumnName))
+
+    DataSetGenerator<T> dataSetGenerator = (DataSetGenerator<T>) (new DataSetGenerator<>(clazz, dataPath, valueColumnName))
       .setColumnDef(genColumnDef);
+
+    /**
+     * Dependent Meta Columns
+     */
+    if (metaColumnsObjects != null) {
+      Map<String, String> metaColumnsMap;
+      try {
+        metaColumnsMap = Casts.castToSameMap(metaColumnsObjects, String.class, String.class);
+      } catch (CastException e) {
+        throw new IllegalArgumentException("The " + DataSetArgument.META_COLUMNS + " attribute for the column " + genColumnDef + " is not a valid key/map of string/string");
+      }
+      int metaColumnsSize = metaColumnsMap.size();
+      switch (metaColumnsSize) {
+        case 0:
+          // empty map
+          if (genColumnDef.getRelationDef().getDataPath().getConnection().getTabular().isStrictExecution()) {
+            throw new IllegalArgumentException("The " + DataSetArgument.META_COLUMNS + " attribute for the column " + genColumnDef + " is empty");
+          }
+          break;
+        case 1:
+          Map.Entry<String, String> dependentColumnName = metaColumnsMap.entrySet().iterator().next();
+          String localColumn = dependentColumnName.getKey();
+          String dataSetColumn = dependentColumnName.getValue();
+          dataSetGenerator.addDependency(localColumn, dataSetColumn);
+          break;
+        default:
+          throw new IllegalArgumentException("The " + DataSetArgument.META_COLUMNS + " attribute for the column " + genColumnDef + " cannot contain more than one column mapping. We found " + metaColumnsSize);
+      }
+
+    }
+
+    return dataSetGenerator;
   }
 
 
   /**
    * Return the internal CSV entity path
-   *
    */
   public static CsvDataPath getEntityPath(Tabular tabular, String entityName, String locale) {
 
@@ -203,67 +271,46 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
     /**
      * First Building of the histogram generators
      */
-    if (nameStreams.isEmpty()) {
+    if (histogramsByDependentValue.isEmpty()) {
 
+      /**
+       * Dependency Value -> Bucket of Row Number, Probability
+       */
       Map<String, Map<Long, Double>> distProbabilities = new HashMap<>();
-      Map<Long, Double> distProb;
-      if (this.dependencyColumn != null) {
-
-        try (SelectStream selectStream = entityPath.getSelectStream()) {
-          while (selectStream.next()) {
-            String dependencyValue = selectStream.getString(this.dependencyColumn.getColumnPosition());
-            distProb = distProbabilities.computeIfAbsent(dependencyValue, k -> new HashMap<>());
-            long rowNum = selectStream.getRow();
-            this.entitySet.put(rowNum, selectStream.getObjects());
-            Double probability = 1.0;
-            if (entityWeightColumnIndex != null) {
-              Double probabilityEntity = selectStream.getDouble(entityWeightColumnIndex);
-              if (probabilityEntity != null) {
-                probability = probabilityEntity;
-              }
-            }
-            distProb.put(rowNum, probability);
+      try (SelectStream dataSetSelectStream = dataSetPath.getSelectStream()) {
+        while (dataSetSelectStream.next()) {
+          String dependencyValue = NO_DEPENDENT_VALUE;
+          if (this.dependencyColumn != null) {
+            dependencyValue = dataSetSelectStream.getString(this.dependencyColumn.getColumnPosition());
           }
-        } catch (SelectException e) {
-          throw new RuntimeException(e);
-        }
-        distProbabilities.forEach((key, buckets) -> nameStreams.put(key, HistogramGenerator.create(Long.class, buckets)));
-
-      } else {
-        try (SelectStream selectStream = entityPath.getSelectStream()) {
-          distProb = new HashMap<>();
-          while (selectStream.next()) {
-            /**
-             * Build the memory set
-             */
-            long rowNum = selectStream.getRow();
-            this.entitySet.put(rowNum, selectStream.getObjects());
-            /**
-             * Build the histogram
-             */
-            Double probability = 1.0;
-            if (entityWeightColumnIndex != null) {
-              Double probabilityEntity = selectStream.getDouble(entityWeightColumnIndex);
-              if (probabilityEntity != null) {
-                probability = probabilityEntity;
-              }
+          // Bucket of Dataset Row Number, Probability
+          Map<Long, Double> histogramBuckets = distProbabilities.computeIfAbsent(dependencyValue, k -> new HashMap<>());
+          long rowNum = dataSetSelectStream.getRecordId();
+          this.dataSetMemory.put(rowNum, dataSetSelectStream.getObjects());
+          Double probability = 1.0;
+          if (entityWeightColumnIndex != null) {
+            Double probabilityEntity = dataSetSelectStream.getDouble(entityWeightColumnIndex);
+            if (probabilityEntity != null) {
+              probability = probabilityEntity;
             }
-            distProb.put(rowNum, probability);
           }
-        } catch (SelectException e) {
-          throw new RuntimeException(e);
+          histogramBuckets.put(rowNum, probability);
         }
-        nameStreams.put(NO_DEPENDENT_VALUE, HistogramGenerator.create(Long.class, distProb));
+      } catch (SelectException e) {
+        throw new RuntimeException(e);
       }
+      distProbabilities.forEach((key, buckets) -> histogramsByDependentValue.put(key, HistogramGenerator.create(Long.class, buckets)));
+
+
     }
 
     Object dependentValue = NO_DEPENDENT_VALUE;
     if (this.dependencyColumn != null) {
       dependentValue = dependencyGenerator.getActualValue();
     }
-    HistogramGenerator<?> generator = nameStreams.get(dependentValue.toString());
+    HistogramGenerator<?> generator = histogramsByDependentValue.get(dependentValue.toString());
     if (generator == null) {
-      throw new RuntimeException("The dependent generator (" + dependencyGenerator + ") has generated the value (" + dependentValue + ") but this value is unknown in the column (" + dependencyColumn.getColumnName() + ") of the entity file (" + this.entityPath + ")");
+      throw new RuntimeException("The dependent generator (" + dependencyGenerator + ") has generated the value (" + dependentValue + ") but this value is unknown in the column (" + dependencyColumn.getColumnName() + ") of the entity file (" + this.dataSetPath + ")");
     }
     this.rowNumber = Casts.castSafe(generator.getNewValue(), Long.class);
 
@@ -271,8 +318,8 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
     /**
      * Get the value
      */
-    this.actualRow = this.entitySet.get(this.rowNumber);
-    this.actualValue = Casts.castSafe(actualRow.get(this.entityValueColumn.getColumnPosition() - 1), this.clazz);
+    this.actualRow = this.dataSetMemory.get(this.rowNumber);
+    this.actualValue = Casts.castSafe(actualRow.get(this.valueColumn.getColumnPosition() - 1), this.clazz);
     return this.actualValue;
 
   }
@@ -280,7 +327,7 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
 
   @Override
   public long getCount() {
-    return nameStreams.values().stream()
+    return histogramsByDependentValue.values().stream()
       .mapToLong(HistogramGenerator::getCount)
       .max()
       .orElse(Long.MAX_VALUE);
@@ -294,9 +341,8 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
 
   /**
    * Shortcut utility function to add a dependency on a column when the name
-   * of the data resource column is the same than the name
+   * of the data resource column is the same as the name
    * in the entity file
-   *
    */
   @SuppressWarnings("unused")
   public DataSetGenerator<?> addDependency(String dependentColumnName) {
@@ -307,35 +353,39 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
 
 
   /**
-   * @param dependentColumnName       - the name of the data resource column that will generate the value
-   * @param entityDependentColumnName - the name of the entity column that should match the value of the dependent column
+   * @param localDependentColumnName   - the name of the data resource column that will generate the value
+   * @param dataSetDependentColumnName - the name of the entity column that should match the value of the dependent column
    */
-  public DataSetGenerator<?> addDependency(String dependentColumnName, String entityDependentColumnName) {
+  public DataSetGenerator<?> addDependency(String localDependentColumnName, String dataSetDependentColumnName) {
 
-    GenColumnDef columnDef;
+    ColumnDef columnDef;
     try {
-      columnDef = this.getRelationDef()
-        .getColumnDef(dependentColumnName);
+      columnDef = this.getColumnDef().getRelationDef()
+        .getColumnDef(localDependentColumnName);
     } catch (NoColumnException e) {
-      throw new IllegalStateException("The column ("+dependentColumnName+") was not found in the resource ("+this.getRelationDef().getDataPath()+")");
+      throw new IllegalStateException("The column (" + localDependentColumnName + ") was not found in the resource (" + this.getColumnDef().getRelationDef().getDataPath() + ")");
     }
 
-    dependencyGenerator = columnDef
-      .getOrCreateGenerator(columnDef.getClazz());
+    if (columnDef == null) {
+      throw new IllegalStateException("The dependent column (" + localDependentColumnName + ") of the resource (" + this.getColumnDef().getRelationDef().getDataPath() + ") is not a generator column and it's not supported");
+    }
+
+    dependencyGenerator = ((GenColumnDef<?>) columnDef).getOrCreateGenerator();
     if (dependencyGenerator == null) {
-      throw new IllegalStateException("The dependent column (" + dependentColumnName + ") for the generator (" + this + ") was not found on the data generation resource (" + this.getRelationDef().getDataPath() + ")");
+      throw new IllegalStateException("The dependent column (" + localDependentColumnName + ") for the generator (" + this + ") was not found on the data generation resource (" + this.getColumnDef().getRelationDef().getDataPath() + ")");
     }
+
     try {
-      dependencyColumn = this.entityPath.getOrCreateRelationDef().getColumnDef(entityDependentColumnName);
+      dependencyColumn = this.dataSetPath.getOrCreateRelationDef().getColumnDef(dataSetDependentColumnName);
     } catch (NoColumnException e) {
-      throw new IllegalStateException("The entity dependent column named (" + entityDependentColumnName + ") for the generator (" + this + ") was not found in the entity file (" + entityPath + ")");
+      throw new IllegalStateException("The entity dependent column named (" + dataSetDependentColumnName + ") for the generator (" + this + ") was not found in the data set (" + dataSetPath + ")");
     }
     return this;
   }
 
   @Override
   public String toString() {
-    return entityPath.getLogicalName() + " " + this.getClass().getSimpleName() + " for the column " + this.getColumnDef();
+    return dataSetPath.getLogicalName() + " " + this.getClass().getSimpleName() + " for the column " + this.getColumnDef();
   }
 
 
@@ -354,17 +404,15 @@ public class DataSetGenerator<T> extends CollectionGeneratorAbs<T> implements Co
   }
 
 
-
   /**
    * The actual row
-   *
    */
   public List<?> getActualRow() {
     return this.actualRow;
   }
 
-  public DataPath getEntity() {
-    return this.entityPath;
+  public DataPath getDataSet() {
+    return this.dataSetPath;
   }
 
 

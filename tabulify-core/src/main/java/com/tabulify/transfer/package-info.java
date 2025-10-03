@@ -3,7 +3,7 @@
  *
  * ie:
  *   * {@link com.tabulify.spi.Tabulars#move(DataPathAbs, DataPathAbs)}
- *   * {@link com.tabulify.spi.Tabulars#move(DataPathAbs, DataPathAbs, TransferProperties)}
+ *   * {@link com.tabulify.spi.Tabulars#move(DataPathAbs, DataPathAbs, TransferPropertiesCross)}
  *   * ...
  *
  * The package is not tested in this module but in the transfer module as the tests depends also on the data store module.

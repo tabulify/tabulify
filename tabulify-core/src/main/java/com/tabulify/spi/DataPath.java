@@ -5,20 +5,20 @@ import com.tabulify.conf.AttributeEnum;
 import com.tabulify.connection.Connection;
 import com.tabulify.engine.StreamDependencies;
 import com.tabulify.model.RelationDef;
-import com.tabulify.sample.BytleSchema;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
-import com.tabulify.transfer.TransferProperties;
-import com.tabulify.uri.DataUri;
+import com.tabulify.transfer.TransferPropertiesSystem;
+import com.tabulify.uri.DataUriNode;
 import net.bytle.dag.Dependency;
 import net.bytle.exception.NoParentException;
-import net.bytle.exception.NoVariableException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MediaType;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,7 +30,7 @@ import java.util.function.Supplier;
  * It may be used to locate a data container (such as a file or a table)
  * in a data system (file system, relational database).
  */
-public interface DataPath extends Comparable<DataPath>, Dependency, StreamDependencies {
+public interface DataPath extends Comparable<DataPath>, Dependency, StreamDependencies, Meta {
 
   /**
    * @return the connection of this data path
@@ -51,6 +51,7 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
    * * data.csv
    * * or data--datagen.csv
    * The name without the suffix is called a  simplified name
+   * The name of the root path (ie /) is the empty string
    *
    * @return the name of the resource
    */
@@ -73,10 +74,10 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
 
   /**
    * @return the relative path in the data system
-   * This is an identifier for all path type except for script
+   * This is an identifier for all static path type(ie not for the runtime resource)
    * The real identifier is {@link #getId}
    */
-  String getRelativePath();
+  String getCompactPath();
 
   /**
    * @return the id
@@ -88,27 +89,16 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
   String getId();
 
   /**
-   * @return a {@link DataDef} object created from the data store metadata or an empty object if it does not exist
+   * @return a {@link DataDefManifest} object created from a metadata data store (ie wrapper around {@link #createRelationDef()}
    * <p>
-   * The function {@link #createRelationDef()} create only an empty object
+   * The function {@link #createEmptyRelationDef()} create only an empty object
+   * <p>
+   * If the {@link RelationDef} is empty at access time, it's:
+   * * a {@link DataPath} that does not exist
+   * * or an {@link #isRuntime()} executable. If it's an executable, you can get the data def at {@link SelectStream#getRuntimeRelationDef()}
    */
   RelationDef getOrCreateRelationDef();
 
-
-  /**
-   * A utility function that allows
-   * some {@link #getScript()} script
-   * processing that is only for query
-   * For instance, a SQL query does not allow a `;` at the end
-   *
-   * @return the query
-   */
-  String getQuery();
-
-  /**
-   * @return the script
-   */
-  String getScript();
 
   /**
    * @param name - the sibling name
@@ -120,7 +110,8 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
   DataPath getSibling(String name);
 
   /**
-   * @param name - a child name
+   * @param name      - a child name
+   * @param mediaType - the media type
    * @return a child (ie on the path `/a/c`, the child `b` would be `/a/c/b`
    * <p>
    * This is the equivalent to the {@link Path#resolve(String)}
@@ -129,17 +120,7 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
    * * you can use only one argument
    */
   @SuppressWarnings("GrazieInspection")
-  DataPath getChild(String name);
-
-  /**
-   * This is the equivalent to the {@link java.nio.file.Path#resolve(String)} (String)}
-   * <p>
-   * The function will return a data path from a {@link ResourcePath}
-   *
-   * @param stringPath the string path
-   * @return the path
-   */
-  DataPath resolve(String stringPath);
+  DataPath resolve(String name, MediaType mediaType);
 
   /**
    * @return the dependencies
@@ -150,22 +131,13 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
    * @param description the description of the data path
    * @return the path
    */
-  DataPath setDescription(String description);
+  DataPath setComment(String description);
 
   /**
    * @return the description of the data path
    */
-  String getDescription();
+  String getComment();
 
-
-  /**
-   * @param name - the name of the path
-   * @return a data path with a tabular structure
-   * For instance:
-   * * when you are in a file data system, you will get a csv
-   * * when you are in a relational data system, you will get a table
-   */
-  DataPath getChildAsTabular(String name);
 
   /**
    * The media type defines the content type:
@@ -182,6 +154,12 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
   MediaType getMediaType();
 
   /**
+   * Get a select stream over this resource safely
+   * If this is a runtime, the runtime is {@link #execute() executed}
+   */
+  SelectStream getSelectStreamSafe();
+
+  /**
    * When processing a stream, another processing should have run before
    * This function returns the data path that would generate a dependency stream
    * <p>
@@ -192,26 +170,36 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
   DataPath getSelectStreamDependency() throws NotFoundException;
 
   /**
-   * @return an empty {@link RelationDef} object
+   * @return an {@link RelationDef} object initialized with the metadata of the underlying {@link DataSystem system} metastore
+   * Overwrite the actual relation def if any
    * <p>
-   * Use it when you don't want to get the  {@link RelationDef} from the underlying {@link DataSystem system}
+   * Use {@link #createEmptyRelationDef()} if you don't want to get the  {@link RelationDef} from the underlying {@link DataSystem system}
    * <p>
-   * If you use the {@link #getOrCreateRelationDef()}, the underlying metadata
-   * from the system will be used
-   * <p>
-   * {@link BytleSchema} is a good example of usage
+   * This is the method that is overridden by implementation.
+   * The relation def is then retrieved with {@link #getOrCreateRelationDef()}
    */
   RelationDef createRelationDef();
 
   /**
-   * @return a data def or null if it does not exist
+   * @return Overwrite if any a relation def and returns an empty {@link RelationDef} object
+   * <p>
+   * Used:
+   * * when loading {@link #mergeDataDefinitionFromYamlMap(Map)}
+   * * when you don't want to get the  {@link RelationDef} from the underlying {@link DataSystem system}
+   * * reset the relation def
+   * <p>
+   */
+  RelationDef createEmptyRelationDef();
+
+  /**
+   * @return a data def or null
    */
   RelationDef getRelationDef();
 
   /**
    * @return the data uri
    */
-  DataUri toDataUri();
+  DataUriNode toDataUri();
 
   /**
    * @return the absolute path string from the data system (not the connection)
@@ -223,51 +211,31 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
   byte[] getByteDigest(String digestAlgo) throws NoSuchAlgorithmException, IOException;
 
 
-  /**
-   * @param name the attribute name
-   * @return the variable
-   * @throws NoVariableException - when the variable was not found
-   *                             Why string and not {@link AttributeEnum} because variable may be created dynamically
-   *                             (for instance backref of regexp), and therefore may be not known in advance
-   */
-  Attribute getAttribute(String name) throws NoVariableException;
-
-  /**
-   * @param attribute - the attribute
-   * @return the variable
-   * @throws NoVariableException - when the variable was not found
-   */
-  Attribute getAttribute(AttributeEnum attribute) throws NoVariableException;
-
-  /**
-   * Set an attribute used to define the data structure
-   *
-   * @param key   the key
-   * @param value the value
-   * @return the data path for chaining
-   */
-  DataPath addAttribute(String key, Object value);
-
-  DataPath addAttribute(AttributeEnum key, Object value);
-
-  Set<Attribute> getAttributes();
-
   DataPath mergeDataPathAttributesFrom(DataPath source);
 
-  DataPath mergeDataDefinitionFromYamlFile(Path dataDefPath);
 
-  DataPath mergeDataDefinitionFromYamlMap(Map<String, ?> document);
+  /**
+   * Merge the data definition
+   * The data definition is first created with the metadata store {@link #createRelationDef()}
+   * then merged
+   */
+  DataPath mergeDataDefinitionFromYamlMap(Map<KeyNormalizer, ?> document);
 
-  DataPath setDataAttributes(Map<String, ?> dataAttributes);
 
   /**
    * Meta = {@link #getAttributes() DataPath Properties}  and {@link #getOrCreateRelationDef() Structure}
    *
-   * @param mergeFrom the source path
+   * @param sourceDataPath the source path
    * @return the path
    */
-  DataPath mergeDataDefinitionFrom(DataPath mergeFrom);
+  DataPath mergeDataDefinitionFrom(DataPath sourceDataPath);
 
+  /**
+   * @param sourceDataPath  the source data path
+   * @param sourceTargetMap - the source target in case of cross transfer or no memory store
+   * @return the path
+   */
+  DataPath mergeDataDefinitionFrom(DataPath sourceDataPath, Map<DataPath, DataPath> sourceTargetMap);
 
   /**
    * Set the simple name
@@ -280,14 +248,10 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
   DataPath setLogicalName(String logicalName);
 
   /**
-   * @return true if the data path is a script
+   * @return true if the data path is a runtime resource
    */
-  boolean isScript();
+  boolean isRuntime();
 
-  /**
-   * @return the attributes / properties in a data path format
-   */
-  DataPath toAttributesDataPath();
 
   /**
    * The size of the data path
@@ -319,7 +283,7 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
    * @param transferProperties the transfer properties
    * @return the object for chaining
    */
-  InsertStream getInsertStream(DataPath source, TransferProperties transferProperties);
+  InsertStream getInsertStream(DataPath source, TransferPropertiesSystem transferProperties);
 
   /**
    * Utility function with no source and transfer properties definition
@@ -342,7 +306,7 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
   SelectStream getSelectStream() throws SelectException;
 
 
-  InsertStream getInsertStream(TransferProperties transferProperties);
+  InsertStream getInsertStream(TransferPropertiesSystem transferProperties);
 
   DataPath getParent() throws NoParentException;
 
@@ -355,16 +319,83 @@ public interface DataPath extends Comparable<DataPath>, Dependency, StreamDepend
   boolean hasHeaderInContent();
 
   /**
-   * If this data path has a script or null
+   * If this data path has a code data path or null
+   * If the code is stored in a string, a memory data path is used
    */
-  DataPath getScriptDataPath();
+  DataPath getExecutableDataPath();
 
-  Attribute getAttributeSafe(AttributeEnum sqlDataPathAttribute);
+
+  /**
+   * @return if the structure of this data path is fixed
+   * (ie if this is an executable, a view or not)
+   * If this is the case, we can't make assumption on the nullability of column for instance.
+   */
+  SchemaType getSchemaType();
+
+  /**
+   * Utility function that gets a child with the default media type
+   * ie {@link #resolve(String, MediaType)} with a null media type
+   */
+  DataPath resolve(String name);
+
+
+  /**
+   * @return the last access time if known (ie atime)
+   */
+  Timestamp getAccessTime();
+
+  /**
+   * @return the last time that the content was changed (ie update time, ie utime)
+   */
+  Timestamp getUpdateTime();
+
+
+  /**
+   * @return the creation time (ie birth time, ie btime)
+   */
+  Timestamp getCreationTime();
+
+  /**
+   * Set an attribute used to define the data structure
+   *
+   * @param key   the key
+   * @param value the value
+   * @return the data path for chaining
+   */
+  DataPath addAttribute(KeyNormalizer key, Object value);
+
+
+  DataPath addAttribute(AttributeEnum key, Object value);
 
   /**
    * Add a variable.
    * It makes it possible to create a variable with a {@link Attribute#setValueProvider(Supplier)}
    */
   DataPath addAttribute(Attribute attribute);
+
+  /**
+   * A utility function that returns the records of a data path
+   *
+   * @return the records of a data path in a list of list
+   */
+  List<List<?>> getRecords();
+
+  /**
+   * Execute a {@link #isRuntime() runtime} and returns its results
+   *
+   * @return the result
+   */
+  DataPath execute();
+
+  /**
+   * @return the tabular type (ie with {@link TabularType#COMMAND} or {@link TabularType#DATA without exit code} )
+   */
+  TabularType getTabularType();
+
+  /**
+   * Set the tabular type
+   */
+  DataPath setTabularType(TabularType tabularType);
+
 
 }

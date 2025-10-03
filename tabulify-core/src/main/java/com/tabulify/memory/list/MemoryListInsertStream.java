@@ -11,7 +11,7 @@ public class MemoryListInsertStream extends InsertStreamAbs implements InsertStr
 
   private final MemoryListDataPath memoryListDataPath;
 
-  private List<List<Object>> tabular;
+  private List<List<?>> tabular;
 
   private int currentRowInBatch = 0;
   private int batchExecutionCount = 0;

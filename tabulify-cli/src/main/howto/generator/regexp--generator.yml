@@ -1,0 +1,14 @@
+kind: generator
+spec:
+  maxRecordCount: 30
+  columns:
+    - name: regexp_double
+      type: Double
+      precision: 6
+      scale: 3
+      data-supplier:
+        type: regexp
+        arguments:
+          expression: '[0-9]{3}\.[0-9]{3}'
+          # optional seed
+          seed: 12345L

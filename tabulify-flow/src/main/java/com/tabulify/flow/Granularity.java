@@ -2,12 +2,13 @@ package com.tabulify.flow;
 
 
 import com.tabulify.conf.AttributeValue;
+import net.bytle.type.KeyNormalizer;
 
 public enum Granularity implements AttributeValue {
 
 
-  RECORD("The record is the container unit. Example: a json or xml document in a record"),
-  RESOURCE("The whole resource is the container unit.");
+  RECORD("Record granularity"),
+  RESOURCE("Resource granularity");
 
   private final String description;
 
@@ -21,4 +22,10 @@ public enum Granularity implements AttributeValue {
   public String getDescription() {
     return this.description;
   }
+
+  @Override
+  public String toString() {
+    return KeyNormalizer.createSafe(this.name()).toCliLongOptionName();
+  }
+
 }

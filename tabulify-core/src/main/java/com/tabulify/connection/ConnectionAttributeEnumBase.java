@@ -1,6 +1,7 @@
 package com.tabulify.connection;
 
 import net.bytle.type.DnsName;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.UriEnhanced;
 
 import java.util.Map;
@@ -10,8 +11,13 @@ import java.util.Map;
  */
 public enum ConnectionAttributeEnumBase implements ConnectionAttributeEnum {
 
-  NAME("The name of the connection", String.class, null, false),
-  ORIGIN("The origin of the connection", ConnectionOrigin.class, null, false),
+  /**
+   * Name is a key normalizer so that we don't get any problem
+   * such `/` and space are not supported because in ini file they may define a hierarchy and create then several datastore
+   * <a href="http://ini4j.sourceforge.net/tutorial/IniTutorial.java.html">...</a>
+   */
+  NAME("The name of the connection", KeyNormalizer.class, null, false),
+  ORIGIN("The origin of the connection", ObjectOrigin.class, null, false),
   URI("The uri of the connection", UriEnhanced.class, null, true),
   // parameter because host is in URI (mandatory), but it can be overridden by an env
   HOST("Host Server", DnsName.class, null, true),
@@ -27,14 +33,20 @@ public enum ConnectionAttributeEnumBase implements ConnectionAttributeEnum {
   TIMESTAMP_DATA_TYPE("Timestamp data type used to store timestamp values", ConnectionAttValueTimeDataType.class, ConnectionAttValueTimeDataType.NATIVE, true),
   TIME_DATA_TYPE("Time format data type to store time values", ConnectionAttValueTimeDataType.class, ConnectionAttValueTimeDataType.NATIVE, true),
   BOOLEAN_DATA_TYPE("Boolean data type used to store boolean values", ConnectionAttValueBooleanDataType.class, ConnectionAttValueBooleanDataType.Native, true),
+  VARCHAR_DEFAULT_PRECISION("Default VARCHAR precision", Integer.class, 0, true),
   MAX_NAME_IN_PATH("The maximum number of names in a path", Integer.class, null, true),
   MAX_CONCURRENT_THREAD("The maximum number of threads that can be created against the system", Integer.class, null, true),
-  NATIVES("Native Driver attributes (jdbc properties, ...)", Map.class, null, true),
+  NATIVES("Native Driver attributes (jdbc properties, ...)", Map.class, null, true), NVARCHAR_DEFAULT_PRECISION("Default NVARCHAR precision", Integer.class, 0, true),
   /**
-   * jdbc driver is here and not in the sql connection because
-   * we use it in {@link ConnectionHowTos}
+   * Why 1 as default for char/nchar
+   * by default, `create foo(bar char)` will create a char with length 1
+   * * mySQL: no doc but tested
+   * * postgres: If character (or char) lacks a specifier, it is equivalent to character(1).
+   * <a href="https://www.postgresql.org/docs/current/datatype-character.html">...</a>
    */
-  DRIVER("The driver class", String.class, null, true);
+  NCHAR_DEFAULT_PRECISION("Default NCHAR precision", Integer.class, 1, true),
+  CHAR_DEFAULT_PRECISION("Default CHAR precision", Integer.class, 1, true),
+  ;
 
   private final String description;
   private final Class<?> clazz;
@@ -68,4 +80,6 @@ public enum ConnectionAttributeEnumBase implements ConnectionAttributeEnum {
   public boolean isParameter() {
     return this.isParameter;
   }
+
+
 }

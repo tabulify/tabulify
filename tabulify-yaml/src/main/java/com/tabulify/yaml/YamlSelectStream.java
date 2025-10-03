@@ -1,6 +1,7 @@
 package com.tabulify.yaml;
 
 
+import com.tabulify.model.ColumnDef;
 import com.tabulify.model.RelationDef;
 import com.tabulify.stream.SelectStream;
 import com.tabulify.stream.SelectStreamAbs;
@@ -93,9 +94,15 @@ public class YamlSelectStream extends SelectStreamAbs {
     return true;
   }
 
+  private boolean isClosed = false;
   @Override
   public void close() {
+    this.isClosed = true;
+  }
 
+  @Override
+  public boolean isClosed() {
+    return this.isClosed;
   }
 
   private String getColumnName(int columnIndex) {
@@ -103,13 +110,14 @@ public class YamlSelectStream extends SelectStreamAbs {
   }
 
   @Override
-  public long getRow() {
+  public long getRecordId() {
     return lineNumber;
   }
 
+
   @Override
-  public Object getObject(int columnIndex) {
-    return currentRecordKeyValue.get(getColumnName(columnIndex));
+  public Object getObject(ColumnDef columnDef) {
+    return currentRecordKeyValue.get(getColumnName(columnDef.getColumnPosition()));
   }
 
 

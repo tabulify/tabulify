@@ -3,71 +3,60 @@ package com.tabulify.gen;
 import com.tabulify.gen.generator.CollectionGenerator;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.stream.SelectStreamAbs;
-import net.bytle.type.Casts;
 
-import java.sql.Clob;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class GenSelectStream extends SelectStreamAbs {
 
   private final GenDataPath genDataPath;
+  private final List<CollectionGenerator<?>> generators;
 
   long actualRowId = 0;
 
   // For each column def, it's value (ie a row)
-  private HashMap<ColumnDef, Object> row;
+  private Map<ColumnDef<?>, Object> row;
 
   public GenSelectStream(GenDataPath dataPath) {
 
     super(dataPath);
     this.genDataPath = dataPath;
-
+    generators = this.genDataPath.getOrCreateRelationDef().buildGeneratorInCreateOrder();
 
   }
 
 
   @Override
   public boolean next() {
+
     if (actualRowId >= genDataPath.getCount()) {
       return false;
-    } else {
-      actualRowId++;
-      buildRow();
-      return true;
     }
-  }
-
-  private void buildRow() {
-    row = new HashMap<>();
-    List<CollectionGenerator<?>> collectionGenerators = CollectionGenerator.createDag()
-      .addRelations(
-        genDataPath.getOrCreateRelationDef()
-          .getAllColumnDefs()
-          .stream()
-          .map(c -> (c.getOrCreateGenerator(c.getClazz()))
-            .setColumnDef(c))
-          .collect(Collectors.toList())
-      )
-      .getCreateOrdered();
-    for(CollectionGenerator<?> c: collectionGenerators){
-      GenColumnDef columnDef = c.getColumnDef();
-      Object newValue = c.getNewValue();
-      row.put(columnDef, newValue);
-    }
+    actualRowId++;
+    row = this.genDataPath.getOrCreateRelationDef().buildRowFromGenerators(generators);
+    return true;
 
   }
+
 
   @Override
   public void close() {
+    this.isClosed = true;
     genDataPath.getOrCreateRelationDef()
       .getColumnDefs()
       .forEach(c ->
-        c.getOrCreateGenerator(c.getClazz())
+        c.getOrCreateGenerator()
           .reset()
       );
+  }
+
+  private boolean isClosed = false;
+
+  @Override
+  public boolean isClosed() {
+    return isClosed;
   }
 
   @Override
@@ -76,20 +65,17 @@ public class GenSelectStream extends SelectStreamAbs {
   }
 
   @Override
-  public long getRow() {
+  public long getRecordId() {
     return actualRowId;
   }
 
+
   @Override
-  public Object getObject(int columnIndex) {
+  public Object getObject(ColumnDef columnDef) {
+
     if (actualRowId == 0) {
       throw new RuntimeException("You are on the row 0, you need to use the next function before retrieving a value");
     }
-
-    ColumnDef columnDef = row.keySet().stream()
-      .filter(c -> c.getColumnPosition().equals(columnIndex))
-      .findFirst()
-      .orElse(null);
 
     /**
      * Because the value generated may be null
@@ -97,23 +83,8 @@ public class GenSelectStream extends SelectStreamAbs {
      */
     return row.get(columnDef);
 
-
   }
 
-
-  @Override
-  public Double getDouble(int columnIndex) {
-
-    return Casts.castSafe(getObject(columnIndex), Double.class);
-
-  }
-
-  @Override
-  public Clob getClob(int columnIndex) {
-
-    return Casts.castSafe(getObject(columnIndex), Clob.class);
-
-  }
 
   @Override
   public boolean next(Integer timeout, TimeUnit timeUnit) {
@@ -129,18 +100,6 @@ public class GenSelectStream extends SelectStreamAbs {
       .collect(Collectors.toList());
   }
 
-  @Override
-  public Integer getInteger(int columnIndex) {
-    return Casts.castSafe(getObject(columnIndex), Integer.class);
-  }
-
-  @Override
-  public Object getObject(String columnName) {
-    return row.keySet().stream()
-      .filter(c -> c.getColumnName().equals(columnName))
-      .findFirst()
-      .orElse(null);
-  }
 
   @Override
   public void beforeFirst() {

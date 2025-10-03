@@ -1,12 +1,12 @@
 package com.tabulify.spi;
 
-import com.tabulify.DbLoggers;
 import com.tabulify.connection.Connection;
-import com.tabulify.model.ColumnDef;
-import com.tabulify.model.ForeignKeyDef;
+import com.tabulify.model.*;
+import net.bytle.type.KeyInterface;
+import net.bytle.type.KeyNormalizer;
+import net.bytle.type.MediaType;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 
 public abstract class DataSystemAbs implements DataSystem {
 
@@ -23,34 +23,39 @@ public abstract class DataSystemAbs implements DataSystem {
   }
 
   @Override
-  public void truncate(DataPath dataPath) {
-    truncate(Collections.singletonList(dataPath));
+  public void dataTypeBuildingMain(SqlDataTypeManager sqlDataTypeManager) {
+
+    /**
+     * Default used to build the memory column
+     */
+    for (SqlDataTypeAnsi sqlDataTypeAnsi : SqlDataTypeAnsi.values()) {
+
+      if (sqlDataTypeAnsi.getValueClass() == null) {
+        continue;
+      }
+
+      SqlDataType.SqlDataTypeBuilder<?> parent = sqlDataTypeManager.createTypeBuilder(sqlDataTypeAnsi)
+        .setPriority(sqlDataTypeAnsi.getPriority());
+      for (KeyInterface shortName : sqlDataTypeAnsi.getAliases()) {
+        parent.addChildAliasName(shortName);
+      }
+
+
+    }
+
   }
 
   @Override
   public void dropNotNullConstraint(DataPath dataPath) {
-    for (ColumnDef columnDef : dataPath.getOrCreateRelationDef().getColumnDefs()) {
+    for (ColumnDef<?> columnDef : dataPath.getOrCreateRelationDef().getColumnDefs()) {
       columnDef.setNullable(false);
     }
   }
 
-  @Override
-  public void dropForce(DataPath dataPath) {
-    List<ForeignKeyDef> foreignKeyDefs = Tabulars.getReferences(dataPath);
-    for (ForeignKeyDef foreignKeyDef : foreignKeyDefs) {
-      Tabulars.dropConstraint(foreignKeyDef);
-    }
-    drop(dataPath);
-  }
 
   @Override
-  public void execute(DataPath dataPath) {
-    throw new UnsupportedOperationException("The execute command is not yet supported in the system of the connection (" + this.getConnection().getName() + ")");
-  }
-
-  @Override
-  public DataPath getTargetFromSource(DataPath sourceDataPath) {
-    return this.getConnection().getDataPath(sourceDataPath.getName());
+  public DataPath getTargetFromSource(DataPath sourceDataPath, MediaType targetMediaType, DataPath targetParentDataPath) {
+    return this.getConnection().getDataPath(sourceDataPath.getName(), targetMediaType);
   }
 
   @Override
@@ -58,13 +63,29 @@ public abstract class DataSystemAbs implements DataSystem {
     return name;
   }
 
+
   @Override
-  public void dropIfExist(DataPath dataPath) {
-    if (exists(dataPath)) {
-      drop(dataPath);
-    } else {
-      DbLoggers.LOGGER_DB_ENGINE.info("The data resource (" + dataPath + ") does not exist and was not dropped");
-    }
+  public boolean isContainer(DataPath dataPath) {
+    return dataPath.getMediaType().equals(this.getContainerMediaType());
   }
 
+  @Override
+  public Long getSize(DataPath dataPath) {
+    return -1L;
+  }
+
+  @Override
+  public SqlDataTypeVendor getSqlDataTypeVendor(KeyNormalizer typeName, int typeCode) {
+    return SqlDataTypeAnsi.cast(typeName, typeCode);
+  }
+
+  @Override
+  public Set<SqlDataTypeVendor> getSqlDataTypeVendors() {
+    return Set.of(SqlDataTypeAnsi.values());
+  }
+
+  @Override
+  public SqlTypeKeyUniqueIdentifier getSqlTypeKeyUniqueIdentifier() {
+    return SqlTypeKeyUniqueIdentifier.NAME_AND_CODE;
+  }
 }

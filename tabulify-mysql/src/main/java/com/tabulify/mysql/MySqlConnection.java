@@ -2,9 +2,12 @@ package com.tabulify.mysql;
 
 import com.tabulify.Tabular;
 import com.tabulify.conf.Attribute;
+import com.tabulify.connection.ConnectionAttributeEnumBase;
 import com.tabulify.jdbc.SqlConnection;
 import com.tabulify.jdbc.SqlDataSystem;
+import com.tabulify.model.ColumnDef;
 import com.tabulify.model.SqlDataType;
+import com.tabulify.model.SqlDataTypeAnsi;
 import net.bytle.exception.NoCatalogException;
 
 import java.sql.Types;
@@ -13,11 +16,25 @@ import java.util.Map;
 
 public class MySqlConnection extends SqlConnection {
 
+
   private MySqlMetadata mySqlMetadata;
   private MySqlDataSystem mySqlDataSystem;
 
   public MySqlConnection(Tabular tabular, Attribute name, Attribute url) {
     super(tabular, name, url);
+
+    // Set a max default precision on mysql
+    // To avoid the Row size too large errors
+    // Row size too large. The maximum row size for the used table type, not counting BLOBs, is 65535. This includes storage overhead, check the manual. You have to change some columns to TEXT or BLOBs
+    // Because most URL are below 2000, we can create 35 columns with this limit
+    // Another solutions would have been to use TEXT and BLOB columns because they don't count toward the row size limit because MySQL stores them separately from the main table data.
+    // but yeah
+    Integer valueOrDefault = this.sqlDataTypeManager.getDefaultVarcharLength();
+    if (valueOrDefault == 0) {
+      this.getAttribute(ConnectionAttributeEnumBase.VARCHAR_DEFAULT_PRECISION)
+        .setPlainValue(MySqlVendorTypes.VARCHAR.getDefaultPrecision());
+    }
+
   }
 
 
@@ -65,19 +82,48 @@ public class MySqlConnection extends SqlConnection {
     return connectionProperties;
   }
 
+
   @Override
-  public SqlDataType getSqlDataTypeFromSourceDataType(SqlDataType sourceSqlDataType) {
+  public SqlDataType<?> getSqlDataTypeFromSourceColumn(ColumnDef<?> columnDef) {
+    /**
+     * Ref: https://dev.mysql.com/doc/refman/8.4/en/other-vendor-data-types.html
+     */
+    SqlDataType<?> sourceSqlDataType = columnDef.getDataType();
     /**
      * Timezone does not exist
      * MySQL converts TIMESTAMP values from the current time zone to UTC for storage, and back from UTC to the current time zone for retrieval.
+     * (This does not occur for other types such as DATETIME.)
      * https://dev.mysql.com/doc/refman/8.4/en/datetime.html
      */
-    if (sourceSqlDataType.getTypeCode() == Types.TIMESTAMP_WITH_TIMEZONE) {
-      return this.getSqlDataType(Types.TIMESTAMP);
+    if (sourceSqlDataType.getVendorTypeNumber() == Types.TIMESTAMP_WITH_TIMEZONE) {
+      return this.getSqlDataType(SqlDataTypeAnsi.TIMESTAMP);
     }
-    if (sourceSqlDataType.getTypeCode() == Types.TIME_WITH_TIMEZONE) {
-      return this.getSqlDataType(Types.TIME);
+    if (sourceSqlDataType.getVendorTypeNumber() == Types.TIME_WITH_TIMEZONE) {
+      return this.getSqlDataType(SqlDataTypeAnsi.TIME);
     }
-    return super.getSqlDataTypeFromSourceDataType(sourceSqlDataType);
+    /**
+     * National Varchar does not exist
+     * All text are Unicode, no distinction between National data type
+     * and normal data type
+     * nvarchar = varchar
+     * nchar = char
+     * https://dev.mysql.com/doc/refman/5.6/en/string-type-syntax.html
+     */
+    if (sourceSqlDataType.getVendorTypeNumber() == Types.NVARCHAR) {
+      return this.getSqlDataType(SqlDataTypeAnsi.CHARACTER_VARYING);
+    }
+    if (sourceSqlDataType.getVendorTypeNumber() == Types.NCHAR) {
+      return this.getSqlDataType(SqlDataTypeAnsi.CHARACTER);
+    }
+    // no xml type can be loaded into a text field
+    if (sourceSqlDataType.getVendorTypeNumber() == Types.SQLXML) {
+      return this.getSqlDataType(MySqlVendorTypes.TEXT);
+    }
+    // no clob type can be loaded into a text field
+    if (sourceSqlDataType.getVendorTypeNumber() == Types.CLOB || sourceSqlDataType.getVendorTypeNumber() == Types.NCLOB) {
+      return this.getSqlDataType(MySqlVendorTypes.MEDIUMTEXT);
+    }
+
+    return super.getSqlDataTypeFromSourceColumn(columnDef);
   }
 }

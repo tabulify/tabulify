@@ -1,5 +1,6 @@
 package com.tabulify.html;
 
+import com.tabulify.model.ColumnDef;
 import com.tabulify.stream.SelectStream;
 import com.tabulify.stream.SelectStreamAbs;
 import org.jsoup.nodes.Element;
@@ -58,20 +59,27 @@ public class HtmlSelectStream extends SelectStreamAbs implements SelectStream {
 
   }
 
+  private boolean isClosed = false;
   @Override
   public void close() {
-
+    this.isClosed = true;
   }
 
   @Override
-  public long getRow() {
+  public boolean isClosed() {
+    return this.isClosed;
+  }
+
+  @Override
+  public long getRecordId() {
     return this.index + 1;
   }
 
+
   @Override
-  public Object getObject(int columnIndex) {
+  public Object getObject(ColumnDef columnDef) {
     try {
-      return this.actualRow.get(columnIndex-1);
+      return this.actualRow.get(columnDef.getColumnPosition() - 1);
     } catch (Exception e) {
       return null;
     }

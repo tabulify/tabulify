@@ -48,11 +48,11 @@ public class DataPathComparison {
    *
    * @return the comparison
    */
-  public DataPathDataComparison compareStructure() {
+  public DataPathDiffResult compareStructure() {
 
     return source
       .getOrCreateRelationDef()
-      .compareData(target);
+      .diff(target);
 
   }
 

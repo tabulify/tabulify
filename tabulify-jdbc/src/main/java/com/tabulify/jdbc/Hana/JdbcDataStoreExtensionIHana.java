@@ -1,8 +1,8 @@
 package com.tabulify.jdbc.Hana;
 
 import com.tabulify.engine.ForeignKeyDag;
-import com.tabulify.jdbc.SqlDataPath;
 import com.tabulify.jdbc.SqlConnection;
+import com.tabulify.jdbc.SqlDataPath;
 import com.tabulify.jdbc.SqlDataSystem;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.model.SqlDataType;
@@ -17,23 +17,15 @@ import java.util.List;
 public class JdbcDataStoreExtensionIHana extends SqlDataSystem {
 
 
-
   public JdbcDataStoreExtensionIHana(SqlConnection jdbcDataStore) {
     super(jdbcDataStore);
   }
 
-  public void updateSqlDataType(SqlDataType sqlDataType) {
-    switch (sqlDataType.getTypeCode()) {
-      case Types.VARCHAR:
-        sqlDataType
-          .setSqlName("NVARCHAR");
-    }
-  }
 
   @Override
   public String createColumnStatement(ColumnDef columnDef) {
     SqlDataType dataType = columnDef.getDataType();
-    switch (dataType.getTypeCode()) {
+    switch (dataType.getVendorTypeNumber()) {
       case Types.VARCHAR:
       // VARCHAR is having length in bytes (not in CHAR !)
       // The VARCHAR(n) data type specifies a variable-length character string, where n :

@@ -1,7 +1,7 @@
 package com.tabulify.jdbc;
 
 import com.tabulify.spi.ConnectionResourcePathAbs;
-import com.tabulify.uri.DataUri;
+import com.tabulify.uri.DataUriNode;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoCatalogException;
 import net.bytle.exception.NoObjectException;
@@ -19,11 +19,10 @@ import static com.tabulify.jdbc.SqlMediaType.*;
  * This is the representation of an addressable path
  * for a sql connection
  * <p>
- * It's the path used by tabli to be able to
+ * It's the path used by tabul to be able to
  * - select schema as data path
  * - use glob pattern to search sql object
  * <p>
- * You can get the sql path with {@link SqlConnectionResourcePath#toSqlStatementPath()}
  */
 public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
 
@@ -52,7 +51,7 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
    *                        * or the {@link #getCurrentPathName()}
    *                        will use the working path.
    *                        <p>
-   *                        A tabli sql string path that can be used to select, address object (catalog, schema and object name)
+   *                        A tabul sql string path that can be used to select, address object (catalog, schema and object name)
    *                        <p>
    *                        This is basically the same as the sql path but allows:
    *                        * empty string as name to be able to select a schema for instance
@@ -84,7 +83,7 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
     /**
      * Init parts
      */
-    if (sqlResourcePath == null || sqlResourcePath.equals(DataUri.CURRENT_CONNECTION_PATH)) {
+    if (sqlResourcePath == null || sqlResourcePath.equals(DataUriNode.CURRENT_CONNECTION_PATH)) {
       this.catalogPart = connectionCurrentCatalog;
       this.schemaPart = connectionCurrentSchema;
       this.objectPart = null;
@@ -94,12 +93,23 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
     }
 
 
-    List<String> processedPathNames = Strings.createFromString(sqlResourcePath)
-      .split(this.getPathSeparator())
-      .stream()
-      .map(s -> sqlConnection.getDataSystem().deleteQuoteIdentifier(s))
-      .collect(Collectors.toList());
+    List<String> processedPathNames;
+    if (sqlResourcePath.equals(this.getPathSeparator())) {
+      // special case of database that does not support any schema (ie sqlite)
+      processedPathNames = List.of("");
+    } else {
+      processedPathNames = Strings.createFromString(sqlResourcePath)
+        .split(this.getPathSeparator())
+        .stream()
+        .map(s -> sqlConnection.getDataSystem().deleteQuoteIdentifier(s))
+        .collect(Collectors.toList());
+    }
     int nameSizes = processedPathNames.size();
+
+    if (nameSizes > sqlConnection.getMetadata().getMaxNamesInPath()) {
+      throw new IllegalStateException("The stringPath (" + sqlResourcePath + ") has " + nameSizes + " parts but the connection (" + sqlConnection + ") supports only " + sqlConnection.getMetadata().getMaxNamesInPath() + " names.");
+    }
+
     switch (nameSizes) {
       case 1:
         this.catalogPart = null;
@@ -132,12 +142,7 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
     } else if (this.objectPart.isEmpty()) {
       this.mediaType = SCHEMA;
     } else {
-      this.mediaType = UNKNOWN;
-    }
-
-
-    if (nameSizes > sqlConnection.getMetadata().getMaxNamesInPath()) {
-      throw new IllegalStateException("The stringPath (" + sqlResourcePath + ") has " + nameSizes + " parts but the connection (" + sqlConnection + ") supports only " + sqlConnection.getMetadata().getMaxNamesInPath() + " names.");
+      this.mediaType = OBJECT;
     }
 
 
@@ -303,10 +308,6 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
    */
   public SqlConnectionResourcePath toRelative() {
 
-    if (!this.absolute) {
-      return this;
-    }
-
     List<String> sqlStringPaths = new ArrayList<>();
 
     String currentCatalog;
@@ -328,21 +329,30 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
         sqlStringPaths.add("");
         break;
       case SCHEMA:
-        if (!currentCatalog.isEmpty() && !currentCatalog.equals(this.catalogPart)) {
+        if (!currentCatalog.isEmpty()
+          && this.catalogPart != null
+          && !this.catalogPart.isEmpty()
+          && !currentCatalog.equals(this.catalogPart)
+        ) {
           sqlStringPaths.add(this.catalogPart);
         }
-        sqlStringPaths.add(this.schemaPart);
-        sqlStringPaths.add("");
+        /**
+         * Special case when schema is not supported
+         */
+        if (this.schemaPart != null && !this.schemaPart.isEmpty()) {
+          sqlStringPaths.add(this.schemaPart);
+          sqlStringPaths.add("");
+        }
         break;
       default:
-        if (currentCatalog != null
-          && !currentCatalog.equals(DataUri.CURRENT_CONNECTION_PATH)
+        if (!currentCatalog.isEmpty()
+          && this.catalogPart != null
           && !currentCatalog.equals(this.catalogPart)) {
           sqlStringPaths.add(this.catalogPart);
         }
         String currentSchema = sqlConnection.getCurrentSchema();
         if (currentSchema != null
-          && !currentSchema.equals(DataUri.CURRENT_CONNECTION_PATH)
+          && !currentSchema.equals(DataUriNode.CURRENT_CONNECTION_PATH)
           && !currentSchema.equals(this.schemaPart)) {
           sqlStringPaths.add(this.schemaPart);
         }
@@ -436,7 +446,7 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
             sibling,
             null
           );
-      case UNKNOWN:
+      case OBJECT:
         return SqlConnectionResourcePath
           .createOfCatalogSchemaAndObjectName(this.sqlConnection,
             this.catalogPart,
@@ -464,7 +474,7 @@ public class SqlConnectionResourcePath extends ConnectionResourcePathAbs {
             this.schemaPart,
             stringPath
           );
-      case UNKNOWN:
+      case OBJECT:
         throw new InternalException("You can''t resolve against a object (relative path is not implemented)");
       default:
         throw new InternalException("The sql resource (" + this.mediaType + ") is not implemented");

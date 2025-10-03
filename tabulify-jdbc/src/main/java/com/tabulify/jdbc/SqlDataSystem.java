@@ -1,25 +1,20 @@
 package com.tabulify.jdbc;
 
-import com.tabulify.DbLoggers;
 import com.tabulify.connection.Connection;
-import com.tabulify.engine.ForeignKeyDag;
 import com.tabulify.exception.DataResourceNotEmptyException;
 import com.tabulify.model.*;
-import com.tabulify.spi.DataPath;
-import com.tabulify.spi.DataSystemAbs;
-import com.tabulify.spi.Tabulars;
+import com.tabulify.spi.*;
 import com.tabulify.transfer.*;
+import net.bytle.crypto.Digest;
 import net.bytle.exception.*;
 import net.bytle.regexp.Glob;
-import net.bytle.type.Casts;
-import net.bytle.type.KeyNormalizer;
-import net.bytle.type.MediaType;
-import net.bytle.type.Strings;
+import net.bytle.type.*;
 
 import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.tabulify.jdbc.SqlMediaType.REQUEST;
 import static com.tabulify.jdbc.SqlMediaType.TABLE;
 import static com.tabulify.transfer.TransferOperation.COPY;
 
@@ -64,21 +59,21 @@ public class SqlDataSystem extends DataSystemAbs {
    * @return an insert into statement
    * between source and target
    */
-  public String createInsertStatementWithSelect(TransferSourceTarget transferSourceTarget) {
+  public String createInsertStatementWithSelect(TransferSourceTargetOrder transferSourceTarget) {
 
     transferSourceTarget.checkBeforeInsert();
 
     SqlDataPath target = (SqlDataPath) transferSourceTarget.getTargetDataPath();
     SqlDataPath source = (SqlDataPath) transferSourceTarget.getSourceDataPath();
 
-    List<? extends ColumnDef> targetColumnsDefs = transferSourceTarget.getSourceColumnsInInsertStatement();
+    List<? extends ColumnDef> targetColumnsDefs = transferSourceTarget.getTargetColumnInInsertStatement();
 
     return "insert into " +
       target.toSqlStringPath() +
       " ( " +
       createColumnsStatementForQuery(targetColumnsDefs) +
       " ) " +
-      createOrGetQuery(source);
+      createOrGetSelectQuery(source);
 
   }
 
@@ -98,12 +93,12 @@ public class SqlDataSystem extends DataSystemAbs {
   }
 
   /**
-   * Return a insert statement again the tableDef from the resultSetMetdata
+   * Return an insert statement again the tableDef from the resultSetMetadata
    *
    * @param sqlBindVariableFormat - do we create a sql parametrized statement (ie with ?) in place of a printf format (ie %s)
    * @return an insert statement
    */
-  public String createInsertStatementUtilityStatementGenerator(TransferSourceTarget transferSourceTarget, Boolean sqlBindVariableFormat) {
+  public String createInsertStatementUtilityStatementGenerator(TransferSourceTargetOrder transferSourceTarget, Boolean sqlBindVariableFormat) {
 
     transferSourceTarget.checkBeforeInsert();
     return createInsertStatementUtilityValuesClauseBefore(transferSourceTarget) +
@@ -117,7 +112,7 @@ public class SqlDataSystem extends DataSystemAbs {
    * @param withAlias             - if true the bind character is followed by `as columnName`
    * @return return a parametrized series of values in a sql or printf format
    */
-  protected String createInsertStatementUtilityValuesClauseGenerator(TransferSourceTarget transferSourceTarget, Boolean sqlBindVariableFormat, Boolean withAlias) {
+  protected String createInsertStatementUtilityValuesClauseGenerator(TransferSourceTargetOrder transferSourceTarget, Boolean sqlBindVariableFormat, Boolean withAlias) {
 
     RelationDef source = transferSourceTarget.getSourceDataPath().getOrCreateRelationDef();
     StringBuilder valuesListStatement = new StringBuilder();
@@ -158,14 +153,14 @@ public class SqlDataSystem extends DataSystemAbs {
     return " )";
   }
 
-  public String createInsertStatementWithPrintfExpressions(TransferSourceTarget transferSourceTarget) {
+  public String createInsertStatementWithPrintfExpressions(TransferSourceTargetOrder transferSourceTarget) {
     return createInsertStatementUtilityStatementGenerator(transferSourceTarget, false);
   }
 
   /**
    * Return a parameterized insert statement again the tableDef from the resultSetMetadata
    */
-  public String createInsertStatementWithBindVariables(TransferSourceTarget transferSourceTarget) {
+  public String createInsertStatementWithBindVariables(TransferSourceTargetOrder transferSourceTarget) {
 
     return createInsertStatementUtilityStatementGenerator(transferSourceTarget, true);
 
@@ -179,6 +174,7 @@ public class SqlDataSystem extends DataSystemAbs {
   @Override
   public Boolean exists(DataPath dataPath) {
 
+
     SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
     SqlMediaType sqlType = sqlDataPath.getMediaType();
 
@@ -191,14 +187,18 @@ public class SqlDataSystem extends DataSystemAbs {
 
     String name = sqlDataPath.getLogicalName();
     switch (sqlType) {
-
+      case REQUEST:
+        DataPath executableDataPath = sqlDataPath.getExecutableDataPath();
+        if (executableDataPath != null) {
+          return Tabulars.exists(executableDataPath);
+        }
+        // the request is generated from a query
+        return true;
       case CATALOG:
         throw new RuntimeException("Catalog exists is not yet supported");
       case SCHEMA:
 
-        final String schemaPattern = name;
-
-        List<SqlDataPath> schemas = this.getConnection().getSchemas(catalog, schemaPattern);
+        List<SqlDataPath> schemas = this.getConnection().getSchemas(catalog, name);
         switch (schemas.size()) {
           case 0:
             return false;
@@ -207,8 +207,12 @@ public class SqlDataSystem extends DataSystemAbs {
           default:
             throw new RuntimeException("In exist, the number of schema returned should be 0 or 1. It was " + schemas.size());
         }
-
       default:
+        if (sqlType.isRuntime()) {
+          // script does not exist in the database
+          // they are runtime resource
+          return false;
+        }
         try {
 
           String schema;
@@ -219,7 +223,7 @@ public class SqlDataSystem extends DataSystemAbs {
           }
 
           String[] allTypes = null; // null  means all types
-          try (ResultSet tableResultSet = this.sqlConnection.getCurrentConnection().getMetaData().getTables(catalog, schema, name, allTypes)) {
+          try (ResultSet tableResultSet = this.sqlConnection.getCurrentJdbcConnection().getMetaData().getTables(catalog, schema, name, allTypes)) {
             return tableResultSet.next(); // For TYPE_FORWARD_ONLY
           }
 
@@ -271,7 +275,7 @@ public class SqlDataSystem extends DataSystemAbs {
   /**
    * When selecting a data path, you need to pass:
    * * the table name if a table
-   * * the query if a query
+   * * the select if a select statement
    * This function returns this clause
    * You can then build a query such as:
    * * select count from fromClause
@@ -279,11 +283,11 @@ public class SqlDataSystem extends DataSystemAbs {
    */
   protected String createFromClause(SqlDataPath sqlDataPath) {
     String fromClause = sqlDataPath.toSqlStringPath();
-    if (sqlDataPath.getMediaType() == SqlMediaType.SCRIPT) {
+    if (sqlDataPath instanceof SqlRequest) {
       /**
        * The alias is mandatory for postgres
        */
-      fromClause = "(" + sqlDataPath.getQuery() + ") " + createQuotedName(sqlDataPath.getName());
+      fromClause = "(" + sqlDataPath.getExecutableSqlScript().getSelect() + ") " + createQuotedName(sqlDataPath.getName());
     }
     return fromClause;
   }
@@ -296,129 +300,53 @@ public class SqlDataSystem extends DataSystemAbs {
 
 
   @Override
-  public String getString(DataPath dataPath) {
+  public String getContentAsString(DataPath dataPath) {
     throw new UnsupportedOperationException("Not yet implemented");
   }
 
   /**
    * This is the implementation of data transfer that happens on the same data store
    * <p>
-   * * A create table from
-   * * A insert into from
+   * * A `create` table from
+   * * A `insert` into from
    * * rename (move)
    */
   @Override
-  public TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public TransferListener transfer(TransferSourceTargetOrder transferOrder) {
 
-    assert source.getConnection().equals(target.getConnection()) : "The datastore of the source (" + source.getConnection() + ") is not the same than the datastore of the target (" + target.getConnection() + ")";
+    SqlDataPath source = (SqlDataPath) transferOrder.getSourceDataPath();
+    SqlDataPath target = (SqlDataPath) transferOrder.getTargetDataPath();
+    assert transferOrder.getSourceDataPath().getConnection().equals(transferOrder.getTargetDataPath().getConnection()) : "The datastore of the source (" + source.getConnection() + ") is not the same than the datastore of the target (" + target.getConnection() + ")";
 
-    SqlDataPath sqlSource = (SqlDataPath) source;
-    SqlDataPath sqlTarget = (SqlDataPath) target;
 
-    TransferSourceTarget transferSourceTarget = new TransferSourceTarget(source, target, transferProperties);
+    TransferPropertiesSystem transferProperties = transferOrder.getTransferProperties();
 
-    TransferListenerAtomic transferListener = new TransferListenerAtomic(transferSourceTarget);
+    TransferListenerAtomic transferListener = new TransferListenerAtomic(transferOrder);
     transferListener.setType(TransferType.LOCAL);
 
-    // Load operation is needed before the checks
-    TransferOperation loadOperation = transferProperties.getOperation();
-    if (loadOperation == null) {
-      loadOperation = getDefaultTransferOperation();
-      transferProperties.setOperation(loadOperation);
-      SqlLog.LOGGER_DB_JDBC.info("The load operation was not set, taking the default (" + loadOperation + ")");
-    }
 
     // Check the source
-    transferSourceTarget.sourcePreChecks();
+    transferOrder.sourcePreChecks();
     // Special create as
-    boolean useCreateAsTarget = this.canCreateAsTableCanBeUsed(transferSourceTarget);
+    boolean useCreateAsTarget = this.canCreateAsTableCanBeUsed(transferOrder);
     // Target check
-    transferSourceTarget.targetPreOperationsAndCheck(transferListener, !useCreateAsTarget);
+    transferOrder.targetPreOperationsAndCheck(transferListener, !useCreateAsTarget);
 
 
     // Load
+    TransferOperation loadOperation = transferProperties.getOperation();
     switch (loadOperation) {
       case INSERT:
       case COPY:
 
-        /**
-         * Can we use a CREATE Table as ?
-         */
-        String copyStatement;
-        if (useCreateAsTarget) {
-
-          /**
-           * Create as statement
-           */
-          transferListener.setMethod(TransferMethod.CREATE_TABLE_AS);
-
-          // Statement
-          copyStatement = createTableAsStatement(transferSourceTarget);
-          SqlLog.LOGGER_DB_JDBC.info("Data Transfer using the `Create Table As` method");
-
-        } else {
-
-
-          /**
-           * Insert into from select
-           */
-          transferListener.setMethod(TransferMethod.INSERT_FROM_QUERY);
-
-          /**
-           * The target check is done by the manager
-           * because in one transfer
-           */
-
-
-          // Create statement
-          copyStatement = createInsertStatementWithSelect(transferSourceTarget);
-          SqlLog.LOGGER_DB_JDBC.info("Data Transfer using the `Insert Query` method");
-
-
-          // The target table should be without rows
-          if (loadOperation == COPY) {
-            long count = target.getCount();
-            if (count != 0) {
-              throw new DataResourceNotEmptyException("In a copy operation, the target table should be empty. This is not the case. The target table (" + target + ") has (" + count + ") rows");
-            }
-          }
-
-        }
-
-        try (Statement statement = sqlSource.getConnection().getCurrentConnection().createStatement()) {
-          boolean resultSetReturned = statement.execute(copyStatement);
-          SqlLog.LOGGER_DB_JDBC.info("Data Transfer statement executed: " + Strings.createFromString(copyStatement).onOneLine().toString());
-          if (!resultSetReturned) {
-            int updateCount = statement.getUpdateCount();
-            transferListener.incrementRows(updateCount);
-            SqlLog.LOGGER_DB_JDBC.info(updateCount + " records were moved from (" + source + ") to (" + target + ")");
-          }
-        } catch (SQLException e) {
-          final String msg = "Error when executing the statement: " + copyStatement;
-          SqlLog.LOGGER_DB_JDBC.severe(msg);
-          transferListener.addException(e);
-          throw new RuntimeException(msg, e);
-        }
+        executeInsertCopy(transferOrder, transferListener, useCreateAsTarget, loadOperation);
         break;
-      case MOVE:
-        String alterTableName = createAlterTableRenameStatement(sqlSource, sqlTarget);
-        transferListener.setMethod(TransferMethod.RENAME);
-        SqlLog.LOGGER_DB_JDBC.info("Data Transfer using the (" + transferListener.getMethod() + ") method");
-        try (Statement statement = sqlSource.getConnection().getCurrentConnection().createStatement()) {
-          statement.execute(alterTableName);
-          SqlLog.LOGGER_DB_JDBC.info("Data Transfer statement executed: " + Strings.createFromString(alterTableName).onOneLine().toString());
-        } catch (SQLException e) {
-          final String msg = "Error when executing the statement: " + alterTableName;
-          SqlLog.LOGGER_DB_JDBC.severe(msg);
-          transferListener.addException(e);
-          throw new RuntimeException(msg, e);
-        }
-        break;
+
       case UPDATE:
-        String updateStatement = createUpdateStatementWithSelect(transferSourceTarget);
+        String updateStatement = createUpdateStatementWithSelect(transferOrder);
         transferListener.setMethod(TransferMethod.UPDATE_FROM_QUERY);
         SqlLog.LOGGER_DB_JDBC.info("Data Transfer using the (" + transferListener.getMethod() + ") method.");
-        try (Statement statement = sqlSource.getConnection().getCurrentConnection().createStatement()) {
+        try (Statement statement = source.getConnection().getCurrentJdbcConnection().createStatement()) {
           boolean resultSetReturned = statement.execute(updateStatement);
           if (!resultSetReturned) {
             int updateCount = statement.getUpdateCount();
@@ -434,10 +362,10 @@ public class SqlDataSystem extends DataSystemAbs {
         }
         break;
       case UPSERT:
-        String upsertStatement = createUpsertStatementWithSelect(transferSourceTarget);
+        String upsertStatement = createUpsertStatementWithSelect(transferOrder);
         transferListener.setMethod(TransferMethod.UPSERT_FROM_QUERY);
         SqlLog.LOGGER_DB_JDBC.info("Data Transfer using the (" + transferListener.getMethod() + ") method");
-        try (Statement statement = sqlSource.getConnection().getCurrentConnection().createStatement()) {
+        try (Statement statement = source.getConnection().getCurrentJdbcConnection().createStatement()) {
           boolean resultSetReturned = statement.execute(upsertStatement);
           if (!resultSetReturned) {
             int updateCount = statement.getUpdateCount();
@@ -453,10 +381,10 @@ public class SqlDataSystem extends DataSystemAbs {
         }
         break;
       case DELETE:
-        String deleteStatement = createDeleteStatementWithSelect(transferSourceTarget);
+        String deleteStatement = createDeleteStatementWithSelect(transferOrder);
         transferListener.setMethod(TransferMethod.DELETE_FROM_QUERY);
         SqlLog.LOGGER_DB_JDBC.info("Data Transfer using the (" + transferListener.getMethod() + ") method.");
-        try (Statement statement = sqlSource.getConnection().getCurrentConnection().createStatement()) {
+        try (Statement statement = source.getConnection().getCurrentJdbcConnection().createStatement()) {
           boolean resultSetReturned = statement.execute(deleteStatement);
           if (!resultSetReturned) {
             int deleteCount = statement.getUpdateCount();
@@ -479,12 +407,99 @@ public class SqlDataSystem extends DataSystemAbs {
 
   }
 
+  private void executeInsertCopy(TransferSourceTargetOrder transferSourceTarget, TransferListenerAtomic transferListener, boolean useCreateAsTarget, TransferOperation loadOperation) {
+
+    SqlDataPath sqlSource = (SqlDataPath) transferSourceTarget.getSourceDataPath();
+    SqlDataPath sqlTarget = (SqlDataPath) transferSourceTarget.getTargetDataPath();
+    /**
+     * Rename ?
+     * (ie copy with source drop on the same system)
+     */
+    if (transferSourceTarget.isRename()) {
+      String alterTableName = createAlterTableRenameStatement(sqlSource, sqlTarget);
+      transferListener.setMethod(TransferMethod.RENAME);
+      SqlLog.LOGGER_DB_JDBC.info("Data Transfer using the (" + transferListener.getMethod() + ") method");
+      try (Statement statement = sqlSource.getConnection().getCurrentJdbcConnection().createStatement()) {
+        statement.execute(alterTableName);
+        SqlLog.LOGGER_DB_JDBC.info("Data Transfer statement executed: " + Strings.createFromString(alterTableName).onOneLine().toString());
+      } catch (SQLException e) {
+        final String msg = "Error when executing the statement: " + alterTableName;
+        SqlLog.LOGGER_DB_JDBC.severe(msg);
+        transferListener.addException(e);
+        throw new RuntimeException(msg, e);
+      }
+      return;
+    }
+
+    /**
+     * With statement
+     */
+    /**
+     * Can we use a CREATE Table as ?
+     */
+    String copyStatement;
+    if (useCreateAsTarget) {
+
+      /**
+       * Create as statement
+       */
+      transferListener.setMethod(TransferMethod.CREATE_TABLE_AS);
+
+      // Statement
+      copyStatement = createTableAsStatement(transferSourceTarget);
+      SqlLog.LOGGER_DB_JDBC.info("Data Transfer using the `Create Table As` method");
+
+    } else {
+
+
+      // The target table should be without rows
+      if (loadOperation == COPY) {
+        long count = sqlTarget.getCount();
+        if (count != 0) {
+          throw new DataResourceNotEmptyException("In a copy operation, the target table should be empty. This is not the case. The target table (" + sqlTarget + ") has (" + count + ") rows");
+        }
+      }
+
+      /**
+       * Insert into from select
+       */
+      transferListener.setMethod(TransferMethod.INSERT_FROM_QUERY);
+
+      /**
+       * The target check is done by the manager
+       * because in one transfer
+       */
+
+
+      // Create statement
+      copyStatement = createInsertStatementWithSelect(transferSourceTarget);
+      SqlLog.LOGGER_DB_JDBC.info("Data Transfer using the `Insert Query` method");
+
+
+    }
+
+    try (Statement statement = sqlSource.getConnection().getCurrentJdbcConnection().createStatement()) {
+      boolean resultSetReturned = statement.execute(copyStatement);
+      SqlLog.LOGGER_DB_JDBC.info("Data Transfer statement executed: " + Strings.createFromString(copyStatement).onOneLine().toString());
+      if (!resultSetReturned) {
+        int updateCount = statement.getUpdateCount();
+        transferListener.incrementRows(updateCount);
+        SqlLog.LOGGER_DB_JDBC.info(updateCount + " records were moved from (" + sqlSource + ") to (" + sqlTarget + ")");
+      }
+    } catch (SQLException e) {
+      final String msg = "Error when executing the statement: " + copyStatement;
+      SqlLog.LOGGER_DB_JDBC.severe(msg);
+      transferListener.addException(e);
+      throw new RuntimeException(msg, e);
+    }
+  }
+
 
   /**
    * @param transferSourceTarget the transfer meta
    * @return if the create table as method can be used
    */
-  private boolean canCreateAsTableCanBeUsed(TransferSourceTarget transferSourceTarget) {
+  private boolean canCreateAsTableCanBeUsed(TransferSourceTargetOrder transferSourceTarget) {
     DataPath target = transferSourceTarget.getTargetDataPath();
     Set<TransferResourceOperations> targetOperations = transferSourceTarget.getTransferProperties().getTargetOperations();
     return (!exists(target) &&
@@ -492,7 +507,7 @@ public class SqlDataSystem extends DataSystemAbs {
         target.getRelationDef() == null ||
           target.getRelationDef().getColumnsSize() == 0
       )
-    ) || targetOperations.contains(TransferResourceOperations.REPLACE);
+    ) || targetOperations.contains(TransferResourceOperations.DROP);
   }
 
 
@@ -507,25 +522,25 @@ public class SqlDataSystem extends DataSystemAbs {
    * Create the `create table as` statement
    * <a href="https://www.postgresql.org/docs/current/sql-createtableas.html">CREATE TABLE AS</a>
    */
-  protected String createTableAsStatement(TransferSourceTarget transferSourceTarget) {
+  protected String createTableAsStatement(TransferSourceTargetOrder transferSourceTarget) {
 
     SqlDataPath target = (SqlDataPath) transferSourceTarget.getTargetDataPath();
     SqlDataPath source = (SqlDataPath) transferSourceTarget.getSourceDataPath();
     return "create table " +
       target.toSqlStringPath() +
       " as " +
-      createOrGetQuery(source);
+      createOrGetSelectQuery(source);
   }
 
   /**
-   * Return the query if the data path is a query or create the select statement
+   * Return the query if the data path is a query
+   * or create the select statement if this is a table
    */
-  protected String createOrGetQuery(SqlDataPath source) {
-    if (source.getMediaType() == SqlMediaType.SCRIPT) {
-      return source.getQuery();
-    } else {
-      return createSelectStatement(source);
+  protected String createOrGetSelectQuery(SqlDataPath source) {
+    if (source instanceof SqlRequest) {
+      return source.getExecutableSqlScript().getSelect();
     }
+    return createSelectStatement(source);
   }
 
 
@@ -700,7 +715,7 @@ public class SqlDataSystem extends DataSystemAbs {
 
         /**
          * In Sql, null means no filter
-         * In Tabli, null means the default
+         * In Tabul, null means the default
          */
         String sqlCatalogPattern = null;
         try {
@@ -750,21 +765,27 @@ public class SqlDataSystem extends DataSystemAbs {
     }
     String tableName = sqlPrimaryKeyDataPath.getName();
 
+
     /**
      * Collect the data
      */
     List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
     List<SqlMetaForeignKey> fkDatas;
+    // MySQL for instance
+    if (this.sqlConnection.getMetadata().isSchemaSeenAsCatalog()) {
+      catalog = schema;
+      schema = null;
+    }
     try (
-      ResultSet tableResultSet = sqlPrimaryKeyDataPath.getConnection().getCurrentConnection().getMetaData().getExportedKeys(catalog, schema, tableName)
+      ResultSet tableResultSet = sqlPrimaryKeyDataPath.getConnection().getCurrentJdbcConnection().getMetaData().getExportedKeys(catalog, schema, tableName)
     ) {
       fkDatas = SqlMetaForeignKey.getForeignKeyMetaFromDriverResultSet(tableResultSet);
     } catch (SQLException e) {
-      String s = "Error when getting the foreign keys that references " + primaryKeyDataPath + " (ie getExportedKeys function) ";
-      if (primaryKeyDataPath.getConnection().getTabular().isStrict()) {
+      String s = "Error when getting the foreign keys that references " + primaryKeyDataPath + " (ie getExportedKeys function). Error: " + e.getMessage();
+      if (primaryKeyDataPath.getConnection().getTabular().isStrictExecution()) {
         throw new RuntimeException(s, e);
       } else {
-        SqlLog.LOGGER_DB_JDBC.warning(s + "\n" + e.getMessage());
+        SqlLog.LOGGER_DB_JDBC.warning(s);
         return foreignKeyDefs;
       }
     }
@@ -792,13 +813,17 @@ public class SqlDataSystem extends DataSystemAbs {
         sqlMeta.getForeignTableSchemaName(),
         sqlMeta.getForeignTableName()
       );
-      foreignKeyDefs.add(
-        ForeignKeyDef.createOf(
+      ForeignKeyDef foreignKeyDef;
+      try {
+        foreignKeyDef = ForeignKeyDef.createOf(
             foreignTable.getOrCreateRelationDef(),
             primaryKey,
             sqlMeta.getForeignKeyColumns()).
-          setName(sqlMeta.getName())
-      );
+          setName(sqlMeta.getName());
+      } catch (Exception e) {
+        throw new RuntimeException("We were unable to create a foreign key for the resource (" + primaryKeyDataPath + ") on the primary key (" + primaryKey.getColumns() + ") for the foreign resource (" + foreignTable + "). Error: " + e.getMessage(), e);
+      }
+      foreignKeyDefs.add(foreignKeyDef);
 
     }
     return foreignKeyDefs;
@@ -808,8 +833,10 @@ public class SqlDataSystem extends DataSystemAbs {
 
   /**
    * Create a drop statement for a {@link Constraint}
+   *
+   * @throws UnsupportedOperationException when the database does not support it (example: sqlite)
    */
-  protected String dropConstraintStatement(Constraint constraint) {
+  protected String dropConstraintStatement(Constraint constraint) throws UnsupportedOperationException {
     StringBuilder dropConstraintStatement = new StringBuilder();
     dropConstraintStatement.append("alter ");
     SqlDataPath table = (SqlDataPath) constraint.getRelationDef().getDataPath();
@@ -837,7 +864,7 @@ public class SqlDataSystem extends DataSystemAbs {
     /**
      * Remove in the database
      */
-    try (Statement sqlStatement = table.getConnection().getCurrentConnection().createStatement()) {
+    try (Statement sqlStatement = table.getConnection().getCurrentJdbcConnection().createStatement()) {
 
       SqlLog.LOGGER_DB_JDBC.fine("Trying to drop the constraint (" + constraint.getName() + ") from the table " + table);
       sqlStatement.execute(dropStatement);
@@ -873,86 +900,151 @@ public class SqlDataSystem extends DataSystemAbs {
   }
 
   @Override
-  public void create(DataPath dataPath) {
+  public void create(DataPath dataPath, DataPath sourceDataPath, Map<DataPath, DataPath> sourceTargets) {
 
+    if (!(dataPath instanceof SqlDataPath)) {
+      // Internal Exception and not IllegalArgument because before calling the `create` function, the caller should check that
+      throw new InternalException("The data path (" + dataPath + ") is not a sql data resource but a " + dataPath.getClass().getSimpleName());
+    }
+    SqlDataPath sqlTargetDataPath = (SqlDataPath) dataPath;
 
-    SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
-    //this.sqlConnection.getCache().addIfNotPresent(sqlDataPath);
-
-    SqlMediaType enumObjectType = sqlDataPath.getMediaType();
-    if (enumObjectType == SqlMediaType.UNKNOWN) {
-      enumObjectType = TABLE;
+    SqlMediaType targetMediaType = sqlTargetDataPath.getMediaType();
+    if (targetMediaType == SqlMediaType.OBJECT) {
+      targetMediaType = TABLE;
     }
 
-    if (enumObjectType == TABLE) {
-
-      // Check that the foreign tables exist
-      for (ForeignKeyDef foreignKeyDef : dataPath.getOrCreateRelationDef().getForeignKeys()) {
-        DataPath foreignDataPath = foreignKeyDef.getForeignPrimaryKey().getRelationDef().getDataPath();
-        if (!exists(foreignDataPath)) {
-          throw new RuntimeException("The foreign table (" + foreignDataPath.toString() + ") does not exist");
+    switch (targetMediaType) {
+      case REQUEST:
+        SqlScript sqlScriptFromScript;
+        if (sourceDataPath != null) {
+          sqlScriptFromScript = SqlScript.builder().setExecutableDataPath(sourceDataPath).build();
+        } else {
+          sqlScriptFromScript = sqlTargetDataPath.getExecutableSqlScript();
         }
-      }
+        this.createAsView(sqlScriptFromScript, sqlTargetDataPath);
+        SqlLog.LOGGER_DB_JDBC.info("View (" + dataPath + ") created from sql script");
+        return;
 
-      // Create the table
-      this.execute(createTableStatement(sqlDataPath));
+      case VIEW:
+        // A view can be created from a select statement/create
+        // sql data path
+        if (sourceDataPath == null) {
+          throw new InternalException("To create the view (" + sqlTargetDataPath + "), a source data resource is mandatory and was not provided");
+        }
+        SqlScript sqlScript = SqlScript.builder().setExecutableDataPath(sourceDataPath).build();
+        this.createAsView(sqlScript, (SqlDataPath) dataPath);
+        SqlLog.LOGGER_DB_JDBC.info("View (" + dataPath + ") created from query");
+        return;
 
-      /**
-       * Add the constraints
-       * <p>
-       * We are not throwing an error when a constraint statement is asked
-       * because the CREATE statement is seen as a unit.
-       * There is not a lot of change to get an constraint statement (alter)
-       * without the create one
-       * The constraint statement function are splits
-       * to be able to test them
-       *
-       */
-      // Add the Primary Key
-      final PrimaryKeyDef primaryKey = dataPath.getOrCreateRelationDef().getPrimaryKey();
-      if (primaryKey != null) {
-        if (!primaryKey.getColumns().isEmpty()) {
-          String createPrimaryKeyStatement = createPrimaryKeyStatement(sqlDataPath);
-          if (createPrimaryKeyStatement != null) {
-            this.execute(createPrimaryKeyStatement);
+      case TABLE: {
+
+        /**
+         * Merge the structure and def
+         */
+        if (sourceDataPath != null) {
+          dataPath
+            .getOrCreateRelationDef()
+            .mergeDataDef(sourceDataPath, sourceTargets);
+        }
+
+        // Check that the foreign tables exist
+        for (ForeignKeyDef foreignKeyDef : dataPath.getOrCreateRelationDef().getForeignKeys()) {
+          DataPath foreignDataPath = foreignKeyDef.getForeignPrimaryKey().getRelationDef().getDataPath();
+          if (!exists(foreignDataPath)) {
+            throw new RuntimeException("The foreign table (" + foreignDataPath.toString() + ") does not exist");
           }
         }
-      }
 
-      // Foreign key
-      for (ForeignKeyDef foreignKeyDef : dataPath.getOrCreateRelationDef().getForeignKeys()) {
-        String createForeignKeyStatement = createForeignKeyStatement(foreignKeyDef);
-        if (createForeignKeyStatement != null) {
-          this.execute(createForeignKeyStatement);
+        // Create the table
+        String tableStatement = createTableStatement(sqlTargetDataPath);
+        this.execute(tableStatement);
+
+        /**
+         * Add the constraints
+         * <p>
+         * We are not throwing an error when a constraint statement is asked
+         * because the CREATE statement is seen as a unit.
+         * There is not a lot of change to get an constraint statement (alter)
+         * without the `create` one
+         * The constraint statement function are splits
+         * to be able to test them
+         *
+         */
+        // Add the Primary Key
+        final PrimaryKeyDef primaryKey = dataPath.getOrCreateRelationDef().getPrimaryKey();
+        if (primaryKey != null) {
+          if (!primaryKey.getColumns().isEmpty()) {
+            try {
+              String createPrimaryKeyStatement = createPrimaryKeyStatement(sqlTargetDataPath);
+              this.execute(createPrimaryKeyStatement);
+            } catch (UnsupportedOperationException e) {
+              // not supported
+              // We don't throw as the creation may be done in the `create` table statement
+              // ie sqlite
+            }
+          }
         }
-      }
 
-      // Unique key
-      for (UniqueKeyDef uniqueKeyDef : dataPath.getOrCreateRelationDef().getUniqueKeys()) {
-        String createUniqueKeyStatement = createUniqueKeyStatement(uniqueKeyDef);
-        if (createUniqueKeyStatement != null) {
-          this.execute(createUniqueKeyStatement);
+        // Foreign key
+        for (ForeignKeyDef foreignKeyDef : dataPath.getOrCreateRelationDef().getForeignKeys()) {
+
+          try {
+            String createForeignKeyStatement = createForeignKeyStatement(foreignKeyDef);
+            this.execute(createForeignKeyStatement);
+          } catch (UnsupportedOperationException e) {
+            // not supported
+            // We don't throw as the creation may be done in the `create` table statement
+            // ie sqlite
+          }
+
         }
+
+        // Unique key
+        for (UniqueKeyDef uniqueKeyDef : dataPath.getOrCreateRelationDef().getUniqueKeys()) {
+
+          try {
+            String createUniqueKeyStatement = createUniqueKeyStatement(uniqueKeyDef);
+            this.execute(createUniqueKeyStatement);
+          } catch (UnsupportedOperationException e) {
+            // not supported
+            // We don't throw as the creation may be done in the `create` table statement
+            // ie sqlite
+          }
+
+        }
+
+        SqlLog.LOGGER_DB_JDBC.info("Table (" + dataPath + ") created");
+
+        return;
       }
 
-      SqlLog.LOGGER_DB_JDBC.info("Table (" + dataPath + ") created");
+      case SCHEMA:
+        this.execute(createSchemaStatement(sqlTargetDataPath));
+        return;
+      default:
 
-    } else if (enumObjectType == SqlMediaType.SCRIPT) {
-
-      this.execute(createViewStatement(sqlDataPath));
-      SqlLog.LOGGER_DB_JDBC.info("View (" + dataPath + ") created from query");
-
-    } else {
-
-      throw new UnsupportedOperationException("The data resources (" + dataPath + ") is a " + enumObjectType + " and the creation of the kind of SQL data resource is not yet supported.");
+        throw new UnsupportedOperationException("The data resources (" + dataPath + ") is a " + targetMediaType + " and the creation of the kind of SQL data resource is not yet supported.");
 
     }
 
   }
 
+  public String createSchemaStatement(SqlDataPath dataPath) {
+
+    if (!dataPath.getMediaType().equals(SqlMediaType.SCHEMA)) {
+      throw new InternalException("The data path (" + dataPath + ") is not a schema resource but a " + dataPath.getMediaType());
+    }
+    /**
+     * MySQL requires the quote around the name
+     * create schema `schema`
+     */
+    return "create schema " + dataPath.toSqlStringPath();
+
+  }
+
 
   /**
-   * @return a create statement without pk and fk
+   * @return a `create` statement without pk and fk
    * For a primary key, see {@link #createPrimaryKeyStatement(SqlDataPath)}
    * For a foreign key, see {@link #createForeignKeyStatement(ForeignKeyDef)}
    */
@@ -998,7 +1090,7 @@ public class SqlDataSystem extends DataSystemAbs {
 
       try {
 
-        ColumnDef columnDef = dataDef.getColumnDef(i);
+        ColumnDef<?> columnDef = dataDef.getColumnDef(i);
         // Add it to the columns statement
         String columnStatement = createColumnStatement(columnDef);
         statementColumnPart.append(columnStatement);
@@ -1027,12 +1119,11 @@ public class SqlDataSystem extends DataSystemAbs {
    * @return The statement is the `create` data type statement that should be compliant
    * with the actual connection.
    */
-  protected String createDataTypeStatement(ColumnDef columnDef) {
+  protected String createDataTypeStatement(ColumnDef<?> columnDef) {
 
     /**
      * Processing var
      */
-    SqlDataType sqlDataType = columnDef.getDataType();
     Connection columnSourceConnection = columnDef.getRelationDef().getDataPath().getConnection();
 
     /**
@@ -1040,15 +1131,19 @@ public class SqlDataSystem extends DataSystemAbs {
      * The table can come from another connection
      * For instance, from a yaml file
      */
-    SqlDataType targetSqlType = sqlConnection.getSqlDataTypeFromSourceDataType(sqlDataType);
+    SqlDataType<?> targetSqlType = sqlConnection.getSqlDataTypeFromSourceColumn(columnDef);
 
     /**
      * Precision verification
      */
-    Integer precision = columnDef.getPrecision();
-    Integer maxPrecision = targetSqlType.getMaxPrecision();
-    Integer defaultPrecision = targetSqlType.getDefaultPrecision();
-    if (precision != null && maxPrecision != null && precision > maxPrecision) {
+    int precision = columnDef.getPrecision();
+    int maxPrecision = targetSqlType.getMaxPrecision();
+    int defaultPrecision = targetSqlType.getDefaultPrecision();
+    if (defaultPrecision == 0) {
+      // varchar
+      defaultPrecision = maxPrecision;
+    }
+    if (precision != 0 && maxPrecision != 0 && precision > maxPrecision) {
       String message = "The precision (" + precision + ") of the column (" + columnDef + ") is greater than the maximum allowed (" + maxPrecision + ") for the datastore (" + columnSourceConnection.getName() + ")";
       SqlLog.LOGGER_DB_JDBC.warning(message);
     }
@@ -1056,9 +1151,9 @@ public class SqlDataSystem extends DataSystemAbs {
     /**
      * Scale verification
      */
-    Integer scale = columnDef.getScale();
-    Integer maximumScale = targetSqlType.getMaximumScale();
-    if (scale != null && maximumScale != null && scale > maximumScale) {
+    int scale = columnDef.getScale();
+    int maximumScale = targetSqlType.getMaximumScale();
+    if (scale > maximumScale) {
       String message = "The scale (" + scale + ") of the column (" + columnDef + ") is greater than the maximum allowed (" + maximumScale + ") for the datastore (" + columnSourceConnection.getName() + ")";
       SqlLog.LOGGER_DB_JDBC.warning(message);
     }
@@ -1066,45 +1161,61 @@ public class SqlDataSystem extends DataSystemAbs {
 
     /**
      * Create the data type statement
+     * See https://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt
+     * Section 17.1 Description of SQL item descriptor areas
+     * Note that we get the parent
      */
-    String dataTypeCreateStatement = targetSqlType.getSqlName();
-    int targetTypeCode = targetSqlType.getTypeCode();
+    String dataTypeCreateStatement = targetSqlType.getParentOrSelf().toKeyNormalizer().toSqlTypeCase();
+    /**
+     * ANSI determines the type of data, the type of statement
+     * In Postgres, the `text` type has a jdbc type code of `varchar` but has no length and is more
+     * a longvarchar/clob
+     * May be not relying on the type code / just relying on {@link SqlDataType#getIsSpecifierMandatory() specifier} function and template
+     * is the best move.
+     */
+    int targetTypeCode = targetSqlType.getAnsiType().getVendorTypeNumber();
     switch (targetTypeCode) {
-      case Types.BIT:
-      case Types.BIGINT:
       case Types.INTEGER:
       case Types.SMALLINT:
+      case Types.TINYINT:
       case Types.REAL:
+      case Types.BIGINT:
       case Types.DOUBLE:
-      case Types.FLOAT:
       case Types.DATE:
       case Types.BOOLEAN:
-      case SqlTypes.JSON:
       case Types.SQLXML:
       case Types.CLOB:
       case Types.BLOB:
       case Types.LONGVARCHAR: // clob, text mapping
-        // DataType without precision (Ie they are in the name)
+      case Types.OTHER: // json
+        /**
+         * DataType without precision or scale (Ie they are specified by the name)
+         * Example for other Jsonb or json type
+         */
         return dataTypeCreateStatement;
       case Types.TIMESTAMP_WITH_TIMEZONE:
-        if (!(precision == null || precision.equals(defaultPrecision))) {
-          // timestamp may be datetime2 (ie sql server)
-          String timestampWord = dataTypeCreateStatement.split(" ")[0];
-          return timestampWord + "(" + precision + ") with time zone";
-        }
-        return dataTypeCreateStatement;
       case Types.TIME_WITH_TIMEZONE:
-        if (!(precision == null || precision == 0 || precision.equals(defaultPrecision))) {
-          // time word may be another one
-          String timeWord = dataTypeCreateStatement.split(" ")[0];
-          return timeWord + "(" + precision + ") with time zone";
+        String[] words = dataTypeCreateStatement.split(" ");
+        String timestampWord = words[0];
+        if (!(precision == 0 || precision == defaultPrecision)) {
+          timestampWord = timestampWord + "(" + precision + ")";
         }
-        return dataTypeCreateStatement;
+        // Example: no with time zone specifier
+        // * SQL Server: datetimeoffset
+        // * Postgres: timetz, timestamptz
+        if (words.length == 1) {
+          return timestampWord;
+        }
+        // We add with time zone normally
+        return timestampWord + " " + Arrays.stream(words)
+          .skip(1)
+          .collect(Collectors.joining(" "));
+
       case Types.TIMESTAMP:
         // timestamp without timezone
         // timestamp precision if not specified is generally implicitly 6 (ie precision is optional)
         // https://www.postgresql.org/docs/current/datatype-datetime.html
-        if (!(precision == null || precision == 0 || precision.equals(defaultPrecision))) {
+        if (!(precision == 0 || precision == defaultPrecision)) {
           return dataTypeCreateStatement + "(" + precision + ")";
         }
         return dataTypeCreateStatement;
@@ -1113,24 +1224,17 @@ public class SqlDataSystem extends DataSystemAbs {
       case Types.NVARCHAR:
       case Types.CHAR:
       case Types.NCHAR:
+      case Types.BIT:
+      case Types.FLOAT:
         /**
-         * This data type have one precision
-         * and should all declare their default precision if not set
+         * This data type have one parameter (ie precision/length)
+         * that may be optional
          */
-        if (defaultPrecision == null) {
-          if (targetTypeCode == Types.TIME) {
-            // implicit zero
-            // https://datacadamia.com/data/type/relation/sql/time
-            defaultPrecision = 0;
-          } else {
-            throw new RuntimeException("The default precision is null for the data type (" + targetSqlType + ") and this is not allowed for a data type with precision");
-          }
-        }
-        if (precision == null) {
+        if (precision == 0) {
           precision = defaultPrecision;
         }
-        if (precision.equals(defaultPrecision)) {
-          if (targetSqlType.getMandatoryPrecision() != null && targetSqlType.getMandatoryPrecision()) {
+        if (precision == defaultPrecision) {
+          if (targetSqlType.getIsSpecifierMandatory() != null && targetSqlType.getIsSpecifierMandatory()) {
             return dataTypeCreateStatement + "(" + precision + ")";
           }
           return dataTypeCreateStatement;
@@ -1138,22 +1242,19 @@ public class SqlDataSystem extends DataSystemAbs {
         return dataTypeCreateStatement + "(" + precision + ")";
       case Types.DECIMAL:
       case Types.NUMERIC:
-        if ((precision == null || precision.equals(defaultPrecision)) && (scale == null || scale == 0 || scale.equals(maximumScale))) {
+        if ((precision == 0 || precision == defaultPrecision) && (scale == 0 || scale == maximumScale)) {
           return dataTypeCreateStatement;
         } else {
-          if (precision == null) {
+          if (precision == 0) {
             precision = targetSqlType.getMaxPrecision();
           }
-          return dataTypeCreateStatement + "(" + precision + (scale != null && scale != 0 ? "," + scale : "") + ")";
+          return dataTypeCreateStatement + "(" + precision + (scale != 0 ? "," + scale : "") + ")";
         }
-
-
       default:
-        if (precision != null && precision > 0) {
-          return dataTypeCreateStatement + "(" + precision + (scale != null && scale != 0 ? "," + scale : "") + ")";
-        } else {
-          return dataTypeCreateStatement;
+        if (precision > 0) {
+          return dataTypeCreateStatement + "(" + precision + (scale != 0 ? "," + scale : "") + ")";
         }
+        return dataTypeCreateStatement;
     }
 
 
@@ -1162,15 +1263,16 @@ public class SqlDataSystem extends DataSystemAbs {
   /**
    * @param uniqueKeyDef - The source unique key def
    * @return an alter table unique statement
+   * @throws UnsupportedOperationException if not supported
    */
-  protected String createUniqueKeyStatement(UniqueKeyDef uniqueKeyDef) {
+  protected String createUniqueKeyStatement(UniqueKeyDef uniqueKeyDef) throws UnsupportedOperationException {
 
     String statement = "ALTER TABLE " + ((SqlDataPath) uniqueKeyDef.getRelationDef().getDataPath()).toSqlStringPath() + " ADD ";
 
 // The series of columns definitions (col1, col2,...)
-    final List<ColumnDef> columns = uniqueKeyDef.getColumns();
+    final List<ColumnDef<?>> columns = uniqueKeyDef.getColumns();
     List<String> columnNames = new ArrayList<>();
-    for (ColumnDef columnDef : columns) {
+    for (ColumnDef<?> columnDef : columns) {
       columnNames.add(createQuotedName(columnDef.getColumnName()));
     }
     final String columnDefStatement = String.join(",", columnNames.toArray(new String[0]));
@@ -1195,7 +1297,7 @@ public class SqlDataSystem extends DataSystemAbs {
    *
    * @param columnDef : The source column
    */
-  protected String createColumnStatement(ColumnDef columnDef) {
+  protected String createColumnStatement(ColumnDef<?> columnDef) {
 
 
     String dataTypeCreateStatement = createDataTypeStatement(columnDef);
@@ -1203,7 +1305,7 @@ public class SqlDataSystem extends DataSystemAbs {
     // NOT NULL / Optionality
     String notNullStatement = "";
     PrimaryKeyDef primaryKey = columnDef.getRelationDef().getPrimaryKey();
-    List<ColumnDef> primaryKeyColumns = new ArrayList<>();
+    List<ColumnDef<?>> primaryKeyColumns = new ArrayList<>();
     if (primaryKey != null) {
       primaryKeyColumns = primaryKey.getColumns();
     }
@@ -1226,7 +1328,7 @@ public class SqlDataSystem extends DataSystemAbs {
    *
    * @return a upsert statement that is used by the loader
    */
-  public String createUpsertStatementWithSelect(TransferSourceTarget transferSourceTarget) {
+  public String createUpsertStatementWithSelect(TransferSourceTargetOrder transferSourceTarget) {
 
 
     /**
@@ -1242,7 +1344,7 @@ public class SqlDataSystem extends DataSystemAbs {
    * The `on Conflict` clause of a statement is shared with several database
    * such as Postgres, Sqlite.
    */
-  protected String createUpsertStatementUtilityOnConflict(TransferSourceTarget transferSourceTarget) {
+  protected String createUpsertStatementUtilityOnConflict(TransferSourceTargetOrder transferSourceTarget) {
 
 
     List<UniqueKeyDef> targetUniqueKeysFoundInSourceColumns = getTargetUniqueKeysFoundInSourceColumns(transferSourceTarget);
@@ -1293,15 +1395,15 @@ public class SqlDataSystem extends DataSystemAbs {
    * Build the targetUniqueKeyFoundInSourceColumns
    * with the target unique constraint columns found in the source
    */
-  protected List<UniqueKeyDef> getTargetUniqueKeysFoundInSourceColumns(TransferSourceTarget transferSourceTarget) {
+  protected List<UniqueKeyDef> getTargetUniqueKeysFoundInSourceColumns(TransferSourceTargetOrder transferSourceTarget) {
 
-    List<ColumnDef> uniqueColumnsForTarget = transferSourceTarget.getSourceUniqueColumnsForTarget();
+    List<ColumnDef<?>> uniqueColumnsForTarget = transferSourceTarget.getSourceUniqueColumnsForTarget();
     List<String> uniqueColumnsNameForTarget = uniqueColumnsForTarget.stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
     SqlDataPath targetDataPath = (SqlDataPath) transferSourceTarget.getTargetDataPath();
     List<UniqueKeyDef> targetUniqueKeyFoundInSourceColumns = new ArrayList<>();
     for (UniqueKeyDef targetUniqueKey : targetDataPath.getOrCreateRelationDef().getUniqueKeys()) {
       boolean notColumnFound = false;
-      for (ColumnDef column : targetUniqueKey.getColumns()) {
+      for (ColumnDef<?> column : targetUniqueKey.getColumns()) {
         if (!uniqueColumnsNameForTarget.contains(column.getColumnName())) {
           notColumnFound = true;
           break;
@@ -1326,7 +1428,7 @@ public class SqlDataSystem extends DataSystemAbs {
 
     // Constraint are supported from 2.1
     // https://issues.apache.org/jira/browse/HIVE-13290
-    if (jdbcDataSystem.getProductName().equals(SqlConnection.DB_HIVE)) {
+    if (jdbcDataSystem.getDatabaseName().equals(SqlConnection.DB_HIVE)) {
       if (jdbcDataSystem.getDatabaseMajorVersion() < 2) {
         return null;
       } else {
@@ -1345,7 +1447,7 @@ public class SqlDataSystem extends DataSystemAbs {
     }
     statement
       .append("FOREIGN KEY (");
-    final List<ColumnDef> nativeColumns = foreignKeyDef.getChildColumns();
+    final List<ColumnDef<?>> nativeColumns = foreignKeyDef.getChildColumns();
     for (int i = 0; i < nativeColumns.size(); i++) {
       statement.append(createQuotedName(nativeColumns.get(i).getColumnName()));
       if (i != nativeColumns.size() - 1) {
@@ -1360,7 +1462,7 @@ public class SqlDataSystem extends DataSystemAbs {
       .append("REFERENCES ")
       .append(((SqlDataPath) foreignDataPath).toSqlStringPath())
       .append(" (");
-    List<ColumnDef> foreignColumns = foreignDataPath.getOrCreateRelationDef().getPrimaryKey().getColumns();
+    List<ColumnDef<?>> foreignColumns = foreignDataPath.getOrCreateRelationDef().getPrimaryKey().getColumns();
     for (int i = 0; i < foreignColumns.size(); i++) {
       statement.append(createQuotedName(foreignColumns.get(i).getColumnName()));
       if (i != foreignColumns.size() - 1) {
@@ -1380,7 +1482,7 @@ public class SqlDataSystem extends DataSystemAbs {
     if (primaryKey == null) {
       return "";
     }
-    List<ColumnDef> columns = primaryKey.getColumns();
+    List<ColumnDef<?>> columns = primaryKey.getColumns();
     int size = columns.size();
     if (size == 0) {
       return null;
@@ -1398,7 +1500,7 @@ public class SqlDataSystem extends DataSystemAbs {
         .append(" ");
     }
     List<String> columnNames = new ArrayList<>();
-    for (ColumnDef columnDef : columns) {
+    for (ColumnDef<?> columnDef : columns) {
       columnNames.add(this.createQuotedName(columnDef.getColumnName()));
     }
     statement
@@ -1411,116 +1513,147 @@ public class SqlDataSystem extends DataSystemAbs {
 
 
   @Override
-  public void drop(DataPath dataPath) {
-
-    SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
-    SqlMediaType type = sqlDataPath.getMediaType();
-    switch (type) {
-      case TABLE:
-      case VIEW:
-        // supported
-        break;
-      case SYSTEM_TABLE:
-      case SYSTEM_VIEW:
-        // Not supported, but we don't return an error because
-        // a `*@sqlite` selection returns them by default for now
-        SqlLog.LOGGER_DB_JDBC.warning("The resource (" + sqlDataPath + ") is not a (" + type + ") and was not dropped");
-        return;
-      default:
-        throw new UnsupportedOperationException("The resource (" + sqlDataPath + ") is not a view or a table. It's a (" + type + "). We don't support a drop");
-    }
-
-
-    String dropTableStatement = createDropTableStatement(sqlDataPath);
-
-    try (Statement statement = sqlDataPath.getConnection().getCurrentConnection().createStatement()) {
-
-      SqlLog.LOGGER_DB_JDBC.fine("Trying to drop " + type + " " + dataPath);
-      statement.execute(dropTableStatement);
-      this.getConnection().getCache().drop(sqlDataPath);
-      String typeCamelCased = Strings.createFromString(type.toString()).toFirstLetterCapitalCase().toString();
-      SqlLog.LOGGER_DB_JDBC.fine(typeCamelCased + " (" + dataPath + ") dropped.");
-
-
-    } catch (SQLException e) {
-      String msg = Strings.createMultiLineFromStrings("Dropping of the data path (" + sqlDataPath + ") was not successful with the statement `" + dropTableStatement + "`"
-        , "Cause: " + e.getMessage()).toString();
-      SqlLog.LOGGER_DB_JDBC.severe(msg);
-      throw new RuntimeException(msg, e);
-    }
-
-  }
-
-  protected String createDropTableStatement(SqlDataPath sqlDataPath) {
-    StringBuilder dropTableStatement = new StringBuilder();
-    dropTableStatement.append("drop ");
-    SqlMediaType enumObjectType = sqlDataPath.getMediaType();
-    switch (enumObjectType) {
-      case TABLE:
-        dropTableStatement.append("table ");
-        break;
-      case VIEW:
-        dropTableStatement.append("view ");
-        break;
-      default:
-        throw new RuntimeException("The drop of the SQL object type (" + enumObjectType + ") is not implemented");
-    }
-    dropTableStatement.append(sqlDataPath.toSqlStringPath());
-    return dropTableStatement.toString();
-  }
-
-  @Override
-  public void delete(DataPath dataPath) {
-
-    SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
-    //noinspection SqlDialectInspection,SqlWithoutWhere,SqlNoDataSourceInspection
-    String deleteStatement = "delete from " + sqlDataPath.toSqlStringPath();
-    try (Statement statement = sqlDataPath.getConnection().getCurrentConnection().createStatement()) {
-      statement.execute(deleteStatement);
-      // Without commit, the database is locked for sqlite (if the connection is no more in autocommit mode)
-      sqlDataPath.getConnection().getCurrentConnection().commit();
-      SqlLog.LOGGER_DB_JDBC.info("Table " + dataPath.getConnection() + " deleted");
-    } catch (SQLException e) {
-      throw new RuntimeException("The delete statement has a problem: " + deleteStatement, e);
-    }
-
-  }
-
-  @Override
-  public void truncate(List<DataPath> dataPaths) {
-
-    List<SqlDataPath> jdbcDataPaths = Casts.castToListSafe(dataPaths, SqlDataPath.class);
+  public void drop(List<DataPath> dataPaths, Set<DropTruncateAttribute> dropAttributes) {
 
     /**
-     * Check if the truncated table
-     * have no dependencies or that the dependencies
-     * are also in the tables to truncate
-     * Normally, the database do this constraint
-     * but as Sqlite does not, we do
+     * The list is already in drop order,
+     * but there is a catch
+     * You may have in the list (because table may depend on view)
+     * * a table,
+     * * a view
+     * * and then a table again
+     * And the drop statement is only by media types
+     * Therefore, we keep the drop order with this list
+     * A list of grouped data resource by media type in drop order fashion
      */
-    for (SqlDataPath sqlDataPath : jdbcDataPaths) {
-      for (ForeignKeyDef fkDependency : Tabulars.getReferences(sqlDataPath)) {
-        SqlDataPath dependentTable = (SqlDataPath) fkDependency.getRelationDef().getDataPath();
-        if (!jdbcDataPaths.contains(dependentTable)) {
-          throw new RuntimeException("The table (" + sqlDataPath + ") cannot be truncated because the table (" + dependentTable + ") dependent on it and is not in the tables to truncate. Add the table (" + fkDependency + ") into the tables to truncate or delete the foreign key (" + fkDependency + ").");
+    List<Map<SqlMediaType, List<SqlDataPath>>> mediaTypeSqlDataPathsMapList = new ArrayList<>();
+    SqlMediaType actualMediaType = null;
+    Map<SqlMediaType, List<SqlDataPath>> actualMediaTypeSqlDataPathsMap = null;
+    for (DataPath dataPath : dataPaths) {
+      if (!(dataPath instanceof SqlDataPath)) {
+        throw new InternalException("The data path " + dataPath + " is not a sql resource");
+      }
+      SqlMediaType mediaType = ((SqlDataPath) dataPath).getMediaType();
+      if (actualMediaType == null || mediaType != actualMediaType) {
+        actualMediaType = mediaType;
+        actualMediaTypeSqlDataPathsMap = new HashMap<>();
+        mediaTypeSqlDataPathsMapList.add(actualMediaTypeSqlDataPathsMap);
+      }
+      SqlDataPath sqlDataPath = ((SqlDataPath) dataPath);
+
+      List<SqlDataPath> mediaTypeDataPaths = actualMediaTypeSqlDataPathsMap.computeIfAbsent(mediaType, k -> new ArrayList<>());
+      mediaTypeDataPaths.add(sqlDataPath);
+    }
+
+    /**
+     * Execute the drop of list grouped in drop order
+     */
+    for (Map<SqlMediaType, List<SqlDataPath>> mediaTypeSqlDataPathsMap : mediaTypeSqlDataPathsMapList) {
+      for (Map.Entry<SqlMediaType, List<SqlDataPath>> entry : mediaTypeSqlDataPathsMap.entrySet()) {
+        SqlMediaType type = entry.getKey();
+        List<SqlDataPath> sqlDataPaths = entry.getValue();
+        List<String> dropStatements;
+        switch (type) {
+          case TABLE:
+          case VIEW:
+          case SCHEMA:
+            dropStatements = createDropStatement(sqlDataPaths, dropAttributes);
+            break;
+          case SYSTEM_TABLE:
+          case SYSTEM_VIEW:
+            // Not supported, but we don't return an error because
+            // a `*@sqlite` selection returns them by default for now
+            SqlLog.LOGGER_DB_JDBC.warning("The resources (" + sqlDataPaths + ") have a type of (" + type + ") and was not dropped");
+            continue;
+          default:
+            String message = "The resource (" + sqlDataPaths + ") is not a view, a table or a schema. It's a (" + type + "). We don't support a drop on this type";
+            if (this.getConnection().getTabular().isStrictExecution()) {
+              throw new StrictException(message);
+            }
+            SqlLog.LOGGER_DB_JDBC.warning("The resources (" + sqlDataPaths + ") have a type of (" + type + ") and was not dropped");
+            continue;
+        }
+
+        for (String dropStatement : dropStatements) {
+          try (Statement statement = this.getConnection().getCurrentJdbcConnection().createStatement()
+          ) {
+
+            /**
+             * A database Server may hang if there is uncommited transaction on a table
+             * 30 second by default
+             */
+            statement.setQueryTimeout(30);
+
+            SqlLog.LOGGER_DB_JDBC.fine("Trying to drop " + type + " " + dataPaths);
+            statement.execute(dropStatement);
+            String typeCamelCased = Strings.createFromString(type.toString()).toFirstLetterCapitalCase().toString();
+            SqlLog.LOGGER_DB_JDBC.fine(typeCamelCased + " (" + dataPaths + ") dropped.");
+
+          } catch (SQLException e) {
+            String msg = Strings.createMultiLineFromStrings("Dropping of the data paths (" + sqlDataPaths + ") was not successful with the statement `" + dropStatement + "`"
+              , "Cause: " + e.getMessage()).toString();
+            SqlLog.LOGGER_DB_JDBC.severe(msg);
+            throw new RuntimeException(msg, e);
+          }
+        }
+
+        /**
+         * Cache drop
+         */
+        SqlCache cache = this.getConnection().getCache();
+        for (SqlDataPath sqlDataPath : sqlDataPaths) {
+          if (dropAttributes.contains(DropTruncateAttribute.IF_EXISTS)) {
+            cache.dropIfExist(sqlDataPath);
+          } else {
+            cache.drop(sqlDataPath);
+          }
         }
       }
     }
 
-    /**
-     * In order, not all database (I see you sqlserver)
-     * support the truncate table table1, table2, ...
-     */
-    List<SqlDataPath> dagSourceDataPaths = ForeignKeyDag
-      .createFromPaths(jdbcDataPaths)
-      .getDropOrdered();
+  }
+
+
+  /**
+   * Drop statement is the same for table, view, schema
+   */
+  protected List<String> createDropStatement(List<SqlDataPath> sqlDataPaths, Set<DropTruncateAttribute> dropAttributes) {
+
+    SqlMediaType enumObjectType = sqlDataPaths.get(0).getMediaType();
+    return SqlDropStatement.builder()
+      .setType(enumObjectType)
+      .setIsCascadeSupported(true)
+      .setIfExistsSupported(true)
+      .setMultipleSqlObjectSupported(true)
+      .build()
+      .getStatements(sqlDataPaths, dropAttributes);
+
+  }
+
+
+  @Override
+  public void truncate(List<DataPath> dataPaths, Set<DropTruncateAttribute> dropAttributes) {
+
+    List<SqlDataPath> sqlDataPaths = new ArrayList<>();
+    for (DataPath dataPath : dataPaths) {
+      if (dataPath instanceof SqlDataPath) {
+        SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
+        SqlMediaType mediaType = sqlDataPath.getMediaType();
+        if (!MediaTypes.equals(mediaType, TABLE)) {
+          throw new IllegalArgumentException("The data path " + dataPath + " is not a table but a " + mediaType + " and cannot be truncated.");
+        }
+        sqlDataPaths.add(sqlDataPath);
+        continue;
+      }
+      throw new InternalException("The data path " + dataPath + " is not a sql resource");
+    }
 
     /**
      * Truncating
      */
-    List<String> sqls = createTruncateStatement(dagSourceDataPaths);
+    List<String> sqls = createTruncateStatement(sqlDataPaths);
     for (String sql : sqls) {
-      try (Statement statement = jdbcDataPaths.get(0).getConnection().getCurrentConnection().createStatement()) {
+      try (Statement statement = this.getConnection().getCurrentJdbcConnection().createStatement()) {
         //noinspection SqlSourceToSinkFlow
         statement.execute(sql);
         SqlLog.LOGGER_DB_JDBC.info("Truncate Statement executed: " + Strings.createFromString(sql).onOneLine().toString());
@@ -1528,10 +1661,19 @@ public class SqlDataSystem extends DataSystemAbs {
         throw new RuntimeException("Error, not permitted or bad Sql:" + Strings.createFromString(sql).onOneLine().toString(), e);
       }
     }
-    SqlLog.LOGGER_DB_JDBC.info("Table(s) (" + dataPaths.stream().map(DataPath::toString).collect(Collectors.joining(", ")) + ") were truncated");
+    SqlLog.LOGGER_DB_JDBC.info("Table(s) (" + sqlDataPaths.stream().map(SqlDataPath::toSqlStringPath).collect(Collectors.joining(", ")) + ") were truncated");
 
   }
 
+  /**
+   * @param dataPaths - the data paths to truncate
+   *                  We don't truncate them one by one now because some database may not allow it
+   *                  even in order
+   *                  For instance,
+   *                  Caused by: org.postgresql.util.PSQLException: ERROR: cannot truncate a table referenced in a foreign key constraint
+   *                  Detail: Table "f_sales" references "d_date".
+   *                  Hint: Truncate table "f_sales" at the same time, or use TRUNCATE ... CASCADE.
+   */
   protected List<String> createTruncateStatement(List<SqlDataPath> dataPaths) {
 
     // https://www.postgresql.org/docs/9.1/sql-truncate.html
@@ -1583,31 +1725,30 @@ public class SqlDataSystem extends DataSystemAbs {
     }
   }
 
-  @Override
-  public void execute(DataPath dataPath) {
-    execute(dataPath.getScript());
-  }
 
   @Override
-  public DataPath getTargetFromSource(DataPath sourceDataPath) {
+  public DataPath getTargetFromSource(DataPath sourceDataPath, MediaType mediaType, DataPath targetParentDataPath) {
 
     String logicalName = sourceDataPath.getLogicalName();
-    String sqlName = KeyNormalizer.createSafe(logicalName).toSqlCaseSafe();
-    return this.getConnection().getDataPath(sqlName);
+    String sqlName = toValidName(logicalName);
+    return this.getConnection().getDataPath(sqlName, mediaType);
 
   }
 
   @Override
   public String toValidName(String name) {
-    return KeyNormalizer.createSafe(name).toSqlCaseSafe();
+    return SqlName.create(name).toValidSqlName();
   }
 
   /**
    * Execute a sql statement
    */
   public void execute(String statement) {
-    try (Statement sqlStatement = this.getConnection().getCurrentConnection().createStatement()) {
-      sqlStatement.execute(statement);
+    try (Statement sqlStatement = this.getConnection().getCurrentJdbcConnection().createStatement()) {
+      boolean resultAsResultSet = sqlStatement.execute(statement);
+      if (resultAsResultSet) {
+        throw new IllegalArgumentException("The statement is not an executable script but a query as it returns a result set");
+      }
     } catch (SQLException e) {
       String message = Strings.createMultiLineFromStrings(
         "\nError: ",
@@ -1619,7 +1760,7 @@ public class SqlDataSystem extends DataSystemAbs {
         statement).toString();
       /**
        * This is at a fine level because we
-       * try to create view to determine the columns
+       * try to create view to determine the columns,
        * and it may fail but this is not an error or even an info
        */
       SqlLog.LOGGER_DB_JDBC.fine(message);
@@ -1657,58 +1798,149 @@ public class SqlDataSystem extends DataSystemAbs {
    * Build the metadata type
    * (by default from the driver ie {@link DatabaseMetaData#getTypeInfo()}
    * For type returned by table, see {@link #getMetaColumns(SqlDataPath)}
+   * Link: <a href="https://docs.oracle.com/javase/8/docs/api/java/sql/DatabaseMetaData.html#getTypeInfo--">...</a>
    */
-  public Map<Integer, SqlMetaDataType> getMetaDataTypes() {
+  @Override
+  public void dataTypeBuildingMain(SqlDataTypeManager sqlDataTypeManager) {
 
     try {
-      ResultSet typeInfoResultSet = sqlConnection.getCurrentConnection().getMetaData().getTypeInfo();
-      Map<Integer, SqlMetaDataType> sqlMetaDataTypes = new HashMap<>();
+      ResultSet typeInfoResultSet = sqlConnection.getCurrentJdbcConnection().getMetaData().getTypeInfo();
+
+      /**
+       * For the same type code, you may get more than one line
+       * Postgres for instance send the aliases this way
+       */
       while (typeInfoResultSet.next()) {
+
+        String typeNameString = typeInfoResultSet.getString("TYPE_NAME");
         int typeCode = typeInfoResultSet.getInt("DATA_TYPE");
-        SqlMetaDataType sqlDataType = new SqlMetaDataType(typeCode);
-        sqlMetaDataTypes.put(typeCode, sqlDataType);
-        String typeName = typeInfoResultSet.getString("TYPE_NAME");
-        sqlDataType.setSqlName(typeName);
+        if (typeCode == Types.ARRAY) {
+          /**
+           * We don't support array type
+           * Postgres returns for an array of varchar the name `_varchar`
+           * Because for us this 2 names are equals, that's a lot of hell to support
+           */
+          continue;
+        }
+        KeyNormalizer typeName = KeyNormalizer.createSafe(typeNameString);
+
+        /**
+         * Get the vendor type to retrieve the class
+         */
+        SqlDataTypeVendor vendorType = this.getSqlDataTypeVendor(typeName, typeCode);
+        KeyNormalizer principalName = typeName;
+        if (!(vendorType instanceof SqlDataTypeAnsi)) {
+          /**
+           * We take the principal name (the type name may be an alias)
+           * For instance, int4 in Postgres is used in the driver but the public name in information schema is integer.
+           * This way, we create first the normalized name (ie integer for Postgres)
+           * and the alias relation is created last (See below Override with vendor info)
+           */
+          principalName = vendorType.toKeyNormalizer();
+        }
+        SqlDataTypeKey sqlDataTypeKey = new SqlDataTypeKey(getConnection(), principalName, typeCode);
+
+        /**
+         * Init the builder
+         */
+        Class<?> valueClass = vendorType.getValueClass();
+        if (valueClass == SqlDataTypeAnsi.class) {
+          throw new InternalException("The class of the vendor type (" + vendorType + ") is an ansi class. Did you use the method (getClass) instead of (getValueClass)");
+        }
+        SqlDataType.SqlDataTypeBuilder<?> typeBuilder = sqlDataTypeManager.createTypeBuilder(sqlDataTypeKey, valueClass);
+
         int precision = typeInfoResultSet.getInt("PRECISION");
-        sqlDataType.setMaxPrecision(precision);
+        typeBuilder.setMaxPrecision(precision);
         String literalPrefix = typeInfoResultSet.getString("LITERAL_PREFIX");
-        sqlDataType.setLiteralPrefix(literalPrefix);
+        typeBuilder.setLiteralPrefix(literalPrefix);
         String literalSuffix = typeInfoResultSet.getString("LITERAL_SUFFIX");
-        sqlDataType.setLiteralSuffix(literalSuffix);
+        typeBuilder.setLiteralSuffix(literalSuffix);
         String createParams = typeInfoResultSet.getString("CREATE_PARAMS");
-        sqlDataType.setCreateParams(createParams);
-        Short nullable = typeInfoResultSet.getShort("NULLABLE");
-        sqlDataType.setNullable(nullable);
+        typeBuilder.setCreateParams(createParams);
+        int nullable = typeInfoResultSet.getInt("NULLABLE");
+        typeBuilder.setNullable(SqlDataTypeNullable.cast(nullable));
         Boolean caseSensitive = typeInfoResultSet.getBoolean("CASE_SENSITIVE");
-        sqlDataType.setCaseSensitive(caseSensitive);
+        typeBuilder.setCaseSensitive(caseSensitive);
         Short searchable = typeInfoResultSet.getShort("SEARCHABLE");
-        sqlDataType.setSearchable(searchable);
+        typeBuilder.setSearchable(searchable);
         Boolean unsignedAttribute = typeInfoResultSet.getBoolean("UNSIGNED_ATTRIBUTE");
-        sqlDataType.setUnsignedAttribute(unsignedAttribute);
-        Boolean fixedPrecScale = typeInfoResultSet.getBoolean("FIXED_PREC_SCALE");
-        sqlDataType.setFixedPrecisionScale(fixedPrecScale);
+        typeBuilder.setUnsignedAttribute(unsignedAttribute);
+        Boolean fixedPrecisionScale = typeInfoResultSet.getBoolean("FIXED_PREC_SCALE");
+        typeBuilder.setIsFixedPrecisionScale(fixedPrecisionScale);
         Boolean autoIncrement = typeInfoResultSet.getBoolean("AUTO_INCREMENT");
-        sqlDataType.setAutoIncrement(autoIncrement);
+        typeBuilder.setAutoIncrement(autoIncrement);
         String localTypeName = typeInfoResultSet.getString("LOCAL_TYPE_NAME");
-        sqlDataType.setLocalTypeName(localTypeName);
-        Integer minimumScale = (int) typeInfoResultSet.getShort("MINIMUM_SCALE");
-        sqlDataType.setMinimumScale(minimumScale);
-        Integer maximumScale = (int) typeInfoResultSet.getShort("MAXIMUM_SCALE");
-        sqlDataType.setMaximumScale(maximumScale);
+        typeBuilder.setLocalTypeName(localTypeName);
+        short minimumScale = typeInfoResultSet.getShort("MINIMUM_SCALE");
+        typeBuilder.setMinimumScale(minimumScale);
+        short maximumScale = typeInfoResultSet.getShort("MAXIMUM_SCALE");
+        typeBuilder.setMaximumScale(maximumScale);
+
+        /**
+         * Override with vendor info
+         * only if it's not our own
+         */
+        if (vendorType instanceof SqlDataTypeAnsi) {
+          typeBuilder.setAnsiType((SqlDataTypeAnsi) vendorType);
+        } else {
+          /**
+           * Override with vendor info
+           */
+          typeBuilder.setDescription(vendorType.getDescription());
+          if (vendorType.getAnsiType() != null) {
+            typeBuilder.setAnsiType(vendorType.getAnsiType());
+          }
+          int maximumScaleVendor = vendorType.getMaximumScale();
+          if (maximumScaleVendor != 0) {
+            int maxScaleDriver = typeBuilder.getMaximumScale();
+            if (maximumScaleVendor > maxScaleDriver) {
+              typeBuilder.setMaximumScale(maximumScaleVendor);
+            }
+          }
+          int minimumScaleVendor = vendorType.getMinScale();
+          if (minimumScaleVendor != 0) {
+            int minimumScaleDriver = typeBuilder.getMinimumScale();
+            if (minimumScaleVendor < minimumScaleDriver) {
+              typeBuilder.setMaximumScale(minimumScaleVendor);
+            }
+          }
+          int maxPrecisionVendor = vendorType.getMaxPrecision();
+          if (maxPrecisionVendor != 0) {
+            int maxPrecisionDriver = typeBuilder.getMaxPrecision();
+            if (maxPrecisionVendor > maxPrecisionDriver) {
+              typeBuilder.setMaxPrecision(maxPrecisionVendor);
+            }
+          }
+          int defaultPrecisionVendor = vendorType.getDefaultPrecision();
+          if (defaultPrecisionVendor != 0) {
+            typeBuilder.setDefaultPrecision(defaultPrecisionVendor);
+          }
+          List<KeyInterface> vendorAliases = vendorType.getAliases();
+          for (KeyInterface keyInterface : vendorAliases) {
+            if (keyInterface instanceof SqlDataTypeAnsi) {
+              typeBuilder.addChildAliasTypedName((SqlDataTypeAnsi) keyInterface, sqlDataTypeManager);
+              continue;
+            }
+            typeBuilder.addChildAliasName(keyInterface);
+          }
+        }
       }
-      return sqlMetaDataTypes;
+
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
 
+
   }
+
 
   /**
    * The metadata read from columns
    *
    * @param dataPath - the data path
    * @return the list of meta columns ordered by position (asc)
-   * For type returned by the driver, see {@link #getMetaDataTypes()}
+   * For type returned by the driver, see {@link #dataTypeBuildingMain(SqlDataTypeManager)}
+   * Wrapper over <a href="https://docs.oracle.com/javase/8/docs/api/java/sql/DatabaseMetaData.html#getColumns-java.lang.String-java.lang.String-java.lang.String-java.lang.String-">getColumns meta function</a>
    */
   public List<SqlMetaColumn> getMetaColumns(SqlDataPath dataPath) {
 
@@ -1727,74 +1959,61 @@ public class SqlDataSystem extends DataSystemAbs {
       catalog = null;
     }
 
+    if (this.getConnection().getMetadata().isSchemaSeenAsCatalog()) {
+      catalog = schemaName;
+      schemaName = null;
+    }
+
     try (
-      ResultSet columnResultSet = dataPath.getConnection().getCurrentConnection().getMetaData().getColumns(catalog, schemaName, dataPath.getName(), null)
+      ResultSet columnResultSet = dataPath.getConnection().getCurrentJdbcConnection().getMetaData().getColumns(catalog, schemaName, dataPath.getName(), null)
     ) {
       while (columnResultSet.next()) {
 
-        SqlMetaColumn meta = SqlMetaColumn.createOf(columnResultSet.getString("COLUMN_NAME"));
+        String columnName = columnResultSet.getString("COLUMN_NAME");
+        SqlMetaColumn meta = SqlMetaColumn.createOf(columnName);
         sqlMetaColumns.add(meta);
 
         // Not implemented on all driver (example: sqliteDriver)
         try {
-          meta.setIsGeneratedColumn(columnResultSet.getString("IS_GENERATEDCOLUMN"));
+          meta.setIsGeneratedColumn(jdbcBooleanCast(columnResultSet.getString("IS_GENERATEDCOLUMN")));
         } catch (SQLException e) {
           SqlLog.LOGGER_DB_JDBC.fine("The IS_GENERATEDCOLUMN column seems not to be implemented. Message: " + e.getMessage());
         }
 
         // Not implemented on all driver (example: sqliteDriver)
         try {
-          /**
-           * JDBC metadata
-           * YES
-           * NO
-           * '' Empty string: not known
-           *
-           */
+
           String isAutoincrement = columnResultSet.getString("IS_AUTOINCREMENT").toLowerCase();
-          switch (isAutoincrement) {
-            case "yes":
-              meta.setIsAutoIncrement(true);
-              break;
-            case "no":
-              meta.setIsAutoIncrement(false);
-              break;
-            case "":
-              meta.setIsAutoIncrement(null);
-              break;
-            default:
-              throw new RuntimeException("isAutoIncrement value (" + isAutoincrement + ") is not JDBC compliant");
-          }
+          meta.setIsAutoIncrement(jdbcBooleanCast(isAutoincrement));
+
 
         } catch (SQLException e) {
           SqlLog.LOGGER_DB_JDBC.fine("The IS_AUTOINCREMENT column seems not to be implemented. Message: " + e.getMessage());
         }
 
-        int data_type = columnResultSet.getInt("DATA_TYPE");
-        Integer scale = columnResultSet.getInt("DECIMAL_DIGITS");
-        // COLUMN_SIZE
-        // For numeric data, this is the maximum precision.
-        // For character data, this is the length in characters.
-        // For datetime datatypes, this is the length in characters
-        int precision = columnResultSet.getInt("COLUMN_SIZE");
+        int typeCode = columnResultSet.getInt("DATA_TYPE");
+
+        // The display size of the column on the terminal
+        // (COLUMN_SIZE definition)
+        // As specified in the doc https://docs.oracle.com/javase/8/docs/api/java/sql/DatabaseMetaData.html#getColumns-java.lang.String-java.lang.String-java.lang.String-java.lang.String-
+        // * For numeric data, this is the maximum precision.
+        // * For character data, this is the length in characters.
+        // * For datetime datatypes, this is the length in characters
+        int columnSize = columnResultSet.getInt("COLUMN_SIZE");
         // BUFFER_LENGTH not used
+        int decimalDigits = columnResultSet.getInt("DECIMAL_DIGITS");
 
 
-        /**
-         * For Postgresql, Sqlserver, by default
-         * the precision of the time is in the scale
-         */
-        if (SqlTypes.timeTypes.contains(data_type)) {
-          precision = scale;
-          scale = null;
-        }
-
+        String typeName = columnResultSet.getString("TYPE_NAME");
+        String comment = columnResultSet.getString("REMARKS");
+        int isNullable = columnResultSet.getInt("NULLABLE");
         meta
-          .setPrecision(precision)
-          .setTypeCode(data_type)
-          .setTypeName(columnResultSet.getString("TYPE_NAME"))
-          .setScale(scale)
-          .setIsNullable(columnResultSet.getInt("NULLABLE"));
+          .setColumnSize(columnSize)
+          .setTypeCode(typeCode)
+          .setTypeName(typeName)
+          .setDecimalDigits(decimalDigits)
+          .setIsNullable(isNullable)
+          .setComment(comment);
       }
 
     } catch (
@@ -1802,6 +2021,29 @@ public class SqlDataSystem extends DataSystemAbs {
       throw new RuntimeException(e);
     }
     return sqlMetaColumns;
+  }
+
+  /**
+   * Cast the `Is` value of
+   * <a href="https://docs.oracle.com/javase/8/docs/api/java/sql/DatabaseMetaData.html#getColumns-java.lang.String-java.lang.String-java.lang.String-java.lang.String-">getColumns</a>
+   *
+   * @return true/false or null
+   * JDBC metadata
+   * YES -> true
+   * NO -> false
+   * '' -> Empty string: not known -> null
+   */
+  private Boolean jdbcBooleanCast(String booleanValue) {
+    switch (booleanValue.toLowerCase()) {
+      case "yes":
+        return true;
+      case "no":
+        return false;
+      case "":
+        return null;
+      default:
+        throw new RuntimeException("value (" + booleanValue + ") is not JDBC column boolean value");
+    }
   }
 
 
@@ -1818,7 +2060,7 @@ public class SqlDataSystem extends DataSystemAbs {
    * at the <a href="https://www.postgresql.org/docs/9.5/sql-update.html">following page</a>
    * Why ? because this query form is guaranteed to raise an error if there are multiple id matches.
    */
-  public String createUpdateStatementWithSelect(TransferSourceTarget transferSourceTarget) {
+  public String createUpdateStatementWithSelect(TransferSourceTargetOrder transferSourceTarget) {
 
     SqlDataPath source = (SqlDataPath) transferSourceTarget.getSourceDataPath();
 
@@ -1848,9 +2090,9 @@ public class SqlDataSystem extends DataSystemAbs {
      * From
      */
     update.append(" from ");
-    if (source.getMediaType() == SqlMediaType.SCRIPT) {
+    if (source.getMediaType() == REQUEST) {
       update.append("( ")
-        .append(source.getQuery())
+        .append(source.getExecutableSqlScript().getSelect())
         .append(" ) ")
         .append(createQuotedName(source.getLogicalName()));
     } else {
@@ -1884,7 +2126,7 @@ public class SqlDataSystem extends DataSystemAbs {
    * Build the first clause of an update statement
    * (ie from `update` ... to `set (` )
    */
-  private String createUpdateStatementUtilityFirstPartUntilSet(TransferSourceTarget transferSourceTarget) {
+  private String createUpdateStatementUtilityFirstPartUntilSet(TransferSourceTargetOrder transferSourceTarget) {
     /**
      * Build the update statement
      */
@@ -1895,25 +2137,10 @@ public class SqlDataSystem extends DataSystemAbs {
       " set";
   }
 
-  /**
-   * Create a view statement from a query data path
-   */
-  public String createViewStatement(SqlDataPath dataPath) {
-    if (dataPath.getMediaType() == SqlMediaType.SCRIPT) {
-      String query = createOrGetQuery(dataPath);
-      return "create view " + dataPath.toSqlStringPathWithNameValidation() + " as " + query;
-    } else {
-      /**
-       * We need a name for the view
-       * A view is just a stored query
-       */
-      throw new UnsupportedOperationException("A create view statement is only support for a query data resource");
-    }
-  }
 
   @Override
   public void dropNotNullConstraint(DataPath dataPath) {
-    for (ColumnDef columnDef : dataPath.getOrCreateRelationDef().getColumnDefs()) {
+    for (ColumnDef<?> columnDef : dataPath.getOrCreateRelationDef().getColumnDefs()) {
       if (
         // if the column is not nullable
         !columnDef.isNullable()
@@ -1935,7 +2162,7 @@ public class SqlDataSystem extends DataSystemAbs {
    * <p>
    * From <a href="https://www.postgresql.org/docs/9.5/ddl-alter.html">...</a>
    */
-  protected String createDropNotNullConstraintStatement(ColumnDef columnDef) {
+  protected String createDropNotNullConstraintStatement(ColumnDef<?> columnDef) {
     SqlDataPath sqlDataPath = (SqlDataPath) columnDef.getRelationDef().getDataPath();
     return "alter table " + sqlDataPath.toSqlStringPath() + " alter column " + createQuotedName(columnDef.getColumnName()) + " drop not null";
   }
@@ -1947,23 +2174,19 @@ public class SqlDataSystem extends DataSystemAbs {
   /**
    * Create upsert from values statement
    */
-  public String createUpsertStatementWithPrintfExpressions(TransferSourceTarget transferSourceTarget) {
-    return createUpsertStatementUtilityValuesPartBefore(transferSourceTarget) +
-      createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, false, false) +
-      createUpsertStatementUtilityValuesPartAfter(transferSourceTarget);
+  public String createUpsertMergeStatementWithPrintfExpressions(TransferSourceTargetOrder transferSourceTarget) {
+    return null;
   }
 
-  public String createUpsertStatementWithBindVariables(TransferSourceTarget transferSourceTarget) {
-    return createUpsertStatementUtilityValuesPartBefore(transferSourceTarget) +
-      createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, true, false) +
-      createUpsertStatementUtilityValuesPartAfter(transferSourceTarget);
+  public String createUpsertMergeStatementWithParameters(TransferSourceTargetOrder transferSourceTarget) {
+    return null;
   }
 
   /**
    * The insert statement before the values
    * The insert statement is split in two to not build it again on every insert
    */
-  public String createInsertStatementUtilityValuesClauseBefore(TransferSourceTarget transferSourceTarget) {
+  public String createInsertStatementUtilityValuesClauseBefore(TransferSourceTargetOrder transferSourceTarget) {
 
     transferSourceTarget.checkBeforeInsert();
 
@@ -1974,7 +2197,7 @@ public class SqlDataSystem extends DataSystemAbs {
       .append(dataPath.toSqlStringPath())
       .append(" ( ");
 
-    List<? extends ColumnDef> targetColumnsToLoad = transferSourceTarget.getSourceColumnsInInsertStatement();
+    List<? extends ColumnDef<?>> targetColumnsToLoad = transferSourceTarget.getTargetColumnInInsertStatement();
     for (int i = 0; i < targetColumnsToLoad.size(); i++) {
       ColumnDef columnDefToLoad = targetColumnsToLoad.get(i);
       if (!columnDefToLoad.isAutoincrement()) {
@@ -1995,7 +2218,7 @@ public class SqlDataSystem extends DataSystemAbs {
    * Because a upsert statement with values should be rewritten each time, the sql statement part
    * that are before and after the values are computed only once
    */
-  public String createUpsertStatementUtilityValuesPartBefore(TransferSourceTarget transferSourceTarget) {
+  public String createUpsertStatementUtilityValuesPartBefore(TransferSourceTargetOrder transferSourceTarget) {
     return createInsertStatementUtilityValuesClauseBefore(transferSourceTarget);
   }
 
@@ -2005,7 +2228,7 @@ public class SqlDataSystem extends DataSystemAbs {
    * Because a upsert statement with values should be rewritten each time, the sql statement part
    * that are before and after the values are computed only once
    */
-  public String createUpsertStatementUtilityValuesPartAfter(TransferSourceTarget transferSourceTarget) {
+  public String createUpsertStatementUtilityValuesPartAfter(TransferSourceTargetOrder transferSourceTarget) {
     return createInsertStatementUtilityValuesClauseAfter() + " " +
       createUpsertStatementUtilityOnConflict(transferSourceTarget);
   }
@@ -2013,7 +2236,7 @@ public class SqlDataSystem extends DataSystemAbs {
   /**
    * @return a update statement with Sql bind variable if sqlBindVariable is true, otherwise with a printf expression
    */
-  protected String createUpdateStatementUtilityStatementGenerator(TransferSourceTarget transferSourceTarget, Boolean sqlBindVariable) {
+  protected String createUpdateStatementUtilityStatementGenerator(TransferSourceTargetOrder transferSourceTarget, Boolean sqlBindVariable) {
     /**
      * Start of the update
      */
@@ -2058,20 +2281,20 @@ public class SqlDataSystem extends DataSystemAbs {
     return update.toString();
   }
 
-  public String createUpdateStatementWithBindVariables(TransferSourceTarget transferSourceTarget) {
+  public String createUpdateStatementWithBindVariables(TransferSourceTargetOrder transferSourceTarget) {
 
     return createUpdateStatementUtilityStatementGenerator(transferSourceTarget, true);
   }
 
 
-  public String createUpdateStatementWithPrintfExpressions(TransferSourceTarget transferSourceTarget) {
+  public String createUpdateStatementWithPrintfExpressions(TransferSourceTargetOrder transferSourceTarget) {
     return createUpdateStatementUtilityStatementGenerator(transferSourceTarget, false);
   }
 
   /**
    * <a href="https://www.postgresql.org/docs/10/sql-delete.html">...</a>
    */
-  public String createDeleteStatementWithSelect(TransferSourceTarget transferSourceTarget) {
+  public String createDeleteStatementWithSelect(TransferSourceTargetOrder transferSourceTarget) {
     /**
      * Start of the statement
      */
@@ -2090,7 +2313,8 @@ public class SqlDataSystem extends DataSystemAbs {
       .collect(Collectors.joining(", "));
     delete.append("( ")
       .append(uniqueColumnsClause)
-      .append(" ) in ( select ")
+      // distinct was needed by sqlite
+      .append(" ) in ( select distinct ")
       .append(uniqueColumnsClause)
       .append(" from ");
 
@@ -2102,10 +2326,10 @@ public class SqlDataSystem extends DataSystemAbs {
           .append(sourceDataPath.toSqlStringPath())
           .append(" )");
         break;
-      case SCRIPT:
+      case REQUEST:
         delete
           .append("( ")
-          .append(sourceDataPath.getQuery())
+          .append(sourceDataPath.getExecutableSqlScript().getSelect())
           .append(" ) ")
           .append(createQuotedName(sourceDataPath.getLogicalName()))
           .append(" )");
@@ -2116,15 +2340,15 @@ public class SqlDataSystem extends DataSystemAbs {
     return delete.toString();
   }
 
-  public String createDeleteStatementWithPrintfExpressions(TransferSourceTarget transferSourceTarget) {
+  public String createDeleteStatementWithPrintfExpressions(TransferSourceTargetOrder transferSourceTarget) {
     return createDeleteStatementUtilityStatementGenerator(transferSourceTarget, false);
   }
 
-  public String createDeleteStatementWithBindVariables(TransferSourceTarget transferSourceTarget) {
+  public String createDeleteStatementWithBindVariables(TransferSourceTargetOrder transferSourceTarget) {
     return createDeleteStatementUtilityStatementGenerator(transferSourceTarget, true);
   }
 
-  private String createDeleteStatementUtilityStatementGenerator(TransferSourceTarget transferSourceTarget, boolean sqlBindVariable) {
+  private String createDeleteStatementUtilityStatementGenerator(TransferSourceTargetOrder transferSourceTarget, boolean sqlBindVariable) {
     transferSourceTarget.checkBeforeDelete();
     StringBuilder delete = new StringBuilder();
     SqlDataPath targetDataPath = (SqlDataPath) transferSourceTarget.getTargetDataPath();
@@ -2163,9 +2387,15 @@ public class SqlDataSystem extends DataSystemAbs {
       catalogName = null;
     }
     SqlConnection dataStore = this.getConnection();
+
+    // MySQL for instance
+    if (this.sqlConnection.getMetadata().isSchemaSeenAsCatalog()) {
+      catalogName = schemaName;
+      schemaName = null;
+    }
     try (
       // ImportedKey = the primary keys imported by a table
-      ResultSet fkResultSet = dataStore.getCurrentConnection().getMetaData().getImportedKeys(catalogName, schemaName, dataPath.getName())
+      ResultSet fkResultSet = dataStore.getCurrentJdbcConnection().getMetaData().getImportedKeys(catalogName, schemaName, dataPath.getName())
     ) {
 
       return SqlMetaForeignKey.getForeignKeyMetaFromDriverResultSet(fkResultSet);
@@ -2175,7 +2405,7 @@ public class SqlDataSystem extends DataSystemAbs {
         "Error when building Foreign Key (ie imported keys) for the table " + dataPath,
         e.getMessage()).toString();
 
-      if (dataStore.getTabular().isStrict()) {
+      if (dataStore.getTabular().isStrictExecution()) {
         throw new RuntimeException(s, e);
       } else {
         SqlLog.LOGGER_DB_JDBC.warning(s);
@@ -2184,18 +2414,70 @@ public class SqlDataSystem extends DataSystemAbs {
     }
   }
 
-  public SqlDataPath createViewFromQueryDataPath(SqlDataPath queryDataPath) {
-    String viewStatement = sqlConnection.getDataSystem().createViewStatement(queryDataPath);
+  /**
+   * @param sqlScript      - the data path with a query (a select sql file or sql query)
+   * @param targetDataPath - the target definition (ie for the name, optional, if null, name is taken from the script)
+   * @return the targetDataPath
+   */
+  public SqlDataPath createAsView(SqlScript sqlScript, SqlDataPath targetDataPath) {
+
+
+    String selectStatement = sqlScript.getSelect();
+    if (selectStatement == null) {
+      throw new IllegalArgumentException("No select sql statement has been found in the data resource (" + sqlScript + ")");
+    }
+
+    // note view name is already optionally quoted
+    // view name
+    String viewName = getViewName(sqlScript, targetDataPath);
+    selectStatement = getViewStatement(selectStatement);
+    // statement
+    String viewStatement = "create view " + viewName + " as " + selectStatement;
     this.execute(viewStatement);
-    return sqlConnection.getDataPath(queryDataPath.toSqlStringPath());
+    return sqlConnection.getDataPath(viewName);
+
   }
+
+  /**
+   * Return the view name.
+   * Why? Some database such as SqlServer does not support the full qualified name but just a name
+   * It's an easy overwrite point for this case
+   *
+   * @param sqlScript      - the source of the query (sql or text file)
+   * @param targetDataPath - the target for the name
+   * @return the name quoted (ie {@link #createQuotedName(String) createQuotedName} has already been applied)
+   */
+  protected String getViewName(SqlScript sqlScript, SqlDataPath targetDataPath) {
+
+    if (targetDataPath != null) {
+      return targetDataPath.toSqlStringPathWithNameValidation();
+    }
+
+    /**
+     * We add a prefix because a sql name cannot start with a number
+     */
+    return createQuotedName("view_anonymous_" + Digest.createFromString(Digest.Algorithm.MD5, sqlScript.getSelect()).getHashHex());
+
+  }
+
+  /**
+   * A function that can be overridden
+   * (Used to delete the `order by` in Sql Server)
+   *
+   * @param viewStatement - the view statement
+   * @return a view statement
+   */
+  protected String getViewStatement(String viewStatement) {
+    return viewStatement;
+  }
+
 
   public String deleteQuoteIdentifier(String s) {
     return Strings.createFromString(s).trim(this.getConnection().getMetadata().getIdentifierQuote()).toString();
   }
 
   /**
-   * If the data path exists in the meta data store:
+   * If the data path exists in the metadata store:
    * * Set the type of the data path {@link DataPath#getMediaType()}
    * * and return true
    * or
@@ -2210,53 +2492,78 @@ public class SqlDataSystem extends DataSystemAbs {
   public SqlMediaType getObjectMediaTypeOrDefault(String catalog, String schema, String objectName) {
 
 
-    try {
-
-      // Query for instance
-      if (objectName == null) {
-        throw new InternalException("Object name cannot be null");
-      }
+    // Query for instance
+    if (objectName == null) {
+      throw new InternalException("Object name cannot be null");
+    }
 
 
-      String[] allTypes = null;
-      try (ResultSet tableResultSet = this.sqlConnection.getCurrentConnection().getMetaData().getTables(catalog, schema, objectName, allTypes)) {
-        boolean exists = tableResultSet.next(); // For TYPE_FORWARD_ONLY
-        if (exists) {
-          /**
-           * We can create a SQL object without a table type (data structure)
-           * All object are tables, schema or catalog, see {@link SqlDataPath#mediaType}
-           * Getting and creating a data def (data structure), update it
-           */
-          String table_type = tableResultSet.getString("TABLE_TYPE");
-          try {
-            return SqlMediaType.getSqlType(table_type);
-          } catch (NotSupportedException e) {
-            // should not happen
-            throw new InternalException("The table type (" + table_type + ") from the database is not a supported table type");
-          }
-
-        } else {
-
-          return TABLE;
-
+    String[] allTypes = null;
+    try (ResultSet tableResultSet = this.sqlConnection.getCurrentJdbcConnection().getMetaData().getTables(catalog, schema, objectName, allTypes)) {
+      boolean exists = tableResultSet.next(); // For TYPE_FORWARD_ONLY
+      if (exists) {
+        /**
+         * We can create a SQL object without a table type (data structure)
+         * All object are tables, schema or catalog, see {@link SqlDataPath#mediaType}
+         * Getting and creating a data def (data structure), update it
+         */
+        String table_type = tableResultSet.getString("TABLE_TYPE");
+        try {
+          return SqlMediaType.castsToSqlType(table_type);
+        } catch (NotSupportedException e) {
+          // should not happen
+          throw new InternalException("The table type (" + table_type + ") from the database is not a supported table type");
         }
+
       }
 
+      /**
+       * If none specified and non-existing
+       * We think that the user want a table object
+       */
+      return TABLE;
 
     } catch (SQLException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("We couldn't read the metadata for the object (" + objectName + "). Error: " + e.getMessage(), e);
     }
 
   }
 
+
   @Override
-  public void dropIfExist(DataPath dataPath) {
-    if (exists(dataPath)) {
-      drop(dataPath);
-    } else {
-      this.sqlConnection.getCache().dropIfExist((SqlDataPath) dataPath);
-      DbLoggers.LOGGER_DB_ENGINE.info("The data resource (" + dataPath + ") does not exist and was not dropped");
+  public MediaType getContainerMediaType() {
+    return SqlMediaType.SCHEMA;
+  }
+
+
+  @Override
+  public SqlDataTypeVendor getSqlDataTypeVendor(KeyNormalizer typeName, int typeCode) {
+
+    if (typeName == null && typeCode == 0) {
+      throw new InternalException("typeName and typeCode can't be null together");
     }
+    SqlTypeKeyUniqueIdentifier sqlKeyIdentifier = this.getSqlTypeKeyUniqueIdentifier();
+    for (SqlDataTypeVendor sqlDataType : getSqlDataTypeVendors()) {
+      if (sqlDataType.getVendorTypeNumber() != typeCode
+        && sqlKeyIdentifier.equals(SqlTypeKeyUniqueIdentifier.NAME_AND_CODE)) {
+        continue;
+      }
+      if (sqlDataType.toKeyNormalizer().equals(typeName)) {
+        return sqlDataType;
+      }
+      for (KeyInterface name : sqlDataType.getAliases()) {
+        if (name.toKeyNormalizer().equals(typeName)) {
+          return sqlDataType;
+        }
+      }
+    }
+
+    /**
+     * It may be a standard type
+     * (ie Postgres has a `date`, we didn't add it at all in {@link
+     */
+    return super.getSqlDataTypeVendor(typeName, typeCode);
+
   }
 
 }

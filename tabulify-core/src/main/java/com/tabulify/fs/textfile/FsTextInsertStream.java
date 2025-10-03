@@ -1,11 +1,11 @@
 package com.tabulify.fs.textfile;
 
-import com.tabulify.transfer.TransferManager;
 import com.tabulify.model.RelationDef;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.InsertStreamAbs;
 import com.tabulify.transfer.TransferListener;
-import com.tabulify.transfer.TransferSourceTarget;
+import com.tabulify.transfer.TransferManager;
+import com.tabulify.transfer.TransferSourceTargetOrder;
 import net.bytle.type.Strings;
 
 import java.io.BufferedWriter;
@@ -119,7 +119,7 @@ public class FsTextInsertStream extends InsertStreamAbs implements InsertStream 
     }
 
     /**
-     * During the transfer {@link TransferManager#beforeTargetCreationAndPreOperations(TransferSourceTarget, TransferListener)}
+     * During the transfer {@link TransferManager#beforeTargetCreationAndPreOperations(TransferSourceTargetOrder, TransferListener)}
      * may add columns
      * <p></p>
      * We correct it here

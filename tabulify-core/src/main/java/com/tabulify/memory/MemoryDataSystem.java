@@ -1,24 +1,29 @@
 package com.tabulify.memory;
 
+import com.tabulify.memory.list.MemoryListDataPath;
+import com.tabulify.memory.queue.MemoryQueueDataPath;
 import com.tabulify.model.Constraint;
 import com.tabulify.model.ForeignKeyDef;
+import com.tabulify.model.RelationDef;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataSystemAbs;
+import com.tabulify.spi.DropTruncateAttribute;
 import com.tabulify.spi.SelectException;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
-import com.tabulify.transfer.TransferListener;
-import com.tabulify.transfer.TransferProperties;
-import com.tabulify.transfer.TransferSourceTarget;
+import com.tabulify.transfer.*;
 import net.bytle.exception.InternalException;
 import net.bytle.regexp.Glob;
 import net.bytle.type.MediaType;
 import net.bytle.type.Strings;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.tabulify.transfer.TransferOperation.COPY;
 
 
 /**
@@ -26,13 +31,6 @@ import java.util.stream.Collectors;
  */
 public class MemoryDataSystem extends DataSystemAbs {
 
-  /**
-   * The data path of the data store are keep here
-   * This is to be able to support the copy/merge of data defs
-   * into another data path that have foreign key relationships
-   * <p>
-   */
-  private Map<String, MemoryDataPath> storageMemDataPaths = new HashMap<>();
 
   private final MemoryConnection memoryConnection;
 
@@ -42,19 +40,18 @@ public class MemoryDataSystem extends DataSystemAbs {
   }
 
 
-  /**
-   */
-  public void delete(DataPath memoryDataPath) {
-    storageMemDataPaths.remove(memoryDataPath.getRelativePath());
+  @Override
+  public void truncate(List<DataPath> dataPaths, Set<DropTruncateAttribute> attributes) {
+    ((MemoryDataPath) dataPaths).truncate();
+  }
+
+  @Override
+  public MediaType getContainerMediaType() {
+    throw new UnsupportedOperationException("Memory system does not support container resources (directory)");
   }
 
 
-  public void truncate(List<DataPath> dataPaths) {
-    dataPaths.forEach(dataPath -> ((MemoryDataPath) dataPath).truncate());
-  }
-
-
-  public InsertStream getInsertStream(TransferSourceTarget transferSourceTarget) {
+  public InsertStream getInsertStream(TransferSourceTargetOrder transferSourceTarget) {
 
     return transferSourceTarget.getTargetDataPath().getInsertStream();
 
@@ -63,17 +60,14 @@ public class MemoryDataSystem extends DataSystemAbs {
   @SuppressWarnings("unchecked")
   @Override
   public List<MemoryDataPath> getChildrenDataPath(DataPath dataPath) {
-    if (dataPath.equals(dataPath.getConnection().getCurrentDataPath())) {
-      return storageMemDataPaths.values()
-        .stream()
-        .filter(p -> !p.equals(dataPath.getConnection().getCurrentDataPath()))
-        .collect(Collectors.toList());
-    } else {
-      throw new RuntimeException(Strings.createMultiLineFromStrings(
-        "The data path (" + dataPath + ") is not the root path.",
-        "In the actual implementation, only the children from the root path may be retrieved"
-      ).toString());
-    }
+
+    /**
+     * We don't throw because {@link com.tabulify.sample.BytleSchema}
+     * is multi connection
+     */
+    return new ArrayList<>();
+
+
   }
 
 
@@ -92,7 +86,7 @@ public class MemoryDataSystem extends DataSystemAbs {
 
 
   @Override
-  public String getString(DataPath dataPath) {
+  public String getContentAsString(DataPath dataPath) {
     int columnSize = dataPath.getOrCreateRelationDef().getColumnsSize();
     StringBuilder string = new StringBuilder();
     try (SelectStream selectString = dataPath.getSelectStream()) {
@@ -111,8 +105,57 @@ public class MemoryDataSystem extends DataSystemAbs {
   }
 
   @Override
-  public TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
-    throw new UnsupportedOperationException("Not yet implemented");
+  public TransferListener transfer(TransferSourceTargetOrder transferOrder) {
+
+    DataPath source = transferOrder.getSourceDataPath();
+    DataPath target = transferOrder.getTargetDataPath();
+    TransferPropertiesSystem transferProperties = transferOrder.getTransferProperties();
+
+    TransferListener transferListenerStream = new TransferListenerAtomic(transferOrder)
+      .startTimer();
+    RelationDef targetRelationDef = target.getRelationDef();
+    if (targetRelationDef == null) {
+      target
+        .mergeDataDefinitionFrom(source);
+    }
+    if (source instanceof MemoryQueueDataPath) {
+      throw new UnsupportedOperationException("The memory transfer with the type " + source.getClass().getSimpleName() + " is not yet implemented");
+    }
+    if (source instanceof MemoryListDataPath) {
+      MemoryListDataPath sourceMemoryList = (MemoryListDataPath) source;
+      List<List<?>> values = sourceMemoryList.getValues();
+      if (!(target instanceof MemoryListDataPath)) {
+        throw new UnsupportedOperationException("The memory transfer to the target type " + target.getClass().getSimpleName() + " is not yet implemented");
+      }
+      MemoryListDataPath targetMemoryList = (MemoryListDataPath) target;
+      List<List<?>> targetValues = ((MemoryListDataPath) target).getValues();
+      TransferOperation operation = transferProperties.getOperation();
+      switch (operation) {
+        case COPY:
+        case INSERT:
+          if (operation.equals(COPY) && !targetValues.isEmpty()) {
+            throw new IllegalArgumentException("The target (" + target + ") is not empty. The copy operation does not allow that.");
+          }
+          if (targetValues.isEmpty()) {
+            targetMemoryList.setValues(values);
+            break;
+          }
+          if (transferProperties.getRunPreDataOperation()
+            && transferProperties.getTargetOperations().contains(TransferResourceOperations.DROP)) {
+            targetMemoryList.setValues(values);
+            break;
+          }
+          targetMemoryList.addValues(values);
+          break;
+        default:
+          throw new UnsupportedOperationException("The transfer operation " + operation + " is not yet implemented in the memory system");
+      }
+      transferListenerStream.stopTimer();
+      return transferListenerStream;
+
+    }
+    throw new InternalException("The memory transfer with the type " + source.getClass().getSimpleName() + " should be processed");
+
   }
 
 
@@ -139,7 +182,7 @@ public class MemoryDataSystem extends DataSystemAbs {
 
   @Override
   public List<ForeignKeyDef> getForeignKeysThatReference(DataPath dataPath) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    return List.of();
   }
 
   @Override
@@ -164,42 +207,28 @@ public class MemoryDataSystem extends DataSystemAbs {
   /**
    * A memory may be created after it's configuration
    * A queue for instance needs a capacity
-   *
    */
   @Override
-  public void create(DataPath dataPath) {
+  public void create(DataPath dataPath, DataPath sourceDataPath, Map<DataPath, DataPath> sourceTargets) {
 
     // Create the structure
     ((MemoryDataPath) dataPath).create();
-    // Add it
-    addInStore((MemoryDataPath) dataPath);
 
   }
 
   @Override
-  public void drop(DataPath dataPath) {
-    MemoryDataPath returned = storageMemDataPaths.remove(dataPath.getRelativePath());
-    if (returned == null) {
-      throw new RuntimeException("The data path (" + dataPath + ") could not be dropped because it does not exists");
-    }
+  public void drop(List<DataPath> dataPaths, Set<DropTruncateAttribute> dropAttributes) {
+
+    // We don't send an error otherwise transfer becomes a nightmare
+    // No store, dropping succeed
+
   }
+
 
   @Override
   public Boolean exists(DataPath dataPath) {
-    return storageMemDataPaths.containsKey(dataPath.getRelativePath());
+    // Transfer will check if the source exists
+    return true;
   }
 
-
-  public void addInStore(MemoryDataPath memoryDataPath) {
-    // Add it
-    storageMemDataPaths.put(memoryDataPath.getRelativePath(), memoryDataPath);
-  }
-
-  public MemoryDataPath getFromStore(String path) {
-    return storageMemDataPaths.get(path);
-  }
-
-  public void emptyStore() {
-    storageMemDataPaths = new HashMap<>();
-  }
 }

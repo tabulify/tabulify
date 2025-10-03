@@ -1,0 +1,17 @@
+steps:
+  - name: "Define"
+    operation: "define"
+    args:
+      data-resource:
+        media-type: text/vnd.tabulify.generator+yaml
+        data-def:
+          logical-name: "my-sequence"
+          max-record-count: 5
+          columns:
+            - name: "id"
+              type: integer
+              data-supplier:
+                type: sequence
+  - name: "Print"
+    comment: "Print the sequence"
+    operation: "print"

@@ -8,15 +8,13 @@ import java.sql.SQLException;
 /**
  * A metadata object for the datastore that gives information
  * about the features
- *
+ * <p>
  * You must see this as:
- *   * the in-memory representation of properties that are used by the {@link SqlDataSystem}
- *   * a wrapper around {@link DatabaseMetaData}
- *
+ * * the in-memory representation of properties that are used by the {@link SqlDataSystem}
+ * * a wrapper around {@link DatabaseMetaData}
+ * <p>
  * Some page about Features
- *   * https://en.wikipedia.org/wiki/SQL_compliance
- *
- *
+ * * <a href="https://en.wikipedia.org/wiki/SQL_compliance">...</a>
  */
 public class SqlConnectionMetadata extends ConnectionMetadata {
 
@@ -24,16 +22,14 @@ public class SqlConnectionMetadata extends ConnectionMetadata {
   private final DatabaseMetaData metadata;
 
 
-
   public SqlConnectionMetadata(SqlConnection sqlConnection) {
     super(sqlConnection);
 
     try {
-      this.metadata = sqlConnection.getCurrentConnection().getMetaData();
+      this.metadata = sqlConnection.getCurrentJdbcConnection().getMetaData();
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
-
 
 
   }
@@ -43,7 +39,6 @@ public class SqlConnectionMetadata extends ConnectionMetadata {
    * if the datastore does not support a catalog, it will be 2
    * if the datastore does not support a schema, it will be 1
    * if the datastore supports a catalog and a schema, it will be 3
-   *
    */
   @Override
   public Integer getMaxNamesInPath() {
@@ -65,31 +60,26 @@ public class SqlConnectionMetadata extends ConnectionMetadata {
   /**
    * Database such as MySql does not support schemas
    * but support catalogs.
-   *
+   * <p>
    * They support only one name namespace.
-   *
+   * <p>
    * And the driver returns the name as `catalog`
    * not `schema` (Schema is always null)
-   *
+   * <p>
    * This function permits defining if the driver
    * has this behavior
-   *
-   *
    */
-  public boolean isSchemaSeenAsCatalog(){
+  public boolean isSchemaSeenAsCatalog() {
     return false;
   }
 
 
-
   /**
-   * Do the datastore supports the fact to
-   * add the catalog name in the {@link SqlConnectionResourcePath#toSqlStatementPath()}}
+   * Do the connection supports the catalog name in the {@link SqlDataPath#toSqlStringPath()}}
    * sql statement path
    * <p></p>
    * For instance, Postgres does not need it, but
    * it supports it for ISO conformance reason
-   *
    */
   public boolean supportsCatalogsInSqlStatementPath() {
 
@@ -119,7 +109,7 @@ public class SqlConnectionMetadata extends ConnectionMetadata {
   String getIdentifierQuote() {
     String identifierQuoteString = "\"";
     try {
-        identifierQuoteString = metadata.getIdentifierQuoteString();
+      identifierQuoteString = metadata.getIdentifierQuoteString();
     } catch (SQLException e) {
       SqlLog.LOGGER_DB_JDBC.warning("The database (" + this + ") throw an error when retrieving the quoted string identifier." + e.getMessage());
     }
@@ -142,7 +132,7 @@ public class SqlConnectionMetadata extends ConnectionMetadata {
   @Override
   public Integer getMaxWriterConnection() {
     try {
-      int maxWriterConnection = ((SqlConnection) this.getConnection()).getCurrentConnection().getMetaData().getMaxConnections();
+      int maxWriterConnection = ((SqlConnection) this.getConnection()).getCurrentJdbcConnection().getMetaData().getMaxConnections();
       // 0 writer is not really possible
       if (maxWriterConnection == 0) {
         return 1;
@@ -158,11 +148,10 @@ public class SqlConnectionMetadata extends ConnectionMetadata {
   /**
    * An utility function to return a {@link DatabaseMetaData}
    * without the exception
-   *
    */
   public DatabaseMetaData getDatabaseMetaData() {
     try {
-      return ((SqlConnection) this.getConnection()).getCurrentConnection().getMetaData();
+      return ((SqlConnection) this.getConnection()).getCurrentJdbcConnection().getMetaData();
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -253,4 +242,6 @@ public class SqlConnectionMetadata extends ConnectionMetadata {
   public Boolean isQuotingEnabled() {
     return this.getConnection().getAttribute(SqlConnectionAttributeEnum.NAME_QUOTING_ENABLED).getValueOrDefaultCastAsSafe(Boolean.class);
   }
+
+
 }

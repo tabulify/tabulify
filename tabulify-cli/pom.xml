@@ -86,13 +86,20 @@
       <groupId>com.tabulify</groupId>
       <artifactId>tabulify-email</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-zip</artifactId>
+    </dependency>
 
     <!-- Eraldy -->
     <dependency>
       <groupId>com.eraldy</groupId>
       <artifactId>eraldy-cli</artifactId>
     </dependency>
-
+    <dependency>
+      <groupId>com.eraldy</groupId>
+      <artifactId>eraldy-docker</artifactId>
+    </dependency>
 
     <!-- Testing -->
     <dependency>
@@ -162,7 +169,7 @@
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <manifestEntries>
-                        <Main-Class>com.tabulify.tabli.Tabli</Main-Class>
+                        <Main-Class>com.tabulify.tabul.Tabul</Main-Class>
                         <Build-Number>${project.version}</Build-Number>
                       </manifestEntries>
                     </transformer>

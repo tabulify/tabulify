@@ -1,15 +1,15 @@
 package com.tabulify.model;
 
 
+import com.tabulify.connection.Connection;
 import com.tabulify.spi.DataPath;
+import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 import net.bytle.exception.NoColumnException;
-import net.bytle.type.MapKeyIndependent;
+import net.bytle.type.KeyInterface;
+import net.bytle.type.KeyNormalizer;
 
-import java.sql.DatabaseMetaData;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -26,12 +26,14 @@ import java.util.stream.Collectors;
 public class RelationDefDefault extends RelationDefAbs {
 
 
+  public static final SqlDataTypeAnsi DEFAULT_DATA_TYPE = SqlDataTypeAnsi.CHARACTER_VARYING;
+
   /**
    * But Oracle by default put all name in uppercase when quoting is disabled
    * we should apply the same transform but RelationDef is system independent
    * so we make it case independent here
    */
-  protected MapKeyIndependent<ColumnDef> columnDefByName = new MapKeyIndependent<>();
+  protected Map<KeyNormalizer, ColumnDef<?>> columnDefByName = new HashMap<>();
 
   public <T extends DataPath> RelationDefDefault(T DataPath) {
     super(DataPath);
@@ -39,78 +41,79 @@ public class RelationDefDefault extends RelationDefAbs {
 
 
   public RelationDefDefault addColumn(String columnName) {
-    addColumn(columnName, Types.VARCHAR, null, null, null, null);
+    addColumn(columnName, DEFAULT_DATA_TYPE, 0, 0, null, null);
     return this;
   }
 
-  public RelationDefDefault addColumn(String columnName, Integer typeCode) {
-    addColumn(columnName, typeCode, null, null, null, null);
-    return this;
+
+  @Override
+  public RelationDef addColumn(String columnName, SqlDataTypeAnsi ansiType) {
+    /**
+     * We search by type number because for
+     * * one ANSI type, one code
+     * * the ANSI name/type code is not really a SQL type identifier
+     */
+    SqlDataType<?> sqlDataType = this.getDataPath().getConnection().getSqlDataType(ansiType);
+    if (sqlDataType == null) {
+      throw getNotSupportedType(columnName, ansiType.toString());
+    }
+    return addColumn(columnName, sqlDataType);
   }
 
   public RelationDefDefault addColumn(String columnName, Class<?> clazz) {
-    SqlDataType typeCode = this.getDataPath().getConnection().getSqlDataType(clazz);
-    addColumn(columnName, typeCode, null, null, null, null);
+    SqlDataType<?> typeCode = this.getDataPath().getConnection().getSqlDataType(clazz);
+    addColumn(columnName, typeCode, 0, 0, null, null);
     return this;
   }
 
-  public RelationDefDefault addColumn(String columnName, Integer type, Integer precision) {
-    addColumn(columnName, type, precision, null, null, null);
+
+  public RelationDefDefault addColumn(String columnName, SqlDataTypeAnsi type, Boolean nullable) {
+    addColumn(columnName, type, 0, 0, nullable, null);
     return this;
   }
 
-  public RelationDefDefault addColumn(String columnName, Integer type, Boolean nullable) {
-    addColumn(columnName, type, null, null, nullable, null);
-    return this;
-  }
-
-  public RelationDefDefault addColumn(String columnName, Integer type, Integer precision, Integer scale) {
+  public RelationDefDefault addColumn(String columnName, SqlDataTypeAnsi type, int precision, int scale) {
     addColumn(columnName, type, precision, scale, null, null);
     return this;
   }
 
-  public RelationDefDefault addColumn(String columnName, Integer type, Integer precision, Integer scale, Boolean nullable) {
+  public RelationDefDefault addColumn(String columnName, SqlDataTypeAnsi type, int precision, int scale, Boolean nullable) {
     addColumn(columnName, type, precision, scale, nullable, null);
     return this;
   }
 
-  public RelationDefDefault addColumn(String columnName, Integer type, Integer precision, Integer scale, Boolean nullable, String comment) {
-    if (type == null) {
-      type = Types.VARCHAR;
-    }
-    SqlDataType sqlDataType = this.getDataPath().getConnection().getSqlDataType(type);
+  public RelationDefDefault addColumn(String columnName, SqlDataTypeAnsi type, int precision, int scale, Boolean nullable, String comment) {
+    SqlDataType<?> sqlDataType = this.getDataPath().getConnection().getSqlDataType(type);
     if (sqlDataType == null) {
-      throw new RuntimeException("The data store (" + this.getDataPath().getConnection() + ") does not know the numeric type code (" + type + ")");
+
+      if (type == SqlDataTypeAnsi.OTHER) {
+        throw new IllegalArgumentException("You can't ask for the type code (" + SqlDataTypeAnsi.OTHER + ") for the column (" + columnName + ") on the resource (" + this.getDataPath() + ") because it's not a deterministic. Multiple type may have this type code.");
+      }
+      throw getNotSupportedType(columnName, type.toString());
     }
-    this.addColumn(columnName, sqlDataType, precision, scale, nullable, comment);
-    return this;
+    return addColumn(columnName, sqlDataType, precision, scale, nullable, comment);
   }
 
-  public RelationDefDefault addColumn(String columnName, SqlDataType sqlDataType, Integer precision, Integer scale, Boolean nullable, String comment) {
+  private IllegalArgumentException getNotSupportedType(String columnName, String type) {
+    return new IllegalArgumentException("The connection (" + this.getDataPath().getConnection() + ") does not support the type (" + type + ") set on the column (" + columnName + ") of the resource (" + this.getDataPath() + ")");
+  }
 
-    if (sqlDataType == null) {
-      sqlDataType = this.getDataPath().getConnection().getSqlDataType(Types.VARCHAR);
-    }
-    int columnNullable;
 
-    if (nullable == null) {
-      columnNullable = DatabaseMetaData.columnNullableUnknown;
-    } else if (nullable) {
-      columnNullable = DatabaseMetaData.columnNullable;
-    } else {
-      columnNullable = DatabaseMetaData.columnNoNulls;
-    }
+  public RelationDefDefault addColumn(String columnName, SqlDataType<?> sqlDataType, int precision, int scale, Boolean nullable, String comment) {
+    Objects.requireNonNull(columnName, "column name should not be null");
+    Objects.requireNonNull(sqlDataType, "sqlDataType should not be null for column " + columnName);
 
-    getOrCreateColumn(columnName, sqlDataType, sqlDataType.getSqlClass())
-      .precision(precision)
-      .scale(scale)
-      .setNullable(columnNullable)
+    createColumn(columnName, sqlDataType)
+      .setPrecision(precision)
+      .setScale(scale)
+      .setNullable(SqlDataTypeNullable.cast(nullable))
       .setComment(comment);
     return this;
   }
 
-  public RelationDefDefault addColumn(String columnName, Integer type, Integer precision, Boolean nullable) {
-    addColumn(columnName, type, precision, null, nullable, null);
+  @Override
+  public RelationDefDefault addColumn(String columnName, SqlDataTypeAnsi type, int precision, Boolean nullable) {
+    addColumn(columnName, type, precision, 0, nullable, null);
     return this;
   }
 
@@ -122,7 +125,7 @@ public class RelationDefDefault extends RelationDefAbs {
    */
   @SuppressWarnings("unchecked")
   @Override
-  public List<? extends ColumnDef> getColumnDefs() {
+  public List<? extends ColumnDef<?>> getColumnDefs() {
 
     return new ArrayList<>(columnDefByName.values())
       .stream()
@@ -136,11 +139,17 @@ public class RelationDefDefault extends RelationDefAbs {
    * @param columnName the column name
    * @return the column or null if not found
    */
-  public ColumnDef getColumnDef(String columnName) throws NoColumnException {
+  public ColumnDef<?> getColumnDef(String columnName) throws NoColumnException {
 
-    ColumnDef column = columnDefByName.get(columnName);
+    KeyNormalizer columnNameNormalized;
+    try {
+      columnNameNormalized = KeyNormalizer.create(columnName);
+    } catch (CastException e) {
+      throw new InternalException("The column name (" + columnName + ") is not valid. Error: " + e.getMessage(), e);
+    }
+    ColumnDef<?> column = columnDefByName.get(columnNameNormalized);
     if (column == null) {
-      throw new NoColumnException("The column (" + columnName + ") was not found for the table (" + this + ")");
+      throw new NoColumnException("The column (" + columnName + ") was not found on the resource (" + this.getDataPath() + ")");
     }
     return column;
   }
@@ -148,12 +157,16 @@ public class RelationDefDefault extends RelationDefAbs {
   /**
    * @return a columnDef by index starting at 0
    */
-  public ColumnDef getColumnDef(Integer columnIndex) {
+  public ColumnDef<?> getColumnDef(Integer columnIndex) {
+
+    if (columnIndex <= 0) {
+      throw new IllegalArgumentException("The column index must be greater than 0. It starts at 1");
+    }
 
     return this.columnDefByName
       .values()
       .stream()
-      .filter(c -> c.getColumnPosition().equals(columnIndex))
+      .filter(c -> c.getColumnPosition() == columnIndex)
       .findFirst()
       .orElseThrow(() -> new IllegalArgumentException("No column at the index " + columnIndex));
 
@@ -162,22 +175,23 @@ public class RelationDefDefault extends RelationDefAbs {
 
   /**
    * @param columnName - The column name
-   * @param clazz      - The type of the column (Java needs the type to be a sort of type safe)
    * @return a new columnDef
    */
-  public ColumnDef getOrCreateColumn(String columnName, SqlDataType sqlDataType, Class<?> clazz) {
+  public <T> ColumnDef<T> getOrCreateColumn(String columnName, SqlDataType<T> sqlDataType) {
 
     try {
 
-      ColumnDef columnDefGet = getColumnDef(columnName);
-      if (columnDefGet.getClazz() != clazz) {
-        throw new IllegalStateException("The column (" + columnDefGet + ") was already defined (may be via metadata - database, datadef or datagen) with the type (" + columnDefGet.getDataType().getSqlName() + ") and then can not be changed to (" + sqlDataType.getSqlName() + ").");
+      ColumnDef<?> columnDefGet = getColumnDef(columnName);
+      Class<T> valueClass = sqlDataType.getValueClass();
+      if (columnDefGet.getClazz() != valueClass) {
+        throw new IllegalStateException("The column (" + columnDefGet + ") was already defined (may be via metadata - database, manifest ) with the class (" + columnDefGet.getClazz().getName() + ") and then can not be changed to (" + valueClass.getName() + ").");
       }
-      return columnDefGet;
+      //noinspection unchecked
+      return (ColumnDef<T>) columnDefGet;
 
     } catch (NoColumnException e) {
 
-      return createColumn(columnName, sqlDataType, clazz);
+      return createColumn(columnName, sqlDataType);
 
     }
 
@@ -186,24 +200,30 @@ public class RelationDefDefault extends RelationDefAbs {
 
   /**
    * @param columnName - The column name
-   * @param clazz      - The type of the column (Java needs the type to be a sort of type safe)
    * @return a new columnDef even if the column already existed
    */
   @Override
-  public ColumnDef createColumn(String columnName, SqlDataType sqlDataType, Class<?> clazz) {
+  public <T> ColumnDef<T> createColumn(String columnName, SqlDataType<T> sqlDataType) {
 
-
+    KeyNormalizer columnNormalized;
+    try {
+      columnNormalized = KeyNormalizer.create(columnName);
+    } catch (CastException e) {
+      throw new IllegalArgumentException("The column name (" + columnName + ") is not a valid name. Error: (" + e.getMessage() + ")", e);
+    }
     // This assert is to catch when object are passed
     // to string function, the length is bigger than the assertion and make it fails
     assert columnName.length() < 100;
-    ColumnDef columnDef = new ColumnDefBase(this, columnName, clazz, sqlDataType);
-    ColumnDef oldColumn = columnDefByName.get(columnName);
+    ColumnDef<T> columnDef = new ColumnDefBase<>(this, columnName, sqlDataType);
+    ColumnDef<?> oldColumn = columnDefByName.get(columnNormalized);
+    // TODO: delete that, create should not replace,
+    //  otherwise you would get some surprise
     if (oldColumn == null) {
       columnDef.setColumnPosition(columnDefByName.size() + 1);
     } else {
       columnDef.setColumnPosition(oldColumn.getColumnPosition());
     }
-    columnDefByName.put(columnName, columnDef);
+    columnDefByName.put(columnNormalized, columnDef);
 
     return columnDef;
 
@@ -216,13 +236,13 @@ public class RelationDefDefault extends RelationDefAbs {
 
   /**
    * @return an array of columns
-   * The columns must exist otherwise you of a exception
+   * The columns must exist otherwise you of an exception
    */
-  protected ColumnDef[] getColumns(String... columnNames) throws NoColumnException {
+  protected ColumnDef<?>[] getColumns(String... columnNames) throws NoColumnException {
 
-    List<ColumnDef> columnDefs = new ArrayList<>();
+    List<ColumnDef<?>> columnDefs = new ArrayList<>();
     for (String columnName : columnNames) {
-      final ColumnDef column;
+      final ColumnDef<?> column;
       column = getColumnDef(columnName);
       columnDefs.add(column);
 
@@ -234,7 +254,7 @@ public class RelationDefDefault extends RelationDefAbs {
    * @return an array of columns
    * The columns must exist otherwise you of a exception
    */
-  protected ColumnDef[] getColumns(List<String> columnNames) throws NoColumnException {
+  protected ColumnDef<?>[] getColumns(List<String> columnNames) throws NoColumnException {
 
     return getColumns(columnNames.toArray(new String[0]));
   }
@@ -246,13 +266,77 @@ public class RelationDefDefault extends RelationDefAbs {
 
   @Override
   public RelationDefDefault dropAll() {
-    columnDefByName = new MapKeyIndependent<>();
+    columnDefByName = new HashMap<>();
     return this;
   }
 
   @Override
   public boolean hasColumn(String columnName) {
+
+    return hasColumn(KeyNormalizer.createSafe(columnName));
+  }
+
+  @Override
+  public boolean hasColumn(KeyNormalizer columnName) {
     return columnDefByName.containsKey(columnName);
+  }
+
+  @Override
+  public ColumnDef<?> getColumnDef(KeyNormalizer name) {
+    return this.columnDefByName.get(name);
+  }
+
+  @Override
+  public RelationDef addColumn(String columnName, SqlDataType<?> dataType) {
+    return addColumn(columnName, dataType, 0, (short) 0, null, null);
+  }
+
+  @Override
+  public RelationDef addColumn(String columnName, SqlDataTypeAnsi sqlDataTypeAnsi, int precision) {
+    Connection connection = this.getDataPath().getConnection();
+    SqlDataType<?> sqlDataType = connection.getSqlDataType(sqlDataTypeAnsi);
+    if (sqlDataType == null) {
+      throw getNotSupportedType(columnName, sqlDataTypeAnsi.toString());
+    }
+    return addColumn(columnName, sqlDataType, precision, (short) 0, null, null);
+  }
+
+  @Override
+  public RelationDef addColumn(String columnName, KeyNormalizer typeName) {
+    Connection connection = this.getDataPath().getConnection();
+    SqlDataType<?> type = connection.getSqlDataType(typeName);
+    if (type == null) {
+      throw getNotSupportedType(columnName, typeName.toSqlTypeCase());
+    }
+    return addColumn(columnName, type);
+  }
+
+  @Override
+  public <T> ColumnDef<T> getColumnDef(String columnName, Class<T> clazz) {
+    ColumnDef<?> column = columnDefByName.get(KeyNormalizer.createSafe(columnName));
+    if (column.getClazz() != clazz) {
+      throw new InternalException("The column (" + columnName + ") has not the class (" + clazz.getName() + ") but the class (" + column.getClazz().getName() + ").");
+    }
+    //noinspection unchecked
+    return (ColumnDef<T>) column;
+  }
+
+  @Override
+  public RelationDef addColumn(String columnName, SqlDataTypeKeyInterface typeKeyInterface) {
+    if (typeKeyInterface.getVendorTypeNumber() == 0) {
+      return addColumn(columnName);
+    }
+    Connection connection = getDataPath().getConnection();
+    SqlDataType<?> type = connection.getSqlDataType(typeKeyInterface);
+    if (type == null) {
+      throw getNotSupportedType(columnName, typeKeyInterface + "/" + typeKeyInterface.getVendorTypeNumber());
+    }
+    return addColumn(columnName, type);
+  }
+
+  @Override
+  public RelationDef addColumn(String columnName, KeyInterface typeName) {
+    return addColumn(columnName, typeName.toKeyNormalizer());
   }
 
 

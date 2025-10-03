@@ -1,8 +1,8 @@
 package com.tabulify.csv;
 
+import com.tabulify.model.ColumnDef;
 import com.tabulify.model.RelationDef;
 import com.tabulify.stream.SelectStreamAbs;
-import net.bytle.exception.CastException;
 import net.bytle.type.Casts;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -72,19 +72,16 @@ public class CsvSelectStream extends SelectStreamAbs {
     currentRecord = this.getDataPath().safeIterate(recordIterator);
     if (currentRecord == null) {
       return false;
-    } else {
-      lineNumberInTextFile++;
-      if (currentRecord.size() == 1) {
-        // Empty line
-        if (currentRecord.get(0).isEmpty() && csvDataPath.isIgnoreEmptyLine()) {
-          return safeIterate();
-        } else {
-          return true;
-        }
-      } else {
-        return true;
-      }
     }
+
+    lineNumberInTextFile++;
+
+    // Empty line
+    if (currentRecord.size() == 1 && currentRecord.get(0).isEmpty() && csvDataPath.isIgnoreEmptyLine()) {
+      return safeIterate();
+    }
+
+    return true;
 
   }
 
@@ -98,16 +95,16 @@ public class CsvSelectStream extends SelectStreamAbs {
   }
 
   @Override
-  public String getString(int columnIndex) {
-
-    return safeGet(columnIndex);
-
+  public boolean isClosed() {
+    return csvParser.isClosed();
   }
 
-  private String safeGet(int columnIndex) {
+
+  private Object safeGet(ColumnDef<?> columnDef) {
     if (rowNum == 0) {
       throw new RuntimeException("You need to go the the first row with the next() function before asking for an object");
     }
+    int columnIndex = columnDef.getColumnPosition();
     if (columnIndex > currentRecord.size()) {
       final int size = csvDataPath.getOrCreateRelationDef().getColumnsSize();
       if (currentRecord.size() > size) {
@@ -119,7 +116,7 @@ public class CsvSelectStream extends SelectStreamAbs {
     try {
       String value = currentRecord.get(columnIndex - 1);
 
-      if (!csvDataPath.getConnection().getTabular().isStrict()) {
+      if (!csvDataPath.getConnection().getTabular().isStrictExecution()) {
         String quoteCharacter = "\"";
         if (value.substring(0, 1).equals(quoteCharacter)) {
           if (value.substring(value.length() - 1).equals(quoteCharacter)) {
@@ -128,9 +125,10 @@ public class CsvSelectStream extends SelectStreamAbs {
         }
       }
 
-      return value;
+      return Casts.cast(value, columnDef.getClazz());
+
     } catch (Exception e) {
-      throw new RuntimeException("Error on the record (" + getRow() + ") when trying to retrieve the column (" + columnIndex + "). Records values are (" + currentRecord + ") ", e);
+      throw new RuntimeException("Error on the record (" + getRecordId() + ") when trying to retrieve the column (" + columnIndex + "). Records values are (" + currentRecord + ") ", e);
     }
   }
 
@@ -146,8 +144,11 @@ public class CsvSelectStream extends SelectStreamAbs {
       lineNumberInTextFile = 0;
 
       // Pass the header
-      while (lineNumberInTextFile < dataDef.getHeaderRowId()) {
-        safeIterate();
+      boolean hasNext = true;
+      int headerRowId = dataDef.getHeaderRowId();
+      while (hasNext) {
+        if (!(lineNumberInTextFile < headerRowId)) break;
+        hasNext = safeIterate();
       }
 
       rowNum = 0;
@@ -159,14 +160,14 @@ public class CsvSelectStream extends SelectStreamAbs {
 
 
   @Override
-  public long getRow() {
+  public long getRecordId() {
     return rowNum;
   }
 
 
   @Override
-  public Object getObject(int columnIndex) {
-    return safeGet(columnIndex);
+  public Object getObject(ColumnDef columnDef) {
+    return safeGet(columnDef);
   }
 
   /**
@@ -181,22 +182,6 @@ public class CsvSelectStream extends SelectStreamAbs {
 
 
   @Override
-  public Double getDouble(int columnIndex) {
-
-    String s = safeGet(columnIndex);
-    if (s == null) {
-      return null;
-    } else {
-      try {
-        return Casts.cast(s, Double.class);
-      } catch (CastException e) {
-        throw new RuntimeException("The value (" + s + ") on in the resource (" + this.getDataPath() + ") in the column (" + this.getDataPath().getRelationDef().getColumnDef(columnIndex).getColumnName() + ") at the row (" + rowNum + ") is not a double", e);
-      }
-    }
-
-  }
-
-  @Override
   public Clob getClob(int columnIndex) {
     throw new RuntimeException("Not Yet implemented");
   }
@@ -205,8 +190,8 @@ public class CsvSelectStream extends SelectStreamAbs {
   /**
    * Retrieves and removes the head of this data path, or returns false if this queue is empty.
    *
-   * @param timeout  - the time out before returning null
-   * @param timeUnit - the time unit of the time out
+   * @param timeout  - the timeout before returning null
+   * @param timeUnit - the time unit of the timeout
    * @return true if there is a new element, otherwise false
    */
   @Override
@@ -221,20 +206,6 @@ public class CsvSelectStream extends SelectStreamAbs {
       .collect(Collectors.toList());
   }
 
-  @Override
-  public Integer getInteger(int columnIndex) {
-    String s = safeGet(columnIndex);
-    if (s == null) {
-      return null;
-    } else {
-      return Integer.parseInt(s);
-    }
-  }
-
-  @Override
-  public Object getObject(String columnName) {
-    return currentRecord.get(columnName);
-  }
 
   @Override
   public CsvDataPath getDataPath() {

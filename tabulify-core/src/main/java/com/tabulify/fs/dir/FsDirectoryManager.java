@@ -3,6 +3,7 @@ package com.tabulify.fs.dir;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.FsDataPath;
 import com.tabulify.fs.FsFileManager;
+import net.bytle.type.MediaType;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,8 +19,8 @@ public class FsDirectoryManager implements FsFileManager {
   }
 
   @Override
-  public FsDataPath createDataPath(FsConnection fsConnection, Path path) {
-    return new FsDirectoryDataPath(fsConnection, path);
+  public FsDataPath createDataPath(FsConnection fsConnection, Path relativePath, MediaType mediaType) {
+    return new FsDirectoryDataPath(fsConnection, relativePath);
   }
 
   @Override

@@ -1,6 +1,7 @@
 package com.tabulify.memory;
 
 import com.tabulify.spi.DataPath;
+import com.tabulify.spi.SelectException;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
 
@@ -34,7 +35,7 @@ public interface MemoryDataPath extends DataPath {
 
   InsertStream getInsertStream();
 
-  SelectStream getSelectStream();
+  SelectStream getSelectStream() throws SelectException;
 
   /**
    * Utility function to set quickly the value to be a text

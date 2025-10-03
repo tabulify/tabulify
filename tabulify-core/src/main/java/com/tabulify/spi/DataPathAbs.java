@@ -1,6 +1,7 @@
 package com.tabulify.spi;
 
 import com.tabulify.DbLoggers;
+import com.tabulify.conf.Attribute;
 import com.tabulify.conf.AttributeEnum;
 import com.tabulify.conf.Origin;
 import com.tabulify.connection.Connection;
@@ -8,25 +9,21 @@ import com.tabulify.engine.StreamDependencies;
 import com.tabulify.model.*;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
-import com.tabulify.transfer.TransferProperties;
-import com.tabulify.uri.DataUri;
+import com.tabulify.transfer.TransferOperation;
+import com.tabulify.transfer.TransferPropertiesSystem;
+import com.tabulify.uri.DataUriNode;
 import net.bytle.dag.Dependency;
 import net.bytle.exception.*;
 import net.bytle.type.*;
-import net.bytle.type.yaml.DefaultTimestampWithoutTimeZoneConstructor;
-import org.yaml.snakeyaml.LoaderOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.scanner.ScannerException;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static com.tabulify.spi.DataPathAttribute.*;
 
@@ -34,25 +31,36 @@ import static com.tabulify.spi.DataPathAttribute.*;
 public abstract class DataPathAbs implements Comparable<DataPath>, StreamDependencies, DataPath, Dependency {
 
 
-  public static final String DATA_DEF_SUFFIX = "--datadef.yml";
-
-
   private final Connection connection;
 
 
   /**
-   * The relative path from the connection locate the resource
-   * This value can only be null if the script data path is not
+   * A compact path identifier known as the {@link DataPathAttribute#PATH}
+   * * for a file system, this is the relative path from the connection base directory
+   * * for a SQL system, this is the sql path qualified if not in the current schema
+   * <p>
+   * This value can only be null if the {@link #executableDataPath} is not
+   * We call it the compact path to make a difference with the {@link #getAbsolutePath()}
    */
-  private final String relativeConnectionPath;
+  private final String compactConnectionPath;
 
   /**
-   * The data path of a script
-   * (If this value is null, the path should not)
+   * The data path of an executable
+   * (ie code or binary)
+   * (If this value is null, the {@link #compactConnectionPath} should not)
    */
-  protected final DataPath scriptDataPath; // Script in a data path
+  protected final DataPath executableDataPath;
 
   protected MediaType mediaType;
+
+  /**
+   * We build data uri and id has final because
+   * it's in the {@link #hashCode()}
+   * and we got error on the Set#contains
+   */
+  private final DataUriNode dataUri;
+  private final String id;
+  private TabularType tabularType;
 
   @Override
   public Connection getConnection() {
@@ -64,48 +72,18 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
    * (ie backref of a regexp for instance)
    * So we need string as key identifier
    */
-  private final Map<String, com.tabulify.conf.Attribute> variables = new MapKeyIndependent<>();
+  private final Map<KeyNormalizer, Attribute> attributes = new HashMap<>();
 
 
   @Override
-  public String getRelativePath() {
-    return this.relativeConnectionPath;
+  public String getCompactPath() {
+    return this.compactConnectionPath;
   }
 
 
   protected RelationDef relationDef;
   private String description;
 
-
-  public DataPathAbs(Connection connection, DataPath scriptDataPath) {
-
-    Objects.requireNonNull(connection, "The connection should not be null");
-    Objects.requireNonNull(scriptDataPath, "The script data path should not be null");
-    this.connection = connection;
-
-    /**
-     * A script resource
-     */
-    this.scriptDataPath = scriptDataPath;
-
-    /**
-     * A normal resource
-     */
-    this.relativeConnectionPath = null;
-
-    /**
-     * Media Type
-     */
-    this.mediaType = DataPathType.TABLI_SCRIPT;
-
-
-    /**
-     * Attach the function
-     */
-    this.buildAttachVariableFunctions();
-
-
-  }
 
   @Override
   public String getName() {
@@ -117,7 +95,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
     this.getOrCreateVariable(PATH).setValueProvider(this::getName);
     this.getOrCreateVariable(CONNECTION).setValueProvider(() -> this.getConnection().getName());
     this.getOrCreateVariable(DATA_URI).setValueProvider(this::toDataUri);
-    this.getOrCreateVariable(PATH).setValueProvider(this::getRelativePath);
+    this.getOrCreateVariable(PATH).setValueProvider(this::getCompactPath);
     this.getOrCreateVariable(ABSOLUTE_PATH).setValueProvider(this::getAbsolutePath);
     this.getOrCreateVariable(PARENT).setValueProvider(() -> {
       try {
@@ -126,8 +104,9 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
         return null;
       }
     });
-    this.getOrCreateVariable(TYPE).setValueProvider(() -> this.getMediaType().toString());
-    this.getOrCreateVariable(SUBTYPE).setValueProvider(() -> this.getMediaType().getSubType());
+    this.getOrCreateVariable(MEDIA_TYPE).setValueProvider(() -> this.getMediaType().toString());
+    this.getOrCreateVariable(MEDIA_SUBTYPE).setValueProvider(() -> this.getMediaType().getSubType());
+    this.getOrCreateVariable(KIND).setValueProvider(() -> this.getMediaType().getKind());
     this.getOrCreateVariable(NAME).setValueProvider(this::getName);
     this.getOrCreateVariable(COUNT).setValueProvider(this::getCount);
     this.getOrCreateVariable(SIZE).setValueProvider(this::getSize);
@@ -154,10 +133,14 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
       }
     });
     this.getOrCreateVariable(LOGICAL_NAME).setValueProvider(this::getDefaultLogicalName);
+    this.getOrCreateVariable(ACCESS_TIME).setValueProvider(this::getAccessTime);
+    this.getOrCreateVariable(UPDATE_TIME).setValueProvider(this::getUpdateTime);
+    this.getOrCreateVariable(CREATION_TIME).setValueProvider(this::getCreationTime);
+    this.getOrCreateVariable(TABULAR_TYPE).setValueProvider(this::getTabularType);
   }
 
 
-  public com.tabulify.conf.Attribute getOrCreateVariable(AttributeEnum attribute) {
+  public Attribute getOrCreateVariable(AttributeEnum attribute) {
 
     try {
 
@@ -165,7 +148,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
 
     } catch (NoVariableException e) {
 
-      com.tabulify.conf.Attribute variable = com.tabulify.conf.Attribute.create(attribute, com.tabulify.conf.Origin.DEFAULT);
+      Attribute variable = Attribute.create(attribute, Origin.DEFAULT);
       this.addAttribute(variable);
       return variable;
 
@@ -173,19 +156,58 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
   /**
-   * @param connection   - the connection
-   * @param relativePath - the relative path from the connection path
-   * @param mediaType    - the media type
+   * A data path may represent:
+   * * static data (stored on disk), located via the relative path
+   * * runtime data (created by execution), created with the code data path
+   * <p>
+   * Why do we have only one data path object and not 2 that represents respectively
+   * a static and a runtime data resource ?
+   * Because an executable data path may extend a static data path so that
+   * it does not need to implement the path functions and use an anonymous name.
+   * <p>
+   * If you want to pass some dynamic code, create a memory data path and store the code in it
+   * Why? We get:
+   * * a runtime identifier (name@memory)@connection
+   * * a name for the code
+   *
+   * @param connection         - the connection
+   * @param compactPath        - the relative path of a static resource from the connection path  (null if executableDataPath is NOT null)
+   * @param executableDataPath - the executable data path of a runtime resource that contains the execution code or is a binary (null if relative path is not null)
+   * @param mediaType          - the media type
    */
-  public DataPathAbs(Connection connection, String relativePath, MediaType mediaType) {
+  public DataPathAbs(Connection connection, String compactPath, DataPath executableDataPath, MediaType mediaType) {
 
     Objects.requireNonNull(connection, "The connection should not be null");
-    Objects.requireNonNull(relativePath, "The relative path should not be null");
+    Objects.requireNonNull(mediaType, "The media type should not be null");
     this.connection = connection;
-
-    this.relativeConnectionPath = relativePath;
-    this.scriptDataPath = null;
     this.mediaType = mediaType;
+
+    if (compactPath == null && executableDataPath == null) {
+      throw new InternalException("The compact path and executable data path should not be null together, we need at least an identifier");
+    }
+
+    if (compactPath != null && executableDataPath != null) {
+      throw new InternalException("The compact path and executable data path should not be NON null together. Compact path: " + compactPath + ", Executable Path: " + executableDataPath);
+    }
+
+    if (executableDataPath != null) {
+      this.compactConnectionPath = null;
+      this.executableDataPath = executableDataPath;
+      this.dataUri = DataUriNode.builder()
+        .setConnection(this.connection)
+        .setPathDataUri(this.executableDataPath.toDataUri())
+        .build();
+    } else {
+      this.compactConnectionPath = compactPath;
+      this.executableDataPath = null;
+      this.dataUri = DataUriNode.builder()
+        .setConnection(this.connection)
+        .setPath(this.compactConnectionPath)
+        .build();
+    }
+
+
+    this.id = this.dataUri.toString();
 
     /**
      * Init the arguments
@@ -197,11 +219,11 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
 
   @Override
   public String getId() {
-    return toDataUri().toString();
+    return this.dataUri.toString();
   }
 
   public int compareTo(DataPath o) {
-    return (this.getConnection().getName() + this.getRelativePath()).compareTo(o.getConnection().getName() + o.getRelativePath());
+    return (Sorts.naturalSortComparator(this.getConnection().getName() + this.getCompactPath(), o.getConnection().getName() + o.getCompactPath()));
   }
 
   @Override
@@ -241,36 +263,6 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
 
 
   /**
-   * @return the query definition (select) or null if it's not a query
-   * See also SqlDataSystem#createOrGetQuery
-   */
-  @Override
-  public String getQuery() {
-    return this.getScript();
-  }
-
-  @Override
-  public String getScript() {
-
-    /**
-     * In the case of a script/runtime data path, the script field is not null
-     * <p>
-     * The script value can be:
-     * * a query that returns data
-     * * a command that does not return data
-     * <p>
-     * Historically, the query is here because even if it defines a little bit the structure
-     * (data def), for now, we get it after its execution if you put the query on the data def you got a recursion
-     */
-    if (scriptDataPath == null) {
-      throw new InternalException("This is not a script resource, you can't ask the script content");
-    }
-    return Tabulars.getString(scriptDataPath);
-
-  }
-
-
-  /**
    * @return the dependency
    * (Example:
    * * for foreign key dependencies, the primary key table referenced by the foreign key relationship
@@ -306,7 +298,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
    * @return the object for chaining
    */
   @Override
-  public DataPath setDescription(String description) {
+  public DataPath setComment(String description) {
     this.description = description;
     return this;
   }
@@ -316,7 +308,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
    * @return the description
    */
   @Override
-  public String getDescription() {
+  public String getComment() {
     return this.description;
   }
 
@@ -326,34 +318,56 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
 
     try {
       return (String) this.getAttribute(LOGICAL_NAME).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+    } catch (NoVariableException e) {
       return this.getDefaultLogicalName();
     }
 
   }
 
   private String getDefaultLogicalName() {
-    if (this.isScript()) {
-      return this.getScriptDataPath().getLogicalName();
+    if (this.isRuntime()) {
+      return this.getExecutableDataPath().getLogicalName();
     }
     return getName();
   }
 
-  public DataPath getScriptDataPath() {
-    return this.scriptDataPath;
+  @Override
+  public DataPath getExecutableDataPath() {
+    return this.executableDataPath;
   }
 
-  public com.tabulify.conf.Attribute getAttribute(AttributeEnum attribute) throws NoVariableException {
-    return getAttribute(attribute.toString());
-  }
 
   @Override
-  public com.tabulify.conf.Attribute getAttribute(String name) throws NoVariableException {
-    com.tabulify.conf.Attribute attribute = this.variables.get(name);
+  public Attribute getAttribute(KeyNormalizer name) throws NoVariableException {
+    Attribute attribute = this.attributes.get(name);
     if (attribute == null) {
       throw new NoVariableException();
     }
     return attribute;
+  }
+
+  @Override
+  public SelectStream getSelectStreamSafe() {
+
+    if (this.isRuntime()) {
+      DataPath execute;
+      try {
+        execute = execute();
+      } catch (Exception e) {
+        throw new RuntimeException("Error during execution of the data path " + this + ". Error: " + e.getMessage(), e);
+      }
+      try {
+        return execute.getSelectStream();
+      } catch (SelectException e) {
+        throw new RuntimeException("We were unable to open the result data path " + execute + " of the runtime " + this + ". Error: " + e.getMessage(), e);
+      }
+    }
+    try {
+      return getSelectStream();
+    } catch (SelectException e) {
+      throw new RuntimeException("We were unable to open the data path " + this + ". Error: " + e.getMessage(), e);
+    }
+
   }
 
   @Override
@@ -367,11 +381,8 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
   @Override
-  public DataUri toDataUri() {
-    if (this.scriptDataPath != null) {
-      return DataUri.createFromConnectionAndScriptUri(this.connection, this.scriptDataPath.toDataUri());
-    }
-    return DataUri.createFromConnectionAndPath(this.connection, this.relativeConnectionPath);
+  public DataUriNode toDataUri() {
+    return this.dataUri;
   }
 
 
@@ -389,7 +400,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
       try {
         selectStream = this.getSelectStream();
       } catch (SelectException e) {
-        boolean isStrict = this.getConnection().getTabular().isStrict();
+        boolean isStrict = this.getConnection().getTabular().isStrictExecution();
         String message = "Error while trying to get the byte digest";
         if (isStrict) {
           throw new RuntimeException(message, e);
@@ -414,8 +425,11 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
 
 
   @Override
-  public boolean isScript() {
-    return scriptDataPath != null;
+  public boolean isRuntime() {
+    if (this.executableDataPath != null) {
+      return true;
+    }
+    return this.mediaType.isRuntime();
   }
 
   /**
@@ -425,126 +439,106 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
    * @param value - the attribute value
    * @return the tableDef for initialization chaining
    */
-  @Override
-  public DataPath addAttribute(String key, Object value) {
+  public DataPath addAttribute(KeyNormalizer key, Object value) {
 
+    Attribute attribute = null;
+
+    /**
+     * Special case of regexp backreference
+     * ie $1, $2, ...
+     */
     try {
-      com.tabulify.conf.Attribute attribute = getConnection().getTabular().createAttribute(key, value);
-      this.addAttribute(attribute);
-      return this;
-    } catch (Exception e) {
-      throw new RuntimeException("Error while creating a variable from an attribute (" + key + ") for the resource (" + this + ")", e);
+      Integer keyInteger = Casts.cast(key.toString(), Integer.class);
+      attribute = Attribute.create(keyInteger.toString(), Origin.DEFAULT)
+        .setPlainValue(value);
+    } catch (CastException e) {
+      //
     }
 
+    /**
+     * Normal attribute
+     */
+    if (attribute == null) {
+      DataPathAttribute dataPathAttribute;
+      try {
+        dataPathAttribute = Casts.cast(key, DataPathAttribute.class);
+      } catch (CastException e) {
+        String expectedKeyAsString = getAttributes().stream()
+          .map(Attribute::getAttributeMetadata)
+          .filter(AttributeEnum::getIsUpdatable)
+          .map(AttributeEnum::getKeyNormalized)
+          .sorted()
+          .map(KeyNormalizer::toCliLongOptionName)
+          .collect(Collectors.joining(", "));
+        throw new IllegalArgumentException("The data path attribute (" + key.toCliLongOptionName() + ") is unknown for the resource (" + this + ", " + getMediaType() + ")" + ". We were expecting one of:" + System.lineSeparator() + expectedKeyAsString);
+      }
+
+      try {
+        attribute = this.getConnection().getTabular().getVault()
+          .createVariableBuilderFromAttribute(dataPathAttribute)
+          .setOrigin(Origin.MANIFEST)
+          .build(value);
+
+      } catch (CastException e) {
+        throw new IllegalArgumentException("The value (" + value + ") is not conform for the common resource attribute (" + dataPathAttribute + "). Error: " + e.getMessage(), e);
+      }
+    }
+    this.addAttribute(attribute);
+    return this;
   }
+
 
   @Override
   public DataPath addAttribute(AttributeEnum key, Object value) {
-
-    try {
-      com.tabulify.conf.Attribute attribute = getConnection().getTabular().createAttribute(key, value);
-      this.addAttribute(attribute);
-      return this;
-    } catch (Exception e) {
-      throw new RuntimeException("Error while creating a variable from an attribute (" + key + ") for the resource (" + this + ")", e);
-    }
-
+    /**
+     * We redirect so that the attribute is checked
+     */
+    return addAttribute(key.getKeyNormalized(), value);
   }
 
-
   /**
-   * Property value are generally given via a {@link DataDef data definition file}
+   * Property value are generally given via a {@link DataDefManifest data definition file}
    *
    * @return the properties value of this table def
    */
   @Override
-  public Set<com.tabulify.conf.Attribute> getAttributes() {
-    return new HashSet<>(variables.values());
+  public Set<Attribute> getAttributes() {
+    return new HashSet<>(attributes.values());
   }
 
 
   @Override
   public DataPath mergeDataPathAttributesFrom(DataPath source) {
-    source.getAttributes().forEach(this::addAttribute);
-    return this;
-  }
-
-
-  /**
-   * @param dataDefPath - the path of a data def file
-   * @return a data path from a data def path
-   * It will create or merge the data path from the data def file
-   * <p>
-   * If the data document already exist in the data store, it will merge, otherwise it will create it.
-   */
-  @Override
-  public DataPath mergeDataDefinitionFromYamlFile(Path dataDefPath) {
-    assert Files.exists(dataDefPath) : "The data definition file path (" + dataDefPath.toAbsolutePath() + " does not exist";
-    assert Files.isRegularFile(dataDefPath) : "The data definition file path (" + dataDefPath.toAbsolutePath() + " does not exist";
-    String fileName = dataDefPath.getFileName().toString();
-    assert fileName.matches("(.*)--(.*).yml") : "The file (" + fileName + ") has not the data def extension (" + DATA_DEF_SUFFIX + ")";
-
-    InputStream input;
-    try {
-      input = Files.newInputStream(dataDefPath);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
-    // Transform the file in properties
-    Yaml yaml = new Yaml(new DefaultTimestampWithoutTimeZoneConstructor(new LoaderOptions()));
-
-    // Every document is one dataDef
-    List<Map<String, Object>> documents = new ArrayList<>();
-    try {
-      for (Object data : yaml.loadAll(input)) {
-        Map<String, Object> document;
-        try {
-          document = Casts.castToSameMap(data, String.class, Object.class);
-        } catch (CastException e) {
-          String message = "A data Def must be in a map format. ";
-          //noinspection ConstantValue
-          if (data.getClass().equals(java.util.ArrayList.class)) {
-            message += "They are in a list format. You should suppress the minus if they are present.";
-          }
-          message += "The Bad Data Def Values are: " + data;
-          throw new RuntimeException(message, e);
-        }
-        documents.add(document);
+    Set<Attribute> attributes = source.getAttributes();
+    for (Attribute attribute : attributes) {
+      if (attribute.isValueProviderValue()) {
+        /**
+         * We don't copy the value provider otherwise
+         * We get the function against the source and not against the target
+         * For example, {@link DataPathAbs} initialize the attribute with the {@link DataPath#getName}
+         */
+        continue;
       }
-    } catch (ScannerException e) {
-      throw new RuntimeException("Error while parsing the yaml file " + dataDefPath + ". Error: \n" + e.getMessage());
-    }
-
-    switch (documents.size()) {
-      case 0:
-        throw new RuntimeException("No data definition was found in the file (" + relativeConnectionPath + "). The file seems to be empty.");
-      case 1:
-
-        Map<String, Object> document = documents.get(0);
-        mergeDataDefinitionFromYamlMap(document);
-
-        break;
-      default:
-        throw new RuntimeException("Too much metadata documents (" + documents.size() + ") found in the file (" + dataDefPath + ") for the dataPath (" + this + ")");
+      this.addAttribute(attribute);
     }
     return this;
   }
 
+
   @Override
-  public DataPath mergeDataDefinitionFromYamlMap(Map<String, ?> document) {
+  public DataPath mergeDataDefinitionFromYamlMap(Map<KeyNormalizer, ?> document) {
 
     List<String> primaryColumns = null;
 
     // Loop through all others properties
-    for (Map.Entry<String, ?> entry : document.entrySet()) {
+    for (Map.Entry<KeyNormalizer, ?> entry : document.entrySet()) {
 
       DataPathAttribute dataPathAttribute;
       try {
         dataPathAttribute = Casts.cast(entry.getKey(), DataPathAttribute.class);
       } catch (Exception e) {
         /**
-         * This is an attribute, not a built-in attribute
+         * This is an attribute, not a common attribute
          */
         this.addAttribute(entry.getKey(), entry.getValue());
         continue;
@@ -558,12 +552,33 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
           }
           this.setLogicalName(logicalName.toString());
           continue;
+        case TABULAR_TYPE:
+          Object tabularType = entry.getValue();
+          if (tabularType == null) {
+            DbLoggers.LOGGER_DB_ENGINE.warning("The yaml key `" + TABULAR_TYPE + "` does not have any value for the data resource (" + this + ")");
+            continue;
+          }
+          try {
+            this.setTabularType(Casts.cast(tabularType, TabularType.class));
+          } catch (CastException e) {
+            throw IllegalArgumentExceptions.createFromMessageWithPossibleValues(
+              "The tabular type value (" + tabularType + ") is not conform",
+              TabularType.class,
+              e
+            );
+          }
+          continue;
+        case MEDIA_TYPE:
+          // To avoid the warning in the default branch below
+          // type should be given at construction time but is part
+          // of the attributes, we know that. This is no error or warning.
+          continue;
         case PRIMARY_COLUMNS:
           Object primaryColumnsValue = entry.getValue();
           if (!(primaryColumnsValue instanceof List)) {
             throw new RuntimeException("The primary columns are not a list but a " + primaryColumnsValue.getClass());
           }
-          primaryColumns = Casts.castToListSafe(primaryColumnsValue, String.class);
+          primaryColumns = Casts.castToNewListSafe(primaryColumnsValue, String.class);
           continue;
         case COLUMNS:
           List<Object> columns;
@@ -575,13 +590,21 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
               DbLoggers.LOGGER_DB_ENGINE.warning("The yaml key `" + COLUMNS + "` does not have any columns definitions for the data resource (" + this + ")");
               continue;
             }
-            columns = Casts.castToListSafe(columnValues, Object.class);
-          } catch (ClassCastException e) {
+            columns = Casts.castToNewList(columnValues, Object.class);
+          } catch (CastException e) {
             String message = "The columns must be in a list format. ";
             message += "They are in the following format:" + (entry.getValue() != null ? entry.getValue().getClass().getSimpleName() : null);
             message += "Bad Columns Values are: " + entry.getValue();
             throw new RuntimeException(message, e);
           }
+          /**
+           * {@link DataPath#getOrCreateRelationDef() Get or create}
+           * and not {@link DataPath#createEmptyRelationDef()}
+           * because it is almost always an additive merge
+           * Example: ie
+           * * enrich will add columns
+           * * csv definition may be not complete
+           */
           RelationDef relationDef = this.getOrCreateRelationDef();
           int columnCount = 0;
           for (Object column : columns) {
@@ -612,24 +635,24 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
               }
 
               /**
-               * List of map
+               * A map of column properties
                */
               Map<String, Object> columnProperties;
               try {
                 columnProperties = Casts.castToSameMap(column, String.class, Object.class);
               } catch (CastException e) {
-                throw new InternalException("String and Object should not throw a cast exception", e);
+                throw new IllegalArgumentException("The expected column properties format should be a map of string/object. It's a " + column.getClass().getSimpleName() + ". Error: " + e.getMessage(), e);
               }
 
               Object columnNameObject = Maps.getPropertyCaseIndependent(columnProperties, ColumnAttribute.NAME.toString());
               if (columnNameObject == null) {
-                throw new RuntimeException("The name property for a column is mandatory and was not found for the column (" + columnCount + ")");
+                throw new IllegalArgumentException("The name property for a column is mandatory and was not found for the column (" + columnCount + ")");
               }
               String columnName;
               try {
                 columnName = (String) columnNameObject;
               } catch (ClassCastException e) {
-                throw new RuntimeException("The name property of the column (" + columnCount + ") is not a string but a " + columnNameObject.getClass().getSimpleName());
+                throw new IllegalArgumentException("The name property of the column (" + columnCount + ") is not a string but a " + columnNameObject.getClass().getSimpleName());
               }
               /**
                * Only one definition by column name
@@ -644,84 +667,141 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
               /**
                * Determination of the type of the column
                */
-              String type = "varchar";
-              Object oType = Maps.getPropertyCaseIndependent(columnProperties, "type");
-              if (oType != null) {
-                type = (String) oType;
+              KeyNormalizer type = SqlDataTypeAnsi.CHARACTER_VARYING.toKeyNormalizer();
+              Object manifestType = Maps.getPropertyCaseIndependent(columnProperties, ColumnAttribute.TYPE.toString());
+              if (manifestType != null) {
+                try {
+                  type = KeyNormalizer.create(manifestType);
+                } catch (CastException e) {
+                  throw new IllegalArgumentException("The type (" + manifestType + ") of the column (" + columnName + ") is not a valid identifier. Error: " + e.getMessage(), e);
+                }
               }
-              SqlDataType sqlDataType = this.getConnection().getSqlDataType(type);
+              Object manifestAnsiType = Maps.getPropertyCaseIndependent(columnProperties, ColumnAttribute.ANSI_TYPE.toString());
+              SqlDataTypeAnsi sqlDataTypeAnsi = null;
+              if (manifestAnsiType != null) {
+                KeyNormalizer typeName;
+                try {
+                  typeName = KeyNormalizer.create(manifestAnsiType.toString());
+                } catch (CastException e) {
+                  throw new IllegalArgumentException("The type (" + manifestAnsiType + ") of the column (" + columnName + ") is not a valid identifier. Error: " + e.getMessage(), e);
+                }
+                SqlDataTypeAnsi.cast(typeName, null);
+              }
+              SqlDataType<?> sqlDataType = this.getConnection().getSqlDataType(type, sqlDataTypeAnsi);
               if (sqlDataType == null) {
-                throw new IllegalStateException("The type (" + type + ") of the column (" + columnName + ") is unknown for the connection (" + this.getConnection() + ")");
+                String sqlNames = this.getConnection().getSqlDataTypes().stream().map(SqlDataType::toKeyNormalizer)
+                  .map(Object::toString)
+                  .sorted()
+                  .collect(Collectors.joining(", "));
+                throw new IllegalStateException("The type (" + type + ") of the column (" + columnName + ") is unknown for the connection (" + this.getConnection() + "). Possible values: " + sqlNames);
               }
 
 
               /**
                * Column building
                */
-              ColumnDef columnDef;
+              ColumnDef<?> columnDef;
               try {
                 columnDef = relationDef.getColumnDef(columnName);
+                // if the type is defined in the manifest, we need to override the actual
+                // we are missing a building system here but yeah
+                if (manifestType != null) {
+                  columnDef = relationDef.createColumn(columnName, sqlDataType)
+                    .setColumnPosition(columnDef.getColumnPosition())
+                    .setNullable(columnDef.isNullable())
+                    .setComment(columnDef.getComment())
+                    .setPrecision(columnDef.getPrecision())
+                    .setScale(columnDef.getScale())
+                    .setIsAutoincrement(columnDef.isAutoincrement())
+                    .setIsGeneratedColumn(columnDef.isGeneratedColumn());
+                }
               } catch (NoColumnException e) {
                 /**
                  * In the case of the text file, all data type are varchar
                  * We are just creating a new column for now
                  */
-                columnDef = relationDef.createColumn(columnName, sqlDataType, sqlDataType.getSqlClass());
+                columnDef = relationDef.createColumn(columnName, sqlDataType);
               }
 
+
               for (Map.Entry<String, Object> columnProperty : columnProperties.entrySet()) {
+                ColumnAttribute columnAttribute;
+                Object value = columnProperty.getValue();
                 try {
-                  ColumnAttribute columnAttribute = Casts.cast(columnProperty.getKey(), ColumnAttribute.class);
-                  switch (columnAttribute) {
-                    case NAME:
-                    case TYPE:
-                      // already done during the creation
-                      break;
-                    case PRECISION:
-                      if (columnDef.getPrecision() == null) {
-                        columnDef.precision((Integer) columnProperty.getValue());
-                      }
-                      break;
-                    case SCALE:
-                      if (columnDef.getScale() == null) {
-                        columnDef.scale((Integer) columnProperty.getValue());
-                      }
-                      break;
-                    case COMMENT:
-                      if (columnDef.getComment() == null) {
-                        columnDef.setComment((String) columnProperty.getValue());
-                      }
-                      break;
-                    case NULLABLE:
-                      if (columnDef.isNullable() == null) {
-                        columnDef.setNullable(Boolean.valueOf((String) columnProperty.getValue()));
-                      }
-                      break;
-                    case POSITION:
-                      columnDef.setColumnPosition(Casts.cast(columnProperty.getValue(), Integer.class));
-                      break;
-                    default:
-                      DbLoggers.LOGGER_DB_ENGINE.warning("The column attribute (" + columnAttribute + ") is not an attribute that can be set on the data path (" + this + ")");
-                      break;
-                  }
+                  columnAttribute = Casts.cast(columnProperty.getKey(), ColumnAttribute.class);
                 } catch (CastException arg) {
                   /**
                    * This is not a built-in attribute
                    */
-                  columnDef.setVariable(columnProperty.getKey(), columnProperty.getValue());
+                  columnDef.setVariable(columnProperty.getKey(), value);
+                  continue;
                 }
+                switch (columnAttribute) {
+                  case NAME:
+                  case TYPE:
+                  case ANSI_TYPE:
+                    // already done during the creation
+                    break;
+                  case PRECISION:
+                    if (columnDef.getPrecision() == 0) {
+                      try {
+                        columnDef.setPrecision(Casts.cast(value, Integer.class));
+                      } catch (CastException e) {
+                        throw new IllegalArgumentException("The precision value (" + value + ") is not a integer. Error: " + e.getMessage(), e);
+                      }
+                    }
+                    break;
+                  case SCALE:
+                    if (columnDef.getScale() == 0) {
+                      try {
+                        columnDef.setScale(Casts.cast(value, Integer.class));
+                      } catch (CastException e) {
+                        throw new IllegalArgumentException("The scale value (" + value + ") is not a integer. Error: " + e.getMessage(), e);
+                      }
+                    }
+                    break;
+                  case COMMENT:
+                    if (columnDef.getComment() == null) {
+                      columnDef.setComment(String.valueOf(value));
+                    }
+                    break;
+                  case NULLABLE:
+                    if (columnDef.isNullable() == null) {
+                      try {
+                        columnDef.setNullable(Casts.cast(value, Boolean.class));
+                      } catch (CastException e) {
+                        throw new IllegalArgumentException("Nullable value (" + value + ") is not a boolean. Error: " + e.getMessage(), e);
+                      }
+                    }
+                    break;
+                  case POSITION:
+                    try {
+                      columnDef.setColumnPosition(Casts.cast(value, Integer.class));
+                    } catch (CastException e) {
+                      throw new IllegalArgumentException("Column position value (" + value + ") is not a integer. Error: " + e.getMessage(), e);
+                    }
+                    break;
+                  default:
+                    throw new MissingSwitchBranch("columnAttribute", columnAttribute);
+                }
+
               }
-            } catch (ClassCastException e) {
-              String message = Strings.createMultiLineFromStrings(
-                "The properties of the column (" + columnCount + ") from the data def (" + this + ") must be given in a map format. ",
-                "They are in the following format: " + column.getClass().getSimpleName(),
-                "Bad Columns Properties Values are: " + column).toString();
-              throw new RuntimeException(message, e);
+            } catch (Exception e) {
+              throw ExceptionWrapper.builder(e,
+                  "Error on a property of the column (" + columnCount + ") from the data " +
+                    "resource (" + this + ")")
+                .setPosition(ExceptionWrapper.ContextPosition.FIRST)
+                .buildAsRuntimeException();
             }
           }
           break;
+        case COMMENT:
+          this.setComment((String) entry.getValue());
+          break;
         default:
-          DbLoggers.LOGGER_DB_ENGINE.warning("The data path attribute (" + dataPathAttribute + ") is not an attribute that can be modified on the data path (" + this + ")");
+          if (this.getConnection().getTabular().isStrictExecution()) {
+            throw new StrictException("The data path attribute (" + dataPathAttribute + ") is not an attribute that can be modified on the data path (" + this + ")");
+          }
           break;
       }
 
@@ -746,23 +826,23 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
     return this;
   }
 
+
   @Override
-  public DataPath setDataAttributes(Map<String, ?> dataAttributes) {
-    dataAttributes.forEach(this::addAttribute);
-    return this;
+  public DataPath mergeDataDefinitionFrom(DataPath sourceDataPath) {
+    return mergeDataDefinitionFrom(sourceDataPath, null);
   }
 
   @Override
-  public DataPath mergeDataDefinitionFrom(DataPath mergeFrom) {
-    this.mergeDataPathAttributesFrom(mergeFrom);
-    this.getOrCreateRelationDef().mergeDataDef(mergeFrom);
+  public DataPath mergeDataDefinitionFrom(DataPath sourceDataPath, Map<DataPath, DataPath> sourceTargetMap) {
+    this.mergeDataPathAttributesFrom(sourceDataPath);
+    this.getOrCreateRelationDef().mergeDataDef(sourceDataPath, sourceTargetMap);
     return this;
   }
 
   @Override
   public DataPath setLogicalName(String logicalName) {
     try {
-      com.tabulify.conf.Attribute attribute = getConnection().getTabular().createAttribute(LOGICAL_NAME, logicalName);
+      Attribute attribute = getConnection().getTabular().getVault().createAttribute(LOGICAL_NAME, logicalName, Origin.DEFAULT);
       this.addAttribute(attribute);
       return this;
     } catch (Exception e) {
@@ -772,54 +852,53 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
   }
 
   @Override
-  public DataPath toAttributesDataPath() {
-
-    RelationDef variablesDataPath = this.getConnection().getTabular().getMemoryDataStore()
-      .getDataPath(this.getName() + "_variable")
-      .setDescription("Information about the data resource (" + this + ")")
-      .getOrCreateRelationDef()
-      .addColumn(KeyNormalizer.createSafe(AttributeProperties.ATTRIBUTE).toSqlCaseSafe())
-      .addColumn(KeyNormalizer.createSafe(AttributeProperties.VALUE).toSqlCaseSafe())
-      .addColumn(KeyNormalizer.createSafe(AttributeProperties.DESCRIPTION).toSqlCaseSafe());
-
-    try (InsertStream insertStream = variablesDataPath.getDataPath().getInsertStream()) {
-      for (com.tabulify.conf.Attribute attribute : this.getAttributes()) {
-        List<Object> row = new ArrayList<>();
-        row.add(KeyNormalizer.createSafe(attribute.getAttributeMetadata().toString()).toCamelCase());
-        row.add(attribute.getValueOrDefaultOrNull());
-        row.add(attribute.getAttributeMetadata().getDescription());
-        insertStream.insert(row);
-      }
-    }
-    return variablesDataPath.getDataPath();
+  public DataPath setTabularType(TabularType tabularType) {
+    this.tabularType = tabularType;
+    return this;
   }
+
 
   @Override
   public InsertStream getInsertStream() {
     /**
      * If the source is not defined, we expect the same structure as the target
      */
-    return getInsertStream(this, TransferProperties.create());
+    return getInsertStream(this, TransferPropertiesSystem.builder().setOperation(TransferOperation.INSERT).build());
   }
 
   @Override
-  public InsertStream getInsertStream(TransferProperties transferProperties) {
+  public InsertStream getInsertStream(TransferPropertiesSystem transferProperties) {
     /**
-     * If the source is not defined, we expect the same structure than the target
+     * If the source is not defined, we expect the same structure as the target
      */
     return getInsertStream(this, transferProperties);
   }
 
   @Override
-  public DataPath addAttribute(com.tabulify.conf.Attribute attribute) {
-    this.variables.put(attribute.getAttributeMetadata().toString(), attribute);
+  public DataPath toAttributesDataPath() {
+
+    DataPath dataPath = this.getConnection().getTabular().getMemoryConnection()
+      .getDataPath(this.getName() + "_variable")
+      .setComment("Information about the data resource (" + this + ")");
+
+    return toAttributesDataPath(dataPath);
+
+  }
+
+  /**
+   * Add a variable.
+   * It makes it possible to create a variable with a {@link Attribute#setValueProvider(Supplier)}
+   */
+  public DataPath addAttribute(Attribute attribute) {
+    AttributeEnum attributeEnum = attribute.getAttributeMetadata();
+    this.attributes.put(KeyNormalizer.createSafe(attributeEnum), attribute);
     /**
      * This conditional is for perf/debug reason, as the {@link #toString()}
      * is pretty expensive (ie the `this` in the string)
      * The problem with this code is that the code in the string gets executed even if the level is not finest
      */
     if (DbLoggers.LOGGER_DB_ENGINE.getLevel().intValue() <= Level.FINEST.intValue()) {
-      DbLoggers.LOGGER_DB_ENGINE.finest("The variable (" + attribute + ") for the resource (" + this + ") was set to the value (" + Strings.createFromObjectNullSafe(attribute.getValueOrDefaultOrNull()) + ")");
+      DbLoggers.LOGGER_DB_ENGINE.finest("The variable (" + attribute + ") for the resource (" + this + ") was set to the value (" + Strings.createFromObjectNullSafe(attribute.getValueOrDefault()) + ")");
     }
     return this;
   }
@@ -831,7 +910,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
    * @return the path for chaining
    */
   public DataPath addVariablesFromEnumAttributeClass(Class<? extends AttributeEnum> enumClass) {
-    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addAttribute(com.tabulify.conf.Attribute.create(c, Origin.DEFAULT)));
+    Arrays.asList(enumClass.getEnumConstants()).forEach(c -> this.addAttribute(Attribute.create(c, Origin.DEFAULT)));
     return this;
   }
 
@@ -840,15 +919,108 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
     return this.mediaType;
   }
 
-  /**
-   * Same as {@link #getAttribute(AttributeEnum)} but without compile exception
-   */
+
   @Override
-  public com.tabulify.conf.Attribute getAttributeSafe(AttributeEnum sqlDataPathAttribute) {
+  public DataPath resolve(String name) {
+    return resolve(name, null);
+  }
+
+  @Override
+  public RelationDef createEmptyRelationDef() {
+
+    this.relationDef = new RelationDefDefault(this);
+    return this.relationDef;
+
+  }
+
+  @Override
+  public Timestamp getAccessTime() {
+    return getAttributeValueIfNotProvider(ACCESS_TIME);
+  }
+
+  @Override
+  public Timestamp getCreationTime() {
+    return getAttributeValueIfNotProvider(CREATION_TIME);
+  }
+
+  /**
+   * Utility function to return an attribute value
+   * if it's not a function to not recurse
+   * System such as memory, just set the value as attribute
+   */
+  private Timestamp getAttributeValueIfNotProvider(DataPathAttribute dataPathAttribute) {
+    // unknown by default
     try {
-      return getAttribute(sqlDataPathAttribute);
+      Attribute attribute = this.getAttribute(dataPathAttribute);
+      if (attribute.isValueProviderValue()) {
+        return null;
+      }
+      return (Timestamp) attribute.getValueOrNull();
     } catch (NoVariableException e) {
-      throw new RuntimeException(e);
+      return null;
     }
   }
+
+
+  @Override
+  public Timestamp getUpdateTime() {
+    return getAttributeValueIfNotProvider(UPDATE_TIME);
+  }
+
+  @Override
+  public List<List<?>> getRecords() {
+    List<List<?>> records = new ArrayList<>();
+    try (SelectStream selectStream = this.getSelectStreamSafe()) {
+      while (selectStream.next()) {
+        records.add(selectStream.getObjects());
+      }
+    }
+    return records;
+  }
+
+  @Override
+  public DataPath execute() {
+    if (this.isRuntime()) {
+      throw new InternalException("The data path (" + this + ", Media Type: " + this.getMediaType() + ") is not yet implemented as self-executable runtime");
+    }
+    throw new IllegalArgumentException("The data path (" + this + ", Media Type: " + this.getMediaType() + ") is not a runtime data path and cannot be executed");
+  }
+
+  @Override
+  public TabularType getTabularType() {
+
+    if (this.tabularType != null) {
+      return this.tabularType;
+    }
+
+    if (isRuntime()) {
+      return TabularType.COMMAND;
+    }
+    return TabularType.DATA;
+
+  }
+
+
+  @Override
+  public SelectStream getSelectStream() throws SelectException {
+
+    if (this.isRuntime()) {
+      /**
+       * Runtime resource should be executed before selecting them
+       * (ie the result of {@link #execute()})
+       * Why? We need the headers and structure parsing
+       * We let the choice of execution to the action/step
+       * Why?
+       * * It's lazy execution
+       * * the info step may choose to show:
+       *   * the runtime info
+       *   * or the result
+       */
+      throw new InternalException("The resource (" + this + ") is a runtime resource. It is virtual, you should execute it and open a select stream on the static result resource, not the runtime resource.");
+    }
+    throw new UnsupportedOperationException("Record iteration over the resource (" + this + "/" + this.getMediaType() + ") is not implemented or not possible.");
+
+  }
+
+
 }

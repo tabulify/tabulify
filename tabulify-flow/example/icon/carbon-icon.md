@@ -22,7 +22,7 @@ update carbon_dictionary set name = REPLACE (name, "--","-");
 ```
   * Download it
 ```bash
-tabli data copy carbon_dictionary@sqlite carbon-dictionary.csv@desktop
+tabul data copy carbon_dictionary@sqlite carbon-dictionary.csv@desktop
 ```
   * Json: Notepad replace (find->replace)
 ```regexp

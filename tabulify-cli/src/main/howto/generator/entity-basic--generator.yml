@@ -1,0 +1,9 @@
+kind: generator
+spec:
+  MaxRecordCount: 10
+  Columns:
+    - name: firstname
+      Type: varchar
+      data-supplier:
+        type: entity
+

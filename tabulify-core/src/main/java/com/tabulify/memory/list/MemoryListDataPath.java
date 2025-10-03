@@ -5,9 +5,10 @@ import com.tabulify.memory.MemoryConnection;
 import com.tabulify.memory.MemoryDataPathAbs;
 import com.tabulify.memory.MemoryDataPathType;
 import com.tabulify.spi.DataPath;
+import com.tabulify.spi.SchemaType;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
-import com.tabulify.transfer.TransferProperties;
+import com.tabulify.transfer.TransferPropertiesSystem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,8 +16,7 @@ import java.util.List;
 public class MemoryListDataPath extends MemoryDataPathAbs {
 
 
-
-  private List<List<Object>> values = new ArrayList<>();
+  private List<List<?>> values = new ArrayList<>();
 
   public MemoryListDataPath(MemoryConnection memoryConnection, String path) {
 
@@ -40,7 +40,7 @@ public class MemoryListDataPath extends MemoryDataPathAbs {
   }
 
   @Override
-  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
+  public InsertStream getInsertStream(DataPath source, TransferPropertiesSystem transferProperties) {
     return new MemoryListInsertStream(this);
   }
 
@@ -49,10 +49,9 @@ public class MemoryListDataPath extends MemoryDataPathAbs {
     this.values = new ArrayList<>();
   }
 
-  public List<List<Object>> getValues() {
+  public List<List<?>> getValues() {
     return values;
   }
-
 
 
   @Override
@@ -70,9 +69,24 @@ public class MemoryListDataPath extends MemoryDataPathAbs {
     return false;
   }
 
+  @SuppressWarnings("RedundantMethodOverride")
+  @Override
+  public SchemaType getSchemaType() {
+    return SchemaType.STRICT;
+  }
+
   @Override
   public Long getSize() {
     return (long) values.size();
+  }
+
+  public void setValues(List<List<?>> values) {
+    this.values = values;
+  }
+
+  public MemoryListDataPath addValues(List<List<?>> values) {
+    this.values.addAll(values);
+    return this;
   }
 
 }

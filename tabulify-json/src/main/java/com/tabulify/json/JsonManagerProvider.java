@@ -1,7 +1,8 @@
 package com.tabulify.json;
 
-import com.tabulify.fs.binary.FsBinaryFileManager;
 import com.tabulify.fs.FsFileManagerProvider;
+import com.tabulify.fs.binary.FsBinaryFileManager;
+import net.bytle.exception.CastException;
 import net.bytle.type.MediaType;
 
 public class JsonManagerProvider extends FsFileManagerProvider {
@@ -11,19 +12,19 @@ public class JsonManagerProvider extends FsFileManagerProvider {
   @Override
   public Boolean accept(MediaType mediaType) {
 
-
-    for (MediaType acceptedMediaType : JsonDataPath.ACCEPTED_MEDIA_TYPES) {
-      if (mediaType.getSubType().equals(acceptedMediaType.getSubType())){
-        return true;
-      }
+    try {
+      JsonMediaType.cast(mediaType);
+      return true;
+    } catch (CastException e) {
+      return false;
     }
-    return false;
+
 
   }
 
   @Override
   public FsBinaryFileManager getFsFileManager() {
-    if (jsonManager == null){
+    if (jsonManager == null) {
       jsonManager = new JsonManagerFs();
     }
     return jsonManager;

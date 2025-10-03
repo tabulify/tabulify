@@ -1,22 +1,58 @@
 package com.tabulify.postgres;
 
 import com.tabulify.jdbc.*;
-import com.tabulify.model.ColumnDef;
-import com.tabulify.model.SqlTypes;
+import com.tabulify.model.*;
+import com.tabulify.spi.DataPath;
+import com.tabulify.transfer.TransferSourceTargetOrder;
+import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
+import net.bytle.exception.NoSchemaException;
+import net.bytle.type.Casts;
 
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.Types;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 public class PostgresDataSystem extends SqlDataSystem {
 
-  protected static final Integer MAX_PRECISION_NUMERIC = 1000;
-  protected static final Integer MAX_SCALE_NUMERIC = 1000;
-  // https://www.postgresql.org/docs/current/datatype-character.html
-  // If specified, the length n must be greater than zero and cannot exceed 10,485,760.
-  public static final Integer MAX_PRECISION_VARCHAR = 10485760;
+  /**
+   * Note that `information_schema.columns` is a high level of pg-attribute
+   * <a href="https://www.postgresql.org/docs/current/catalog-pg-attribute.html">...</a>
+   */
+  public static final String GET_TABLE_COLUMNS_SQL = "SELECT\n" +
+    "    table_schema,\n" +
+    "    table_name,\n" +
+    "    column_name,\n" +
+    "    data_type,\n" +
+    "    character_maximum_length,\n" +
+    "    numeric_precision,\n" +
+    "    numeric_scale,\n" +
+    "    ordinal_position,\n" +
+    "    col_description(pgc.oid, ordinal_position) as column_comment,\n" +
+    "    CASE\n" +
+    "        WHEN column_default LIKE 'nextval%' THEN 'YES'\n" +
+    "        ELSE 'NO'\n" +
+    "        END as is_autoincrement,\n" +
+    "    CASE\n" +
+    "        WHEN is_nullable = 'YES' THEN 1   -- columnNullable\n" +
+    "        WHEN is_nullable = 'NO' THEN 0    -- columnNoNulls\n" +
+    "        ELSE 2                            -- columnNullableUnknown\n" +
+    "        END as nullable\n" +
+    "FROM information_schema.columns isc\n" +
+    "         LEFT JOIN pg_catalog.pg_class pgc ON pgc.relname = isc.table_name\n" +
+    "         LEFT JOIN pg_catalog.pg_namespace pgn ON pgn.oid = pgc.relnamespace\n" +
+    "    AND pgn.nspname = isc.table_schema\n" +
+    "WHERE table_schema = ?\n" +
+    "  AND table_name = ?\n" +
+    "ORDER BY table_schema, table_name, ordinal_position";
+
+  /**
+   * Due to code improvement, retrieving the data directly
+   * from Postgres is no more needed
+   */
+  @SuppressWarnings("FieldCanBeLocal")
+  private final boolean useColumnDriverMeta = true;
 
   public PostgresDataSystem(SqlConnection sqlConnection) {
     super(sqlConnection);
@@ -24,216 +60,213 @@ public class PostgresDataSystem extends SqlDataSystem {
 
 
   @Override
-  protected String createDataTypeStatement(ColumnDef columnDef) {
+  protected String createDataTypeStatement(ColumnDef<?> columnDef) {
     return super.createDataTypeStatement(columnDef);
+  }
+
+
+  /**
+   * The driver returns the aliases
+   * <a href="https://www.postgresql.org/docs/current/datatype.html">...</a>
+   * <a href="https://www.postgresql.org/docs/7.4/datatype.html#DATATYPE-TABLE">...</a>
+   */
+  @Override
+  public void dataTypeBuildingMain(SqlDataTypeManager sqlDataTypeManager) {
+
+    /**
+     * Get the type from the JDBC driver
+     * There is a lot of error.
+     * We could get them from `pg_catalog.pg_type`
+     * but this is not straightforward
+     * We have corrected what we need.
+     * We assume that the name will not change in the future
+     */
+    super.dataTypeBuildingMain(sqlDataTypeManager);
+
+    /**
+     * {@link Connection#createClob()}  is not supported
+     * But it can be easily defined as a synonym to the text type
+     * https://stackoverflow.com/questions/49963618/postgresql-clob-datatype
+     * <p>
+     * Passing a clob to a prepared statement is See{@link org.postgresql.jdbc.PgPreparedStatement#setClob(int, Clob)}
+     * return the alias float4 ...
+     */
+    sqlDataTypeManager.addTypeCodeTypeNameMapEntry(SqlDataTypeAnsi.CLOB, PostgresDataType.TEXT.toKeyNormalizer());
+
+    sqlDataTypeManager.addJavaClassToTypeRelation(String.class, PostgresDataType.CHARACTER_VARYING);
+
+
+    // We got money for double
+    sqlDataTypeManager
+      .addJavaClassToTypeRelation(Double.class, PostgresDataType.DOUBLE_PRECISION);
+
+    /**
+     * Timestamp with timezone has a timestamp type code
+     */
+    sqlDataTypeManager
+      .addTypeCodeTypeNameMapEntry(SqlDataTypeAnsi.TIMESTAMP_WITH_TIME_ZONE, PostgresDataType.TIMESTAMP_WITH_TIME_ZONE);
+    /**
+     * Time with timezone has a time type code
+     */
+    sqlDataTypeManager
+      .addTypeCodeTypeNameMapEntry(SqlDataTypeAnsi.TIME_WITH_TIME_ZONE, PostgresDataType.TIME_WITH_TIME_ZONE);
+
+    /**
+     * A boolean has {@link Types#BIT} type
+     */
+    sqlDataTypeManager
+      .addTypeCodeTypeNameMapEntry(SqlDataTypeAnsi.BOOLEAN, PostgresDataType.BOOLEAN);
+    // bit has a 1 precision by default
+    sqlDataTypeManager.getTypeBuilder(PostgresDataType.BOOLEAN)
+      .setMaxPrecision(0);
+    /**
+     * Postgres has 2 real (real and float4)
+     */
+    sqlDataTypeManager.addJavaClassToTypeRelation(Float.class, PostgresDataType.REAL);
+
   }
 
 
   @Override
   public List<SqlMetaColumn> getMetaColumns(SqlDataPath dataPath) {
-    List<SqlMetaColumn> columnsMeta = super.getMetaColumns(dataPath);
-    columnsMeta.forEach(meta -> {
-      switch (meta.getTypeName()) {
-        case "timestamptz":
-          /**
-           * For whatever reason the driver, return a {@link Types#TIMESTAMP}
-           */
-          meta.setTypeCode(Types.TIMESTAMP_WITH_TIMEZONE);
-          break;
-        case "timetz":
-          /**
-           * For whatever reason the driver, return a {@link Types#TIME}
-           */
-          meta.setTypeCode(Types.TIME_WITH_TIMEZONE);
-          break;
-        case "bool":
-          /**
-           * For whatever reason the driver, return a {@link Types#BIT}
-           */
-          meta.setTypeCode(Types.BOOLEAN);
-          break;
-        case "text":
-          /**
-           * CLOB is not supported, we treat CLOB as text
-           */
-          meta
-            .setTypeCode(Types.CLOB)
-            .setPrecision(null);
-          break;
-        case "json":
-          /**
-           * Json is a special
-           */
-          meta.setTypeCode(SqlTypes.JSON).setPrecision(null);
-          break;
+
+    if (useColumnDriverMeta) {
+      return super.getMetaColumns(dataPath);
+    }
+
+    /**
+     * This code was created because the driver returns `bpchar` as name for a character name
+     * At the time, it fucked up our test, no more since
+     * We still have an inconsistency between the driver type and the column type
+     * How to resolve it is a bit of unknown
+     */
+    List<SqlMetaColumn> sqlMetaColumns = new ArrayList<>();
+    try (
+      PreparedStatement statement = this.getMetaColumnsStatement(dataPath);
+      ResultSet resultSet = statement.executeQuery()
+    ) {
+      while (resultSet.next()) {
+
+        String columnName = resultSet.getString("column_name");
+        SqlMetaColumn meta = SqlMetaColumn.createOf(columnName);
+        sqlMetaColumns.add(meta);
+
+        String dataType = resultSet.getString("data_type");
+        meta.setTypeName(dataType);
+
+        int charMaxLength = resultSet.getInt("character_maximum_length");
+        int numericPrecision = resultSet.getInt("numeric_precision");
+        int precision = Math.max(charMaxLength, numericPrecision);
+
+        meta.setColumnSize(precision);
+
+
+        int numericScale = resultSet.getInt("numeric_scale");
+        meta.setDecimalDigits(numericScale);
+
+        meta.setIsNullable(resultSet.getBoolean("nullable"));
+        meta.setIsAutoIncrement(resultSet.getBoolean("is_autoincrement"));
+        meta.setComment(resultSet.getString("column_comment"));
+        meta.setPosition(resultSet.getInt("ordinal_position"));
+
       }
-      switch (meta.getTypeCode()) {
-        case Types.NUMERIC:
-          /**
-           * The driver returns 131089
-           */
-          if (meta.getPrecision() > MAX_PRECISION_NUMERIC) {
-            meta.setPrecision(MAX_PRECISION_NUMERIC);
-          }
-          if (meta.getScale() > MAX_SCALE_NUMERIC) {
-            meta.setScale(MAX_SCALE_NUMERIC);
-          }
-        case Types.CHAR:
-        case Types.NCHAR:
-        case Types.VARCHAR:
-        case Types.NVARCHAR:
-          /**
-           * The driver returns 2147483647
-           */
-          if (meta.getPrecision() > MAX_PRECISION_VARCHAR) {
-            meta.setPrecision(MAX_PRECISION_VARCHAR);
-          }
-      }
-    });
-    return columnsMeta;
+    } catch (SQLException e) {
+      // we don't pass a bigger message to give any context
+      // because the data path may be created temporarily
+      // The user would see:
+      // Error trying to retrieve the meta from ("tmp_tabulify_4fed3943bb14f96aeff44b6d13c4f253"@sqlite)
+      // We let the caller gives the good context
+      throw new IllegalStateException(e.getMessage(), e);
+    }
+    return sqlMetaColumns;
+  }
+
+  private PreparedStatement getMetaColumnsStatement(SqlDataPath dataPath) throws SQLException {
+    PreparedStatement statement = dataPath.getConnection().getCurrentJdbcConnection().prepareStatement(GET_TABLE_COLUMNS_SQL);
+    try {
+      statement.setString(1, dataPath.getSchema().getName());
+    } catch (NoSchemaException e) {
+      throw new InternalException("Postgres has a schema, should not fire", e);
+    }
+    statement.setString(2, dataPath.getName());
+    return statement;
+  }
+
+  @Override
+  public Long getSize(DataPath dataPath) {
+    SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
+    /**
+     * Table only for now
+     */
+    if (!
+      (
+        sqlDataPath.getMediaType() == SqlMediaType.TABLE ||
+          sqlDataPath.getMediaType() == SqlMediaType.SYSTEM_TABLE
+      )) {
+      return -1L;
+    }
+    // https://www.postgresql.org/docs/current/functions-admin.html
+    // pg_total_relation_size operate on tables or indexes
+    SqlRequest sqlRequest = SqlRequest.builder()
+      .setSql(this.getConnection(), "select pg_total_relation_size('" + sqlDataPath.toSqlStringPath() + "')")
+      .build();
+    List<List<?>> records = sqlRequest.execute().getRecords();
+    if (records.isEmpty()) {
+      // may not exist
+      return -1L;
+    }
+    /**
+     * {@link SqlDataTypeAnsi#BIGINT} ie Long
+     */
+    Object sizeAsObject = records.get(0).get(0);
+    try {
+      return Casts.cast(sizeAsObject, Long.class);
+    } catch (CastException e) {
+      throw new InternalException("The returned size of the resource (" + dataPath + ") could not be cast to a long. Error:" + e.getMessage(), e);
+    }
+  }
+
+
+  @Override
+  public Set<SqlDataTypeVendor> getSqlDataTypeVendors() {
+    return Set.of(PostgresDataType.values());
+  }
+
+  @Override
+  public String createUpsertMergeStatementWithParameters(TransferSourceTargetOrder transferSourceTarget) {
+    return createUpsertStatementUtilityValuesPartBefore(transferSourceTarget) +
+      createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, true, false) +
+      createUpsertStatementUtilityValuesPartAfter(transferSourceTarget);
   }
 
   /**
-   * The driver returns the alias
-   * <a href="https://www.postgresql.org/docs/7.4/datatype.html#DATATYPE-TABLE">...</a>
-   *
+   * Create upsert from values statement
    */
   @Override
-  public Map<Integer, SqlMetaDataType> getMetaDataTypes() {
-
-    Map<Integer, SqlMetaDataType> sqlDataTypes = super.getMetaDataTypes();
-
-    // in place of bpchar ("blank-padded char", the internal name of the character data type)
-    sqlDataTypes.computeIfAbsent(Types.CHAR, SqlMetaDataType::new)
-      .setSqlName("char")
-      .setDefaultPrecision(1)
-      .setMaxPrecision(MAX_PRECISION_VARCHAR);
-
-    // the precision of the driver was not the same than taken from the meta (10485760)
-    sqlDataTypes.computeIfAbsent(Types.VARCHAR, SqlMetaDataType::new)
-      .setMaxPrecision(MAX_PRECISION_VARCHAR);
-
-
-    /**
-     * {@link Connection#createClob()}  is not supported
-     *
-     * but to pass a clob to a prepared statement is See{@link org.postgresql.jdbc.PgPreparedStatement#setClob(int, Clob)}
-     *
-     * The driver return the alias float4
-     *
-     * Binary (blob) are with the type oid
-     * https://www.postgresql.org/docs/7.1/jdbc-lo.html
-     */
-    sqlDataTypes.computeIfAbsent(Types.CLOB, SqlMetaDataType::new)
-      .setSqlName("text")
-      .setDriverTypeCode(Types.VARCHAR)
-      .setSqlJavaClazz(String.class);
-
-    /**
-     * Unicode character strings
-     * All character string are unicode in Postgres
-     * See https://stackoverflow.com/questions/1245217/what-is-the-postgresql-equivalent-to-sql-server-nvarchar
-     * NVARCHAR = VARCHAR then
-     */
-    sqlDataTypes.computeIfAbsent(Types.NVARCHAR, SqlMetaDataType::new)
-      .setSqlName("varchar")
-      .setDriverTypeCode(Types.VARCHAR)
-      .setMaxPrecision(MAX_PRECISION_VARCHAR)
-      .setSqlJavaClazz(String.class);
-
-    sqlDataTypes.computeIfAbsent(Types.NCHAR, SqlMetaDataType::new)
-      .setSqlName("char")
-      .setDriverTypeCode(Types.CHAR)
-      .setMaxPrecision(MAX_PRECISION_VARCHAR)
-      .setSqlJavaClazz(String.class);
-
-    // The driver return serial for integer
-    sqlDataTypes.computeIfAbsent(Types.INTEGER, SqlMetaDataType::new)
-      .setSqlName("integer")
-      .setAutoIncrement(false);
-
-    // The driver return oid for bigint
-    sqlDataTypes.computeIfAbsent(Types.BIGINT, SqlMetaDataType::new)
-      .setSqlName("bigint")
-      .setAutoIncrement(false);
-
-    // The driver return the alias int2
-    sqlDataTypes.computeIfAbsent(Types.SMALLINT, SqlMetaDataType::new)
-      .setSqlName("smallint")
-      .setAutoIncrement(false);
-
-    // From https://www.postgresql.org/docs/13/datatype-numeric.html
-    // the driver return 1000
-    sqlDataTypes.computeIfAbsent(Types.NUMERIC, SqlMetaDataType::new)
-      .setMaxPrecision(MAX_PRECISION_NUMERIC)
-      .setMaximumScale(MAX_PRECISION_NUMERIC);
-
-    // Alias name for numeric
-    // https://www.postgresql.org/docs/7.4/datatype.html#DATATYPE-TABLE
-    sqlDataTypes.computeIfAbsent(Types.DECIMAL, s -> sqlDataTypes.get(Types.NUMERIC));
-
-    // From https://www.postgresql.org/docs/13/datatype-numeric.html
-    // the driver return the alias float4
-    sqlDataTypes.computeIfAbsent(Types.REAL, SqlMetaDataType::new)
-      .setSqlName("real")
-      .setMaximumScale(16383);
-
-    // Alias for real
-    // https://www.postgresql.org/docs/7.4/datatype.html#DATATYPE-TABLE
-    sqlDataTypes.computeIfAbsent(Types.FLOAT, s -> sqlDataTypes.get(Types.REAL));
-
-    // This is a "double precision" floating point number which supports 15 digits of mantissa.
-    // Driver was returning money
-    sqlDataTypes.computeIfAbsent(Types.DOUBLE, SqlMetaDataType::new)
-      .setSqlName("double precision");
-
-    // https://www.postgresql.org/docs/9.1/datatype-datetime.html
-    // This is a "timestamp" (ie without timezone)
-    // Driver was returning timestamptz (ie with tz)
-    sqlDataTypes.computeIfAbsent(Types.TIMESTAMP, SqlMetaDataType::new)
-      .setSqlName("timestamp")
-      .setMaxPrecision(6);
-
-    // https://www.postgresql.org/docs/9.1/datatype-datetime.html
-    // Postgres expect the sql name to be lowercase
-    sqlDataTypes.computeIfAbsent(Types.TIMESTAMP_WITH_TIMEZONE, SqlMetaDataType::new)
-      .setSqlName("timestamp with time zone")
-      .setMaxPrecision(6);
-
-    // https://www.postgresql.org/docs/9.1/datatype-datetime.html
-    // returns timetz
-    sqlDataTypes.computeIfAbsent(Types.TIME, SqlMetaDataType::new)
-      .setSqlName("time")
-      .setMaxPrecision(6);
-
-    // https://www.postgresql.org/docs/9.1/datatype-datetime.html
-    // Postgres expect the sql name to be lowercase and there was no maximum defined
-    sqlDataTypes.computeIfAbsent(Types.TIME_WITH_TIMEZONE, SqlMetaDataType::new)
-      .setSqlName("time with time zone")
-      .setMaxPrecision(6);
-
-    // https://www.postgresql.org/docs/9.1/datatype-boolean.html
-    // Postgres expect the sql name to be lowercase
-    sqlDataTypes.computeIfAbsent(Types.BOOLEAN, SqlMetaDataType::new)
-      .setSqlName("boolean");
-
-    /**
-     * https://www.postgresql.org/docs/13/datatype-json.html
-     * JSON as type is also working but we just follow the lowercase rule of postgres
-     *
-     * In the documentation, they talk about
-     * a {@link org.postgresql.util.PGobject}
-     * but a string for json is working
-     */
-    sqlDataTypes.computeIfAbsent(SqlTypes.JSON, SqlMetaDataType::new)
-      .setSqlName("json")
-      .setSqlJavaClazz(String.class)
-      .setDriverTypeCode(Types.OTHER);
-
-
-    return sqlDataTypes;
-
+  public String createUpsertMergeStatementWithPrintfExpressions(TransferSourceTargetOrder transferSourceTarget) {
+    return createUpsertStatementUtilityValuesPartBefore(transferSourceTarget) +
+      createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, false, false) +
+      createUpsertStatementUtilityValuesPartAfter(transferSourceTarget);
   }
 
-
+  @Override
+  public SqlTypeKeyUniqueIdentifier getSqlTypeKeyUniqueIdentifier() {
+    /**
+     * Type code bug
+     * JSONB and JSON returns sometimes {@link java.sql.Types#STRUCT}, sometimes {@link java.sql.Types#OTHER}
+     *
+     * Due to:
+     * SELECT typtype
+     * FROM pg_catalog.pg_type
+     * where typname= 'jsonb'
+     * In the driver, we got, b and c
+     * b is OTHER (1111) and c is STRUCT (2002)
+     * <p>
+     * Query:
+     * https://github.com/pgjdbc/pgjdbc/blob/1566eed0caeb26108f9df1d28255538767b7676f/pgjdbc/src/main/java/org/postgresql/jdbc/TypeInfoCache.java#L237
+     * typtype to jdbc code
+     * https://github.com/pgjdbc/pgjdbc/blob/release/42.7.x/pgjdbc/src/main/java/org/postgresql/jdbc/TypeInfoCache.java#L265
+     */
+    return SqlTypeKeyUniqueIdentifier.NAME_ONLY;
+  }
 }

@@ -1,0 +1,9 @@
+kind: command
+spec:
+  # the runtime data uri
+  data-uri: (command/hello-world@howto)@tmp
+  # The data definition (attributes)
+  data-def:
+    # A list of arguments passed to the command
+    arguments:
+      - Bar # The first argument, the name

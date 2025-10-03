@@ -1,17 +1,18 @@
 package com.tabulify.excel;
 
+import com.tabulify.conf.Attribute;
 import com.tabulify.fs.FsConnection;
+import com.tabulify.fs.FsDataPath;
 import com.tabulify.fs.binary.FsBinaryDataPath;
 import com.tabulify.model.RelationDef;
 import com.tabulify.model.RelationDefDefault;
+import com.tabulify.model.SqlDataTypeAnsi;
 import com.tabulify.spi.DataPath;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
-import com.tabulify.transfer.TransferProperties;
+import com.tabulify.transfer.TransferPropertiesSystem;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
-import com.tabulify.conf.Attribute;
 import org.apache.commons.collections4.bidimap.TreeBidiMap;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.ss.usermodel.Cell;
@@ -23,15 +24,18 @@ import java.util.Map;
 public class ExcelDataPath extends FsBinaryDataPath {
 
 
-
   private ExcelSheet excelSheet;
 
   public ExcelDataPath(FsConnection fsConnection, Path path) {
-    super(fsConnection, path, ExcelManagerProvider.getMediaTye(path));
+    super(fsConnection, path, ExcelMediaType.castFromPath(path));
 
     this.addVariablesFromEnumAttributeClass(ExcelDataPathAttribute.class);
   }
 
+
+  public ExcelDataPath(FsDataPath fsDataPath) {
+    this(fsDataPath.getConnection(), fsDataPath.getNioPath());
+  }
 
 
   @Override
@@ -39,38 +43,43 @@ public class ExcelDataPath extends FsBinaryDataPath {
     if (this.relationDef == null) {
 
       this.relationDef = new RelationDefDefault(this);
-      if (!Files.exists(this.getNioPath())) {
+      if (!Files.exists(this.getAbsoluteNioPath())) {
         return this.relationDef;
       }
       this.excelSheet = this.getExcelSheet(PackageAccess.READ);
 
 
-      ExcelResultSet excelResultSet = new ExcelResultSet(this.excelSheet);
-      TreeBidiMap<String, Integer> headerNames = excelResultSet.getHeaderNames();
-      for (Map.Entry<Integer, Cell> type : excelResultSet.getColumnTypes().entrySet()) {
-        Integer columnId = type.getKey();
-        Integer typeCode = ExcelSheets.toSqlType(type.getValue());
-        String columnName = "col" + columnId;
-        if (headerNames != null) {
-          columnName = headerNames.getKey(columnId);
+      try (ExcelResultSet excelResultSet = new ExcelResultSet(this.excelSheet)) {
+        TreeBidiMap<String, Integer> headerNames = excelResultSet.getHeaderNames();
+        for (Map.Entry<Integer, Cell> type : excelResultSet.getHeaderColumnTypes().entrySet()) {
+          Integer columnId = type.getKey();
+          SqlDataTypeAnsi typeCode = ExcelSheets.toSqlType(type.getValue());
+          String columnName = "col" + columnId;
+          if (headerNames != null) {
+            columnName = headerNames.getKey(columnId);
+          }
+          this.relationDef.addColumn(columnName, typeCode);
         }
-        this.relationDef.addColumn(columnName, typeCode);
       }
 
     }
     return this.relationDef;
   }
 
+
   /**
-   * A internal function to build the  Excel result set only once lazily
+   * An internal function to build the  Excel result set only once lazily
    *
    * @param packageAccess - the package access if important (if not read, it will write and mess up with it)
    * @return the Excel result set
    */
   protected ExcelSheet getExcelSheet(PackageAccess packageAccess) {
     if (excelSheet == null) {
-      this.excelSheet = ExcelSheet.config(this.getNioPath(), packageAccess)
+      this.excelSheet = ExcelSheet
+        .config(this.getAbsoluteNioPath(), packageAccess)
         .setHeaderId(getHeaderRowId())
+        .setTimestampFormat(getTimestampFormat())
+        .setDateFormat(getDateFormat())
         .setSheetName(getSheetName())
         .setDataPath(this)
         .build();
@@ -78,11 +87,20 @@ public class ExcelDataPath extends FsBinaryDataPath {
     return excelSheet;
   }
 
-  private String getDefaultDateFormat() {
+  private String getTimestampFormat() {
+    try {
+      Attribute attribute = this.getAttribute(ExcelDataPathAttribute.TIMESTAMP_FORMAT);
+      return (String) attribute.getValueOrDefault();
+    } catch (NoVariableException e) {
+      throw new InternalException("The TIMESTAMP_FORMAT has already a default, this should not happen", e);
+    }
+  }
+
+  private String getDateFormat() {
     try {
       Attribute attribute = this.getAttribute(ExcelDataPathAttribute.DATE_FORMAT);
       return (String) attribute.getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+    } catch (NoVariableException e) {
       throw new InternalException("The DATE_FORMAT has already a default, this should not happen", e);
     }
   }
@@ -95,7 +113,7 @@ public class ExcelDataPath extends FsBinaryDataPath {
     try {
       Attribute attribute = this.getAttribute(ExcelDataPathAttribute.HEADER_ROW_ID);
       return (int) attribute.getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+    } catch (NoVariableException e) {
       throw new InternalException("The HEADER_ROW_ID has already a default, this should not happen", e);
     }
 
@@ -109,7 +127,7 @@ public class ExcelDataPath extends FsBinaryDataPath {
 
     try {
       return (String) this.getAttribute(ExcelDataPathAttribute.SHEET_NAME).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+    } catch (NoVariableException e) {
       return null;
     }
 
@@ -146,7 +164,7 @@ public class ExcelDataPath extends FsBinaryDataPath {
   }
 
   @Override
-  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
+  public InsertStream getInsertStream(DataPath source, TransferPropertiesSystem transferProperties) {
     return new ExcelInsertStream(this, transferProperties);
   }
 

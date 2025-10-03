@@ -47,7 +47,7 @@ public class SqlMetaForeignKey {
   public static List<SqlMetaForeignKey> getForeignKeyMetaFromDriverResultSet(ResultSet resultSet) throws SQLException {
 
 
-    Map<SqlMetaForeignKey,SqlMetaForeignKey> fkDatas = new HashMap<>();
+    Map<SqlMetaForeignKey, SqlMetaForeignKey> fkDatas = new HashMap<>();
 
     // The column names of the fkresult set
     while (resultSet.next()) {
@@ -66,9 +66,22 @@ public class SqlMetaForeignKey {
       //  ---- Column seq for FK and PK
       short col_key_seq = resultSet.getShort("KEY_SEQ");
 
+      /**
+       * Why o why?
+       * MySql skip the schema
+       */
+      if (fkTableCatalogName != null && fkTableSchemaName == null) {
+        fkTableSchemaName = fkTableCatalogName;
+        fkTableCatalogName = null;
+      }
+      if (pkTableCatalogName != null && pkTableSchemaName == null) {
+        pkTableSchemaName = pkTableCatalogName;
+        pkTableCatalogName = null;
+      }
+
       SqlMetaForeignKey sqlMetaForeignKey = new SqlMetaForeignKey(pkTableCatalogName, pkTableSchemaName, pkTableName, fkTableCatalogName, fkTableSchemaName, fkTableName, fkName);
-      sqlMetaForeignKey = fkDatas.computeIfAbsent(sqlMetaForeignKey,sqlMetaForeignKey1 -> sqlMetaForeignKey1);
-      sqlMetaForeignKey.addColumnMapping(col_key_seq,pkTableColumnName,fkTableColumnName);
+      sqlMetaForeignKey = fkDatas.computeIfAbsent(sqlMetaForeignKey, sqlMetaForeignKey1 -> sqlMetaForeignKey1);
+      sqlMetaForeignKey.addColumnMapping(col_key_seq, pkTableColumnName, fkTableColumnName);
 
     }
     return new ArrayList<>(fkDatas.values());

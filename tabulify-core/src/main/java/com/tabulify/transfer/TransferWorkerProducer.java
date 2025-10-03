@@ -15,11 +15,10 @@ public class TransferWorkerProducer implements Runnable {
   private final DataPath sourceDataPath;
   private final DataPath buffer;
   private final TransferListenerStream transferListenerStream;
-  private final TransferProperties transferProperties;
+  private final TransferPropertiesSystem transferProperties;
 
 
-
-  public TransferWorkerProducer(TransferSourceTarget transferSourceTarget, TransferWorkerMetricsViewer transferWorkerMetricsViewer) {
+  public TransferWorkerProducer(TransferSourceTargetOrder transferSourceTarget, TransferWorkerMetricsViewer transferWorkerMetricsViewer) {
 
     this.sourceDataPath = transferSourceTarget.getSourceDataPath();
     this.buffer = transferSourceTarget.getTargetDataPath();

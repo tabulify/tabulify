@@ -1,5 +1,6 @@
 package com.tabulify.fs.textfile;
 
+import com.tabulify.model.ColumnDef;
 import com.tabulify.model.RelationDef;
 import com.tabulify.stream.SelectStreamAbs;
 import net.bytle.exception.NoColumnException;
@@ -177,9 +178,17 @@ public class FsTextSelectStream extends SelectStreamAbs {
   public void close() {
     try {
       bufferedReader.close();
+      this.isClosed = true;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private boolean isClosed = false;
+
+  @Override
+  public boolean isClosed() {
+    return this.isClosed;
   }
 
   @Override
@@ -211,14 +220,14 @@ public class FsTextSelectStream extends SelectStreamAbs {
 
 
   @Override
-  public long getRow() {
+  public long getRecordId() {
     return recordNumberInTextFile;
   }
 
 
   @Override
-  public Object getObject(int columnIndex) {
-    return safeGet(columnIndex);
+  public Object getObject(ColumnDef columnDef) {
+    return safeGet(columnDef.getColumnPosition());
   }
 
   /**
@@ -235,18 +244,6 @@ public class FsTextSelectStream extends SelectStreamAbs {
     return relationDef;
   }
 
-
-  @Override
-  public Double getDouble(int columnIndex) {
-
-    String s = safeGet(columnIndex);
-    if (s == null) {
-      return null;
-    } else {
-      return Double.parseDouble(s);
-    }
-
-  }
 
   @Override
   public Clob getClob(int columnIndex) {
@@ -267,7 +264,7 @@ public class FsTextSelectStream extends SelectStreamAbs {
   }
 
   @Override
-  public List<String> getObjects() {
+  public List<Object> getObjects() {
     return Collections.singletonList(record);
   }
 

@@ -1,6 +1,7 @@
 package com.tabulify.model;
 
 import com.tabulify.DbLoggers;
+import net.bytle.exception.InternalException;
 import net.bytle.exception.NoColumnException;
 import net.bytle.type.Arrayss;
 
@@ -10,7 +11,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * A foreign key is a constraint definition
+ * A foreign key is a constraint definition,
  * but it's basically the definition of relation between two tables
  * * from a column(s)
  * * and the columns of the (foreign) primary key
@@ -30,7 +31,7 @@ public class ForeignKeyDef implements Comparable<ForeignKeyDef>, Constraint {
 
   // The list of column
   // Order is important
-  private final List<ColumnDef> columnDefs;
+  private final List<ColumnDef<?>> columnDefs;
   // The foreign primary key
   private final PrimaryKeyDef foreignPrimaryKey;
   // The data def
@@ -64,7 +65,7 @@ public class ForeignKeyDef implements Comparable<ForeignKeyDef>, Constraint {
     if (primaryKeyDef.getColumns().size() != columnNames.length) {
       final String msg = "The foreign primary key (" + primaryKeyDef + ") has (" + primaryKeyDef.getColumns().size() + ") columns and we got only (" + columnNames.length + ") columns from the argument (" + Arrayss.toJoinedStringWithComma(columnNames) + ").";
       DbLoggers.LOGGER_DB_ENGINE.severe(msg);
-      throw new RuntimeException(msg);
+      throw new InternalException(msg);
     }
 
     // Finally
@@ -102,7 +103,7 @@ public class ForeignKeyDef implements Comparable<ForeignKeyDef>, Constraint {
     return new ForeignKeyDef(relationDef, primaryKeyDef, columnNames);
   }
 
-  public static ForeignKeyDef createOf(RelationDef relationDef, PrimaryKeyDef primaryKeyDef, ColumnDef... columnDefs) {
+  public static ForeignKeyDef createOf(RelationDef relationDef, PrimaryKeyDef primaryKeyDef, ColumnDef<?>... columnDefs) {
     return createOf(relationDef, primaryKeyDef, Arrays.stream(columnDefs).map(ColumnDef::getColumnName).toArray(String[]::new));
   }
 
@@ -113,7 +114,7 @@ public class ForeignKeyDef implements Comparable<ForeignKeyDef>, Constraint {
   /**
    * The name may be null
    * See
-   * https://docs.oracle.com/javase/7/docs/api/java/sql/DatabaseMetaData.html#getImportedKeys(java.lang.String,%20java.lang.String,%20java.lang.String)
+   * <a href="https://docs.oracle.com/javase/7/docs/api/java/sql/DatabaseMetaData.html#getImportedKeys(java.lang.String,%20java.lang.String,%20java.lang.String)">...</a>
    *
    * @return the name of the fk
    */
@@ -122,7 +123,7 @@ public class ForeignKeyDef implements Comparable<ForeignKeyDef>, Constraint {
   }
 
 
-  public List<ColumnDef> getChildColumns() {
+  public List<ColumnDef<?>> getChildColumns() {
     return columnDefs;
   }
 
@@ -161,6 +162,11 @@ public class ForeignKeyDef implements Comparable<ForeignKeyDef>, Constraint {
   @Override
   public RelationDef getRelationDef() {
     return this.relationDef;
+  }
+
+  @Override
+  public ConstraintType getConstraintType() {
+    return ConstraintType.FOREIGN_KEY;
   }
 
   @Override

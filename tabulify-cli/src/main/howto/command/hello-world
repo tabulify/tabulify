@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# First argument is the name and default to "world" if not provided
+name=${1:-World}
+
+# Output the greeting
+echo "Hello $name"

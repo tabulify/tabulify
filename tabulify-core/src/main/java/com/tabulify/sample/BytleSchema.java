@@ -1,10 +1,11 @@
 package com.tabulify.sample;
 
 import com.tabulify.connection.Connection;
+import com.tabulify.model.PrimaryKeyDef;
+import com.tabulify.model.SqlDataTypeAnsi;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.Tabulars;
 
-import java.sql.Types;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -68,10 +69,10 @@ public class BytleSchema implements SchemaSample {
     // Dim Cat Table
     final DataPath catTable = connection.getDataPath(TABLE_CATEGORY_NAME);
     bytleTables.put(TABLE_CATEGORY_NAME, catTable);
-    catTable.createRelationDef()
-      .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
-      .addColumn(COLUMN_CATEGORY_DESC_NAME, Types.VARCHAR, 30)
-      .addColumn(COLUMN_CATEGORY_LOAD_TIMESTAMP, Types.TIMESTAMP)
+    catTable.createEmptyRelationDef()
+      .addColumn(COLUMN_CATEGORY_ID, SqlDataTypeAnsi.INTEGER)
+      .addColumn(COLUMN_CATEGORY_DESC_NAME, SqlDataTypeAnsi.CHARACTER_VARYING, 30)
+      .addColumn(COLUMN_CATEGORY_LOAD_TIMESTAMP, SqlDataTypeAnsi.TIMESTAMP)
       .setPrimaryKey(COLUMN_CATEGORY_ID)
       .addUniqueKey(COLUMN_CATEGORY_DESC_NAME);
 
@@ -79,15 +80,15 @@ public class BytleSchema implements SchemaSample {
     // Dim timeTable
     final DataPath timeTable = connection.getDataPath(TABLE_DATE_NAME);
     bytleTables.put(TABLE_DATE_NAME, timeTable);
-    timeTable.createRelationDef()
-      .addColumn(COLUMN_DATE_ID, Types.DATE)
-      .addColumn(COLUMN_DATE_NAME, Types.CHAR, 10)
-      .addColumn(COLUMN_MONTH_ID, Types.VARCHAR, 6)
-      .addColumn(COLUMN_MONTH_NUMBER, Types.INTEGER)
-      .addColumn(COLUMN_MONTH_NAME, Types.VARCHAR, 20)
-      .addColumn(COLUMN_MONTH_DESC, Types.VARCHAR, 20)
-      .addColumn(COLUMN_MONTH_DESC_SHORT, Types.VARCHAR, 10)
-      .addColumn(COLUMN_YEAR_NUMBER, Types.VARCHAR, 4)
+    timeTable.createEmptyRelationDef()
+      .addColumn(COLUMN_DATE_ID, SqlDataTypeAnsi.DATE)
+      .addColumn(COLUMN_DATE_NAME, SqlDataTypeAnsi.CHARACTER, 10)
+      .addColumn(COLUMN_MONTH_ID, SqlDataTypeAnsi.CHARACTER_VARYING, 6)
+      .addColumn(COLUMN_MONTH_NUMBER, SqlDataTypeAnsi.INTEGER)
+      .addColumn(COLUMN_MONTH_NAME, SqlDataTypeAnsi.CHARACTER_VARYING, 20)
+      .addColumn(COLUMN_MONTH_DESC, SqlDataTypeAnsi.CHARACTER_VARYING, 20)
+      .addColumn(COLUMN_MONTH_DESC_SHORT, SqlDataTypeAnsi.CHARACTER_VARYING, 10)
+      .addColumn(COLUMN_YEAR_NUMBER, SqlDataTypeAnsi.CHARACTER_VARYING, 4)
       .addUniqueKey(COLUMN_DATE_NAME)
       .setPrimaryKey(COLUMN_DATE_ID);
 
@@ -95,14 +96,15 @@ public class BytleSchema implements SchemaSample {
     // Fact Table
     final DataPath factTable = connection.getDataPath(TABLE_FACT_NAME);
     bytleTables.put(TABLE_FACT_NAME, factTable);
-    factTable.createRelationDef()
-      .addColumn(COLUMN_FACT_ID, Types.INTEGER)
-      .addColumn(COLUMN_DATE_ID, Types.DATE)
-      .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
-      .addColumn(COLUMN_SALES_QTY, Types.REAL)
-      .addColumn(COLUMN_SALES_PRICE, Types.NUMERIC, 20, 2)
+    PrimaryKeyDef timeTablePrimaryKey = timeTable.getOrCreateRelationDef().getPrimaryKey();
+    factTable.createEmptyRelationDef()
+      .addColumn(COLUMN_FACT_ID, SqlDataTypeAnsi.INTEGER)
+      .addColumn(COLUMN_DATE_ID, SqlDataTypeAnsi.DATE)
+      .addColumn(COLUMN_CATEGORY_ID, SqlDataTypeAnsi.INTEGER)
+      .addColumn(COLUMN_SALES_QTY, SqlDataTypeAnsi.REAL)
+      .addColumn(COLUMN_SALES_PRICE, SqlDataTypeAnsi.NUMERIC, 20, 2)
       .setPrimaryKey(COLUMN_FACT_ID)
-      .addForeignKey(timeTable.getOrCreateRelationDef().getPrimaryKey(), COLUMN_DATE_ID)
+      .addForeignKey(timeTablePrimaryKey, COLUMN_DATE_ID)
       .addForeignKey(catTable.getOrCreateRelationDef().getPrimaryKey(), COLUMN_CATEGORY_ID);
 
 
@@ -136,9 +138,10 @@ public class BytleSchema implements SchemaSample {
   /**
    * Drop all tables and recreate the schema
    */
-  public void dropAllAndCreateDataPaths() {
+  public BytleSchema dropAllAndCreateDataPaths() {
     dropAll();
     createDataPaths();
+    return this;
   }
 
   public List<DataPath> getDataPaths() {
@@ -156,7 +159,7 @@ public class BytleSchema implements SchemaSample {
   /**
    * Just a utility function to drop all
    */
-  public void dropAll() {
+  public BytleSchema dropAll() {
 
     // Delete all
     Tabulars.dropIfExists(Tabulars.getChildren(connection.getCurrentDataPath()));
@@ -165,9 +168,13 @@ public class BytleSchema implements SchemaSample {
     // if they were not in the database
     Tabulars.dropIfExists(this.getDataPaths());
 
+    return this;
+
   }
 
   public DataPath getDateTable() {
     return getDataPath(TABLE_DATE_NAME);
   }
+
+
 }

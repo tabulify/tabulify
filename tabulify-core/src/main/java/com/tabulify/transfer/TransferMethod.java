@@ -1,5 +1,9 @@
 package com.tabulify.transfer;
 
+/**
+ * The transfer method is the actual applied method
+ * of a transfer
+ */
 public enum TransferMethod {
 
   /**
@@ -28,9 +32,16 @@ public enum TransferMethod {
   UPDATE_FROM_QUERY,
   /**
    * Upsert sql statement values based
-   * Transfer used when the data is from the same sql data store
    */
-  UPSERT,
+  UPSERT_MERGE_LITERAL,
+  /**
+   * Upsert update/insert with literal
+   */
+  UPSERT_UPDATE_INSERT_WITHOUT_PARAMETERS,
+  /**
+   * Upsert insert/update with literal
+   */
+  UPSERT_INSERT_UPDATE_WITHOUT_PARAMETERS,
   /**
    * Upsert sql statement select based
    */
@@ -46,7 +57,15 @@ public enum TransferMethod {
   /**
    * A sql merge with bind variable
    */
-  UPSERT_WITH_BIND_VARIABLE,
+  UPSERT_MERGE_WITH_PARAMETERS,
+  /**
+   * An insert then an update
+   */
+  UPSERT_INSERT_UPDATE_WITH_PARAMETERS,
+  /**
+   * An update then an insert
+   */
+  UPSERT_UPDATE_INSERT_WITH_PARAMETERS,
   /**
    * A sql update with bind variable
    */
@@ -62,7 +81,7 @@ public enum TransferMethod {
   /**
    * A delete with values
    */
-  DELETE;
+  DELETE,
 
 
 }

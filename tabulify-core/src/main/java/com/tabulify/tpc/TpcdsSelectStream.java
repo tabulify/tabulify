@@ -9,7 +9,6 @@ import com.teradata.tpcds.Options;
 import com.teradata.tpcds.Results;
 import com.teradata.tpcds.Session;
 import com.teradata.tpcds.Table;
-import net.bytle.exception.NoColumnException;
 
 import java.util.Iterator;
 import java.util.List;
@@ -25,7 +24,6 @@ public class TpcdsSelectStream extends SelectStreamAbs {
   private SelectStreamListener selectStreamListener;
 
 
-
   public TpcdsSelectStream(DataPath dataPath) {
     super(dataPath);
     init();
@@ -37,7 +35,7 @@ public class TpcdsSelectStream extends SelectStreamAbs {
 
       // Teradata options
       Options options = new Options();
-      options.scale = (Double) this.getDataPath().getConnection().getAttribute(TpcConnectionAttributeEnum.SCALE).getValueOrDefaultOrNull();
+      options.scale = (Double) this.getDataPath().getConnection().getAttribute(TpcConnectionAttributeEnum.SCALE).getValueOrDefault();
       options.noSexism = true;
       Session session = options.toSession();
 
@@ -56,7 +54,6 @@ public class TpcdsSelectStream extends SelectStreamAbs {
 
 
   }
-
 
 
   public static TpcdsSelectStream create(DataPath dataPath) {
@@ -81,19 +78,14 @@ public class TpcdsSelectStream extends SelectStreamAbs {
   }
 
   @Override
-  public void close() {
-    // Nothing to do
-  }
-
-
-  @Override
-  public long getRow() {
+  public long getRecordId() {
     return row;
   }
 
+
   @Override
-  public Object getObject(int columnIndex) {
-    return values.get(columnIndex-1);
+  public Object getObject(ColumnDef columnDef) {
+    return values.get(columnDef.getColumnPosition() - 1);
   }
 
 
@@ -102,17 +94,6 @@ public class TpcdsSelectStream extends SelectStreamAbs {
     return next();
   }
 
-
-  @Override
-  public Object getObject(String columnName) {
-    ColumnDef columnDef;
-    try {
-      columnDef = this.getDataPath().getOrCreateRelationDef().getColumnDef(columnName);
-    } catch (NoColumnException e) {
-      throw new RuntimeException("Column name (" + columnName + ") not found in data document (" + this.getDataPath() + ")");
-    }
-    return values.get(columnDef.getColumnPosition()-1);
-  }
 
   @Override
   public SelectStreamListener getSelectStreamListener() {
@@ -138,5 +119,16 @@ public class TpcdsSelectStream extends SelectStreamAbs {
   }
 
 
+  private boolean isClosed = false;
+
+  @Override
+  public void close() {
+    this.isClosed = true;
+  }
+
+  @Override
+  public boolean isClosed() {
+    return this.isClosed;
+  }
 
 }

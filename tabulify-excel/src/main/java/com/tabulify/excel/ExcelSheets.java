@@ -1,12 +1,12 @@
 package com.tabulify.excel;
 
-import com.tabulify.model.SqlDataType;
+import com.tabulify.model.SqlDataTypeAnsi;
 import net.bytle.exception.CastException;
 import net.bytle.type.Casts;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.ExcelNumberFormat;
 
 import java.sql.SQLException;
 import java.sql.Types;
@@ -19,28 +19,35 @@ public class ExcelSheets {
    * @param cell - the cell
    * @return Sql types code from {@link Types}
    */
-  public static int toSqlType(Cell cell) {
+  public static SqlDataTypeAnsi toSqlType(Cell cell) {
 
     CellType cellType = cell.getCellType();
 
-
     switch (cellType) {
       case BOOLEAN:
-        return Types.BOOLEAN;
+        return SqlDataTypeAnsi.BOOLEAN;
       case STRING:
       case _NONE:
       case FORMULA:
-        return Types.VARCHAR;
+        return SqlDataTypeAnsi.CHARACTER_VARYING;
       case BLANK:
         if (DateUtil.isCellDateFormatted(cell)) {
-          return Types.DATE;
+          String format = ExcelNumberFormat.from(cell, null).getFormat();
+          if (format.length() <= 10) {
+            return SqlDataTypeAnsi.DATE;
+          }
+          return SqlDataTypeAnsi.TIMESTAMP;
         }
-        return Types.VARCHAR;
+        return SqlDataTypeAnsi.CHARACTER_VARYING;
       case NUMERIC:
         if (DateUtil.isCellDateFormatted(cell)) {
-          return Types.DATE;
+          String format = ExcelNumberFormat.from(cell, null).getFormat();
+          if (format.length() <= 10) {
+            return SqlDataTypeAnsi.DATE;
+          }
+          return SqlDataTypeAnsi.TIMESTAMP;
         }
-        return Types.NUMERIC;
+        return SqlDataTypeAnsi.DOUBLE_PRECISION;
       default:
         throw new IllegalArgumentException("The cell type (" + cellType + ") of the cell (" + cell.getRowIndex() + "," + cell.getColumnIndex() + ") can not be mapped to a intern data type.");
 
@@ -50,8 +57,8 @@ public class ExcelSheets {
   }
 
   /**
-   *
    * @throws SQLException because {@link ExcelResultSet} was first created and SQLException is mandatory. Use {@link #getCellValueSafe(Cell, Class)} to get rid of it
+   *                      See {@link ExcelSheet#setCellValue(Cell, Object)}
    */
   static <T> T getCellValue(Cell cell, Class<T> clazz) throws SQLException {
 
@@ -70,18 +77,40 @@ public class ExcelSheets {
         // Special case because Date are stored as numeric
         // Example ise: DateUtil.isCellDateFormatted(cell)
         if (DateUtil.isCellDateFormatted(cell)) {
-          if (java.util.Date.class.equals(clazz)) {
-            //noinspection unchecked
-            return (T) cell.getDateCellValue();
+
+          // We manipulate only java.sql.Date or java.sql.Timestamp
+          // not (java.util.Date.class)
+          java.util.Date dateCellValue = cell.getDateCellValue();
+          if (dateCellValue == null) {
+            return null;
           }
-          if (java.sql.Date.class.equals(clazz)) {
-            java.util.Date dateCellValue = cell.getDateCellValue();
-            if (dateCellValue == null) {
-              return null;
+          if (clazz.equals(java.sql.Date.class)) {
+            return clazz.cast(new java.sql.Date(dateCellValue.getTime()));
+          }
+
+          if (clazz.equals(java.sql.Timestamp.class)) {
+            return clazz.cast(new java.sql.Timestamp(dateCellValue.getTime()));
+          }
+
+          // case when an Excel sheet has a header but the header is set to zero
+          // All column type are then set to the class varchar
+          if (clazz.equals(String.class)) {
+            String format = ExcelNumberFormat.from(cell, null).getFormat();
+            if (format.length() <= 10) {
+              return clazz.cast((new java.sql.Date(dateCellValue.getTime())).toString());
             }
-            //noinspection unchecked
-            return (T) new java.sql.Date(dateCellValue.getTime());
+            return clazz.cast((new java.sql.Timestamp(dateCellValue.getTime())).toString());
+
           }
+
+          if (clazz.equals(Object.class)) {
+            String format = ExcelNumberFormat.from(cell, null).getFormat();
+            if (format.length() <= 10) {
+              return clazz.cast((new java.sql.Date(dateCellValue.getTime())));
+            }
+            return clazz.cast((new java.sql.Timestamp(dateCellValue.getTime())));
+          }
+
         }
         value = cell.getNumericCellValue();
         break;
@@ -115,9 +144,9 @@ public class ExcelSheets {
   }
 
 
-  static <T> T getCellValueSafe(Cell cell, Class<T> clazz)  {
+  static <T> T getCellValueSafe(Cell cell, Class<T> clazz) {
     try {
-      return getCellValue(cell,clazz);
+      return getCellValue(cell, clazz);
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }

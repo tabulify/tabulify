@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.tabulify.tpc.TpcDataPath.CURRENT_WORKING_DIRECTORY_NAME;
+
 public class TpcDataSetSystem extends DataSetSystemAbs {
 
 
@@ -29,11 +31,12 @@ public class TpcDataSetSystem extends DataSetSystemAbs {
   @Override
   public Boolean exists(DataPath dataPath) {
     assert dataPath != null : "A data path should not be null";
+    if (dataPath.getCompactPath().equals(CURRENT_WORKING_DIRECTORY_NAME)) {
+      return true;
+    }
     TpcDataPath tpcDataPath = (TpcDataPath) dataPath;
     return tpcDataPath.getConnection().getDataModel().getAndCreateDataPath(dataPath.getName()) != null;
   }
-
-
 
 
   @Override
@@ -45,7 +48,7 @@ public class TpcDataSetSystem extends DataSetSystemAbs {
   @SuppressWarnings("unchecked")
   @Override
   public List<DataPath> getChildrenDataPath(DataPath dataPath) {
-    if (dataPath.getRelativePath().equals(TpcDataPath.CURRENT_WORKING_DIRECTORY_NAME)) {
+    if (dataPath.getCompactPath().equals(CURRENT_WORKING_DIRECTORY_NAME)) {
       return ((TpcConnection) dataPath.getConnection()).getDataModel().createDataPaths();
     } else {
       return new ArrayList<>();
@@ -74,7 +77,7 @@ public class TpcDataSetSystem extends DataSetSystemAbs {
 
   @Override
   public boolean isDocument(DataPath dataPath) {
-    return !dataPath.getRelativePath().equals(TpcDataPath.CURRENT_WORKING_DIRECTORY_NAME);
+    return !dataPath.getCompactPath().equals(CURRENT_WORKING_DIRECTORY_NAME);
   }
 
 
@@ -85,14 +88,13 @@ public class TpcDataSetSystem extends DataSetSystemAbs {
   }
 
 
-
   @SuppressWarnings("unchecked")
   @Override
   public List<DataPath> select(DataPath dataPath, String globNameOrPath, MediaType mediaType) {
 
     Glob glob = Glob.createOf(globNameOrPath);
     return getChildrenDataPath(dataPath).stream()
-      .filter(d -> glob.matches(d.getRelativePath()))
+      .filter(d -> glob.matches(d.getCompactPath()))
       .collect(Collectors.toList());
   }
 
@@ -105,8 +107,6 @@ public class TpcDataSetSystem extends DataSetSystemAbs {
       .filter(d -> d.getForeignPrimaryKey().getRelationDef().getDataPath().equals(dataPath))
       .collect(Collectors.toList());
   }
-
-
 
 
 }

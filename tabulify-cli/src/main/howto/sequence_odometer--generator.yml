@@ -1,0 +1,41 @@
+kind: generator
+spec:
+  Columns:
+    - name: id
+      type: integer
+      comment: A id column to see easily the number of values generated
+      data-supplier:
+        type: sequence
+    - name: x
+      type: integer
+      comment: A column with a sequence date generator
+      data-supplier:
+        type: sequence
+        arguments:
+          start: 0
+          # number from 0 to 9 will be generated (10 elements)
+          maxTick: 10
+    - name: y
+      type: integer
+      comment: A column with a sequence timestamp generator
+      data-supplier:
+        type: sequence
+        arguments:
+          start: 0
+          # number from 0 to 9 will be generated (10 elements)
+          maxTick: 10
+          # the x column will go to the next value when this sequence has reach its last value
+          tickerFor: x
+    - name: z
+      type: integer
+      comment: A column with a sequence timestamp generator
+      data-supplier:
+        type: sequence
+        arguments:
+          start: 0
+          # number from 0 to 9 will be generated (10 elements)
+          maxTick: 10
+          # the y column will go to the next value when this sequence has reach its last value
+          tickerFor: y
+
+

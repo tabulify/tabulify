@@ -1,6 +1,7 @@
 package com.tabulify.gen;
 
 import com.tabulify.conf.AttributeEnum;
+import net.bytle.type.KeyNormalizer;
 
 import java.util.Map;
 
@@ -10,16 +11,18 @@ public enum GenColumnAttribute implements AttributeEnum {
   /**
    * The property key giving the data generator data
    */
-  DATA_GENERATOR("Data Generation Properties", Map.class, null);
+  DATA_SUPPLIER("Data Supplier Properties", Map.class, null);
 
   private final String desc;
   private final Class<?> aClass;
   private final Object defaultValue;
+  private final KeyNormalizer keyNormalizer;
 
   GenColumnAttribute(String hidden, Class<?> booleanClass, Object defaultValue) {
     this.desc = hidden;
     this.aClass = booleanClass;
     this.defaultValue = defaultValue;
+    this.keyNormalizer = KeyNormalizer.createSafe(this.name());
   }
 
   @Override
@@ -37,4 +40,13 @@ public enum GenColumnAttribute implements AttributeEnum {
     return this.aClass;
   }
 
+  @Override
+  public String toString() {
+    return KeyNormalizer.createSafe(this.name()).toKebabCase();
+  }
+
+  @Override
+  public KeyNormalizer toKeyNormalizer() {
+    return keyNormalizer;
+  }
 }

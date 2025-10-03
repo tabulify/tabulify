@@ -1,0 +1,3 @@
+com.tabulify.zip.datapath.ArchiveManagerProvider
+com.tabulify.zip.entry.ArchiveEntryProvider
+com.tabulify.zip.entry.ArchiveEntryManifestProvider

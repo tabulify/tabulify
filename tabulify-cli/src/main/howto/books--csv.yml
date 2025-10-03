@@ -1,0 +1,16 @@
+kind: csv
+spec:
+  data-def:
+    logical-name: favorite_books
+    header-row-id: 1
+    delimiter-character: ','
+    columns:
+      - name: asin
+        type: varchar
+        precision: 20
+      - name: description
+        type: varchar
+      - name: price
+        type: double
+      - name: group
+        type: varchar

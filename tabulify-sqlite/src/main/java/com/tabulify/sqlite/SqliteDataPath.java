@@ -11,7 +11,7 @@ public class SqliteDataPath extends SqlDataPath implements DataPath {
 
 
   public SqliteDataPath(SqliteConnection jdbcDataStore, String path, MediaType mediaType) {
-    super(jdbcDataStore, path, mediaType);
+    super(jdbcDataStore, path, null, mediaType);
 
     try {
       String catalog = this.getSqlConnectionResourcePath().getCatalogPart();
@@ -30,10 +30,6 @@ public class SqliteDataPath extends SqlDataPath implements DataPath {
   }
 
 
-  public SqliteDataPath(SqliteConnection sqliteConnection, DataPath dataPath) {
-    super(sqliteConnection, dataPath);
-  }
-
 
   @Override
   public SqliteDataPath getSchema() throws NoSchemaException {
@@ -47,22 +43,23 @@ public class SqliteDataPath extends SqlDataPath implements DataPath {
     return (SqliteConnection) super.getConnection();
   }
 
+
   @Override
-  public SqliteRelationDef getOrCreateRelationDef() {
-    if (relationDef == null) {
-      relationDef = new SqliteRelationDef(this, true);
-    }
-    return (SqliteRelationDef) relationDef;
+  public SqliteDataPathRelationDef createEmptyRelationDef() {
+
+    this.relationDef = new SqliteDataPathRelationDef(this, false);
+    return (SqliteDataPathRelationDef) this.relationDef;
+
   }
 
   @Override
-  public SqliteRelationDef createRelationDef() {
-    relationDef = new SqliteRelationDef(this, false);
-    return (SqliteRelationDef) relationDef;
+  public SqliteDataPathRelationDef createRelationDef() {
+    this.relationDef = new SqliteDataPathRelationDef(this, true);
+    return (SqliteDataPathRelationDef) relationDef;
   }
 
   @Override
-  public SqliteDataPath getChild(String name) {
+  public SqliteDataPath resolve(String name, MediaType mediaType) {
     if (this.getMediaType() != SqlMediaType.SCHEMA) {
       throw new RuntimeException("In Sqlite, you can't ask a children only from a schema. You are asking a children from the " + SqlMediaType.SCHEMA + " (" + this + ")");
     }

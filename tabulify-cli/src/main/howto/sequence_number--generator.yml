@@ -1,0 +1,51 @@
+kind: generator
+spec:
+  MaxRecordCount: 14
+  Columns:
+    - name: id
+      type: integer
+      comment: A id column to see easily the number of values generated
+      data-supplier:
+        type: sequence
+    - name: seq_int
+      type: integer
+      comment: A column with a complex sequence integer generator
+      data-supplier:
+        type: sequence
+        arguments:
+          start: 3
+          step: 2
+          maxTick: 5
+    - name: seq_float
+      type: float
+      comment: A column with a float sequence generator
+      data-supplier:
+        type: sequence
+        arguments:
+          step: 0.5
+    - name: seq_double
+      type: double
+      comment: A column with a double sequence generator
+      data-supplier:
+        type: sequence
+        arguments:
+          start: 10
+          step: 0.75
+    - name: seq_numeric
+      scale: 2
+      type: numeric
+      comment: A column with a numeric sequence generator
+      data-supplier:
+        type: sequence
+        arguments:
+          start: 3
+          step: 0.255
+    - name: seq_decimal
+      scale: 2
+      type: decimal
+      comment: A column with a decimal sequence generator
+      data-supplier:
+        type: sequence
+        arguments:
+          start: 3
+          step: 0.255

@@ -17,7 +17,7 @@ public class PrimaryKeyDef implements Constraint {
    * The position of the columns
    * are the position in the primary ket
    */
-  private final List<ColumnDef> columns = new ArrayList<>();
+  private final List<ColumnDef<?>> columns = new ArrayList<>();
 
   public static PrimaryKeyDef of(RelationDefAbs relationDef, String... columnNames) {
     assert relationDef != null;
@@ -46,7 +46,7 @@ public class PrimaryKeyDef implements Constraint {
         columnDef = relationDef.getColumnDef(cn);
         this.columns.add(columnDef);
       } catch (NoColumnException e) {
-        throw new RuntimeException("The column (" + cn + ") does not exist in the data path (" + relationDef.getDataPath() + "). This data path knows only the following columns (" + relationDef.getColumnDefs().stream().map(Objects::toString).collect(Collectors.joining(",")) + ')');
+        throw new IllegalArgumentException("We could not create the primary of the resource (" + relationDef.getDataPath() + ") because the primary column name specified (" + cn + ") is not one of its columns. This resource knows only the following columns: (" + relationDef.getColumnDefs().stream().map(Objects::toString).collect(Collectors.joining(",")) + ')');
       }
     });
   }
@@ -55,13 +55,18 @@ public class PrimaryKeyDef implements Constraint {
     return relationDef;
   }
 
+  @Override
+  public ConstraintType getConstraintType() {
+    return ConstraintType.PRIMARY_KEY;
+  }
+
   public PrimaryKeyDef setName(String name) {
     this.name = name;
     return this;
   }
 
 
-  public List<ColumnDef> getColumns() {
+  public List<ColumnDef<?>> getColumns() {
     return columns;
   }
 

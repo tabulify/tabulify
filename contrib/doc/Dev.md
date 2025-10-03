@@ -6,7 +6,7 @@ How to set up a dev environment
 ## Clone
 
 ```bash
-git clone --recurse-submodules https://github.com/EraldyHq/tabulify
+git clone --recurse-submodules https://github.com/tabulify/tabulify-mono
 ```
 
 
@@ -14,7 +14,7 @@ git clone --recurse-submodules https://github.com/EraldyHq/tabulify
 ## Sdk (Java, Maven, Jreleaser)
 
 Sdks:
-* are managed via sdkman in [.envrc](../.envrc)
+* are managed via sdkman in [.envrc](../../.envrc)
 * versions are in `pom.xml`
 
 

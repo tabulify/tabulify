@@ -1,4 +1,4 @@
-pipeline:
+steps:
   - name: "Select"
     comment: "This operation select the resources to send"
     operation: "select"

@@ -1,6 +1,9 @@
 package com.tabulify.conf;
 
 
+import net.bytle.type.KeyInterface;
+import net.bytle.type.KeyNormalizer;
+
 /**
  * An attribute is a name for a {@link Attribute variable} with extra properties.
  * <p></p>
@@ -22,7 +25,7 @@ package com.tabulify.conf;
  * * No equality for attribute created on the fly (not used though)
  * * No simple get identifier (toString should be implemented right)
  */
-public interface AttributeEnum {
+public interface AttributeEnum extends KeyInterface {
 
 
   /**
@@ -37,11 +40,24 @@ public interface AttributeEnum {
   Object getDefaultValue();
 
   /**
-   * Optional as info the target class of the value
+   * The target class of the value
    * It's used to create relational column
    * For complex value such as map and list, you need to take over
    */
   Class<?> getValueClazz();
 
+  /**
+   * @return the enum in a normalized way
+   */
+  default KeyNormalizer getKeyNormalized() {
+    return KeyNormalizer.createSafe(this.name());
+  }
+
+  /**
+   * @return if the attribute can be set
+   */
+  default boolean getIsUpdatable() {
+    return true;
+  }
 
 }

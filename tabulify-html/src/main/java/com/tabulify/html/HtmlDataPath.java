@@ -1,6 +1,7 @@
 package com.tabulify.html;
 
 import com.tabulify.conf.Attribute;
+import com.tabulify.conf.Origin;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.textfile.FsTextDataPath;
 import com.tabulify.model.RelationDef;
@@ -33,6 +34,7 @@ public class HtmlDataPath extends FsTextDataPath {
     this.addVariablesFromEnumAttributeClass(HtmlDataPathAttribute.class);
 
   }
+
 
   @Override
   public MediaType getMediaType() {
@@ -93,10 +95,10 @@ public class HtmlDataPath extends FsTextDataPath {
       return;
     }
 
-    headerElements = table.select(headerSelector);
-    if (!headerElements.isEmpty()) {
-      throw new RuntimeException("The (" + headerSelector + ") headers element are not in the first (" + rowSelector + ") element of the table selector " + this.getTableSelector() + " in the resource (" + this + ")");
-    }
+//    headerElements = table.select(headerSelector);
+//    if (!headerElements.isEmpty()) {
+//      throw new RuntimeException("The header selector (" + headerSelector + ") headers element are not in the first (" + rowSelector + ") element of the table selector " + this.getTableSelector() + " in the resource (" + this + ")");
+//    }
 
     int elementsCount = firstTrElement.siblingElements().size();
     for (int i = 0; i < elementsCount; i++) {
@@ -106,7 +108,7 @@ public class HtmlDataPath extends FsTextDataPath {
   }
 
   @Override
-  public FsTextDataPath addAttribute(String key, Object value) {
+  public FsTextDataPath addAttribute(KeyNormalizer key, Object value) {
 
 
     HtmlDataPathAttribute htmlDataAttribute = null;
@@ -117,7 +119,7 @@ public class HtmlDataPath extends FsTextDataPath {
     }
 
     try {
-      Attribute attribute = getConnection().getTabular().createAttribute(htmlDataAttribute, value);
+      Attribute attribute = getConnection().getTabular().getVault().createAttribute(htmlDataAttribute, value, Origin.DEFAULT);
       this.addAttribute(attribute);
     } catch (Exception e) {
       throw new RuntimeException("The variable (" + key + ") for the HTML path (" + this + ") could not be created with the value (" + value + ")", e);
@@ -139,7 +141,7 @@ public class HtmlDataPath extends FsTextDataPath {
 
     try {
       return (String) this.getAttribute(HtmlDataPathAttribute.TABLE_SELECTOR).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+    } catch (NoVariableException e) {
       throw new InternalException("The TABLE_SELECTOR has already a default and should be added, it should not happen", e);
     }
 
@@ -157,7 +159,7 @@ public class HtmlDataPath extends FsTextDataPath {
 
     try {
       return (String) this.getAttribute(HtmlDataPathAttribute.HEADER_SELECTOR).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+    } catch (NoVariableException e) {
       throw new InternalException("The HEADER_SELECTOR has already a default and should be added, it should not happen", e);
     }
 
@@ -167,7 +169,7 @@ public class HtmlDataPath extends FsTextDataPath {
 
     try {
       return (String) this.getAttribute(HtmlDataPathAttribute.ROW_SELECTOR).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+    } catch (NoVariableException e) {
       throw new InternalException("The ROW_SELECTOR has already a default and should be added, it should not happen", e);
     }
 
@@ -177,7 +179,7 @@ public class HtmlDataPath extends FsTextDataPath {
 
     try {
       return (String) this.getAttribute(HtmlDataPathAttribute.CELL_SELECTOR).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
+    } catch (NoVariableException e) {
       throw new InternalException("The CELL_SELECTOR has already a default and should be added, it should not happen", e);
     }
 

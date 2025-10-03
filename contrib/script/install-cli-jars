@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# Install the jar in the cli
+# no need to run jlink each time
+
+set -TCEeuo pipefail
+
+find_git_root() {
+  local dir="$PWD"
+  while [[ "$dir" != "/" ]]; do
+    if [[ -d "$dir/.git" ]]; then
+      echo "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  echo "No .git directory found in any parent directory." >&2
+  return 1
+}
+
+# Default values
+TABUL_HOME=${CLI_TABUL_HOME:-/opt/tabulify}
+TARGET_DIR="${TABUL_HOME}/jars"
+
+
+echo "Starting Maven dependencies extraction..."
+echo "Target directory: $TARGET_DIR"
+
+# Delete target directory if it exists
+# We don't delete the target directory
+# to still get the same jar provided by jreleaser
+# Create target directory
+echo "Creating directory: $TARGET_DIR"
+mkdir -p "$TARGET_DIR"
+
+echo "Install all jars..."
+PROJECT_ROOT=$(find_git_root)
+(cd "$PROJECT_ROOT"; mvn install -DskipTests)
+
+# Copy dependencies to target directory
+echo "Copying dependencies..."
+
+# Check if the operation was successful
+POM_FILE="$PROJECT_ROOT/tabulify-cli/pom.xml"
+if ! mvn -f "$POM_FILE" dependency:copy-dependencies -DoutputDirectory="$TARGET_DIR" -DincludeScope=runtime; then
+  echo "Error: Failed to copy dependencies"
+  exit 1
+fi
+
+# Install Cli Jar
+PROJECT_JAR_NAME="$(mvn -f "$POM_FILE" help:evaluate -Dexpression=project.build.finalName -q -DforceStdout).jar"
+PROJECT_JAR_PATH="$(mvn -f "$POM_FILE" help:evaluate -Dexpression=project.build.directory -q -DforceStdout)/$PROJECT_JAR_NAME"
+echo "Copying Cli Jar $PROJECT_JAR_NAME"
+cp "$PROJECT_JAR_PATH" "$TARGET_DIR/"
+
+
+echo "Dependencies copied"
+

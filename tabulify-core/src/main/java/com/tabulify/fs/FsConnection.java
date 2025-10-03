@@ -2,13 +2,11 @@ package com.tabulify.fs;
 
 import com.tabulify.Tabular;
 import com.tabulify.conf.Attribute;
-import com.tabulify.conf.AttributeEnumParameter;
+import com.tabulify.connection.ConnectionAttributeEnum;
 import com.tabulify.connection.ConnectionMetadata;
-import com.tabulify.fs.binary.FsBinaryDataPath;
-import com.tabulify.fs.dir.FsDirectoryDataPath;
 import com.tabulify.noop.NoOpConnection;
+import com.tabulify.spi.DataDefManifest;
 import com.tabulify.spi.DataPath;
-import com.tabulify.spi.DataPathAbs;
 import com.tabulify.spi.ProcessingEngine;
 import com.tabulify.spi.ResourcePath;
 import net.bytle.exception.CastException;
@@ -26,12 +24,15 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A file data store (ie a store that is instantiated with a file system path or a uri)
+ * A file data store (ie a store that is instantiated with a file system path or an uri)
  * A wrapper around {@link FileSystem}
  */
 public class FsConnection extends NoOpConnection {
 
 
+  /**
+   * The file system (local, sftp, s3, ...)
+   */
   private FileSystem fileSystem;
 
 
@@ -43,8 +44,8 @@ public class FsConnection extends NoOpConnection {
   }
 
   @Override
-  public List<Class<? extends AttributeEnumParameter>> getAttributeEnums() {
-    List<Class<? extends AttributeEnumParameter>> list = new ArrayList<>(super.getAttributeEnums());
+  public List<Class<? extends ConnectionAttributeEnum>> getAttributeEnums() {
+    List<Class<? extends ConnectionAttributeEnum>> list = new ArrayList<>(super.getAttributeEnums());
     list.add(FsConnectionAttribute.class);
     return list;
   }
@@ -86,7 +87,14 @@ public class FsConnection extends NoOpConnection {
         fileSystem = FileSystems.getDefault();
       } else {
 
-        fileSystem = FileSystems.newFileSystem(uri.toUri(), this.getConnectionProperties());
+        try {
+          fileSystem = FileSystems.newFileSystem(uri.toUri(), this.getConnectionProperties());
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        } catch (FileSystemAlreadyExistsException e) {
+          fileSystem = FileSystems.getFileSystem(uri.toUri());
+        }
+
       }
 
     } catch (Exception e) {
@@ -140,19 +148,20 @@ public class FsConnection extends NoOpConnection {
 
 
   @Override
-  public DataPath createScriptDataPath(DataPath dataPath) {
-    return new FsBinaryDataPath(this, dataPath);
+  public DataPath getRuntimeDataPath(DataPath dataPath, MediaType mediaType) {
+    FsFileManager fileManager = this.getDataSystem().getFileManager(dataPath.getMediaType());
+    return fileManager.createRuntimeDataPath(this, (FsDataPath) dataPath);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public List<FsDataPath> select(String globPathOrName, MediaType mediaType) {
+  public List<DataPath> select(String globPathOrName, MediaType mediaType) {
     return getDataSystem().select(getCurrentDataPath(), globPathOrName, mediaType);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public List<FsDataPath> select(String globPathOrName) {
+  public List<DataPath> select(String globPathOrName) {
     return select(globPathOrName, null);
   }
 
@@ -182,16 +191,19 @@ public class FsConnection extends NoOpConnection {
 
 
   /**
-   * @param path      - the nio path
+   * @param path      - the nio relative path
    * @param mediaType - the media type
    * @return The entry point to create all file system data path
    */
-  public FsDataPath getFsDataPath(Path path, MediaType mediaType) {
+  public DataPath getFsDataPath(Path path, MediaType mediaType) {
 
 
-    FsFileManager fileManager = this
-      .getDataSystem()
-      .getFileManager(path, mediaType);
+    FsDataSystem dataSystem = this.getDataSystem();
+
+    if (mediaType == null) {
+      mediaType = dataSystem.determineMediaType(path);
+    }
+    FsFileManager fileManager = dataSystem.getFileManager(mediaType);
 
     Path connectionPath = this.getNioPath();
     if (path.isAbsolute()) {
@@ -201,26 +213,14 @@ public class FsConnection extends NoOpConnection {
         throw new InternalException("The path (" + path + ") is not relative path of the connection path (" + connectionPath + ")");
       }
     }
-    FsDataPath dataPath = fileManager.createDataPath(this, path);
+    DataPath dataPath = fileManager.createDataPath(this, path, mediaType);
 
     /**
      * DataDef yaml check: Do we have also a yaml property files
      * <p>
      * Only for files, not for directory
      */
-    if (!(dataPath instanceof FsDirectoryDataPath)) {
-      /**
-       * Only on the local file system (ie file)
-       * not on network for performance reason.
-       * With HTTP, it can add up really quickly
-       */
-      if (path.toUri().getScheme().equals("file")) {
-        Path yamlDataDef = path.resolveSibling(dataPath.getLogicalName() + DataPathAbs.DATA_DEF_SUFFIX);
-        if (Files.exists(yamlDataDef)) {
-          dataPath.mergeDataDefinitionFromYamlFile(yamlDataDef);
-        }
-      }
-    }
+    DataDefManifest.mergeDataDef(dataPath, mediaType);
 
     return dataPath;
 
@@ -234,7 +234,7 @@ public class FsConnection extends NoOpConnection {
    * @return the data path
    */
   @Override
-  public FsDataPath getDataPath(String pathOrName, MediaType mediaType) {
+  public DataPath getDataPath(String pathOrName, MediaType mediaType) {
 
     this.buildIfNotDone();
 
@@ -244,15 +244,18 @@ public class FsConnection extends NoOpConnection {
     try {
       path = fileSystem.getPath(pathOrName);
     } catch (InvalidPathException e) {
-      throw new RuntimeException("The path given is not valid. Path not valid: (" + pathOrName + "). Error returned: (" + e.getMessage() + ")", e);
+      throw new IllegalArgumentException("The path given is not valid. Path not valid: (" + pathOrName + "). Error returned: (" + e.getMessage() + ")", e);
+    }
+    if (mediaType == null) {
+      mediaType = this.getDataSystem().determineMediaType(path);
     }
     return getFsDataPath(path, mediaType);
 
   }
 
   @Override
-  public FsDataPath getDataPath(String pathOrName) {
-    return getDataPath(pathOrName, null);
+  public DataPath getDataPath(String pathOrName) {
+    return getDataPath(pathOrName, (MediaType) null);
   }
 
   @Override
@@ -293,11 +296,14 @@ public class FsConnection extends NoOpConnection {
      * This way, this is no more necessary and there is a huge
      * gain on time performance (36 to 1 sec)
      */
-    return getFsDataPath(path, MediaTypes.DIR);
+    return (FsDataPath) getFsDataPath(path, MediaTypes.DIR);
 
   }
 
-  Path getNioPath() {
+  /**
+   * @return the absolute path of the connection
+   */
+  public Path getNioPath() {
     URI uri = this.getUri().toUri();
     try {
       return Paths.get(uri).normalize().toAbsolutePath();

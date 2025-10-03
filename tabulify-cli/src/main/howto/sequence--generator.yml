@@ -1,0 +1,15 @@
+kind: generator
+spec:
+  MaxRecordCount: 30
+  Columns:
+    - name: seq_int
+      type: integer
+      comment: A column with a sequence integer generator
+      data-supplier:
+        type: sequence
+    - name: seq_char
+      type: varchar
+      precision: 20
+      comment: A column with a sequence character generator
+      data-supplier:
+        type: sequence

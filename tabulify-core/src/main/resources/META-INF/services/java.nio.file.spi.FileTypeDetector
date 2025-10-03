@@ -1,0 +1,2 @@
+com.tabulify.resource.ManifestResourceFileTypeDetector
+com.tabulify.fs.runtime.FsCommandManifestTypeDetector

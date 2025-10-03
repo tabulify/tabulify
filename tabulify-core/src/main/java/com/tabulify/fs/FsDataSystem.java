@@ -5,10 +5,7 @@ import com.tabulify.fs.binary.FsBinaryFileManager;
 import com.tabulify.fs.textfile.FsTextManager;
 import com.tabulify.model.Constraint;
 import com.tabulify.model.ForeignKeyDef;
-import com.tabulify.spi.DataPath;
-import com.tabulify.spi.DataSystemAbs;
-import com.tabulify.spi.SelectException;
-import com.tabulify.spi.Tabulars;
+import com.tabulify.spi.*;
 import com.tabulify.stream.SelectStream;
 import com.tabulify.transfer.*;
 import net.bytle.exception.InternalException;
@@ -16,6 +13,7 @@ import net.bytle.exception.NotAbsoluteException;
 import net.bytle.fs.Fs;
 import net.bytle.fs.FsShortFileName;
 import net.bytle.regexp.Glob;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
 
@@ -26,6 +24,8 @@ import java.net.URL;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -36,11 +36,11 @@ import java.util.stream.Collectors;
 public class FsDataSystem extends DataSystemAbs {
 
 
-  private final FsConnection dataStore;
+  private final FsConnection fsConnection;
 
   public FsDataSystem(FsConnection fsConnection) {
     super(fsConnection);
-    dataStore = fsConnection;
+    this.fsConnection = fsConnection;
   }
 
   /**
@@ -74,19 +74,30 @@ public class FsDataSystem extends DataSystemAbs {
 
   @Override
   public FsConnection getConnection() {
-    return dataStore;
+    return fsConnection;
   }
 
   @Override
   public Boolean exists(DataPath dataPath) {
 
     final FsDataPath fsDataPath = (FsDataPath) dataPath;
+
     Path nioPath = fsDataPath.getAbsoluteNioPath();
+    /**
+     * A runtime existence is checked against the exectuable
+     */
+    if (dataPath.isRuntime()) {
+      DataPath executableDataPath = dataPath.getExecutableDataPath();
+      if (!(executableDataPath instanceof FsDataPath)) {
+        return true;
+      }
+      nioPath = ((FsDataPath) executableDataPath).getAbsoluteNioPath();
+    }
+
     if (nioPath == null) {
       return false;
-    } else {
-      return Files.exists(nioPath);
     }
+    return Files.exists(nioPath);
 
   }
 
@@ -94,45 +105,27 @@ public class FsDataSystem extends DataSystemAbs {
   /**
    * The service provider
    *
-   * @param path      the path
    * @param mediaType the media type
    * @return the file manager
    */
-  public FsFileManager getFileManager(Path path, MediaType mediaType) {
+  public FsFileManager getFileManager(MediaType mediaType) {
 
     /**
      * If the media type is given, get the
      * file manager by media type
      */
-    if (mediaType != null) {
-      FsFileManager fileManager = getFsFileManagerWithMediaType(mediaType);
-      if (fileManager != null) {
-        return fileManager;
-      }
-    }
-
-    /**
-     * Media Type determination
-     */
-    Path absolutePath = this.toAbsolutePath(path);
-    try {
-      mediaType = Fs.detectMediaType(absolutePath);
-    } catch (NotAbsoluteException e) {
-      throw new InternalException("It should not happen as the path passed is absolute. Path: " + absolutePath, e);
-    }
-
     FsFileManager fileManager = getFsFileManagerWithMediaType(mediaType);
     if (fileManager != null) {
       return fileManager;
     }
 
     /**
-     * Try to return a text (Charset to verify that this is a text file)
+     * Mime Text?
      */
-    String charset = Fs.detectCharacterSet(path);
-    if (charset != null) {
+    if (mediaType.isText()) {
       return FsTextManager.getSingeleton();
     }
+
 
     /**
      * Raw binary file
@@ -163,7 +156,7 @@ public class FsDataSystem extends DataSystemAbs {
         if (fileManager == null) {
           String message = "The returned file manager is null for the provider (" + structProvider.getClass() + ")";
           DbLoggers.LOGGER_DB_ENGINE.severe(message);
-          throw new RuntimeException(message);
+          throw new InternalException(message);
         }
         return fileManager;
       }
@@ -173,67 +166,69 @@ public class FsDataSystem extends DataSystemAbs {
 
 
   @Override
-  public boolean isContainer(DataPath dataPath) {
-    return Files.isDirectory(((FsDataPath) dataPath).getAbsoluteNioPath());
-  }
-
-  @Override
-  public void create(DataPath dataPath) {
+  public void create(DataPath dataPath, DataPath sourceDataPath, Map<DataPath, DataPath> sourceTargets) {
     FsDataPath fsDataPath = (FsDataPath) dataPath;
-    if (!exists(dataPath)) {
-      Path path = fsDataPath.getAbsoluteNioPath();
-      try {
-        if (Files.isDirectory(path)) {
-          Files.createDirectory(path);
-        } else {
-          getFileManager(path).create(fsDataPath);
-        }
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    } else {
+    if (exists(dataPath)) {
       throw new RuntimeException("The data path (" + fsDataPath.getAbsoluteNioPath() + ") already exists");
     }
+    Path path = fsDataPath.getAbsoluteNioPath();
+    try {
+      if (Files.isDirectory(path)) {
+        Files.createDirectory(path);
+        return;
+      }
+      /**
+       * Merge the definition
+       */
+      if (sourceDataPath != null) {
+        dataPath
+          .getOrCreateRelationDef()
+          .mergeDataDef(sourceDataPath, sourceTargets);
+      }
+      /**
+       * Create it
+       */
+      getFileManager(dataPath.getMediaType()).create(fsDataPath);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
   }
 
   private FsFileManager getFileManager(Path path) {
-    return getFileManager(path, null);
+    MediaType mediaType = this.determineMediaType(path);
+    return getFileManager(mediaType);
   }
 
 
   @Override
-  public void drop(DataPath dataPath) {
-    delete(dataPath);
-  }
-
-  @Override
-  public void delete(DataPath dataPath) {
-    FsDataPath fsDataPath = (FsDataPath) dataPath;
-    try {
-      Files.delete(fsDataPath.getAbsoluteNioPath());
-    } catch (IOException e) {
-      throw new RuntimeException("Unable to delete the file (" + fsDataPath + ")", e);
+  public void drop(List<DataPath> dataPaths, Set<DropTruncateAttribute> dropAttributes) {
+    boolean cascade = dropAttributes.contains(DropTruncateAttribute.FORCE) || dropAttributes.contains(DropTruncateAttribute.CASCADE);
+    for (DataPath dataPath : dataPaths) {
+      FsDataPath fsDataPath = (FsDataPath) dataPath;
+      if (dropAttributes.contains(DropTruncateAttribute.IF_EXISTS)) {
+        if (!exists(dataPath)) {
+          continue;
+        }
+      }
+      Fs.delete(fsDataPath.getAbsoluteNioPath(), cascade);
     }
   }
 
   @Override
-  public void truncate(List<DataPath> dataPaths) {
-    dataPaths.forEach(this::delete);
-  }
+  public void truncate(List<DataPath> dataPaths, Set<DropTruncateAttribute> truncateAttributes) {
+
+    boolean cascade = truncateAttributes.contains(DropTruncateAttribute.FORCE) || truncateAttributes.contains(DropTruncateAttribute.CASCADE);
+
+    for (DataPath dataPath : dataPaths) {
+      if (!(dataPaths instanceof FsDataPath)) {
+        throw new InternalException("The data resource (" + dataPaths + ") is not a file  but a " + dataPath.getMediaType());
+      }
+      FsDataPath fsDataPath = (FsDataPath) dataPath;
+      Fs.truncate(fsDataPath.getAbsoluteNioPath(), 0, cascade);
+    }
 
 
-  /**
-   * See also how Github handles shell
-   * <a href="https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstepsrun">...</a>
-   * <p>
-   * <a href="https://www.nextflow.io/docs/latest/process.html">...</a>
-   * The shebangdeclaration for a Perl script, for example, would look like: #!/usr/bin/env perl
-   *
-   * @param dataPath - a script data path
-   */
-  @Override
-  public void execute(DataPath dataPath) {
-    throw new UnsupportedOperationException("Not yet implemented");
   }
 
 
@@ -258,7 +253,11 @@ public class FsDataSystem extends DataSystemAbs {
     try (DirectoryStream<Path> paths = Files.newDirectoryStream(path)) {
 
       List<DataPath> children = new ArrayList<>();
-      paths.forEach(p -> children.add(dataPath.getChild(p.getFileName().toString())));
+      for (Path childPath : paths) {
+        MediaType mediaType = MediaTypes.detectMediaTypeSafe(childPath.toAbsolutePath());
+        children.add(dataPath.resolve(childPath.getFileName().toString(), mediaType));
+      }
+
       //noinspection unchecked
       return (List<D>) children;
 
@@ -291,7 +290,7 @@ public class FsDataSystem extends DataSystemAbs {
 
 
   @Override
-  public String getString(DataPath dataPath) {
+  public String getContentAsString(DataPath dataPath) {
     FsDataPath fsDataPath = (FsDataPath) dataPath;
     try {
       return Fs.getFileContent(fsDataPath.getAbsoluteNioPath());
@@ -301,23 +300,26 @@ public class FsDataSystem extends DataSystemAbs {
   }
 
   @Override
-  public TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
-    FsDataPath fsSource = (FsDataPath) source;
+  public TransferListener transfer(TransferSourceTargetOrder transferOrder) {
+
+
+    FsDataPath fsSource = (FsDataPath) transferOrder.getSourceDataPath();
 
     if (!this.isReadable(fsSource)) {
-      throw new RuntimeException("The source file (" + source + ") is not readable. You don't have the permission.");
+      throw new RuntimeException("The source file (" + fsSource + ") is not readable. You don't have the permission.");
     }
     if (!exists(fsSource)) {
-      throw new RuntimeException("The source file (" + source + ") does not exists.");
+      throw new RuntimeException("The source file (" + fsSource + ") does not exists.");
     }
-    FsDataPath fsTarget = (FsDataPath) target;
-    TransferListener transferListenerStream = new TransferListenerAtomic(new TransferSourceTarget(fsSource, fsTarget, transferProperties))
+    FsDataPath fsTarget = (FsDataPath) transferOrder.getTargetDataPath();
+    TransferListener transferListenerStream = new TransferListenerAtomic(transferOrder)
       .startTimer();
     try {
 
       /*
        * Load Operation check
        */
+      TransferPropertiesSystem transferProperties = transferOrder.getTransferProperties();
       TransferOperation loadOperation = transferProperties.getOperation();
       if (loadOperation == null) {
         loadOperation = TransferOperation.COPY;
@@ -328,21 +330,27 @@ public class FsDataSystem extends DataSystemAbs {
        * Target check
        */
       Path targetNioPath = fsTarget.getAbsoluteNioPath();
-      Fs.createDirectoryIfNotExists(targetNioPath.getParent());
       if (!Files.exists(targetNioPath)) {
-        // Copy create the file and does not them by default
-        if (loadOperation != TransferOperation.COPY && loadOperation != TransferOperation.MOVE) {
+        // Fs.Copy, Fs.Write and Fs.Move create the file
+        if (!Set.of(TransferOperation.COPY, TransferOperation.INSERT).contains(loadOperation) && !transferProperties.isMoveOperation()) {
           if (
             transferProperties.getTargetOperations().contains(TransferResourceOperations.CREATE)
           ) {
-            if (target.getOrCreateRelationDef().getColumnDefs().isEmpty() && !source.getOrCreateRelationDef().getColumnDefs().isEmpty()) {
-              target.getOrCreateRelationDef()
-                .mergeStructWithoutConstraints(source);
+            if (fsTarget.getOrCreateRelationDef().getColumnDefs().isEmpty() && !fsSource.getOrCreateRelationDef().getColumnDefs().isEmpty()) {
+              fsTarget.getOrCreateRelationDef()
+                .mergeColumns(fsSource.getRelationDef());
             }
-            Tabulars.create(target);
+            Fs.createDirectoryIfNotExists(targetNioPath.getParent());
+            Tabulars.create(fsTarget);
           } else {
-            throw new RuntimeException("The target data resource file does not exist and the target data operation (" + TransferResourceOperations.CREATE + ") was not present");
+            throw new RuntimeException("The target data resource file (" + targetNioPath + ") does not exist and the target data operation (" + TransferResourceOperations.CREATE + ") was not present");
           }
+        }
+      } else {
+        if (
+          transferProperties.getTargetOperations().contains(TransferResourceOperations.DROP)
+        ) {
+          Files.delete(targetNioPath);
         }
       }
 
@@ -350,7 +358,7 @@ public class FsDataSystem extends DataSystemAbs {
        * Copy Options
        */
       List<StandardCopyOption> copyOptions = new ArrayList<>();
-      if (transferProperties.getTargetOperations().contains(TransferResourceOperations.REPLACE)) {
+      if (transferProperties.getTargetOperations().contains(TransferResourceOperations.DROP)) {
         copyOptions.add(StandardCopyOption.REPLACE_EXISTING);
       }
 
@@ -360,40 +368,50 @@ public class FsDataSystem extends DataSystemAbs {
 
       switch (loadOperation) {
         case COPY:
-          try {
-            /*
-             * We try atomic
-             */
-            Files.copy(fsSource.getAbsoluteNioPath(), targetNioPath, atomicOption.toArray(new StandardCopyOption[0]));
-          } catch (AtomicMoveNotSupportedException | UnsupportedOperationException e) {
-            /*
-             * Non-atomic then
-             */
-            Files.copy(fsSource.getAbsoluteNioPath(), targetNioPath, copyOptions.toArray(new StandardCopyOption[0]));
-          }
-          break;
-        case MOVE:
-          try {
-            /*
-             * We try atomic
-             */
-            Files.move(fsSource.getAbsoluteNioPath(), fsTarget.getAbsoluteNioPath(), atomicOption.toArray(new StandardCopyOption[0]));
-          } catch (AtomicMoveNotSupportedException | UnsupportedOperationException e) {
-            /*
-             * Non-atomic then
-             */
-            Files.move(fsSource.getAbsoluteNioPath(), fsTarget.getAbsoluteNioPath(), copyOptions.toArray(new StandardCopyOption[0]));
+          /**
+           * ie copy and source delete (surely implemented as rename)
+           */
+          if (transferProperties.isMoveOperation()) {
+            try {
+              /*
+               * We try atomic
+               */
+              Files.move(fsSource.getAbsoluteNioPath(), fsTarget.getAbsoluteNioPath(), atomicOption.toArray(new StandardCopyOption[0]));
+            } catch (AtomicMoveNotSupportedException | UnsupportedOperationException e) {
+              /*
+               * Non-atomic then
+               */
+              Files.move(fsSource.getAbsoluteNioPath(), fsTarget.getAbsoluteNioPath(), copyOptions.toArray(new StandardCopyOption[0]));
+            }
+          } else {
+            try {
+              /*
+               * We try atomic
+               */
+              Files.copy(fsSource.getAbsoluteNioPath(), targetNioPath, atomicOption.toArray(new StandardCopyOption[0]));
+            } catch (AtomicMoveNotSupportedException | UnsupportedOperationException e) {
+              /*
+               * Non-atomic then
+               */
+              Files.copy(fsSource.getAbsoluteNioPath(), targetNioPath, copyOptions.toArray(new StandardCopyOption[0]));
+            }
           }
           break;
         case INSERT:
-          /*
+          /**
            * Existing file may have headers in the content at creation
            * Example: csv
+           * This case is taken into account in the {@link TransferManagerOrder}
            */
+          List<StandardOpenOption> options = new ArrayList<>();
+          options.add(StandardOpenOption.APPEND);
+          if (transferProperties.getTargetOperations().contains(TransferResourceOperations.CREATE) && !Files.exists(fsTarget.getAbsoluteNioPath())) {
+            options.add(StandardOpenOption.CREATE_NEW);
+          }
           Files.write(
             fsTarget.getAbsoluteNioPath(),
             Files.readAllBytes(fsSource.getAbsoluteNioPath()),
-            StandardOpenOption.APPEND);
+            options.toArray(new StandardOpenOption[0]));
           break;
       }
 
@@ -422,7 +440,7 @@ public class FsDataSystem extends DataSystemAbs {
 
   @SuppressWarnings("unchecked")
   @Override
-  public List<FsDataPath> select(DataPath baseDataPath, String patternOrPath, MediaType mediaType) {
+  public List<DataPath> select(DataPath baseDataPath, String patternOrPath, MediaType mediaType) {
 
     FsDataPath baseFsDataPath = (FsDataPath) baseDataPath;
     Path basePath = baseFsDataPath.getAbsoluteNioPath();
@@ -619,30 +637,40 @@ public class FsDataSystem extends DataSystemAbs {
 
 
   @Override
-  public DataPath getTargetFromSource(DataPath sourceDataPath) {
+  public DataPath getTargetFromSource(DataPath sourceDataPath, MediaType mediaType, DataPath targetParentDataPath) {
 
     // For convenience
     FsConnection connection = this.getConnection();
 
+    if (targetParentDataPath != null && !(targetParentDataPath instanceof FsDataPath)) {
+      throw new InternalException("The targetParentDataPath must be a FsDataPath");
+    }
+    FsDataPath fsTargetParentDataPath = (FsDataPath) targetParentDataPath;
+    if (fsTargetParentDataPath == null) {
+      fsTargetParentDataPath = connection.getCurrentDataPath();
+    }
+
     // Tabular (ie Sql data)
     if (
       !(sourceDataPath.getConnection() instanceof FsConnection)
-        && (sourceDataPath.getOrCreateRelationDef().getColumnsSize() > 0 || sourceDataPath.isScript())
+        && (sourceDataPath.getOrCreateRelationDef().getColumnsSize() > 0 || sourceDataPath.isRuntime())
     ) {
-      MediaType mediaType = (MediaType) getConnection().getAttribute(FsConnectionAttribute.TABULAR_FILE_TYPE).getValueOrDefaultOrNull();
-      FsDataPath dataPath = connection.getDataPath(sourceDataPath.getLogicalName() + "." + mediaType.getExtension(), mediaType);
+      if (mediaType == null) {
+        mediaType = (MediaType) getConnection().getAttribute(FsConnectionAttribute.TABULAR_FILE_TYPE).getValueOrDefault();
+      }
+      FsDataPath dataPath = (FsDataPath) fsTargetParentDataPath.resolve(sourceDataPath.getLogicalName() + "." + mediaType.getExtension(), mediaType);
       // hack
-      if (mediaType == MediaTypes.TEXT_CSV) {
-        dataPath.addAttribute("header-row-id", 1);
+      if (MediaTypes.equals(mediaType, MediaTypes.TEXT_CSV)) {
+        dataPath.addAttribute(KeyNormalizer.createSafe("header-row-id"), 1);
       }
       return dataPath;
 
     }
 
     // Script ?
-    if (sourceDataPath.isScript()) {
+    if (sourceDataPath.isRuntime()) {
       // a query is anonymous and does not have any name
-      return connection.getDataPath(sourceDataPath.getLogicalName());
+      return fsTargetParentDataPath.resolve(sourceDataPath.getLogicalName(), mediaType);
     }
 
     /**
@@ -650,7 +678,27 @@ public class FsDataSystem extends DataSystemAbs {
      * (ie when we move the file `foo.txt`, to a file system, the name
      * will be `foo.txt`
      */
-    return connection.getDataPath(sourceDataPath.getName());
+    return fsTargetParentDataPath.resolve(sourceDataPath.getName(), mediaType);
 
+  }
+
+  @Override
+  public MediaType getContainerMediaType() {
+    return MediaTypes.DIR;
+  }
+
+  /**
+   * Media Type determination
+   */
+  public MediaType determineMediaType(Path path) {
+    Path absolutePath = path;
+    if (!path.isAbsolute()) {
+      absolutePath = this.toAbsolutePath(path);
+    }
+    try {
+      return Fs.detectMediaType(absolutePath);
+    } catch (NotAbsoluteException e) {
+      throw new InternalException("It should not happen as the path passed is absolute. Path: " + absolutePath, e);
+    }
   }
 }

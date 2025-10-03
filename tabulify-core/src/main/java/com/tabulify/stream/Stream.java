@@ -4,6 +4,7 @@ import com.tabulify.spi.DataPath;
 
 public interface Stream {
 
+
   /**
    * @return the data path Definition
    */
@@ -14,4 +15,6 @@ public interface Stream {
    * @return
    */
   String getName();
+
+
 }

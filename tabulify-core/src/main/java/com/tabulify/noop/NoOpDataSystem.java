@@ -4,12 +4,15 @@ import com.tabulify.model.Constraint;
 import com.tabulify.model.ForeignKeyDef;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataSystemAbs;
+import com.tabulify.spi.DropTruncateAttribute;
 import com.tabulify.transfer.TransferListener;
-import com.tabulify.transfer.TransferProperties;
+import com.tabulify.transfer.TransferSourceTargetOrder;
 import net.bytle.type.MediaType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class NoOpDataSystem extends DataSystemAbs {
 
@@ -29,24 +32,20 @@ public class NoOpDataSystem extends DataSystemAbs {
   }
 
   @Override
-  public void create(DataPath dataPath) {
+  public void create(DataPath dataPath, DataPath sourceDataPath, Map<DataPath, DataPath> sourceTargets) {
 
   }
 
   @Override
-  public void drop(DataPath dataPath) {
+  public void drop(List<DataPath> dataPaths, Set<DropTruncateAttribute> dropAttributes) {
 
   }
 
   @Override
-  public void delete(DataPath dataPath) {
+  public void truncate(List<DataPath> dataPaths, Set<DropTruncateAttribute> truncateAttributes) {
 
   }
 
-  @Override
-  public void truncate(DataPath dataPath) {
-
-  }
 
   @Override
   public <D extends DataPath> List<D> getChildrenDataPath(DataPath dataPath) {
@@ -55,7 +54,7 @@ public class NoOpDataSystem extends DataSystemAbs {
 
   @Override
   public Boolean isEmpty(DataPath queue) {
-    return queue.getSize()==0;
+    return queue.getSize() == 0;
   }
 
   @Override
@@ -64,12 +63,12 @@ public class NoOpDataSystem extends DataSystemAbs {
   }
 
   @Override
-  public String getString(DataPath dataPath) {
+  public String getContentAsString(DataPath dataPath) {
     throw new RuntimeException("This connection does not have any system");
   }
 
   @Override
-  public TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public TransferListener transfer(TransferSourceTargetOrder transferOrder) {
     throw new RuntimeException("This connection does not have any system and can't transfer");
   }
 
@@ -93,23 +92,16 @@ public class NoOpDataSystem extends DataSystemAbs {
 
   }
 
-  @Override
-  public void truncate(List<DataPath> dataPaths) {
-
-  }
 
   @Override
   public void dropNotNullConstraint(DataPath dataPath) {
 
   }
 
-  @Override
-  public void dropForce(DataPath dataPath) {
-
-  }
 
   @Override
-  public void execute(DataPath dataPath) {
-
+  public MediaType getContainerMediaType() {
+    throw new UnsupportedOperationException("The noop connection does not support container resources (directory)");
   }
+
 }

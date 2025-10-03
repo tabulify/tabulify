@@ -4,9 +4,12 @@ import com.tabulify.connection.Connection;
 import com.tabulify.model.Constraint;
 import com.tabulify.model.ForeignKeyDef;
 import com.tabulify.transfer.TransferListener;
-import com.tabulify.transfer.TransferProperties;
+import com.tabulify.transfer.TransferSourceTargetOrder;
+import net.bytle.type.MediaType;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Data Set = Source only data store
@@ -24,22 +27,20 @@ public abstract class DataSetSystemAbs extends DataSystemAbs implements DataSyst
   public abstract Boolean exists(DataPath dataPath);
 
 
-  public void create(DataPath dataPath) {
+  public void create(DataPath dataPath, DataPath sourceDataPath, Map<DataPath, DataPath> sourceTargets) {
     throw new RuntimeException("A data set cannot create a data path. It can only read it");
   }
 
-
-  public void drop(DataPath dataPath) {
-    throw new RuntimeException("A data set cannot drop a data path. It can only read it");
+  @Override
+  public void drop(List<DataPath> dataPaths, Set<DropTruncateAttribute> dropAttributes) {
+    throw new RuntimeException("A data set system cannot drop a data path. It can only read it");
   }
 
-  public void delete(DataPath dataPath) {
-    throw new RuntimeException("A data set cannot delete a data path. It can only read it");
+  @Override
+  public void truncate(List<DataPath> dataPaths, Set<DropTruncateAttribute> truncateAttributes) {
+    throw new RuntimeException("A data set system cannot truncate a data path. It can only read it");
   }
 
-  public void truncate(List<DataPath> dataPaths) {
-    throw new RuntimeException("A data set cannot truncate a data path. It can only read it");
-  }
 
   @Override
   public void dropConstraint(Constraint constraint) {
@@ -63,12 +64,12 @@ public abstract class DataSetSystemAbs extends DataSystemAbs implements DataSyst
    * @return the content of a data path in a string format
    */
   @Override
-  public String getString(DataPath dataPath) {
+  public String getContentAsString(DataPath dataPath) {
     throw new RuntimeException("Not implemented had this time");
   }
 
   @Override
-  public TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public TransferListener transfer(TransferSourceTargetOrder transferOrder) {
     throw new RuntimeException("A data set cannot copy (write) data. It can only read them");
   }
 
@@ -81,10 +82,8 @@ public abstract class DataSetSystemAbs extends DataSystemAbs implements DataSyst
 
 
   @Override
-  public void execute(DataPath dataPath) {
-    throw new UnsupportedOperationException("A data set system does not support execution");
+  public MediaType getContainerMediaType() {
+    throw new UnsupportedOperationException("A data set system does not support container resources (directory)");
   }
-
-
 
 }

@@ -2,7 +2,6 @@ package com.tabulify.gen.generator;
 
 import com.tabulify.gen.DataGenType;
 import com.tabulify.gen.GenColumnDef;
-import com.tabulify.gen.GenRelationDef;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.type.Casts;
@@ -18,7 +17,7 @@ public abstract class CollectionGeneratorAbs<T> implements CollectionGenerator<T
   /**
    * The related column def
    */
-  private GenColumnDef genColumnDef;
+  private GenColumnDef<T> genColumnDef;
 
   /**
    * A shortcut to get the clazz
@@ -30,7 +29,7 @@ public abstract class CollectionGeneratorAbs<T> implements CollectionGenerator<T
     this.clazz = clazz;
   }
 
-  public CollectionGeneratorAbs<T> setColumnDef(GenColumnDef columnDef) {
+  public CollectionGeneratorAbs<T> setColumnDef(GenColumnDef<T> columnDef) {
     this.genColumnDef = columnDef;
     if (this.clazz != columnDef.getClazz()) {
       throw new InternalException("The generator (" + this + ") is coupled to a column (" + columnDef + ") that expects data from the class (" + columnDef.getClazz().getSimpleName() + ") but it generates value from the " + this.clazz.getSimpleName() + " type.");
@@ -52,11 +51,6 @@ public abstract class CollectionGeneratorAbs<T> implements CollectionGenerator<T
   public String toString() {
     String columnName = this.getColumnDef() == null ? "unknown" : this.getColumnDef().getColumnName();
     return this.getClass().getSimpleName() + " for the column " + columnName;
-  }
-
-  @Override
-  public GenRelationDef getRelationDef() {
-    return this.genColumnDef.getRelationDef();
   }
 
 

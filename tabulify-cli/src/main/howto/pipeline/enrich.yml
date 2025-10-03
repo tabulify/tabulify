@@ -1,0 +1,27 @@
+kind: pipeline
+spec:
+  steps:
+    - operation: 'define'
+      arguments:
+        data-resource:
+          data-uri: 'pipeline/enrich/enrich-me.md@howto'
+    - operation: 'enrich'
+      arguments:
+        data-def:
+          columns:
+            - name: file_name
+              data-supplier:
+                type: meta
+                arguments:
+                  attribute: name
+            - name: file_extension
+              data-supplier:
+                type: expression
+                arguments:
+                  column-variable: file_name
+                  expression: "file_name.split('.').pop()"
+            - name: line_id
+              type: integer
+              data-supplier:
+                type: sequence
+    - operation: 'print'

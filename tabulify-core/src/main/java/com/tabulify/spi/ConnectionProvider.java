@@ -2,8 +2,9 @@ package com.tabulify.spi;
 
 
 import com.tabulify.Tabular;
-import com.tabulify.connection.Connection;
 import com.tabulify.conf.Attribute;
+import com.tabulify.connection.Connection;
+import com.tabulify.service.Service;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -49,7 +50,7 @@ public abstract class ConnectionProvider {
   private static Void checkPermission() {
     SecurityManager sm = System.getSecurityManager();
     if (sm != null)
-      sm.checkPermission(new RuntimePermission("DataStoreProvider"));
+      sm.checkPermission(new RuntimePermission("ConnectionProvider"));
     return null;
   }
 
@@ -142,5 +143,19 @@ public abstract class ConnectionProvider {
    */
   public abstract boolean accept(Attribute uri);
 
+
+  /**
+   * @return a howto services
+   */
+  public Set<Service> getHowToServices(Tabular tabular) {
+    return new HashSet<>();
+  }
+
+  /**
+   * @return a howto connections
+   */
+  public Set<Connection> getHowToConnections(Tabular tabular) {
+    return new HashSet<>();
+  }
 
 }

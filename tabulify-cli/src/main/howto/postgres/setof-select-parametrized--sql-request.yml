@@ -1,0 +1,14 @@
+kind: sql-request
+spec:
+  # the executable data uri
+  # * takes the file (setof-select-parametrized)
+  # * located in the same directory as this manifest (md)
+  # * and execute it against (postgres)
+  data-uri: (setof-select-parametrized.sql@md)@postgres
+  # the data definition
+  data-def:
+    parameters:
+      # the parameter for the placeholder
+      - value: 2 # the value passed to the upper function
+        direction: in # set the value
+        type: integer # the type of the value

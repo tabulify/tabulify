@@ -1,0 +1,31 @@
+kind: generator
+spec:
+  MaxRecordCount: 10
+  Columns:
+    - name: id
+      type: integer
+      comment: A id column to see easily the number of values generated
+      data-supplier:
+        type: sequence
+    - name: bucket_map
+      type: varchar
+      comment: A column with a random color generator and a map of values with the chance factor
+      data-supplier:
+        type: histogram
+        arguments:
+          Buckets:
+            blue: 1
+            red: 1
+            green: 1
+    - name: bucket_list
+      type: varchar
+      comment: A column with a random color generator and a list of values
+      data-supplier:
+        type: histogram
+        arguments:
+          Buckets:
+            - blue
+            - red
+            - green
+
+

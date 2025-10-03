@@ -1,24 +1,31 @@
 package com.tabulify.conf;
 
+import com.tabulify.stream.SelectStream;
+import com.tabulify.uri.DataUriStringNode;
 import net.bytle.exception.CastException;
+import net.bytle.exception.ExceptionWrapper;
+import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
 import net.bytle.type.Casts;
 import net.bytle.type.KeyNormalizer;
-import net.bytle.type.Strings;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
  * A super set of a key pair value
  * adding functionality such:
- * * as conf/secret via {@link #setRawValue(String)} and {@link #setPlainValue(Object)} (Object)}
+ * * as conf/secret via {@link #setRawValue(Object)} and {@link #setPlainValue(Object)} (Object)}
  * * key case independence (via {@link AttributeEnum} that uses a {@link KeyNormalizer})
+ * Attribute key may be created dynamically (for instance from a record {@link SelectStream#getAttributes()}
+ * Templating function over the value is within the vault {@link com.tabulify.Vault} that holds the env
  */
 public class Attribute implements Comparable<Attribute> {
 
 
+  public static final String NOT_SHOWN_SECRET = "xxxxxx";
   /**
    * password and passphrase are widely sensitive
    * We set them by default as secret
@@ -33,13 +40,16 @@ public class Attribute implements Comparable<Attribute> {
   private final Origin origin;
 
   /**
-   * The value as found in the text file / operating system
+   * The value as:
+   * * found in the text file / operating system
+   * * as set by java method (set)
    * so that we can:
    * * recreate the text file
    * * send this data to the log / console output (only if it's really needed)
    * This value is returned as an empty string by {@link #getRawValue()} if it comes from Os and {@link #isOsSecret} is true
+   * It's an object because an attribute may be also a map or a list
    */
-  private String rawValue;
+  private Object rawValue;
 
   /**
    * A plain value (decrypted if needed, and casted as {@link AttributeEnum#getValueClazz()})
@@ -94,11 +104,11 @@ public class Attribute implements Comparable<Attribute> {
 
 
   /**
-   * Utility class of {@link #createWithClassAndDefault(String, Origin, Class, Object)}
+   * Utility class of {@link #createWithClassAndDefault(KeyNormalizer, Origin, Class, Object)}
    * where the default value is null
    */
   public static Attribute createWithClass(String name, Origin origin, Class<?> clazz) {
-    return createWithClassAndDefault(name, origin, clazz, null);
+    return createWithClassAndDefault(KeyNormalizer.createSafe(name), origin, clazz, null);
   }
 
   /**
@@ -108,15 +118,25 @@ public class Attribute implements Comparable<Attribute> {
    * * dynamic variable such as the backref reference of a regexp $1, ...
    * So we need to be able to create a variable by name
    */
-  public static Attribute createWithClassAndDefault(String name, Origin origin, Class<?> clazz, Object defaultValue) {
+  public static Attribute createWithClassAndDefault(KeyNormalizer name, Origin origin, Class<?> clazz, Object defaultValue) {
 
 
     AttributeEnum attributeFromName = new AttributeEnum() {
 
 
       @Override
-      public String getDescription() {
+      public String name() {
+        return name.toString();
+      }
+
+      @Override
+      public KeyNormalizer toKeyNormalizer() {
         return name;
+      }
+
+      @Override
+      public String getDescription() {
+        return name.toString();
       }
 
       @Override
@@ -134,7 +154,7 @@ public class Attribute implements Comparable<Attribute> {
        */
       @Override
       public String toString() {
-        return name;
+        return name.toString();
       }
 
     };
@@ -158,9 +178,9 @@ public class Attribute implements Comparable<Attribute> {
    * and in the log.
    * We can't return a fake value if this is a secret.
    */
-  public String getRawValue() {
+  public Object getRawValue() {
     if (isOsSecret) {
-      return "xxx";
+      return NOT_SHOWN_SECRET;
     }
     return this.rawValue;
   }
@@ -168,45 +188,92 @@ public class Attribute implements Comparable<Attribute> {
   /**
    * @return the value to be used in the application in clear
    */
-  public Object getValueOrDefault() throws NoValueException {
+  public Object getValueOrDefault() {
     try {
 
       return this.getValue();
 
     } catch (NoValueException e) {
 
-      Object value = this.attributeEnum.getDefaultValue();
-      if (value != null) {
-        return value;
-      }
+      return this.attributeEnum.getDefaultValue();
 
-      throw new NoValueException("No value or default value found");
     }
 
   }
 
 
-  @SuppressWarnings("unused")
+  /**
+   * @param value - the value set at runtime or the decoded value of raw values
+   */
   public Attribute setPlainValue(Object value) {
     Class<?> valueClazz = this.attributeEnum.getValueClazz();
     if (valueClazz == null) {
       throw new ClassCastException("The class of the attribute " + this.attributeEnum + " should not be null");
     }
-    try {
-      this.plainValue = Casts.cast(value, valueClazz);
-    } catch (CastException e) {
-      // It's not a secret as it's the original value
-      throw new ClassCastException("The value " + value + " of " + this.getAttributeMetadata() + " cannot be converted to a " + valueClazz);
+
+    this.plainValue = castToPlainValue(value, valueClazz);
+
+    if (this.rawValue == null) {
+      setRawValue(plainValue);
     }
     return this;
   }
 
+  /**
+   * Cast to a plain value
+   */
+  private Object castToPlainValue(Object value, Class<?> valueClazz) {
+
+    try {
+
+      // The only tabulify specific type for now
+      if (valueClazz == DataUriStringNode.class) {
+        return DataUriStringNode.createFromString(value.toString());
+      }
+
+      // All other
+      return Casts.cast(value, valueClazz);
+
+    } catch (CastException e) {
+      // It's not a secret as it's the original value
+      throw ExceptionWrapper.builder(e, "The value " + value + " of " + this.getAttributeMetadata() + " cannot be converted to a " + valueClazz.getSimpleName() + ". Error: " + e.getMessage())
+        .setPosition(ExceptionWrapper.ContextPosition.FIRST)
+        .buildAsRuntimeException()
+        ;
+    }
+
+  }
+
   @Override
   public String toString() {
-    /**
-     * No clear value in the log
-     */
-    return this.attributeEnum.toString() + " = " + Strings.createFromObjectNullSafe(this.rawValue);
+
+    StringBuilder stringBuilder = new StringBuilder();
+    stringBuilder
+      .append(this.attributeEnum.toString())
+      .append(" = ");
+    if (this.valueProvider != null) {
+      stringBuilder.append("value provider");
+    } else {
+
+      Object rawValue = this.rawValue;
+      if (rawValue != null) {
+        stringBuilder.append(rawValue);
+      } else if (this.plainValue != null) {
+
+        /**
+         * No clear value in the log
+         */
+        stringBuilder.append("secret");
+
+      } else {
+
+        stringBuilder.append("no value");
+
+      }
+
+    }
+    return stringBuilder.toString();
+
   }
 
 
@@ -230,7 +297,7 @@ public class Attribute implements Comparable<Attribute> {
    * Utility wrapper around {@link Casts#cast(Object, Class)}
    */
   @SuppressWarnings("unused")
-  public <T> T getValueOrDefaultCastAs(Class<T> clazz) throws NoValueException, CastException {
+  public <T> T getValueOrDefaultCastAs(Class<T> clazz) throws CastException {
     Object object = this.getValueOrDefault();
     return Casts.cast(object, clazz);
   }
@@ -244,7 +311,7 @@ public class Attribute implements Comparable<Attribute> {
 
     try {
       return getValueOrDefaultCastAs(clazz);
-    } catch (NoValueException | CastException e) {
+    } catch (CastException e) {
       throw new RuntimeException(e);
     }
 
@@ -261,24 +328,22 @@ public class Attribute implements Comparable<Attribute> {
     throw new NoValueException("No value found");
   }
 
-  @SuppressWarnings("unused")
-  public boolean hasNullValue() {
-    try {
-      this.getValueOrDefault();
-      return true;
-    } catch (NoValueException e) {
-      return false;
+  /**
+   * @return the plain value or the provider or null
+   * It's used in templating to pass template variable
+   * without computing each attribute
+   */
+  public Object getPublicValueOrProvider() {
+    Object publicValue = this.getRawValue();
+    if (publicValue != null) {
+      return publicValue;
     }
+    if (this.valueProvider != null) {
+      return this.valueProvider;
+    }
+    return null;
   }
 
-  @SuppressWarnings("unused")
-  public Object getValueOrDefaultOrNull() {
-    try {
-      return this.getValueOrDefault();
-    } catch (NoValueException e) {
-      return null;
-    }
-  }
 
   public Object getValueOrNull() {
     try {
@@ -290,14 +355,17 @@ public class Attribute implements Comparable<Attribute> {
 
 
   /**
-   * @return the string value or the empty string if not found
+   * @return the string value or the empty string if null
+   * By default, it was "null", not the empty string
    */
   public String getValueOrDefaultAsStringNotNull() {
-    try {
-      return String.valueOf(getValueOrDefault());
-    } catch (NoValueException e) {
+
+    Object valueOrDefault = getValueOrDefault();
+    if (valueOrDefault == null) {
       return "";
     }
+    return String.valueOf(valueOrDefault);
+
   }
 
   /**
@@ -321,9 +389,54 @@ public class Attribute implements Comparable<Attribute> {
     return this.attributeEnum.toString().compareTo(o.attributeEnum.toString());
   }
 
-  public Attribute setRawValue(String string) {
-    this.rawValue = string;
+  /**
+   * @param value - the raw or public value (maybe a string, a list or a map), found in a file
+   *              {@link #setPlainValue(Object)} will set it also if the raw value not set
+   *              This value is:
+   *              * used to create the {@link ConfVault}
+   *              * printed to the console {@link #getPublicValue()}
+   */
+  public Attribute setRawValue(Object value) {
+    this.rawValue = value;
     return this;
+  }
+
+  /**
+   * @return a public value, ie the value suitable for the console (ie hiding the secrets)
+   * This function will run the {@link #setValueProvider(Supplier)}
+   * See {@link #getPublicValueOrProvider()} if you want them before computation
+   */
+  public String getPublicValue() {
+
+    Object originalValue = this.getRawValue();
+    if (originalValue == null) {
+      originalValue = this.getValueOrDefault();
+      if ((isTabulifySecretAttribute || isOsSecret) && originalValue != null) {
+        originalValue = NOT_SHOWN_SECRET;
+      }
+    }
+    if (originalValue == null) {
+      return "";
+    }
+    boolean isCollection = Collection.class.isAssignableFrom(originalValue.getClass());
+    if (isCollection) {
+      return String.join(", ", Casts.castToNewListSafe(originalValue, String.class));
+    }
+    if (originalValue.getClass().isArray()) {
+      try {
+        return String.join(", ", Casts.castToArray(originalValue, String.class));
+      } catch (CastException e) {
+        throw new InternalException("The attribute " + this + " has an array value that could not be casted to an array of string. Error:" + e.getMessage(), e);
+      }
+    }
+
+    return originalValue.toString();
+
+  }
+
+
+  public boolean isValueProviderValue() {
+    return valueProvider != null;
   }
 
 }

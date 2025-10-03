@@ -18,19 +18,15 @@ public class FsCssManagerProvider extends FsFileManagerProvider {
   }
 
   /**
+   *
    */
   @Override
   public Boolean accept(MediaType mediaType) {
 
-    return isCssFileExtensionOrMime(mediaType);
+    return mediaType.getSubType().equals(MediaTypes.TEXT_CSS.getSubType());
 
   }
 
-  public static Boolean isCssFileExtensionOrMime(MediaType mimeType) {
-
-    return mimeType.getSubType().equals(MediaTypes.TEXT_CSS.getSubType());
-
-  }
 
   @Override
   public FsBinaryFileManager getFsFileManager() {

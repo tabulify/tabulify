@@ -1,0 +1,21 @@
+kind: generator
+spec:
+  LogicalName: date_dim
+  Columns:
+    - name: d_date
+      type: date
+      comment: A column with a sequence generator that generates a date sequence from 2001-01-01 and after
+      data-supplier:
+        type: sequence
+        arguments:
+          start: 2001-01-01
+          step: 1
+    - name: d_year
+      type: integer
+      precision: 4
+      comment: A column with a expression generator that extracts the year from the date column
+      data-supplier:
+        type: expression
+        arguments:
+          column-variable: d_date
+          expression: "d_date.getFullYear()"

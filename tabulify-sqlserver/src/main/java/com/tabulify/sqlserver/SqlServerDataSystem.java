@@ -1,19 +1,45 @@
 package com.tabulify.sqlserver;
 
+import com.tabulify.fs.sql.SqlQuery;
 import com.tabulify.jdbc.*;
 import com.tabulify.model.*;
 import com.tabulify.spi.DataPath;
-import com.tabulify.transfer.TransferSourceTarget;
+import com.tabulify.spi.DropTruncateAttribute;
+import com.tabulify.spi.Tabulars;
+import com.tabulify.stream.SelectStream;
+import com.tabulify.transfer.TransferSourceTargetOrder;
+import net.bytle.exception.InternalException;
 
+import java.math.BigDecimal;
 import java.sql.Types;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class SqlServerDataSystem extends SqlDataSystem {
 
   public static final int MAX_NVARCHAR_PRECISION = 4000;
-  public static final int MAX_VARCHAR_PRECISION = 8000;
+
+
+  public static final List<String> ALLOWED_VIEW_CLAUSE_WITH_ORDER_BY = Arrays.asList("TOP", "OFFSET", "FOR XML");
+  /**
+   * 38 comes from the driver and from the doc, ie you the maximum number would have 38 digits
+   * <a href="https://learn.microsoft.com/en-us/sql/t-sql/data-types/decimal-and-numeric-transact-sql?view=sql-server-ver17#p-precision">...</a>
+   * The precision must be a value from 1 through the maximum precision of 38. The default precision is 18.
+   */
+  public static final int NUMERIC_DECIMAL_MAX_PRECISION = 38;
+  public static final int NUMERIC_DECIMAL_PRECISION_DEFAULT = 18;
+
+  /**
+   * Max 24 digits
+   */
+  public static final int REAL_MAX_PRECISION = 24;
+  /**
+   * 10 digits (yyyy-mm-dd)
+   */
+  public static final int DATE_MAX_PRECISION = 10;
+
 
   public SqlServerDataSystem(SqlServerConnection jdbcDataStore) {
     super(jdbcDataStore);
@@ -23,180 +49,119 @@ public class SqlServerDataSystem extends SqlDataSystem {
    * <a href="https://docs.microsoft.com/en-us/sql/t-sql/statements/truncate-table-transact-sql?view=sql-server-ver15">...</a>
    */
   @Override
-  public void truncate(List<DataPath> dataPaths) {
-    super.truncate(dataPaths);
+  public void truncate(List<DataPath> dataPaths, Set<DropTruncateAttribute> dropAttributes) {
+    super.truncate(dataPaths, dropAttributes);
   }
 
   @Override
-  public Map<Integer, SqlMetaDataType> getMetaDataTypes() {
-    Map<Integer, SqlMetaDataType> metaDataType = super.getMetaDataTypes();
+  public void dataTypeBuildingMain(SqlDataTypeManager typeManager) {
+
+    super.dataTypeBuildingMain(typeManager);
+
 
     /**
-     * Character
+     * RowVersion is not part of the driver
+     * We add it for info
      */
-    // The size (xxxxxxx) given to the column 'varchar' exceeds the maximum allowed for any data type (8000).
-    metaDataType.computeIfAbsent(Types.VARCHAR, SqlMetaDataType::new)
-      .setDefaultPrecision(1)
-      .setMaxPrecision(MAX_VARCHAR_PRECISION);
-
-    metaDataType.computeIfAbsent(Types.CHAR, SqlMetaDataType::new)
-      .setDefaultPrecision(1);
-
-    metaDataType.computeIfAbsent(Types.NCHAR, SqlMetaDataType::new)
-      .setDefaultPrecision(1);
-
-    // nvarchar is used to store json in the doc
-
-    metaDataType.computeIfAbsent(Types.NVARCHAR, SqlMetaDataType::new)
-      .setSqlName("nvarchar") // was sysname
-      .setDefaultPrecision(1)
-      .setMaxPrecision(MAX_NVARCHAR_PRECISION);
+    typeManager.createTypeBuilder(SqlServerTypes.ROWVERSION);
 
     /**
+     * Max precision given by the driver was 27???
+     */
+    typeManager.getTypeBuilder(SqlServerTypes.DATETIME2)
+      .setMaxPrecision(SqlServerTypes.DATETIME2.getMaxPrecision());
+
+
+    /**
+     * CLOB, Text is deprecated for varchar(max)
      * https://docs.microsoft.com/en-us/sql/connect/jdbc/using-advanced-data-types
      * Clob can be seen as text that comes back as long varchar
+     * No support for CLOB natively, we send back a varchar(max) as advised here
+     * https://learn.microsoft.com/en-us/sql/connect/jdbc/using-advanced-data-types?view=sql-server-ver17#blob-and-clob-and-nclob-data-types
      */
-    metaDataType.computeIfAbsent(Types.CLOB, SqlMetaDataType::new)
-      .setSqlName("text");
-    metaDataType.computeIfAbsent(Types.LONGVARCHAR, SqlMetaDataType::new)
-      .setSqlName("text");
+    typeManager.addTypeCodeTypeNameMapEntry(SqlDataTypeAnsi.CLOB, SqlServerTypes.VARCHAR);
 
-    /**
-     * Integer
-     * https://docs.microsoft.com/en-us/sql/t-sql/data-types/int-bigint-smallint-and-tinyint-transact-sql
-     * The driver was adding the identity word
-     * https://docs.microsoft.com/en-us/sql/t-sql/statements/create-table-transact-sql-identity-property
-     */
-    metaDataType.computeIfAbsent(Types.INTEGER, SqlMetaDataType::new)
-      .setSqlName("int")
-      .setMaxPrecision(10);
-
-    metaDataType.computeIfAbsent(Types.BIGINT, SqlMetaDataType::new)
-      .setSqlName("bigint")
-      .setMaxPrecision(19);
-
-    metaDataType.computeIfAbsent(Types.SMALLINT, SqlMetaDataType::new)
-      .setSqlName("smallint")
-      .setMaxPrecision(5);
-
-    metaDataType.computeIfAbsent(Types.TINYINT, SqlMetaDataType::new)
-      .setSqlName("tinyint")
-      .setMaxPrecision(3);
-
-    /**
-     * Numeric
-     * https://docs.microsoft.com/en-us/sql/t-sql/data-types/decimal-and-numeric-transact-sql?view=sql-server-ver15
-     */
-    metaDataType.computeIfAbsent(Types.NUMERIC, SqlMetaDataType::new)
-      .setSqlName("numeric")
-      .setMaxPrecision(38)
-      .setMaximumScale(38)
-      .setDefaultPrecision(18);
-
-    metaDataType.computeIfAbsent(Types.DECIMAL, SqlMetaDataType::new)
-      .setSqlName("decimal")
-      .setMaxPrecision(38)
-      .setDefaultPrecision(18);
-
-    /**
-     * Float, Double, Real
-     * https://docs.microsoft.com/en-us/sql/t-sql/data-types/float-and-real-transact-sql?view=sql-server-ver15
-     */
-    metaDataType.computeIfAbsent(Types.FLOAT, SqlMetaDataType::new)
-      .setSqlName("float")
-      .setMaxPrecision(53)
-      .setDefaultPrecision(53);
-
-    /**
-     * Double = float(53)
-     */
-    metaDataType.computeIfAbsent(Types.DOUBLE, SqlMetaDataType::new)
-      .setSqlName("float")
-      .setMaxPrecision(53)
-      .setDefaultPrecision(53);
-
-    /**
-     *
-     * datetime should become datetime2.
-     * https://docs.microsoft.com/en-us/sql/t-sql/data-types/datetime-transact-sql?view=sql-server-ver15
-     * <p></p>
-     * https://docs.microsoft.com/en-us/sql/t-sql/data-types/datetime2-transact-sql?view=sql-server-ver15
-     */
-    metaDataType.computeIfAbsent(Types.TIMESTAMP, SqlMetaDataType::new)
-      .setSqlName("datetime2")
-      .setDefaultPrecision(7);
-
-    /**
-     * TIMESTAMP_WITH_TIMEZONE is known as datetimeoffset
-     * https://docs.microsoft.com/en-us/sql/t-sql/data-types/datetimeoffset-transact-sql?view=sql-server-ver15
-     */
-    metaDataType.computeIfAbsent(Types.TIMESTAMP_WITH_TIMEZONE, SqlMetaDataType::new)
-      .setSqlName("datetimeoffset")
-      .setDefaultPrecision(7);
-
-    metaDataType.computeIfAbsent(SqlServerTypes.DATETIMEOFFSET, i -> metaDataType.get(Types.TIMESTAMP_WITH_TIMEZONE))
-      .setSqlJavaClazz(java.sql.Timestamp.class)
-      .setDriverTypeCode(Types.TIMESTAMP_WITH_TIMEZONE)
-      .setDefaultPrecision(7);
-
-    metaDataType.computeIfAbsent(Types.TIME, SqlMetaDataType::new)
-      .setSqlName("time")
-      .setDefaultPrecision(7);
 
     /**
      * Boolean
      * https://docs.microsoft.com/en-us/sql/t-sql/data-types/bit-transact-sql?view=sql-server-ver15
+     * There is no boolean data type
+     * It's a bit(1)
+     * <a href="https://docs.microsoft.com/en-us/sql/t-sql/data-types/bit-transact-sql?view=sql-server-ver15">...</a>
+     * <a href="https://learn.microsoft.com/en-us/sql/connect/jdbc/using-basic-data-types">...</a>
+     * Alias to bit works because the default precision is 1
      */
-    metaDataType.computeIfAbsent(Types.BOOLEAN, i -> metaDataType.get(Types.BIT))
-      .setSqlName("bit");
+    typeManager.addTypeCodeTypeNameMapEntry(SqlDataTypeAnsi.BOOLEAN, SqlDataTypeAnsi.BIT);
 
     /**
-     * See
-     * https://docs.microsoft.com/en-us/sql/connect/jdbc/using-advanced-data-types
+     * A float is a double in sql server
      */
-    metaDataType.computeIfAbsent(SqlTypes.JSON, SqlMetaDataType::new)
-      .setSqlName("nvarchar")
-      .setDriverTypeCode(Types.NVARCHAR);
-
+    typeManager.addTypeCodeTypeNameMapEntry(SqlDataTypeAnsi.FLOAT, SqlServerTypes.FLOAT);
 
     /**
-     * See
-     * https://docs.microsoft.com/en-us/sql/connect/jdbc/using-advanced-data-types
+     * Timestamp to datetime2 (datetime exists also but is not preferred)
      */
-    metaDataType.computeIfAbsent(Types.SQLXML, SqlMetaDataType::new)
-      .setSqlName("xml");
+    typeManager.addTypeCodeTypeNameMapEntry(SqlDataTypeAnsi.TIMESTAMP, SqlServerTypes.DATETIME2);
 
-    return metaDataType;
+    /**
+     * Priority to numeric (vs decimal)
+     */
+    typeManager.addJavaClassToTypeRelation(BigDecimal.class, SqlDataTypeAnsi.NUMERIC);
+
+    /**
+     * Lala.. sql_identifier is also a string
+     */
+    typeManager.addJavaClassToTypeRelation(String.class, SqlServerTypes.VARCHAR);
+
+    /**
+     * Json (Only in SQL Server 2025 (17.x) Preview.
+     */
+    SqlDataType.SqlDataTypeBuilder<?> jsonType = typeManager.getTypeBuilder(SqlDataTypeAnsi.JSON.toKeyNormalizer());
+    if (jsonType == null) {
+      typeManager.addTypeCodeTypeNameMapEntry(SqlDataTypeAnsi.JSON, SqlServerTypes.VARCHAR);
+    }
+
 
   }
 
   @Override
-  protected String createDataTypeStatement(ColumnDef columnDef) {
+  public SqlTypeKeyUniqueIdentifier getSqlTypeKeyUniqueIdentifier() {
+    return SqlTypeKeyUniqueIdentifier.NAME_ONLY;
+  }
 
-    SqlDataType dataType = sqlConnection.getSqlDataTypeFromSourceDataType(columnDef.getDataType());
-    Integer precision = columnDef.getPrecision();
-    switch (dataType.getTargetTypeCode()) {
-      case Types.TIMESTAMP_WITH_TIMEZONE:
-        if (!(precision == null || precision.equals(dataType.getDefaultPrecision()))) {
-          return dataType.getSqlName() + "(" + precision + ")";
-        }
-        return dataType.getSqlName();
+  @Override
+  protected String createDataTypeStatement(ColumnDef<?> columnDef) {
+
+    SqlDataType<?> dataType = sqlConnection.getSqlDataTypeFromSourceColumn(columnDef);
+    int precision = columnDef.getPrecision();
+    switch (dataType.getVendorTypeNumber()) {
       case Types.VARCHAR:
       case Types.NVARCHAR:
         /**
          * The default for varchar is 1 when there is no precision
-         * Which means that we got a lot of problem.
-         * <p></p>
+         * Which means that we got nvarchar(1) and a lot of problem when loading unknown length data.
+         * <p>
          * We change that it to make it max and output `max` when the precision is the max
-         * <p></p>
+         * <p>
          * This has also the effect that JSON takes also the max
+         * <p>
+         * Ref:
+         * When n isn't specified in a data definition or variable declaration statement, the default length is 1. If n isn't specified when using the CAST and CONVERT functions, the default length is 30.
+         * https://learn.microsoft.com/en-us/sql/t-sql/data-types/char-and-varchar-transact-sql
+         * https://learn.microsoft.com/en-us/sql/t-sql/data-types/nchar-and-nvarchar-transact-sql
          */
         StringBuilder typeStatement = new StringBuilder();
-        typeStatement.append(dataType.getSqlName());
+        typeStatement.append(dataType.toKeyNormalizer());
 
         typeStatement.append("(");
-        if (precision == null || dataType.getMaxPrecision() != null && columnDef.getPrecision().equals(dataType.getMaxPrecision())) {
-          typeStatement.append("max");
+        if (precision == 0) {
+          int defaultPrecision = dataType.getDefaultPrecision();
+          if (defaultPrecision == 0) {
+            // maximum storage size is 2^31-1 characters (2 GB)
+            typeStatement.append("max");
+          } else {
+            typeStatement.append(defaultPrecision);
+          }
         } else {
           typeStatement.append(columnDef.getPrecision());
         }
@@ -211,67 +176,55 @@ public class SqlServerDataSystem extends SqlDataSystem {
 
 
   @Override
-  public List<SqlMetaColumn> getMetaColumns(SqlDataPath dataPath) {
-    List<SqlMetaColumn> metaColumns = super.getMetaColumns(dataPath);
+  protected List<String> createDropStatement(List<SqlDataPath> sqlDataPaths, Set<DropTruncateAttribute> dropAttributes) {
 
-    metaColumns.forEach(c -> {
-        if (c.getTypeCode().equals(SqlServerTypes.DATETIMEOFFSET)) {
-          c.setPrecision(c.getScale());
-          c.setScale(null);
-        }
-        /**
-         * The driver returns {@link Types.LONGNVARCHAR}
-         */
-        if (c.getTypeName().equals("xml")) {
-          c.setTypeCode(Types.SQLXML);
-        }
-        /**
-         * The driver returns 2147483647 but max is 4000
-         */
-        if (c.getTypeCode().equals(Types.NVARCHAR)) {
-          if (c.getPrecision() > MAX_NVARCHAR_PRECISION) {
-            c.setPrecision(MAX_NVARCHAR_PRECISION);
-          }
-        }
-        /**
-         * The driver returns 2147483647 but max is 8000
-         */
-        if (c.getTypeCode().equals(Types.VARCHAR)) {
-          if (c.getPrecision() > MAX_VARCHAR_PRECISION) {
-            c.setPrecision(MAX_VARCHAR_PRECISION);
-          }
-        }
-      }
-    );
-    return metaColumns;
+    SqlMediaType enumObjectType = sqlDataPaths.get(0).getMediaType();
+    SqlDropStatement.DropStatementBuilder sqlDropStatement = SqlDropStatement.builder()
+      .setType(enumObjectType)
+      .setIfExistsSupported(true)
+      .setMultipleSqlObjectSupported(true)
+      // cascade is not supported at all (even on schema)
+      .setIsCascadeSupported(false);
 
-  }
+    switch (enumObjectType) {
+      case SCHEMA:
+        // 'DROP SCHEMA' does not allow specifying the schema and database name as a prefix to the object name.
+        // https://learn.microsoft.com/en-us/sql/t-sql/statements/drop-schema-transact-sql
+        sqlDropStatement.setMaximumNamePart(1);
+        break;
+      case TABLE:
+        // 'DROP TABLE' allows all 3 parts
+        // https://learn.microsoft.com/en-us/sql/t-sql/statements/drop-table-transact-sql?view=sql-server-ver17
+        sqlDropStatement.setMaximumNamePart(3);
+        break;
+      case VIEW:
+      default:
+        // 'DROP VIEW' does not allow specifying the database name as a prefix to the object name.
+        // https://learn.microsoft.com/en-us/sql/t-sql/statements/drop-view-transact-sql
+        sqlDropStatement.setMaximumNamePart(2);
+        break;
 
-
-  @Override
-  protected String createDropTableStatement(SqlDataPath sqlDataPath) {
-    if (sqlDataPath.getMediaType() == SqlMediaType.VIEW) {
-      // 'DROP VIEW' does not allow specifying the database name as a prefix to the object name.
-      return "drop view " + sqlDataPath.toSqlStringPath(2);
-
-    } else {
-      return super.createDropTableStatement(sqlDataPath);
     }
+
+    return sqlDropStatement.build()
+      .getStatements(sqlDataPaths, dropAttributes);
+
+
   }
 
   @Override
-  public String createInsertStatementWithBindVariables(TransferSourceTarget transferSourceTarget) {
+  public String createInsertStatementWithBindVariables(TransferSourceTargetOrder transferSourceTarget) {
     return super.createInsertStatementWithBindVariables(transferSourceTarget);
   }
 
   @Override
-  public String createUpsertStatementWithPrintfExpressions(TransferSourceTarget transferSourceTarget) {
+  public String createUpsertMergeStatementWithPrintfExpressions(TransferSourceTargetOrder transferSourceTarget) {
     return getMergeStatement(transferSourceTarget, false);
   }
 
 
   @Override
-  public String createUpsertStatementWithBindVariables(TransferSourceTarget transferSourceTarget) {
+  public String createUpsertMergeStatementWithParameters(TransferSourceTargetOrder transferSourceTarget) {
 
     return getMergeStatement(transferSourceTarget, true);
 
@@ -281,7 +234,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
    * Upsert statement is known as Merge
    * <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/merge-transact-sql?view=sql-server-ver16">...</a>
    */
-  private String getMergeStatement(TransferSourceTarget transferSourceTarget, boolean sqlBindFormat) {
+  private String getMergeStatement(TransferSourceTargetOrder transferSourceTarget, boolean sqlBindFormat) {
 
     // Original upsert statement are insert and then update on conflict
     // Sql server is match expression on column, meaning that
@@ -325,9 +278,9 @@ public class SqlServerDataSystem extends SqlDataSystem {
 
     // on
     mergeStatement.append(" on ");
-    List<ColumnDef> uniqueKeyColumns = targetUniqueKeysFoundInSourceColumns.get(0).getColumns();
+    List<ColumnDef<?>> uniqueKeyColumns = targetUniqueKeysFoundInSourceColumns.get(0).getColumns();
     for (int i = 0; i < uniqueKeyColumns.size(); i++) {
-      ColumnDef uniqueKeyColumnDef = uniqueKeyColumns.get(i);
+      ColumnDef<?> uniqueKeyColumnDef = uniqueKeyColumns.get(i);
       mergeStatement
         .append(sourceAlias).append(".").append(this.createQuotedName(uniqueKeyColumnDef.getColumnName()))
         .append(" = ")
@@ -339,9 +292,9 @@ public class SqlServerDataSystem extends SqlDataSystem {
 
     // WHEN MATCHED THEN update
     mergeStatement.append(" WHEN MATCHED THEN UPDATE SET ");
-    List<ColumnDef> sourceNonUniqueColumnsForTarget = transferSourceTarget.getSourceNonUniqueColumnsForTarget();
+    List<ColumnDef<?>> sourceNonUniqueColumnsForTarget = transferSourceTarget.getSourceNonUniqueColumnsForTarget();
     for (int i = 0; i < sourceNonUniqueColumnsForTarget.size(); i++) {
-      ColumnDef updateColumn = sourceNonUniqueColumnsForTarget.get(i);
+      ColumnDef<?> updateColumn = sourceNonUniqueColumnsForTarget.get(i);
       mergeStatement
         .append(targetAlias)
         .append(".")
@@ -357,9 +310,9 @@ public class SqlServerDataSystem extends SqlDataSystem {
 
     // WHEN not MATCHED THEN insert
     mergeStatement.append(" WHEN NOT MATCHED THEN INSERT (");
-    List<? extends ColumnDef> targetColumnsToLoad = transferSourceTarget.getSourceColumnsInInsertStatement();
+    List<? extends ColumnDef<?>> targetColumnsToLoad = transferSourceTarget.getTargetColumnInInsertStatement();
     for (int i = 0; i < targetColumnsToLoad.size(); i++) {
-      ColumnDef targetInsertColumn = targetColumnsToLoad.get(i);
+      ColumnDef<?> targetInsertColumn = targetColumnsToLoad.get(i);
       mergeStatement.append(this.createQuotedName(targetInsertColumn.getColumnName()));
       if (i != targetColumnsToLoad.size() - 1) {
         mergeStatement.append(",");
@@ -367,7 +320,7 @@ public class SqlServerDataSystem extends SqlDataSystem {
     }
     mergeStatement.append(") VALUES (");
     for (int i = 0; i < targetColumnsToLoad.size(); i++) {
-      ColumnDef targetInsertColumn = targetColumnsToLoad.get(i);
+      ColumnDef<?> targetInsertColumn = targetColumnsToLoad.get(i);
       mergeStatement
         .append(sourceAlias)
         .append(".")
@@ -386,22 +339,28 @@ public class SqlServerDataSystem extends SqlDataSystem {
   }
 
   @Override
-  public String createViewStatement(SqlDataPath dataPath) {
+  protected String getViewName(SqlScript sqlScript, SqlDataPath targetDataPath) {
 
-    if (dataPath.getMediaType() == SqlMediaType.SCRIPT) {
-      String query = createOrGetQuery(dataPath);
-      // A view in sql server have only one name
-      // Otherwise, error !
-      // 'CREATE/ALTER VIEW' does not allow specifying the database name as a prefix to the object name.
-      String viewName = this.createQuotedName(dataPath.getLogicalName());
-      return "create view " + viewName + " as " + query;
+    // A view in sql server have only one name
+    // Otherwise, error !
+    // 'CREATE/ALTER VIEW' does not allow specifying the database name as a prefix to the object name.
+    if (targetDataPath != null) {
+      return this.createQuotedName(targetDataPath.getLogicalName());
     }
-    /**
-     * We need a name for the view
-     * A view is just a stored query
-     */
-    throw new UnsupportedOperationException("A create view statement is only support for a query data resource");
+    return this.createQuotedName(sqlScript.getExecutableDataPath().getLogicalName());
 
+  }
+
+
+  @Override
+  protected String getViewStatement(String viewStatement) {
+
+    for (String allowedClause : ALLOWED_VIEW_CLAUSE_WITH_ORDER_BY) {
+      if (viewStatement.contains(allowedClause)) {
+        return viewStatement;
+      }
+    }
+    return SqlQuery.createFromString(viewStatement).toStringWithoutOrderBy();
 
   }
 
@@ -416,6 +375,86 @@ public class SqlServerDataSystem extends SqlDataSystem {
       .map(d -> "truncate table " + d.toSqlStringPath())
       .collect(Collectors.toList());
 
+  }
+
+  @Override
+  public Long getSize(DataPath dataPath) {
+    SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
+    /**
+     * Table only for now
+     */
+    if (!
+      (
+        sqlDataPath.getMediaType() == SqlMediaType.TABLE ||
+          sqlDataPath.getMediaType() == SqlMediaType.SYSTEM_TABLE
+      )) {
+      return -1L;
+    }
+    // https://learn.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-allocation-units-transact-sql?view=sql-server-ver17#determine-space-used-by-object-and-type-of-an-allocation-unit
+    SqlRequest sqlRequest = SqlRequest.builder()
+      .setSql(this.getConnection(), "SELECT u.total_pages\n" +
+        "FROM sys.allocation_units AS u\n" +
+        "         JOIN sys.partitions AS p ON u.container_id = p.hobt_id\n" +
+        "         JOIN sys.tables AS t ON p.object_id = t.object_id\n" +
+        "         INNER JOIN sys.schemas s ON t.schema_id = s.schema_id\n" +
+        "WHERE t.object_id = OBJECT_ID(?)")
+      .build();
+    sqlRequest
+      .addParameter(
+        SqlParameter
+          .builder()
+          .setValue(sqlDataPath.toSqlStringPath())
+      );
+    try (SelectStream selectStream = sqlRequest.execute().getSelectStreamSafe()) {
+      boolean nextRecord = selectStream.next();
+      if (!nextRecord) {
+        // may not exist
+        return -1L;
+      }
+      return selectStream.getObject(1, Long.class);
+    }
+
+  }
+
+
+  /**
+   * Only one name is authorized
+   */
+  @Override
+  public String createSchemaStatement(SqlDataPath dataPath) {
+
+    if (!dataPath.getMediaType().equals(SqlMediaType.SCHEMA)) {
+      throw new InternalException("The data path (" + dataPath + ") is not a schema resource but a " + dataPath.getMediaType());
+    }
+
+    return "create schema " + dataPath.toSqlStringPath(1);
+
+  }
+
+  @Override
+  public void drop(List<DataPath> dataPaths, Set<DropTruncateAttribute> dropAttributes) {
+    if (dataPaths.isEmpty()) {
+      return;
+    }
+    DataPath dataPath = dataPaths.get(0);
+    if (dataPath.getMediaType() == SqlMediaType.SCHEMA) {
+      /**
+       * SQL Server does not support the cascade attribute
+       * We do it
+       */
+      if (dropAttributes.contains(DropTruncateAttribute.CASCADE)) {
+        if (!Tabulars.exists(dataPath)) {
+          return;
+        }
+        Tabulars.drop(Tabulars.getChildren(dataPath));
+      }
+    }
+    super.drop(dataPaths, dropAttributes);
+  }
+
+  @Override
+  public Set<SqlDataTypeVendor> getSqlDataTypeVendors() {
+    return Set.of(SqlServerTypes.values());
   }
 
 }

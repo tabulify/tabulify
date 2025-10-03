@@ -14,8 +14,8 @@ plugins {
 
 
 description = "Db Cli"
-val tabliApplicationName = "tabli"
-val tabliReleaseFileName = "release-${tabliApplicationName}.properties"
+val tabulApplicationName = "tabul"
+val tabulReleaseFileName = "release-${tabulApplicationName}.properties"
 
 /**
  * Target Os for the distributions
@@ -65,7 +65,7 @@ val archiveBaseName: String = "tabulify"
 val currentDirectory: String by project
 val arguments: String by project
 val uberFatJarClassifier: String = "all"
-val tabli: String = "tabli"
+val tabul: String = "tabul"
 
 
 /**
@@ -85,7 +85,7 @@ val releaseFile = tasks.register<Copy>("versionFile") {
       "buildOsArch" to System.getProperty("os.arch")
     )
     eachFile {
-      name = tabliReleaseFileName
+      name = tabulReleaseFileName
     }
   }
 }
@@ -105,16 +105,16 @@ val releaseFile = tasks.register<Copy>("versionFile") {
  * https://imperceptiblethoughts.com/shadow/custom-tasks/
  *
  */
-val tabliShadowJarName = "tabli"
-val tabliShadowJar = tasks.named<ShadowJar>("shadowJar") {
+val tabulShadowJarName = "tabul"
+val tabulShadowJar = tasks.named<ShadowJar>("shadowJar") {
 
-  group = tabli
-  archiveBaseName.set(tabliShadowJarName)
+  group = tabul
+  archiveBaseName.set(tabulShadowJarName)
   mergeServiceFiles()
   manifest.inheritFrom(jar.manifest)
   manifest {
     // the description and version attribute are set in the jar task
-    attributes["Main-Class"] = "net.bytle.db.tabli.Tabli"
+    attributes["Main-Class"] = "net.bytle.db.tabul.tabul"
     attributes["FatJar"] = "yes"
   }
 
@@ -124,7 +124,7 @@ val tabliShadowJar = tasks.named<ShadowJar>("shadowJar") {
   dependsOn(releaseFile)
 
   // add the release
-  from(layout.buildDirectory.file(tabliReleaseFileName))
+  from(layout.buildDirectory.file(tabulReleaseFileName))
 
 }
 
@@ -184,9 +184,9 @@ val jar = tasks.getByName<Jar>("jar") {
   manifest {
     // https://docs.oracle.com/javase/tutorial/deployment/jar/packageman.html
     // https://docs.oracle.com/javase/8/docs/technotes/guides/versioning/spec/versioning2.html#wp89936
-    attributes["Name"] = "net/bytle/db/tabli"
-    attributes["Description"] = "The tabli command line tool"
-    attributes["Package-Title"] = "Tabli"
+    attributes["Name"] = "net/bytle/db/tabul"
+    attributes["Description"] = "The tabul command line tool"
+    attributes["Package-Title"] = "tabul"
     attributes["Package-Version"] = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE)
     attributes["Package-Vendor"] = "tabulify"
     attributes["Build-Time"] = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
@@ -203,12 +203,12 @@ val jar = tasks.getByName<Jar>("jar") {
 val buildDockerImage = "buildDockerImage"
 tasks.register<Exec>(buildDockerImage) {
 
-  group = tabli
+  group = tabul
 
   // The dependency are started in the Dockerfile
   // to build the artifacts
-  //dependsOn(tabliShadowJar)
-  //dependsOn(tabliShadowStartScripts)
+  //dependsOn(tabulShadowJar)
+  //dependsOn(tabulShadowStartScripts)
 
   val gradleVersion = gradle.gradleVersion
   val relativePath = projectDir.relativeTo(rootProject.projectDir)
@@ -230,19 +230,19 @@ tasks.register<Exec>(buildDockerImage) {
     println("  * Java Version:  $javaVersion")
     println("  * Java Version:  $jvmVersion")
     println("  * Java Vendor:  $javaVendor")
-    println("  * File Name:  ${shadowJarFileName.get()}") // tabli-all.jar
+    println("  * File Name:  ${shadowJarFileName.get()}") // tabul-all.jar
   }
 
 }
 
 /**
- * The tabli start scripts
+ * The tabul start scripts
  */
-val tabliStartScripts = tasks.register<CreateStartScripts>("tabliStartScripts") {
-  group = tabli
+val tabulStartScripts = tasks.register<CreateStartScripts>("tabulStartScripts") {
+  group = tabul
   outputDir = file("${buildDir}/scripts/non-shadow")
-  applicationName = tabliApplicationName
-  mainClass.set("net.bytle.db.tabli.Tabli")
+  applicationName = tabulApplicationName
+  mainClass.set("net.bytle.db.tabul.tabul")
   classpath = files(configurations.runtimeClasspath) + files(jar.archiveFileName)
   // Class Path was too long for Windows, we have changed the template
   // see the `tasks.withType<CreateStartScripts>` block
@@ -250,15 +250,15 @@ val tabliStartScripts = tasks.register<CreateStartScripts>("tabliStartScripts") 
 
 // Get the file path of the shadow file
 val shadowJarFileName by extra {
-  tabliShadowJar.map { shadowJarTask ->
+  tabulShadowJar.map { shadowJarTask ->
     shadowJarTask.archiveFileName.get()
   }
 }
-val tabliShadowStartScripts = tasks.register<CreateStartScripts>("tabliShadowStartScripts") {
-  group = tabli
+val tabulShadowStartScripts = tasks.register<CreateStartScripts>("tabulShadowStartScripts") {
+  group = tabul
   outputDir = file("${buildDir}/scripts/shadow")
-  applicationName = tabliApplicationName
-  mainClass.set("net.bytle.db.tabli.Tabli")
+  applicationName = tabulApplicationName
+  mainClass.set("net.bytle.db.tabul.tabul")
   classpath = files(shadowJarFileName)
   // Class Path was too long for Windows, we have changed the template
   // see the `tasks.withType<CreateStartScripts>` block
@@ -329,13 +329,13 @@ dependencies {
 
 
 /**
- * External script called with `tabli.cmd`
+ * External script called with `tabul.cmd`
  * to be able to develop interactively
  * Args are passed with the `--args=` option
  */
-tasks.register<JavaExec>("tabli") {
-  group = tabli
-  mainClass.set("net.bytle.db.tabli.Tabli")
+tasks.register<JavaExec>("tabul") {
+  group = tabul
+  mainClass.set("net.bytle.db.tabul.tabul")
   classpath = sourceSets["main"].runtimeClasspath
   if (project.hasProperty("currentDirectory")) {
     workingDir = File(currentDirectory)
@@ -353,13 +353,13 @@ testTask.failFast = failFast.toBoolean()
 
 
 /**
- * Upload tabli on the server
+ * Upload tabul on the server
  * Note: 2022-11-24: We deploy only the shadow jar (due to error in hash when using Jlink)
  */
 tasks.register("deploy") {
 //  dependsOn(testTask, distZip)
   //dependsOn(x64LinuxDistZipTaskName)
-  dependsOn(tabliShadowJar)
+  dependsOn(tabulShadowJar)
   failFast = "true"
 
   doLast {
@@ -370,7 +370,7 @@ tasks.register("deploy") {
     val appsUserName: String by project
     val appsUserPwd: String by project
     val tabulifyUploadDir =
-      "/opt/apps/tabli/shadow" // project.properties.getOrDefault("tabulifyUploadDir", "/opt/apps/tabli/shadow") as String
+      "/opt/apps/tabul/shadow" // project.properties.getOrDefault("tabulifyUploadDir", "/opt/apps/tabul/shadow") as String
 
 
     /**
@@ -389,7 +389,7 @@ tasks.register("deploy") {
 //    val archiveName = getArchiveBaseName(x64Linux)
 //    val archiveFullName = "${archiveName}.zip"
 //    val file = "${buildDir}/distributions/$archiveFullName"
-    val file = "${buildDir}/libs/$tabliShadowJarName.jar"
+    val file = "${buildDir}/libs/$tabulShadowJarName.jar"
     ant.withGroovyBuilder {
       "scp"(
         "file" to file,
@@ -412,7 +412,7 @@ tasks.register("deploy") {
 //      )
 //    }
 //    val command =
-//      "rm -r ${tabulifyUploadDir}/tabli; unzip ${tabulifyUploadDir}/${archiveFullName} ; mv ${tabulifyUploadDir}/${archiveName} tabli ; rm ${tabulifyUploadDir}//${archiveFullName} ; echo Done"
+//      "rm -r ${tabulifyUploadDir}/tabul; unzip ${tabulifyUploadDir}/${archiveFullName} ; mv ${tabulifyUploadDir}/${archiveName} tabul ; rm ${tabulifyUploadDir}//${archiveFullName} ; echo Done"
 //    ant.withGroovyBuilder {
 //      "sshexec"(
 //        "command" to command,
@@ -857,7 +857,7 @@ distributions {
         from("src/gradle/README.md") {
           expand(
             "version" to version,
-            "commandName" to tabliApplicationName
+            "commandName" to tabulApplicationName
           )
         }
       }
@@ -927,7 +927,7 @@ distributions {
 val distDep = tasks.register("distDep")
   .get()
   .dependsOn(jar)
-  .dependsOn(tabliStartScripts)
+  .dependsOn(tabulStartScripts)
   .dependsOn(configurations.runtimeClasspath)
 
 tasks.getByName("distZip")

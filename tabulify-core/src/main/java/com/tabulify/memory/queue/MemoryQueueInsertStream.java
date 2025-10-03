@@ -13,7 +13,7 @@ public class MemoryQueueInsertStream extends InsertStreamAbs implements InsertSt
 
   private final MemoryQueueDataPath memoryQueueDataPath;
 
-  private ArrayBlockingQueue tabular;
+  private final ArrayBlockingQueue<List<Object>> listObjectQueue;
 
   private int currentRowInBatch = 0;
   private int batchExecutionCount = 0;
@@ -21,7 +21,7 @@ public class MemoryQueueInsertStream extends InsertStreamAbs implements InsertSt
   public MemoryQueueInsertStream(MemoryQueueDataPath memoryQueueDataPath) {
     super(memoryQueueDataPath);
     this.memoryQueueDataPath = memoryQueueDataPath;
-    this.tabular = memoryQueueDataPath.getValues();
+    this.listObjectQueue = memoryQueueDataPath.getValues();
   }
 
 
@@ -33,7 +33,7 @@ public class MemoryQueueInsertStream extends InsertStreamAbs implements InsertSt
     int timeout = memoryQueueDataPath.getTimeOut();
     boolean result;
     try {
-      result = tabular.offer(objects, timeout, TimeUnit.SECONDS);
+      result = listObjectQueue.offer(objects, timeout, TimeUnit.SECONDS);
     } catch (InterruptedException e) {
       this.insertStreamListener.addException(e);
       throw new RuntimeException(e);

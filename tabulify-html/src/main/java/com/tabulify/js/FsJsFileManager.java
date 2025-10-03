@@ -3,6 +3,7 @@ package com.tabulify.js;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.FsFileManager;
 import com.tabulify.fs.binary.FsBinaryFileManager;
+import net.bytle.type.MediaType;
 
 import java.nio.file.Path;
 
@@ -19,9 +20,9 @@ public class FsJsFileManager extends FsBinaryFileManager implements FsFileManage
   }
 
   @Override
-  public FsJsDataPath createDataPath(FsConnection fsConnection, Path path) {
+  public FsJsDataPath createDataPath(FsConnection fsConnection, Path relativePath, MediaType mediaType) {
 
-    return new FsJsDataPath(fsConnection, path);
+    return new FsJsDataPath(fsConnection, relativePath);
 
   }
 

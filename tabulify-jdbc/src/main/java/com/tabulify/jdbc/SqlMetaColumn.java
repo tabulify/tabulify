@@ -1,14 +1,13 @@
 package com.tabulify.jdbc;
 
 import com.tabulify.model.ColumnDef;
-import com.tabulify.spi.DataPath;
 
 import java.sql.DatabaseMetaData;
 
 /**
  * Represents the column meta that we get from the database
  * This object is used to be able to path information
- * to {@link SqlDataStoreProvider}
+ * to {@link SqlConnectionProvider}
  * in order to correct them
  * before creating the columns
  * <p>
@@ -24,13 +23,15 @@ public class SqlMetaColumn {
   /**
    * The IsGeneratedColumn of the JDBC driver
    */
-  private String isGeneratedColumn;
+  private Boolean isGeneratedColumn;
   /**
    * The isAutoIncrement of the JDBC driver
    */
   private Boolean isAutoIncrement;
   /**
-   * The COLUMN_SIZE of the JDBC driver (ie precision)
+   * The COLUMN_SIZE of the JDBC driver (ie the size on the terminal display)
+   * <p></p>
+   * <a href="https://docs.oracle.com/javase/8/docs/api/java/sql/DatabaseMetaData.html#getColumns-java.lang.String-java.lang.String-java.lang.String-java.lang.String-">JDBC definition</a>
    * For numeric data, this is the maximum precision.
    * For character data, this is the length in characters.
    * For datetime datatypes, this is the length in characters of the String representation
@@ -38,11 +39,11 @@ public class SqlMetaColumn {
    * For the ROWID datatype, this is the length in bytes.
    * Null is returned for data types where the column size is not applicable.
    */
-  private Integer precision;
+  private int columnSize;
   /**
    * The type code constant ({@link java.sql.Types}
    */
-  private Integer typeCode;
+  private int typeCode;
   /**
    * The type name of the JDBC driver
    * It's handy when the type code constant is not the good one
@@ -51,18 +52,24 @@ public class SqlMetaColumn {
    */
   private String typeName;
   /**
-   * The DECIMAL_DIGITS of the JDBC driver (the scale)
+   * The DECIMAL_DIGITS of the JDBC driver
+   * The number of fractional digits
+   * (ie the precision, number of second for timestamp)
    */
-  private Integer scale;
+  private Integer decimalDigits;
   /**
    * The NULLABLE value of the JDBC driver
-   * See {@link ColumnDef#setNullable(int)}
+   * See {@link ColumnDef#setNullable(Boolean)}
    */
   private Integer isNullable;
   /**
    * The position in the list of columns
    */
   private Integer position;
+  /**
+   * Note that the comment is known as remarks in jdbc
+   */
+  private String comment;
 
 
   public SqlMetaColumn(String columnName) {
@@ -81,28 +88,28 @@ public class SqlMetaColumn {
     return columnName;
   }
 
-  public Integer getPrecision() {
-    return precision;
+  public int getColumnSize() {
+    return columnSize;
   }
 
-  public Integer getScale() {
-    return scale;
+  public int getDecimalDigits() {
+    return decimalDigits;
   }
 
   public Boolean isAutoIncrement() {
     return isAutoIncrement;
   }
 
-  public String isGeneratedColumn() {
+  public Boolean isGeneratedColumn() {
     return isGeneratedColumn;
   }
 
-  public int isNullable() {
+  public Integer isNullable() {
     return isNullable;
   }
 
-  public SqlMetaColumn setIsGeneratedColumn(String isGeneratedcolumn) {
-    this.isGeneratedColumn = isGeneratedcolumn;
+  public SqlMetaColumn setIsGeneratedColumn(Boolean isGeneratedColumn) {
+    this.isGeneratedColumn = isGeneratedColumn;
     return this;
   }
 
@@ -111,12 +118,12 @@ public class SqlMetaColumn {
     return this;
   }
 
-  public SqlMetaColumn setPrecision(Integer precision) {
-    this.precision = precision;
+  public SqlMetaColumn setColumnSize(int columnSize) {
+    this.columnSize = columnSize;
     return this;
   }
 
-  public SqlMetaColumn setTypeCode(Integer typeCode) {
+  public SqlMetaColumn setTypeCode(int typeCode) {
     this.typeCode = typeCode;
     return this;
   }
@@ -126,8 +133,8 @@ public class SqlMetaColumn {
     return this;
   }
 
-  public SqlMetaColumn setScale(Integer scale) {
-    this.scale = scale;
+  public SqlMetaColumn setDecimalDigits(int decimalDigits) {
+    this.decimalDigits = decimalDigits;
     return this;
   }
 
@@ -158,4 +165,14 @@ public class SqlMetaColumn {
     this.position = position;
     return this;
   }
+
+  public SqlMetaColumn setComment(String columnComment) {
+    this.comment = columnComment;
+    return this;
+  }
+
+  public String getComment() {
+    return this.comment;
+  }
+
 }

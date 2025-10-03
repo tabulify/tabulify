@@ -1,7 +1,7 @@
 package com.tabulify.email.flow;
 
-import com.tabulify.flow.Granularity;
 import com.tabulify.conf.AttributeEnum;
+import com.tabulify.flow.Granularity;
 import net.bytle.type.Key;
 
 public enum SendmailStepArgument implements AttributeEnum {
@@ -19,7 +19,7 @@ public enum SendmailStepArgument implements AttributeEnum {
   TXT("The email body in text format", String.class, null),
   HTML("The email body in html format", String.class, null),
   BODY_TYPE("The type of resources seen as email body if selected", String.class, null),
-  STEP_GRANULARITY("The granularity of the run", Granularity.class, Granularity.RECORD),
+  GRANULARITY("The granularity of the execution", Granularity.class, Granularity.RESOURCE),
   LOG_TARGET_URI("The target uri where to write the logs", String.class, null);
 
 

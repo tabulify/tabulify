@@ -1,6 +1,7 @@
 package com.tabulify.jdbc;
 
 import com.tabulify.model.SqlDataType;
+import net.bytle.type.JdbcUri;
 
 import java.net.URI;
 import java.sql.Connection;
@@ -25,7 +26,7 @@ public class SqlDataStoreStatic {
     System.out.println();
     System.out.println("Driver Information:");
     DatabaseMetaData databaseMetadata;
-    final Connection currentConnection = jdbcDataStore.getCurrentConnection();
+    final Connection currentConnection = jdbcDataStore.getCurrentJdbcConnection();
     try {
 
       databaseMetadata = currentConnection.getMetaData();
@@ -58,7 +59,7 @@ public class SqlDataStoreStatic {
 
       System.out.println();
       URI url = jdbcDataStore.getUri().toUri();
-      SqlUri sqlUri = new SqlUri(url);
+      JdbcUri jdbcUri = new JdbcUri(url);
       System.out.println("URL (" + url + ")");
       System.out.println("Authority: " + url.getAuthority());
       System.out.println("Scheme: " + url.getScheme());
@@ -72,8 +73,8 @@ public class SqlDataStoreStatic {
       System.out.println("Raw Fragment: " + url.getRawFragment());
       System.out.println("Raw Path: " + url.getRawPath());
       System.out.println("Raw Schema Specific Part: " + url.getRawSchemeSpecificPart());
-      System.out.println("Driver: " + sqlUri.getDriver());
-      System.out.println("Server: " + sqlUri.getSqlScheme());
+      System.out.println("Driver: " + jdbcUri.getDriver());
+      System.out.println("Server: " + jdbcUri.getSqlScheme());
 
     } catch (SQLException e) {
       throw new RuntimeException(e);
@@ -85,7 +86,7 @@ public class SqlDataStoreStatic {
    */
   public static void printDataTypeInformation(SqlConnection jdbcDataStore) {
 
-    Set<SqlDataType> sqlDataTypes = jdbcDataStore.getSqlDataTypes();
+    Set<SqlDataType<?>> sqlDataTypes = jdbcDataStore.getSqlDataTypes();
 
     // Headers
     System.out.println("Data Type\t" +
@@ -106,8 +107,8 @@ public class SqlDataStoreStatic {
 
     for (SqlDataType typeInfo : sqlDataTypes) {
       System.out.println(
-        typeInfo.getTypeCode() + "\t" +
-          typeInfo.getSqlName() + "\t" +
+        typeInfo.getVendorTypeNumber() + "\t" +
+          typeInfo.toKeyNormalizer() + "\t" +
           typeInfo.getMaxPrecision() + "\t" +
           typeInfo.getLiteralPrefix() + "\t" +
           typeInfo.getLiteralSuffix() + "\t" +
@@ -116,7 +117,7 @@ public class SqlDataStoreStatic {
           typeInfo.getCaseSensitive() + "\t" +
           typeInfo.getSearchable() + "\t" +
           typeInfo.getUnsignedAttribute() + "\t" +
-          typeInfo.isFixedPrecisionScale() + "\t" +
+          typeInfo.getIsFixedPrecisionScale() + "\t" +
           typeInfo.getLocalTypeName() + "\t" +
           typeInfo.getMinimumScale() + "\t" +
           typeInfo.getMaximumScale()

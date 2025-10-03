@@ -1,3 +1,4 @@
+# Bug in idea, you need to download and map the schema to the below file
 # $schema: https://jreleaser.org/schema/jreleaser-schema-1.17.0.json
 
 environment:
@@ -8,14 +9,14 @@ environment:
 
 # https://jreleaser.org/guide/latest/reference/project.html
 project:
-  name: tabulify-cli
+  name: tabulify
   #version: '{{projectVersion}}'
   description: Tabulify CLI application
   longDescription: |
-    Tabulify CLI application for data manipulation and analysis.
+    Tabulify, a local-first data processing tool for the AI era
   authors:
     - Tabulify Team
-  copyright: '{{project.inceptionYear}}` Eraldy.com'
+  copyright: '{{project.inceptionYear}} Tabulify.com'
   license: FSL without Future License
   inceptionYear: '2020'
   tags:
@@ -23,6 +24,10 @@ project:
     - sql
     - csv
     - data processing
+    - oracle
+    - sqlserver
+    - mysql
+    - sqlite
   links:
     homepage: https://www.tabulify.com
     documentation: https://www.tabulify.com
@@ -30,32 +35,79 @@ project:
     java:
       groupId: com.tabulify
       artifactId: tabulify-cli
-      mainClass: com.tabulify.tabli.Tabli
+      mainClass: com.tabulify.tabul.Tabul
       version: '11.0.26'
       multiProject: true
   stereotype: CLI
 
-# Create a github release
+# Create a GitHub release
+# https://jreleaser.org/guide/latest/reference/release/github.html
 release:
   github:
-    owner: EraldyHq
-    name: tabulify
+    owner: tabulify
+    name: tabulify-releases
+    skipTag: true
+    # When this is a draft, it won’t be seen by the public unless it’s published.
+    draft: true
+    # Release by default
+    releaseName: "Release {{projectEffectiveVersion}}"
+    prerelease:
+      # # A regex to determine if the project version is a prerelease
+      pattern: .*-rc.*
+    # https://jreleaser.org/guide/latest/reference/release/changelog.html
+    changelog:
+      formatted: ALWAYS
+      format: '- {{commitShortHash}} {{commitTitle}}'
+      preset: 'conventional-commits'
+      contributors:
+        enabled: false
+      content: |
+        # Changelog Version {{projectEffectiveVersion}}
+
+        {{changelogChanges}}
+      labelers:
+        - label: 'feature'
+          title: 'Resolves #'
+          body: 'Resolves #'
+        - label: 'issue'
+          title: 'Fixes #'
+          body: 'Fixes #'
+        - label: 'issue'
+          title: 'Relates to #'
+          body: 'Relates to #'
+        - label: 'task'
+          title: '[chore]'
+      categories:
+        - title: '🚀 Features'
+          key: 'features'
+          labels:
+            - 'feature'
+        - title: '✅ Issues'
+          key: 'issues'
+          labels:
+            - 'issue'
+        - title: '🧰 Tasks'
+          key: 'tasks'
+          labels:
+            - 'task'
+      replacers:
+        - search: '\[chore\] '
 
 # Execute with jreleaser assemble
 assemble:
   # https://jreleaser.org/guide/latest/reference/assemble/jlink.html
   jlink:
     # Assembly Name
-    # Use in the name of the assembly
+    # Used in the name of the assembly
     # Example: tabulify-early-access-linux-x86_64.zip
     tabulify:
       active: ALWAYS
       imageName: '{{distributionName}}-{{projectEffectiveVersion}}'
-      executable: tabli
+      executable: tabul
       fileSets:
-        - input: '.'
+        - input: '..'
           includes:
-            - LICENSE.md
+            - License.md
         - input: src/main/howto
           output: resources/howto
         - input: ../tabulify-gen-entities/src/main/resources/entity
@@ -83,10 +135,10 @@ assemble:
       targetJdks:
         - path: '{{jdkPathPrefix}}Linux/{{jdkDirectoryName}}'
           platform: 'linux-x86_64'
-        - path: '{{jdkPathPrefix}}Windows/{{jdkDirectoryName}}'
-          platform: 'windows-x86_64'
-        - path: '{{jdkPathPrefix}}Osx/{{jdkDirectoryName}}/Contents/Home'
-          platform: 'osx-x86_64'
+      #        - path: '{{jdkPathPrefix}}Windows/{{jdkDirectoryName}}'
+      #          platform: 'windows-x86_64'
+      #        - path: '{{jdkPathPrefix}}Osx/{{jdkDirectoryName}}/Contents/Home'
+      #          platform: 'osx-x86_64'
       mainJar:
         path: 'target/tabulify-cli-{{projectVersion}}.jar'
       jars:
@@ -94,23 +146,32 @@ assemble:
       swid:
         tagRef: swid-tag
 
-
+# Distributions define artifacts that may be published using supported packages and announced with supported announcers.
 distributions:
-  # Single Executable Jar
-  # Doc: https://jreleaser.org/guide/latest/concepts/distributions/single-jar.html
-  # Example: https://jreleaser.org/guide/latest/examples/java/single-jar.html
-  fatjar:
-    type: SINGLE_JAR
-    artifacts:
-      - path: target/{{distributionName}}-{{projectVersion}}-fatjar.jar
+  tabulify:
+    # Take the default value from the `assemble` node
+    # See with:
+    # jreleaser config --quiet  | grep -A 40 '^distributions' | yq
+    # grep because the output is not accepted by yq
+    type: JLINK
 
+# Create a software BOM (works only for non-snapshot)
+catalog:
+  active: ALWAYS
+  sbom:
+    active: ALWAYS
+    syft:
+      active: ALWAYS
+
+# Create signatures files for the distributions files and the checksum files
+signing:
+  active: ALWAYS
+  mode: COMMAND
 
 packagers:
   brew:
     active: ALWAYS
     multiPlatform: true
-  chocolatey:
-    active: ALWAYS
   docker:
     active: ALWAYS
     imageNames:

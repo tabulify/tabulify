@@ -109,8 +109,12 @@ public class DataGens {
 
   }
 
-  public static GenColumnDef castToGenColumnDef(ColumnDef c) {
-    return (GenColumnDef) c;
+  public static GenColumnDef<?> castToGenColumnDef(ColumnDef<?> c) {
+    if (c instanceof GenColumnDef) {
+      return (GenColumnDef<?>) c;
+    }
+    throw new IllegalArgumentException("Column definition is not a GenColumnDef but a " + c.getClass());
+
   }
 
 }

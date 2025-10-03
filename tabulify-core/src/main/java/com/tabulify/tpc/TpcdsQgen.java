@@ -1,7 +1,8 @@
 package com.tabulify.tpc;
 
-import net.bytle.command.Command;
+
 import com.tabulify.connection.Connection;
+import net.bytle.exec.Command;
 import net.bytle.fs.Fs;
 import net.bytle.os.Oss;
 

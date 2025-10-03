@@ -3,7 +3,7 @@
 
 ## About
 
-Read Excel File
+Read/Write Excel File
 
 ## Format supported
 

@@ -7,7 +7,7 @@ public class UniqueKeyDef implements Constraint {
 
   private final RelationDef relationDef;
   private String name;
-  private Map<Integer, ColumnDef> columnDefs = new HashMap<>();
+  private final Map<Integer, ColumnDef<?>> columnDefs = new HashMap<>();
 
   public static UniqueKeyDef of(RelationDef relationDef) {
     return new UniqueKeyDef(relationDef);
@@ -15,10 +15,8 @@ public class UniqueKeyDef implements Constraint {
 
   /**
    * The name is not mandatory when creating a constraint
-   * via a create statement
-   * but is mandatory to delete it
-   *
-   * @return
+   * via a `create` statement
+   * but is mandatory when deleting it
    */
   public String getName() {
     return name;
@@ -34,17 +32,22 @@ public class UniqueKeyDef implements Constraint {
     return relationDef;
   }
 
+  @Override
+  public ConstraintType getConstraintType() {
+    return ConstraintType.UNIQUE_KEY;
+  }
+
   public UniqueKeyDef name(String name) {
     this.name = name;
     return this;
   }
 
-  public UniqueKeyDef addColumn(ColumnDef columnDef) {
+  public UniqueKeyDef addColumn(ColumnDef<?> columnDef) {
 
-    return addColumn(columnDef, this.columnDefs.keySet().size() + 1);
+    return addColumn(columnDef, this.columnDefs.size() + 1);
   }
 
-  public UniqueKeyDef addColumn(ColumnDef columnDef, int colSeq) {
+  public UniqueKeyDef addColumn(ColumnDef<?> columnDef, int colSeq) {
 
     if (!this.columnDefs.containsValue(columnDef)) {
 
@@ -59,13 +62,12 @@ public class UniqueKeyDef implements Constraint {
   /**
    * Return the columns sorted by position
    *
-   * @return
    */
-  public List<ColumnDef> getColumns() {
+  public List<ColumnDef<?>> getColumns() {
 
     List<Integer> positions = new ArrayList<>(columnDefs.keySet());
     Collections.sort(positions);
-    List<ColumnDef> columnDefsToReturn = new ArrayList<>();
+    List<ColumnDef<?>> columnDefsToReturn = new ArrayList<>();
     for (Integer position : positions) {
       columnDefsToReturn.add(columnDefs.get(position));
     }
@@ -73,9 +75,9 @@ public class UniqueKeyDef implements Constraint {
   }
 
 
-  public UniqueKeyDef addColumns(List<ColumnDef> columnDefs) {
+  public UniqueKeyDef addColumns(List<ColumnDef<?>> columnDefs) {
 
-    for (ColumnDef columnDef : columnDefs) {
+    for (ColumnDef<?> columnDef : columnDefs) {
       addColumn(columnDef);
     }
 

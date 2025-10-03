@@ -1,10 +1,9 @@
 package com.tabulify.tpc;
 
 import com.tabulify.Tabular;
-import com.tabulify.Vault;
-import com.tabulify.conf.AttributeEnumParameter;
 import com.tabulify.conf.Origin;
 import com.tabulify.connection.Connection;
+import com.tabulify.connection.ConnectionAttributeEnum;
 import com.tabulify.fs.FsConnectionResourcePath;
 import com.tabulify.noop.NoOpConnection;
 import com.tabulify.spi.DataPath;
@@ -73,7 +72,7 @@ public class TpcConnection extends NoOpConnection {
 
 
   @Override
-  public DataPath createScriptDataPath(DataPath dataPath) {
+  public DataPath getRuntimeDataPath(DataPath dataPath, MediaType mediaType) {
     throw new UnsupportedOperationException("The tpc data source does not support scripting");
   }
 
@@ -108,12 +107,12 @@ public class TpcConnection extends NoOpConnection {
   }
 
   @Override
-  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin, Vault vault) {
+  public Connection addAttribute(KeyNormalizer name, Object value, Origin origin) {
     TpcConnectionAttributeEnum connectionAttribute;
     try {
       connectionAttribute = Casts.cast(name, TpcConnectionAttributeEnum.class);
     } catch (CastException e) {
-      return super.addAttribute(name, value, origin, vault);
+      return super.addAttribute(name, value, origin);
     }
     return addAttribute(
       this
@@ -124,8 +123,8 @@ public class TpcConnection extends NoOpConnection {
   }
 
   @Override
-  public List<Class<? extends AttributeEnumParameter>> getAttributeEnums() {
-    List<Class<? extends AttributeEnumParameter>> attributeEnums = new ArrayList<>(super.getAttributeEnums());
+  public List<Class<? extends ConnectionAttributeEnum>> getAttributeEnums() {
+    List<Class<? extends ConnectionAttributeEnum>> attributeEnums = new ArrayList<>(super.getAttributeEnums());
     attributeEnums.add(TpcConnectionAttributeEnum.class);
     return attributeEnums;
   }

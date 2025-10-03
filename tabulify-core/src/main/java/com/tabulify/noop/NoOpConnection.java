@@ -1,6 +1,7 @@
 package com.tabulify.noop;
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Attribute;
 import com.tabulify.connection.Connection;
 import com.tabulify.fs.FsConnectionResourcePath;
 import com.tabulify.spi.DataPath;
@@ -8,7 +9,6 @@ import com.tabulify.spi.DataSystem;
 import com.tabulify.spi.ProcessingEngine;
 import com.tabulify.spi.ResourcePath;
 import net.bytle.exception.CastException;
-import com.tabulify.conf.Attribute;
 import net.bytle.type.Casts;
 import net.bytle.type.MediaType;
 
@@ -32,7 +32,7 @@ public class NoOpConnection extends Connection {
 
   @Override
   public DataPath getDataPath(String pathOrName) {
-    return getDataPath(pathOrName, null);
+    return getDataPath(pathOrName, (MediaType) null);
   }
 
   @Override
@@ -53,12 +53,12 @@ public class NoOpConnection extends Connection {
 
   @Override
   public DataPath getCurrentDataPath() {
-    throw new UnsupportedOperationException("No provider was found for connection (" + getName() + ") and the the url (" + getUriAsVariable() + ")");
+    return null;
   }
 
 
   @Override
-  public DataPath createScriptDataPath(DataPath dataPath) {
+  public DataPath getRuntimeDataPath(DataPath dataPath, MediaType mediaType) {
     throw new UnsupportedOperationException("No provider was found for connection (" + getName() + ") and the the url (" + getUriAsVariable() + ")");
   }
 
@@ -68,12 +68,13 @@ public class NoOpConnection extends Connection {
     throw new UnsupportedOperationException("No provider was found for connection (" + getName() + ") and the the url (" + getUriAsVariable() + ")");
   }
 
+
   @Override
-  public <T> T getObject(Object valueObject, Class<T> clazz)  {
+  public <T> T getObject(Object valueObject, Class<T> clazz) {
     try {
       return Casts.cast(valueObject, clazz);
     } catch (CastException e) {
-      throw new RuntimeException(e.getMessage()+". We were unable to cast the object value ("+valueObject+") to the class ("+clazz+") for the connection ("+this+")",e);
+      throw new RuntimeException(e.getMessage() + ". We were unable to cast the object value (" + valueObject + ") to the class (" + clazz + ") for the connection (" + this + ")", e);
     }
   }
 
@@ -87,7 +88,7 @@ public class NoOpConnection extends Connection {
      * we prefer to set the string path to the fs path
      * because it should work most of the time
      */
-    NoOpLog.LOGGER.warning("Glob matching may not work fully (because StringPath is not implemented by the connection ("+getName()+") and the the url ("+ getUriAsVariable()+").)");
+    NoOpLog.LOGGER.warning("Glob matching may not work fully (because StringPath is not implemented by the connection (" + getName() + ") and the the url (" + getUriAsVariable() + ").)");
     return FsConnectionResourcePath.createOf(pathOrName, names);
 
 

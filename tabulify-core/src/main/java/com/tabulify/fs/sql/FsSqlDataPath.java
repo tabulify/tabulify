@@ -4,13 +4,13 @@ import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.textfile.FsTextDataPath;
 import com.tabulify.model.RelationDef;
 import com.tabulify.model.RelationDefDefault;
+import com.tabulify.model.SqlDataTypeAnsi;
 import com.tabulify.stream.SelectStream;
-import net.bytle.exception.NoValueException;
+import net.bytle.exception.InternalException;
 import net.bytle.exception.NoVariableException;
 import net.bytle.type.MediaTypes;
 
 import java.nio.file.Path;
-import java.sql.Types;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -34,7 +34,7 @@ public class FsSqlDataPath extends FsTextDataPath {
 
     this.addVariablesFromEnumAttributeClass(FsSqlDataPathAttribute.class);
 
-    this.setColumnName("sql");
+    this.setColumnName(FsSqlParserColumn.SQL.toKeyNormalizer().toSqlCase());
 
     this.setEndOfRecords(
       ";\r", ";\r\n", ";\n",
@@ -45,12 +45,11 @@ public class FsSqlDataPath extends FsTextDataPath {
   }
 
 
-
   public FsSqlDataPath setParsingMode(FsSqlParsingModeValue parsingMode) {
     try {
       this.getAttribute(FsSqlDataPathAttribute.PARSING_MODE).setPlainValue(parsingMode);
     } catch (NoVariableException e) {
-      throw new RuntimeException("Internal Error: PARSING_MODE variable was not found. It should not happen");
+      throw new InternalException("PARSING_MODE variable was not found. It should not happen");
     }
     return this;
   }
@@ -59,16 +58,15 @@ public class FsSqlDataPath extends FsTextDataPath {
   public SelectStream getSelectStream() {
     if (this.getParsingModeValue() == TEXT) {
       return super.getSelectStream();
-    } else {
-      return new FsSqlParserStream(this);
     }
+    return new FsSqlParserStream(this);
   }
 
   private FsSqlParsingModeValue getParsingModeValue() {
     try {
       return (FsSqlParsingModeValue) this.getAttribute(FsSqlDataPathAttribute.PARSING_MODE).getValueOrDefault();
-    } catch (NoVariableException | NoValueException e) {
-      throw new RuntimeException("Internal Error: PARSING_MODE variable was not found. It should not happen");
+    } catch (NoVariableException e) {
+      throw new InternalException("PARSING_MODE variable was not found. It should not happen");
     }
   }
 
@@ -78,16 +76,17 @@ public class FsSqlDataPath extends FsTextDataPath {
     switch (parsingModeValue) {
       case TEXT:
         relationDef = new RelationDefDefault(this)
-          .addColumn(this.getColumnName(), Types.CLOB);
+          .addColumn(this.getColumnName(), SqlDataTypeAnsi.CLOB);
         return relationDef;
       case SQL:
-        // type is the type of sql:  sql, plsql, comment,…
         relationDef = new RelationDefDefault(this)
-          .addColumn("type")
-          .addColumn(this.getColumnName(), Types.CLOB);
+          .addColumn(FsSqlParserColumn.NAME.toKeyNormalizer().toSqlCase(), SqlDataTypeAnsi.CHARACTER_VARYING, 30)
+          .addColumn(FsSqlParserColumn.SUBSET.toKeyNormalizer().toSqlCase(), SqlDataTypeAnsi.CHARACTER_VARYING, 30)
+          .addColumn(FsSqlParserColumn.CATEGORY.toKeyNormalizer().toSqlCase(), SqlDataTypeAnsi.CHARACTER_VARYING, 30)
+          .addColumn(this.getColumnName(), SqlDataTypeAnsi.CLOB);
         return relationDef;
       default:
-        throw new IllegalStateException("Internal error: The parsing mode (" + parsingModeValue + ") should be in the case statement");
+        throw new InternalException("The parsing mode (" + parsingModeValue + ") should be in the case statement");
     }
   }
 }

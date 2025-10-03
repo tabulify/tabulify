@@ -1,14 +1,20 @@
 package com.tabulify.stream;
 
+import com.tabulify.conf.Attribute;
+import com.tabulify.conf.AttributeEnum;
+import com.tabulify.conf.Origin;
 import com.tabulify.model.ColumnDef;
 import com.tabulify.model.RelationDef;
 import com.tabulify.spi.DataPath;
 import net.bytle.exception.CastException;
 import net.bytle.exception.NoColumnException;
+import net.bytle.exception.NoVariableException;
+import net.bytle.type.KeyNormalizer;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public abstract class SelectStreamAbs implements Stream, SelectStream {
@@ -25,10 +31,35 @@ public abstract class SelectStreamAbs implements Stream, SelectStream {
 
   }
 
+  @Override
+  public Set<Attribute> getAttributes() {
+    throw new UnsupportedOperationException("get attributes on select stream is not supported yet.");
+  }
+
+  @Override
+  public Attribute getAttribute(AttributeEnum attribute) throws NoVariableException {
+    return getAttribute(attribute.toKeyNormalizer());
+  }
+
+  @Override
+  public Attribute getAttribute(KeyNormalizer name) throws NoVariableException {
+    ColumnDef columnDef = this.getDataPath().getRelationDef().getColumnDef(name);
+    return Attribute
+      .createWithClassAndDefault(columnDef.getColumnNameNormalized(), Origin.DEFAULT, columnDef.getClazz(), null)
+      .setPlainValue(this.getObject(columnDef));
+  }
+
+  @Override
+  public DataPath toAttributesDataPath() {
+    DataPath dataPath = this.getDataPath().getConnection().getTabular().getMemoryConnection()
+      .getDataPath(this.getDataPath().getLogicalName() + "_stream_attributes");
+    return toAttributesDataPath(dataPath);
+  }
+
   /**
    * Retrieves and removes the head of this data path, or returns null if this queue is empty.
    *
-   * @param timeout - the numeric timeout to retrieve an object
+   * @param timeout  - the numeric timeout to retrieve an object
    * @param timeUnit - the unit
    * @return false if this is the end
    */
@@ -49,20 +80,34 @@ public abstract class SelectStreamAbs implements Stream, SelectStream {
 
   @Override
   public <T> T getObject(String columnName, Class<T> clazz) {
+    ColumnDef columnDef;
     try {
-      return this.getDataPath().getConnection().getObject(getObject(columnName), clazz);
-    } catch (CastException e) {
-      throw new ClassCastException(e.getMessage());
+      columnDef = getRuntimeRelationDef().getColumnDef(columnName);
+    } catch (NoColumnException e) {
+      throw new IllegalArgumentException("The column (" + columnName + ") is unknown for the resource (" + this.getDataPath() + ")", e);
     }
+    return this.getObject(columnDef, clazz);
+
+  }
+
+  @Override
+  public <T> T getObject(KeyNormalizer columnName, Class<T> clazz) {
+
+    ColumnDef columnDef = getRuntimeRelationDef().getColumnDef(columnName);
+    if (columnDef == null) {
+      throw new IllegalArgumentException("The column (" + columnName + ") is unknown for the resource (" + this.getDataPath() + ")");
+    }
+    return this.getObject(columnDef, clazz);
+
   }
 
   @Override
   public <T> T getObject(int index, Class<T> clazz) {
-    try {
-      return this.getDataPath().getConnection().getObject(getObject(index), clazz);
-    } catch (CastException e) {
-      throw new ClassCastException(e.getMessage());
+    ColumnDef<?> columnDef = getRuntimeRelationDef().getColumnDef(index);
+    if (columnDef == null) {
+      throw new IllegalArgumentException("The column position (" + index + ") is unknown for the resource (" + this.getDataPath() + ")");
     }
+    return this.getObject(columnDef, clazz);
   }
 
 
@@ -156,13 +201,37 @@ public abstract class SelectStreamAbs implements Stream, SelectStream {
 
   @Override
   public Object getObject(String columnName) {
-    ColumnDef columnDef;
+    ColumnDef<?> columnDef;
     try {
       columnDef = getRuntimeRelationDef().getColumnDef(columnName);
     } catch (NoColumnException e) {
-      throw new RuntimeException("The column with the name (" + columnName + ") does not exist in the data resource (" + this.getDataPath() + ")");
+      // You may check if a column exists
+      return null;
     }
-    return getObject(columnDef.getColumnPosition());
+    return getObject(columnDef);
+  }
+
+  @Override
+  public Object getObject(int columnPosition) {
+    ColumnDef<?> columnDef;
+    try {
+      columnDef = getRuntimeRelationDef().getColumnDef(columnPosition);
+    } catch (IllegalArgumentException e) {
+      // Bad position is much more an error
+      throw new RuntimeException("The column with the position (" + columnPosition + ") does not exist in the data resource (" + this.getDataPath() + ")");
+    }
+    return getObject(columnDef);
+  }
+
+  @Override
+  public Object getObject(KeyNormalizer keyNormalizer) {
+    ColumnDef<?> columnDef;
+    try {
+      columnDef = getRuntimeRelationDef().getColumnDef(keyNormalizer);
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
+    return getObject(columnDef);
   }
 
   @Override
@@ -175,5 +244,20 @@ public abstract class SelectStreamAbs implements Stream, SelectStream {
     return object.toString();
 
   }
+
+  @Override
+  public Integer getInteger(String columnName) {
+    return getObject(columnName, Integer.class);
+  }
+
+  @Override
+  public <T> T getObject(ColumnDef<?> columnDef, Class<T> clazz) {
+    try {
+      return this.getDataPath().getConnection().getObject(getObject(columnDef), clazz);
+    } catch (CastException e) {
+      throw new ClassCastException(e.getMessage());
+    }
+  }
+
 
 }

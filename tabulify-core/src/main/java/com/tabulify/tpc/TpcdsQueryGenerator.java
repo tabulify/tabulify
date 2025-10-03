@@ -3,7 +3,7 @@ package com.tabulify.tpc;
 
 import com.tabulify.Tabular;
 import com.tabulify.connection.Connection;
-import com.tabulify.connection.ConnectionHowTos;
+import net.bytle.type.KeyNormalizer;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,25 +22,25 @@ public class TpcdsQueryGenerator {
     public static void main(String[] args) {
 
       // Args
-      String datastoreName = ConnectionHowTos.MYSQL_CONNECTION_NAME;
+      KeyNormalizer connectionName = KeyNormalizer.createSafe("mysql");
 
-      // Dialect by Database
-      Map<String,String> dialects = new HashMap<>();
-      dialects.put(ConnectionHowTos.SQLITE_CONNECTION_NAME,"sqlite");
-      dialects.put(ConnectionHowTos.POSTGRESQL_CONNECTION_NAME, "netezza");
-      dialects.put(ConnectionHowTos.SQLSERVER_CONNECTION_NAME, "sqlserver");
-      dialects.put(ConnectionHowTos.ORACLE_CONNECTION_NAME, "oracle");
+      // Dialect by Database Scheme, connection name
+      Map<String, String> dialects = new HashMap<>();
+      dialects.put("sqlite", "sqlite");
+      dialects.put("postgres", "netezza");
+      dialects.put("sqlserver", "sqlserver");
+      dialects.put("oracle", "oracle");
       // For Mysql: https://github.com/gregrahn/tpcds-kit/issues/13
-      dialects.put(ConnectionHowTos.MYSQL_CONNECTION_NAME, "netezza");
+      dialects.put("mysql", "netezza");
 
       Path tpcDsHomePath = Paths.get(System.getenv("HOME"),"code","tpcds-kit");
 
       try (Tabular tabular = Tabular.tabularWithCleanEnvironment()) {
-        Connection connection = tabular.loadHowtoConnections().getConnection(datastoreName);
+        Connection connection = tabular.getConnection(connectionName);
         Path buildPath = tpcDsHomePath.resolve("tools");
         TpcdsQgen tpcdsQgen = TpcdsQgen
           .create(connection)
-          .setDialect(dialects.get(datastoreName))
+          .setDialect(dialects.get(connectionName))
           .setDsqGenDirectory(buildPath)
           .setOutputDirectory(Paths.get("tabulify-jdbc/src/main/sql/tpcds/" + connection.getName()))
           .setDistributionFile(buildPath.resolve("tpcds.idx"))

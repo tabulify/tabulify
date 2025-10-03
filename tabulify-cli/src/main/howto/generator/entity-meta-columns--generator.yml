@@ -1,0 +1,22 @@
+kind: generator
+spec:
+  MaxRecordCount: 30
+  Columns:
+    - name: gender
+      Type: Varchar
+      data-supplier:
+        type: histogram
+        arguments:
+          Buckets:
+            M: 1.0
+            F: 2.0
+    - name: firstname
+      Type: Varchar
+      data-supplier:
+        type: entity
+        arguments:
+          name: firstname
+          locale: en
+          metaColumns:
+            gender: gender
+

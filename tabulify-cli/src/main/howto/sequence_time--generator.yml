@@ -1,0 +1,26 @@
+kind: generator
+spec:
+  MaxRecordCount: 30
+  Columns:
+    - name: id
+      type: integer
+      comment: A id column to see easily the number of values generated
+      data-supplier:
+        type: sequence
+    - name: seq_date
+      type: date
+      comment: A column with a sequence date generator
+      data-supplier:
+        type: sequence
+        arguments:
+          start: 2020-11-23
+          offset: 10 # the number of day in the future from the start value
+          step: 2
+    - name: seq_timestamp
+      type: timestamp
+      comment: A column with a sequence timestamp generator
+      data-supplier:
+        type: sequence
+        arguments:
+          start: 2020-11-23 08:11:10
+          step: 10000

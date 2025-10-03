@@ -38,6 +38,7 @@ public class ExcelSheet {
   private final POIFSFileSystem poifsFileSystem;
   private final ExcelSheetConfig excelSheetConfig;
   private final CreationHelper createHelper;
+  private final CellStyle timestampCellStyle;
   private final CellStyle dateCellStyle;
 
 
@@ -52,6 +53,12 @@ public class ExcelSheet {
     // Using a File object allows for lower memory consumption, while an InputStream requires more memory as it has to buffer the whole file.
     // https://poi.apache.org/components/spreadsheet/quick-guide.html#FileInputStream
 
+    boolean existingFile;
+    try {
+      existingFile = Files.exists(path) && Files.size(path) != 0;
+    } catch (IOException e) {
+      throw new RuntimeException("Error while reading the size of " + path.toAbsolutePath(), e);
+    }
     try {
       String extension = Fs.getExtension(path);
       boolean localFile = path.getFileSystem().provider().getScheme().equals("file");
@@ -59,7 +66,7 @@ public class ExcelSheet {
         case ExcelManagerProvider.XLSX:
           if (localFile) {
             // doesn't need to hold the whole zip file in memory, and can take advantage of native methods
-            if (Files.exists(path)) {
+            if (existingFile) {
               this.pkg = OPCPackage.open(path.toString(), excelSheetConfig.access);
               this.wb = new XSSFWorkbook(pkg);
             } else {
@@ -98,7 +105,7 @@ public class ExcelSheet {
           }
           this.pkg = null;
         default:
-          throw new RuntimeException("Internal error: extension " + extension + " not taken into account");
+          throw new RuntimeException("Internal error: extension (" + extension + ") not taken into account");
 
       }
 
@@ -110,15 +117,18 @@ public class ExcelSheet {
      * Helper to create cell values
      */
     createHelper = wb.getCreationHelper();
+    timestampCellStyle = wb.createCellStyle();
+    String timestampFormat = this.excelSheetConfig.getTimestampFormat();
+    timestampCellStyle.setDataFormat(createHelper.createDataFormat().getFormat(timestampFormat));
     dateCellStyle = wb.createCellStyle();
-    dateCellStyle.setDataFormat(
-      createHelper.createDataFormat().getFormat(this.excelSheetConfig.getDateFormat()));
+    String dateFormat = this.excelSheetConfig.getDateFormat();
+    dateCellStyle.setDataFormat(createHelper.createDataFormat().getFormat(dateFormat));
 
     /**
      * Get the sheet
      */
     String sheetName = excelSheetConfig.getSheetName();
-    if (Files.exists(path)) {
+    if (existingFile) {
       if (sheetName == null) {
         this.sheet = wb.getSheetAt(0);
       } else {
@@ -166,7 +176,7 @@ public class ExcelSheet {
       String headerName = relationDef.getColumnDef(i).getColumnName();
 
       // Construct the cell
-      Cell headerCell = headerRow.createCell(i);
+      Cell headerCell = headerRow.createCell(i - 1);
       headerCell.setCellValue(headerName);
       this.sheet.autoSizeColumn(i);
 
@@ -179,6 +189,9 @@ public class ExcelSheet {
     return this.wb;
   }
 
+  /**
+   * See also the counterpart {@link ExcelSheets#getCellValue(Cell, Class)}
+   */
   public void setCellValue(Cell cell, Object value) throws CastException {
 
     // https://poi.apache.org/components/spreadsheet/quick-guide.html#CreateCells
@@ -192,34 +205,49 @@ public class ExcelSheet {
       throw new InternalException("Internal: The excel data path is empty");
     }
 
+    // Relation def is mandatory for setting or reading a cell
     RelationDef relationDef = this.excelSheetConfig.excelDataPath.getRelationDef();
     if (relationDef == null) {
       throw new InternalException("Internal: The relation def is empty");
     }
 
     SqlDataType dataType = relationDef.getColumnDef(cell.getColumnIndex() + 1).getDataType();
-    if (dataType.isNumeric()) {
+    if (dataType.isNumber()) {
       cell.setCellValue(Casts.cast(value, Float.class));
       return;
     }
 
-    int typeCode = dataType.getTypeCode();
+    int typeCode = dataType.getVendorTypeNumber();
     switch (typeCode) {
       case Types.BOOLEAN:
         cell.setCellValue(Casts.cast(value, Boolean.class));
         return;
       case Types.TIMESTAMP:
+        cell.setCellStyle(timestampCellStyle);
+        cell.setCellValue(Casts.cast(value, Date.class));
+        return;
       case Types.DATE:
         cell.setCellStyle(dateCellStyle);
         cell.setCellValue(Casts.cast(value, Date.class));
         return;
+      case Types.DOUBLE:
+      case Types.NUMERIC:
+      case Types.FLOAT:
+      case Types.INTEGER:
+        cell.setCellValue(Casts.cast(value, Double.class));
+        return;
+      case Types.VARCHAR:
+      case Types.NVARCHAR:
+      case Types.CHAR:
+      case Types.NCHAR:
       default:
-        // could be also setCellValue("a string");
+        // All other format as string
+        // There is also a setCellValue("a string");
         cell.setCellValue(createHelper.createRichTextString(value.toString()));
+
     }
 
   }
-
 
 
   public static class ExcelSheetConfig {
@@ -228,16 +256,22 @@ public class ExcelSheet {
     private int headerId = 0;
     private String sheetName = null;
 
-    private String dateFormat;
+    private String timestampFormat = ExcelDataPathAttribute.Constants.DEFAULT_TIMESTAMP_FORMAT;
     private ExcelDataPath excelDataPath;
+    private String dateFormat = ExcelDataPathAttribute.Constants.DEFAULT_DATE_FORMAT;
 
     public ExcelSheetConfig(Path pathObj, PackageAccess packageAccess) {
       this.path = pathObj;
       this.access = packageAccess;
     }
 
-    public ExcelSheetConfig setDateFormat(String i) {
-      this.dateFormat = i;
+    public ExcelSheetConfig setTimestampFormat(String timestampFormat) {
+      this.timestampFormat = timestampFormat;
+      return this;
+    }
+
+    public ExcelSheetConfig setDateFormat(String dateFormat) {
+      this.dateFormat = dateFormat;
       return this;
     }
 
@@ -266,6 +300,10 @@ public class ExcelSheet {
     public ExcelSheetConfig setSheetName(String sheetName) {
       this.sheetName = sheetName;
       return this;
+    }
+
+    public String getTimestampFormat() {
+      return this.timestampFormat;
     }
 
     public String getDateFormat() {

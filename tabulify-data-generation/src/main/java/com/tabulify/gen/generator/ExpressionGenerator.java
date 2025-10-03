@@ -7,7 +7,7 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.NoColumnException;
 import net.bytle.type.Casts;
 import net.bytle.type.Strings;
-import net.bytle.type.time.Date;
+import net.bytle.type.time.Timestamp;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.EvaluatorException;
 import org.mozilla.javascript.ScriptableObject;
@@ -18,8 +18,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import static com.tabulify.gen.DataGenAttribute.COLUMN_PARENTS;
-import static com.tabulify.gen.DataGenAttribute.EXPRESSION;
+import static com.tabulify.gen.generator.ExpressionArgument.*;
 
 
 public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements CollectionGenerator<T>, java.util.function.Supplier<T> {
@@ -44,6 +43,14 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
   private Object actualValue;
 
 
+  /**
+   * @param clazz                          - the return type
+   * @param expression                     - the expression
+   * @param parentDataCollectionGenerators - the column that compose the expression.
+   *                                       Note that we may discover them from the expression but
+   *                                       as we create a graph to build the column in order
+   *                                       this is still mandatory
+   */
   public ExpressionGenerator(Class<T> clazz, String expression, List<CollectionGenerator<?>> parentDataCollectionGenerators) {
     super(clazz);
 
@@ -59,40 +66,51 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
 
   /**
    * Instantiate an expression generator from the columns properties
-   * This function is called via recursion by the function {@link GenColumnDef#getOrCreateGenerator(Class)}
+   * This function is called via recursion by the function {@link GenColumnDef#getOrCreateGenerator()}
    * Don't delete
    */
-  public static <T> ExpressionGenerator<T> createFromProperties(Class<T> tClass, GenColumnDef genColumnDef) {
+  public static <T> ExpressionGenerator<T> createFromProperties(Class<T> tClass, GenColumnDef<T> genColumnDef) {
 
+    Map<ExpressionArgument, Object> argumentMap = genColumnDef.getDataSupplierArgument(ExpressionArgument.class);
     // Parent Generator
-    Object columnParentsValue = genColumnDef.getDataGeneratorValue(COLUMN_PARENTS);
-    if (columnParentsValue == null) {
-      throw new IllegalStateException("The " + COLUMN_PARENTS + " property is not defined in the '" + COLUMN_PARENTS + "' properties for the column " + genColumnDef.getFullyQualifiedName());
+    Object columnParentsValue = argumentMap.get(ExpressionArgument.COLUMN_VARIABLES);
+    Object columnParentValue = argumentMap.get(ExpressionArgument.COLUMN_VARIABLE);
+    if (columnParentsValue == null && columnParentValue == null) {
+      throw new IllegalArgumentException("A " + COLUMN_VARIABLES + " or " + COLUMN_VARIABLE + " attribute was not found. It is mandatory in the data supplier of the column " + genColumnDef.getFullyQualifiedName());
     }
+    if (columnParentsValue != null && columnParentValue != null) {
+      throw new IllegalArgumentException("The " + COLUMN_VARIABLES + " or " + COLUMN_VARIABLE + " attributes have values. Only one of the 2 attributes should be present in the data supplier of the column " + genColumnDef.getFullyQualifiedName());
+    }
+
     List<String> columnParentNames = new ArrayList<>();
-    if (columnParentsValue instanceof Collection) {
-      columnParentNames = Casts.castToListSafe(columnParentsValue, String.class);
-    } else {
-      columnParentNames.add(columnParentsValue.toString());
+    if (columnParentsValue != null) {
+      try {
+        columnParentNames = Casts.castToNewList(columnParentsValue, String.class);
+      } catch (CastException e) {
+        throw new IllegalArgumentException("The " + COLUMN_VARIABLES + " value of the column " + genColumnDef.getFullyQualifiedName() + " is not a list. Error: " + e.getMessage(), e);
+      }
+    }
+    if (columnParentValue != null) {
+      columnParentNames.add(columnParentValue.toString());
     }
 
     List<CollectionGenerator<?>> parentCollectionGenerator = new ArrayList<>();
     for (String columnParentName : columnParentNames) {
-      GenColumnDef columnParent;
+      GenColumnDef<?> columnParent;
       try {
-        columnParent = genColumnDef.getRelationDef().getColumnDef(columnParentName);
+        columnParent = genColumnDef.getGenRelationDef().getColumnDef(columnParentName);
       } catch (NoColumnException e) {
         throw new IllegalStateException("The parent column (" + columnParentName + ") was not found and is mandatory to create an expression generator for the column (" + genColumnDef + ")");
       }
       if (genColumnDef.equals(columnParent)) {
         throw new RuntimeException("The column (" + genColumnDef + ") has a expression generator with itself creating a loop. Please choose another column as parent column.");
       }
-      CollectionGenerator<?> parentGenerator = columnParent.getOrCreateGenerator(columnParent.getClazz());
+      CollectionGenerator<?> parentGenerator = columnParent.getOrCreateGenerator();
       parentCollectionGenerator.add(parentGenerator);
     }
 
     // Expression
-    Object expression = genColumnDef.getDataGeneratorValue(EXPRESSION);
+    Object expression = argumentMap.get(ExpressionArgument.EXPRESSION);
     if (expression == null) {
       throw new IllegalStateException("The '" + EXPRESSION + "' property is mandatory to create a expression data generator and is missing for the column (" + genColumnDef.getFullyQualifiedName() + ")");
     }
@@ -111,26 +129,28 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
   public T getNewValue() {
 
     StringBuilder evalScript = new StringBuilder();
-    List<String> variableNames = Arrays.asList("x", "y", "z", "a", "b", "c", "d", "e", "f");
-    int counter = 0;
     for (CollectionGenerator<?> parentCollectionGenerator : parentCollectionGenerators) {
       Object parentValue = parentCollectionGenerator.getActualValue();
       String value = parentValue.toString();
 
-      if (Arrays.asList(java.util.Date.class, java.sql.Date.class).contains(parentValue.getClass())) {
-        LocalDate actualDate;
-        if (parentValue.getClass().equals(java.sql.Date.class)) {
-          actualDate = ((java.sql.Date) parentValue).toLocalDate();
-        } else {
-          actualDate = Date.createFromDate((java.util.Date) parentValue).toLocalDate();
-        }
+      if (parentValue.getClass().equals(java.sql.Date.class)) {
+        LocalDate actualDate = ((java.sql.Date) parentValue).toLocalDate();
         value = "new Date(\"" + actualDate.format(DateTimeFormatter.ISO_DATE) + "\")";
       } else if (parentValue.getClass().equals(String.class)) {
         value = "'" + value + "'";
+      } else if (Arrays.asList(java.util.Date.class, java.sql.Timestamp.class).contains(parentValue.getClass())) {
+        java.sql.Timestamp actualTimestamp = Timestamp.createFromObjectSafeCast(parentValue).toSqlTimestamp();
+        String formatted = actualTimestamp.toLocalDateTime()
+          .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        value = "new Date(\"" + formatted + "\")";
       }
 
-      String variableName = variableNames.get(counter);
-      counter++;
+      /**
+       * To lowercase in order to have a naming consistent
+       * (ie ORACLE will return UPPER case column name if the column name in the `create` statement are not quoted)
+       * because key should be idempotent, we put them in lower case
+       */
+      String variableName = parentCollectionGenerator.getColumnDef().getColumnName().toLowerCase();
       evalScript
         .append("var ")
         .append(variableName)
@@ -151,14 +171,23 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
       try {
         evalValue = cx.evaluateString(scope, evalScript.toString(), "<cmd>", 1, null);
       } catch (Exception e) {
-        throw new RuntimeException("Error while evaluating the expression for the column " + this.getColumnDef() + ". \nError: " + e.getMessage() + ". \nExpression:\n" + evalScript, e);
+        throw new IllegalArgumentException("Error while evaluating the expression for the column " + this.getColumnDef() + ". \nError: " + e.getMessage() + ". \nExpression:\n" + evalScript, e);
       }
       if (evalValue == null) {
         final String msg = "The expression generator for the column (" + this.getColumnDef() + ") has returned a NULL value and it's not expected.\nThe expression was: " + evalScript;
         LOGGER.error(msg);
-        throw new RuntimeException(msg);
+        throw new IllegalArgumentException(msg);
       }
       this.actualValue = evalValue;
+
+      /**
+       * Nan check
+       */
+      if (evalValue instanceof Double) {
+        if (Double.isNaN((Double) evalValue)) {
+          throw new IllegalArgumentException("NAN returned. Not a Number value found. Error while evaluating the expression for the column " + this.getColumnDef() + ". Expression:\n" + evalScript);
+        }
+      }
 
       /**
        * The substring because javascript return always a float for numbers,
@@ -167,7 +196,7 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
       if (this.clazz.equals(String.class)) {
         String processString = Strings.createFromObjectNullSafe(evalValue).toString();
         GenColumnDef columnDef = this.getColumnDef();
-        if (columnDef.getPrecision() != null) {
+        if (columnDef.getPrecision() != 0) {
           if (processString.length() > columnDef.getPrecisionOrMax()) {
             processString = processString.substring(0, columnDef.getPrecisionOrMax());
           }
@@ -179,9 +208,9 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
         return Casts.cast(this.actualValue, clazz);
       } catch (CastException ex) {
         try {
-          if (clazz.equals(java.sql.Date.class)) {
+          if (clazz.equals(java.sql.Date.class) || clazz.equals(java.sql.Timestamp.class)) {
             // Happens on formula
-            // The object (org.mozilla.javascript.NativeDate@46678e49) has an class (NativeDate) that is not yet seen as a date.
+            // The object (org.mozilla.javascript.NativeDate@46678e49) has a class (NativeDate) that is not yet seen as a date.
             this.actualValue = Context.jsToJava(this.actualValue, java.util.Date.class);
             return Casts.cast(this.actualValue, clazz);
           }

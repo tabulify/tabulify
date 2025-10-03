@@ -2,6 +2,8 @@ package com.tabulify.transfer;
 
 import com.tabulify.conf.AttributeValue;
 
+import java.nio.file.StandardCopyOption;
+
 /**
  * Operation:
  * * on the existing target before load (replace, truncate)
@@ -11,11 +13,11 @@ public enum TransferResourceOperations implements AttributeValue {
 
 
   TRUNCATE( "Truncate the source or the existing target", "both"),
+  /**
+   * For the target, equivalent to {@link StandardCopyOption#REPLACE_EXISTING}
+   */
   DROP( "Drop the source after the transfer or the existing target before the transfer", "both"),
-  CREATE( "Create a target resource if it does not exist. This is by default always on", "target"),
-  REPLACE( "Replace the existing target (ie drop, create) - ie replace existing", "target"),
-  KEEP("Does not replace the target if it exists", "target"),
-  REPLACE_IF_NEWER( "Replace the target if the source is newer", "target"),
+  CREATE("Create a target resource if it does not exist. This is by default always on", "target")
   ;
 
 

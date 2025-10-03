@@ -1,11 +1,12 @@
 package com.tabulify.hive;
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Attribute;
 import com.tabulify.jdbc.SqlConnection;
 import com.tabulify.jdbc.SqlConnectionMetadata;
 import com.tabulify.jdbc.SqlDataSystem;
 import com.tabulify.model.SqlDataType;
-import com.tabulify.conf.Attribute;
+import net.bytle.type.KeyNormalizer;
 
 import java.sql.Types;
 
@@ -27,20 +28,18 @@ public class HiveConnection extends SqlConnection {
 
 
   /**
-   * https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types#LanguageManualTypes-IntegralTypes(TINYINT,SMALLINT,INT/INTEGER,BIGINT)
-   * @param typeCode
-   * @return
+   * <a href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types#LanguageManualTypes-IntegralTypes(TINYINT,SMALLINT,INT/INTEGER,BIGINT)">...</a>
    */
   @Override
-  public SqlDataType getSqlDataType(Integer typeCode) {
-    SqlDataType sqlDataType = super.getSqlDataType(typeCode);
+  public SqlDataType getSqlDataType(KeyNormalizer typeName, int typeCode) {
+    SqlDataType sqlDataType = super.getSqlDataType(typeName, typeCode);
     switch (typeCode){
       case Types.NUMERIC:
-        sqlDataType.setSqlName("DECIMAL");
+        //sqlDataType.setSqlNameSafe("DECIMAL");
         break;
       case Types.TIME:
         // Time doesn't exist, we try to make it a timestamp
-        sqlDataType.setSqlName("TIMESTAMP");
+        //sqlDataType.setSqlNameSafe("TIMESTAMP");
         break;
     }
     return sqlDataType;

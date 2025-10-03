@@ -93,7 +93,7 @@ public class TabularEnvs {
    * for instance, name in os is the name of the computer
    */
   public KeyNormalizer getNormalizedKey(AttributeEnum attribute) {
-    return KeyNormalizer.createSafe(Tabular.TABLI_NAME + "_" + attribute);
+    return KeyNormalizer.createSafe(Tabular.TABUL_NAME + "_" + attribute);
   }
 
   public Map<String, String> getEnvs() {

@@ -1,3 +1,5 @@
+com.tabulify.fs.runtime.FsCommandManifestProvider
 com.tabulify.fs.textfile.FsTextManagerProvider
 com.tabulify.fs.dir.FsDirManagerProvider
 com.tabulify.fs.sql.FsSqlManagerProvider
+com.tabulify.resource.ManifestResourceProvider

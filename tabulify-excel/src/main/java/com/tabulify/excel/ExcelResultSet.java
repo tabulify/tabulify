@@ -14,43 +14,50 @@ import java.sql.*;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 
 /**
  * A Sql result set implementation
  * First tabulify cursor implementation
  * See <a href="https://poi.apache.org/components/spreadsheet/quick-guide.html">...</a>
+ * We should have only a {@link ExcelSelectStream} but we didn't merge them yet
  */
 public class ExcelResultSet implements ResultSet {
 
-  private static final Logger LOGGER = Logger.getLogger(Thread.currentThread().getStackTrace()[0].getClassName());
+
   private final Sheet sheet;
   private final ExcelSheet excelSheet;
 
 
-  // Excel Poi Row Num
-  // As zero is the first row num, null means that there are no data in the sheet
-  private Integer firstPhysicalRowNum = null;
+  /**
+   * The first row of data in Excel Poi Row Num (Zero based)
+   * As zero is the first row num,
+   * * -1 means that there are no data in the sheet
+   * * 0 means that there is one row
+   * The row just after the header because it's zero based, it's also equal to the header row id
+   */
+  private final Integer excelFirstRowNum;
   private boolean dataSetIsEmpty = true;
 
-  // The lastPhysicalRowNum of the data Set
-  // It's used for instance to insert a row at the end ...
-  // null if there is no row, no header
-  private Integer lastPhysicalRowNum;
+  /**
+   * The lastPhysicalRowNum of the data Set
+   * It's used for instance to insert a row at the end ...
+   * null if there is no row, no header
+   * 0 means first row
+   */
+  private final Integer excelLastRowNum;
   // The last columnNum is defined by the first row size
   // may be null
-  private Short lastColumnNum;
+  private final Short lastColumnNum;
 
 
-  // The logical location of the row
-  // 0 is before
-  // 1 is the first row
-  // ....
+  /**
+   * The logical location of the row in the set
+   * 0 is before
+   * 1 is the first row of data
+   * ....
+   */
   private int logicalRowIndex = 0;
-
-
-  private ResultSetMetaData resultSetMetaData;
 
 
   /**
@@ -60,7 +67,7 @@ public class ExcelResultSet implements ResultSet {
    * * xlsx: Excel
    * * csv: CSV
    *
-   * @param excelSheet - path to the excel file
+   * @param excelSheet - path to the Excel file
    */
   public ExcelResultSet(ExcelSheet excelSheet) {
 
@@ -68,39 +75,34 @@ public class ExcelResultSet implements ResultSet {
     this.sheet = this.excelSheet.getSheet();
 
     // The last row num with data
-    this.lastPhysicalRowNum = getLastRowNum();
+    this.excelLastRowNum = getLastRowNum();
 
-    this.firstPhysicalRowNum = excelSheet.getHeaderRowId();
+    int headerRowId = excelSheet.getHeaderRowId();
+    this.excelFirstRowNum = headerRowId;
 
-    if (this.firstPhysicalRowNum <= this.lastPhysicalRowNum) {
-      this.dataSetIsEmpty = false;
-    } else {
-      this.dataSetIsEmpty = true;
-    }
+    this.dataSetIsEmpty = this.excelFirstRowNum > this.excelLastRowNum;
     // The last ColumnNum with data
     this.lastColumnNum = getLastColNum();
 
-    // Metadata Building
-    if (excelSheet.getHeaderRowId() != 0) {
-      Row headerRow = sheet.getRow(this.getExcelRowIndex(excelSheet.getHeaderRowId()));
+    // Headers Row Building
+    if (headerRowId != 0) {
+      Row headerRow = sheet.getRow(this.getExcelRowIndex(headerRowId));
       int columnIndex = 0;
       headerNames = new TreeBidiMap<>();
       for (Cell cell : headerRow) {
         if (cell.getCellType() != CellType.STRING) {
           throw new IllegalArgumentException("The cell (" + cell.getRowIndex() + "," + cell.getColumnIndex() + ") with the value (" + ExcelSheets.getCellValueSafe(cell, String.class) + ") can be an header as it is not of STRING type but of type (" + getCellTypeName(cell.getCellType()) + ")");
-        } else {
-          columnIndex++;
-          headerNames.put(cell.getStringCellValue(), columnIndex);
         }
+        columnIndex++;
+        headerNames.put(cell.getStringCellValue(), columnIndex);
       }
     }
 
     // DataType Building
     // The data type comes from the first row of data
     // We need to read it
-    // rowId is zero based so getRow(headerRowId) get the next row
-    int nextRow = excelSheet.getHeaderRowId();
-    Row firstRowWithData = sheet.getRow(nextRow);
+    // rowId is zero based so getRow(headerRowId) get the row after the headers
+    Row firstRowWithData = sheet.getRow(headerRowId);
     if (firstRowWithData != null) {
 
       int columnIndex = 0;
@@ -112,8 +114,6 @@ public class ExcelResultSet implements ResultSet {
       }
     }
     // empty sheet, data type may be given manually
-    // throw new IllegalArgumentException("The first row of data must be present in order to determine the data type of each column automatically. The row (" + (nextRow + 1) + ") does not exist");
-
 
 
   }
@@ -136,12 +136,12 @@ public class ExcelResultSet implements ResultSet {
    */
 
   public boolean next() {
-    if (this.logicalRowIndex > this.lastPhysicalRowNum) {
+    int logicalNormalizedRowIndex = getLogicalRowIndexWithHeader(logicalRowIndex);
+    if (getExcelRowIndex(logicalNormalizedRowIndex) > this.excelLastRowNum) {
       return false;
-    } else {
-      this.logicalRowIndex++;
-      return isCursorInDataSet();
     }
+    this.logicalRowIndex++;
+    return isCursorInDataSet();
   }
 
   /**
@@ -173,8 +173,6 @@ public class ExcelResultSet implements ResultSet {
 
   /**
    * Validate the Row index
-   *
-   * @param rowIndex
    */
   private void validateRowIndex(int rowIndex) throws SQLException {
     if (rowIndex < 1) {
@@ -186,8 +184,6 @@ public class ExcelResultSet implements ResultSet {
 
   /**
    * Validate the columnIndex
-   *
-   * @param columnIndex
    */
   private void validateColumnIndex(int columnIndex) throws SQLException {
     if (columnIndex < 1) {
@@ -206,9 +202,9 @@ public class ExcelResultSet implements ResultSet {
    * @param columnIndex the first column is 1, the second is 2, ...
    * @return the column value; if the value is <code>NULL</code> (ie BLANK type in Excel), the
    * value returned is <code>0</code>
-   * @throws Exception if the columnIndex is not valid;
-   *                   if an access error occurs or this method is
-   *                   called on a closed result set
+   * @throws SQLException if the columnIndex is not valid;
+   *                      if an access error occurs or this method is
+   *                      called on a closed result set
    */
 
   public Double getNumeric(int columnIndex) throws SQLException {
@@ -537,9 +533,12 @@ public class ExcelResultSet implements ResultSet {
 
   }
 
-  // Return the physique coordinates from a logical one
-  private int getPhysicalRowIndex(int logicalRowIndex) {
-    return logicalRowIndex + this.firstPhysicalRowNum;
+  /**
+   * Return the logical row index with header
+   * 1 based, not zero based
+   */
+  private int getLogicalRowIndexWithHeader(int dataSetRowIndex) {
+    return dataSetRowIndex + this.excelFirstRowNum;
   }
 
   /**
@@ -573,7 +572,7 @@ public class ExcelResultSet implements ResultSet {
    */
   @Override
   public Timestamp getTimestamp(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not yet implemented");
+    return this.cast(null, columnIndex, java.sql.Timestamp.class);
   }
 
   /**
@@ -772,7 +771,7 @@ public class ExcelResultSet implements ResultSet {
    */
   @Override
   public Timestamp getTimestamp(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not yet implemented");
+    return getTimestamp(getColumnIndex(columnLabel));
   }
 
   /**
@@ -991,12 +990,9 @@ public class ExcelResultSet implements ResultSet {
    */
   @Override
   public Object getObject(int columnIndex) throws SQLException {
-    validateCell(logicalRowIndex, columnIndex);
-    int physicalRowIndex = getPhysicalRowIndex(logicalRowIndex);
-    int sheetRowIndex = this.getExcelRowIndex(physicalRowIndex);
-    int sheetColumnIndex = this.getExcelColumnIndex(columnIndex);
-    return this.sheet.getRow(sheetRowIndex).getCell(sheetColumnIndex);
+    return getObject(columnIndex, Object.class);
   }
+
 
   /**
    * <p>Gets the value of the designated column in the current row
@@ -1135,7 +1131,7 @@ public class ExcelResultSet implements ResultSet {
    */
 
   public boolean isBeforeFirst() {
-    if (this.getRow() < this.firstPhysicalRowNum) {
+    if (this.getRow() < this.excelFirstRowNum) {
       return true;
     } else {
       return false;
@@ -1155,11 +1151,11 @@ public class ExcelResultSet implements ResultSet {
    */
 
   public boolean isAfterLast() {
-    if (getRow() > this.lastPhysicalRowNum) {
+    int physicalRowIndex = getLogicalRowIndexWithHeader(getRow());
+    if (getExcelRowIndex(physicalRowIndex) > this.excelLastRowNum) {
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   /**
@@ -1174,7 +1170,7 @@ public class ExcelResultSet implements ResultSet {
    */
 
   public boolean isFirst() {
-    if (this.getRow() == this.firstPhysicalRowNum) {
+    if (this.getRow() == this.excelFirstRowNum) {
       return true;
     } else {
       return false;
@@ -1216,7 +1212,7 @@ public class ExcelResultSet implements ResultSet {
 
   public void beforeFirst() {
     if (!this.dataSetIsEmpty) {
-      this.logicalRowIndex = this.firstPhysicalRowNum - 1;
+      this.logicalRowIndex = this.excelFirstRowNum - 1;
     }
   }
 
@@ -1233,7 +1229,7 @@ public class ExcelResultSet implements ResultSet {
 
   public boolean first() {
     if (!this.dataSetIsEmpty) {
-      this.logicalRowIndex = this.firstPhysicalRowNum;
+      this.logicalRowIndex = this.excelFirstRowNum;
       return true;
     } else {
       return false;
@@ -1364,14 +1360,14 @@ public class ExcelResultSet implements ResultSet {
   public boolean relative(int rows) {
 
     if (rows > 0) {
-      if (this.logicalRowIndex + rows > this.lastPhysicalRowNum) {
-        this.logicalRowIndex = this.lastPhysicalRowNum + 1;
+      if (this.logicalRowIndex + rows > this.excelLastRowNum) {
+        this.logicalRowIndex = this.excelLastRowNum + 1;
       } else {
         this.logicalRowIndex += rows;
       }
     } else if (rows < 0) {
-      if (this.logicalRowIndex - Math.abs(rows) < this.firstPhysicalRowNum) {
-        this.logicalRowIndex = this.firstPhysicalRowNum - 1;
+      if (this.logicalRowIndex - Math.abs(rows) < this.excelFirstRowNum) {
+        this.logicalRowIndex = this.excelFirstRowNum - 1;
       } else {
         this.logicalRowIndex -= Math.abs(rows);
       }
@@ -1500,7 +1496,7 @@ public class ExcelResultSet implements ResultSet {
    */
   int size() {
     // this.sheet.getPhysicalNumberOfRows();
-    return this.lastPhysicalRowNum - this.firstPhysicalRowNum + 1;
+    return this.excelLastRowNum - this.excelFirstRowNum + 1;
   }
 
   /**
@@ -1518,7 +1514,7 @@ public class ExcelResultSet implements ResultSet {
     if (this.dataSetIsEmpty) {
       return false;
     } else {
-      this.logicalRowIndex = this.lastPhysicalRowNum;
+      this.logicalRowIndex = this.excelLastRowNum;
       return true;
     }
   }
@@ -1554,7 +1550,7 @@ public class ExcelResultSet implements ResultSet {
 
   public void afterLast() {
     if (!this.dataSetIsEmpty) {
-      this.logicalRowIndex = this.lastPhysicalRowNum + 1;
+      this.logicalRowIndex = this.excelLastRowNum + 1;
     }
   }
 
@@ -4603,7 +4599,11 @@ public class ExcelResultSet implements ResultSet {
    */
   @Override
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-    throw new UnsupportedOperationException("Not yet implemented");
+    validateCell(logicalRowIndex, columnIndex);
+    int physicalRowIndex = getLogicalRowIndexWithHeader(logicalRowIndex);
+    int sheetRowIndex = this.getExcelRowIndex(physicalRowIndex);
+    int sheetColumnIndex = this.getExcelColumnIndex(columnIndex);
+    return ExcelSheets.getCellValue(this.sheet.getRow(sheetRowIndex).getCell(sheetColumnIndex), type);
   }
 
   /**
@@ -4641,6 +4641,9 @@ public class ExcelResultSet implements ResultSet {
 
   // Header and column data type
   private TreeBidiMap<String, Integer> headerNames;
+  /**
+   * Column Index, Cell from the header
+   */
   private Map<Integer, Cell> headerCells = new HashMap<>();
 
 
@@ -4781,7 +4784,7 @@ public class ExcelResultSet implements ResultSet {
     return this.headerNames;
   }
 
-  public Map<Integer, Cell> getColumnTypes() {
+  public Map<Integer, Cell> getHeaderColumnTypes() {
     return headerCells;
   }
 
@@ -4986,6 +4989,7 @@ public class ExcelResultSet implements ResultSet {
      * @throws SQLException if a database access error occurs
      * @see Types
      */
+    @Override
     public int getColumnType(int column) throws SQLException {
       if (column < 1) {
         throw new SQLException("The column index can not be 0 or less. The column index passed was (" + column + ")");
@@ -4993,7 +4997,7 @@ public class ExcelResultSet implements ResultSet {
       if (column > headerCells.size()) {
         throw new SQLException("The column index can not be greater than the number of column (" + headerCells.size() + "). The column index passed was (" + column + ")");
       }
-      return ExcelSheets.toSqlType(headerCells.get(column));
+      return ExcelSheets.toSqlType(headerCells.get(column)).getVendorTypeNumber();
     }
 
 
@@ -5112,7 +5116,7 @@ public class ExcelResultSet implements ResultSet {
     }
 
     validateCell(logicalRowIndex, columnIndex);
-    int physicalRowIndex = getPhysicalRowIndex(rowIndex);
+    int physicalRowIndex = getLogicalRowIndexWithHeader(rowIndex);
 
     // Mapping of logical location with the sourceResultSet sheet location
     int sheetRowIndex = this.getExcelRowIndex(physicalRowIndex);

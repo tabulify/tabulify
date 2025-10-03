@@ -1,6 +1,8 @@
 package com.tabulify.gen.generator;
 
-import com.tabulify.gen.*;
+import com.tabulify.gen.DataGenType;
+import com.tabulify.gen.GenColumnDef;
+import com.tabulify.gen.GenDataPath;
 import net.bytle.dag.Dag;
 import net.bytle.dag.Dependency;
 
@@ -12,8 +14,8 @@ import java.util.function.Supplier;
  * <p>
  * Why ? Because they supports only one column:
  * * they can be generic
- * * they can supports functional generation {@link Supplier}
- * * a dag (Direct Acyclic Graph) can be build with a child-parent relationship
+ * * they can support functional generation {@link Supplier}
+ * * a dag (Direct Acyclic Graph) can be built with a child-parent relationship
  * <p>
  * If a generator must generate multiple values,
  * it means that this is a parent generator and
@@ -41,7 +43,7 @@ public interface CollectionGenerator<T> extends Dependency, Supplier<T> {
   }
 
   /**
-   * How much data can this generator generate.
+   * How much row can this generator generate.
    * <p>
    * Example with a start of 0, a step of 1 and a maxValue of 2, the maxValue must be 2 (ie 1,2)
    *
@@ -56,13 +58,6 @@ public interface CollectionGenerator<T> extends Dependency, Supplier<T> {
   void reset();
 
 
-  /**
-   *
-   * A utility function to get back to the data def
-   * because a {@link DataGenerator} may have several columns
-   *
-   */
-  GenRelationDef getRelationDef();
 
   /**
    * @return a new generated data object every time it's called for a single column generator
@@ -85,7 +80,7 @@ public interface CollectionGenerator<T> extends Dependency, Supplier<T> {
    * when asking a value for a column, we may need to ask the value for another column before
    * If the generator is a multi-column generator, it will throw an errors
    */
-  GenColumnDef getColumnDef();
+  GenColumnDef<T> getColumnDef();
 
 
   /**
@@ -101,7 +96,7 @@ public interface CollectionGenerator<T> extends Dependency, Supplier<T> {
   DataGenType getGeneratorType();
 
 
-  CollectionGenerator<?> setColumnDef(GenColumnDef genColumnDef);
+  CollectionGenerator<T> setColumnDef(GenColumnDef<T> genColumnDef);
 
   /**
    * @return if this generator may return null value

@@ -1,0 +1,21 @@
+kind: generator
+spec:
+  maxRecordCount: 30
+  columns:
+    - name: gender
+      type: varchar
+      data-supplier:
+        type: histogram
+        arguments:
+          buckets:
+            M: 1.0
+            F: 2.0
+    - name: firstname
+      type: varchar
+      data-supplier:
+        type: data-set
+        arguments:
+          dataUri: firstname/firstname_fr.csv@entity
+          column: firstname # for demo purpose as this is the default value
+          metaColumns:
+            gender: gender

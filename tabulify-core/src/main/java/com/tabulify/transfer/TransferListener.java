@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * A transfer listeners return statistics / information about the
  * transfers.
- *
+ * <p>
  * Example:
  *  * exception and errors
  *  * number of commits
@@ -67,9 +67,9 @@ public interface TransferListener extends Comparable<TransferListener>, ThreadLi
 
   /**
    *
-   * @return the target data path, the source data path and the {@link TransferProperties}
+   * @return the target data path, the source data path and the {@link TransferPropertiesCross}
    */
-  TransferSourceTarget getTransferSourceTarget();
+  TransferSourceTargetOrder getTransferSourceTarget();
 
   /**
    *

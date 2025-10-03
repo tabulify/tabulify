@@ -6,9 +6,10 @@ import com.tabulify.memory.MemoryDataPathAbs;
 import com.tabulify.memory.MemoryDataPathType;
 import com.tabulify.memory.list.MemoryListDataPath;
 import com.tabulify.spi.DataPath;
+import com.tabulify.spi.SchemaType;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
-import com.tabulify.transfer.TransferProperties;
+import com.tabulify.transfer.TransferPropertiesSystem;
 
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -90,7 +91,7 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
   }
 
   @Override
-  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
+  public InsertStream getInsertStream(DataPath source, TransferPropertiesSystem transferProperties) {
     return new MemoryQueueInsertStream(this);
   }
 
@@ -107,6 +108,11 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
   @Override
   public boolean hasHeaderInContent() {
     return false;
+  }
+
+  @Override
+  public SchemaType getSchemaType() {
+    return SchemaType.STRICT;
   }
 
   @Override

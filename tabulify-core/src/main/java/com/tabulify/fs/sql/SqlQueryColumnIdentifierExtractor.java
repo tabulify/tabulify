@@ -6,6 +6,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Parse a query and returns the column identifier
+ * The main class is {@link SqlQuery#extractColumnNames()}
+ */
 public class SqlQueryColumnIdentifierExtractor {
 
   public static final char QUOTE_CHAR = '"';

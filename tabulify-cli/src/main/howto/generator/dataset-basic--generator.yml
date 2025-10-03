@@ -1,0 +1,11 @@
+kind: generator
+spec:
+  MaxRecordCount: 10
+  Columns:
+    - name: firstname
+      Type: varchar
+      data-supplier:
+        type: data-set
+        arguments:
+          dataUri: firstname/firstname_fr.csv@entity
+          column: firstname # for demo purpose as this is the default value

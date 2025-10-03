@@ -1,14 +1,14 @@
 package com.tabulify.hive;
 
 import com.tabulify.Tabular;
-import com.tabulify.connection.Connection;
-import com.tabulify.jdbc.SqlDataStoreProvider;
 import com.tabulify.conf.Attribute;
+import com.tabulify.connection.Connection;
+import com.tabulify.jdbc.SqlConnectionProvider;
 
-public class HiveProvider extends SqlDataStoreProvider {
+public class HiveProvider extends SqlConnectionProvider {
 
   @Override
-  public Connection getJdbcDataStore(Tabular tabular, Attribute name, Attribute uri) {
+  public Connection createSqlConnection(Tabular tabular, Attribute name, Attribute uri) {
     return new HiveConnection(tabular, name, uri);
   }
 

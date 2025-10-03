@@ -1,12 +1,12 @@
 package com.tabulify.transfer;
 
+import com.tabulify.model.SqlDataTypeAnsi;
 import com.tabulify.spi.DataPath;
 import com.tabulify.spi.Tabulars;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.InsertStreamListener;
 import net.bytle.type.time.Timestamp;
 
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,14 +35,14 @@ public class TransferWorkerMetricsViewer implements Runnable {
   public TransferWorkerMetricsViewer(
 
     DataPath buffer,
-    TransferProperties transferProperties,
+    TransferPropertiesCross transferPropertiesCross,
     AtomicBoolean producerWorkIsDone,
     AtomicBoolean consumerWorkIsDone) {
 
     this.buffer = buffer;
     this.producerWorkIsDone = producerWorkIsDone;
-    this.bufferSize = transferProperties.getBufferSize();
-    this.metricsFilePath = transferProperties.getMetricsPath();
+    this.bufferSize = transferPropertiesCross.getBufferSize();
+    this.metricsFilePath = transferPropertiesCross.getMetricsPath();
     this.consumerWorkIsDone = consumerWorkIsDone;
 
 
@@ -59,11 +59,11 @@ public class TransferWorkerMetricsViewer implements Runnable {
       dataPath = metricsFilePath;
     }
     dataPath.getOrCreateRelationDef()
-      .addColumn("run", Types.TIMESTAMP)
-      .addColumn("timestamp", Types.TIMESTAMP)
-      .addColumn("metric", Types.VARCHAR)
-      .addColumn("value", Types.BIGINT)
-      .addColumn("worker", Types.VARCHAR);
+      .addColumn("run", SqlDataTypeAnsi.TIMESTAMP)
+      .addColumn("timestamp", SqlDataTypeAnsi.TIMESTAMP)
+      .addColumn("metric", SqlDataTypeAnsi.CHARACTER_VARYING)
+      .addColumn("value", SqlDataTypeAnsi.BIGINT)
+      .addColumn("worker", SqlDataTypeAnsi.CHARACTER_VARYING);
     if (Tabulars.exists(dataPath)) {
       Tabulars.drop(dataPath);
     }

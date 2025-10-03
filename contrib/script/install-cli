@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install Tabulify locally
-# at LOCAL_TABLI_HOME
+# at LOCAL_TABUL_HOME
 
 set -TCEeuo pipefail
 
@@ -18,18 +18,10 @@ find_git_root() {
 }
 
 
-# Cli because in IDE mode, TABLI_HOME is the ide project root
-# Cli because TABLI_HOME depends on the context
-# In ide development, TABLI_HOME is the ide project root
-# In cli,             TABLI_HOME is the cli installation root
-TABLI_HOME=${CLI_TABLI_HOME}
-if [ "$TABLI_HOME" == "" ]; then
-  echo "CLI_TABLI_HOME should be set into envrc"
-  exit 1
-fi
+TABUL_HOME=${CLI_TABUL_HOME:-/opt/tabulify}
 
 # Get, check if the parent directory exists
-parent_dir=$(dirname "${TABLI_HOME}")
+parent_dir=$(dirname "${TABUL_HOME}")
 if [[ ! -d "${parent_dir}" ]]; then
     echo "Error: Parent directory '${parent_dir}' does not exist or is not a directory."
     exit 1
@@ -67,7 +59,7 @@ mvn clean package -DskipTests -P release
 
 # Clean
 # mkdir first as the tabulify dir should not exists, other the move command will copy the directory into
-mkdir -p "$TABLI_HOME" && rm -rf "$TABLI_HOME"
+mkdir -p "$TABUL_HOME" && rm -rf "$TABUL_HOME"
 ASSEMBLY_DIR=target/jreleaser/assemble/tabulify/jlink
 rm -rf $ASSEMBLY_DIR
 
@@ -78,4 +70,4 @@ jreleaser assemble --debug --select-current-platform
 # No need to unzip - the dir is still there
 ARCHIVE_NAME=tabulify-early-access-linux-x86_64
 ASSEMBLY_WORK_DIR=work-linux-x86_64
-mv "${ASSEMBLY_DIR}/${ASSEMBLY_WORK_DIR}/${ARCHIVE_NAME}" "${TABLI_HOME}"
+mv "${ASSEMBLY_DIR}/${ASSEMBLY_WORK_DIR}/${ARCHIVE_NAME}" "${TABUL_HOME}"

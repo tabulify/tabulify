@@ -1,13 +1,17 @@
 package com.tabulify.memory;
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Attribute;
 import com.tabulify.connection.Connection;
 import com.tabulify.spi.ConnectionProvider;
-import com.tabulify.conf.Attribute;
+import net.bytle.type.KeyNormalizer;
 
 public class MemoryConnectionProvider extends ConnectionProvider {
 
-  public static final String SCHEME = "mem";
+
+  public static final KeyNormalizer SCHEME = KeyNormalizer.createSafe("mem");
+  public static final String URI = SCHEME + ":/";
+
   static MemoryConnectionProvider memoryDataStoreProvider;
 
   public static MemoryConnectionProvider of() {
@@ -41,7 +45,8 @@ public class MemoryConnectionProvider extends ConnectionProvider {
 
   @Override
   public boolean accept(Attribute url) {
-    return url.getValueOrDefaultAsStringNotNull().toLowerCase().startsWith(SCHEME);
+    return url.getValueOrDefaultAsStringNotNull().toLowerCase().startsWith(SCHEME.toString());
   }
+
 
 }

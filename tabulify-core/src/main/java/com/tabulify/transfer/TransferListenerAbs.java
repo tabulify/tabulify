@@ -14,7 +14,7 @@ import java.util.List;
 public abstract class TransferListenerAbs extends ThreadListenerAbs implements TransferListener {
 
   //The source target of this transfer
-  private final TransferSourceTarget transferSourceTarget;
+  private final TransferSourceTargetOrder transferSourceTarget;
 
   private Timer timer = Timer.create("total");
 
@@ -31,7 +31,7 @@ public abstract class TransferListenerAbs extends ThreadListenerAbs implements T
   private List<TransferResourceOperations> sourceDataOperations = new ArrayList<>();;
   private TransferType transferType;
 
-  public TransferListenerAbs(TransferSourceTarget transferSourceTarget) {
+  public TransferListenerAbs(TransferSourceTargetOrder transferSourceTarget) {
     this.transferSourceTarget = transferSourceTarget;
   }
   @Override
@@ -52,7 +52,7 @@ public abstract class TransferListenerAbs extends ThreadListenerAbs implements T
   }
 
   @Override
-  public TransferSourceTarget getTransferSourceTarget() {
+  public TransferSourceTargetOrder getTransferSourceTarget() {
     return this.transferSourceTarget;
   }
 

@@ -28,6 +28,10 @@
       <groupId>com.tabulify</groupId>
       <artifactId>tabulify-json</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.jgrapht</groupId>
+      <artifactId>jgrapht-io</artifactId>
+    </dependency>
 
     <!-- Testing -->
     <dependency>
@@ -45,22 +49,14 @@
       <artifactId>junit-vintage-engine</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.jgrapht</groupId>
-      <artifactId>jgrapht-io</artifactId>
-      <scope>test</scope>
-    </dependency>
+
     <!-- Csv is used as format with header, to have a good number of row, we need the csv -->
     <dependency>
       <groupId>com.tabulify</groupId>
       <artifactId>tabulify-csv</artifactId>
       <scope>test</scope>
     </dependency>
-
-
   </dependencies>
-
-
 
 
 </project>

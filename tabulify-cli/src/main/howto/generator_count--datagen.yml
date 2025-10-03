@@ -1,8 +1,0 @@
-# A generator used to show the count of a near infinite generator
-# no MaxRecordCount
-Columns:
-  - name: seq_int
-    type: integer
-    comment: A column with a sequence integer generator
-    DataGenerator:
-      type: sequence

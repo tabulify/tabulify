@@ -4,7 +4,9 @@ import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.FsDataPath;
 import com.tabulify.fs.FsFileManager;
 import com.tabulify.fs.FsFileManagerProvider;
+import com.tabulify.fs.runtime.FsCommand;
 import net.bytle.fs.Fs;
+import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
 
 import java.nio.file.Path;
@@ -32,9 +34,9 @@ public class FsBinaryFileManager implements FsFileManager {
 
 
   @Override
-  public FsDataPath createDataPath(FsConnection fsConnection, Path path) {
+  public FsDataPath createDataPath(FsConnection fsConnection, Path relativePath, MediaType mediaType) {
 
-    return new FsBinaryDataPath(fsConnection, path, MediaTypes.BINARY_FILE);
+    return new FsBinaryDataPath(fsConnection, relativePath, MediaTypes.BINARY_FILE);
 
   }
 
@@ -47,6 +49,11 @@ public class FsBinaryFileManager implements FsFileManager {
   @Override
   public void create(FsDataPath fsDataPath) {
     Fs.createEmptyFile(fsDataPath.getAbsoluteNioPath());
+  }
+
+  @Override
+  public FsDataPath createRuntimeDataPath(FsConnection executionConnection, FsDataPath executableDataPath) {
+    return new FsCommand(executionConnection, executableDataPath);
   }
 
 

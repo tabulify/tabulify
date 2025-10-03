@@ -1,0 +1,23 @@
+kind: generator
+spec:
+  MaxRecordCount: 30
+  Columns:
+    - name: id
+      type: integer
+      comment: A id column to see easily the number of values generated
+      data-supplier:
+        type: sequence
+    - name: bucket_map
+      type: time
+      comment: A column with a histogram generator that generates an uniform distribution of time
+      data-supplier:
+        type: histogram
+        arguments:
+          Buckets:
+            "8:45": 0.05
+            "8:50": 0.5
+            "8:55": 0.22
+            "9:00": 0.4
+            "9:05": 0.22
+            "9:10": 0.5
+            "9:15": 0.05

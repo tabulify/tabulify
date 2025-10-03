@@ -17,7 +17,7 @@ public class TransferListenerAtomic extends TransferListenerAbs {
 
   private long rows;
 
-  public TransferListenerAtomic(TransferSourceTarget transferSourceTarget) {
+  public TransferListenerAtomic(TransferSourceTargetOrder transferSourceTarget) {
     super(transferSourceTarget);
   }
 

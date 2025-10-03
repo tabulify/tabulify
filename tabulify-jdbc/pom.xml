@@ -25,6 +25,10 @@
       <artifactId>tabulify-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-docker</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
     </dependency>

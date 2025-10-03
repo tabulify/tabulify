@@ -2,6 +2,8 @@ package com.tabulify.model;
 
 import com.tabulify.conf.AttributeEnum;
 import com.tabulify.conf.Origin;
+import net.bytle.exception.CastException;
+import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MapKeyIndependent;
 
 import java.sql.DatabaseMetaData;
@@ -9,6 +11,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static com.tabulify.conf.Origin.DEFAULT;
 
 /**
  * A class that contains a column data structure definition
@@ -18,20 +22,11 @@ import java.util.Set;
  * @see <a href="https://www.w3.org/TR/2015/REC-tabular-data-model-20151217/#columns">Web tabular model Columns</a>
  * @see <a href="https://www.w3.org/TR/2015/REC-tabular-metadata-20151217/#columns">Web tabular metadata Columns</a>
  */
-public class ColumnDefBase implements ColumnDef {
+public class ColumnDefBase<T> implements ColumnDef<T> {
 
 
-  private static final Set<Integer> allowedNullableValues = new HashSet<>();
-  private final SqlDataType sqlDataType;
+  private final SqlDataType<T> sqlDataType;
 
-  /**
-   * The data type of the value
-   * It's not final because it may be
-   * modified for instance if a data generator
-   * is attached to the column in the data generator
-   * module
-   */
-  protected Class<?> clazz;
 
   /**
    * Variables may be generated
@@ -39,20 +34,15 @@ public class ColumnDefBase implements ColumnDef {
    */
   protected Map<String, com.tabulify.conf.Attribute> variables = new MapKeyIndependent<>();
 
-  static {
-    allowedNullableValues.add(DatabaseMetaData.columnNoNulls);
-    allowedNullableValues.add(DatabaseMetaData.columnNullable);
-    allowedNullableValues.add(DatabaseMetaData.columnNullableUnknown);
-  }
 
   /**
    * Mandatory
    * Called also an Identifier in SQL
    * See {@link DatabaseMetaData#getIdentifierQuoteString()}
    */
-  private final String columnName;
+  private final KeyNormalizer columnName;
 
-  private int nullable = DatabaseMetaData.columnNullable;
+  private SqlDataTypeNullable nullable = SqlDataTypeNullable.NULLABLE;
   private Boolean isAutoincrement = null;
   private Boolean isGeneratedColumn = false;
   private final RelationDef relationDef;
@@ -66,10 +56,15 @@ public class ColumnDefBase implements ColumnDef {
   /**
    * Precision = Length for string,
    * Precision = Precision for Fix Number
+   * 0 = no precision
    */
-  private Integer precision;
-  /* Only needed for number */
-  private Integer scale;
+  private int precision;
+  /**
+   * Only needed for number
+   * 0 = no precision
+   * It could be a short as in <a href="https://docs.oracle.com/javase/8/docs/api/java/sql/DatabaseMetaData.html#getTypeInfo--">...</a> but there is no short literal. Because the impact is minim, we use an int
+   */
+  private int scale;
 
   private String comment;
 
@@ -82,18 +77,20 @@ public class ColumnDefBase implements ColumnDef {
    * Only called by the function of of a TableDef
    * To construct a column use TableDef.of
    */
-  public ColumnDefBase(RelationDef relationDef, String columnName, Class<?> clazz, SqlDataType sqlDataType) {
+  public ColumnDefBase(RelationDef relationDef, String columnName, SqlDataType<T> sqlDataType) {
 
     assert sqlDataType != null : "The sql data type cannot be null";
     assert relationDef != null : "The data def cannot be null";
     assert columnName != null : "The column name cannot be null";
-    assert clazz != null : "The class cannot be null for the column " + columnName + " with the data type (" + sqlDataType + ") on the data path " + relationDef.getDataPath() + " for the column (" + columnName + ")";
-    assert clazz == sqlDataType.getSqlClass() : "For the column (" + columnName + "), the classes given are different, argument class (" + clazz.getSimpleName() + ") vs type class (" + sqlDataType.getSqlClass().getSimpleName() + "). They should not be different.";
+
 
     this.relationDef = relationDef;
-    this.columnName = columnName;
+    try {
+      this.columnName = KeyNormalizer.create(columnName);
+    } catch (CastException e) {
+      throw new IllegalArgumentException("The column name (" + columnName + ") is not a valid column name. Error: " + e.getMessage(), e);
+    }
     this.sqlDataType = sqlDataType;
-    this.clazz = clazz;
 
     this.addVariablesFromEnumAttributeClass(ColumnAttribute.class);
 
@@ -107,10 +104,7 @@ public class ColumnDefBase implements ColumnDef {
    */
   @Override
   public Boolean isNullable() {
-    return
-      nullable == DatabaseMetaData.columnNullable
-        ||
-        nullable == DatabaseMetaData.columnNullableUnknown;
+    return nullable.isNullable();
   }
 
   @Override
@@ -124,16 +118,21 @@ public class ColumnDefBase implements ColumnDef {
 
   @Override
   public String getColumnName() {
+    return columnName.toString();
+  }
+
+  @Override
+  public KeyNormalizer getColumnNameNormalized() {
     return columnName;
   }
 
   @Override
-  public Integer getPrecision() {
+  public int getPrecision() {
     return precision;
   }
 
   @Override
-  public Integer getScale() {
+  public int getScale() {
     return scale;
   }
 
@@ -143,41 +142,36 @@ public class ColumnDefBase implements ColumnDef {
   }
 
   @Override
-  public SqlDataType getDataType() {
+  public SqlDataType<T> getDataType() {
 
     return this.sqlDataType;
 
   }
 
   @Override
-  public ColumnDef setColumnPosition(int columnPosition) {
+  public ColumnDef<T> setColumnPosition(int columnPosition) {
     this.columnPosition = columnPosition;
     return this;
   }
 
   @Override
-  public Integer getColumnPosition() {
+  public int getColumnPosition() {
     return columnPosition;
   }
 
   @Override
-  public ColumnDef setNullable(int nullable) {
+  public ColumnDef<T> setNullable(SqlDataTypeNullable nullable) {
 
-    if (!allowedNullableValues.contains(nullable)) {
-      throw new RuntimeException("The value (" + nullable + ") is unknown");
-    } else {
-      this.nullable = nullable;
-    }
+    this.nullable = nullable;
+
     return this;
 
   }
 
   @Override
-  public ColumnDef setNullable(Boolean nullable) {
+  public ColumnDef<T> setNullable(Boolean nullable) {
 
-    if (nullable != null) {
-      setNullable(nullable ? DatabaseMetaData.columnNullable : DatabaseMetaData.columnNoNulls);
-    }
+    setNullable(SqlDataTypeNullable.cast(nullable));
     return this;
 
   }
@@ -192,26 +186,12 @@ public class ColumnDefBase implements ColumnDef {
 
   @Override
   public int compareTo(ColumnDef o) {
-    return this.getColumnPosition().compareTo(o.getColumnPosition());
+    return Integer.compare(this.getColumnPosition(), o.getColumnPosition());
   }
 
 
   @Override
-  public ColumnDef precision(Integer precision) {
-    if (precision != null) {
-      this.precision = precision;
-      if (this.scale != null) {
-        if (this.scale > this.precision) {
-          throw new RuntimeException("Scale (" + this.scale + ") cannot be greater than precision (" + this.precision + ").");
-        }
-      }
-    }
-    return this;
-  }
-
-
-  @Override
-  public ColumnDef setIsAutoincrement(Boolean isAutoincrement) {
+  public ColumnDef<T> setIsAutoincrement(Boolean isAutoincrement) {
     this.isAutoincrement = isAutoincrement;
     return this;
   }
@@ -220,24 +200,11 @@ public class ColumnDefBase implements ColumnDef {
    * What is this ? derived column ?
    */
   @Override
-  public ColumnDef setIsGeneratedColumn(String isGeneratedColumn) {
-    this.isGeneratedColumn = isGeneratedColumn != null && isGeneratedColumn.equals("YES");
+  public ColumnDef<T> setIsGeneratedColumn(Boolean isGeneratedColumn) {
+    this.isGeneratedColumn = isGeneratedColumn;
     return this;
   }
 
-  @Override
-  public ColumnDef scale(Integer scale) {
-
-    if (scale != null) {
-      if (this.precision != null) {
-        if (scale > this.precision) {
-          throw new RuntimeException("Scale (" + this.scale + ") cannot be greater than precision (" + this.precision + ").");
-        }
-      }
-    }
-    this.scale = scale;
-    return this;
-  }
 
   @Override
   public String toString() {
@@ -249,7 +216,8 @@ public class ColumnDefBase implements ColumnDef {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    ColumnDef columnDef = (ColumnDef) o;
+    //noinspection unchecked
+    ColumnDef<T> columnDef = (ColumnDef<T>) o;
 
     return getFullyQualifiedName().equals(columnDef.getFullyQualifiedName());
   }
@@ -267,20 +235,18 @@ public class ColumnDefBase implements ColumnDef {
    * @return the default value if any
    */
   @Override
-  public Object getDefault() {
+  public T getDefault() {
     throw new UnsupportedOperationException("Not yet implemented");
   }
 
-  /**
-   * TODO: not yet implemented
-   */
+
   @Override
-  public String getDescription() {
-    return "";
+  public String getComment() {
+    return this.comment;
   }
 
   @Override
-  public ColumnDef setComment(String comment) {
+  public ColumnDef<T> setComment(String comment) {
     this.comment = comment;
     return this;
   }
@@ -295,15 +261,15 @@ public class ColumnDefBase implements ColumnDef {
 
 
   @Override
-  public ColumnDef setVariable(String key, Object value) {
+  public ColumnDef<T> setVariable(String key, Object value) {
     throw new RuntimeException("The property column value (" + key + ") is unexpected. The column (" + this.getClass().getSimpleName() + ") does not implement (or have) any extra columns.");
   }
 
   @Override
-  public ColumnDef setVariable(AttributeEnum key, Object value) {
+  public ColumnDef<T> setVariable(AttributeEnum key, Object value) {
     com.tabulify.conf.Attribute attribute;
     try {
-      attribute = this.getRelationDef().getDataPath().getConnection().getTabular().createAttribute(key, value);
+      attribute = this.getRelationDef().getDataPath().getConnection().getTabular().getVault().createAttribute(key, value, DEFAULT);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -340,17 +306,13 @@ public class ColumnDefBase implements ColumnDef {
     return new HashSet<>(variables.values());
   }
 
-  @Override
-  public String getComment() {
-    return this.comment;
-  }
 
   /**
    * @return the sql class of the data
    */
   @Override
-  public Class<?> getClazz() {
-    return this.clazz;
+  public Class<T> getClazz() {
+    return this.sqlDataType.getValueClass();
   }
 
 
@@ -358,26 +320,45 @@ public class ColumnDefBase implements ColumnDef {
    * @return the precision or the max for this data type
    */
   @Override
-  public Integer getPrecisionOrMax() {
-    return precision == null ? getDataType().getMaxPrecision() : precision;
+  public int getPrecisionOrMax() {
+    return precision == 0 ? getDataType().getMaxPrecision() : precision;
   }
 
   @Override
-  public ColumnDef setAllVariablesFrom(ColumnDef source) {
+  public ColumnDef<T> setAllVariablesFrom(ColumnDef<?> source) {
     source.getVariables().forEach(v -> this.variables.put(v.getAttributeMetadata().toString(), v));
     return this;
   }
 
   @Override
-  public ColumnDef setPrecision(Integer precision) {
+  public ColumnDef<T> setPrecision(int precision) {
     this.precision = precision;
+    // Add it in a builder pattern
+    // precision is now always 0 so we don't know if it was set or not
+    //    if (this.scale > this.precision) {
+    //      throw new IllegalStateException("Scale (" + this.scale + ") cannot be greater than precision (" + this.precision + ").");
+    //    }
     return this;
   }
 
   @Override
-  public ColumnDef setScale(Integer scale) {
+  public ColumnDef<T> setScale(int scale) {
     this.scale = scale;
+    // Add it in a builder pattern
+    // precision is now always 0 so we don't know if it was set or not
+    //    if (scale > this.precision) {
+    //      throw new RuntimeException("Scale (" + this.scale + ") cannot be greater than precision (" + this.precision + ") for the column (" + this + ")");
+    //    }
     return this;
+  }
+
+  @Override
+  public SqlDataTypeAnsi getAnsiType() {
+    SqlDataTypeAnsi ansiType = getDataType().getAnsiType();
+    if (ansiType == SqlDataTypeAnsi.BIT && (this.getPrecision() == 1 || this.getPrecision() == 0)) {
+      return SqlDataTypeAnsi.BOOLEAN;
+    }
+    return ansiType;
   }
 
   /**
@@ -386,7 +367,7 @@ public class ColumnDefBase implements ColumnDef {
    * @param enumClass - the class that holds all enum attribute
    * @return the column for chaining
    */
-  public ColumnDef addVariablesFromEnumAttributeClass(Class<? extends AttributeEnum> enumClass) {
+  public ColumnDef<T> addVariablesFromEnumAttributeClass(Class<? extends AttributeEnum> enumClass) {
     Arrays.asList(enumClass.getEnumConstants()).forEach(c -> {
       com.tabulify.conf.Attribute attribute = com.tabulify.conf.Attribute.create(c, Origin.DEFAULT);
       this.variables.put(c.toString(), attribute);

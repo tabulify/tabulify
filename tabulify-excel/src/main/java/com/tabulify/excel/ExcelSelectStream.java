@@ -1,5 +1,6 @@
 package com.tabulify.excel;
 
+import com.tabulify.model.ColumnDef;
 import com.tabulify.model.RelationDef;
 import com.tabulify.stream.SelectStreamAbs;
 import org.apache.poi.openxml4j.opc.PackageAccess;
@@ -28,19 +29,26 @@ public class ExcelSelectStream extends SelectStreamAbs {
   }
 
   @Override
+  public boolean isClosed() {
+    return resultSet.isClosed();
+  }
+
+  @Override
   public String getString(int columnIndex) {
     return String.valueOf(getObject(columnIndex));
   }
 
   @Override
-  public long getRow() {
+  public long getRecordId() {
     return resultSet.getRow();
   }
 
+
   @Override
-  public Object getObject(int columnIndex) {
+  public Object getObject(ColumnDef columnDef) {
+    Class<?> typeCode = columnDef.getDataType().getValueClass();
     try {
-      return resultSet.getObject(columnIndex);
+      return resultSet.getObject(columnDef.getColumnPosition(), typeCode);
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }

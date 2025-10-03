@@ -1,5 +1,6 @@
 package com.tabulify;
 
+import com.tabulify.conf.Attribute;
 import com.tabulify.conf.AttributeEnum;
 import com.tabulify.conf.Origin;
 import com.tabulify.conf.TabularEnvs;
@@ -9,7 +10,11 @@ import net.bytle.exception.CastException;
 import net.bytle.template.TextTemplate;
 import net.bytle.template.TextTemplateEngine;
 import net.bytle.type.Casts;
+import net.bytle.type.KeyNormalizer;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -71,6 +76,9 @@ public class Vault {
   }
 
 
+  /**
+   * @param key -  a string, not a key normalizer because we may get external attributes
+   */
   public com.tabulify.conf.Attribute createAttribute(String key, Object value, com.tabulify.conf.Origin origin) throws Exception {
 
     return createVariableBuilderFromName(key)
@@ -79,7 +87,10 @@ public class Vault {
 
   }
 
-  private VariableBuilder createVariableBuilderFromName(String key) {
+  /**
+   * @param key -  a string, not a key normalizer because we may get external attributes
+   */
+  public VariableBuilder createVariableBuilderFromName(String key) {
 
     return new VariableBuilder(key);
 
@@ -115,21 +126,28 @@ public class Vault {
     return value;
   }
 
+  public Attribute createAttribute(KeyNormalizer key, Object value, Origin origin) throws Exception {
+    return createAttribute(key.toKebabCase(), value, origin);
+  }
+
   /**
    * Helper to build a variable
    */
   public class VariableBuilder {
 
-    private AttributeEnum attribute;
+    private AttributeEnum attributeEnum;
     private com.tabulify.conf.Origin origin;
     private String name;
 
+    /**
+     * @param name - a string, not a key normalizer because we may get external keys (such as Jdbc Properties)
+     */
     public VariableBuilder(String name) {
       this.name = name;
     }
 
-    public VariableBuilder(AttributeEnum attribute) {
-      this.attribute = attribute;
+    public VariableBuilder(AttributeEnum attributeEnum) {
+      this.attributeEnum = attributeEnum;
     }
 
     public VariableBuilder setOrigin(Origin origin) {
@@ -161,13 +179,59 @@ public class Vault {
         return attribute;
       }
 
+      // The raw
+      attribute.setRawValue(value);
 
-      if (!(value instanceof String)) {
-        return attribute.setPlainValue(value);
+      if ((value instanceof String)) {
+        attribute.setPlainValue(this.rawToPlain((String) value));
+        return attribute;
       }
 
-      String valueString = value.toString();
-      attribute.setRawValue(valueString);
+      if ((value instanceof List)) {
+        List<?> valueList = (List<?>) value;
+        if (valueList.isEmpty()) {
+          attribute.setPlainValue(value);
+          return attribute;
+        }
+        List<String> valueListString = new ArrayList<>();
+        for (Object object : valueList) {
+          if (object.getClass() != String.class) {
+            attribute.setPlainValue(value);
+            return attribute;
+          }
+          valueListString.add(rawToPlain((String) object));
+        }
+        attribute.setPlainValue(valueListString);
+        return attribute;
+      }
+
+      if ((value instanceof Map)) {
+        Map<?, ?> valueMap = (Map<?, ?>) value;
+        if (valueMap.isEmpty()) {
+          attribute.setPlainValue(value);
+          return attribute;
+        }
+        Map<Object, String> valueMapString = new HashMap<>();
+        for (Map.Entry<?, ?> object : valueMap.entrySet()) {
+          if (object.getValue().getClass() != String.class) {
+            attribute.setPlainValue(value);
+            return attribute;
+          }
+          valueMapString.put(object.getKey(), rawToPlain((String) object.getValue()));
+        }
+        attribute.setPlainValue(valueMapString);
+        return attribute;
+      }
+
+      attribute.setPlainValue(value);
+      return attribute;
+    }
+
+    private String rawToPlain(String valueString) throws CastException {
+
+      if (valueString == null) {
+        return null;
+      }
 
       if (valueString.startsWith(Vault.VAULT_PREFIX)) {
 
@@ -179,8 +243,7 @@ public class Vault {
           throw new CastException("No passphrase was given, we can't decrypt the vault value (" + valueToDecrypt + ")");
         }
         try {
-          String decrypt = protector.decrypt(valueToDecrypt);
-          return attribute.setPlainValue(decrypt);
+          return protector.decrypt(valueToDecrypt);
         } catch (Exception exception) {
           String message = "We were unable to decrypt the value with the given passphrase. Value:" + valueToDecrypt;
           DbLoggers.LOGGER_DB_ENGINE.severe(message);
@@ -196,60 +259,28 @@ public class Vault {
         .getOrCreate()
         .compile(valueString);
       if (textTemplate.getVariableNames().isEmpty()) {
-        return attribute.setPlainValue(valueString);
+        return valueString;
       }
       if (!textTemplate.getVariableNames().isEmpty() && templatingEnvs == null) {
         // should happen only in test
         throw new RuntimeException("The templating envs are null but the value (" + valueString + ") has a variable");
       }
-      String clearValue = textTemplate
+      return textTemplate
         .applyVariables(templatingEnvs)
         .getResult();
-      return attribute.setPlainValue(clearValue);
     }
 
     private com.tabulify.conf.Attribute builtAttribute(Class<?> valueClazz) {
 
-      if (this.attribute != null) {
-        return com.tabulify.conf.Attribute.create(this.attribute, origin);
+      if (this.attributeEnum != null) {
+        return Attribute.create(attributeEnum, origin);
       }
-
       if (name == null) {
-        throw new RuntimeException("Name and attribute cannot be null together.  A variable needs an identifiant");
+        throw new RuntimeException("Name or Enum cannot be null together. A variable needs an identifier");
       }
-      this.attribute = new AttributeEnum() {
 
-        @Override
-        public String getDescription() {
-          return name;
-        }
+      return Attribute.createWithClassAndDefault(KeyNormalizer.createSafe(name), origin, valueClazz, null);
 
-        @Override
-        public Class<?> getValueClazz() {
-          return valueClazz;
-        }
-
-        @Override
-        public Object getDefaultValue() {
-          return null;
-        }
-
-        /**
-         * @return the unique string identifier (mandatory)
-         */
-        @Override
-        public String toString() {
-          return name;
-        }
-
-      };
-      return com.tabulify.conf.Attribute.create(this.attribute, origin);
-
-    }
-
-    public VariableBuilder setName(String name) {
-      this.name = name;
-      return this;
     }
 
     public com.tabulify.conf.Attribute buildSafe(Object value) {

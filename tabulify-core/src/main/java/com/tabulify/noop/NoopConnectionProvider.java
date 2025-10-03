@@ -1,8 +1,8 @@
 package com.tabulify.noop;
 
 import com.tabulify.Tabular;
-import com.tabulify.spi.ConnectionProvider;
 import com.tabulify.conf.Attribute;
+import com.tabulify.spi.ConnectionProvider;
 
 public class NoopConnectionProvider extends ConnectionProvider {
 

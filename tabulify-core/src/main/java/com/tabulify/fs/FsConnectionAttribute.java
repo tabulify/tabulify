@@ -10,7 +10,7 @@ public enum FsConnectionAttribute implements ConnectionAttributeEnum {
    * When we move tabular data into a file system,
    * the below extension (tabular format) for the file is used
    */
-  TABULAR_FILE_TYPE("The default file type when downloading tabular data", true, MediaTypes.TEXT_CSV, MediaType.class);
+  TABULAR_FILE_TYPE("The default media type when downloading tabular data", true, MediaTypes.TEXT_CSV, MediaType.class);
 
 
   private final String desc;

@@ -1,7 +1,7 @@
 package com.tabulify.memory;
 
-import com.tabulify.spi.DataPath;
 import com.tabulify.spi.DataPathAbs;
+import com.tabulify.spi.SchemaType;
 import com.tabulify.stream.InsertStream;
 import net.bytle.type.MediaType;
 
@@ -14,7 +14,7 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
   private final String path;
 
   public MemoryDataPathAbs(MemoryConnection memoryConnection, String path, MediaType mediaType) {
-    super(memoryConnection, path, mediaType);
+    super(memoryConnection, path, null, mediaType);
     this.path = path;
   }
 
@@ -27,9 +27,12 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
 
   @Override
   public String getName() {
-    return getNames().get(getNames().size() - 1);
+    List<String> names = getNames();
+    if (names.isEmpty() && this.path.equals("/")) {
+      return "";
+    }
+    return names.get(names.size() - 1);
   }
-
 
   @Override
   public List<String> getNames() {
@@ -38,7 +41,7 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
   }
 
   @Override
-  public String getRelativePath() {
+  public String getCompactPath() {
 
     return path;
 
@@ -47,7 +50,7 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
   @Override
   public String getAbsolutePath() {
 
-    return this.getRelativePath();
+    return this.getCompactPath();
 
   }
 
@@ -67,28 +70,24 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
   }
 
   @Override
-  public MemoryDataPath getChild(String name) {
+  public MemoryDataPath resolve(String name, MediaType mediaType) {
 
-    if (this.path.equals(this.getConnection().getCurrentDataPath().getName())) {
+    MemoryDataPath currentDataPath = this.getConnection().getCurrentDataPath();
+    if (this.path.equals(currentDataPath.getName())) {
       return this.getConnection().getDataPath(name);
-    } else {
-      return this.getConnection().getTypedDataPath(getMediaType(), this.path + PATH_SEPARATOR + name);
     }
+
+    return this.getConnection().getTypedDataPath(getMediaType(), this.path + PATH_SEPARATOR + name);
 
   }
 
   @Override
   public MemoryDataPath resolve(String name) {
 
-    return getChild(name);
+    return resolve(name, mediaType);
 
   }
 
-
-  @Override
-  public DataPath getChildAsTabular(String name) {
-    return getChild(name);
-  }
 
 
   @Override
@@ -105,5 +104,8 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
     return (MemoryDataPath) super.setLogicalName(logicalName);
   }
 
-
+  @Override
+  public SchemaType getSchemaType() {
+    return SchemaType.STRICT;
+  }
 }

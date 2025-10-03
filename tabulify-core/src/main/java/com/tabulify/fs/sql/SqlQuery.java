@@ -44,7 +44,7 @@ public class SqlQuery {
   }
 
   /**
-   * @return true if a the string is a query (ie start with the 'select' or `with` word
+   * @return true if the string is a SQL query (ie start with the 'select' or `with` word
    */
   public Boolean isQuery() {
 
@@ -89,5 +89,27 @@ public class SqlQuery {
 
   public SqlQueryColumnIdentifierExtractor createColumnIdentifierExtractor() {
     return new SqlQueryColumnIdentifierExtractor(this);
+  }
+
+  /**
+   * Delete the order by
+   * Sql Server does not want any order by in a view
+   */
+  public String toStringWithoutOrderBy() {
+
+    // Convert to uppercase to find the position case-insensitively
+    String upperInput = query.toUpperCase();
+    String searchString = "ORDER BY";
+
+    // Find the first occurrence of "ORDER BY" (case-insensitive)
+    int index = upperInput.indexOf(searchString);
+
+    // If "ORDER BY" is found, return substring up to that position
+    if (index != -1) {
+      return query.substring(0, index);
+    }
+
+    return query;
+
   }
 }

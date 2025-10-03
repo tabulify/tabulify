@@ -18,6 +18,10 @@
       <groupId>com.tabulify</groupId>
       <artifactId>tabulify-jdbc</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-docker</artifactId>
+    </dependency>
     <!-- ojdbc8 means certified with jdk8 -->
     <!-- https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc8/ -->
     <!-- https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc11 -->

@@ -1,13 +1,17 @@
 package com.tabulify.model;
 
 import com.tabulify.DbLoggers;
-import com.tabulify.diff.DataPathDataComparison;
+import com.tabulify.Tabular;
+import com.tabulify.diff.DataPathDiff;
+import com.tabulify.diff.DataPathDiffResult;
 import com.tabulify.memory.MemoryDataPath;
 import com.tabulify.spi.DataPath;
+import com.tabulify.spi.StrictException;
 import com.tabulify.spi.Tabulars;
 import com.tabulify.stream.InsertStream;
+import net.bytle.exception.InternalException;
 import net.bytle.exception.NoColumnException;
-import net.bytle.type.KeyNormalizer;
+import net.bytle.type.Casts;
 import net.bytle.type.Strings;
 
 import java.util.*;
@@ -108,21 +112,20 @@ public abstract class RelationDefAbs implements RelationDef {
     }
     if (uniqueKeyDefToReturn == null) {
       try {
-        List<ColumnDef> list = new ArrayList<>();
+        List<ColumnDef<?>> list = new ArrayList<>();
         for (String s : columnName) {
-          ColumnDef columnDef = getColumnDef(s);
+          ColumnDef<?> columnDef = getColumnDef(s);
           list.add(columnDef);
         }
         uniqueKeyDefToReturn = UniqueKeyDef.of(this)
           .addColumns(list);
         uniqueKeys.add(uniqueKeyDefToReturn);
       } catch (NoColumnException e) {
-        String message = "A unique key of the resource (" + this.getDataPath() + ") was not created  because a column was not found in the metadata." + e.getMessage();
-        if (this.getDataPath().getConnection().getTabular().isIdeEnv()) {
+        String message = "A unique key of the resource (" + this.getDataPath() + ") was not created because a column was not found in the metadata. " + e.getMessage();
+        if (this.getDataPath().getConnection().getTabular().isStrictExecution()) {
           throw new RuntimeException(message, e);
-        } else {
-          DbLoggers.LOGGER_DB_ENGINE.severe(message);
         }
+        DbLoggers.LOGGER_DB_ENGINE.severe(message);
       }
     }
     return uniqueKeyDefToReturn;
@@ -255,19 +258,25 @@ public abstract class RelationDefAbs implements RelationDef {
    * @param clazz      the clazz
    * @return the object for chaining
    */
-  public ColumnDef getOrCreateColumn(String columnName, Class<?> clazz) {
-    SqlDataType sqlDataType = this.getDataPath().getConnection().getSqlDataType(clazz);
-    return this.getOrCreateColumn(columnName, sqlDataType, clazz);
+  public <T> ColumnDef<T> getOrCreateColumn(String columnName, Class<T> clazz) {
+    SqlDataType<?> sqlDataType = this.getDataPath().getConnection().getSqlDataType(clazz);
+    if (sqlDataType == null) {
+      throw new InternalException("No sql type was found for the clazz (" + clazz + "). We cannot create the column (" + columnName + ")");
+    }
+    if (sqlDataType.getValueClass() != clazz) {
+      throw new InternalException("Inconsistency, the sql data type (+" + sqlDataType + ") has a class (" + sqlDataType.getValueClass() + ") that is not the same as the requested one (" + clazz + ")");
+    }
+    //noinspection unchecked
+    return (ColumnDef<T>) this.getOrCreateColumn(columnName, sqlDataType);
   }
 
-  public ColumnDef getOrCreateColumn(String columnName) {
-    SqlDataType sqlDataType = this.getDataPath().getConnection().getSqlDataType(String.class);
-    return this.getOrCreateColumn(columnName, sqlDataType, String.class);
+  public ColumnDef<String> getOrCreateColumn(String columnName) {
+    return this.getOrCreateColumn(columnName, String.class);
   }
 
-  public ColumnDef getOrCreateColumn(String columnName, Integer typeCode) {
-    SqlDataType sqlDataType = this.getDataPath().getConnection().getSqlDataType(typeCode);
-    return this.getOrCreateColumn(columnName, sqlDataType, sqlDataType.getSqlClass());
+  public ColumnDef<?> getOrCreateColumn(String columnName, SqlDataTypeAnsi ansi) {
+    SqlDataType<?> sqlDataType = this.getDataPath().getConnection().getSqlDataType(ansi);
+    return this.getOrCreateColumn(columnName, sqlDataType);
   }
 
   @Override
@@ -285,17 +294,22 @@ public abstract class RelationDefAbs implements RelationDef {
   }
 
   /**
-   * @param targetDataPath the target to compare to
+   * @param sourceDataPath the target to compare to
    * @return the DataPathDataComparison
    * Compare only the data structure (not the constraints)
    */
   @Override
-  public DataPathDataComparison compareData(DataPath targetDataPath) {
+  public DataPathDiffResult diff(DataPath sourceDataPath) {
 
-    DataPath left = this.toColumnsDataPathBy(NAME);
-    DataPath right = targetDataPath.getOrCreateRelationDef().toColumnsDataPathBy(NAME);
+    ColumnAttribute driverColumn = POSITION;
+    DataPath target = this.toColumnsDataPathBy(driverColumn);
+    DataPath source = sourceDataPath.getOrCreateRelationDef().toColumnsDataPathBy(driverColumn);
 
-    return DataPathDataComparison.create(left, right).compareData();
+    return DataPathDiff
+      .builder(sourceDataPath.getConnection().getTabular())
+      .setDriverColumns(POSITION.toString())
+      .build()
+      .diff(source, target);
 
   }
 
@@ -318,10 +332,10 @@ public abstract class RelationDefAbs implements RelationDef {
         POSITION, NAME, TYPE, PRECISION, SCALE
       };
     }
-    MemoryDataPath structureComparisonDataPath = this.getDataPath().getConnection().getTabular().getMemoryDataStore().getDataPath("structure" + this.getDataPath().getLogicalName());
+    MemoryDataPath structureComparisonDataPath = this.getDataPath().getConnection().getTabular().getMemoryConnection().getDataPath("structure" + this.getDataPath().getLogicalName());
     RelationDef relationDef = structureComparisonDataPath.getOrCreateRelationDef();
     for (ColumnAttribute columnAttribute : columnAttributes) {
-      relationDef.addColumn(KeyNormalizer.createSafe(columnAttribute).toSqlCaseSafe(), columnAttribute.getValueClazz());
+      relationDef.addColumn(this.getDataPath().getConnection().getDataSystem().toValidName(columnAttribute.toString()), columnAttribute.getValueClazz());
     }
 
     try (
@@ -333,9 +347,9 @@ public abstract class RelationDefAbs implements RelationDef {
         .sorted((s1, s2) -> {
             switch (orderColumn) {
               case POSITION:
-                return s1.getColumnPosition().compareTo(s2.getColumnPosition());
+                return Integer.compare(s1.getColumnPosition(), s2.getColumnPosition());
               case TYPE:
-                return s1.getDataType().getSqlName().compareTo(s2.getDataType().getSqlName());
+                return s1.getDataType().toKeyNormalizer().compareTo(s2.getDataType().toKeyNormalizer());
               default:
                 /**
                  * By name default
@@ -359,7 +373,7 @@ public abstract class RelationDefAbs implements RelationDef {
               columnsColumns[i] = columnDef.getColumnName();
               break;
             case TYPE:
-              columnsColumns[i] = columnDef.getDataType().getSqlName();
+              columnsColumns[i] = columnDef.getDataType().toKeyNormalizer();
               break;
             case NULLABLE:
               columnsColumns[i] = columnDef.isNullable();
@@ -427,24 +441,38 @@ public abstract class RelationDefAbs implements RelationDef {
 
 
   @Override
-  public RelationDef mergeStructWithoutConstraints(DataPath fromDataPath) {
-    assert fromDataPath != null : "The target data definition cannot be null";
-    RelationDef fromDataDef = fromDataPath.getOrCreateRelationDef();
+  public RelationDef mergeColumns(RelationDef relationDef) {
 
-    int columnCount = fromDataDef.getColumnsSize();
+    int columnCount = relationDef.getColumnsSize();
     for (int i = 1; i <= columnCount; i++) {
-      ColumnDef columnDef = fromDataDef.getColumnDef(i);
-      ColumnDef targetColumn;
+      ColumnDef<?> targetColumn = relationDef.getColumnDef(i);
+      ColumnDef<?> sourceColumn;
       try {
-        targetColumn = this.getColumnDef(columnDef.getColumnName());
+        sourceColumn = this.getColumnDef(targetColumn.getColumnName());
+        Tabular tabular = sourceColumn.getRelationDef().getDataPath().getConnection().getTabular();
+        if (Casts.isNarrowingConversion(sourceColumn.getClazz(), targetColumn.getClazz())) {
+          // Why?
+          // * to prevent data generation error. For instance, if the target is a date and the existing columns is a string, because a date has no precision, a sequence generation could generate only 1 string value after merge
+          // * we allow a Date to a Timestamp (ie Oracle DATE is a timestamp)
+          String message = "Possible data loss due to narrowing conversion. The target column exists already and has a type class that can not receive the source data." +
+            "\nSource: " + sourceColumn + ", class: " + sourceColumn.getClazz().getName() +
+            "\nTarget: " + targetColumn + ", class: " + targetColumn.getClazz().getName() +
+            "\nPossible solutions: " +
+            "\n  * change the data type source definition" +
+            "\n  * use a query to cast the data type";
+          if (tabular.isIdeEnv()) {
+            message += "\n  * use the dataPath#createEmptyRelationDef if you want to merge on an empty structure.";
+          }
+          throw new StrictException(message);
+        }
       } catch (NoColumnException e) {
-        targetColumn = this.getOrCreateColumn(columnDef.getColumnName(), columnDef.getDataType(), columnDef.getClazz());
+        sourceColumn = this.getOrCreateColumn(targetColumn.getColumnName(), targetColumn.getDataType());
       }
-      targetColumn
-        .precision(columnDef.getPrecision())
-        .scale(columnDef.getScale())
-        .setComment(columnDef.getComment())
-        .setAllVariablesFrom(columnDef);
+      sourceColumn
+        .setPrecision(targetColumn.getPrecision())
+        .setScale(targetColumn.getScale())
+        .setComment(targetColumn.getComment())
+        .setAllVariablesFrom(targetColumn);
     }
 
     return this;
@@ -454,21 +482,21 @@ public abstract class RelationDefAbs implements RelationDef {
    * Copy the struct (struct = columns + local constraint (fk and uk))
    * <p>
    * If the target have any columns of the source with a different class (data type),
-   * you will get an error. To avoid it, you may want to use the {@link #mergeStructWithoutConstraints(DataPath)}
+   * you will get an error. To avoid it, you may want to use the {@link #mergeColumns(RelationDef)}
    * function instead
    */
   @Override
-  public RelationDefAbs copyStruct(DataPath from) {
-    assert from != null : "The source data definition cannot be null";
+  public RelationDefAbs copyStruct(DataPath sourceDataPath) {
+    assert sourceDataPath != null : "The source data definition cannot be null";
 
     // Add the columns
-    int columnCount = from.getOrCreateRelationDef().getColumnsSize();
+    int columnCount = sourceDataPath.getOrCreateRelationDef().getColumnsSize();
     for (int i = 1; i <= columnCount; i++) {
-      ColumnDef columnDef = from.getRelationDef().getColumnDef(i);
-      SqlDataType targetDataType = this.getDataPath().getConnection().getSqlDataTypeFromSourceDataType(columnDef.getDataType());
-      this.getOrCreateColumn(columnDef.getColumnName(), targetDataType, targetDataType.getSqlClass())
-        .precision(columnDef.getPrecision())
-        .scale(columnDef.getScale())
+      ColumnDef<?> columnDef = sourceDataPath.getRelationDef().getColumnDef(i);
+      SqlDataType<?> targetDataType = this.getDataPath().getConnection().getSqlDataTypeFromSourceColumn(columnDef);
+      this.getOrCreateColumn(columnDef.getColumnName(), targetDataType)
+        .setPrecision(columnDef.getPrecision())
+        .setScale(columnDef.getScale())
         .setNullable(columnDef.isNullable())
         .setComment(columnDef.getComment())
         .setAllVariablesFrom(columnDef);
@@ -476,16 +504,16 @@ public abstract class RelationDefAbs implements RelationDef {
 
 
     // Add the primary key
-    copyPrimaryKeyFrom(from);
+    copyPrimaryKeyFrom(sourceDataPath.getOrCreateRelationDef());
 
-    copyUniqueKeysFrom(from);
+    copyUniqueKeysFrom(sourceDataPath.getOrCreateRelationDef());
 
     return this;
   }
 
   @Override
-  public RelationDef copyPrimaryKeyFrom(DataPath from) {
-    final PrimaryKeyDef sourcePrimaryKey = from.getOrCreateRelationDef().getPrimaryKey();
+  public RelationDef copyPrimaryKeyFrom(RelationDef relationDef) {
+    final PrimaryKeyDef sourcePrimaryKey = relationDef.getPrimaryKey();
     if (sourcePrimaryKey != null) {
       final List<String> columns = sourcePrimaryKey.getColumns().stream()
         .map(ColumnDef::getColumnName)
@@ -496,17 +524,17 @@ public abstract class RelationDefAbs implements RelationDef {
   }
 
   @Override
-  public <D1 extends DataPath, D2 extends DataPath, D3 extends DataPath> RelationDef mergeDataDef(D1 targetDataPath, Map<D2, D3> targetSources) {
+  public <D1 extends DataPath, D2 extends DataPath, D3 extends DataPath> RelationDef mergeDataDef(D1 sourceDataPath, Map<D2, D3> sourceTargets) {
 
     /**
      * The structure
      */
-    mergeStruct(targetDataPath);
+    mergeStruct(sourceDataPath.getOrCreateRelationDef());
 
     /**
      * Add the foreign keys
      */
-    copyForeignKeysFrom(targetDataPath, targetSources);
+    copyForeignKeysFrom(sourceDataPath, sourceTargets);
 
     return this;
 
@@ -577,52 +605,60 @@ public abstract class RelationDefAbs implements RelationDef {
   }
 
   @Override
-  public RelationDef copyForeignKeysFrom(DataPath fromDataPath) {
-    return copyForeignKeysFrom(fromDataPath, null);
+  public RelationDef copyForeignKeysFrom(DataPath sourceDataPath) {
+    return copyForeignKeysFrom(sourceDataPath, null);
   }
 
   /**
    * The struct = columns + primary key + unique key
    *
-   * @param fromDataPath the source
+   * @param relationDef the source
    * @return the relation
    */
   @Override
-  public RelationDef mergeStruct(DataPath fromDataPath) {
+  public RelationDef mergeStruct(RelationDef relationDef) {
 
     /**
      * Merge without constraints
      */
-    mergeStructWithoutConstraints(fromDataPath);
+    mergeColumns(relationDef);
 
-    /**
-     * Add the constraints
-     */
-    // Add the primary key
-    if (this.getPrimaryKey() == null) {
-      copyPrimaryKeyFrom(fromDataPath);
-    }
-
-    // Add the unique keys
-    copyUniqueKeysFrom(fromDataPath);
-
-    // Add null constraint
-    for (int i = 1; i <= fromDataPath.getRelationDef().getColumnsSize(); i++) {
-      this.getColumnDef(i).setNullable(fromDataPath.getRelationDef().getColumnDef(i).isNullable());
-    }
-    PrimaryKeyDef primaryKeyDef = this.getPrimaryKey();
-    if (primaryKeyDef != null) {
-      for (ColumnDef column : primaryKeyDef.getColumns()) {
-        column.setNullable(true);
-      }
-    }
+    mergeLocalConstraints(relationDef);
 
     return this;
 
   }
 
-  private RelationDef copyUniqueKeysFrom(DataPath fromDataPath) {
-    for (UniqueKeyDef uniqueKeyDef : fromDataPath.getRelationDef().getUniqueKeys()) {
+  @Override
+  public RelationDef mergeLocalConstraints(RelationDef relationDef) {
+    /**
+     * Add the constraints
+     */
+    // Add the primary key
+    if (this.getPrimaryKey() == null) {
+      copyPrimaryKeyFrom(relationDef);
+    }
+
+    // Add the unique keys
+    copyUniqueKeysFrom(relationDef);
+
+    // Add null constraint
+    for (int i = 1; i <= relationDef.getColumnsSize(); i++) {
+      this.getColumnDef(i).setNullable(relationDef.getColumnDef(i).isNullable());
+    }
+    PrimaryKeyDef primaryKeyDef = this.getPrimaryKey();
+    if (primaryKeyDef != null) {
+      for (ColumnDef<?> column : primaryKeyDef.getColumns()) {
+        column.setNullable(true);
+      }
+    }
+    return this;
+  }
+
+
+  @Override
+  public RelationDef copyUniqueKeysFrom(RelationDef relationDef) {
+    for (UniqueKeyDef uniqueKeyDef : relationDef.getUniqueKeys()) {
       final String[] columns = uniqueKeyDef.getColumns().stream()
         .map(ColumnDef::getColumnName)
         .toArray(String[]::new);
@@ -638,4 +674,24 @@ public abstract class RelationDefAbs implements RelationDef {
     return this;
   }
 
+  @Override
+  public RelationDef copyDataDef(DataPath fromDataPath, Map<DataPath, DataPath> sourceTargetMap) {
+    copyStruct(fromDataPath);
+    copyForeignKeysFrom(fromDataPath, sourceTargetMap);
+    return this;
+  }
+
+  @Override
+  public RelationDef setPrimaryKey(ColumnDef<?>... primaryColumns) {
+    setPrimaryKey(Arrays.stream(primaryColumns).map(ColumnDef::getColumnName).collect(Collectors.toList()));
+    return this;
+  }
+
+  public ColumnDef<?> getColumnDefSafe(String columnName) {
+    try {
+      return getColumnDef(columnName);
+    } catch (NoColumnException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

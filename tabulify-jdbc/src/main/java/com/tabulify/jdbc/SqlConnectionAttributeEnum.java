@@ -12,8 +12,14 @@ import java.sql.DatabaseMetaData;
 public enum SqlConnectionAttributeEnum implements ConnectionAttributeEnum {
 
 
-  CONNECTION_INIT_SCRIPT("A script that runs after a connection has been established", false, true, null, String.class),
-  CONNECTION_CLOSING_SCRIPT("A script that runs before a connection is closed", false, true, null, String.class),
+  DRIVER("The jdbc driver class", false, true, null, String.class),
+  /**
+   * Login script because SQL Plus has the notion of a login.sql
+   * We don't use Startup script as name (Intellij Idea uses this term)
+   * because the inverse is shutdown, and it refers more to a service
+   * <a href="https://www.jetbrains.com/help/idea/configuring-database-connections.html#set_a_predefined_query_to_run_as_you_establish_a_connection">...</a>
+   */
+  LOGIN_STATEMENTS("Statements that runs after a connection has been established", false, true, null, String.class),
   DATABASE_PRODUCT_NAME("The name of the database", true, false, null, String.class),
   DATABASE_PRODUCT_VERSION("The version of the database", true, false, null, String.class),
   DATABASE_MAJOR_VERSION("The major version number of the database", true, false, null, String.class),

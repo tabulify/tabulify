@@ -1,20 +1,14 @@
 package com.tabulify.jdbc;
 
-import com.tabulify.fs.FsDataPath;
-import com.tabulify.spi.DataPath;
-import com.tabulify.spi.DataPathAbs;
-import com.tabulify.spi.SelectException;
-import com.tabulify.spi.Tabulars;
+import com.tabulify.spi.*;
 import com.tabulify.stream.InsertStream;
 import com.tabulify.stream.SelectStream;
-import com.tabulify.transfer.TransferProperties;
+import com.tabulify.transfer.TransferPropertiesSystem;
 import com.tabulify.transfer.TransferSourceTarget;
+import com.tabulify.transfer.TransferSourceTargetOrder;
 import net.bytle.exception.*;
-import net.bytle.fs.Fs;
 import net.bytle.type.Casts;
-import net.bytle.type.KeyNormalizer;
 import net.bytle.type.MediaType;
-import net.bytle.type.Strings;
 
 import java.sql.DatabaseMetaData;
 import java.util.List;
@@ -31,63 +25,10 @@ import static com.tabulify.jdbc.SqlMediaType.*;
 public class SqlDataPath extends DataPathAbs {
 
 
-  private final SqlConnectionResourcePath sqlConnectionResourcePath;
-
-
-  public SqlDataPath(SqlConnection sqlConnection, DataPath scriptDataPath) {
-
-    super(sqlConnection, scriptDataPath);
-
-    this.mediaType = SCRIPT;
-    this.addVariablesFromEnumAttributeClass(SqlDataPathAttribute.class);
-
-    String currentCatalog;
-    try {
-      currentCatalog = sqlConnection.getCurrentCatalog();
-    } catch (NoCatalogException e) {
-      currentCatalog = null;
-    }
-    String schema = sqlConnection.getCurrentSchema();
-    /**
-     * We don't read the content of the script and make a hash id
-     * as the resource may not exist
-     */
-    String object = KeyNormalizer.createSafe(scriptDataPath.getRelativePath() + "_" + scriptDataPath.getConnection() + "_" + sqlConnection).toSqlCaseSafe();
-    this.sqlConnectionResourcePath = SqlConnectionResourcePath
-      .createOfCatalogSchemaAndObjectName(this.getConnection(), currentCatalog, schema, object);
-
-    /**
-     * Add variable
-     */
-    this.addBuildVariables();
-
-    /**
-     * Logical Name is the name of the file without the extension
-     * If you load `query_1.sql`, you will create a `query_1` table
-     */
-    String logicalName = scriptDataPath.getLogicalName();
-    if (scriptDataPath instanceof FsDataPath) {
-      logicalName = Fs.getFileNameWithoutExtension(((FsDataPath) scriptDataPath).getNioPath());
-    }
-    String logicalNameSql = this.getConnection().getDataSystem().toValidName(logicalName);
-    this.setLogicalName(logicalNameSql);
-
-  }
-
-
-  private void addBuildVariables() {
-    this.addVariablesFromEnumAttributeClass(SqlDataPathAttribute.class);
-
-    this.getOrCreateVariable(SqlDataPathAttribute.CATALOG).setValueProvider(() -> {
-      try {
-        return this.sqlConnectionResourcePath.getCatalogPartOrDefault();
-      } catch (NoCatalogException e) {
-        return null;
-      }
-    });
-    this.getOrCreateVariable(SqlDataPathAttribute.SCHEMA).setValueProvider(this.sqlConnectionResourcePath::getSchemaPartOrDefault);
-
-  }
+  /**
+   * The path object representation
+   */
+  protected SqlConnectionResourcePath sqlConnectionResourcePath;
 
 
   @Override
@@ -123,6 +64,17 @@ public class SqlDataPath extends DataPathAbs {
     return false;
   }
 
+  @Override
+  public SchemaType getSchemaType() {
+    switch ((SqlMediaType) this.mediaType) {
+      case TABLE:
+      case SYSTEM_TABLE:
+        return SchemaType.STRICT;
+      default:
+        return SchemaType.LOOSE;
+    }
+  }
+
 
   /**
    * Sql Server does not allow
@@ -155,12 +107,13 @@ public class SqlDataPath extends DataPathAbs {
 
   /**
    * The global constructor for table or view.
-   * Query has another one, See {@link #SqlDataPath(SqlConnection, DataPath)}
+   * Request has another one, See {@link SqlRequest(SqlConnection, DataPath)}
    *
-   * @param sqlConnection the connection
-   * @param path          a relative resource path from the connection
+   * @param sqlConnection      the connection
+   * @param compactPath        a qualified sql name or a name relative to the current connection
+   * @param executableDataPath an executable data path
    */
-  protected SqlDataPath(SqlConnection sqlConnection, String path, MediaType mediaType) {
+  protected SqlDataPath(SqlConnection sqlConnection, String compactPath, DataPath executableDataPath, MediaType mediaType) {
 
     /**
      * An SQL path does not start from the root but from the leaf.
@@ -168,18 +121,32 @@ public class SqlDataPath extends DataPathAbs {
      *    * mostly the name of the resource (table, view).
      * An empty path is the special root path {@link SqlMediaType.ROOT}
      */
-    super(sqlConnection, path, mediaType);
+    super(sqlConnection, compactPath, executableDataPath, mediaType);
 
-    this.sqlConnectionResourcePath = SqlConnectionResourcePath.createOfConnectionPath(sqlConnection, path);
+    this.sqlConnectionResourcePath = SqlConnectionResourcePath.createOfConnectionPath(sqlConnection, compactPath);
 
     this.mediaType = this.buildMediaType(mediaType);
 
+
+    /**
+     * Add the attributes
+     */
+    this.addVariablesFromEnumAttributeClass(SqlDataPathAttribute.class);
+    this.getOrCreateVariable(SqlDataPathAttribute.CATALOG).setValueProvider(() -> {
+      try {
+        return this.sqlConnectionResourcePath.getCatalogPartOrDefault();
+      } catch (NoCatalogException e) {
+        return null;
+      }
+    });
+    this.getOrCreateVariable(SqlDataPathAttribute.SCHEMA).setValueProvider(this.sqlConnectionResourcePath::getSchemaPartOrDefault);
+    this.getOrCreateVariable(SqlDataPathAttribute.NAME).setValueProvider(this::getName);
 
   }
 
   private SqlMediaType buildMediaType(MediaType mediaType) {
 
-    if (mediaType != null && mediaType != UNKNOWN) {
+    if (mediaType != null && mediaType != OBJECT) {
       if (mediaType instanceof SqlMediaType) {
         return (SqlMediaType) mediaType;
       }
@@ -192,7 +159,7 @@ public class SqlDataPath extends DataPathAbs {
     }
 
     SqlMediaType resourcePathMediaType = this.sqlConnectionResourcePath.getSqlMediaType();
-    if (resourcePathMediaType != UNKNOWN) {
+    if (resourcePathMediaType != OBJECT) {
       return resourcePathMediaType;
     }
 
@@ -223,13 +190,22 @@ public class SqlDataPath extends DataPathAbs {
 
     Objects.requireNonNull(name);
     String path = this.getSqlConnectionResourcePath().getSibling(name).toString();
-    return this.getConnection().getDataPath(path, UNKNOWN);
+    return this.getConnection().getDataPath(path, OBJECT);
 
   }
 
   @Override
-  public SqlDataPath getChild(String name) {
-    return resolve(name);
+  public SqlDataPath resolve(String name, MediaType mediaType) {
+    Objects.requireNonNull(name);
+    // may be null if not specified
+    if (mediaType == null) {
+      mediaType = OBJECT;
+    }
+    String path = this.getSqlConnectionResourcePath()
+      .resolve(name)
+      .toRelative()
+      .toString();
+    return this.getConnection().getDataPath(path, mediaType);
   }
 
   /**
@@ -239,16 +215,10 @@ public class SqlDataPath extends DataPathAbs {
   @Override
   public SqlDataPath resolve(String stringPath) {
 
-    Objects.requireNonNull(stringPath);
-    String path = this.getSqlConnectionResourcePath().resolve(stringPath).toString();
-    return this.getConnection().getDataPath(path, UNKNOWN);
+    return resolve(stringPath, null);
 
   }
 
-  @Override
-  public DataPath getChildAsTabular(String name) {
-    return getChild(name);
-  }
 
   /**
    * @return the schema of this object
@@ -266,15 +236,15 @@ public class SqlDataPath extends DataPathAbs {
       () -> new SqlDataPath(
         connection,
         schemaName,
-        SCHEMA
+        null, SCHEMA
       ));
 
   }
 
   @Override
   public String getLogicalName() {
-    if (this.scriptDataPath != null) {
-      return this.scriptDataPath.getLogicalName();
+    if (this.executableDataPath != null) {
+      return this.executableDataPath.getLogicalName();
     }
     return super.getLogicalName();
   }
@@ -314,8 +284,7 @@ public class SqlDataPath extends DataPathAbs {
 
   @Override
   public Long getSize() {
-    SqlLog.LOGGER_DB_JDBC.fine("The size operation is not yet implemented for the connection (" + this.getConnection().getProductName() + ")");
-    return null;
+    return this.getConnection().getDataSystem().getSize(this);
   }
 
   @Override
@@ -323,48 +292,53 @@ public class SqlDataPath extends DataPathAbs {
 
     long count = 0;
 
-    if (Tabulars.isDocument(this)) {
+    if (Tabulars.isContainer(this)) {
+      return (long) Tabulars.getChildren(this).size();
+    }
 
-      // `as count` alias is mandatory for sql server
-      DataPath queryDataPath = this.getConnection().createScriptDataPath("select count(1) as count from " + this.getConnection().getDataSystem().createFromClause(this));
-      try (
-        SelectStream selectStream = queryDataPath.getSelectStream()
-      ) {
-        boolean next = selectStream.next();
-        if (next) {
-          count = selectStream.getInteger(1);
-        }
-      } catch (SelectException e) {
-        boolean strict = this.getConnection().getTabular().isStrict();
-        String message = "Error while trying to get the count of " + this;
-        if (strict) {
-          throw new RuntimeException(message, e);
-        } else {
-          SqlLog.LOGGER_DB_JDBC.warning(message + "\n" + e.getMessage());
-        }
+
+    // `as count` alias is mandatory for sql server
+    SqlRequest queryDataPath = this.getConnection().getRuntimeDataPath("select count(1) as count from " + this.toSqlStringPath());
+    try (
+      SelectStream selectStream = queryDataPath.execute().getSelectStream()
+    ) {
+      boolean next = selectStream.next();
+      if (next) {
+        count = selectStream.getInteger(1);
       }
-    } else {
-      count = Tabulars.getChildren(this).size();
+    } catch (SelectException e) {
+      boolean strict = this.getConnection().getTabular().isStrictExecution();
+      String message = "Error while trying to get the count of " + this;
+      if (strict) {
+        throw new RuntimeException(message, e);
+      } else {
+        SqlLog.LOGGER_DB_JDBC.warning(message + "\n" + e.getMessage());
+      }
     }
     return count;
+
+
   }
 
   @Override
-  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
-    TransferSourceTarget transferSourceTarget = TransferSourceTarget.create(source, this, transferProperties);
+  public InsertStream getInsertStream(DataPath source, TransferPropertiesSystem transferProperties) {
+    TransferSourceTargetOrder transferSourceTarget = TransferSourceTarget.create(source, this).buildOrder(transferProperties);
     return SqlInsertStream.create(transferSourceTarget);
   }
 
   @Override
   public SelectStream getSelectStream() throws SelectException {
-    return new SqlSelectStream(this);
+    SqlRequest sqlRequest = SqlRequest.builder()
+      .setSqlObjectDataPath(this)
+      .build();
+    return SqlRequestExecution.executeAndGetSelectStream(sqlRequest);
   }
 
   public SqlDataPath getCatalogDataPath() throws NoCatalogException {
     return new SqlDataPath(
       this.getConnection(),
       this.sqlConnectionResourcePath.getCatalogPath().toString(),
-      CATALOG
+      null, CATALOG
     );
   }
 
@@ -442,11 +416,13 @@ public class SqlDataPath extends DataPathAbs {
       // No schema
     }
 
+    // schema
+    if (absoluteSqlConnectionResourcePath.getObjectPartOrNull() == null) {
+      return sqlStringPath.toString();
+    }
+
     if (sqlStringPath.length() != 0) {
       sqlStringPath.append(absoluteSqlConnectionResourcePath.getPathSeparator());
-    }
-    if (absoluteSqlConnectionResourcePath.getObjectPartOrNull() == null) {
-      throw new RuntimeException("A sql statement exists only for an object. The data path (" + this + ") seems to not be a object but a catalog or schema.");
     }
     // the sql name is the logical name
     String objectName = this.getLogicalName();
@@ -459,37 +435,49 @@ public class SqlDataPath extends DataPathAbs {
   }
 
   @Override
-  public SqlRelationDef getRelationDef() {
+  public SqlDataPathRelationDef getRelationDef() {
 
-    return (SqlRelationDef) super.getRelationDef();
+    return (SqlDataPathRelationDef) super.getRelationDef();
   }
 
   @Override
-  public SqlRelationDef createRelationDef() {
-    this.relationDef = new SqlRelationDef(this, false);
-    return (SqlRelationDef) this.relationDef;
+  public SqlDataPathRelationDef createRelationDef() {
+    this.relationDef = new SqlDataPathRelationDef(this, true);
+    return (SqlDataPathRelationDef) this.relationDef;
   }
+
+
+  @Override
+  public SqlDataPathRelationDef getOrCreateRelationDef() {
+    return (SqlDataPathRelationDef) super.getOrCreateRelationDef();
+  }
+
+  @Override
+  public SqlDataPathRelationDef createEmptyRelationDef() {
+    this.relationDef = new SqlDataPathRelationDef(this, false);
+    return (SqlDataPathRelationDef) this.relationDef;
+  }
+
 
   /**
-   * @return the script as a query definition (select)
-   * See also {@link SqlDataSystem#createOrGetQuery(SqlDataPath)}
-   * <p>
-   * This function will remove the trailing comma.
+   * Every sql object needs a sql statement
+   * to retrieve data
+   *
+   * @return the sql statement script
    */
-  @Override
-  public String getQuery() {
-
-    return Strings.createFromString(this.getScript().trim()).rtrim(";").toString();
-
+  public SqlScript getExecutableSqlScript() {
+    return SqlScript.builder()
+      .setSqlDataPath(this)
+      .build();
   }
 
-  @Override
-  public SqlRelationDef getOrCreateRelationDef() {
-    if (getRelationDef() == null) {
-      this.relationDef = new SqlRelationDef(this, true);
+
+  public DataPath getSchemaSafe() {
+    try {
+      return getSchema();
+    } catch (NoSchemaException e) {
+      throw new InternalException("No schema known for path (" + this + ")", e);
     }
-    return (SqlRelationDef) this.relationDef;
   }
-
 
 }

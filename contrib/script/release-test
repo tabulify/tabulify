@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+
+# Release Tabulify
+
+set -TCEeuo pipefail
+
+# Arg
+RESUME_FROM=""
+while [[ $# -gt 0 ]]
+do
+   case "$1" in
+    "--resume-from"|"-rf")
+      shift
+      RESUME_FROM="$1"
+      shift
+      ;;
+    "--help"|"-h")
+      echo "One option: --resume-from or -rf"
+      exit 0
+      ;;
+    *)
+      echo "Option $1 not known"
+      exit 1
+   esac
+done
+
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/../.."
+
+# Change context
+cd "$PROJECT_ROOT"
+
+# Not all module pass tests
+# We could handle that by configuring the module to skip test on release profile
+# https://maven.apache.org/surefire/maven-surefire-plugin/examples/skipping-tests.html
+# but we do it here with a loop
+# The advantage is that the test container is stopped at the end of the execution
+
+# To resolve/list the dependencies with the command below,
+# they should be installed in the local repo
+# Recompile all module even
+# in a resume mode as a previous module may have been modified
+mvn install -DskipTests
+
+MAIN_GROUP="com.tabulify"
+MAIN_PROJECT="tabulify-cli"
+# Get dependencies in dag order
+TABULIFY_DEPENDENCIES=$(mvn dependency:list \
+  -DexcludeTransitive=true \
+  -DincludeScope=compile \
+  -DincludeGroupIds="$MAIN_GROUP" \
+  --projects "$MAIN_PROJECT"
+)
+# Add the main module/project
+TABULIFY_DEPENDENCIES="$TABULIFY_DEPENDENCIES $MAIN_GROUP.$MAIN_PROJECT"
+
+# Modules where to skip test
+SKIP_MODULE_TESTS=()
+
+RESUMED="false"
+PROJECTS=();
+for word in $TABULIFY_DEPENDENCIES; do
+
+  # For loop split by space and we get words
+  # Is it a dependency word ?
+  if [[ $word =~ com.tabulify:(tabulify-[^:]*):.* ]]; then
+
+    # Project
+    PROJECT=${BASH_REMATCH[1]}
+    echo "Project: $PROJECT"
+    PROJECTS+=("$PROJECT")
+
+    # Resume ?
+    if [ "$RESUME_FROM" != "" ] && [ "$RESUMED" == "false" ]; then
+      if [ "$PROJECT" != "$RESUME_FROM" ]; then
+        echo "Project: $PROJECT skipped due to resume from"
+        continue
+      fi
+      RESUMED="true";
+    fi
+
+    # Skip test?
+    if [[ " ${SKIP_MODULE_TESTS[*]} " =~ ${PROJECT} ]]; then
+      echo "Project: $PROJECT skipped due to test being not performed"
+      continue
+    fi
+
+    # Execute
+    if ! mvn install --projects "$PROJECT"; then
+      echo "Error while installing the project: $PROJECT"
+      exit 1
+    fi
+
+  fi
+
+done
+
+# Processing main module
+if ! mvn install --projects "$MAIN_PROJECT"; then
+  echo "Error while installing the project: $MAIN_PROJECT"
+  exit 1
+fi
+
+echo ""
+echo "Project processed"
+for PROJECT in "${PROJECTS[@]}"; do
+  echo "$PROJECT";
+done
+echo "$MAIN_PROJECT";
+
+
+git cliff --bumped-version
+

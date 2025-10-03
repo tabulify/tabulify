@@ -2,20 +2,28 @@ package com.tabulify.spi;
 
 import com.tabulify.DbLoggers;
 import com.tabulify.connection.Connection;
+import com.tabulify.diff.DataDiffColumn;
+import com.tabulify.diff.DataPathDiff;
 import com.tabulify.engine.ForeignKeyDag;
+import com.tabulify.fs.sql.FsSqlDataPath;
+import com.tabulify.fs.textfile.FsTextDataPath;
 import com.tabulify.model.Constraint;
 import com.tabulify.model.ForeignKeyDef;
 import com.tabulify.model.UniqueKeyDef;
-import com.tabulify.stream.SelectStream;
-import com.tabulify.stream.Streams;
+import com.tabulify.stream.InsertStream;
+import com.tabulify.stream.Printer;
 import com.tabulify.transfer.*;
 import net.bytle.dag.Dag;
+import net.bytle.exception.ExceptionWrapper;
+import net.bytle.exception.MissingSwitchBranch;
+import net.bytle.java.JavaEnvs;
 import net.bytle.regexp.Glob;
+import net.bytle.type.Strings;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.*;
 
 
 public class Tabulars {
@@ -30,7 +38,7 @@ public class Tabulars {
 
   public static void create(DataPath dataPath) {
 
-    dataPath.getConnection().getDataSystem().create(dataPath);
+    dataPath.getConnection().getDataSystem().create(dataPath, null, null);
 
   }
 
@@ -87,32 +95,10 @@ public class Tabulars {
 
   }
 
-  public static void drop(DataPath dataPath, DataPath... dataPaths) {
+  public static void drop(DataPath dataPath, DropTruncateAttribute... dropAttributes) {
 
-    if (dataPaths.length != 0) {
 
-      // Create one list
-      List<DataPath> allDataPaths = new ArrayList<>();
-      allDataPaths.add(dataPath);
-      allDataPaths.addAll(Arrays.asList(dataPaths));
-
-      // A dag will build the data def, and we may not want it when dropping only one table
-      Dag<DataPath> dag = ForeignKeyDag.createFromPaths(allDataPaths);
-      List<DataPath> dropOrdered = dag.getDropOrdered();
-      for (DataPath orderedDataPath : dropOrdered) {
-        dataPath.getConnection().getDataSystem().drop(orderedDataPath);
-      }
-      return;
-
-    }
-
-    /**
-     * Needed when we manipulate only one table
-     * (If we delete several at once, we need to update the data def (data structure)
-     * and if we just want to drop it, we may get side effect due
-     * to update of the metadata
-     */
-    dataPath.getConnection().getDataSystem().drop(dataPath);
+    drop(List.of(dataPath), dropAttributes);
 
 
   }
@@ -126,51 +112,153 @@ public class Tabulars {
    *
    * @param dataPaths - The tables to drop
    */
-  public static void drop(List<DataPath> dataPaths) {
+  public static void drop(List<DataPath> dataPaths, DropTruncateAttribute... dropAttributes) {
+
+    dropOrTruncateUtility(DropTruncate.DROP, dataPaths, dropAttributes);
+
+  }
+
+  private static void dropOrTruncateUtility(DropTruncate dropTruncate, List<DataPath> dataPaths, DropTruncateAttribute[] dropAttributes) {
 
     if (dataPaths.isEmpty()) {
       return;
     }
 
-    DataPath[] moreDataPath = {};
-    if (dataPaths.size() > 1) {
-      moreDataPath = dataPaths.subList(1, dataPaths.size()).toArray(new DataPath[0]);
+    /**
+     * Batch them by connection
+     */
+    Map<Connection, List<DataPath>> dataPathsByDataStores = dataPaths
+      .stream()
+      .collect(
+        groupingBy(
+          DataPath::getConnection,
+          mapping(dp -> dp, toList())
+        )
+      );
+
+    Set<DropTruncateAttribute> dropAttributeSet = new HashSet<>();
+    if (dropAttributes != null) {
+      dropAttributeSet = Arrays.stream(dropAttributes).collect(toSet());
     }
-    drop(dataPaths.get(0), moreDataPath);
 
+    /**
+     * Doing the work connection by connection
+     */
+    for (Connection connection : dataPathsByDataStores.keySet()) {
+      List<DataPath> dataPathForConnectionList = dataPathsByDataStores.get(connection);
 
+      DataSystem dataSystem = connection.getDataSystem();
+
+      /**
+       * Force Flag implementation
+       * Check if the truncated/dropped table
+       * have no dependencies or that the dependencies
+       * are also in the tables to truncate
+       * <p>
+       * Note:
+       * * Normally, the database enforce this constraint but as Sqlite does not, we do
+       * * a list of views created with non-existing tables will fail miserably to get the references
+       */
+      boolean withForce = dropAttributeSet.contains(DropTruncateAttribute.FORCE);
+      boolean ifExists = dropAttributeSet.contains(DropTruncateAttribute.IF_EXISTS);
+      try {
+        List<DataPath> dataPathToTruncates = ForeignKeyDag.createFromPaths(dataPathForConnectionList).getDropOrdered();
+        for (DataPath dataPathToTruncate : dataPathToTruncates) {
+          if (ifExists && !Tabulars.exists(dataPathToTruncate)) {
+            continue;
+          }
+          List<ForeignKeyDef> exportedForeignKeys = Tabulars.getReferences(dataPathToTruncate);
+          for (ForeignKeyDef exportedForeignKey : exportedForeignKeys) {
+            DataPath exportedDataPath = exportedForeignKey.getRelationDef().getDataPath();
+            if (!dataPathForConnectionList.contains(exportedDataPath)) {
+              if (withForce) {
+                Tabulars.dropConstraint(exportedForeignKey);
+                DbLoggers.LOGGER_DB_ENGINE.warning("ForeignKey (" + exportedForeignKey.getName() + ") was dropped from the table (" + exportedDataPath + ")");
+              } else {
+                String msg = Strings.createMultiLineFromStrings(
+                  "Unable to " + dropTruncate + " the data resource (" + dataPathToTruncate + ")",
+                  "The table (" + exportedDataPath + ") is referencing the table (" + dataPathToTruncate + ") and is not in the tables to " + dropTruncate,
+                  "To resolve, this problem you can:",
+                  "  * drop the foreign keys referencing the tables to " + dropTruncate + "  with the " + DropTruncateAttribute.FORCE + " flag.",
+                  "  * add the primary tables referencing the tables to " + dropTruncate + " with the with-dependencies flag."
+
+                ).toString();
+                throw new IllegalArgumentException(msg);
+
+              }
+            }
+          }
+        }
+      } catch (Exception e) {
+        /**
+         * A list of Views created with non-existing tables will fail miserably to get the references
+         * We should check the validity of the resource before doing that
+         */
+        long viewCount = dataPathForConnectionList.stream()
+          .filter(s -> s.getMediaType().getSubType().equalsIgnoreCase("view"))
+          .count();
+        if (viewCount == 0) {
+          throw ExceptionWrapper.builder(e, "resource graph building before " + dropTruncate + " failed")
+            .setPosition(ExceptionWrapper.ContextPosition.FIRST)
+            .buildAsRuntimeException();
+        }
+        DbLoggers.LOGGER_DB_ENGINE.warning("Error while building the data resources graph with view. Error: " + e.getMessage());
+      }
+
+      /**
+       * Dropping/Truncating
+       */
+      List<DataPath> dataPathOrdered;
+      switch (dataPathForConnectionList.size()) {
+        case 0:
+          return;
+        case 1:
+          // A dag will build the data def, and we may not want it when dropping/truncating only one table
+          dataPathOrdered = List.of(dataPathForConnectionList.get(0));
+          break;
+        default:
+          Dag<DataPath> dag = ForeignKeyDag.createFromPaths(dataPathForConnectionList);
+          dataPathOrdered = dag.getDropOrdered();
+          break;
+      }
+
+      switch (dropTruncate) {
+        case DROP:
+          dataSystem.drop(dataPathOrdered, dropAttributeSet);
+          break;
+        case TRUNCATE:
+          dataSystem.truncate(dataPathOrdered, dropAttributeSet);
+          break;
+        default:
+          throw new MissingSwitchBranch("drop/truncate operation", dropTruncate);
+      }
+    }
   }
 
   /**
-   * Suppress all rows of the table
-   *
-   * @param dataPath - the tableDef where to suppress all rows
+   * @param sourceDataPath - the records to delete
+   * @param targetDataPath - the target where the records are going to be deleted
    */
-  public static void delete(DataPath dataPath) {
-
-    dataPath.getConnection().getDataSystem().delete(dataPath);
-
-  }
-
   public static TransferListener delete(DataPath sourceDataPath, DataPath targetDataPath) {
 
     return TransferManager
-      .create()
-      .setTransferProperties(
-        TransferProperties
-          .create()
+      .builder()
+      .setTransferPropertiesSystem(
+        TransferPropertiesSystem
+          .builder()
           .setOperation(TransferOperation.DELETE)
       )
-      .addTransfer(sourceDataPath, targetDataPath)
-      .run()
+      .build()
+      .createOrder(sourceDataPath, targetDataPath)
+      .execute()
       .getTransferListeners()
       .get(0);
 
   }
 
-  public static void dropIfExists(DataPath... dataPaths) {
+  public static void dropIfExists(DataPath dataPath, DropTruncateAttribute... dropAttributes) {
 
-    dropIfExists(Arrays.asList(dataPaths));
+    dropIfExists(List.of(dataPath), dropAttributes);
 
   }
 
@@ -179,13 +267,22 @@ public class Tabulars {
    * Drop the table from the database if exist
    * and drop the table from the cache
    */
-  public static void dropIfExists(List<DataPath> dataPaths) {
+  public static void dropIfExists(List<DataPath> dataPaths, DropTruncateAttribute... dropAttributes) {
+
+    /**
+     * Create new array with the {@link DropTruncateAttribute.IF_EXISTS} flag
+     * so that the data path is dropped from any cache even if it does not exist,
+     * and we can use the underlying statement
+     * (ie drop table if exists for sql) wining a round trip
+     */
+    DropTruncateAttribute[] dropAttributesWithExists = Arrays.copyOf(dropAttributes, dropAttributes.length + 1);
+    dropAttributesWithExists[dropAttributes.length] = DropTruncateAttribute.IF_EXISTS;
 
     // A hack to avoid building the data def
     // Because the getDropOrderedTables will build the dependency
     if (dataPaths.size() == 1) {
       DataPath dataPath = dataPaths.get(0);
-      dataPath.getConnection().getDataSystem().dropIfExist(dataPath);
+      Tabulars.drop(dataPath, dropAttributesWithExists);
       return;
     }
 
@@ -194,28 +291,51 @@ public class Tabulars {
      */
     List<DataPath> dropOrdered = ForeignKeyDag.createFromPaths(dataPaths).getDropOrdered();
     for (DataPath dataPath : dropOrdered) {
-      dataPath.getConnection().getDataSystem().dropIfExist(dataPath);
+      Tabulars.drop(dataPath, dropAttributesWithExists);
     }
 
 
   }
 
+  /**
+   * Postgres does not allow to truncate a table referenced by a foreign key
+   * if the two tables are not in the same statement
+   * <a href="https://www.postgresql.org/docs/current/sql-truncate.html">Sql Truncate</a>
+   */
+  public static void truncate(List<DataPath> dataPaths, DropTruncateAttribute... dropAttributes) {
+
+    dropOrTruncateUtility(DropTruncate.TRUNCATE, dataPaths, dropAttributes);
+
+  }
+
   public static void truncate(DataPath dataPath) {
-    dataPath.getConnection().getDataSystem().truncate(dataPath);
+    truncate(List.of(dataPath));
   }
 
 
   /**
    * Print the data of a table
    *
-   * @param dataPath
+   * @param dataPath - the data path to print
    */
   public static void print(DataPath dataPath) {
 
-    try (SelectStream tableOutputStream = dataPath.getSelectStream()) {
-      Streams.print(tableOutputStream);
-    } catch (SelectException e) {
-      throw new RuntimeException(e);
+    Printer.PrintBuilder builder = Printer.builder();
+    String standardColorsColumn = DataPathDiff.DIFF_COLUMN_PREFIX + DataDiffColumn.COLORS.toKeyNormalizer().toSqlCase();
+    if (JavaEnvs.isRunningInTerminal() && dataPath.getOrCreateRelationDef().hasColumn(standardColorsColumn)) {
+      builder.setColorsColumnName(standardColorsColumn);
+    }
+    builder.
+      build()
+      .print(dataPath);
+
+
+  }
+
+  public static void print(List<DataPath> dataPaths) {
+
+    for (DataPath dataPath : dataPaths) {
+      Tabulars.print(dataPath);
     }
 
   }
@@ -241,17 +361,16 @@ public class Tabulars {
 
 
   /**
-   * @param dataPath
    * @return if the data path locate a document
    * <p>
-   * The counter part is {@link #isContainer(DataPath)}
+   * The counterpart is {@link #isContainer(DataPath)}
    */
   public static boolean isDocument(DataPath dataPath) {
     return dataPath.getConnection().getDataSystem().isDocument(dataPath);
   }
 
   public static void create(List<DataPath> dataPaths) {
-    Dag dag = ForeignKeyDag.createFromPaths(dataPaths);
+    Dag<DataPath> dag = ForeignKeyDag.createFromPaths(dataPaths);
     dataPaths = dag.getCreateOrdered();
     for (DataPath dataPath : dataPaths) {
       create(dataPath);
@@ -264,10 +383,21 @@ public class Tabulars {
    */
   public static List<DataPath> getChildren(DataPath dataPath) {
 
-    if (Tabulars.isDocument(dataPath)) {
-      throw new RuntimeException("The data path (" + dataPath + ") is a document, it has therefore no children");
+    if (!Tabulars.exists(dataPath)) {
+      if (dataPath.getConnection().getTabular().isStrictExecution()) {
+        throw new RuntimeException("The data path (" + dataPath + ") does not exist, we can get its children");
+      }
+      return Collections.emptyList();
     }
-    return dataPath.getConnection().getDataSystem().getChildrenDataPath(dataPath);
+    if (Tabulars.isDocument(dataPath)) {
+      throw new RuntimeException("The data path (" + dataPath + ") is a document (" + dataPath.getMediaType() + "), it has therefore no children");
+    }
+    return dataPath.getConnection()
+      .getDataSystem()
+      .getChildrenDataPath(dataPath)
+      .stream()
+      .sorted()
+      .collect(Collectors.toList());
 
   }
 
@@ -310,14 +440,14 @@ public class Tabulars {
    * @return the content of a data path in a string format
    */
   public static String getString(DataPath dataPath) {
-    return dataPath.getConnection().getDataSystem().getString(dataPath);
+    return dataPath.getConnection().getDataSystem().getContentAsString(dataPath);
   }
 
   /**
    * Move a source document to a target document
    * If the document is:
    * * on the same data store, it's a rename operation,
-   * * not on the same data store, it's a transfer and a delete from the source
+   * * not on the same data store, it's a transfer and a `delete` from the source
    *
    * @param source - the source to move
    * @param target - a target data path container or document
@@ -327,15 +457,17 @@ public class Tabulars {
   public static TransferListener move(DataPath source, DataPath target, TransferResourceOperations... targetDataOperations) {
 
     return TransferManager
-      .create()
-      .setTransferProperties(
-        TransferProperties
-          .create()
-          .setOperation(TransferOperation.MOVE)
-          .addTargetOperations(targetDataOperations)
+      .builder()
+      .setTransferPropertiesSystem(
+        TransferPropertiesSystem
+          .builder()
+          .setOperation(TransferOperation.COPY)
+          .setSourceOperations(TransferResourceOperations.DROP)
+          .setTargetOperations(targetDataOperations)
       )
-      .addTransfer(source, target)
-      .run()
+      .build()
+      .createOrder(source, target)
+      .execute()
       .getTransferListeners()
       .get(0);
 
@@ -349,20 +481,21 @@ public class Tabulars {
    * @param source               - a source document data path
    * @param target               - a target document or container (If this is a container, the target document will get the name of the source document)
    * @param targetDataOperations - the target data operations
-   * @return
+   * @return a transfer listener
    */
   public static TransferListener copy(DataPath source, DataPath target, TransferResourceOperations... targetDataOperations) {
 
     return TransferManager
-      .create()
-      .setTransferProperties(
-        TransferProperties
-          .create()
+      .builder()
+      .setTransferPropertiesSystem(
+        TransferPropertiesSystem
+          .builder()
           .setOperation(TransferOperation.COPY)
-          .addTargetOperations(targetDataOperations)
+          .setTargetOperations(targetDataOperations)
       )
-      .addTransfer(source, target)
-      .run()
+      .build()
+      .createOrder(source, target)
+      .execute()
       .getTransferListeners()
       .get(0);
 
@@ -372,14 +505,15 @@ public class Tabulars {
   public static TransferListener insert(DataPath source, DataPath target) {
 
     return TransferManager
-      .create()
-      .setTransferProperties(
-        TransferProperties
-          .create()
+      .builder()
+      .setTransferPropertiesSystem(
+        TransferPropertiesSystem
+          .builder()
           .setOperation(TransferOperation.INSERT)
       )
-      .addTransfer(source, target)
-      .run()
+      .build()
+      .createOrder(source, target)
+      .execute()
       .getTransferListeners()
       .get(0);
   }
@@ -400,8 +534,6 @@ public class Tabulars {
 
   /**
    * Drop a constraint
-   *
-   * @param constraint
    */
   public static void dropConstraint(Constraint constraint) {
     if (constraint != null) {
@@ -409,38 +541,6 @@ public class Tabulars {
     }
   }
 
-  /**
-   * Postgres does not allow to truncate a table referenced by a foreign key
-   * if the two tables are not in the same statement
-   * <a href="https://www.postgresql.org/docs/current/sql-truncate.html">Sql Truncate</a>
-   *
-   * @param dataPaths
-   */
-  public static void truncate(List<DataPath> dataPaths) {
-    if (dataPaths.size() == 0) {
-      throw new IllegalStateException("The number of data paths is zero, we can't truncate them");
-    }
-    List<Connection> connections = dataPaths.stream().map(DataPath::getConnection).distinct().collect(Collectors.toList());
-    if (connections.size() != 1) {
-      throw new IllegalStateException("We found more than one datastore (" + connections.stream().map(Connection::getName).collect(Collectors.joining(", ")) + ". This function does not support to truncate tables from two different datastores.");
-    }
-    dataPaths.get(0).getConnection().getDataSystem().truncate(dataPaths);
-  }
-
-
-  /**
-   * Drop a target data path and all the foreign keys that
-   * reference it
-   *
-   * @param dataPath
-   */
-  public static void dropForceIfExists(DataPath dataPath) {
-
-    if (exists(dataPath)) {
-      dataPath.getConnection().getDataSystem().dropForce(dataPath);
-    }
-
-  }
 
   /**
    * Drop all constraint of the data path
@@ -483,12 +583,13 @@ public class Tabulars {
   }
 
 
-  public static TransferListener transfer(DataPath sourceDataPath, DataPath targetDataPath, TransferProperties transferProperties) {
+  public static TransferListener transfer(DataPath sourceDataPath, DataPath targetDataPath, TransferPropertiesSystem.TransferPropertiesSystemBuilder transferPropertiesCross) {
     return TransferManager
-      .create()
-      .setTransferProperties(transferProperties)
-      .addTransfer(sourceDataPath, targetDataPath)
-      .run()
+      .builder()
+      .setTransferPropertiesSystem(transferPropertiesCross)
+      .build()
+      .createOrder(sourceDataPath, targetDataPath)
+      .execute()
       .getTransferListeners()
       .get(0);
   }
@@ -496,45 +597,75 @@ public class Tabulars {
 
   public static TransferListener upsert(DataPath sourceDataPath, DataPath targetDataPath, TransferResourceOperations... targetDataOperations) {
     return TransferManager
-      .create()
-      .setTransferProperties(
-        TransferProperties
-          .create()
+      .builder()
+      .setTransferPropertiesSystem(
+        TransferPropertiesSystem
+          .builder()
           .setOperation(TransferOperation.UPSERT)
-          .addTargetOperations(targetDataOperations)
+          .setTargetOperations(targetDataOperations)
       )
-      .addTransfer(sourceDataPath, targetDataPath)
-      .run()
+      .build()
+      .createOrder(sourceDataPath, targetDataPath)
+      .execute()
+      .getTransferListeners()
+      .get(0);
+  }
+
+  public static TransferListener update(DataPath sourceDataPath, DataPath targetDataPath, TransferPropertiesSystem.TransferPropertiesSystemBuilder transferProperties) {
+    transferProperties.setOperation(TransferOperation.UPDATE);
+    return TransferManager
+      .builder()
+      .setTransferPropertiesSystem(transferProperties)
+      .build()
+      .createOrder(sourceDataPath, targetDataPath)
+      .execute()
       .getTransferListeners()
       .get(0);
   }
 
   public static TransferListener update(DataPath sourceDataPath, DataPath targetDataPath, TransferResourceOperations... targetDataOperations) {
-    return TransferManager
-      .create()
-      .setTransferProperties(
-        TransferProperties
-          .create()
-          .setOperation(TransferOperation.UPDATE)
-          .addTargetOperations(targetDataOperations)
-      )
-      .addTransfer(sourceDataPath, targetDataPath)
-      .run()
-      .getTransferListeners()
-      .get(0);
+    return update(sourceDataPath, targetDataPath, TransferPropertiesSystem
+      .builder()
+      .setTargetOperations(targetDataOperations)
+    );
+
   }
 
   /**
-   * @param dataPath
-   * @return true if the data resource is a script
+   * @return true if the data resource is a runtime
    */
-  public static boolean isScript(DataPath dataPath) {
-    return dataPath.isScript();
-  }
-
-  public static void execute(DataPath dataPath) {
-    dataPath.getConnection().getDataSystem().execute(dataPath);
+  public static boolean isRuntime(DataPath dataPath) {
+    return dataPath.isRuntime();
   }
 
 
+  /**
+   * A free schema form structure accepts any number of columns on insertion
+   * Free from data path will:
+   * * not see their schema tested
+   * * see their schema created on the fly
+   * There is:
+   * * {@link FsTextDataPath}
+   * * {@link FsSqlDataPath}
+   * * by default 2 (token type and sql) but this is the structure when reading the file,
+   * * not writing that will accept generally only the sql
+   */
+  public static boolean isFreeSchemaForm(DataPath dataPath) {
+    return dataPath.getClass().equals(FsTextDataPath.class) || dataPath.getClass().equals(FsSqlDataPath.class);
+  }
+
+
+  /**
+   * Utility function to insert lines
+   */
+  public static void writeLines(DataPath dataPath, String input) {
+    if (input == null) {
+      return;
+    }
+    try (InsertStream insertStream = dataPath.getInsertStream()) {
+      for (String line : input.split("\\r?\\n")) {
+        insertStream.insert(line);
+      }
+    }
+  }
 }

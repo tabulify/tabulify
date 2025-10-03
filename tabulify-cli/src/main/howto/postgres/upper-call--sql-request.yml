@@ -1,0 +1,17 @@
+kind: sql-request
+spec:
+  # the executable data uri
+  # * takes the file (upper-call.sql)
+  # * located in the same directory as this manifest (md)
+  # * and execute it against (postgres)
+  data-uri: (upper-call.sql@md)@postgres
+  # the data definition
+  data-def:
+    parameters:
+      # the parameter for the first placeholder
+      - direction: out # retrieve the value
+        type: varchar # the type of the retrieved value
+        # the parameter for the second placeholder
+      - value: lowercase to uppercase # the value passed to the upper function
+        direction: in # set the value
+        type: varchar # the type of the value

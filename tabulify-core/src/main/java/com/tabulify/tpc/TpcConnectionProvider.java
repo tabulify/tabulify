@@ -1,14 +1,15 @@
 package com.tabulify.tpc;
 
 import com.tabulify.Tabular;
+import com.tabulify.conf.Attribute;
 import com.tabulify.connection.Connection;
 import com.tabulify.spi.ConnectionProvider;
-import com.tabulify.conf.Attribute;
+import net.bytle.type.KeyNormalizer;
 
 public class TpcConnectionProvider extends ConnectionProvider {
 
 
-  public static final String TPCDS_SCHEME = "tpcds";
+  public static final KeyNormalizer TPCDS_SCHEME = KeyNormalizer.createSafe("tpcds");
 
 
   @Override
@@ -18,7 +19,8 @@ public class TpcConnectionProvider extends ConnectionProvider {
 
   @Override
   public boolean accept(Attribute uri) {
-    return uri.getValueOrDefaultAsStringNotNull().toLowerCase().startsWith(TPCDS_SCHEME);
+    return uri.getValueOrDefaultAsStringNotNull().toLowerCase().startsWith(TPCDS_SCHEME.toString());
   }
+
 
 }

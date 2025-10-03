@@ -1,0 +1,56 @@
+kind: generator
+spec:
+  Comment: An example of date dimension generator based on the `date_dim` table of TPCDS
+  Columns:
+    - name: d_date_sk
+      comment: A surrogate key
+      Type: integer
+      data-supplier:
+        type: sequence
+    - name: d_date
+      comment: A business key in date format
+      Type: date
+      data-supplier:
+        type: sequence
+        arguments:
+          start: 2025-05-13
+    - name: d_date_id
+      comment: A business key in string
+      Type: varchar
+      data-supplier:
+        type: expression
+        arguments:
+          column-variable: d_date
+          expression: "d_date.toISOString().substring(0,10)"
+    - name: d_month_seq
+      comment: An ascendant sequence for the month
+      Type: integer
+      data-supplier:
+        type: expression
+        arguments:
+          column-variable: d_date
+          expression: "function pad(number) {if (number < 10) { return '0' + number; } return number; }; d_date.getFullYear()+''+(pad(d_date.getMonth()+1))"
+    - name: d_day_name
+      comment: The name of the day
+      Type: varchar
+      data-supplier:
+        type: expression
+        arguments:
+          column-variable: d_date
+          expression: "var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; days[d_date.getDay()]"
+    - name: d_moy
+      comment: the month number in year
+      Type: Integer
+      data-supplier:
+        type: expression
+        arguments:
+          column-variable: d_date
+          expression: "d_date.getMonth()+1"
+    - name: d_year
+      comment: The year number
+      Type: Integer
+      data-supplier:
+        type: expression
+        arguments:
+          column-variable: d_date
+          expression: "d_date.getFullYear()"

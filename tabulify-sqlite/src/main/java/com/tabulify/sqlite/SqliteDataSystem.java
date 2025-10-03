@@ -1,27 +1,28 @@
 package com.tabulify.sqlite;
 
-import com.tabulify.jdbc.SqlDataPath;
-import com.tabulify.jdbc.SqlDataSystem;
-import com.tabulify.jdbc.SqlMediaType;
-import com.tabulify.jdbc.SqlMetaDataType;
+import com.tabulify.jdbc.*;
 import com.tabulify.model.*;
 import com.tabulify.spi.DataPath;
-import com.tabulify.transfer.TransferSourceTarget;
+import com.tabulify.spi.DropTruncateAttribute;
+import com.tabulify.spi.Tabulars;
+import com.tabulify.transfer.TransferSourceTargetOrder;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
+import net.bytle.type.Casts;
 import net.bytle.type.MediaType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class SqliteDataSystem extends SqlDataSystem {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(SqliteDataSystem.class);
+  private static final Logger LOGGER = Logger.getLogger("tabulify.sqlite");
+  // In sqlite, precision and scale are just hint, they are optional
+  // but for our type system, we need them
+  // as we check that are not 0
+  public static final int MAX_PRECISION_OR_SCALE = 100;
 
   /*
    * The driver returns the system tables
@@ -34,9 +35,16 @@ public class SqliteDataSystem extends SqlDataSystem {
     super(sqliteDataStore);
   }
 
+  @Override
+  protected String dropConstraintStatement(Constraint constraint) {
+    throw new UnsupportedOperationException("SQLite does not support to drop any constraints in its alter statement. https://www.sqlite.org/lang_altertable.html");
+  }
 
   @Override
   public Boolean exists(DataPath dataPath) {
+    if (dataPath instanceof SqlRequest) {
+      return Tabulars.exists(dataPath.getExecutableDataPath());
+    }
     if (!(dataPath instanceof SqliteDataPath)) {
       throw new InternalException("This data path is not a sqlite data path. " + dataPath);
     }
@@ -50,8 +58,8 @@ public class SqliteDataSystem extends SqlDataSystem {
 
   /**
    * Returns statement to create the table
-   * SQLlite has limited support on the alter statement
-   * The primary key shoud be in the create statement.
+   * SQLite has limited support on the alter statement
+   * The primary key should be in the `create` statement.
    * See <a href="https://sqlite.org/faq.html#q11">...</a>
    *
    * @param dataPath the data path source
@@ -67,7 +75,7 @@ public class SqliteDataSystem extends SqlDataSystem {
       throw new RuntimeException("The dataPath (" + dataPath + ") has no columns definitions. We can't create a table from then");
     }
     for (int i = 1; i <= tableDef.getColumnsSize(); i++) {
-      ColumnDef columnDef = tableDef.getColumnDef(i);
+      ColumnDef<?> columnDef = tableDef.getColumnDef(i);
       statement.append(createColumnStatement(columnDef));
       if (i != tableDef.getColumnsSize()) {
         statement.append(",\n");
@@ -155,7 +163,9 @@ public class SqliteDataSystem extends SqlDataSystem {
    */
   @Override
   protected String createPrimaryKeyStatement(SqlDataPath jdbcDataPath) {
-    return null;
+
+    throw new UnsupportedOperationException("SQLite does not support the creation of primary key via the alter statement. https://sqlite.org/lang_altertable.html");
+
   }
 
   /**
@@ -164,7 +174,9 @@ public class SqliteDataSystem extends SqlDataSystem {
    */
   @Override
   protected String createUniqueKeyStatement(UniqueKeyDef uniqueKeyDef) {
-    return null;
+
+    throw new UnsupportedOperationException("SQLite does not support the creation of unique key via the alter statement. https://sqlite.org/lang_altertable.html");
+
   }
 
   /**
@@ -173,7 +185,7 @@ public class SqliteDataSystem extends SqlDataSystem {
    */
   @Override
   protected String createForeignKeyStatement(ForeignKeyDef foreignKeyDef) {
-    return null;
+    throw new UnsupportedOperationException("SQLite does not support the creation of foreign key via the alter statement. https://sqlite.org/lang_altertable.html");
   }
 
   /**
@@ -227,7 +239,7 @@ public class SqliteDataSystem extends SqlDataSystem {
     } else if (constraint instanceof UniqueKeyDef) {
       msg.append("The dropping of a unique key was passed. ");
     }
-    LOGGER.warn(
+    LOGGER.warning(
       msg
         .append("Sqlite does not support the drop of constraints in its ALTER statement. ")
         .append("See https://sqlite.org/lang_altertable.html ")
@@ -236,125 +248,111 @@ public class SqliteDataSystem extends SqlDataSystem {
     );
   }
 
-  @Override
-  public Map<Integer, SqlMetaDataType> getMetaDataTypes() {
-
-    Map<Integer, SqlMetaDataType> sqlMetaDataType = super.getMetaDataTypes();
-
-    /**
-     * Text data type
-     * From https://sqlite.org/datatype3.html
-     * If the declared type of the column contains any of the strings "CHAR", "CLOB", or "TEXT"
-     * then that column has TEXT affinity.
-     * Notice that the type VARCHAR contains the string "CHAR" and is thus assigned TEXT affinity.
-     */
-    sqlMetaDataType.computeIfAbsent(Types.CHAR, SqlMetaDataType::new)
-      .setSqlName("text")
-      .setMaxPrecision(SqliteType.MAX_LENGTH);
-
-    sqlMetaDataType.computeIfAbsent(Types.NCHAR, SqlMetaDataType::new)
-      .setSqlName("text")
-      .setMaxPrecision(SqliteType.MAX_LENGTH);
-
-    sqlMetaDataType.computeIfAbsent(Types.VARCHAR, SqlMetaDataType::new)
-      .setSqlName("text")
-      .setMaxPrecision(SqliteType.MAX_LENGTH);
-
-    sqlMetaDataType.computeIfAbsent(Types.NVARCHAR, SqlMetaDataType::new)
-      .setSqlName("text")
-      .setMaxPrecision(SqliteType.MAX_LENGTH);
-
-    sqlMetaDataType.computeIfAbsent(Types.CLOB, SqlMetaDataType::new)
-      .setSqlName("text")
-      .setMaxPrecision(SqliteType.MAX_LENGTH);
-
-    /**
-     * https://sqlite.org/datatype3.html
-     * If the declared type contains the string "INT" then it is assigned INTEGER affinity.
-     */
-    sqlMetaDataType.computeIfAbsent(Types.INTEGER, SqlMetaDataType::new)
-      .setSqlName("integer");
-
-    /**
-     * https://sqlite.org/datatype3.html
-     * If the declared type contains the string "INT" then it is assigned INTEGER affinity.
-     */
-    sqlMetaDataType.computeIfAbsent(Types.BIGINT, SqlMetaDataType::new)
-      .setSqlName("bigint");
-
-    /**
-     *
-     * SQLite 3 database has only the NUMERIC data type for fixed point
-     * DECIMAL(10,5) is NUMERIC
-     * See https://sqlite.org/datatype3.html
-     */
-    sqlMetaDataType.computeIfAbsent(Types.DECIMAL, SqlMetaDataType::new)
-      .setSqlName("numeric")
-      .setMaxPrecision(SqliteType.MAX_NUMERIC_PRECISION)
-      .setMinimumScale(0)
-      .setMaximumScale(SqliteType.MAX_NUMERIC_PRECISION);
-    sqlMetaDataType.computeIfAbsent(Types.NUMERIC, SqlMetaDataType::new)
-      .setSqlName("numeric")
-      .setMaxPrecision(SqliteType.MAX_NUMERIC_PRECISION)
-      .setMinimumScale(0)
-      .setMaximumScale(SqliteType.MAX_NUMERIC_PRECISION);
-
-    /**
-     * https://sqlite.org/datatype3.html
-     * SQlite knows only real for floating point
-     */
-    sqlMetaDataType.computeIfAbsent(Types.DOUBLE, SqlMetaDataType::new)
-      .setSqlName("real");
-
-    sqlMetaDataType.computeIfAbsent(Types.FLOAT, SqlMetaDataType::new)
-      .setSqlName("real");
-
-    sqlMetaDataType.computeIfAbsent(Types.REAL, SqlMetaDataType::new)
-      .setSqlName("real");
-
-    /**
-     * SQLXML
-     */
-    sqlMetaDataType.computeIfAbsent(Types.SQLXML, SqlMetaDataType::new)
-      .setSqlName("sqlxml")
-      .setSqlJavaClazz(String.class);
-
-    return sqlMetaDataType;
-
+  public SqliteConnection getConnection() {
+    return (SqliteConnection) sqlConnection;
   }
 
   @Override
-  public void drop(DataPath dataPath) {
-    SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
+  public void dataTypeBuildingMain(SqlDataTypeManager sqlDataTypeManager) {
 
-    if (sqlDataPath.getMediaType() == SqlMediaType.TABLE) {
+
+    super.dataTypeBuildingMain(sqlDataTypeManager);
+
+    List<SqlDataTypeVendor> sqlDataTypeVendors = new ArrayList<>();
+    // The numeric affinity is not in the driver
+    sqlDataTypeVendors.add(SqliteTypeAffinity.NUMERIC);
+
+    if (this.getConnection().getAffinityConversion()) {
+
       /**
-       * Sqlite will still drop the table even if there is a foreign key that references it
+       * Text data type.
+       * They finally get an affinity text
+       * All syntax can be used (VARCHAR, ...) but they become text
+       * See https://www.sqlite.org/datatype3.html
+       * If the declared type of the column contains any of the strings "CHAR", "CLOB", or "TEXT"
+       * then that column has TEXT affinity.
+       * Notice that the type VARCHAR contains the string "CHAR" and is thus assigned TEXT affinity.
+       * <p>
+       * SQLXML and JSON Not supported natively
+       * but because of the affinity system we can take them as TEXT
        */
-      List<ForeignKeyDef> foreignKeysThatReference = super.getForeignKeysThatReference(sqlDataPath);
-      if (!foreignKeysThatReference.isEmpty()) {
-        throw new RuntimeException("The table (" + dataPath + ") is referenced by the following tables " + foreignKeysThatReference.stream().map(fk -> fk.getRelationDef().getDataPath().getName()).collect(Collectors.joining(", ")) + " and can't therefore be dropped");
-      }
+      sqlDataTypeManager.createTypeBuilder(SqlDataTypeAnsi.CHARACTER_VARYING)
+        .setMaxPrecision(SqliteTypeParser.MAX_LENGTH)
+        .addChildAliasTypedName(SqlDataTypeAnsi.CHARACTER, sqlDataTypeManager)
+        .addChildAliases(SqlDataTypeAnsi.CHARACTER.getAliases())
+        .addChildAliasTypedName(SqlDataTypeAnsi.NATIONAL_CHARACTER, sqlDataTypeManager)
+        .addChildAliases(SqlDataTypeAnsi.NATIONAL_CHARACTER.getAliases())
+        .addChildAliasTypedName(SqlDataTypeAnsi.NATIONAL_CHARACTER_VARYING, sqlDataTypeManager)
+        .addChildAliases(SqlDataTypeAnsi.NATIONAL_CHARACTER_VARYING.getAliases())
+        .addChildAliasCommonNames();
+
+      /**
+       * Integer is the top type
+       * https://sqlite.org/datatype3.html
+       * If the declared type contains the string "INT" then it is assigned INTEGER affinity.
+       */
+      sqlDataTypeManager.createTypeBuilder(SqlDataTypeAnsi.INTEGER)
+        .setMaxPrecision(SqlDataTypeManager.INTEGER_SIGNED_MAX_LENGTH)
+        .addChildAliasCommonNames()
+        .addChildAliasName(SqlDataTypeCommon.MEDIUMINT)
+        .addChildAliasName(SqlDataTypeCommon.INT3)
+        .addChildAliasTypedName(SqlDataTypeAnsi.BIGINT, sqlDataTypeManager)
+        .addChildAliases(SqlDataTypeAnsi.BIGINT.getAliases())
+        .addChildAliasTypedName(SqlDataTypeAnsi.SMALLINT, sqlDataTypeManager)
+        .addChildAliases(SqlDataTypeAnsi.SMALLINT.getAliases())
+        .addChildAliasTypedName(SqlDataTypeAnsi.TINYINT, sqlDataTypeManager)
+        .addChildAliases(SqlDataTypeAnsi.TINYINT.getAliases());
+
+      /**
+       * For number, sqlite knows only real
+       * Sqlite Real is not Sql real. It's a Sql double
+       * https://sqlite.org/datatype3.html
+       * Thanks to affinity, we can still keep the sql name original
+       * Real is a double
+       */
+      sqlDataTypeManager.getTypeBuilder(SqliteTypeAffinity.REAL)
+        .addChildAliasCommonNames()
+        .addChildAliasTypedName(SqlDataTypeAnsi.FLOAT, sqlDataTypeManager);
+      sqlDataTypeManager.getTypeBuilder(SqliteTypeAffinity.NUMERIC)
+        .addChildAliasTypedName(SqlDataTypeAnsi.DECIMAL, sqlDataTypeManager);
+
+    } else {
+
+      sqlDataTypeVendors.addAll(Arrays.asList(SqliteTypeAnsi.values()));
 
     }
-    super.drop(dataPath);
+
+    for (SqlDataTypeVendor sqlTypeAnsi : sqlDataTypeVendors) {
+      sqlDataTypeManager.createTypeBuilder(sqlTypeAnsi.toKeyNormalizer(), sqlTypeAnsi.getVendorTypeNumber(), sqlTypeAnsi.getValueClass())
+        .setMaxPrecision(sqlTypeAnsi.getMaxPrecision())
+        .setMaximumScale(sqlTypeAnsi.getMaximumScale())
+        .setDescription(sqlTypeAnsi.getDescription())
+        .addChildAliases(sqlTypeAnsi.getAliases());
+    }
+
+    /**
+     * Real is a float4 normally, but in Sqlite, it's a double (float8)
+     */
+    sqlDataTypeManager
+      .addJavaClassToTypeRelation(Float.class, SqliteTypeAffinity.REAL)
+      .addJavaClassToTypeRelation(BigDecimal.class, SqliteTypeAffinity.NUMERIC)
+      .addJavaClassToTypeRelation(Double.class, SqliteTypeAffinity.REAL)
+      // a double is a real in sqlite
+      .addTypeCodeTypeNameMapEntry(SqlDataTypeAnsi.DOUBLE_PRECISION, SqliteTypeAffinity.REAL)
+      .addTypeCodeTypeNameMapEntry(SqlDataTypeAnsi.REAL, SqliteTypeAffinity.REAL)
+      .addTypeCodeTypeNameMapEntry(SqlDataTypeAnsi.FLOAT, SqliteTypeAnsi.FLOAT)
+      .addTypeCodeTypeNameMapEntry(SqlDataTypeAnsi.CLOB, SqliteTypeAffinity.TEXT)
+    ;
+
 
   }
 
-  /**
-   * Sqlite will still drop the table even if there is a foreign key that references it
-   * There is no integrity
-   */
-  @Override
-  public void dropForce(DataPath dataPath) {
-    super.drop(dataPath);
-  }
 
   /**
    * Insert On conflict cause
    */
   @Override
-  public String createUpsertStatementWithSelect(TransferSourceTarget transferSourceTarget) {
+  public String createUpsertStatementWithSelect(TransferSourceTargetOrder transferSourceTarget) {
 
     StringBuilder statement = new StringBuilder();
     String insertStatementWithSelect = createInsertStatementWithSelect(transferSourceTarget);
@@ -391,4 +389,78 @@ public class SqliteDataSystem extends SqlDataSystem {
       )
       .collect(Collectors.toList());
   }
+
+  @Override
+  protected List<String> createDropStatement(List<SqlDataPath> sqlDataPaths, Set<DropTruncateAttribute> dropAttributes) {
+    SqlMediaType enumObjectType = sqlDataPaths.get(0).getMediaType();
+    return SqlDropStatement.builder()
+      .setType(enumObjectType)
+      .setIsCascadeSupported(false)
+      .setIfExistsSupported(true)
+      .setMultipleSqlObjectSupported(false)
+      .build()
+      .getStatements(sqlDataPaths, dropAttributes);
+  }
+
+  @Override
+  public SqlTypeKeyUniqueIdentifier getSqlTypeKeyUniqueIdentifier() {
+    return SqlTypeKeyUniqueIdentifier.NAME_ONLY;
+  }
+
+  @Override
+  public Set<SqlDataTypeVendor> getSqlDataTypeVendors() {
+    return Set.of(SqliteTypeAffinity.values());
+  }
+
+  @Override
+  public Long getSize(DataPath dataPath) {
+
+    SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
+    /**
+     * Table only for now
+     */
+    if (!
+      (
+        sqlDataPath.getMediaType() == SqlMediaType.TABLE ||
+          sqlDataPath.getMediaType() == SqlMediaType.SYSTEM_TABLE
+      )) {
+      return -1L;
+    }
+    // https://stackoverflow.com/questions/27572387/query-that-returns-the-size-of-a-table-in-a-sqlite-database
+    SqlRequest sqlRequest = SqlRequest.builder()
+      .setSql(this.getConnection(), "SELECT SUM(\"pgsize\") FROM \"dbstat\" WHERE name='" + sqlDataPath.toSqlStringPath() + "'")
+      .build();
+    List<List<?>> records = sqlRequest.execute().getRecords();
+    if (records.isEmpty()) {
+      // may not exist
+      return -1L;
+    }
+    /**
+     * {@link SqlDataTypeAnsi#BIGINT} ie Long
+     */
+    Object sizeAsObject = records.get(0).get(0);
+    try {
+      return Casts.cast(sizeAsObject, Long.class);
+    } catch (CastException e) {
+      throw new InternalException("The returned size of the resource (" + dataPath + ") could not be cast to a long. Error:" + e.getMessage(), e);
+    }
+  }
+
+  @Override
+  public String createUpsertMergeStatementWithParameters(TransferSourceTargetOrder transferSourceTarget) {
+    return createUpsertStatementUtilityValuesPartBefore(transferSourceTarget) +
+      createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, true, false) +
+      createUpsertStatementUtilityValuesPartAfter(transferSourceTarget);
+  }
+
+  /**
+   * Create upsert from values statement
+   */
+  @Override
+  public String createUpsertMergeStatementWithPrintfExpressions(TransferSourceTargetOrder transferSourceTarget) {
+    return createUpsertStatementUtilityValuesPartBefore(transferSourceTarget) +
+      createInsertStatementUtilityValuesClauseGenerator(transferSourceTarget, false, false) +
+      createUpsertStatementUtilityValuesPartAfter(transferSourceTarget);
+  }
+
 }

@@ -3,22 +3,25 @@ package com.tabulify;
 import com.tabulify.conf.*;
 import com.tabulify.connection.Connection;
 import com.tabulify.connection.ConnectionBuiltIn;
-import com.tabulify.connection.ConnectionHowTos;
-import com.tabulify.connection.ConnectionOrigin;
+import com.tabulify.connection.ObjectOrigin;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.FsDataPath;
+import com.tabulify.howto.Howtos;
 import com.tabulify.memory.MemoryConnection;
 import com.tabulify.memory.MemoryDataPath;
+import com.tabulify.service.Service;
 import com.tabulify.spi.DataPath;
+import com.tabulify.spi.StrictException;
 import com.tabulify.tpc.TpcConnection;
-import com.tabulify.uri.DataUri;
+import com.tabulify.uri.DataUriBuilder;
+import com.tabulify.uri.DataUriNode;
+import com.tabulify.uri.DataUriStringNode;
 import net.bytle.crypto.Protector;
 import net.bytle.exception.*;
 import net.bytle.fs.Fs;
 import net.bytle.log.Logs;
 import net.bytle.regexp.Glob;
 import net.bytle.type.KeyNormalizer;
-import net.bytle.type.MapKeyIndependent;
 import net.bytle.type.MediaType;
 import net.bytle.type.Strings;
 
@@ -26,13 +29,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.FileSystemNotFoundException;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 
@@ -49,17 +48,17 @@ import java.util.stream.Collectors;
 public class Tabular implements AutoCloseable {
 
 
-  public static final String TABLI_NAME = "tabli";
-  public static final String TABLI_CONF_FILE_NAME = "." + TABLI_NAME + ".yml";
+  public static final String TABUL_NAME = "tabul";
+  public static final String TABUL_CONF_FILE_NAME = "." + TABUL_NAME + ".yml";
   // Hack to have a consistent os user home in the documentation
-  public static final String TABLI_OS_USER_HOME = "TABLI_OS_USER_HOME";
+  public static final String TABUL_OS_USER_HOME = TABUL_NAME.toUpperCase(Locale.ROOT) + "_OS_USER_HOME";
 
 
   private final Vault vault;
   private final TabularExecEnv executionEnv;
-  private final Path projectHomePath;
+  private final Path appHomePath;
   private final TabularEnvs tabularEnvs;
-  private final ConnectionHowTos howtoConnections;
+
 
   // The default connection added to a data URI if it does not have it.
   protected Connection defaultConnection;
@@ -68,16 +67,11 @@ public class Tabular implements AutoCloseable {
   /**
    * Connections
    */
-  final MapKeyIndependent<Connection> connections;
-
-
+  final Map<KeyNormalizer, Connection> connections;
   /**
-   * If the run is strict, the run will not try to correct itself.
-   * <p>
-   * If the run is not strict, the run will try to correct itself.
-   * For instance, if a file exists already, it will not overwrite it.
+   * Connections
    */
-  private Boolean strict = true;
+  final Map<KeyNormalizer, Service> services;
 
 
   /**
@@ -88,7 +82,6 @@ public class Tabular implements AutoCloseable {
    * and then fail
    */
   private int exitStatus = 0;
-  private Path runningPipelineScript;
 
 
   /**
@@ -96,34 +89,23 @@ public class Tabular implements AutoCloseable {
    * so the key identifier is not a string
    */
   private final Map<TabularAttributeEnum, Attribute> attributes = new HashMap<>();
+  private final DataUriBuilder dataUriBuilder;
 
 
   public Tabular(TabularConfig tabularConfig) {
 
 
     /**
-     * To avoid
-     * Dec 10, 2020 1:23:32 PM oracle.jdbc.driver.OracleDriver registerMBeans
-     * WARNING: Error while registering Oracle JDBC Diagnosability MBean.
-     * java.security.AccessControlException: access denied ("javax.management.MBeanTrustPermission" "register")
-     * 	at java.security.AccessControlContext.checkPermission(AccessControlContext.java:472)
-     * 	at java.lang.SecurityManager.checkPermission(SecurityManager.java:585)
-     * 	at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.checkMBeanTrustPermission(DefaultMBeanServerInterceptor.java:1848)
-     * 	at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.registerMBean(DefaultMBeanServerInterceptor.java:322)
-     * 	at com.sun.jmx.mbeanserver.JmxMBeanServer.registerMBean(JmxMBeanServer.java:522)
-     */
-    Logger.getLogger("oracle.jdbc").setLevel(Level.SEVERE);
-
-    /**
      * Protector
      */
-    String passphrase = TabularInit.determinePassphrase(tabularConfig.passphrase);
+    String passphrase = TabularInit.determinePassphrase(tabularConfig.passphrase, attributes);
     Protector protector;
     if (passphrase != null) {
       protector = Protector.create(passphrase);
     } else {
       protector = null;
     }
+
 
     /**
      * All determine functions utility
@@ -144,39 +126,88 @@ public class Tabular implements AutoCloseable {
     Logs.setLevel(logLevel.getLevel());
     DbLoggers.LOGGER_TABULAR_START.info("The log level was set to " + logLevel);
 
+    /**
+     * Set the strict hood of the run
+     *
+     * @param strict - if the execution is strict or not
+     */
+    TabularInit.determineIsStrict(tabularConfig.isStrict, vault, attributes, tabularEnvs);
 
     /**
      * Project
      */
-    this.projectHomePath = TabularInit.determineProjectHome(tabularConfig.projectHome, vault, attributes, tabularEnvs);
-    if (projectHomePath != null) {
-      DbLoggers.LOGGER_TABULAR_START.info("This is a project run (" + projectHomePath + ")");
+    this.appHomePath = TabularInit.determineProjectHome(tabularConfig.appHome, vault, attributes, tabularEnvs);
+    if (appHomePath != null) {
+      DbLoggers.LOGGER_TABULAR_START.info("This is a project run (" + appHomePath + ")");
     } else {
       DbLoggers.LOGGER_TABULAR_START.info("This is not a project run.");
     }
 
     Path userHomePath = TabularInit.determineUserHome(vault, tabularEnvs, attributes);
     if (tabularConfig.cleanEnv) {
-      Fs.deleteIfExists(userHomePath);
+      Fs.deleteIfExists(userHomePath, true);
     }
-
-    /**
-     * Tabli Yaml File
-     * confPath is a field because it's used by the cli
-     * to modify a conf file with the cli
-     */
-    Path confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, tabularEnvs, projectHomePath, userHomePath, attributes);
-    ConfVault confVault = ConfVault.createFromPath(confPath, vault, this);
 
     /**
      * Execution Env
      */
-    this.executionEnv = TabularInit.determineEnv(tabularConfig.execEnv, vault, tabularEnvs, attributes, confVault);
+    this.executionEnv = TabularInit.determineExecutionEnv(tabularConfig.execEnv, vault, tabularEnvs, attributes);
 
     /**
      * Home Path
      */
-    Path tabliInstallationHomePath = TabularInit.determineHomePath(tabularConfig.homePath, this.executionEnv, tabularEnvs, attributes, vault, confVault);
+    Path tabulInstallationHomePath = TabularInit.determineHomePath(tabularConfig.homePath, executionEnv, tabularEnvs, attributes, vault);
+
+    /**
+     * Build tabular Connection
+     * (After init of variables
+     */
+    Path osUserHome = Fs.getUserHome();
+    // Hack to have a consistent os user home in the documentation
+    String envValue = tabularEnvs.getOsEnvValue(KeyNormalizer.createSafe(TABUL_OS_USER_HOME));
+    if (envValue != null) {
+      osUserHome = Paths.get(envValue);
+    }
+    connections = ConnectionBuiltIn.loadBuiltInConnections(this, userHomePath, osUserHome, tabulInstallationHomePath);
+    if (appHomePath != null) {
+      addConnection(
+        Connection.createConnectionFromProviderOrDefault(this, ConnectionBuiltIn.APP_CONNECTION, appHomePath.toUri().toString())
+          .setComment("The project home path")
+      );
+      // Default connection is project
+      this.setDefaultConnection(ConnectionBuiltIn.APP_CONNECTION);
+    } else {
+      // Default connection is cd
+      this.setDefaultConnection(ConnectionBuiltIn.CD_LOCAL_FILE_SYSTEM);
+    }
+
+    /**
+     * Tabul Yaml File
+     * confPath is a field because it's used by the cli
+     * to modify a conf file with the cli
+     */
+    ConfVault confVault;
+    if (tabularConfig.loadConfigurationFile) {
+      Path confPath = TabularInit.determineConfPath(tabularConfig.confPath, vault, tabularEnvs, appHomePath, userHomePath, attributes);
+      confVault = ConfVault.createFromPath(confPath, this);
+      if (!Files.exists(confPath)) {
+        /**
+         * Why we create it?
+         * * We have in test env such as TABUL_CONNECTION_SMTP_TO and Tabular will report an error if it's not present
+         * * Easy tutorial, the users get them everytime
+         * * Easy doc, we just need to delete the file to get a clean environment
+         * * Easy maintenance, we don't need to recreate the environment each time
+         */
+        DbLoggers.LOGGER_TABULAR_START.info("Conf path does not exist. Creating it " + confVault);
+        confVault
+          .loadHowtoConnections()
+          .loadHowtoServices()
+          .flush();
+      }
+    } else {
+      confVault = ConfVault.createEmpty(this);
+    }
+
 
     /**
      * Other Tabular attributes, not processed
@@ -203,7 +234,7 @@ public class Tabular implements AutoCloseable {
         continue;
       }
       // Env
-      String envValue = tabularEnvs.getOsEnvValue(envName);
+      envValue = tabularEnvs.getOsEnvValue(envName);
       if (envValue != null) {
         attributes.put(attribute,
           variableBuilder
@@ -224,43 +255,35 @@ public class Tabular implements AutoCloseable {
 
 
     /**
-     * Build tabular Connection
-     * (After init of variables
+     * Configuration vault connection and services
      */
-    Path osUserHome = Fs.getUserHome();
-    // Hack to have a consistent os user home in the documentation
-    String envValue = tabularEnvs.getOsEnvValue(KeyNormalizer.createSafe(TABLI_OS_USER_HOME));
-    if (envValue != null) {
-      osUserHome = Paths.get(envValue);
+    HashSet<Connection> confVaultConnections = confVault.getConnections();
+    for (Connection connection : confVaultConnections) {
+      this.addConnection(connection);
     }
-    connections = ConnectionBuiltIn.loadBuiltInConnections(this, userHomePath, osUserHome, tabliInstallationHomePath);
-    confVault.getConnections().forEach(this::addConnection);
+    DbLoggers.LOGGER_TABULAR_START.info(confVault.getConnections().size() + " connections were loaded from the configuration vault");
+    services = confVault.getServices();
+
+
+    /**
+     * Needed in test only when we want to test the {@link TabularConfig#addEnv(String, String)} setting of env}
+     * on howto connections
+     */
+    if (tabularConfig.loadHowtoConnections) {
+      loadHowtoConnections();
+    }
 
     /**
      * Check for env
      */
     TabularInit.checkForEnvNotProcessed(tabularEnvs, attributes, connections, this);
 
-    // Default Connection
-    if (projectHomePath != null) {
-      addConnection(
-        Connection.createConnectionFromProviderOrDefault(this, ConnectionBuiltIn.PROJECT_CONNECTION, projectHomePath.toUri().toString())
-          .setComment("The project home path")
-      );
-      // Default connection is project
-      this.setDefaultConnection(ConnectionBuiltIn.PROJECT_CONNECTION);
-    } else {
-      // Default connection is cd
-      this.setDefaultConnection(ConnectionBuiltIn.CD_LOCAL_FILE_SYSTEM);
-    }
-    // How to connection utility
-    this.howtoConnections = ConnectionHowTos.createHowtoConnections(this, userHomePath);
-
+    dataUriBuilder = DataUriBuilder.builder(this).build();
 
   }
 
 
-  public static TabularConfig tabularConfig() {
+  public static TabularConfig builder() {
     return new TabularConfig();
   }
 
@@ -278,14 +301,21 @@ public class Tabular implements AutoCloseable {
    */
   public static Tabular tabularWithCleanEnvironment() {
 
-    return cleanTabularConfig().build();
+    return Tabular
+      .builder()
+      .cleanEnv(true)
+      .build();
+
   }
 
-  public static TabularConfig cleanTabularConfig() {
-    return Tabular.tabularConfig()
-      .cleanEnv(true);
-  }
+  public static Tabular tabularWithoutConfigurationFile() {
 
+    return Tabular
+      .builder()
+      .loadConfigurationFile(false)
+      .build();
+
+  }
 
   public Tabular addConnection(Connection connection) {
 
@@ -300,15 +330,17 @@ public class Tabular implements AutoCloseable {
     this.defaultConnection = connection;
   }
 
-  public void setDefaultConnection(String connectionName) {
+  public void setDefaultConnection(KeyNormalizer connectionName) {
     Connection connection = getConnection(connectionName);
-    if (connection != null) {
-      this.defaultConnection = connection;
-    } else {
+
+    if (connection == null) {
       throw new RuntimeException(
         Strings.createMultiLineFromStrings("The connection (" + connectionName + ") was not found and could not be set as the default one.",
           "The actual connections are (" + getConnections().stream().map(Connection::toString).collect(Collectors.joining(", ")) + ")").toString());
     }
+
+    this.defaultConnection = connection;
+
   }
 
 
@@ -327,59 +359,73 @@ public class Tabular implements AutoCloseable {
       .filter(
         ds -> Arrays
           .stream(globPatterns)
-          .anyMatch(gp -> Glob.createOf(gp).matches(ds.toString()))
+          .anyMatch(gp -> Glob.createOf(gp).matches(ds.getName().toString()))
       )
       .collect(Collectors.toList());
   }
 
-  public DataPath getDataPath(String dataUri) {
-    return getDataPath(dataUri, null);
+  /**
+   * @param uriOrDataUri - an uri or a data uri
+   */
+  public DataPath getDataPath(String uriOrDataUri) {
+    return getDataPath(uriOrDataUri, null);
   }
 
+  /**
+   * @param uriOrDataUriString - an uri or a data uri
+   * @param mediaType          as string (because the connection is not yet made)
+   */
   public DataPath getDataPath(String uriOrDataUriString, MediaType mediaType) {
 
-    DataUri dataUriObj = this.createDataUri(uriOrDataUriString);
+    DataUriNode dataUriObj = this.createDataUri(uriOrDataUriString);
     return getDataPath(dataUriObj, mediaType);
 
   }
 
+
   /**
    * @param dataUri   - A data uri defining the first data path
-   * @param mediaType - The media type
+   * @param mediaType - The media type of the returned data path
    * @return the data path
    */
-  public DataPath getDataPath(DataUri dataUri, MediaType mediaType) {
+  public DataPath getDataPath(DataUriNode dataUri, MediaType mediaType) {
 
-    Connection connection = dataUri.getConnection();
+    Connection dataUriConnection = dataUri.getConnection();
 
     String path;
     try {
       path = dataUri.getPath();
     } catch (NoPathFoundException e) {
 
-      if (dataUri.isScriptSelector()) {
-        DataPath scriptPath = this.getDataPath(dataUri.getScriptUri().toString());
-        return connection.createScriptDataPath(scriptPath);
+      if (dataUri.isRuntimeSelector()) {
+        DataUriNode executableDataUri = dataUri.getDataUri();
+        DataPath executableDataPath = this.getDataPath(executableDataUri, null);
+        /**
+         * Recursion
+         */
+        while (executableDataPath.isRuntime()) {
+          executableDataPath = executableDataPath.execute();
+        }
+        return dataUriConnection.getRuntimeDataPath(executableDataPath, mediaType);
       }
 
-      return connection.getCurrentDataPath();
+      return dataUriConnection.getCurrentDataPath();
 
     }
 
 
-    return connection.getDataPath(path, mediaType);
+    return dataUriConnection.getDataPath(path, mediaType);
 
 
   }
 
   /**
-   * @param spec - an URI or a data URI
+   * @param dataUrString - a URL or a data URI String
    * @return the data uri object
    */
-  public DataUri createDataUri(String spec) {
+  public DataUriNode createDataUri(String dataUrString) {
 
-
-    return DataUri.createFromString(this, spec);
+    return dataUriBuilder.apply(dataUrString);
 
   }
 
@@ -387,7 +433,7 @@ public class Tabular implements AutoCloseable {
    * @param connectionName - the name of the connection
    * @return a connection or null
    */
-  public Connection getConnection(String connectionName) {
+  public Connection getConnection(KeyNormalizer connectionName) {
 
     Objects.requireNonNull(connectionName, "The connection name is null. Internal error, you may want to create a qualified URI before to create the connection");
 
@@ -395,11 +441,32 @@ public class Tabular implements AutoCloseable {
 
   }
 
+  /**
+   * @param uri - the uri
+   */
+  public Connection createRuntimeConnection(String uri) {
 
-  public Connection createRuntimeConnection(String connectionName, String uri) {
+
+    return createRuntimeConnection(uri, null);
+  }
+
+  /**
+   * @param uri            - the uri
+   * @param connectionName - the connection name (maybe null)
+   */
+  public Connection createRuntimeConnection(String uri, KeyNormalizer connectionName) {
+
+    if (connectionName == null) {
+      try {
+        connectionName = KeyNormalizer.create(uri);
+      } catch (CastException e) {
+        throw new IllegalArgumentException("The uri (" + uri + ") cannot be used to create the connection name. Error: " + e.getMessage(), e);
+      }
+    }
+
     Connection connection = Connection
       .createConnectionFromProviderOrDefault(this, connectionName, uri)
-      .setOrigin(ConnectionOrigin.RUNTIME);
+      .setOrigin(ObjectOrigin.RUNTIME);
     this.connections.put(connectionName, connection);
     return connection;
   }
@@ -424,23 +491,18 @@ public class Tabular implements AutoCloseable {
    */
   public FsDataPath getDataPath(Path path) {
 
-    DataUri dataUri = DataUri.createFromString(this, path.toUri().toString());
-    try {
-      return (FsDataPath) dataUri.getConnection().getDataPath(dataUri.getPath(), null);
-    } catch (NoPathFoundException e) {
-      throw new InternalException("The path should be available as we give it");
-    }
+    return (FsDataPath) getDataPath(path, null);
 
   }
 
 
-  public List<DataPath> select(DataUri dataSelector) {
+  public List<DataPath> select(DataUriNode dataSelector) {
     return select(dataSelector, null);
   }
 
   public List<DataPath> select(String dataUriSelector) {
 
-    return select(DataUri.createFromString(this, dataUriSelector), null);
+    return select(createDataUri(dataUriSelector), null);
   }
 
 
@@ -454,7 +516,7 @@ public class Tabular implements AutoCloseable {
    * @param dataSelector - a data selector
    * @return the data paths that the data uri pattern selects
    */
-  public List<DataPath> select(DataUri dataSelector, MediaType mediaType) {
+  public List<DataPath> select(DataUriNode dataSelector, MediaType mediaType) {
 
     /**
      * The return object
@@ -475,22 +537,22 @@ public class Tabular implements AutoCloseable {
      * Path part
      */
     // Script ? (Command or query)
-    if (dataSelector.isScriptSelector()) {
+    if (dataSelector.isRuntimeSelector()) {
 
       /**
        * The path part of the data uri defines a command or a query
        */
-      List<DataPath> commandDataPaths = select(dataSelector.getScriptUri(), null);
+      List<DataPath> commandDataPaths = select(dataSelector.getDataUri(), null);
       for (DataPath commandDataPath : commandDataPaths) {
-        dataPathsToReturn.add(connection.createScriptDataPath(commandDataPath));
+        dataPathsToReturn.add(connection.getRuntimeDataPath(commandDataPath, null));
       }
 
     } else {
 
       String pattern;
       try {
-        pattern = dataSelector.getPattern();
-      } catch (NoPatternFoundException e) {
+        pattern = dataSelector.getPath();
+      } catch (NoPathFoundException e) {
         throw new RuntimeException("A glob is mandatory when selecting and was not found on the selector (" + dataSelector + "). Example with the star: *@datastore");
       }
       dataPathsToReturn = connection.select(pattern, mediaType);
@@ -524,32 +586,23 @@ public class Tabular implements AutoCloseable {
    */
   public MemoryDataPath getAndCreateRandomMemoryDataPath() {
 
-    return (MemoryDataPath) getConnection(ConnectionBuiltIn.MEMORY_CONNECTION).getAndCreateRandomDataPath(null);
+    return (MemoryDataPath) getConnection(ConnectionBuiltIn.MEMORY_CONNECTION).getAndCreateRandomDataPath(null, null, null);
 
   }
 
   @SuppressWarnings("unused")
   public DataPath getAndCreateRandomDataPathWithType(MediaType mediaType) {
 
-    return getConnection(ConnectionBuiltIn.MEMORY_CONNECTION).getAndCreateRandomDataPath(mediaType);
+    return getConnection(ConnectionBuiltIn.MEMORY_CONNECTION).getAndCreateRandomDataPath(null, null, mediaType);
 
   }
 
-
-  /**
-   * Set the strict hood of the run
-   *
-   * @param strict - if the execution is strict or not
-   */
-  public void setStrict(Boolean strict) {
-    this.strict = strict;
-  }
 
   /**
    * Return if it's a strict run
    */
-  public boolean isStrict() {
-    return this.strict;
+  public boolean isStrictExecution() {
+    return (boolean) this.getAttribute(TabularAttributeEnum.STRICT_EXECUTION).getValueOrDefault();
   }
 
 
@@ -558,7 +611,7 @@ public class Tabular implements AutoCloseable {
    *
    * @return the memory datastore
    */
-  public MemoryConnection getMemoryDataStore() {
+  public MemoryConnection getMemoryConnection() {
     return (MemoryConnection) getConnection(ConnectionBuiltIn.MEMORY_CONNECTION);
   }
 
@@ -577,21 +630,30 @@ public class Tabular implements AutoCloseable {
    * A utility to get a local file resource data store
    *
    * @param clazz - the class to locate the resource for
-   * @param root  - the root directory (mandatory otherwise the root is not on the resources directory)
+   * @param root  - the root directory (mandatory otherwise the root is not on the resources' directory)
    * @return the connection
    */
   public FsConnection createRuntimeConnectionForResources(Class<?> clazz, String root) {
-    return createRuntimeConnectionForResourcesWithName(clazz, root, null);
+    return createRuntimeConnectionForResources(clazz, root, null);
   }
 
   /**
    * @param clazz - the class
-   * @param root  - the resource root
+   * @param root  - the resource root directory with a root path (should start with /)
    * @param name  - the name of the created connection (maybe null)
    * @return the connection created
+   * See {@link #getResourceDataPath(Class, String)}
    */
-  public FsConnection createRuntimeConnectionForResourcesWithName(Class<?> clazz, String root, String name) {
+  public FsConnection createRuntimeConnectionForResources(Class<?> clazz, String root, KeyNormalizer name) {
     try {
+      if (root.trim().equals("/")) {
+        // The root path / is not fixed and is module dependent
+        // ie Sql_71_SelectQueryViewTest.class.getResource("/") will yield the following results:
+        // from the jdbc module: file:/home/admin/code/tabulify/tabulify-jdbc/target/test-classes/
+        // from the sqlite module: file:/home/admin/code/tabulify/tabulify-sqlite/target/test-classes/
+        // We forbid it then so that there is a search
+        throw new InternalException("Root path / is forbidden");
+      }
       if (!(root.startsWith("/"))) {
         root = "/" + root;
       }
@@ -626,12 +688,12 @@ public class Tabular implements AutoCloseable {
       }
 
       if (name == null) {
-        name = Connection.getConnectionNameFromUri(uri);
+        name = KeyNormalizer.createSafe("resource_" + root);
       }
       Connection connection = this.getConnection(name);
       if (connection == null) {
         String url = uri.toString();
-        connection = createRuntimeConnection(name, url);
+        connection = createRuntimeConnection(url, name);
       }
       return (FsConnection) connection;
     } catch (URISyntaxException e) {
@@ -651,7 +713,7 @@ public class Tabular implements AutoCloseable {
    * @param msg - terminate if the run is strict or print a warning message
    */
   public void warningOrTerminateIfStrict(String msg) {
-    if (this.isStrict()) {
+    if (this.isStrictExecution()) {
       DbLoggers.LOGGER_DB_ENGINE.warning("The run is strict, we terminate");
       throw new IllegalStateException(msg);
     }
@@ -664,7 +726,7 @@ public class Tabular implements AutoCloseable {
    * @param e Exception - terminate if the run is strict or print a warning message
    */
   public void warningOrTerminateIfStrict(Exception e) {
-    if (this.isStrict()) {
+    if (this.isStrictExecution()) {
       DbLoggers.LOGGER_DB_ENGINE.warning("The run is strict, we terminate");
       throw new IllegalStateException(e);
     }
@@ -683,8 +745,8 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public Connection getTempConnection() {
-    return getConnection(ConnectionBuiltIn.TEMP_LOCAL_FILE_SYSTEM);
+  public FsConnection getTmpConnection() {
+    return (FsConnection) getConnection(ConnectionBuiltIn.TEMP_LOCAL_FILE_SYSTEM);
   }
 
 
@@ -697,11 +759,11 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public Set<DataPath> select(Set<DataUri> dataSelectors, boolean isStrict, MediaType mediaType) {
+  public List<DataPath> select(List<DataUriNode> dataSelectors, boolean isStrictSelection, MediaType mediaType) {
 
-    Set<DataPath> dataPathSet = new HashSet<>();
+    List<DataPath> dataPathSet = new ArrayList<>();
 
-    for (DataUri dataUriSelector : dataSelectors) {
+    for (DataUriNode dataUriSelector : dataSelectors) {
 
       List<DataPath> dataPathsByPattern = this.select(dataUriSelector, mediaType);
 
@@ -718,8 +780,8 @@ public class Tabular implements AutoCloseable {
          */
         String msg = "The data uri selector (" + dataUriSelector + ") does not select data resources";
         DbLoggers.LOGGER_DB_ENGINE.fine(msg);
-        if (isStrict) {
-          throw new RuntimeException(msg);
+        if (isStrictSelection) {
+          throw new StrictException(msg);
         }
 
       } else {
@@ -729,21 +791,20 @@ public class Tabular implements AutoCloseable {
          * Adding the glob backreference to the data path attributes
          * ie 1, 2, 3
          */
-        boolean containsWildCard = false;
-        String pattern = null;
-        try {
-          pattern = dataUriSelector.getPattern();
-          containsWildCard = Glob.createOf(pattern).containsGlobWildCard();
-        } catch (NoPatternFoundException e) {
-          // no pattern
-        }
-
+        boolean containsWildCard = dataUriSelector.isGlobPattern();
         if (containsWildCard) {
 
-          if (dataUriSelector.isScriptSelector()) {
+          String pattern;
+          if (!dataUriSelector.isRuntimeSelector()) {
             try {
-              pattern = dataUriSelector.getScriptUri().getPattern();
-            } catch (NoPatternFoundException e) {
+              pattern = dataUriSelector.getPath();
+            } catch (NoPathFoundException e) {
+              throw new InternalException("Not path found in (" + dataUriSelector + "). Should not happen as we test for a runtime", e);
+            }
+          } else {
+            try {
+              pattern = dataUriSelector.getDataUri().getPath();
+            } catch (NoPathFoundException e) {
               throw new IllegalArgumentException("A pattern or path is mandatory with a script data uri");
             }
             /**
@@ -767,11 +828,19 @@ public class Tabular implements AutoCloseable {
               .standardize()
               .toGlobExpression();
             /**
-             * The match is against the relative connection path
+             * The match is against the compact name
              */
-            List<String> groups = glob.getGroups(dataPath.getRelativePath());
-            for (int i = 1; i < groups.size(); i++) {
-              String key = String.valueOf(i);
+            String compactName;
+            if (dataPath.isRuntime()) {
+              compactName = dataPath.getExecutableDataPath().getCompactPath();
+            } else {
+              compactName = dataPath.getCompactPath();
+            }
+            List<String> groups = glob.getGroups(compactName);
+            // We start from 0 for backwards compatibility, ($0) being the whole name
+            int start = 0;
+            for (int i = start; i < groups.size(); i++) {
+              KeyNormalizer key = KeyNormalizer.createSafe(String.valueOf(i));
               String value = groups.get(i);
               dataPath.addAttribute(key, value);
             }
@@ -791,23 +860,32 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public FsConnection createRuntimeConnectionFromLocalPath(String connectionName, Path localPath) {
+  public FsConnection createRuntimeConnectionFromLocalPath(KeyNormalizer connectionName, Path localPath) {
     String uri = localPath.toAbsolutePath()
       .normalize()
       .toUri()
       .toString();
-    return (FsConnection) this.createRuntimeConnection(connectionName, uri);
+    return (FsConnection) this.createRuntimeConnection(uri, connectionName);
+  }
+
+  public FsConnection createRuntimeConnectionFromLocalPath(String connectionName, Path localPath) {
+
+    try {
+      return createRuntimeConnectionFromLocalPath(KeyNormalizer.create(connectionName), localPath);
+    } catch (CastException e) {
+      throw new IllegalArgumentException("The connection name (" + connectionName + ") is not conform. Error: " + e.getMessage(), e);
+    }
   }
 
 
   @SuppressWarnings("unused")
   public FsDataPath getTempDirectory(String prefix) {
-    return (FsDataPath) this.getTempConnection().getDataPath("tabli" + prefix + UUID.randomUUID());
+    return (FsDataPath) this.getTmpConnection().getDataPath("tabli" + prefix + UUID.randomUUID());
   }
 
 
   public boolean isProjectRun() {
-    return this.projectHomePath != null;
+    return this.appHomePath != null;
   }
 
 
@@ -820,50 +898,31 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public DataPath getTempFile(String prefix, String suffix) {
-    return this.getTempConnection().getDataPath(prefix + UUID.randomUUID() + suffix);
+  public FsDataPath getTempFile(String prefix, String suffix) {
+    return (FsDataPath) this.getTmpConnection().getDataPath(prefix + UUID.randomUUID() + suffix);
   }
 
-  public DataUri getDefaultUri() {
-    return DataUri.createFromConnectionAndPath(this.getDefaultConnection(), "");
+  public DataUriNode getDefaultUri() {
+    return DataUriNode
+      .builder()
+      .setConnection(this.getDefaultConnection())
+      .setPath("")
+      .build();
   }
 
-  /**
-   * Used to indicate the running script
-   * to be able to use the {@link Connection}
-   *
-   * @param path - the path of the actual running or parsed pipeline script
-   * @return the object for chaining
-   */
-  public Tabular setParsedPipelineScript(Path path) {
-    this.runningPipelineScript = path;
-    return this;
-  }
-
-  public Path getRunningPipelineScript() {
-    return this.runningPipelineScript;
-  }
-
-  public Connection getSdConnection() {
-    Path path = this.getRunningPipelineScript();
-    if (path == null) {
-      throw new RuntimeException("Internal Error: The running pipeline is unknown but a data uri string uses a `sd` connection");
-    }
-    return this.createRuntimeConnectionFromLocalPath(Connection.getConnectionNameFromUri(path.getParent().toUri()), path.getParent());
-  }
 
   public Vault getVault() {
     return this.vault;
   }
 
   @SuppressWarnings("unused")
-  public void removeConnection(String connectionName) {
+  public void removeConnection(KeyNormalizer connectionName) {
     Connection conn = this.connections.remove(connectionName);
     conn.close();
   }
 
   public String getName() {
-    return TABLI_NAME;
+    return TABUL_NAME;
   }
 
 
@@ -873,11 +932,11 @@ public class Tabular implements AutoCloseable {
 
 
   public MemoryDataPath createMemoryDataPath(String path) {
-    return this.getMemoryDataStore().getDataPath(path);
+    return this.getMemoryConnection().getDataPath(path);
   }
 
   @SuppressWarnings("UnusedReturnValue")
-  public Tabular addConnection(String name, Connection connection) {
+  public Tabular addConnection(KeyNormalizer name, Connection connection) {
     this.connections.put(name, connection);
     return this;
   }
@@ -888,8 +947,17 @@ public class Tabular implements AutoCloseable {
    * (used in test mostly)
    */
   public Tabular loadHowtoConnections() {
-    this.connections.putAll(this.howtoConnections.getAll());
+
+    this.connections.putAll(
+      Howtos
+        .getConnections(this)
+        .stream()
+        .collect(Collectors.toMap(
+          Connection::getName,
+          connection -> connection
+        )));
     return this;
+
   }
 
 
@@ -911,16 +979,9 @@ public class Tabular implements AutoCloseable {
 
 
   public Path getConfPath() {
-    return (Path) this.getAttribute(TabularAttributeEnum.CONF).getValueOrDefaultOrNull();
+    return (Path) this.getAttribute(TabularAttributeEnum.CONF).getValueOrDefault();
   }
 
-  public Attribute createAttribute(AttributeEnum attribute, Object value) {
-    return this.getVault().createAttribute(attribute, value, Origin.DEFAULT);
-  }
-
-  public Attribute createAttribute(String key, Object value) throws Exception {
-    return this.getVault().createAttribute(key, value, Origin.DEFAULT);
-  }
 
   public TabularEnvs getTabularEnvs() {
     return this.tabularEnvs;
@@ -950,36 +1011,100 @@ public class Tabular implements AutoCloseable {
   }
 
   public Path getTabliUserHome() {
-    return (Path) this.getAttribute(TabularAttributeEnum.USER_HOME).getValueOrDefaultOrNull();
+    return (Path) this.getAttribute(TabularAttributeEnum.USER_HOME).getValueOrDefault();
   }
 
-  public Connection getHowtoConnection(String connectionName) {
-    return this.howtoConnections.get(connectionName);
+
+  public Tabular loadHowtoServices() {
+
+    this.services.putAll(
+      Howtos.getServices(this)
+        .stream()
+        .collect(Collectors.toMap(
+          Service::getName,
+          service -> service
+        )));
+    return this;
   }
 
-  public Collection<? extends Connection> getHowtoConnections() {
-    return this.howtoConnections.getAll().values();
+  public Set<Service> getServices() {
+    return new HashSet<>(this.services.values());
+  }
+
+  public Service getService(KeyNormalizer name) {
+    return services.get(name);
+  }
+
+
+  public String getApplicationName() {
+    return TABUL_NAME;
+  }
+
+  public FsConnection getDataHomeDirectory() {
+    return (FsConnection) getConnection(ConnectionBuiltIn.DATA_HOME_LOCAL_FILE_SYSTEM);
+  }
+
+  public DataUriNode createDataUri(DataUriStringNode dataUriStringNode) {
+    return dataUriBuilder.apply(dataUriStringNode);
+  }
+
+  /**
+   * A utility class to get a data path from the resources directory
+   *
+   * @param clazz        - the clazz
+   * @param relativePath - the relative path from the resources directory
+   * @return the data path
+   */
+  public DataPath getResourceDataPath(Class<?> clazz, String relativePath) {
+    KeyNormalizer connectionName = KeyNormalizer.createSafe("resources");
+    Path path = Paths.get(relativePath);
+    return createRuntimeConnectionForResources(clazz, path.getParent().toString(), connectionName).getDataPath(path.getFileName().toString());
+  }
+
+  public Level getLogLevel() {
+    return Logs.getLevel();
+  }
+
+
+  public FsDataPath getDataPath(Path path, MediaType mediaType) {
+    DataUriNode dataUri = dataUriBuilder.apply(path.toUri());
+    try {
+      return (FsDataPath) dataUri.getConnection().getDataPath(dataUri.getPath(), mediaType);
+    } catch (NoPathFoundException e) {
+      throw new InternalException("The path should be available as we give it");
+    }
+  }
+
+  public List<DataPath> select(DataUriStringNode dataUriSelector) {
+    return select(createDataUri(dataUriSelector));
   }
 
 
   public static class TabularConfig {
     private Path homePath;
     private String passphrase;
-    private Path projectHome;
+    private Path appHome;
     private Path confPath;
     private TabularExecEnv execEnv;
     private final Map<String, String> envs = new HashMap<>();
     private TabularLogLevel logLevel;
     // Do we need to clean the env (ie delete the user home directory)
     private boolean cleanEnv = false;
+    private Boolean isStrict;
+    private boolean loadHowtoConnections = false;
+    /**
+     * Used mostly in test
+     * Do we load a conf file?
+     */
+    private boolean loadConfigurationFile = true;
 
     public TabularConfig setPassphrase(String passphrase) {
       this.passphrase = passphrase;
       return this;
     }
 
-    public TabularConfig setProjectHome(Path projectHome) {
-      this.projectHome = projectHome;
+    public TabularConfig setAppHome(Path appHome) {
+      this.appHome = appHome;
       return this;
     }
 
@@ -1023,5 +1148,27 @@ public class Tabular implements AutoCloseable {
       this.cleanEnv = clean;
       return this;
     }
+
+    public TabularConfig setStrictExecution(Boolean isStrict) {
+      this.isStrict = isStrict;
+      return this;
+    }
+
+    /**
+     * Load the howto connections
+     * This is needed if connection env are set {@link #addEnv(String, String)}
+     * Otherwise the connection is unknown
+     */
+    public TabularConfig loadHowtoConnections() {
+      this.loadHowtoConnections = true;
+      return this;
+    }
+
+    public TabularConfig loadConfigurationFile(boolean loadConfigurationFile) {
+      this.loadConfigurationFile = loadConfigurationFile;
+      return this;
+    }
+
+
   }
 }

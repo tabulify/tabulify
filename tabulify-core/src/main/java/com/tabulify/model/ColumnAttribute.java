@@ -7,6 +7,7 @@ public enum ColumnAttribute implements AttributeEnum {
   POSITION("The position of the column", Integer.class),
   NAME("The name of the column", String.class),
   TYPE( "The type of the column", String.class),
+  ANSI_TYPE("The ansi type of the column", String.class),
   NULLABLE("If the value may be nullable", Boolean.class),
   COMMENT("The description of the column", String.class),
   PRECISION("The number precision if th type is a number", Integer.class),

@@ -1,50 +1,21 @@
 package com.tabulify.xml;
 
 import com.tabulify.conf.Attribute;
-import com.tabulify.conf.AttributeEnum;
 import com.tabulify.fs.FsConnection;
 import com.tabulify.fs.textfile.FsTextDataPath;
 import com.tabulify.model.RelationDef;
 import com.tabulify.model.RelationDefDefault;
-import net.bytle.type.*;
+import com.tabulify.model.SqlDataTypeAnsi;
+import net.bytle.type.Casts;
+import net.bytle.type.KeyNormalizer;
+import net.bytle.type.MediaType;
+import net.bytle.type.MediaTypes;
 
 import java.nio.file.Path;
-import java.sql.Types;
+
+import static com.tabulify.conf.Origin.DEFAULT;
 
 public class XmlDataPath extends FsTextDataPath {
-
-
-  public static final MediaType MEDIA_TYPE_EXTENSION = MediaTypes.TEXT_XML;
-
-  enum XML_ATTRIBUTE implements AttributeEnum {
-
-    COLUMN_NAME("The name of the column when the JSON is returned in one column"),
-    ;
-
-    private final String description;
-
-    XML_ATTRIBUTE(String description) {
-
-      this.description = description;
-    }
-
-    @Override
-    public String getDescription() {
-      return this.description;
-    }
-
-    @Override
-    public Class<?> getValueClazz() {
-      return String.class;
-    }
-
-    @Override
-    public Object getDefaultValue() {
-      return null;
-    }
-
-
-  }
 
 
   public static final String XML_DEFAULT_HEADER_NAME = "xml";
@@ -56,6 +27,7 @@ public class XmlDataPath extends FsTextDataPath {
     this.setEndOfRecords(FsTextDataPath.EOF);
 
   }
+
 
   @Override
   public RelationDef getOrCreateRelationDef() {
@@ -70,7 +42,7 @@ public class XmlDataPath extends FsTextDataPath {
 
   private void buildColumnNamesIfNeeded() {
 
-    this.relationDef.addColumn(getColumnName(), Types.SQLXML);
+    this.relationDef.addColumn(getColumnName(), SqlDataTypeAnsi.XML);
 
   }
 
@@ -84,12 +56,12 @@ public class XmlDataPath extends FsTextDataPath {
 
 
   @Override
-  public XmlDataPath addAttribute(String key, Object value) {
+  public XmlDataPath addAttribute(KeyNormalizer key, Object value) {
 
 
-    XML_ATTRIBUTE attribute;
+    XmlDataPathAttribute attribute;
     try {
-      attribute = Casts.cast(key, XML_ATTRIBUTE.class);
+      attribute = Casts.cast(key, XmlDataPathAttribute.class);
     } catch (Exception e) {
       super.addAttribute(key, value);
       return this;
@@ -97,13 +69,14 @@ public class XmlDataPath extends FsTextDataPath {
 
     Attribute variable;
     try {
-      variable = this.getConnection().getTabular().createAttribute(attribute, value);
+      variable = this.getConnection().getTabular().getVault().createAttribute(attribute, value, DEFAULT);
     } catch (Exception e) {
       throw new RuntimeException("Error while creating the variable (" + attribute + ") with the value (" + value + ") for the resource (" + this + ").", e);
     }
     super.addAttribute(variable);
     return this;
   }
+
 }
 
 

@@ -1,0 +1,17 @@
+kind: generator
+spec:
+  MaxRecordCount: 10
+  Columns:
+    - name: region
+      Type: varchar
+      data-supplier:
+        type: entity
+        arguments:
+          name: region
+    - name: code
+      Type: varchar
+      data-supplier:
+        type: data-set-meta # the type
+        arguments:
+          column-variable: region # refer to the first column that contains a entity generator
+          column: code # the column in the region entity data set to return

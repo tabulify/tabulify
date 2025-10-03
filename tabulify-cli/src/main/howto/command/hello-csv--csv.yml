@@ -1,0 +1,13 @@
+kind: csv
+spec:
+  # the command manifest
+  data-uri: hello-csv--command.yml@md
+  data-def:
+    # the character separator
+    delimiter-character: ;
+    # the columns to define the data type
+    columns:
+      - name: Id
+        type: integer
+      - name: Greeting
+        type: varchar

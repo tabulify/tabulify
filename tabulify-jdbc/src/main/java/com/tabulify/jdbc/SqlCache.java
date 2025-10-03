@@ -8,8 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static com.tabulify.jdbc.SqlMediaType.SCRIPT;
-
 /**
  * A cache for perf
  * <p></p>
@@ -37,7 +35,7 @@ public class SqlCache {
   }
 
   /**
-   * Relative Path is the identifier
+   * Relative Path is the string identifier
    */
   private Map<String, SqlDataPath> sqlDataPathCache = new HashMap<>();
 
@@ -56,7 +54,7 @@ public class SqlCache {
     /**
      * Check
      */
-    if (sqlMediaType == SCRIPT) {
+    if (sqlMediaType.isRuntime()) {
       throw new InternalException("This should not be a script as this is the signature for an non-script data resource");
     }
 
@@ -89,7 +87,7 @@ public class SqlCache {
       }
     }
     if (nameToDelete == null) {
-      if (sqlDataPath.getMediaType() == SCRIPT) {
+      if (sqlDataPath.isRuntime()) {
         // not cached
         return this;
       }
@@ -114,7 +112,7 @@ public class SqlCache {
   }
 
   public Boolean inCache(SqlDataPath sqlDataPath) {
-    return sqlDataPathCache.containsKey(sqlDataPath.getRelativePath());
+    return sqlDataPathCache.containsKey(sqlDataPath.getCompactPath());
   }
 
   public void dropIfExist(SqlDataPath dataPath) {
