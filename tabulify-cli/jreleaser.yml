@@ -4,7 +4,8 @@
 environment:
   properties:
     jdkPathPrefix: '/tmp/jdks/temurin'
-    jdkDirectoryName: 'jdk-11.0.26+4'
+    jdkVersion: '16.0.2'
+    jdkDirectoryName: 'jdk-16.0.2+7'
     depsPrefix: 'target/deps'
 
 # https://jreleaser.org/guide/latest/reference/project.html
@@ -19,6 +20,7 @@ project:
   copyright: '{{project.inceptionYear}} Tabulify.com'
   license: FSL without Future License
   inceptionYear: '2020'
+  vendor: Tabulify
   tags:
     - cli
     - sql
@@ -36,7 +38,7 @@ project:
       groupId: com.tabulify
       artifactId: tabulify-cli
       mainClass: com.tabulify.tabul.Tabul
-      version: '11.0.26'
+      version: '16.0.2'
       multiProject: true
   stereotype: CLI
 
@@ -145,6 +147,23 @@ assemble:
         - pattern: '{{depsPrefix}}/*.jar'
       swid:
         tagRef: swid-tag
+  # https://jreleaser.org/guide/latest/reference/assemble/jpackage.html#_jlink_jpackage
+  jpackage:
+    tabulify-jpackage:
+      # jpackage tool create only native installers for the platform it's running on
+      # https://github.com/jreleaser/jreleaser/blob/main/.github/workflows/step-jpackage.yml
+      active: NEVER
+      jlink: tabulify
+      linux:
+        types: [ rpm ]
+      osx:
+        types: [ dmg ]
+      windows:
+        types: [ exe ]
+      applicationPackage:
+        # additional restrictions on app-version???
+        appVersion: 2.0.0
+
 
 # Distributions define artifacts that may be published using supported packages and announced with supported announcers.
 distributions:
