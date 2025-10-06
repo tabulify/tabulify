@@ -75,7 +75,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
 
 
   /**
-   * Connection Variable. Variable managed by Tabli
+   * Connection Variable. Variable managed by Tabul
    * Should be a known attribute
    */
   Map<ConnectionAttributeEnum, Attribute> attributes = new HashMap<>();
@@ -305,7 +305,7 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
         throw new IllegalArgumentException("The " + ALIAS_SCHEME + " scheme is supported only with file system data uri. The connection " + connectionName + " is not a file system connection but a " + connection.getClass().getSimpleName() + " connection");
       }
       String resolve = connection.getCurrentDataPath().resolve(dataUriString.getPath()).getAbsolutePath();
-      attributeUri.setPlainValue("file://" + "/" + resolve.replace("\\", "/"));
+      attributeUri.setPlainValue("file://" + resolve.replace("\\", "/"));
     }
 
     List<ConnectionProvider> installedProviders = ConnectionProvider.installedProviders();

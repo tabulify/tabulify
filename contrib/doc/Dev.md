@@ -21,5 +21,7 @@ Sdks:
 * Idea
   * Jdk: Project Structure > Project Settings > Sdk > Path of sdkman
   * Maven: Path of sdkman
+  * Run Target (WSL)
+
 
 

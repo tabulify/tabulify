@@ -17,20 +17,16 @@
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
-  <!-- Scm is mandatory for the release plugin  -->
-  <!-- https://maven.apache.org/maven-release/maven-release-plugin/usage.html -->
-  <!-- https://maven.apache.org/scm/git.html -->
-  <scm>
-    <developerConnection>scm:git://github.com:tabulify/tabulify.git</developerConnection>
-  </scm>
-
   <properties>
 
+    <!-- Jdk These values are used in the `.envrc` to set up and install the jdk -->
     <!-- Disco Api values used to download the jdk https://github.com/foojayio/discoapi   -->
-    <maven.compiler.source>11.0.26</maven.compiler.source>
-    <maven.compiler.target>11.0.26</maven.compiler.target>
-    <!-- 11.0.26 release version not supported   -->
-    <maven.compiler.release>11</maven.compiler.release>
+    <!-- https://api.foojay.io/swagger-ui#/default/getMajorVersionV3 -->
+    <!-- Why 16? Records and JPackage to create msi -->
+    <maven.compiler.source>16.0.2</maven.compiler.source>
+    <maven.compiler.target>16.0.2</maven.compiler.target>
+    <!-- Full version number not supported   -->
+    <maven.compiler.release>16</maven.compiler.release>
     <!-- Disco Api values used to download the jdk https://github.com/foojayio/discoapi   -->
     <jdk.distribution>temurin</jdk.distribution>
 
