@@ -1,3 +1,6 @@
-[submodule "tabulify-cli/src/main/tabulify.com"]
-	path = tabulify-cli/src/main/tabulify.com
-	url = git@github.com:EraldyHq/tabulify-website.git
+[submodule "tabulify-docs"]
+	path = docs-tabul
+	url = git@github.com:tabulify/tabulify-docs.git
+[submodule "tabulify-ee"]
+	path = ee-tabul
+	url = git@github.com:tabulify/tabulify-ee.git

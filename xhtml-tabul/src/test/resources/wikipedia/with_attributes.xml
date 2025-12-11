@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<DECLARE xmlns="http://www.oracle.com/obis/repository/admin" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="THDWHDEV" databaseRef="/oracle/bi/server/base/Database/4d5351d0-0c90-1000-8ca6-0a5088c60000.xml#m4d5351d0-0c90-1000-8ca6-0a5088c60000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="10" maxConnDiff="10" mdsid="m4d5351d1-0c90-1000-8ca6-0a5088c60000" name="Writeback_Column_Names" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC711561D885131C8A772FD26B589A80932CE1ACD7CE7083855F5C24854F336828A0185770EC4016B91D46F7E21D7AF8E7 B90A6A3C0FA59920CD5FBEBC3185C54CBD8C497EDEA379C7858F132EF58A2888" reqQualifedTableName="false" tempTablePrefix="TT" timeout="300" transactionBoundary="1000" type="OCI10G" user="qs_dwh" xmlaUseSession="false">
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="131072" dataSource="PVH_QAS_TT_DATA_STORE" databaseRef="/oracle/bi/server/base/Database/00000001-cf90-14e5-835d-c0a8471b0000.xml#m00000001-cf90-14e5-835d-c0a8471b0000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="50" maxConnDiff="10" mdsid="m00000002-cf90-14e5-835d-c0a8471b0000" name="PVH_TT_DWH" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0ACE6BEE66F366F2F903384E251A24D57B1C709A2BF4BB72875D21F917D3A96449B79A88EEC19E8304BFEA1420AA6670EE71FAD5B99F1F153226C074AEC4C3EFF42 47F2A950F844F523747E5B320AF4393182B95A1D18FE0CBDE9F03506F2C4F467" reqQualifedTableName="true" tempTablePrefix="TT" timeout="300" transactionBoundary="1000" type="ODBC200" user="PVH_TT_DWH_bad" xmlaUseSession="false">
+<AfterQueryString isEnabled="true">
+<Value>commit;</Value>
+</AfterQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>call ttoptsetflag('rowlock',0)</Value>
+</BeforeQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>call ttoptsetflag('tbllock',1)</Value>
+</BeforeQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>call ttoptsetflag('mergejoin',0)</Value>
+</BeforeQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>call ttoptsetflag('nestedloop',1)</Value>
+</BeforeQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>call ttoptsetflag('fastprepare',1)</Value>
+</BeforeQueryString>
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="THDWHDEV" databaseRef="/oracle/bi/server/base/Database/00028931-0bcf-0000-714b-e31d00000000.xml#m00028931-0bcf-0000-714b-e31d00000000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="10" maxConnDiff="10" mdsid="m40000000-a920-14ec-94c3-0a5089260000" name="WriteBack_QS_ODS" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC3CE7C967C1455E5E767EEB9B50D74B6DAF1BEDC4EB206FADE19B1AA351BFE9AD4F27DADEAB2C3FE27B6D253EB1879E4F5B00333CE96DF2656785F6C50A45B5E8 F8E33CE253065E3050929EFA7E54D418F579C237B9362D2B6F8933EE80F14EB6" reqQualifedTableName="true" tempTablePrefix="TT" timeout="300" transactionBoundary="1000" type="OCI10G" user="qs_ods" xmlaUseSession="false">
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="THDWHDEV" databaseRef="/oracle/bi/server/base/Database/c0000000-85f8-14fa-9165-0a5089260000.xml#mc0000000-85f8-14fa-9165-0a5089260000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="10" maxConnDiff="10" mdsid="mc0000001-85f8-14fa-9165-0a5089260000" name="HANDSONINSIGHT" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC94178138E402166035423C61F6AAA96497B3C67A9E1A58D86164C7EAD44E39B2A758DDD1757D566F4CC0C12F2D2BE0A9 0D9B2B5FE35B4976DE3090B46BC39C7601F8D3933BA1181312447755B5AA77F0" reqQualifedTableName="false" tempTablePrefix="TT" timeout="300" transactionBoundary="1000" type="OCI10G" user="HANDSONINSIGHT" xmlaUseSession="false">
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="THDWHDEV" databaseRef="/oracle/bi/server/base/Database/802b29a9-0bcf-0000-714b-e31d00000000.xml#m802b29a9-0bcf-0000-714b-e31d00000000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="10" maxConnDiff="10" mdsid="m802b29aa-0bd5-0000-714b-e31d00000000" name="CP_LCM" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0ACE9895BFC9B7E84355902D135A3ED1C854564C777B3B03850C8B7D5A5C20B433FF99946E6D3786CA46F4B9DC5D94E4F5CB6D4FA87325CEEA4C39128775E6FE43B 51D295A0FAA25769A3B0DE42A6A9073D57C1798577D68F2C33C753C010F6A1C5" reqQualifedTableName="false" timeout="4294967295" transactionBoundary="0" type="OCI10G" user="DEV_BIPLATFORM" xmlaUseSession="false">
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="THDWHDEV" databaseRef="/oracle/bi/server/base/Database/00028931-0bcf-0000-714b-e31d00000000.xml#m00028931-0bcf-0000-714b-e31d00000000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="30" maxConnDiff="10" mdsid="m59c23a40-0c53-1000-9ab3-0a50888f0000" name="BI_FILTERING" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0ACBC61397EFCC99A2C633CBFCAB14D6E415E1B466220425965CDC8C060BE4EC02950388897A9925657A05C2201E84C10C263C7A1C707EBBC3C78F480FB3961BA31 9540A35CD673927DC6884CB69554B8555F7F5770F5FFDDAA2940165BF8034631" reqQualifedTableName="true" tempTablePrefix="TT" timeout="300" transactionBoundary="10" type="OCI10G" user="TST_PVH_BI_AUTH" xmlaUseSession="false">
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION SET STAR_TRANSFORMATION_ENABLED=TRUE</Value>
+</PostConnectString>
+<PostConnectString isEnabled="false">
+<Value>ALTER SESSION SET NLS_DATE_FORMAT = 'MM/DD/yyyy'</Value>
+</PostConnectString>
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD'</Value>
+</PostConnectString>
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION DISABLE PARALLEL QUERY</Value>
+</PostConnectString>
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="THDWHDEV" databaseRef="/oracle/bi/server/base/Database/00028931-0bcf-0000-714b-e31d00000000.xml#m00028931-0bcf-0000-714b-e31d00000000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="30" maxConnDiff="10" mdsid="m40000000-123a-1542-8567-0a5089260000" name="TH_OWB_USER" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC711561D885131C8A772FD26B589A80932CE1ACD7CE7083855F5C24854F336828A0185770EC4016B91D46F7E21D7AF8E7 B90A6A3C0FA59920CD5FBEBC3185C54CBD8C497EDEA379C7858F132EF58A2888" reqQualifedTableName="true" tempTablePrefix="TT" timeout="300" transactionBoundary="10" type="OCI10G" user="th_owb_owner" xmlaUseSession="false">
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION SET STAR_TRANSFORMATION_ENABLED=TRUE</Value>
+</PostConnectString>
+<PostConnectString isEnabled="false">
+<Value>ALTER SESSION SET NLS_DATE_FORMAT = 'MM/DD/yyyy'</Value>
+</PostConnectString>
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD'</Value>
+</PostConnectString>
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION DISABLE PARALLEL QUERY</Value>
+</PostConnectString>
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION SET "_optimizer_cartesian_enabled" = FALSE</Value>
+</PostConnectString>
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="THDWHDEV" databaseRef="/oracle/bi/server/base/Database/00028931-0bcf-0000-714b-e31d00000000.xml#m00028931-0bcf-0000-714b-e31d00000000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="15" maxConnDiff="10" mdsid="m0002893b-0bd5-0000-714b-e31d00000000" name="PRODS" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC711561D885131C8A772FD26B589A80932CE1ACD7CE7083855F5C24854F336828A0185770EC4016B91D46F7E21D7AF8E7 B90A6A3C0FA59920CD5FBEBC3185C54CBD8C497EDEA379C7858F132EF58A2888" reqQualifedTableName="true" tempTablePrefix="TT" timeout="300" transactionBoundary="10" type="OCI10G" user="qs_dwh" xmlaUseSession="false">
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION SET STAR_TRANSFORMATION_ENABLED=TRUE</Value>
+</PostConnectString>
+<PostConnectString isEnabled="false">
+<Value>ALTER SESSION SET NLS_DATE_FORMAT = 'MM/DD/yyyy'</Value>
+</PostConnectString>
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD'</Value>
+</PostConnectString>
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION DISABLE PARALLEL QUERY</Value>
+</PostConnectString>
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION SET "_optimizer_cartesian_enabled" = FALSE</Value>
+</PostConnectString>
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION SET "_complex_view_merging"= FALSE</Value>
+</PostConnectString>
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION SET "_simple_view_merging"= FALSE</Value>
+</PostConnectString>
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="THDWHDEV" databaseRef="/oracle/bi/server/base/Database/00028931-0bcf-0000-714b-e31d00000000.xml#m00028931-0bcf-0000-714b-e31d00000000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="30" maxConnDiff="10" mdsid="mdb802a50-0c40-1000-8b9f-0a50888f0000" name="PRODS_CP" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC711561D885131C8A772FD26B589A80932CE1ACD7CE7083855F5C24854F336828A0185770EC4016B91D46F7E21D7AF8E7 B90A6A3C0FA59920CD5FBEBC3185C54CBD8C497EDEA379C7858F132EF58A2888" reqQualifedTableName="true" tempTablePrefix="TT" timeout="300" transactionBoundary="10" type="OCI10G" user="qs_dwh" xmlaUseSession="false">
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION SET STAR_TRANSFORMATION_ENABLED=TRUE</Value>
+</PostConnectString>
+<PostConnectString isEnabled="false">
+<Value>ALTER SESSION SET NLS_DATE_FORMAT = 'MM/DD/yyyy'</Value>
+</PostConnectString>
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD'</Value>
+</PostConnectString>
+<PostConnectString isEnabled="true">
+<Value>ALTER SESSION DISABLE PARALLEL QUERY</Value>
+</PostConnectString>
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="THDWHDEV" databaseRef="/oracle/bi/server/base/Database/00028931-0bcf-0000-714b-e31d00000000.xml#m00028931-0bcf-0000-714b-e31d00000000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="30" maxConnDiff="10" mdsid="m0002893c-0bd5-0000-714b-e31d00000000" name="EXT_INPUT" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC3CE7C967C1455E5E767EEB9B50D74B6DAF1BEDC4EB206FADE19B1AA351BFE9AD4F27DADEAB2C3FE27B6D253EB1879E4F5B00333CE96DF2656785F6C50A45B5E8 F8E33CE253065E3050929EFA7E54D418F579C237B9362D2B6F8933EE80F14EB6" reqQualifedTableName="true" tempTablePrefix="TT" timeout="300" transactionBoundary="10" type="OCI10G" user="EXT_INPUT" xmlaUseSession="false">
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="THDWHDEV" databaseRef="/oracle/bi/server/base/Database/c0000000-9725-1581-aa28-0a50884d0000.xml#mc0000000-9725-1581-aa28-0a50884d0000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="10" maxConnDiff="10" mdsid="mc0000001-9725-1581-aa28-0a50884d0000" name="PVH_BI_AUTH" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC3CE7C967C1455E5E767EEB9B50D74B6DAF1BEDC4EB206FADE19B1AA351BFE9AD4F27DADEAB2C3FE27B6D253EB1879E4F5B00333CE96DF2656785F6C50A45B5E8 F8E33CE253065E3050929EFA7E54D418F579C237B9362D2B6F8933EE80F14EB6" reqQualifedTableName="false" tempTablePrefix="TT" timeout="300" transactionBoundary="1000" type="OCI10G" user="TST_PVH_BI_AUTH" xmlaUseSession="false">
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="THDWHDEV" databaseRef="/oracle/bi/server/base/Database/c0000000-9725-1581-aa28-0a50884d0000.xml#mc0000000-9725-1581-aa28-0a50884d0000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="10" maxConnDiff="10" mdsid="m00000000-9726-1581-aa28-0a50884d0000" name="PVH_BI_AUTH_Init" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC3CE7C967C1455E5E767EEB9B50D74B6DAF1BEDC4EB206FADE19B1AA351BFE9AD4F27DADEAB2C3FE27B6D253EB1879E4F5B00333CE96DF2656785F6C50A45B5E8 F8E33CE253065E3050929EFA7E54D418F579C237B9362D2B6F8933EE80F14EB6" reqQualifedTableName="false" tempTablePrefix="TT" timeout="300" transactionBoundary="1000" type="OCI10G" user="TST_PVH_BI_AUTH" xmlaUseSession="false">
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="THDWHDEV" databaseRef="/oracle/bi/server/base/Database/00028931-0bcf-0000-714b-e31d00000000.xml#m00028931-0bcf-0000-714b-e31d00000000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="30" maxConnDiff="10" mdsid="m0367ae81-0c55-1000-828b-0a5088900000" name="WriteBack_EXT_INPUT" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC3CE7C967C1455E5E767EEB9B50D74B6DAF1BEDC4EB206FADE19B1AA351BFE9AD4F27DADEAB2C3FE27B6D253EB1879E4F5B00333CE96DF2656785F6C50A45B5E8 F8E33CE253065E3050929EFA7E54D418F579C237B9362D2B6F8933EE80F14EB6" reqQualifedTableName="true" tempTablePrefix="TT" timeout="300" transactionBoundary="10" type="OCI10G" user="EXT_INPUT" xmlaUseSession="false">
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="HANA-DEV" databaseRef="/oracle/bi/server/base/Database/80000001-9807-1636-b612-0a5088530000.xml#m80000001-9807-1636-b612-0a5088530000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="30" maxConnDiff="10" mdsid="m80000002-9807-1636-b612-0a5088530000" name="HDB_TIMESTEN1" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC613BB9E81347FE2070F41A1F5BFB8DF596CEA843D91E754AB17BAED992F3273E8A6AF4BC59A017ECB89BB53065EC57E7 4E6D91D8B09110204A670B4AE09F4EF085A226278C64629CBC70D2D578AF07D8" reqQualifedTableName="false" tempTablePrefix="TT" timeout="4294967295" transactionBoundary="1000" type="ODBC200" user="TIMESTEN1" xmlaUseSession="false">
+<Description>The user that runs the agents doesn't have access to it.</Description>
+<AfterQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONUSER'= 'AfterQueryConnectionValue'</Value>
+</AfterQueryString>
+<AfterQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONSOURCE' = 'AfterQueryConnectionValue'</Value>
+</AfterQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONUSER'= 'VALUEOF(NQ_SESSION.USER)'</Value>
+</BeforeQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONSOURCE' = 'VALUEOF(NQ_SESSION.HANA_APP_SOURCE)'
+</Value>
+</BeforeQueryString>
+<PostConnectString isEnabled="true">
+<Value>SET SESSION 'APPLICATION' = 'OBIEE'</Value>
+</PostConnectString>
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="HANA-DEV" databaseRef="/oracle/bi/server/base/Database/80000001-9807-1636-b612-0a5088530000.xml#m80000001-9807-1636-b612-0a5088530000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="30" maxConnDiff="10" mdsid="m80000003-9807-1636-b612-0a5088530000" name="HOTITEM" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC4BBC70CBA40CF66E3A7744E016CCFF36F849A821F39FC62BB1118316F660A06EE0A9975782FF29386C396E1BF1C1919F 681F949487202DCD4650D80D57F0CDE59461252963C5C9BB4A1E666C81EB69AC" reqQualifedTableName="false" tempTablePrefix="TT" timeout="4294967295" transactionBoundary="1000" type="ODBC200" user="HOTITEM" xmlaUseSession="false">
+<AfterQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONUSER'= 'AfterQueryConnectionValue'</Value>
+</AfterQueryString>
+<AfterQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONSOURCE' = 'AfterQueryConnectionValue'</Value>
+</AfterQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONUSER'= 'VALUEOF(NQ_SESSION.USER)'</Value>
+</BeforeQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONSOURCE' = 'VALUEOF(NQ_SESSION.HANA_APP_SOURCE)'
+</Value>
+</BeforeQueryString>
+<PostConnectString isEnabled="true">
+<Value>SET SESSION 'APPLICATION' = 'OBIEE'</Value>
+</PostConnectString>
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="HANA-DEV" databaseRef="/oracle/bi/server/base/Database/80000001-9807-1636-b612-0a5088530000.xml#m80000001-9807-1636-b612-0a5088530000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="30" maxConnDiff="10" mdsid="m80000001-7b94-1642-9555-0a5088530000" name="TIMESTEN2" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC613BB9E81347FE2070F41A1F5BFB8DF596CEA843D91E754AB17BAED992F3273E8A6AF4BC59A017ECB89BB53065EC57E7 4E6D91D8B09110204A670B4AE09F4EF085A226278C64629CBC70D2D578AF07D8" reqQualifedTableName="false" tempTablePrefix="TT" timeout="4294967295" transactionBoundary="1000" type="ODBC200" user="TIMESTEN2" xmlaUseSession="false">
+<AfterQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONUSER'= 'AfterQueryConnectionValue'</Value>
+</AfterQueryString>
+<AfterQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONSOURCE' = 'AfterQueryConnectionValue'</Value>
+</AfterQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONUSER'= 'VALUEOF(NQ_SESSION.USER)'</Value>
+</BeforeQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONSOURCE' = 'VALUEOF(NQ_SESSION.HANA_APP_SOURCE)'
+</Value>
+</BeforeQueryString>
+<PostConnectString isEnabled="true">
+<Value>SET SESSION 'APPLICATION' = 'OBIEE'</Value>
+</PostConnectString>
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="HANA-DEV" databaseRef="/oracle/bi/server/base/Database/80000001-9807-1636-b612-0a5088530000.xml#m80000001-9807-1636-b612-0a5088530000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="2" maxConnDiff="10" mdsid="m40000001-171e-1647-8741-0a5088530000" name="HDB_TIMESTEN1_AGENT" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC613BB9E81347FE2070F41A1F5BFB8DF596CEA843D91E754AB17BAED992F3273E8A6AF4BC59A017ECB89BB53065EC57E7 4E6D91D8B09110204A670B4AE09F4EF085A226278C64629CBC70D2D578AF07D8" reqQualifedTableName="false" tempTablePrefix="TT" timeout="4294967295" transactionBoundary="1000" type="ODBC200" user="TIMESTEN1" xmlaUseSession="false">
+<AfterQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONUSER'= 'AfterQueryConnectionValue'</Value>
+</AfterQueryString>
+<AfterQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONSOURCE' = 'AfterQueryConnectionValue'</Value>
+</AfterQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONUSER'= 'VALUEOF(NQ_SESSION.USER)'</Value>
+</BeforeQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONSOURCE' = 'VALUEOF(NQ_SESSION.HANA_APP_SOURCE)'
+</Value>
+</BeforeQueryString>
+<PostConnectString isEnabled="true">
+<Value>SET SESSION 'APPLICATION' = 'OBIEE'</Value>
+</PostConnectString>
+</ConnectionPool>
+  <ConnectionPool xmlns="http://www.oracle.com/obis/repository" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bulkInsertBufferSize="10485760" dataSource="HANA-DEV" databaseRef="/oracle/bi/server/base/Database/80000001-9807-1636-b612-0a5088530000.xml#m80000001-9807-1636-b612-0a5088530000" ignoreFirstLine="false" isCloseAfterEveryRequest="false" isConcurrentQueriesInConnection="false" isSharedLogin="true" isSiebelJDBSecured="false" maxConn="9" maxConnDiff="10" mdsid="m00000000-1726-1647-8741-0a5088530000" name="HDB_TIMESTEN1_INIT_BLOCK" outputType="xml" password="75EDA2ADE0FF7A26168A4BCA3EE6E0AC613BB9E81347FE2070F41A1F5BFB8DF596CEA843D91E754AB17BAED992F3273E8A6AF4BC59A017ECB89BB53065EC57E7 4E6D91D8B09110204A670B4AE09F4EF085A226278C64629CBC70D2D578AF07D8" reqQualifedTableName="false" tempTablePrefix="TT" timeout="4294967295" transactionBoundary="1000" type="ODBC200" user="TIMESTEN1" xmlaUseSession="false">
+<AfterQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONUSER'= 'AfterQueryConnectionValue'</Value>
+</AfterQueryString>
+<AfterQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONSOURCE' = 'AfterQueryConnectionValue'</Value>
+</AfterQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONUSER'= 'VALUEOF(NQ_SESSION.USER)'</Value>
+</BeforeQueryString>
+<BeforeQueryString isEnabled="true">
+<Value>SET SESSION 'APPLICATIONSOURCE' = 'VALUEOF(NQ_SESSION.HANA_APP_SOURCE)'
+</Value>
+</BeforeQueryString>
+<PostConnectString isEnabled="true">
+<Value>SET SESSION 'APPLICATION' = 'OBIEE'</Value>
+</PostConnectString>
+</ConnectionPool>
+</DECLARE>

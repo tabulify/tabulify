@@ -1,0 +1,4 @@
+com.tabulify.html.HtmlManagerProvider
+com.tabulify.css.FsCssManagerProvider
+com.tabulify.js.FsJsManagerProvider
+com.tabulify.xml.XmlManagerProvider

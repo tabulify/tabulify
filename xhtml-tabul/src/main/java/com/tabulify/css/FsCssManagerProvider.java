@@ -1,0 +1,38 @@
+package com.tabulify.css;
+
+import com.tabulify.fs.FsFileManagerProvider;
+import com.tabulify.fs.binary.FsBinaryFileManager;
+import com.tabulify.type.MediaType;
+import com.tabulify.type.MediaTypes;
+
+public class FsCssManagerProvider extends FsFileManagerProvider {
+
+
+  static private FsCssFileManager fsCssFileManager;
+
+  public static FsCssFileManager getSingleton() {
+    if (fsCssFileManager == null) {
+      fsCssFileManager = new FsCssFileManager();
+    }
+    return fsCssFileManager;
+  }
+
+  /**
+   *
+   */
+  @Override
+  public Boolean accept(MediaType mediaType) {
+
+    return mediaType.getSubType().equals(MediaTypes.TEXT_CSS.getSubType());
+
+  }
+
+
+  @Override
+  public FsBinaryFileManager getFsFileManager() {
+    if (fsCssFileManager == null) {
+      fsCssFileManager = new FsCssFileManager();
+    }
+    return fsCssFileManager;
+  }
+}

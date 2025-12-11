@@ -1,0 +1,15 @@
+kind: pipeline
+spec:
+  steps:
+    - name: 'Define'
+      operation: 'define'
+      arguments:
+        data-resource:
+          data-uri: ../archives/archive.tar.gz@md
+    - operation: 'unzip'
+      arguments:
+        entry-selector: "*foo*"
+        strip-components: 1
+        output-type: results
+        stream-type: map
+        target-data-uri: '${input_logical_name}/${entry_path}@tmp'

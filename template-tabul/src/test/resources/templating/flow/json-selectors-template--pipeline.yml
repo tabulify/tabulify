@@ -1,0 +1,17 @@
+kind: pipeline
+spec:
+  steps:
+    - name: "Define"
+      operation: "define"
+      arguments:
+        data-resource:
+          data-def:
+            columns: [ "version","script","file","integrity" ]
+          data-records:
+            - [ "4.4.1", "bootstrap.16col", "bootstrap.16col.min.css", "sha384-7/QJWEBUuqkcuwRA+9t03pPgZlWIijurW5dMHOroOhOnuvLJNs/+ia7CiFz7Sws2" ]
+            - [ "4.5.0", "bootstrap.16col", "bootstrap.16col.min.css", "sha384-qHUrb/0aQsXITU+/99hyrzzX8Sq1M5nNhf1u/bUHJUR+2J6K3oYJ4qQnB/5kZnMY" ]
+            - [ "4.5.0", "bootswatch.cerulean", "bootstrap.cerulean.min.css", "sha384-qHUrb/0aQsXITU+/99hyrzzX8Sq1M5nNhf1u/bUHJUR+2J6K3oYJ4qQnB/5kZnMY" ]
+    - name: "Json"
+      operation: "template"
+      arguments:
+        template-selector: ../templates/fileAttributes.json@md

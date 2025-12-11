@@ -18,21 +18,21 @@ find_git_root() {
 
 # Check if arguments are provided
 if [ "$#" -lt 1 ]; then
-    echo "Usage:"
-    echo ""
-    echo " $(basename "$0") --compile --ide --no-cache globPath"
-    echo ""
-    echo "where:"
-    echo "  * --compile     : recompile the whole project"
-    echo "  * --resume      : don't delete the environment (ie sqlite, ...)"
-    echo "  * --install-cli : install the cli before running"
-    echo "  * --ide         : runs the Tabul.class instead of the tabul cli (way quicker as it stay in the same jvm)"
-    echo "  * --no-cache    : suppress the cache for the selected pages"
-    echo "  * --purge-cache : suppress the whole cache directory"
-    echo "  * globPath      : a glob path."
-    echo ""
-    echo "Example: $(basename "$0") docs/tabul/**/*.txt"
-    exit 1
+  echo "Usage:"
+  echo ""
+  echo " $(basename "$0") --compile --ide --no-cache globPath"
+  echo ""
+  echo "where:"
+  echo "  * --compile     : recompile the whole project"
+  echo "  * --resume      : don't delete the environment (ie sqlite, ...)"
+  echo "  * --install-cli : install the cli before running"
+  echo "  * --ide         : runs the Tabul.class instead of the tabul cli (way quicker as it stay in the same jvm)"
+  echo "  * --no-cache    : suppress the cache for the selected pages"
+  echo "  * --purge-cache : suppress the whole cache directory"
+  echo "  * globPath      : a glob path."
+  echo ""
+  echo "Example: $(basename "$0") docs/tabul/**/*.txt"
+  exit 1
 fi
 
 # Compile before running
@@ -42,58 +42,52 @@ INSTALL_CLI=false
 # Run with the ide and not the cli?
 IDE_RUN=false
 # Doc exec options
-DOC_EXEC_OPTIONS=();
+DOC_EXEC_OPTIONS=()
 while [ $# -gt 0 ]; do
 
-   case "$1" in
-      --compile)
-          MAVEN_COMPILE=true
-          ;;
-      --install-cli)
-          INSTALL_CLI=true
-          ;;
-      --ide)
-        IDE_RUN=true
-        DOC_EXEC_OPTIONS+=("$1")
-        ;;
-      *)
-        DOC_EXEC_OPTIONS+=("$1")
-   esac
+  case "$1" in
+    --compile)
+      MAVEN_COMPILE=true
+      ;;
+    --install-cli)
+      INSTALL_CLI=true
+      ;;
+    --ide)
+      IDE_RUN=true
+      DOC_EXEC_OPTIONS+=("$1")
+      ;;
+    *)
+      DOC_EXEC_OPTIONS+=("$1")
+      ;;
+  esac
 
-    # Shift to the next argument
-    shift
+  # Shift to the next argument
+  shift
 done
 
-
 PROJECT_ROOT=$(find_git_root)
-TABULIFY_CLI_DIR="$PROJECT_ROOT/tabulify-cli"
+TABULIFY_CLI_DIR="$PROJECT_ROOT/cli-tabul"
 cd "$TABULIFY_CLI_DIR"
-
 
 if [ "$MAVEN_COMPILE" == "true" ]; then
   echo "Building project with Maven..."
-  if ! OUTPUT=$(cd "$PROJECT_ROOT"; mvn install -DskipTests ); then
+  if ! OUTPUT=$(
+    cd "$PROJECT_ROOT"
+    mvn install -DskipTests
+  ); then
     echo "Maven Project build failed."
     echo "$OUTPUT"
     exit 1
   fi
   # Compile the project using Maven (The DocRun class is in test)
   if ! OUTPUT=$(mvn test-compile); then
-      echo "Maven build failed."
-      echo "$OUTPUT"
-      exit 1
+    echo "Maven build failed."
+    echo "$OUTPUT"
+    exit 1
   fi
 fi
 
-
-# Dependency
-CLASSPATH=$(mvn dependency:build-classpath -Dmdep.outputFile=/dev/stdout -q)
-
-# Add the target/classes directory to include your compiled classes
-CLASSPATH="$CLASSPATH:$TABULIFY_CLI_DIR/target/classes"
-CLASSPATH="$CLASSPATH:$TABULIFY_CLI_DIR/target/test-classes"
-
-export TABUL_EXEC_ENV="dev";
+export TABUL_EXEC_ENV="dev"
 if [ "$IDE_RUN" == "true" ]; then
   # When the code run as ide, tabul does not exit, it will throw
   # otherwise the doc executor security manager see it as executing and to prevent exit will throw
@@ -114,6 +108,20 @@ export TABUL_LOG_LEVEL=error
 # ie to get a consistent cd connection
 export TABUL_OS_USER_HOME=/home/tabulify
 cd "$TABUL_OS_USER_HOME"
-# Exec
-MAIN_CLASS=com.tabulify.doc.DocExec
-java -cp "$CLASSPATH" "$MAIN_CLASS" "${DOC_EXEC_OPTIONS[@]}"
+
+PATH_DOC="$PROJECT_ROOT/docs-tabul/data/pages"
+PATH_INLINE_FILE="/opt/tabulify/resources/howto"
+
+/opt/doc-exec/bin/doc-exec --doc-path "$PATH_DOC" --file-path ${PATH_INLINE_FILE} --doc-name "tabulify" "${DOC_EXEC_OPTIONS[@]}"
+
+exit
+# Deprecated Old
+## Exec
+#MAIN_CLASS=com.tabulify.doc.DocExec
+## Dependency
+#CLASSPATH=$(mvn dependency:build-classpath -Dmdep.outputFile=/dev/stdout -q)
+## Add the target/classes directory to include your compiled classes
+#CLASSPATH="$CLASSPATH:$TABULIFY_CLI_DIR/target/classes"
+#CLASSPATH="$CLASSPATH:$TABULIFY_CLI_DIR/target/test-classes"
+## -Djava.security.manager=allow is to allow System.setSecurityManager in doc-exec
+#java -cp "$CLASSPATH" -Djava.security.manager=allow "$MAIN_CLASS" "${DOC_EXEC_OPTIONS[@]}"

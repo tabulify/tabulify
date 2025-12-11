@@ -1,0 +1,2 @@
+com.tabulify.niofs.http.HttpFileSystemProvider
+com.tabulify.niofs.http.HttpsFileSystemProvider

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>tabulify-tabul-flow</artifactId>
+  <name>Tabulify Flow</name>
+
+  <!-- Parent are used before all for the assembly build steps -->
+  <parent>
+    <groupId>com.tabulify</groupId>
+    <artifactId>tabulify</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+  </parent>
+
+
+  <dependencies>
+
+    <!-- Compile -->
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-tabul-base</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-tabul-json</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jgrapht</groupId>
+      <artifactId>jgrapht-io</artifactId>
+    </dependency>
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Csv is used as format with header, to have a good number of row, we need the csv -->
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-tabul-csv</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <testSourceDirectory>../ee-tabul/${project.artifactId}/src/test/java</testSourceDirectory>
+    <testResources>
+      <testResource>
+        <directory>../ee-tabul/${project.artifactId}/src/test/resources</directory>
+      </testResource>
+    </testResources>
+  </build>
+
+</project>

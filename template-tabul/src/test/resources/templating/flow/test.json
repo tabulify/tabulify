@@ -1,0 +1,8 @@
+{
+  "${group}": {
+    "${item_code}": {
+      "price": "${price}",
+      "description": "${description}"
+    }
+  }
+}

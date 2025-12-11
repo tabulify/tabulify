@@ -55,8 +55,10 @@ public class TabulTmpTest {
   @Test
   public void docTest() {
 
-    String[] args = {"--ide", "--no-cache", "docs/data_type/data_type"};
-    DocExec.main(args);
+    boolean ideRun = true;
+    boolean cache = false;
+    String pattern = "howto/mysql/procedure_call.txt";
+    DocExec.run(ideRun, cache, pattern);
 
   }
 

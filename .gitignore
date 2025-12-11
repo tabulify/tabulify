@@ -1,22 +1,13 @@
-target/
-build/
-.gradle
-**/.gradle/
-**/build/
-**/out/
 .idea
-.idea/*
+target
+build
+out
+
 *.iml
-.env
-.yarn
-logs
-**/*secret
-**/*secret.*
-
-# .aider* is chcked by default
+# Backup file of editor (ie name.md~ file)
+*~
+# orig are file created by the merge tool
+*.orig
+# aider files to ignore
 .aider*
-!.aider.conf.yml
 !.aiderignore
-
-# https://stackoverflow.com/questions/22904573/what-is-the-purpose-of-dependency-reduced-pom-xml-generated-by-the-shade-plugin
-dependency-reduced-pom.xml

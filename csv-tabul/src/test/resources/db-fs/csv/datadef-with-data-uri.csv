@@ -1,0 +1,5 @@
+^ A header comment
+
+'First Name';'Last Name';'Address';'Integer'
+^ A comment
+'Foo';'Bar';'1 fake street';'2'

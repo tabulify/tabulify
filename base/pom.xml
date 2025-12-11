@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>tabulify-base</artifactId>
+  <name>Tabulify Base</name>
+
+  <parent>
+    <groupId>com.tabulify</groupId>
+    <artifactId>tabulify</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+  </parent>
+
+
+  <dependencies>
+
+    <!-- For character set detection -->
+    <dependency>
+      <groupId>com.ibm.icu</groupId>
+      <artifactId>icu4j</artifactId>
+
+    </dependency>
+    <!-- Structure -->
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+
+    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.ini4j</groupId>-->
+<!--      <artifactId>ini4j</artifactId>-->
+<!--    </dependency>-->
+    <!-- Email Validation  -->
+    <dependency>
+      <groupId>com.sanctionco.jmail</groupId>
+      <artifactId>jmail</artifactId>
+    </dependency>
+    <!-- Exec -->
+    <dependency>
+      <groupId>org.zeroturnaround</groupId>
+      <artifactId>zt-exec</artifactId>
+    </dependency>
+
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- In Java 11 or higher, JAXB has been removed from JDK  -->
+    <dependency>
+      <groupId>javax.xml.bind</groupId>
+      <artifactId>jaxb-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+
+  </dependencies>
+
+</project>

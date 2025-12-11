@@ -1,88 +1,213 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.tabulify</groupId>
   <artifactId>tabulify</artifactId>
   <name>Tabulify</name>
   <packaging>pom</packaging>
-  <version>2.1.0-SNAPSHOT</version>
+  <version>2.0.0-SNAPSHOT</version>
+  <inceptionYear>2020</inceptionYear>
 
-  <parent>
-    <groupId>com.eraldy</groupId>
-    <artifactId>eraldy-core-aggregator</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
-  </parent>
+
+  <!-- Organization used in the manifest file as Package vendor -->
+  <organization>
+    <name>Tabulify</name>
+    <url>https://www.tabulify.com</url>
+  </organization>
 
   <properties>
 
-    <!-- Jdk These values are used in the `.envrc` to set up and install the jdk -->
-    <!-- Disco Api values used to download the jdk https://github.com/foojayio/discoapi   -->
-    <!-- https://api.foojay.io/swagger-ui#/default/getMajorVersionV3 -->
-    <!-- Why 16? Records and JPackage to create msi -->
-    <maven.compiler.source>16.0.2</maven.compiler.source>
-    <maven.compiler.target>16.0.2</maven.compiler.target>
-    <!-- Full version number not supported   -->
-    <maven.compiler.release>16</maven.compiler.release>
-    <!-- Disco Api values used to download the jdk https://github.com/foojayio/discoapi   -->
-    <jdk.distribution>temurin</jdk.distribution>
+    <!-- Compiler Language -->
+    <!-- https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#release -->
+    <maven.compiler.release>17</maven.compiler.release>
+    <!-- According to the compiler.release, compiler source and target are no more needed for JDK9+ -->
+    <!-- the source code format -->
+    <!-- https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#source-->
+    <!-- <maven.compiler.source>11</maven.compiler.source>-->
+    <!-- the format of the generated class files -->
+    <!-- The target must be equal to or higher than the source -->
+    <!-- <maven.compiler.target>11</maven.compiler.target> -->
 
-    <jreleaser.version>1.17.0</jreleaser.version>
-    <parent.parent.version>0.1.0-SNAPSHOT</parent.parent.version>
+    <!-- See java-jdk.md -->
+    <!-- Why 17? Records and JPackage to create msi -->
+    <!-- https://github.com/adoptium/temurin17-binaries/releases/tag/jdk-17.0.16%2B8 -->
+    <!-- Sdk and setup disco value -->
+    <jdk.version.major>17</jdk.version.major>
+    <!-- sdk list java -->
+    <jdk.version>17.0.16</jdk.version>
+    <!-- The built (ie the 8 in 17.0.16+8)-->
+    <jdk.version.build>8</jdk.version.build>
+    <!-- The setup disco value, brew value -->
+    <jdk.distribution>temurin</jdk.distribution>
+    <!-- The directory where the jdks are downloaded -->
+    <jdk.output.directory>${java.io.tmpdir}/jdks</jdk.output.directory>
+
+    <!--
+      To avoid warning
+      File encoding has not been set, using platform encoding UTF-8, i.e. build is platform dependent!
+    -->
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
   </properties>
 
 
   <modules>
-    <module>tabulify-core</module>
-    <module>tabulify-cli</module>
-    <module>tabulify-flow</module>
-    <module>tabulify-json</module>
-    <module>tabulify-jdbc</module>
-    <module>tabulify-data-generation</module>
-    <module>tabulify-csv</module>
-    <module>tabulify-templating</module>
-    <module>tabulify-email</module>
-    <module>tabulify-xml</module>
-    <module>tabulify-yaml</module>
-    <module>tabulify-sqlite</module>
-    <module>tabulify-html</module>
-    <module>tabulify-excel</module>
-    <module>tabulify-oracle</module>
-    <module>tabulify-sqlserver</module>
-    <module>tabulify-mysql</module>
-    <module>tabulify-docker</module>
-    <module>tabulify-zip</module>
+    <module>base</module>
+    <module>base-tabul</module>
+    <module>cli</module>
+    <module>cli-tabul</module>
+    <module>crypto</module>
+    <module>csv-tabul</module>
+    <module>data-generation-tabul</module>
+    <module>email-tabul</module>
+    <module>json-tabul</module>
+    <module>jdbc-tabul</module>
+    <module>flow-tabul</module>
+    <module>http-niofs</module>
+    <module>template</module>
+    <module>template-tabul</module>
+    <module>yaml-tabul</module>
+    <module>sqlite-tabul</module>
+    <module>xhtml</module>
+    <module>xhtml-tabul</module>
+    <module>excel-tabul</module>
+    <module>oracle-tabul</module>
+    <module>sqlserver-tabul</module>
+    <module>mysql-tabul</module>
+    <module>docker</module>
+    <module>docker-tabul</module>
+    <module>zip-tabul</module>
+    <module>test-util</module>
   </modules>
+
+  <repositories>
+    <repository>
+      <!-- For Tcpds com.github.teradata:tcpds:jar-->
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
+  </repositories>
 
   <!-- The rest of dependencies management is in core  -->
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-core</artifactId>
+        <artifactId>tabulify-base</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-flow</artifactId>
+        <artifactId>tabulify-cli</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-json</artifactId>
+        <artifactId>tabulify-crypto</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-jdbc</artifactId>
+        <artifactId>tabulify-template</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-sqlite</artifactId>
+        <artifactId>tabulify-test-util</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-http-niofs</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-base</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-flow</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-json</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-jdbc</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-sqlite</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-data-generation</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-csv</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-yaml</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-excel</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-template</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-xhtml</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-xhtml</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-email</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-oracle</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-sqlserver</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-mysql</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tabulify-tabul-zip</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -92,132 +217,68 @@
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-data-generation</artifactId>
+        <artifactId>tabulify-tabul-docker</artifactId>
         <version>${project.version}</version>
       </dependency>
+
+      <!--  Java API for Microsoft Documents -->
+      <!-- Excel -->
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-csv</artifactId>
-        <version>${project.version}</version>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi</artifactId>
+        <version>5.4.1</version>
       </dependency>
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-yaml</artifactId>
-        <version>${project.version}</version>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi-ooxml</artifactId>
+        <version>5.4.1</version>
       </dependency>
+      <!-- Needed by XSSFWorkbook of org.apache.poi.xssf (not in the dependencies) -->
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-excel</artifactId>
-        <version>${project.version}</version>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-collections4</artifactId>
+        <version>4.1</version>
       </dependency>
+      <!-- https://mvnrepository.com/artifact/org.mozilla/rhino -->
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-templating</artifactId>
-        <version>${project.version}</version>
+        <groupId>org.mozilla</groupId>
+        <artifactId>rhino</artifactId>
+        <version>1.8.1</version>
       </dependency>
+      <!-- Convergence (to avoid vulnerabilities) -->
+      <!-- used by tpcds all version (18 from airlift) -->
+      <!-- https://github.com/Teradata/tpcds -->
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-xml</artifactId>
-        <version>${project.version}</version>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>33.5.0-jre</version>
       </dependency>
+      <!-- Convergence -->
+      <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-html</artifactId>
-        <version>${project.version}</version>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>2.21.0</version>
       </dependency>
+      <!-- Zip Module -->
+      <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-compress -->
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-email</artifactId>
-        <version>${project.version}</version>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>1.28.0</version>
       </dependency>
+      <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-oracle</artifactId>
-        <version>${project.version}</version>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>3.20.0</version>
       </dependency>
+      <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-csv -->
+      <!-- Csv parsing -->
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-sqlserver</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-mysql</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>tabulify-zip</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <!-- Eraldy -->
-      <dependency>
-        <groupId>com.eraldy</groupId>
-        <artifactId>eraldy-log</artifactId>
-        <version>${parent.parent.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.eraldy</groupId>
-        <artifactId>eraldy-core</artifactId>
-        <version>${parent.parent.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.eraldy</groupId>
-        <artifactId>eraldy-niofs-http</artifactId>
-        <version>${parent.parent.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.eraldy</groupId>
-        <artifactId>eraldy-docker</artifactId>
-        <version>${parent.parent.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.eraldy</groupId>
-        <artifactId>eraldy-test</artifactId>
-        <version>${parent.parent.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.eraldy</groupId>
-        <artifactId>eraldy-template</artifactId>
-        <version>${parent.parent.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.eraldy</groupId>
-        <artifactId>eraldy-html</artifactId>
-        <version>${parent.parent.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.eraldy</groupId>
-        <artifactId>eraldy-xml</artifactId>
-        <version>${parent.parent.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.eraldy</groupId>
-        <artifactId>eraldy-email</artifactId>
-        <version>${parent.parent.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.eraldy</groupId>
-        <artifactId>eraldy-smtp-client</artifactId>
-        <classifier>tests</classifier>
-        <type>test-jar</type>
-        <scope>test</scope>
-        <version>${parent.parent.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.eraldy</groupId>
-        <artifactId>eraldy-smtp-client</artifactId>
-        <version>${parent.parent.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.eraldy</groupId>
-        <artifactId>eraldy-cli</artifactId>
-        <version>${parent.parent.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.eraldy</groupId>
-        <artifactId>eraldy-doc-exec</artifactId>
-        <version>${parent.parent.version}</version>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-csv</artifactId>
+        <version>1.10.0</version>
       </dependency>
       <!-- from https://jdbc.postgresql.org/download.html -->
       <!-- 42.2.16 is the current version of the driver. This is the driver you should be using.-->
@@ -239,13 +300,320 @@
       <dependency>
         <groupId>com.microsoft.sqlserver</groupId>
         <artifactId>mssql-jdbc</artifactId>
-        <version>13.2.0.jre11</version>
+        <version>13.2.1.jre11</version>
       </dependency>
       <!-- https://mvnrepository.com/artifact/com.mysql/mysql-connector-j -->
       <dependency>
         <groupId>com.mysql</groupId>
         <artifactId>mysql-connector-j</artifactId>
-        <version>9.2.0</version>
+        <version>9.5.0</version>
+      </dependency>
+
+      <!-- ************ -->
+      <!-- DNS          -->
+      <!-- ************ -->
+      <dependency>
+        <groupId>dnsjava</groupId>
+        <artifactId>dnsjava</artifactId>
+        <version>3.6.0</version>
+      </dependency>
+
+      <!-- ************ -->
+      <!-- Text File    -->
+      <!-- ************ -->
+      <!-- For character set detection -->
+      <dependency>
+        <groupId>com.ibm.icu</groupId>
+        <artifactId>icu4j</artifactId>
+        <version>68.1</version>
+      </dependency>
+
+      <!-- ************ -->
+      <!-- XML Text File    -->
+      <!-- ************ -->
+      <!-- In Java 11 or higher, JAXB has been removed from JDK  -->
+      <dependency>
+        <groupId>javax.xml.bind</groupId>
+        <artifactId>jaxb-api</artifactId>
+        <version>2.3.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.thoughtworks.xstream</groupId>
+        <artifactId>xstream</artifactId>
+        <version>1.4.21</version>
+      </dependency>
+
+      <!-- ************ -->
+      <!-- Cli          -->
+      <!-- ************ -->
+      <dependency>
+        <groupId>info.picocli</groupId>
+        <artifactId>picocli</artifactId>
+        <version>4.7.6</version>
+      </dependency>
+
+      <!-- ************ -->
+      <!-- Template -->
+      <!-- ************ -->
+      <!-- https://mvnrepository.com/artifact/io.pebbletemplates/pebble -->
+      <dependency>
+        <groupId>io.pebbletemplates</groupId>
+        <artifactId>pebble</artifactId>
+        <version>3.2.4</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/org.thymeleaf/thymeleaf -->
+      <dependency>
+        <groupId>org.thymeleaf</groupId>
+        <artifactId>thymeleaf</artifactId>
+        <version>3.1.3.RELEASE</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/org.yaml/snakeyaml -->
+      <dependency>
+        <groupId>org.yaml</groupId>
+        <artifactId>snakeyaml</artifactId>
+        <version>2.5</version>
+      </dependency>
+
+      <!-- Crypto -->
+      <!-- https://mvnrepository.com/artifact/org.bouncycastle/bc-jdk18on-bom -->
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bc-jdk18on-bom</artifactId>
+        <version>1.83</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.ini4j</groupId>
+        <artifactId>ini4j</artifactId>
+        <version>0.5.4</version>
+      </dependency>
+
+
+      <!-- ************ -->
+      <!-- Ssh, sftp    -->
+      <!-- ************ -->
+      <dependency>
+        <groupId>com.jcraft</groupId>
+        <artifactId>jsch</artifactId>
+        <version>0.1.51</version>
+      </dependency>
+
+      <!-- ************ -->
+      <!-- Json         -->
+      <!-- ************ -->
+      <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>2.12.1</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/org.json/json -->
+      <dependency>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        <version>20250107</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/com.jayway.jsonpath/json-path -->
+      <dependency>
+        <groupId>com.jayway.jsonpath</groupId>
+        <artifactId>json-path</artifactId>
+        <version>2.10.0</version>
+      </dependency>
+
+      <!-- ************ -->
+      <!-- HTML         -->
+      <!-- ************ -->
+      <!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
+      <dependency>
+        <groupId>org.jsoup</groupId>
+        <artifactId>jsoup</artifactId>
+        <version>1.21.2</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/net.sourceforge.cssparser/cssparser -->
+      <dependency>
+        <groupId>net.sourceforge.cssparser</groupId>
+        <artifactId>cssparser</artifactId>
+        <version>0.9.30</version>
+      </dependency>
+
+
+      <!-- ************ -->
+      <!-- Graph        -->
+      <!-- ************ -->
+      <!-- Graph to create the dag-->
+      <dependency>
+        <groupId>org.jgrapht</groupId>
+        <artifactId>jgrapht-core</artifactId>
+        <version>1.5.2</version>
+      </dependency>
+      <!-- Graph Output -->
+      <dependency>
+        <groupId>org.jgrapht</groupId>
+        <artifactId>jgrapht-io</artifactId>
+        <version>1.5.2</version>
+      </dependency>
+
+      <!-- ************ -->
+      <!-- Email        -->
+      <!-- ************ -->
+      <!-- # Email -->
+      <!-- angus and jakarta should be the same as in SimpleEmail (don't know how to do that)-->
+      <!-- https://github.com/bbottema/simple-java-mail/blob/master/modules/core-module/pom.xml-->
+      <!-- https://eclipse-ee4j.github.io/angus-mail/-->
+      <!-- https://mvnrepository.com/artifact/jakarta.mail/jakarta.mail-api -->
+      <dependency>
+        <groupId>jakarta.mail</groupId>
+        <artifactId>jakarta.mail-api</artifactId>
+        <version>2.1.2</version>
+      </dependency>
+      <!-- Runtime: convergence -->
+      <!-- https://mvnrepository.com/artifact/org.eclipse.angus/angus-mail -->
+      <!-- https://eclipse-ee4j.github.io/angus-mail/-->
+      <dependency>
+        <groupId>org.eclipse.angus</groupId>
+        <artifactId>angus-mail</artifactId>
+        <version>2.0.5</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/org.simplejavamail/simple-java-mail -->
+      <dependency>
+        <groupId>org.simplejavamail</groupId>
+        <artifactId>simple-java-mail</artifactId>
+        <version>8.12.6</version>
+      </dependency>
+      <dependency>
+        <groupId>com.sanctionco.jmail</groupId>
+        <artifactId>jmail</artifactId>
+        <version>2.0.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.davidmoten</groupId>
+        <artifactId>subethasmtp</artifactId>
+        <version>7.2.0</version>
+        <scope>test</scope>
+      </dependency>
+
+
+      <!-- ************ -->
+      <!-- Docker       -->
+      <!-- ************ -->
+      <!-- Test Container -->
+      <!-- https://mvnrepository.com/artifact/org.testcontainers/testcontainers-bom -->
+      <!-- https://github.com/testcontainers/testcontainers-java -->
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>2.0.2</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/com.github.docker-java/docker-java-core -->
+      <!-- Version from test containers: https://github.com/testcontainers/testcontainers-java/blob/1.20.6/core/build.gradle#L91 -->
+      <dependency>
+        <groupId>com.github.docker-java</groupId>
+        <artifactId>docker-java-bom</artifactId>
+        <version>3.4.1</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <!-- Jackson -->
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>2.20.0</version>
+        <scope>import</scope>
+        <type>pom</type>
+      </dependency>
+
+
+      <!-- ************ -->
+      <!-- WebDriver    -->
+      <!-- ************ -->
+      <!-- https://www.selenium.dev/documentation/en/selenium_installation/installing_selenium_libraries/-->
+      <!-- https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-java-->
+      <dependency>
+        <groupId>org.seleniumhq.selenium</groupId>
+        <artifactId>selenium-java</artifactId>
+        <version>4.9.1</version>
+      </dependency>
+      <!--  https://mvnrepository.com/artifact/io.github.bonigarcia/webdrivermanager -->
+      <dependency>
+        <groupId>io.github.bonigarcia</groupId>
+        <artifactId>webdrivermanager</artifactId>
+        <version>5.3.3</version>
+      </dependency>
+
+      <!-- ************ -->
+      <!-- Exec         -->
+      <!-- ************ -->
+      <dependency>
+        <groupId>org.zeroturnaround</groupId>
+        <artifactId>zt-exec</artifactId>
+        <version>1.12</version>
+      </dependency>
+
+      <!-- ************ -->
+      <!-- Test         -->
+      <!-- ************ -->
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>5.12.1</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.13.2</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.assertj</groupId>
+        <artifactId>assertj-core</artifactId>
+        <version>3.4.1</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest-core</artifactId>
+        <version>2.2</version>
+        <scope>test</scope>
+      </dependency>
+
+      <!-- ************ -->
+      <!-- Log          -->
+      <!-- ************ -->
+      <!-- Slf4j -->
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>2.0.9</version>
+      </dependency>
+      <!-- SLF4J implementation: Adapter Logback Classic-->
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.5.13</version>
+        <scope>test</scope>
+      </dependency>
+      <!-- SLF4J implementation: Java JUL-->
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-jdk14</artifactId>
+        <!-- not the last 17 because the slf4j dependency api is at 9 (ie slf4j-api-2.0.9.jar)-->
+        <version>2.0.9</version>
+        <scope>runtime</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-bom</artifactId>
+        <version>2.20.0</version>
+        <scope>import</scope>
+        <type>pom</type>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -254,21 +622,42 @@
     <pluginManagement>
       <plugins>
         <plugin>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <configuration>
-            <source>1.11</source>
-            <target>1.11</target>
-          </configuration>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.5.2</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <configuration>
-            <excludedGroups>slow</excludedGroups>
-          </configuration>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.4.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.jreleaser</groupId>
+          <artifactId>jreleaser-maven-plugin</artifactId>
+          <version>1.21.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.jreleaser</groupId>
+          <artifactId>jdks-maven-plugin</artifactId>
+          <!-- Same as jreleaser -->
+          <version>1.21.0</version>
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <!-- Maven runs: one Surefire JVM per module, in separate processes, in sequence -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <configuration>
+          <!-- One JVM per module (Default) -->
+          <forkCount>1</forkCount>
+          <!-- Yes (default) Same fork for all test in the module otherwise it mess up with test containers -->
+          <reuseForks>true</reuseForks>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 
   <profiles>
@@ -319,5 +708,6 @@
       </build>
     </profile>
   </profiles>
+
 
 </project>

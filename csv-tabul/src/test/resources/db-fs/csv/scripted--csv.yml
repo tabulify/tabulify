@@ -1,0 +1,11 @@
+kind: csv
+spec:
+  # the runtime data uri
+  data-uri: scripted-csv--command.yml@md
+  data-def:
+    delimiter-character: ;
+    columns:
+      - name: Id
+        type: integer
+      - name: Greeting
+        type: varchar

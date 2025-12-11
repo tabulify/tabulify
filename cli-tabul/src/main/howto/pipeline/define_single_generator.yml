@@ -1,0 +1,21 @@
+kind: pipeline
+spec:
+  steps:
+    - name: "Define"
+      operation: "define"
+      args:
+        data-resource:
+          # The below media-type has `fragment` in its extension
+          # It's a special media-type that makes it possible to define a generator as a yaml in a `define` step
+          media-type: text/vnd.tabulify.generator+yaml-fragment
+          data-def:
+            logical-name: "my-sequence"
+            max-record-count: 5
+            columns:
+              - name: "id"
+                type: integer
+                data-supplier:
+                  type: sequence
+    - name: "Print"
+      comment: "Print the sequence"
+      operation: "print"

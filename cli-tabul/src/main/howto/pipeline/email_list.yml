@@ -1,0 +1,19 @@
+kind: pipeline
+spec:
+  steps:
+    - name: "Define"
+      comment: "This operation defines a data path with the expected columns of a mailing list"
+      operation: "define"
+      args:
+        data-resource:
+          data-def:
+            columns: [ "to","from","subject","txt","html" ]
+          data-records:
+            - [ "foo@tabulify.com", "support@tabulify.com", "Email for foo", "A textual email body", "<html><body><h1>A html email body</h1></body></html>" ]
+            - [ "bar@tabulify.com", "support@tabulify.com", "Email for bar", "A textual email body", "<html><body><h1>A html email body</h1></body></html>" ]
+    - name: "Send"
+      comment: "Send the email"
+      operation: "sendmail"
+      args:
+        target-uri: "@smtp" # smtp is the default smtp connection and is therefore optional
+        granularity: "record"

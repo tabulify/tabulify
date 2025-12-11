@@ -1,0 +1,24 @@
+kind: pipeline
+spec:
+  steps:
+    - operation: "define"
+      arguments:
+        data-resource:
+          data-def:
+            columns: [ "id","name" ]
+          data-records:
+            - [ "1", "Arnold" ]
+            - [ "2", "Don" ]
+            - [ "3", "Dale" ]
+    - operation: "template"
+      arguments:
+        granularity: record
+        template-inline:
+          logical-name: cheers
+          media-type: text
+          content: |
+            Dear ${name},
+            We are really lucky to count you our ${id} customers
+            All the best for this new year
+    - name: "Print"
+      operation: "print"

@@ -1,0 +1,11 @@
+kind: data-def
+spec:
+  commentCharacter: '^'
+  delimiterCharacter: ';'
+  escapeCharacter: '\'
+  headerRowId: 3
+  ignoreEmptyLine: false
+  quoteCharacter: ''''
+  columns:
+    - name: Integer
+      type: integer

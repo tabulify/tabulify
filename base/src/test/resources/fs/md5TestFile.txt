@@ -1,0 +1,6 @@
+# A md5 test file
+
+## About
+
+This file is used in the md5 test.
+

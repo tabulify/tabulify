@@ -1,0 +1,67 @@
+---
+title: "LatencyAnalytics"
+author: "Nicolas"
+date: "July 6, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loader Metrics Analysis
+
+This is an R Markdown document that will analyse the metrics output file of the loader.
+
+
+```{r data}
+library(readr) # for csv
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(data.table) # for the %like% function
+
+loaderMetricsMim <- read_csv("C:/Users/gerard/Desktop/temp_log_file/logfiles/man_in_the_middle/1_C_SALES_TOTAL_0.log", col_names = c("timestamp","metrics", "value"))
+
+loaderMetricsPrdPrd <- read_csv("C:/Users/gerard/Desktop/temp_log_file/logfiles/prd/2_C_SALES_TOTAL_0.log", col_names = c("timestamp","metrics", "value"))
+
+loaderMetricsPrdDev <- read_csv("C:/Users/gerard/Desktop/temp_log_file/logfiles/dev/2_C_SALES_TOTAL_0.log", col_names = c("timestamp","metrics", "value"))
+
+
+## "C:/Users/gerard/Desktop/logging/middel/2_C_SALES_TOTAL_0.log
+## "C:/Users/gerard/Desktop/logging/snel/1_C_RETAIL_INVENTORY_WEEK_0.csv"
+
+```
+
+## Thread Compare Analysis
+
+Producer and consumer follows the same line.
+The line were artificially moved from each other to be able to see them.
+
+```{r pressure, echo=FALSE}
+startTimeMim = min(loaderMetricsMim$timestamp)
+producerMim = loaderMetricsMim %>%
+  filter(metrics %like% "Producer") %>%
+  mutate(timestamp = as.numeric(difftime(timestamp, startTimeMim, units=c("mins"))), metrics = "Producer Man in the middle", value)
+
+startTimePrdPrd = min(loaderMetricsPrdPrd$timestamp)
+producerPrdPrd = loaderMetricsPrdPrd %>%
+  filter(metrics %like% "Producer") %>%
+  mutate(timestamp = as.numeric(difftime(timestamp, startTimePrdPrd, units=c("mins"))), metrics = "Producer Prd to Prd", value)
+
+startTimePrdDev = min(loaderMetricsPrdDev$timestamp)
+producerPrdDev = loaderMetricsPrdDev %>%
+  filter(metrics %like% "Producer") %>%
+  mutate(timestamp = as.numeric(difftime(timestamp, startTimePrdDev, units=c("mins"))), metrics = "Producer Prd to Dev", value)
+
+
+# Rows binds (Union)
+loaderThreadMetrics = rbind(as.data.frame(producerMim), as.data.frame(producerPrdPrd), as.data.frame(producerPrdDev), make.row.names = FALSE)
+
+
+ggplotly(ggplot(loaderThreadMetrics, aes(x=loaderThreadMetrics$timestamp, y=loaderThreadMetrics$value, color=loaderThreadMetrics$metrics)) +
+  geom_line() +
+  scale_y_continuous(label=c("0","5M","10M"),breaks = c(0, 5000000, 10000000)) +
+  labs(x="Time (min)",y="Rows",color="Load Path"))
+
+```

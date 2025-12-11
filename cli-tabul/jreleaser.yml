@@ -1,0 +1,234 @@
+# $schema: https://jreleaser.org/schema/jreleaser-schema-1.21.0.json
+
+# Environment properties are in maven
+# JDK template variables (jdkOutputDirectory, ...) are maven properties
+# ie jdkOutputDirectory is jdk.output.directory in maven
+
+
+# https://jreleaser.org/guide/latest/reference/project.html
+project:
+  name: tabulify
+  description: Tabulify CLI application
+  longDescription: |
+    Tabulify, a local-first data processing tool for the AI era
+  authors:
+    - Tabulify Team
+  copyright: '{{project.inceptionYear}} Tabulify.com'
+  license: Functional Source License (FSL)
+  inceptionYear: '2020'
+  vendor: Tabulify
+  snapshot:
+    pattern: .*-SNAPSHOT
+    # This is the default version value but if you search for, you get it
+    label: early-access
+    # default is false
+    fullChangelog: true
+  tags:
+    - cli
+    - sql
+    - csv
+    - data processing
+    - oracle
+    - sqlserver
+    - mysql
+    - sqlite
+  links:
+    homepage: https://www.tabulify.com
+    documentation: https://www.tabulify.com
+  languages:
+    java:
+      groupId: com.tabulify
+      artifactId: tabulify-cli
+      mainClass: com.tabulify.tabul.Tabul
+      # Java Version, you can't set it as template variable from maven, so we use the environment
+      # See jdk properties in maven.
+      # In Maven, compiler version seems to not have major, minor, patch, tag and build
+      # You get the version in multiple projectJavaVersion template variables
+      # See https://jreleaser.org/guide/latest/reference/name-templates.html#_project
+      # version: '17.0.16+8'
+  stereotype: CLI
+
+# Create a GitHub release
+# https://jreleaser.org/guide/latest/reference/release/github.html
+release:
+  github:
+    # Release by default
+    releaseName: "Release {{projectEffectiveVersion}}"
+    prerelease:
+      # # A regex to determine if the project version is a prerelease
+      pattern: .*-rc.*
+    # https://jreleaser.org/guide/latest/reference/release/changelog.html
+    changelog:
+      formatted: ALWAYS
+      format: '- {{commitShortHash}} {{commitTitle}}'
+      preset: 'conventional-commits'
+      contributors:
+        enabled: false
+      content: |
+        # Changelog Version {{projectEffectiveVersion}}
+
+        {{changelogChanges}}
+      labelers:
+        - label: 'feature'
+          title: 'Resolves #'
+          body: 'Resolves #'
+        - label: 'issue'
+          title: 'Fixes #'
+          body: 'Fixes #'
+        - label: 'issue'
+          title: 'Relates to #'
+          body: 'Relates to #'
+        - label: 'task'
+          title: '[chore]'
+      categories:
+        - title: '🚀 Features'
+          key: 'features'
+          labels:
+            - 'feature'
+        - title: '✅ Issues'
+          key: 'issues'
+          labels:
+            - 'issue'
+        - title: '🧰 Tasks'
+          key: 'tasks'
+          labels:
+            - 'task'
+      replacers:
+        - search: '\[chore\] '
+
+# Execute with jreleaser assemble
+assemble:
+  # Execute it with
+  #  mvnw jreleaser:assemble -Djreleaser.config.file="jreleaser.yml" -pl "cli-tabul" -Djreleaser.assemblers=javaArchive
+  # unzip -l cli-tabul/target/jreleaser/assemble/tabulify-nojre/java-archive/tabulify-tabul-cli-early-access-nojre.zip
+  javaArchive:
+    tabulify-nojre:
+      active: ALWAYS
+      executable:
+        name: tabul
+      exported: true # The artifact generated will be created as distribution with the name tabulify-nojre
+      archiveName: 'tabulify-{{projectEffectiveVersion}}-nojre'
+      # Common practice is to provide both .zip and .tar.gz
+      formats:
+        - ZIP
+      fileSets:
+        - input: '{{baseOutputDirectory}}/../..'
+          includes:
+            - LICENSE.md
+        - input: '{{baseOutputDirectory}}/../src/main/howto'
+          output: resources/howto
+        - input: '{{baseOutputDirectory}}/../../data-generation-entities/src/main/resources/entity'
+          output: resources/entity
+        - input: '{{baseOutputDirectory}}/../../jdbc-tabul/src/main/sql/tpcds_query'
+          output: resources/tpcds_query
+      mainJar:
+        path: '{{baseOutputDirectory}}/{{projectJavaArtifactId}}-{{projectVersion}}.jar'
+      jars:
+        # The dependency jars are copied via maven with the deps profile
+        - pattern: '{{depsOutputDirectory}}/*.jar'
+      swid:
+        tagRef: swid-tag
+  # https://jreleaser.org/guide/latest/reference/assemble/jlink.html
+  # mvnw jreleaser:assemble -Djreleaser.config.file="jreleaser.yml" -pl "cli-tabul" -Djreleaser.assemblers=jlink
+  jlink:
+    # Assembly Name
+    tabulify-jre:
+      active: ALWAYS
+      imageName: 'tabulify-{{projectEffectiveVersion}}-jre'
+      executable: tabul
+      fileSets:
+        - input: '{{baseOutputDirectory}}/../..'
+          includes:
+            - LICENSE.md
+        - input: '{{baseOutputDirectory}}/../src/main/howto'
+          output: resources/howto
+        - input: '{{baseOutputDirectory}}/../../data-generation-entities/src/main/resources/entity'
+          output: resources/entity
+        - input: '{{baseOutputDirectory}}/../../jdbc-tabul/src/main/sql/tpcds_query'
+          output: resources/tpcds_query
+      jdeps:
+        # Specifies the version when processing multi-release JAR files. version should be an integer >=9 or base.
+        multiRelease: '17'
+        ignoreMissingDeps: true
+        targets:
+          # bug: baseOutputDirectory is the parent/target directory, not the project/target directory
+          # see ticket: https://github.com/jreleaser/jreleaser/issues/2024
+          - '{{baseOutputDirectory}}/tabulify-tabul-cli-{{projectVersion}}.jar'
+      additionalModuleNames:
+        # jdk.crypto.ec is mandatory to avoid handshake_failure on http request
+        # https://stackoverflow.com/questions/55439599/sslhandshakeexception-with-jlink-created-runtime
+        - 'jdk.crypto.ec'
+      # Old one from jreleaser
+      #        - 'java.rmi'
+      #        - 'java.security.sasl'
+      #        - 'java.security.jgss'
+      #        - 'jdk.crypto.cryptoki'
+      #        - 'jdk.localedata'
+      #        - 'jdk.net'
+      #        - 'jdk.security.auth'
+      #        - 'jdk.security.jgss'
+      targetJdks:
+        # On Mac and linux, we use brew that installs the JDK.
+        # JDK template variables (jdkOutputDirectory, ...) are maven properties
+        # ie jdkOutputDirectory is jdk.output.directory
+        - path: '{{jdkOutputDirectory}}/{{jdkDistribution}}-windows/jdk-{{jdkVersion}}+{{jdkVersionBuild}}'
+          platform: 'windows-x86_64'
+      mainJar:
+        # baseOutputDirectory is the tabul cli project directory
+        path: '{{baseOutputDirectory}}/tabulify-tabul-cli-{{projectVersion}}.jar'
+      jars:
+        - pattern: '{{depsOutputDirectory}}/*.jar'
+      swid:
+        tagRef: swid-tag
+  # https://jreleaser.org/guide/latest/reference/assemble/jpackage.html#_jlink_jpackage
+  jpackage:
+    tabulify-installer:
+      # jpackage tool create only native installers for the platform it's running on
+      # https://github.com/jreleaser/jreleaser/blob/main/.github/workflows/step-jpackage.yml
+      active: NEVER
+      jlink: tabulify-jre
+      linux:
+        types: [ rpm ]
+      osx:
+        types: [ dmg ]
+      windows:
+        types: [ exe ]
+      applicationPackage:
+        # additional restrictions on app-version???
+        appVersion: 2.0.0
+
+
+# Distributions define artifacts that are added in the release and packager manifest
+distributions:
+  # Assembly tabulify-nojre is exported as distribution
+  # no need to define the path
+  tabulify-nojre:
+    # Brew: run it with
+    # export BREW_FORMULA_NAME=tabulify-early-access; mvnw jreleaser:prepare -Djreleaser.packagers=brew -Djreleaser.config.file="jreleaser.yml" -pl "cli-tabul" -Djreleaser.distributions=tabulify-nojre
+    # https://jreleaser.org/guide/latest/reference/packagers/homebrew.html
+    brew:
+      active: ALWAYS
+      formulaName: '{{Env.BREW_FORMULA_NAME}}'
+      # Relative path to the pwd, not the subproject
+      templateDirectory: 'contrib/release/brew'
+      # java jdk dependency is in the template because brew dependencies do not allow any templating
+      repository:
+        # multi product one repo, we add the project
+        tagName: '{{projectName}}-{{tagName}}'
+      extraProperties:
+        # Don't add java as a dependency
+        # https://jreleaser.org/guide/latest/reference/packagers/homebrew.html#_jdk_dependency
+        skipJava: "true"
+
+# Create a software BOM (works only for non-snapshot)
+catalog:
+  active: ALWAYS
+  sbom:
+    active: ALWAYS
+    syft:
+      active: ALWAYS
+
+# Create signatures files for the distributions files and the checksum files
+signing:
+  active: ALWAYS
+  mode: COMMAND

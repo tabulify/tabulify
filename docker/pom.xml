@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>tabulify-docker</artifactId>
+  <packaging>jar</packaging>
+  <name>Tabulify Docker</name>
+  <description>Docker commands based on object than API call</description>
+
+  <parent>
+    <groupId>com.tabulify</groupId>
+    <artifactId>tabulify</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+  </parent>
+
+
+  <dependencies>
+
+    <!-- Docker Java and the mandatory transport   -->
+    <!-- https://github.com/docker-java/docker-java/blob/main/docs/transports.md -->
+    <dependency>
+      <groupId>com.github.docker-java</groupId>
+      <artifactId>docker-java-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.docker-java</groupId>
+      <artifactId>docker-java-transport-httpclient5</artifactId>
+    </dependency>
+    <!-- Testing (Junit5) -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- For Port detection (Oss) -->
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-base</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- We start a msql server and connect to it -->
+    <dependency>
+      <groupId>com.microsoft.sqlserver</groupId>
+      <artifactId>mssql-jdbc</artifactId>
+      <version>13.2.1.jre11</version>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+</project>

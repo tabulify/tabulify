@@ -1,0 +1,13 @@
+kind: csv
+spec:
+  data-uri: datadef-with-data-uri.csv@md
+  data-def:
+    commentCharacter: '^'
+    delimiterCharacter: ';'
+    escapeCharacter: '\'
+    headerRowId: 3
+    ignoreEmptyLine: false
+    quoteCharacter: ''''
+    columns:
+      - name: Integer
+        type: integer

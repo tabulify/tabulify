@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>tabulify-test-util</artifactId>
+  <packaging>jar</packaging>
+  <name>Tabulify Test</name>
+  <description>Utilities used for testing purpose</description>
+
+  <parent>
+    <groupId>com.tabulify</groupId>
+    <artifactId>tabulify</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+  </parent>
+
+
+  <dependencies>
+
+    <!-- Version in bom import -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+    </dependency>
+    <!-- To see log of test container -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-jdk14</artifactId>
+    </dependency>
+    <!-- Test (Junit5 only)-->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+</project>

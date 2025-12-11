@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+# Get number of lines from argument, default to 1
+LINES=${1:-1}
+
+# Print CSV headers
+echo "Id;Greeting"
+
+# Generate the line lines
+for ((i=1; i<=LINES; i++)); do
+    echo "$i;Hello $i"
+done

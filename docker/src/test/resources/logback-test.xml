@@ -1,0 +1,18 @@
+<configuration>
+  <!-- Set root logger to a higher level to suppress other libraries -->
+  <root level="WARN">
+    <appender-ref ref="CONSOLE"/>
+  </root>
+
+  <!-- Set your library's package to the desired level -->
+  <logger name="com.combostrap.docker" level="DEBUG" additivity="false">
+    <appender-ref ref="CONSOLE"/>
+  </logger>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.err</target>
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+</configuration>

@@ -64,10 +64,17 @@ ASSEMBLY_DIR=target/jreleaser/assemble/tabulify/jlink
 rm -rf $ASSEMBLY_DIR
 
 # Generate only for the current platform
+export JRELEASER_PROJECT_VERSION
+JRELEASER_PROJECT_VERSION=$(yq --exit-status '.project.version' ../pom.xml)
 jreleaser assemble --debug --select-current-platform
 
 # Move the jlink output
 # No need to unzip - the dir is still there
-ARCHIVE_NAME=tabulify-early-access-linux-x86_64
+ARCHIVE_VERSION_NAME=$JRELEASER_PROJECT_VERSION
+# JReleaser change the archive name for snapshot
+if [[ "$JRELEASER_PROJECT_VERSION" == *"-SNAPSHOT"* ]]; then
+  ARCHIVE_VERSION_NAME=$(yq --exit-status '.project.snapshot.label' jreleaser.yml)
+fi
+ARCHIVE_NAME=tabulify-${ARCHIVE_VERSION_NAME}-linux-x86_64
 ASSEMBLY_WORK_DIR=work-linux-x86_64
 mv "${ASSEMBLY_DIR}/${ASSEMBLY_WORK_DIR}/${ARCHIVE_NAME}" "${TABUL_HOME}"

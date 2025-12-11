@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>tabulify-tabul-email</artifactId>
+  <name>Tabulify Email Tabul</name>
+
+  <parent>
+    <groupId>com.tabulify</groupId>
+    <artifactId>tabulify</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+  </parent>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-tabul-base</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-tabul-flow</artifactId>
+    </dependency>
+    <!-- Provide a tabul service -->
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-tabul-docker</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.simplejavamail</groupId>
+      <artifactId>simple-java-mail</artifactId>
+    </dependency>
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!--    <dependency>-->
+    <!--      <groupId>com.eraldy</groupId>-->
+    <!--      <artifactId>eraldy-smtp-client</artifactId>-->
+    <!--      <classifier>tests</classifier>-->
+    <!--      <type>test-jar</type>-->
+    <!--      <scope>test</scope>-->
+    <!--    </dependency>-->
+    <dependency>
+      <groupId>com.github.davidmoten</groupId>
+      <artifactId>subethasmtp</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <testSourceDirectory>../ee-tabul/${project.artifactId}/src/test/java</testSourceDirectory>
+    <testResources>
+      <testResource>
+        <directory>../ee-tabul/${project.artifactId}/src/test/resources</directory>
+      </testResource>
+    </testResources>
+  </build>
+
+</project>

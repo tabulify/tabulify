@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        table {
+            width: 600px;
+            table-layout: fixed;
+            border-collapse: collapse;
+        }
+        td {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            padding: 5px;
+            vertical-align: top;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Docker Test Page</h1>
+        <p>This is a simple test page running in a Docker container.</p>
+        <p>Click the link below to view environment variables:</p>
+        <p><a href="./cgi-bin/print-envs.cgi">View Environment Variables</a></p>
+      <p><a href="./cgi-bin/print-env.cgi?name=ONE">Print Variable ONE</a></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+kind: command
+spec:
+  # the runtime data uri
+  data-uri: (scripted-csv@md)@tmp
+  # The data definition (attributes)
+  data-def:
+    # A list of arguments passed to the command
+    arguments:
+      - 3 # The first argument, the number of lines
+    stdout-data-uri: 'execute/${execution_start_time}-${executable_logical_name}.log@tmp'

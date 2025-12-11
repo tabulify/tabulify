@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>tabulify-tabul-mysql</artifactId>
+  <name>Tabulify MySql Tabul</name>
+
+  <parent>
+    <groupId>com.tabulify</groupId>
+    <artifactId>tabulify</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+  </parent>
+
+
+  <dependencies>
+
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-tabul-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-tabul-docker</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-tabul-jdbc</artifactId>
+      <version>${project.parent.version}</version>
+      <classifier>tests</classifier>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-test-util</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-tabul-data-generation</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-tabul-csv</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tabulify</groupId>
+      <artifactId>tabulify-tabul-flow</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- https://java.testcontainers.org/modules/databases/mysql/ -->
+    <!-- Version in bom import -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-mysql</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <testSourceDirectory>../ee-tabul/${project.artifactId}/src/test/java</testSourceDirectory>
+    <testResources>
+      <testResource>
+        <directory>../ee-tabul/${project.artifactId}/src/test/resources</directory>
+      </testResource>
+    </testResources>
+  </build>
+
+</project>

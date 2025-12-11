@@ -1,0 +1,17 @@
+kind: sql-request
+spec:
+  # the executable data uri
+  # * takes the sql file (call-get-supplier-of-coffee.sql)
+  # * located in the same directory as this manifest (md)
+  # * and execute it against (mysql)
+  data-uri: (call-get-supplier-of-coffee.sql@md)@mysql
+  # the data definition
+  data-def:
+    parameters:
+      # the parameter for the first placeholder
+      - direction: in # retrieve the value
+        type: varchar # the type of the retrieved value
+        value: Colombian # the value passed to the GET_SUPPLIER_OF_COFFEE function
+      # the parameter for the second placeholder
+      - direction: out # set the value
+        type: varchar # the type of the value
