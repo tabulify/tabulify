@@ -2,12 +2,11 @@
 
 ## Test
 
-Start the [release-test](../script/release-test) script
+Start the Test script
 ```bash
 release-test
+release-test -rf xxx
 ```
-It will start the test for each module.
-Why? The test containers are going down when the JVM goes down.
 
 ## Doc Sync and broken links
 

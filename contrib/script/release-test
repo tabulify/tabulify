@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Release Tabulify
-# Test are starting containers with testcontainers
-# Surefire is starting a JVM by module and testcontainers with Ryuk is deleting them
-# when the jvm exit
-# It means that we can just use mvnw as it's standard
-#
+# Tabulify Test
+# See test.md
 
 set -TCEeuo pipefail
+
+NC='\033[0m'        # No Color
+RED='\033[0;31m'    # Red
 
 # Arg
 RESUME_FROM=""
@@ -28,9 +27,16 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-ARGS=("test")
+
+# site goal and not test so that the reports are generated
+ARGS=("clean" "site")
 if [ "$RESUME_FROM" != "" ]; then
   ARGS+=("--resume-from" "$RESUME_FROM")
+fi
+
+if ! (command -v docker > /dev/null 2>&1 && docker info > /dev/null 2>&1); then
+  echo -e "${RED}Error: docker is not available${NC}"
+  exit 1
 fi
 
 if [ "$PROJECT_ROOT" == "" ]; then
@@ -39,7 +45,7 @@ if [ "$PROJECT_ROOT" == "" ]; then
 fi
 
 # Change context
-(cd "$PROJECT_ROOT"; mvnw "${ARGS[@]}")
-
-
-git cliff --bumped-version
+(
+  cd "$PROJECT_ROOT"
+  mvnw "${ARGS[@]}"
+)

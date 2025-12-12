@@ -642,23 +642,66 @@
           <!-- Same as jreleaser -->
           <version>1.21.0</version>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-report-plugin</artifactId>
+          <version>3.5.4</version>
+        </plugin>
+        <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-site-plugin -->
+        <!-- note 4 because of https://github.com/apache/maven-project-info-reports-plugin/issues/103 -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.21.0</version>
+        </plugin>
+        <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-project-info-reports-plugin -->
+        <!-- to solve: [WARNING] Report plugin org.apache.maven.plugins:maven-project-info-reports-plugin has an empty version.-->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-project-info-reports-plugin</artifactId>
+          <version>3.9.0</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
       <plugin>
         <!-- Maven runs: one Surefire JVM per module, in separate processes, in sequence -->
+        <!-- https://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.2.5</version>
         <configuration>
           <!-- One JVM per module (Default) -->
           <forkCount>1</forkCount>
           <!-- Yes (default) Same fork for all test in the module otherwise it mess up with test containers -->
           <reuseForks>true</reuseForks>
+          <!-- Report -->
+          <printSummary>true</printSummary>
+          <!-- redirect the unit test standard output to a file (found in reportsDirectory/testName-output.txt) -->
+          <redirectTestOutputToFile>true</redirectTestOutputToFile>
         </configuration>
       </plugin>
     </plugins>
   </build>
+
+  <!-- Run it with mvnw site -->
+  <!-- https://maven.apache.org/surefire/maven-surefire-report-plugin/usage.html -->
+  <reporting>
+    <plugins>
+      <plugin>
+        <!-- Create a report from the test XML report -->
+        <!-- https://maven.apache.org/surefire/maven-surefire-report-plugin/report-mojo.html -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+        <configuration>
+          <!-- Shows only failure -->
+          <!-- https://maven.apache.org/surefire/maven-surefire-report-plugin/examples/show-failures.html -->
+          <showSuccess>false</showSuccess>
+          <!-- build an aggregated report at the root -->
+          <aggregate>true</aggregate>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
 
   <profiles>
     <profile>

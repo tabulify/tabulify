@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# a little script to execute a command every second
+# example
+# monitor docker ps
+# will list you the running containers
+
+while true; do
+    clear
+    "$@"
+    sleep 1
+done
