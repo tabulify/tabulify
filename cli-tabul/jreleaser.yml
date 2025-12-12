@@ -125,7 +125,7 @@ assemble:
         path: '{{baseOutputDirectory}}/{{projectJavaArtifactId}}-{{projectVersion}}.jar'
       jars:
         # The dependency jars are copied via maven with the deps profile
-        - pattern: '{{depsOutputDirectory}}/*.jar'
+        - pattern: '{{dependencyOutputDirectory}}/*.jar'
       swid:
         tagRef: swid-tag
   # https://jreleaser.org/guide/latest/reference/assemble/jlink.html
@@ -208,13 +208,16 @@ distributions:
     # https://jreleaser.org/guide/latest/reference/packagers/homebrew.html
     brew:
       active: ALWAYS
-      formulaName: '{{Env.BREW_FORMULA_NAME}}'
+      # Bug: Template variable are not working: https://github.com/jreleaser/jreleaser/issues/2025
+      # when solved: '{{Env.BREW_FORMULA_NAME}}'
+      formulaName: tabulify
       # Relative path to the pwd, not the subproject
       templateDirectory: 'contrib/release/brew'
       # java jdk dependency is in the template because brew dependencies do not allow any templating
       repository:
         # multi product one repo, we add the project
-        tagName: '{{projectName}}-{{tagName}}'
+        # Bug: hardcoded because projectName value is tabulify-nojre, not tabulify
+        tagName: 'tabulify-{{tagName}}'
       extraProperties:
         # Don't add java as a dependency
         # https://jreleaser.org/guide/latest/reference/packagers/homebrew.html#_jdk_dependency

@@ -9,6 +9,7 @@ class {{brewFormulaName}} < Formula
   version "{{projectVersion}}"
   sha256 "{{distributionChecksumSha256}}"
   license "{{projectLicense}}"
+  head "https://{{repoHost}}/{{repoOwner}}/{{repoName}}.git", branch: "main"
 
   {{#brewHasLivecheck}}
   livecheck do
@@ -18,8 +19,8 @@ class {{brewFormulaName}} < Formula
   end
   {{/brewHasLivecheck}}
 
-  {{! jdk dependency is not in jreleaser.yml because we can't template it }}
-  depends_on "{{jdkDistribution}}@{{projectJavaVersionMajor}}"
+  {{! jdk dependency is not temurin because it's a cask and a formulae can't have a cask as dependency }}
+  depends_on "{{jdkDistributionBrew}}@{{projectJavaVersionMajor}}"
   {{#brewDependencies}}
   depends_on {{.}}
   {{/brewDependencies}}
@@ -52,7 +53,7 @@ class {{brewFormulaName}} < Formula
         original = File.read(script)
         modified = original.sub(
             /^#!\/usr\/bin\/env bash/,
-            "#!/usr/bin/env bash\nJAVA_HOME=\"#{Formula["openjdk@17"].opt_prefix}\""
+            "#!/usr/bin/env bash\nJAVA_HOME=\"#{Formula["{{jdkDistributionBrew}}@{{projectJavaVersionMajor}}"].opt_prefix}\""
         )
         File.write(script, modified)
     end

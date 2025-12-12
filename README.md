@@ -41,3 +41,16 @@ tabul data diff data_expected.csv data@database
 ```bash
 tabul app deploy
 ```
+
+## Quick Installation
+
+On Windows WSL, Linux, macOS
+* Installation
+```bash
+brew install tabulify/tap/tabulify
+```
+* Upgrade
+```bash
+brew update
+brew upgrade tabulify/tap/tabulify
+```

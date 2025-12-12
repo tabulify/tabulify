@@ -19,7 +19,7 @@
 
   <properties>
     <!-- Where to copy the dependencies for packaging -->
-    <dependency.output-directory>${project.build.directory}/deps</dependency.output-directory>
+    <dependency.output.directory>${project.build.directory}/deps</dependency.output.directory>
     <!-- Name used in the brew formula to design the cli project -->
     <cli.project.name>${project.pomFile.parentFile.name}</cli.project.name>
   </properties>
@@ -244,7 +244,7 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>
             <configuration>
-              <outputDirectory>${dependency.output-directory}</outputDirectory>
+              <outputDirectory>${dependency.output.directory}</outputDirectory>
               <includeScope>runtime</includeScope>
             </configuration>
           </plugin>

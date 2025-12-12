@@ -3,9 +3,8 @@
 set -TCEeuo pipefail
 
 # Reset
-NC='\033[0m'        # No Color
-RED='\033[0;31m'    # Red
-
+NC='\033[0m'     # No Color
+RED='\033[0;31m' # Red
 
 PROJECT_TO_RELEASE=cli-tabul
 JRELEASER_LOG="$PROJECT_TO_RELEASE/target/jreleaser/trace.log"
@@ -15,7 +14,7 @@ function synopsis() {
 
   Release $PROJECT_TO_RELEASE:
 
-      $(basename "$0") [options] [patch|minor|major|early]
+      $(basename "$0") [options] [patch|minor|major|none]
 
   Options:
     * -a | --assemble-only    : create the archive only (will not release)
@@ -31,8 +30,8 @@ function synopsis() {
 
 EOF
 }
-
-BUMP_TYPE="early"
+NO_BUMP_TYPE="none"
+BUMP_TYPE="$NO_BUMP_TYPE"
 GOAL="release"
 ASSEMBLE_GOAL="assemble"
 PREPARE_GOAL="prepare"
@@ -72,18 +71,33 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
-NO_BUMP="early"
-NEXT_VERSION="$NO_BUMP"
-if [ "$BUMP_TYPE" != "$NO_BUMP" ]; then
+if [ "$BUMP_TYPE" != "$NO_BUMP_TYPE" ]; then
   # Get the next version
   export GIT_CLIFF__BUMP__INITIAL_TAG=v0.1.0 # by default it's 0.1.0
-  NEXT_VERSION=$(git cliff --unreleased --bump "$BUMP_TYPE" --context --tag-pattern "v[0-9]+\\.[0-9]+\\.[0-9]+" | jq -r '.[0].version' | tr -d "v")
+  if ! RELEASE_VERSION=$(git cliff --unreleased --context --tag-pattern "v[0-9]+\\.[0-9]+\\.[0-9]+" --ignore-tags "v[0-9]+\\.[0-9]+\\.[0-9]+-rc[0-9]*" --bump "$BUMP_TYPE" | jq -r '.[0].version' | tr -d "v"); then
+    echo -e "${RED}Error while getting the next version${NC}"
+  fi
   # Jreleaser read the version from the pom file
   # We need to modify the pom file
-  mvnw versions:set -DgenerateBackupPoms=false -DnewVersion="$NEXT_VERSION"
-  git commit -am "chore(release): $NEXT_VERSION"
+  echo "Creating Next version $RELEASE_VERSION commit"
+  mvnw versions:set -DgenerateBackupPoms=false -DnewVersion="$RELEASE_VERSION"
+  git commit -am "chore(release): $RELEASE_VERSION"
   git push origin
+  echo "Next version $RELEASE_VERSION commit done"
+else
+  echo "No bump taking the actual version"
+  RELEASE_VERSION=$(yq '.project.version' pom.xml)
 fi
+
+IS_SNAPSHOT=false
+EFFECTIVE_VERSION=$RELEASE_VERSION
+if [[ "$RELEASE_VERSION" =~ .*-SNAPSHOT ]]; then
+  IS_SNAPSHOT=true
+  EFFECTIVE_VERSION="early-access"
+fi
+
+
+
 
 # Common Arg
 # Because we call only the cli module, jreleaser is expected to be in this directory
@@ -96,61 +110,68 @@ if [ $LEVEL == "debug" ]; then
 fi
 
 if [ "$GOAL" == "$CONFIG_GOAL" ]; then
-  echo "Config only version $NEXT_VERSION"
+  echo "Config only version $RELEASE_VERSION"
   mvnw jreleaser:config "${JRELEASER_COMMON_ARGS[@]}"
-  echo "Config only version $NEXT_VERSION done"
+  echo "Config only version $RELEASE_VERSION done"
   exit
 fi
 
 if [ "$GOAL" == "$CHANGELOG_GOAL" ]; then
-  echo "Changelog only version $NEXT_VERSION"
+  echo "Changelog only version $RELEASE_VERSION"
   mvnw clean jreleaser:changelog "${JRELEASER_COMMON_ARGS[@]}"
-  echo "Changelog only version $NEXT_VERSION done"
+  echo "Changelog only version $RELEASE_VERSION done"
   exit
 fi
 
 # Create the cli archive
 if [ $ASSEMBLY == true ]; then
-  echo "Cleaning"
+  echo "Cleaning $RELEASE_VERSION"
   mvnw clean -Dorg.slf4j.simpleLogger.defaultLogLevel=$LEVEL
   echo "Cleaning done"
-  echo "Packaging and Installing"
+  echo "Packaging and Installing $RELEASE_VERSION"
   # Installing locally is mandatory because of the dependencies copy
   mvnw install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=$LEVEL # create the lib and cli archive
-  echo "Copying dependencies"
+  echo "Copying dependencies $RELEASE_VERSION"
   mvnw -Pdeps -pl "$PROJECT_TO_RELEASE" -Dorg.slf4j.simpleLogger.defaultLogLevel=$LEVEL
-  echo "Downloading Jdk"
+  echo "Downloading Jdk $RELEASE_VERSION"
   if ! mvnw -Pjdks -pl "$PROJECT_TO_RELEASE" -Dorg.slf4j.simpleLogger.defaultLogLevel=$LEVEL; then
     echo -e "${RED}Error: while downloading the JDK check the logs at $JRELEASER_LOG${NC}"
     exit 1
   fi
   echo "Downloading Jdk Done"
-  echo "Assembling version $NEXT_VERSION"
+  echo "Assembling version $RELEASE_VERSION"
   if ! mvnw jreleaser:assemble -Dorg.slf4j.simpleLogger.defaultLogLevel=$LEVEL "${JRELEASER_COMMON_ARGS[@]}"; then
     echo -e "${RED}Error: check the logs at $JRELEASER_LOG${NC}"
     exit 1
   fi
-  echo "Assembling $NEXT_VERSION done"
+  echo "Assembling $RELEASE_VERSION done"
+
+  echo "Testing Assembly $RELEASE_VERSION"
+  TABUL_BIN="$PROJECT_ROOT/$PROJECT_TO_RELEASE/target/jreleaser/assemble/tabulify-nojre/java-archive/work/tabulify-$EFFECTIVE_VERSION-nojre/bin/tabul"
+  if ! $TABUL_BIN version; then
+    echo -e "${RED}Error: assembly error${NC}"
+    echo -e "${RED}The executable returns an error: $TABUL_BIN${NC}"
+    exit 1
+  fi
+  echo "Test successful"
 else
   echo "Assembly disabled"
 fi
-
 
 if [ "$GOAL" == "$ASSEMBLE_GOAL" ]; then
   echo "Assemble only run. Exiting"
   exit
 fi
 
-
 # Preparation and publish due to bug: https://github.com/jreleaser/jreleaser/issues/2025
-echo "Preparing $NEXT_VERSION"
+echo "Preparing $RELEASE_VERSION"
 # The formulae name
 export BREW_FORMULA_NAME=tabulify
-if [ "$BUMP_TYPE" == "$NO_BUMP" ]; then
+if [[ $IS_SNAPSHOT == true ]]; then
   BREW_FORMULA_NAME=tabulify-early-access
 fi
 mvnw jreleaser:prepare -Dorg.slf4j.simpleLogger.defaultLogLevel="$LEVEL" "${JRELEASER_COMMON_ARGS[@]}"
-echo "Preparing $NEXT_VERSION done"
+echo "Preparing $RELEASE_VERSION done"
 FORMULAE_DIR="$PROJECT_ROOT/$PROJECT_TO_RELEASE/target/jreleaser/prepare/tabulify-nojre/brew/Formula"
 SOURCE_FORMULAE_FILE="$FORMULAE_DIR/brewformulaname.rb"
 if [ ! -f "$SOURCE_FORMULAE_FILE" ]; then
@@ -171,26 +192,24 @@ if [ "$LEVEL" == "warn" ]; then
   LEVEL="info"
 fi
 
-
-echo "Version release of $NEXT_VERSION"
+echo "Version release of $RELEASE_VERSION"
 mvnw jreleaser:release -Dorg.slf4j.simpleLogger.defaultLogLevel="$LEVEL" "${JRELEASER_COMMON_ARGS[@]}"
-echo "Version release of $NEXT_VERSION done"
+echo "Version release of $RELEASE_VERSION done"
 # To avoid:  ! [rejected]  early-access -> early-access  (would clobber existing tag)
 git fetch --tags --force
 
-
-echo "Publishing $NEXT_VERSION"
+echo "Publishing $RELEASE_VERSION"
 mvnw jreleaser:publish -Dorg.slf4j.simpleLogger.defaultLogLevel=$LEVEL "${JRELEASER_COMMON_ARGS[@]}"
 echo "Publishing done"
 
-if [ "$BUMP_TYPE" == "$NO_BUMP" ]; then
-  echo "Snapshot release, no bump exiting"
+if [[ $IS_SNAPSHOT == true ]]; then
+  echo "Snapshot release, no next dev iteration. Exiting"
   exit
 fi
 
 # Next dev iteration
-NEXT_VERSION=$(git cliff --unreleased --bump "patch" --context --tag-pattern "v[0-9]+\\.[0-9]+\\.[0-9]+" | jq -r '.[0].version' | tr -d "v")
-NEXT_SNAPSHOT_VERSION="$NEXT_VERSION-SNAPSHOT"
+RELEASE_VERSION=$(git cliff --unreleased --bump "patch" --context --tag-pattern "v[0-9]+\\.[0-9]+\\.[0-9]+" | jq -r '.[0].version' | tr -d "v")
+NEXT_SNAPSHOT_VERSION="$RELEASE_VERSION-SNAPSHOT"
 echo "Next Iteration Commit to $NEXT_SNAPSHOT_VERSION"
 mvnw versions:set -DgenerateBackupPoms=false -DnewVersion="$NEXT_SNAPSHOT_VERSION"
 git commit -am "chore(next): $NEXT_SNAPSHOT_VERSION"

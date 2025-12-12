@@ -42,6 +42,8 @@
     <jdk.version.build>8</jdk.version.build>
     <!-- The setup disco value, brew value -->
     <jdk.distribution>temurin</jdk.distribution>
+    <!-- Temurin is a cask and cannot be a brew dependency -->
+    <jdk.distribution.brew>openjdk</jdk.distribution.brew>
     <!-- The directory where the jdks are downloaded -->
     <jdk.output.directory>${java.io.tmpdir}/jdks</jdk.output.directory>
 
