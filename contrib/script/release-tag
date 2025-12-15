@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Create a tag
 
+set -TCEeuo pipefail
+
 NC='\033[0m'     # No Color
 RED='\033[0;31m' # Red
 
@@ -14,6 +16,9 @@ function synopsis() {
   Args:
     * patch|minor|major|none : is the type of bump for the semver version (default to none - no bump)
 
+  Options:
+    * --dry-run : just shows the next tag and version
+
   The version is changed if the bump type is patch|minor|major
 
 EOF
@@ -21,11 +26,30 @@ EOF
 
 NO_BUMP_TYPE="none"
 BUMP_TYPE="$NO_BUMP_TYPE"
-if [ -z "$1" ]; then
-  echo -e "${RED}Please provide a bump type.${NC}"
-  synopsis
-  exit
-fi
+DRY_RUN=true
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h | --help | help)
+      # Help
+      doc::help synopsis
+      exit 0
+      ;;
+    synopsis)
+      # Doc Synopsis
+      synopsis
+      exit 0
+      ;;
+    -ndr | --no-dry-run)
+      DRY_RUN=false
+      ;;
+    *)
+      BUMP_TYPE="$1"
+      shift
+      break
+      ;;
+  esac
+  shift
+done
 
 echo "Determining the version"
 if [ "$BUMP_TYPE" != "$NO_BUMP_TYPE" ]; then
@@ -37,39 +61,74 @@ if [ "$BUMP_TYPE" != "$NO_BUMP_TYPE" ]; then
   fi
   # Jreleaser read the version from the pom file
   # We need to modify the pom file
-  echo "Creating Next version $RELEASE_VERSION commit"
-  mvnw versions:set -DgenerateBackupPoms=false -DnewVersion="$RELEASE_VERSION"
-  git commit -am "chore(release): $RELEASE_VERSION"
-  git push origin
-  echo "Next version $RELEASE_VERSION commit done"
+  if [ $DRY_RUN == false ]; then
+    echo "Creating Next version $RELEASE_VERSION commit"
+    mvnw versions:set -DgenerateBackupPoms=false -DnewVersion="$RELEASE_VERSION"
+    git commit -am "chore(release): $RELEASE_VERSION"
+    git push origin
+    echo "Next version $RELEASE_VERSION commit done"
+  else
+    echo "Dry Run, no commit done"
+  fi
 else
   echo "No bump taking the actual version"
   RELEASE_VERSION=$(yq '.project.version' pom.xml)
 fi
 echo "Version determined to be $RELEASE_VERSION"
 
+IS_SNAPSHOT=true
+if [[ ! "$RELEASE_VERSION" =~ .*-SNAPSHOT ]]; then
+  IS_SNAPSHOT=false
+fi
+
 echo "Determining the tag"
-if [[ "$RELEASE_VERSION" =~ .*-SNAPSHOT ]]; then
+if [[ $IS_SNAPSHOT == true ]]; then
   TAG_NAME="early-access"
 else
   TAG_NAME="v$RELEASE_VERSION"
 fi
 echo "Tag determined to be $TAG_NAME"
 
-# Delete the tag if it exists (both locally and remotely)
-if git tag -l | grep -q "^${TAG_NAME}$"; then
-  echo "Deleting existing local tag: $TAG_NAME"
-  git tag -d "$TAG_NAME"
+if [ $DRY_RUN == false ]; then
+  # Delete the tag if it exists (both locally and remotely)
+  if git tag -l | grep -q "^${TAG_NAME}$"; then
+    echo "Deleting existing local tag: $TAG_NAME"
+    git tag -d "$TAG_NAME"
+  fi
+
+  # Check if tag exists on remote and delete it
+  if git ls-remote --tags origin | grep -q "refs/tags/${TAG_NAME}$"; then
+    echo "Deleting existing remote tag: $TAG_NAME"
+    git push origin --delete "$TAG_NAME"
+  fi
+
+  echo "Creating Tag $1"
+  git tag "$1"
+  echo "Pushing Tag $1"
+  git push origin tag "$1"
+  echo "Tagging done"
+
+else
+  echo "Dry Run, no tag creation"
 fi
 
-# Check if tag exists on remote and delete it
-if git ls-remote --tags origin | grep -q "refs/tags/${TAG_NAME}$"; then
-  echo "Deleting existing remote tag: $TAG_NAME"
-  git push origin --delete "$TAG_NAME"
+
+
+# Next dev iteration
+RELEASE_VERSION=$(git cliff --unreleased --bump "minor" --context --tag-pattern "v[0-9]+\\.[0-9]+\\.[0-9]+" | jq -r '.[0].version' | tr -d "v")
+NEXT_SNAPSHOT_VERSION="$RELEASE_VERSION-SNAPSHOT"
+echo "Next Iteration Commit to $NEXT_SNAPSHOT_VERSION"
+
+if [[ $IS_SNAPSHOT == true ]]; then
+  echo "Snapshot release, no next dev iteration. Exiting"
+  exit
 fi
 
-echo "Creating Tag $1"
-git tag "$1"
-echo "Pushing Tag $1"
-git push origin tag "$1"
-echo "Tagging done. Exiting"
+if [[ $DRY_RUN == true ]]; then
+  echo "Dry Run, no next commit"
+else
+  mvnw versions:set -DgenerateBackupPoms=false -DnewVersion="$NEXT_SNAPSHOT_VERSION"
+  git commit -am "chore(next): $NEXT_SNAPSHOT_VERSION"
+  git push origin
+  echo "Next Iteration Commit to $NEXT_SNAPSHOT_VERSION: done"
+fi
