@@ -148,6 +148,17 @@
         <directory>../ee-tabul/${project.artifactId}/src/test/resources</directory>
       </testResource>
     </testResources>
+    <plugins>
+      <plugin>
+        <groupId>org.jreleaser</groupId>
+        <artifactId>jreleaser-maven-plugin</artifactId>
+        <inherited>false</inherited>
+        <configuration>
+          <!-- https://jreleaser.org/guide/latest/tools/jreleaser-maven.html#_configuration -->
+          <configFile>jreleaser.yml</configFile>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 
 
@@ -198,6 +209,8 @@
         </plugins>
       </build>
     </profile>
+    <!-- Profile to download the jdk -->
+    <!-- Example: mvnw -Pjdks -Dorg.slf4j.simpleLogger.defaultLogLevel=info -pl cli-tabul -->
     <profile>
       <id>jdks</id>
       <properties>
@@ -218,12 +231,28 @@
               <!-- On Linux and OSX, we use brew that install the JDK -->
               <jdks>
                 <jdk>
-                  <name>${jdk.distribution}-windows</name>
+                  <name>${jdk.distribution}-windows-x64</name>
                   <platform>windows-x86_64</platform>
                   <url>
                     https://github.com/adoptium/${jdk.distribution}${jdk.version.major}-binaries/releases/download/jdk-${jdk.version}%2B${jdk.version.build}/OpenJDK${jdk.version.major}U-jdk_x64_windows_hotspot_${jdk.version}_${jdk.version.build}.zip
                   </url>
                   <checksum>sha256/8c7cfff78a55c56ebaf470ed6a89c6466b47d8274bdabdda997d7507c20325c5</checksum>
+                </jdk>
+                <jdk>
+                  <name>${jdk.distribution}-linux-x64</name>
+                  <url>
+                    https://github.com/adoptium/${jdk.distribution}${jdk.version.major}-binaries/releases/download/jdk-${jdk.version}%2B${jdk.version.build}/OpenJDK${jdk.version.major}U-jdk_x64_linux_hotspot_${jdk.version}_${jdk.version.build}.tar.gz
+                  </url>
+                  <checksum>sha256/166774efcf0f722f2ee18eba0039de2d685b350ee14d7b69e6f83437dafd2af1</checksum>
+                  <platform>linux-x86_64</platform>
+                </jdk>
+                <jdk>
+                  <name>${jdk.distribution}-linux-musl-x64</name>
+                  <url>
+                    https://github.com/adoptium/${jdk.distribution}${jdk.version.major}-binaries/releases/download/jdk-${jdk.version}%2B${jdk.version.build}/OpenJDK${jdk.version.major}U-jdk_x64_alpine-linux_hotspot_${jdk.version}_${jdk.version.build}.tar.gz
+                  </url>
+                  <checksum>sha256/2e83ac152fb315db0d667761f2120b64504800f641a513044e834a1a41f29bc0</checksum>
+                  <platform>linux_musl-x86_64</platform>
                 </jdk>
               </jdks>
             </configuration>
@@ -253,6 +282,8 @@
 
     </profile>
   </profiles>
+
+
 
 
 </project>

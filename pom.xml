@@ -663,6 +663,12 @@
           <artifactId>maven-project-info-reports-plugin</artifactId>
           <version>3.9.0</version>
         </plugin>
+        <!-- https://mvnrepository.com/artifact/io.github.git-commit-id/git-commit-id-maven-plugin -->
+        <plugin>
+          <groupId>io.github.git-commit-id</groupId>
+          <artifactId>git-commit-id-maven-plugin</artifactId>
+          <version>9.0.2</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -681,6 +687,119 @@
           <!-- redirect the unit test standard output to a file (found in reportsDirectory/testName-output.txt) -->
           <redirectTestOutputToFile>true</redirectTestOutputToFile>
         </configuration>
+      </plugin>
+      <plugin>
+        <!-- Git Variable Injection -->
+        <!-- https://github.com/git-commit-id/git-commit-id-maven-plugin -->
+        <groupId>io.github.git-commit-id</groupId>
+        <artifactId>git-commit-id-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>get-the-git-infos</id>
+            <goals>
+              <goal>revision</goal>
+            </goals>
+            <!-- Binds to the initialize phase by default, so that all git properties are available -->
+            <phase>initialize</phase>
+          </execution>
+        </executions>
+        <configuration>
+          <skipPoms>false</skipPoms>
+          <!-- Inject the properties in all pom -->
+          <injectAllReactorProjects>true</injectAllReactorProjects>
+          <!-- Use native git because git.tag was blank -->
+          <useNativeGit>true</useNativeGit>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <configuration>
+              <archive>
+                <manifest>
+                  <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                  <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                </manifest>
+                <!-- Generate a jar INDEX.LIST -->
+                <index>true</index>
+                <manifestEntries>
+                  <!-- Add the Maven coordinates in the manifest -->
+                  <Maven-Project-Group-Id>${project.groupId}</Maven-Project-Group-Id>
+                  <Maven-Project-Artifact-Id>${project.artifactId}</Maven-Project-Artifact-Id>
+                  <Maven-Project-Version>${project.version}</Maven-Project-Version>
+                  <Maven-Version>${maven.version}</Maven-Version>
+                  <Maven-Build-Timestamp>${maven.build.timestamp}</Maven-Build-Timestamp>
+                  <Maven-Build-Version>${maven.build.version}</Maven-Build-Version>
+                  <!-- Package -->
+                  <!-- https://docs.oracle.com/javase/8/docs/technotes/guides/versioning/spec/versioning2.html#wp89936 -->
+                  <Package-Title>${project.name}</Package-Title>
+                  <Package-Version>${project.version}</Package-Version>
+                  <Package-Vendor>${project.organization.name}</Package-Vendor>
+                  <Package-Vendor-Url>${project.organization.url}</Package-Vendor-Url>
+                  <!-- Os -->
+                  <Os-Arch>${os.arch}</Os-Arch>
+                  <Os-Name>${os.name}</Os-Name>
+                  <Os-Version>${os.version}</Os-Version>
+                  <!-- Java -->
+                  <Java-Version>${java.version}</Java-Version>
+                  <Java-Version-Date>${java.version.date}</Java-Version-Date>
+                  <Java-Vendor>${java.vendor}</Java-Vendor>
+                  <Java-Vendor-Url>${java.vendor.url}</Java-Vendor-Url>
+                  <Java-Vendor-Version>${java.vendor.version}</Java-Vendor-Version>
+                  <Java-VM-Name>${java.vm.name}</Java-VM-Name>
+                  <Java-VM-Version>${java.vm.version}</Java-VM-Version>
+                  <Java-VM-Vendor>${java.vm.vendor}</Java-VM-Vendor>
+                  <Java-VM-Info>${java.vm.info}</Java-VM-Info>
+                  <Java-Runtime-Name>${java.runtime.name}</Java-Runtime-Name>
+                  <Java-Runtime-Version>${java.runtime.version}</Java-Runtime-Version>
+                  <!-- Add the Git and build info -->
+                  <!-- https://github.com/git-commit-id/git-commit-id-maven-plugin/blob/master/docs/configuration-and-properties.md -->
+                  <!-- https://github.com/git-commit-id/git-commit-id-plugin-core/blob/master/src/main/java/pl/project13/core/GitCommitPropertyConstant.java -->
+                  <!-- Property are immutable so we can't set them and the IDE is not happy, we silence the warning -->
+                  <!--suppress MavenModelInspection -->
+                  <Build-Host>${git.build.host}</Build-Host>
+                  <!-- The CI unique id -->
+                  <!--suppress MavenModelInspection -->
+                  <Build-Number>${git.build.number}</Build-Number>
+                  <!-- Git info-->
+                  <!--suppress MavenModelInspection -->
+                  <Git-Branch>${git.branch}</Git-Branch>
+                  <!--suppress MavenModelInspection -->
+                  <Git-Dirty>${git.dirty}</Git-Dirty>
+                  <!--suppress MavenModelInspection -->
+                  <Git-Commit>${git.commit.id}</Git-Commit>
+                  <!--suppress MavenModelInspection -->
+                  <Git-Commit-Abbrev>${git.commit.id.abbrev}</Git-Commit-Abbrev>
+                  <!--suppress MavenModelInspection -->
+                  <Git-Commit-Describe>${git.commit.id.describe}</Git-Commit-Describe>
+                  <!--suppress MavenModelInspection -->
+                  <Git-Commit-User-name>${git.build.user.name}</Git-Commit-User-name>
+                  <!--suppress MavenModelInspection -->
+                  <Git-Commit-User-email>${git.build.user.email}</Git-Commit-User-email>
+                  <!--suppress MavenModelInspection -->
+                  <Git-Commit-Message-Short>${git.commit.message.short}</Git-Commit-Message-Short>
+                  <!--suppress MavenModelInspection -->
+                  <!-- Full Message create bad Manifest file because the next line does not have any leading space -->
+                  <!-- <Git-Commit-Message-Full>${git.commit.message.full}</Git-Commit-Message-Full>-->
+                  <!--suppress MavenModelInspection -->
+                  <Git-Commit-Time>${git.commit.time}</Git-Commit-Time>
+                  <!--suppress MavenModelInspection -->
+                  <Git-Tag>${git.tag}</Git-Tag>
+                  <!--suppress MavenModelInspection -->
+                  <Git-Tags>${git.tags}</Git-Tags>
+                </manifestEntries>
+              </archive>
+              <!-- Remove examples and native-image -->
+              <excludes>
+                <exclude>/examples/**</exclude>
+                <exclude>META-INF/native-image/**</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

@@ -1,0 +1,198 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Release
+# Ref: https://raw.githubusercontent.com/jreleaser/helloworld-java-jpackage/refs/heads/main/.github/workflows/release.yml
+
+on:
+  # Trigger on button click
+  workflow_dispatch:
+    inputs:
+      tag:
+        # The tag should have the good version in the pom.xml
+        description: 'Tag to checkout (vx.x.x)'
+        required: true
+        type: string
+  # Trigger on tag push
+#  push:
+#    tags:
+#      - 'v*'
+
+# When you create and push a tag, Git might trigger the workflow twice if you have other push triggers (like on branches).
+# https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#example-only-cancel-in-progress-jobs-or-runs-for-the-current-workflow
+# https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments#using-concurrency
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # to cancel any currently running job or workflow in the same concurrency group
+  cancel-in-progress: true
+
+# Release Token
+# https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes
+# The release token should have:
+#   * repo scope to create a repo (at least public_repo) to create and manage public repositories
+#   * workflow to create workflow files
+#   * packages to write packages
+
+# GITHUB_TOKEN: Token permission
+# https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#permissions
+# We publish to other repo in the same organisation
+# permissions control what the GITHUB_TOKEN can do within the repository where the workflow is running.
+permissions:
+  packages: write # Allow creating package in the same repo
+  contents: write # Allow creating/deleting a GitHub release in the same repo
+
+# Constant for entire workflow
+env:
+  JRELEASER_JPACKAGE_ASSEMBLY_NAME: 'tabulify-installer' # The jpackage assembly name
+  JRELEASER_JLINK_ASSEMBLY_NAME: 'tabulify-jre' # The jlink assembly name
+  JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME: 'tabulify-nojre'
+  WORKFLOW_ID: release # the workflow name without extension
+
+jobs:
+
+  # Assemble (Jpackage starts Archive assembly)
+  release-assemble:
+    uses: ./.github/workflows/release-assemble-jpackage.yml
+    with:
+      runner: 'windows-latest'
+      tag: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
+  # Assemble artifacts except installers
+  # Release all generated artifacts
+  release:
+    runs-on: ubuntu-latest
+    needs: [ release-assemble ]
+    environment: release
+    steps:
+
+      # Checkout
+      - name: Git Checkout ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          fetch-depth: 0
+
+      # Homebrew is installed but not in the path
+      # https://github.com/actions/runner-images/issues/6283
+      - name: Homebrew Setup
+        run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+      - name: Homebrew Utility Installation
+        run: brew install yq
+
+      # Extract Props from pom.xml
+      - name: Props And Version Check ${{ github.ref_name }}
+        id: props
+        shell: bash
+        run: |
+
+          set -TCEeuo pipefail
+
+          # Ref
+          REF=${{ github.ref_name }}
+          echo "ref=${REF}" >> $GITHUB_OUTPUT
+
+          # Generate the effective pom
+          POM_EFFECTIVE="${{runner.temp}}/pom-effective.xml"
+          ./mvnw help:effective-pom --quiet "-Doutput=$POM_EFFECTIVE"
+
+          # Project version and check
+          PROJECT_VERSION=$(yq --exit-status '.project.version' "$POM_EFFECTIVE")
+          echo "project_version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+
+          if [ "v$PROJECT_VERSION" != "$REF" ]; then
+            echo "Project version in pom.xml (v$PROJECT_VERSION) is not the same as the branch/tag $REF"
+            exit 1
+          fi
+
+          JDK_VERSION=$(yq --exit-status '.project.properties."jdk.version"' "$POM_EFFECTIVE")
+          echo "jdk_version=$JDK_VERSION" >> $GITHUB_OUTPUT
+
+          JDK_DISTRO=$(yq --exit-status '.project.properties."jdk.distribution"' "$POM_EFFECTIVE")
+          echo "jdk_distro=$JDK_DISTRO" >> $GITHUB_OUTPUT
+
+          JDK_DOWNLOAD_DIRECTORY=$(yq --exit-status '.project.properties."jdk.download-directory"' "$POM_EFFECTIVE")
+          echo "jdk_download_directory=$JDK_DOWNLOAD_DIRECTORY" >> $GITHUB_OUTPUT
+
+          # JDK Name - The jdk and runner id
+          # The name uses to download the jdk. It's unique by runner and unique by jdk
+          # It should be lowercase, we use the bash syntax to do that
+          # Why Node and not bash subsitution, macOS has an old bash: 3.2.57(1)-release
+          JDK_NAME=$(echo 'console.log("${{ runner.os }}-${{ runner.arch }}".toLowerCase())' | node -);
+          echo "jdk_name=${JDK_NAME}" >> $GITHUB_OUTPUT
+
+
+      # Cache to not download the maven dependency between matrix run
+      # https://github.com/actions/cache/blob/main/examples.md#java---maven
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ steps.props.outputs.jdk_version }}
+          distribution: ${{ steps.props.outputs.jdk_distro }}
+          cache: maven
+
+      - name: Download Java Archive Artifacts
+        uses: actions/download-artifact@v4
+        continue-on-error: false
+        with:
+          pattern: java-archive-*
+          merge-multiple: true # download them to the same directory
+          path: ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive
+
+      - name: Download Jlink Artifacts
+        uses: actions/download-artifact@v4
+        continue-on-error: false
+        with:
+          pattern: jlink-*
+          merge-multiple: true # download them to the same directory
+          path: ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink
+
+      - name: Download Jpackage Installer Artifacts
+        uses: actions/download-artifact@v4
+        continue-on-error: false
+        with:
+          pattern: jpackage-*
+          merge-multiple: true # download them to the same directory
+          path: ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}/jpackage
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Import Gpg Signing Key
+        shell: bash
+        run:
+          gpg --batch --yes --passphrase "${{ secrets.GPG_SOFTWARE_SIGNING_PASSPHRASE }}" --import <(echo "${{ secrets.GPG_SOFTWARE_SIGNING_KEY }}")
+
+      - name: JReleaser Full Release
+        uses: jreleaser/release-action@v2
+        env:
+          # Mandatory passphrase otherwise: gpg: signing failed: Inappropriate ioctl for device
+          JRELEASER_GPG_PASSPHRASE: ${{ secrets.GPG_SOFTWARE_SIGNING_PASSPHRASE }}
+          # Token
+          # JRELEASER_GITHUB_TOKEN should be secrets.GITHUB_TOKEN
+          # Otherwise we get another push leading to a recursive start of release workflow
+          # see https://github.com/jreleaser/jreleaser/issues/2010
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_DOCKER_GHCR_IO_PASSWORD: ${{ secrets.RELEASE_TOKEN }}
+          JRELEASER_WINGET_GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          JRELEASER_HOMEBREW_GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          JRELEASER_CHOCOLATEY_GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        with:
+          arguments: full-release
+
+
+      - name: JReleaser Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1
+          name: jreleaser-logs-${{env.WORKFLOW_ID}}
+          path: |
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/trace.log
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/output.properties

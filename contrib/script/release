@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Release of the cli
+# Local Release of the cli
+# Superseded by the github workflow release
+# but is still used for release development and local installation
 set -TCEeuo pipefail
 
 # Reset
@@ -17,11 +19,12 @@ function synopsis() {
       $(basename "$0") [options] [patch|minor|major|none]
 
   Options:
-    * -a | --assemble-only    : create the archive only (will not release)
-    * -c | --config-only      : create the config only (will not release)
-    * -l | --changelog-only   : create the changelog only (will not release)
-    * -p | --prepare-only     : create the archive and the packagers manifest only (will not release)
-    * -na | --no-assembly     : no assembly is performed
+    * -a | --assemble-only     : create the archive only (will not release)
+    * -c | --config-only       : create the config only (will not release)
+    * -l | --changelog-only    : create the changelog only (will not release)
+    * -p | --prepare-only      : create the archive and the packagers manifest only (will not release)
+    * -na | --no-assembly      : no assembly is performed
+    * -cp | --current-platform : assemble only for the current platform (no by default)
     * --debug                 : set the level to debug
   Args:
     * patch|minor|major|early : is the type of bump for the semver version (default to early - no bump)
@@ -38,11 +41,15 @@ PREPARE_GOAL="prepare"
 CONFIG_GOAL="config"
 CHANGELOG_GOAL="changelog"
 ASSEMBLY=true
+CURRENT_PLATFORM=false
 LEVEL=warn # The org.slf4j.simpleLogger.defaultLogLevel value
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -a | --assemble-only)
+    -a | --assembly-only)
       GOAL="$ASSEMBLE_GOAL"
+      ;;
+    -cp | --current-platform)
+      CURRENT_PLATFORM=true
       ;;
     -c | --config-only)
       GOAL="$CONFIG_GOAL"
@@ -96,9 +103,6 @@ if [[ "$RELEASE_VERSION" =~ .*-SNAPSHOT ]]; then
   EFFECTIVE_VERSION="early-access"
 fi
 
-
-
-
 # Common Arg
 # Because we call only the cli module, jreleaser is expected to be in this directory
 JRELEASER_FILE="jreleaser.yml"
@@ -133,27 +137,42 @@ if [ $ASSEMBLY == true ]; then
   mvnw install -DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=$LEVEL # create the lib and cli archive
   echo "Copying dependencies $RELEASE_VERSION"
   mvnw -Pdeps -pl "$PROJECT_TO_RELEASE" -Dorg.slf4j.simpleLogger.defaultLogLevel=$LEVEL
-  echo "Downloading Jdk $RELEASE_VERSION"
-  if ! mvnw -Pjdks -pl "$PROJECT_TO_RELEASE" -Dorg.slf4j.simpleLogger.defaultLogLevel=$LEVEL; then
-    echo -e "${RED}Error: while downloading the JDK check the logs at $JRELEASER_LOG${NC}"
-    exit 1
+  echo "Downloading and extracting Jdk $RELEASE_VERSION"
+  # Jdks still extract and we get a bunch of warnings
+  # We set the archiver log to error to avoid a bunch of warning
+  # See https://github.com/jreleaser/jreleaser/issues/2028
+  if [ ! -d /tmp/jdks ]; then
+    if ! mvnw -Pjdks -pl "$PROJECT_TO_RELEASE" -Dorg.slf4j.simpleLogger.log.org.codehaus.plexus.archiver.tar.TarGZipUnArchiver=error -Dorg.slf4j.simpleLogger.defaultLogLevel=$LEVEL; then
+      echo -e "${RED}Error: while downloading the JDK check the logs at $JRELEASER_LOG${NC}"
+      exit 1
+    fi
+    echo "Downloading Jdk Done"
+  else
+    # to avoid extraction
+    echo "Downloading Jdk Skipped. Jdks directory exists"
   fi
-  echo "Downloading Jdk Done"
+
   echo "Assembling version $RELEASE_VERSION"
-  if ! mvnw jreleaser:assemble -Dorg.slf4j.simpleLogger.defaultLogLevel=$LEVEL "${JRELEASER_COMMON_ARGS[@]}"; then
-    echo -e "${RED}Error: check the logs at $JRELEASER_LOG${NC}"
+  ASSEMBLY_ARGS=(-Dorg.slf4j.simpleLogger.defaultLogLevel="$LEVEL")
+  if [ $CURRENT_PLATFORM == true ]; then
+    # Current platform doc: https://jreleaser.org/guide/latest/tools/jreleaser-maven.html#_filtering_artifacts
+    ASSEMBLY_ARGS+=(-Djreleaser.select.current.platform)
+  fi
+  if ! mvnw jreleaser:assemble "${ASSEMBLY_ARGS[@]}" "${JRELEASER_COMMON_ARGS[@]}"; then
+    echo -e "${RED}Assembly Error: check the logs at $JRELEASER_LOG${NC}"
     exit 1
   fi
   echo "Assembling $RELEASE_VERSION done"
 
   echo "Testing Assembly $RELEASE_VERSION"
   TABUL_BIN="$PROJECT_ROOT/$PROJECT_TO_RELEASE/target/jreleaser/assemble/tabulify-nojre/java-archive/work/tabulify-$EFFECTIVE_VERSION-nojre/bin/tabul"
-  if ! $TABUL_BIN version; then
+  if ! $TABUL_BIN version > /dev/null; then
     echo -e "${RED}Error: assembly error${NC}"
     echo -e "${RED}The executable returns an error: $TABUL_BIN${NC}"
     exit 1
   fi
   echo "Test successful"
+  echo "Assembly done"
 else
   echo "Assembly disabled"
 fi

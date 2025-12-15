@@ -18,7 +18,7 @@ end_of_line = lf
 insert_final_newline = unset
 
 # https://www.jetbrains.com/help/idea/settings-code-style-xml.html
-[*.xml]
+[{*.xml,*.wxs}]
 # Why align_attributes false?
 # On a pom.xml, if on, the indentation is 9 on the second line: ie 8 (project length) + 1 space
 # It clashes with an indent_size of 2

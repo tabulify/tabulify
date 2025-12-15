@@ -372,15 +372,15 @@ public class CliParser {
         }
 
         /*
-          Not found
-          In Conf map ?
+         * Not found
+         * In Conf map ?
          */
         if (value == null) {
             String configName = cliWord.getConfigName();
             if (configName == null) {
                 /*
-                  Get the id with the scope
-                  (ie the command is attached)
+                 * Get the id with the scope
+                 * (ie the command is attached)
                  */
                 configName = cliWord.getId();
             }
@@ -397,14 +397,14 @@ public class CliParser {
         }
 
         /*
-          Default value
+         * Default value
          */
         if (value == null) {
 
             String defaultValue = cliWord.getDefaultValue();
 
             /*
-              Flag have always false as default
+             * Flag have always false as default
              */
             if (defaultValue == null && cliWord.isFlag()) {
                 defaultValue = "false";

@@ -10,7 +10,14 @@ All scripts entry can be seen in [Taskfile](../Taskfile.yml)
 
 ### Ntabul - Next Tabul
 
-[ntabul](script/ntabul) - Next Tabul: The next version of tabul. Change your code, run `ntabul` and see your changes
+[ntabul](script/ntabul) - `ntabul (Next Tabul)` is the script that run the next version of `tabul`.
+
+It can run:
+
+* with maven: change your code, run `ntabul` with the `--compile` option and see your changes instantly
+* with the release assembly:
+  * `ntabul --install` to install it
+  * then `ntabul` to run next command
 
 ### Release
 
@@ -27,11 +34,9 @@ that should have stop but have not.
 * [site-broken task](../Taskfile.yml) to get the broken links
 * [site-sync task](../Taskfile.yml) to sync the database
 * [site-frontmatter task](../Taskfile.yml) to sync the frontmatter
-* [install-cli](script/install-cli) - Create a client distribution and installs it locally
 * [doc-exec](script/doc-exec) - Run code in the code block of
   the [tabulify website](../docs-tabul/README.md)
   and update the console block
-
 
 ## Doc
 

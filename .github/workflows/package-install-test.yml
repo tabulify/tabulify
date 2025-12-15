@@ -1,0 +1,43 @@
+name: Install Test
+# Test installation of package
+
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        description: 'Operating System'
+        required: true
+        type: choice
+        options:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+          - all
+
+jobs:
+  assemble:
+    name: 'Install ${{ matrix.os }}'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(
+          inputs.os == 'all' && '["ubuntu-latest", "windows-latest", "macos-latest"]' ||
+          format('["{0}"]', inputs.os)
+          ) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+
+      # macOS
+      - name: Installation test (macOS)
+        if: runner.os == 'macOS'
+        run: brew install tabulify/tap/tabulify
+
+      # Linux
+      - name: Installation test (Linux)
+        if: runner.os == 'Linux'
+        run: brew install tabulify/tap/tabulify
+
+      # Windows
+      - name: Installation test (Windows)
+        if: runner.os == 'Windows'
+        run: winget install tabulify

@@ -1,9 +1,23 @@
 #!/bin/bash
 # Next Tabul: The next version of tabul
-# Shortcut to run the tabul development version quickly after changing a class
-# It will recompile optionally and run tabul without the need to create a jar
 
 set -TCEeuo pipefail
+
+function synopsis() {
+  cat << EOF
+
+  ntabul : Next tabul, run the next tabul version
+
+      $(basename "$0") [options]
+
+  Options:
+    * -j | --java      : run the next java version (by default, it runs the distribution)
+    * -i | --install   : install:
+        * the distribution (distribution run)
+        * or the jars (java run)
+
+EOF
+}
 
 find_git_root() {
   local dir="$SCRIPT_DIR"
@@ -18,13 +32,19 @@ find_git_root() {
   return 1
 }
 
-MAVEN_COMPILE=false
+INSTALL=false
 TABUL_OPTIONS=()
+NEXT_TABUL_TYPE_DISTRIBUTION="distribution"
+NEXT_TABUL_TYPE_JAVA="java"
+NEXT_TABUL_TYPE=$NEXT_TABUL_TYPE_DISTRIBUTION
 while [ $# -gt 0 ]; do
 
   case "$1" in
-    --compile)
-      MAVEN_COMPILE=true
+    -i | --install)
+      INSTALL=true
+      ;;
+    -j | --java)
+      NEXT_TABUL_TYPE="$NEXT_TABUL_TYPE_JAVA"
       ;;
     *)
       TABUL_OPTIONS+=("$1")
@@ -35,36 +55,64 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-echo "Running Tabul with Java and Mvn classpath" > /dev/stderr
-
 if [ "$PROJECT_ROOT" == "" ]; then
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   PROJECT_ROOT=$(find_git_root)
 fi
-cd "$PROJECT_ROOT/cli-tabul"
 
-# Extract main class from arguments
+# Tabul home is important because it will be seen in the doc
+# /opt/tabulify to have short path for the resource connection
+# example for the howto: file:///opt/tabulify/resources/howto/
+TABUL_HOME=${CLI_TABUL_HOME:-/opt/tabulify}
+
+if [ "$NEXT_TABUL_TYPE" == "$NEXT_TABUL_TYPE_DISTRIBUTION" ]; then
+  # Distribution installation
+
+  if [ $INSTALL == true ]; then
+    echo "Install distribution"
+    install
+    echo "Install distribution done"
+  else
+    if [ ! -f "$TABUL_HOME/bin/tabul" ]; then
+      echo "Tabul assembly not found, installing" > /dev/stderr
+      install
+    fi
+  fi
+  echo "Running tabul in $TABUL_HOME" > /dev/stderr
+  if ! "${TABUL_HOME}/bin/tabul" "${TABUL_OPTIONS[@]}"; then
+    echo -e "${RED}Error while running tabul in TABUL_HOME${NC}" > /dev/stderr
+    exit 1
+  fi
+  exit
+fi
+
+echo "Running Tabul with Java (and Mvn classpath)" > /dev/stderr
+
+CLI_PROJECT="cli-tabul"
+
+# Main class
 MAIN_CLASS=com.tabulify.tabul.Tabul
 
 # Dependency
-CLASSPATH=$(mvn dependency:build-classpath -Dmdep.outputFile=/dev/stdout -q)
+CLASSPATH=$(mvn dependency:build-classpath -pl "$CLI_PROJECT" -Dmdep.outputFile=/dev/stdout -q)
 
 # Add the target/classes directory to include your compiled classes
-CLASSPATH="$CLASSPATH:target/classes"
+CLASSPATH="$CLASSPATH:$PROJECT_ROOT/$CLI_PROJECT/target/classes"
 
-if [ "$MAVEN_COMPILE" == "true" ]; then
-  echo "Building project with Maven..."
+if [ $INSTALL == true ]; then
+  echo "Installing jars with Maven..."
   if ! OUTPUT=$(
     cd "$PROJECT_ROOT"
     mvn install -DskipTests
   ); then
     echo "$OUTPUT"
-    echo "Maven Project build failed."
+    echo "Maven Project install failed."
     exit 1
   fi
 fi
 
-command="TABUL_ENV=ide java -cp \"$CLASSPATH\" \"$MAIN_CLASS\" ${TABUL_OPTIONS[*]}"
+# to get the stack, add TABUL_EXEC_ENV=ide
+command="java -cp \"$CLASSPATH\" \"$MAIN_CLASS\" ${TABUL_OPTIONS[*]}"
 eval "$command"
 
 # Note: exec:java does not work, as it does not add the resources

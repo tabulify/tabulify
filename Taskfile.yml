@@ -45,7 +45,7 @@ tasks:
   install-cli:
     cmds:
       - |
-        {{.TASKFILE_DIR}}/contrib/script/install-cli
+        {{.TASKFILE_DIR}}/contrib/script/ntabul --install
   # Install the jars in the cli
   install-cli-jars:
     cmds:
@@ -55,8 +55,8 @@ tasks:
   install-cli-resources:
     cmds:
       - |
-        cp -r {{.TASKFILE_DIR}}/tabulify-cli/src/main/howto $CLI_TABUL_HOME/resources
-        cp -r {{.TASKFILE_DIR}}/tabulify-gen-entities/src/main/resources/entity $CLI_TABUL_HOME/resources
+        cp -r {{.TASKFILE_DIR}}/cli-tabul/src/main/howto $CLI_TABUL_HOME/resources
+        cp -r {{.TASKFILE_DIR}}/data-generation-entities/src/main/resources/entity $CLI_TABUL_HOME/resources
   # Start the documentation website
   site-start:
     cmds:

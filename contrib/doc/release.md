@@ -1,8 +1,17 @@
 # Release Steps
 
+## Note/Rules
+
+* Release is the release of the tabul cli project
+* Release is done via JReleaser Maven
+* Release command should be invoked from the root directory
+  * Why? TemplateDirectory in [brew](https://jreleaser.org/guide/latest/reference/packagers/homebrew.html) is relative
+    to the current directory and accepts no template
+
 ## Test
 
 Start the Test script
+
 ```bash
 release-test
 release-test -rf xxx
@@ -34,7 +43,6 @@ Note on documentation:
   * It should start/stop services as needed
   * We don't recreate the env each time (`.tabul.yml`)
   * If you want to get a clean environment, you need to delete `.tabul.yml` in the document ie
-    ie
 
 ```md
 <unit>
@@ -46,10 +54,12 @@ tabul data drop --not-strict .tabul/.tabul.yml@home
 
 Procedure:
 
-- Install the cli (The doc is executed with the tabul distribution.)
+- Install the cli in `/opt/tabulify`
+  * The doc is executed from this directory for better documentation
+  * The cli is the jre distribution to test the added modules in the runtime
 
 ```bash
-task install-cli
+ntabul --install
 ```
 
 * First execution, purge the cache and execute all docs with our [doc-exec wrapper](../script/doc-exec)
@@ -57,6 +67,8 @@ task install-cli
 ```bash
 # first run: purge the whole doc cache and run
 doc-exec --purge-cache run **/*.txt
+# or for a quick iteration only the getting started
+doc-exec --purge-cache run howto/getting_started/*
 ```
 
 * Next executions, execute the docs without purging the cache. You can do it:
@@ -69,12 +81,12 @@ doc-exec run **/*.txt
 doc-exec --no-cache howto/postgres/anonymous_code_block
 ```
 
-## Release/Tag
+## Distribution Test
 
-No errors, release.
-```bash
-release-tag
-```
+we create a:
+
+* nojre distribution that is tested at brew installation
+* jre that is tested locally when running doc-exec
 
 ## Todo
 

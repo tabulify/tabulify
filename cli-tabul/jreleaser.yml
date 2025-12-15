@@ -4,6 +4,13 @@
 # JDK template variables (jdkOutputDirectory, ...) are maven properties
 # ie jdkOutputDirectory is jdk.output.directory in maven
 
+platform:
+  replacements:
+    # used by GitHub and does not suck
+    aarch_64: arm64
+    x86_64: x64
+    osx: macos
+    linux_musl: alpine
 
 # https://jreleaser.org/guide/latest/reference/project.html
 project:
@@ -54,6 +61,8 @@ release:
   github:
     # Release by default
     releaseName: "Release {{projectEffectiveVersion}}"
+    # We create the tag
+    skipTag: true
     prerelease:
       # # A regex to determine if the project version is a prerelease
       pattern: .*-rc.*
@@ -129,13 +138,14 @@ assemble:
       swid:
         tagRef: swid-tag
   # https://jreleaser.org/guide/latest/reference/assemble/jlink.html
-  # mvnw jreleaser:assemble -Djreleaser.config.file="jreleaser.yml" -pl "cli-tabul" -Djreleaser.assemblers=jlink
+  # mvnw jreleaser:assemble -pl "cli-tabul" -Djreleaser.assemblers=jlink
   jlink:
     # Assembly Name
     tabulify-jre:
       active: ALWAYS
       imageName: 'tabulify-{{projectEffectiveVersion}}-jre'
       executable: tabul
+      exported: true
       fileSets:
         - input: '{{baseOutputDirectory}}/../..'
           includes:
@@ -158,26 +168,32 @@ assemble:
         # jdk.crypto.ec is mandatory to avoid handshake_failure on http request
         # https://stackoverflow.com/questions/55439599/sslhandshakeexception-with-jlink-created-runtime
         - 'jdk.crypto.ec'
-      # Old one from jreleaser
-      #        - 'java.rmi'
-      #        - 'java.security.sasl'
-      #        - 'java.security.jgss'
-      #        - 'jdk.crypto.cryptoki'
-      #        - 'jdk.localedata'
-      #        - 'jdk.net'
-      #        - 'jdk.security.auth'
-      #        - 'jdk.security.jgss'
+        # Exception in thread "main" java.lang.NoClassDefFoundError: java/awt/Color
+        - 'java.desktop'
+        # To compile java code (Required by Rhino)
+        - 'jdk.compiler'
+        # When compiling, Error: No file system provider is available to handle this file: /opt/tabulify/jars/lanterna-3.1.3.jar
+        - 'jdk.zipfs'
+        # Required by Rhino
+        - 'jdk.dynalink'
       targetJdks:
-        # On Mac and linux, we use brew that installs the JDK.
+        # Jdks are downloaded via the jdk maven plugin configured in the tabul cli module
         # JDK template variables (jdkOutputDirectory, ...) are maven properties
         # ie jdkOutputDirectory is jdk.output.directory
-        - path: '{{jdkOutputDirectory}}/{{jdkDistribution}}-windows/jdk-{{jdkVersion}}+{{jdkVersionBuild}}'
+        - path: '{{jdkOutputDirectory}}/{{jdkDistribution}}-windows-x64/jdk-{{jdkVersion}}+{{jdkVersionBuild}}'
           platform: 'windows-x86_64'
+        # Not exported used to test the modules on WSL (not exported as linux installation is done with brew and openjdk)
+        # On Mac and linux, we use brew that installs the JDK.
+        - path: '{{jdkOutputDirectory}}/{{jdkDistribution}}-linux-x64/jdk-{{jdkVersion}}+{{jdkVersionBuild}}'
+          platform: 'linux-x86_64'
+        # Alpine (musl is used for docker image only)
+        - path: '{{jdkOutputDirectory}}/{{jdkDistribution}}-linux-musl-x64/jdk-{{jdkVersion}}+{{jdkVersionBuild}}'
+          platform: 'linux_musl-x86_64'
       mainJar:
         # baseOutputDirectory is the tabul cli project directory
         path: '{{baseOutputDirectory}}/tabulify-tabul-cli-{{projectVersion}}.jar'
       jars:
-        - pattern: '{{depsOutputDirectory}}/*.jar'
+        - pattern: '{{dependencyOutputDirectory}}/*.jar'
       swid:
         tagRef: swid-tag
   # https://jreleaser.org/guide/latest/reference/assemble/jpackage.html#_jlink_jpackage
@@ -187,15 +203,22 @@ assemble:
       # https://github.com/jreleaser/jreleaser/blob/main/.github/workflows/step-jpackage.yml
       active: NEVER
       jlink: tabulify-jre
-      linux:
-        types: [ rpm ]
-      osx:
-        types: [ dmg ]
-      windows:
-        types: [ exe ]
       applicationPackage:
-        # additional restrictions on app-version???
-        appVersion: 2.0.0
+        appName: 'tabul'
+      # Windows:
+      # Create the MSI on Windows Powershell:
+      #     jreleaser assemble --debug --select-current-platform --assembler=jpackage
+      # Check your MSI
+      #     msiexec /i target\jreleaser\assemble\tabulify-installer\jpackage\tabulify-1.0.0-windows-x86_64.msi /l*v target/msi-logfile.txt
+      # Delete
+      #     msiexec /x target\jreleaser\assemble\tabulify-installer\jpackage\tabulify-1.0.0-windows-x86_64.msi /l*v target/msi-uninstall-logfile.txt
+      windows:
+        types: [ msi ]
+        console: true # this is a console app
+        dirChooser: true # The wizard will open
+        resourceDir: "{{baseOutputDirectory}}/../src/main/release/jpackage/windows-resource-dir"
+        icon: "{{baseOutputDirectory}}/../src/main/release/media/tabulify.ico"
+        perUserInstall: true # Why? No space by default in the path, `C:\Users\user\AppData\Local\tabulify\`
 
 
 # Distributions define artifacts that are added in the release and packager manifest
@@ -212,7 +235,7 @@ distributions:
       # when solved: '{{Env.BREW_FORMULA_NAME}}'
       formulaName: tabulify
       # Relative path to the pwd, not the subproject
-      templateDirectory: 'contrib/release/brew'
+      templateDirectory: 'cli-tabul/src/main/release/brew'
       # java jdk dependency is in the template because brew dependencies do not allow any templating
       repository:
         # multi product one repo, we add the project
@@ -222,6 +245,70 @@ distributions:
         # Don't add java as a dependency
         # https://jreleaser.org/guide/latest/reference/packagers/homebrew.html#_jdk_dependency
         skipJava: "true"
+  # Distributions based on JLink Archive
+  # Take the default value from the `assemble` tabulify-jre node
+  tabulify-jre:
+    # Run it with
+    # Create the assembly
+    #    mvnw jreleaser:assemble -Djreleaser.assemblers=jlink -Djreleaser.select.platforms=linux_musl-x86_64
+    # Create the Dockerfile
+    #    mvnw jreleaser:prepare -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
+    # Create the image
+    #    mvnw jreleaser:package -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
+    #    docker run --rm -v $(pwd):/workspace ghcr.io/tabulify/tabulify-alpine:early-access tabul --version
+    # Push to the registry
+    #    mvnw jreleaser:publish -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
+    docker:
+      active: ALWAYS
+      useLocalArtifact: true
+      repository: # Wild ! This repository will contain the Dockerfile and the distribution
+        active: NEVER
+      registries:
+        - serverName: ghcr.io
+      specs:
+        tabulify-alpine:
+          labels: # Labels are in the specs otherwise image title is not taken into account
+            org.opencontainers.image.source: "https://{{repoHost}}/{{repoOwner}}/{{repoName}}"
+            org.opencontainers.image.title: "{{projectName}}"
+          matchers:
+            platform: 'linux_musl-x86_64'
+          imageNames:
+            - "ghcr.io/{{repoOwner}}/{{dockerSpecName}}:{{tagName}}"
+            - "ghcr.io/{{repoOwner}}/{{dockerSpecName}}:latest"
+          preCommands:
+            - 'RUN apk add unzip bash'
+          postCommands:
+            - 'VOLUME /workspace' # working directory
+  # Installer distributions (ie windows msi)
+  tabulify-installer:
+    executable:
+      name: "tabul" # used in the winget manifest, not a template
+    # To test winget:
+    # * on WSL, upload the artifacts generate the manifests:
+    #    mvnw jreleaser:prepare -Djreleaser.packagers=winget
+    # * on Windows, validate and install them
+    #    winget validate --manifest \\wsl.localhost\xxx\tabulify\cli-tabul\target\jreleaser\prepare\tabulify-installer\winget\manifests\c\tabulify\tabulify\1.0.0
+    #    winget install --manifest \\wsl.localhost\xxx\tabulify\cli-tabul\target\jreleaser\prepare\tabulify-installer\winget\manifests\c\tabulify\tabulify\1.0.0
+    # https://jreleaser.org/guide/latest/reference/packagers/winget.html#_repository
+    winget:
+      active: RELEASE
+      continueOnError: true
+      package:
+        name: tabulify
+      installer:
+        scope: USER # Why? No space by default in the path, `C:\Users\user\AppData\Local\tabulify\`
+      repository:
+        active: ALWAYS
+        # Jreleaser creates a repo by product, not a unique repo, we do
+        name: winget-manifests
+        commitMessage: '{{projectName}} {{tagName}}'
+        # Tag name got also the product name so that we can have multiple product in the same repo
+        tagName: '{{projectName}}-{{tagName}}'
+    artifacts:
+      # used by winget
+      - path: '{{baseOutputDirectory}}/jreleaser/assemble/tabulify-installer/jpackage/{{projectName}}-{{projectVersionNumber}}.msi'
+        transform: '{{distributionName}}/{{projectJavaArtifactId}}-{{projectEffectiveVersion}}-jre-x64.msi'
+        platform: 'windows-x86_64'
 
 # Create a software BOM (works only for non-snapshot)
 catalog:
@@ -235,3 +322,5 @@ catalog:
 signing:
   active: ALWAYS
   mode: COMMAND
+  command:
+    keyName: support@tabulify.com

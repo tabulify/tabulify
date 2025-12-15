@@ -3,6 +3,10 @@
 
 set -TCEeuo pipefail
 
+# Reset
+NC='\033[0m'     # No Color
+RED='\033[0;31m' # Red
+
 find_git_root() {
   local dir="$PWD"
   while [[ "$dir" != "/" ]]; do
@@ -26,7 +30,7 @@ if [ "$#" -lt 1 ]; then
   echo "  * --compile     : recompile the whole project"
   echo "  * --resume      : don't delete the environment (ie sqlite, ...)"
   echo "  * --install-cli : install the cli before running"
-  echo "  * --ide         : runs the Tabul.class instead of the tabul cli (way quicker as it stay in the same jvm)"
+  #echo "  * --ide         : runs the Tabul.class instead of the tabul cli (way quicker as it stay in the same jvm)"
   echo "  * --no-cache    : suppress the cache for the selected pages"
   echo "  * --purge-cache : suppress the whole cache directory"
   echo "  * globPath      : a glob path."
@@ -40,7 +44,7 @@ MAVEN_COMPILE=false
 # Install the cli before running?
 INSTALL_CLI=false
 # Run with the ide and not the cli?
-IDE_RUN=false
+# IDE_RUN=false
 # Doc exec options
 DOC_EXEC_OPTIONS=()
 while [ $# -gt 0 ]; do
@@ -52,10 +56,10 @@ while [ $# -gt 0 ]; do
     --install-cli)
       INSTALL_CLI=true
       ;;
-    --ide)
-      IDE_RUN=true
-      DOC_EXEC_OPTIONS+=("$1")
-      ;;
+      #    --ide)
+      #      IDE_RUN=true
+      #      DOC_EXEC_OPTIONS+=("$1")
+      #      ;;
     *)
       DOC_EXEC_OPTIONS+=("$1")
       ;;
@@ -65,7 +69,11 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-PROJECT_ROOT=$(find_git_root)
+# Set by envrc normally
+if [ "$PROJECT_ROOT" == "" ]; then
+  PROJECT_ROOT=$(find_git_root)
+fi
+
 TABULIFY_CLI_DIR="$PROJECT_ROOT/cli-tabul"
 cd "$TABULIFY_CLI_DIR"
 
@@ -80,28 +88,44 @@ if [ "$MAVEN_COMPILE" == "true" ]; then
     exit 1
   fi
   # Compile the project using Maven (The DocRun class is in test)
-  if ! OUTPUT=$(mvn test-compile); then
-    echo "Maven build failed."
-    echo "$OUTPUT"
-    exit 1
-  fi
+  #if ! OUTPUT=$(mvn test-compile); then
+  #  echo "Maven build failed."
+  #  echo "$OUTPUT"
+  #  exit 1
+  #fi
 fi
 
 export TABUL_EXEC_ENV="dev"
-if [ "$IDE_RUN" == "true" ]; then
-  # When the code run as ide, tabul does not exit, it will throw
-  # otherwise the doc executor security manager see it as executing and to prevent exit will throw
-  TABUL_EXEC_ENV="ide"
-  export TABUL_HOME="$PROJECT_ROOT"
-fi
+#if [ "$IDE_RUN" == "true" ]; then
+#  # When the code run as ide, tabul does not exit, it will throw
+#  # otherwise the doc executor security manager see it as executing and to prevent exit will throw
+#  TABUL_EXEC_ENV="ide"
+#  export TABUL_HOME="$PROJECT_ROOT"
+#fi
 
+CLI_PROJECT="cli-tabul"
 # Install the cli before executing
 if [ "$INSTALL_CLI" == "true" ]; then
-  if ! install-cli; then
-    echo "Install cli failed"
+  echo "Assembling Tabul"
+  if ! mvnw jreleaser:assemble -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Djreleaser.config.file="$JRELEASER_FILE" -pl "$CLI_PROJECT"; then
+    echo -e "${RED}Assembling Error: check the logs at $JRELEASER_LOG${NC}"
     exit 1
   fi
 fi
+
+# Tabul home is important because it will be seen in the doc
+# /opt/tabulify to have short path for the resource connection
+# example for the howto: file:///opt/tabulify/resources/howto/
+TABUL_HOME=${CLI_TABUL_HOME:-/opt/tabulify}
+
+if [ ! -f "$TABUL_HOME/bin/tabul" ]; then
+  echo -e "${RED}tabul was not found at $TABUL_HOME/bin/tabul${NC}"
+  echo -e "${RED}install it with \`ntabul --install\`${NC}"
+  exit 1
+fi
+
+export PATH="$TABUL_HOME/bin:$PATH"
+
 # no warning in doc
 export TABUL_LOG_LEVEL=error
 # Trick to have a USER_HOME consistent in the doc
@@ -110,11 +134,15 @@ export TABUL_OS_USER_HOME=/home/tabulify
 cd "$TABUL_OS_USER_HOME"
 
 PATH_DOC="$PROJECT_ROOT/docs-tabul/data/pages"
-PATH_INLINE_FILE="/opt/tabulify/resources/howto"
+PATH_INLINE_FILE="$TABUL_HOME/resources/howto"
 
-/opt/doc-exec/bin/doc-exec --doc-path "$PATH_DOC" --file-path ${PATH_INLINE_FILE} --doc-name "tabulify" "${DOC_EXEC_OPTIONS[@]}"
+# It's a wrapper script, we select the second in path order
+# this one is the first, the second is brew
+if ! "$(which -a doc-exec | sed -n '2p')" --doc-path "$PATH_DOC" --file-path "${PATH_INLINE_FILE}" --doc-name "tabulify" "${DOC_EXEC_OPTIONS[@]}"; then
+  echo -e "${RED}Error were seen while executing the doc${NC}"
+  exit 1
+fi
 
-exit
 # Deprecated Old
 ## Exec
 #MAIN_CLASS=com.tabulify.doc.DocExec

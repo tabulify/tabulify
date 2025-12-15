@@ -1,27 +1,75 @@
 #!/usr/bin/env bash
 # Create a tag
 
+NC='\033[0m'     # No Color
+RED='\033[0;31m' # Red
+
+function synopsis() {
+  cat << EOF
+
+  Release Tag:
+
+      $(basename "$0") [options] [patch|minor|major|none]
+
+  Args:
+    * patch|minor|major|none : is the type of bump for the semver version (default to none - no bump)
+
+  The version is changed if the bump type is patch|minor|major
+
+EOF
+}
+
+NO_BUMP_TYPE="none"
+BUMP_TYPE="$NO_BUMP_TYPE"
 if [ -z "$1" ]; then
-	echo "Please provide a tag."
-	echo "Usage: ./release-tag v[X.Y.Z]"
-	exit
+  echo -e "${RED}Please provide a bump type.${NC}"
+  synopsis
+  exit
 fi
 
-tag_name=$1;
+echo "Determining the version"
+if [ "$BUMP_TYPE" != "$NO_BUMP_TYPE" ]; then
+  echo "Version bump asked"
+  # Get the next version
+  export GIT_CLIFF__BUMP__INITIAL_TAG=v0.1.0 # by default it's 0.1.0
+  if ! RELEASE_VERSION=$(git cliff --unreleased --context --tag-pattern "v[0-9]+\\.[0-9]+\\.[0-9]+" --ignore-tags "v[0-9]+\\.[0-9]+\\.[0-9]+-rc[0-9]*" --bump "$BUMP_TYPE" | jq -r '.[0].version' | tr -d "v"); then
+    echo -e "${RED}Error while getting the next version${NC}"
+  fi
+  # Jreleaser read the version from the pom file
+  # We need to modify the pom file
+  echo "Creating Next version $RELEASE_VERSION commit"
+  mvnw versions:set -DgenerateBackupPoms=false -DnewVersion="$RELEASE_VERSION"
+  git commit -am "chore(release): $RELEASE_VERSION"
+  git push origin
+  echo "Next version $RELEASE_VERSION commit done"
+else
+  echo "No bump taking the actual version"
+  RELEASE_VERSION=$(yq '.project.version' pom.xml)
+fi
+echo "Version determined to be $RELEASE_VERSION"
+
+echo "Determining the tag"
+if [[ "$RELEASE_VERSION" =~ .*-SNAPSHOT ]]; then
+  TAG_NAME="early-access"
+else
+  TAG_NAME="v$RELEASE_VERSION"
+fi
+echo "Tag determined to be $TAG_NAME"
 
 # Delete the tag if it exists (both locally and remotely)
-if git tag -l | grep -q "^${tag_name}$"; then
-    echo "Deleting existing local tag: $tag_name"
-    git tag -d "$tag_name"
+if git tag -l | grep -q "^${TAG_NAME}$"; then
+  echo "Deleting existing local tag: $TAG_NAME"
+  git tag -d "$TAG_NAME"
 fi
 
 # Check if tag exists on remote and delete it
-if git ls-remote --tags origin | grep -q "refs/tags/${tag_name}$"; then
-    echo "Deleting existing remote tag: $tag_name"
-    git push origin --delete "$tag_name"
+if git ls-remote --tags origin | grep -q "refs/tags/${TAG_NAME}$"; then
+  echo "Deleting existing remote tag: $TAG_NAME"
+  git push origin --delete "$TAG_NAME"
 fi
 
 echo "Creating Tag $1"
 git tag "$1"
 echo "Pushing Tag $1"
 git push origin tag "$1"
+echo "Tagging done. Exiting"

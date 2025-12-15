@@ -1,0 +1,70 @@
+#!/bin/bash
+# Install locally next tabul version
+# * for doc execution purpose
+# * and test purpose
+#
+# We install a jre jlink and not a non-jre to be able to test the modules
+# ie to avoid jdk.dynalink class is missing
+
+set -TCEeuo pipefail
+
+NC='\033[0m'     # No Color
+RED='\033[0;31m' # Red
+
+# Tabul home is important because it will be seen in the doc
+# /opt/tabulify to have short path for the resource connection
+# example for the howto: file:///opt/tabulify/resources/howto/
+TABUL_HOME=${CLI_TABUL_HOME:-/opt/tabulify}
+CLI_PROJECT="cli-tabul"
+
+# Check if we can move into the tabul home
+check_tabul_home() {
+  # Get, check if the parent directory exists
+  parent_dir=$(dirname "${TABUL_HOME}")
+  if [[ ! -d "${parent_dir}" ]]; then
+    echo -e "${RED}Error: Parent directory '${parent_dir}' does not exist or is not a directory.${NC}"
+    exit 1
+  fi
+  # Get the owner of the parent directory
+  # stat gnu first, then stat macos
+  if ! path_owner=$(stat -c '%U' "${parent_dir}" 2> /dev/null); then
+    # Try macOS/BSD stat format if Linux format fails
+    if ! path_owner=$(stat -f '%Su' "${parent_dir}" 2> /dev/null); then
+      echo -e "${RED}Error: Unable to determine ownership of parent directory '${parent_dir}'.${NC}"
+      exit 1
+    fi
+  fi
+
+  # Compare the owner with the current user
+  current_user=$(whoami)
+  if [[ "${path_owner}" != "${current_user}" ]]; then
+    echo "Parent directory '${parent_dir}' is owned by '${path_owner}', not by current user '${current_user}'. We can't install and move into it"
+    exit 1
+  fi
+}
+
+echo "Check and clean tabul_home"
+check_tabul_home
+mkdir -p "$TABUL_HOME" && rm -rf "$TABUL_HOME"
+
+echo "Detect the archive name that depends on the version"
+VERSION=$(yq --exit-status '.project.version' "$PROJECT_ROOT/pom.xml")
+# JReleaser change the archive name for snapshot
+if [[ "$VERSION" == *"-SNAPSHOT"* ]]; then
+  VERSION=$(yq --exit-status '.project.snapshot.label' "$PROJECT_ROOT/$CLI_PROJECT/jreleaser.yml")
+fi
+
+echo "Clean Assembly dir"
+ASSEMBLY_DIR="$PROJECT_ROOT/$CLI_PROJECT/target/jreleaser/assemble/tabulify-jre/jlink/work-linux-x86_64"
+rm -rf "$ASSEMBLY_DIR"
+echo "Cleaning done"
+
+echo "Create assembly"
+release --assembly-only --current-platform
+echo "Create assembly - done"
+
+ARCHIVE_DIR_NAME="tabulify-$VERSION-jre-linux-x64"
+
+echo "Install by moving the directory $ARCHIVE_DIR_NAME into tabul home $TABUL_HOME"
+mv "${ASSEMBLY_DIR}/${ARCHIVE_DIR_NAME}" "${TABUL_HOME}"
+echo "Moving done"

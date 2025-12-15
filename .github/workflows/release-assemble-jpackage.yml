@@ -1,0 +1,286 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Release Assemble JPackage
+# Jpackage needs the original operating system (ie the installer tools and the c library) to create and compile the native package
+# Inspiration: https://github.com/jreleaser/helloworld-java-jpackage/blob/main/.github/workflows/reusable-assemble.yml
+
+# Mandatory (manual)
+on:
+  # Trigger on button click
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag'
+        required: true
+        type: string
+      runner:
+        description: 'Runner'
+        required: false
+        type: choice
+        default: windows-latest
+        options:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+          - all
+  workflow_call:
+    # ! input have to be duplicated with workflow_dispatch
+    # Limitations of GitHub: https://github.com/orgs/community/discussions/39357
+    inputs:
+      runner:
+        description: 'Runner'
+        required: true
+        default: windows-latest
+        type: string
+      tag:
+        description: 'Tag'
+        required: true
+        type: string
+
+
+# Constant for entire workflow
+env:
+  # The assembly name. They should never change, but it's still a property
+  JRELEASER_JPACKAGE_ASSEMBLY_NAME: 'tabulify-installer'
+  JRELEASER_JLINK_ASSEMBLY_NAME: 'tabulify-jre'
+  JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME: 'tabulify-nojre'
+  WORKFLOW_ID: 'release-assemble-jpackage' # the workflow name without extension
+
+jobs:
+
+  # Jlink archive used by Jpackage are build and tested on a Linux OS
+  assemble-archive:
+    uses: ./.github/workflows/release-assemble-archive.yml
+    with:
+      tag: ${{ inputs.tag }}
+
+  # The name is used as path in GitHub
+  # So we get from a release run: release-assemble / assemble-archive
+  assemble-jpackage:
+    # We can't put any runner context info here unfortunately
+    name: 'Assemble ${{ matrix.os }}'
+    needs: [ assemble-archive ]
+    strategy:
+      fail-fast: false
+      matrix:
+        # List: https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job#standard-github-hosted-runners-for-public-repositories
+        os: ${{ fromJSON(
+          inputs.runner == 'all' && '["ubuntu-latest", "windows-latest", "macos-latest"]' ||
+          format('["{0}"]', inputs.runner)
+          ) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+
+      # Checkout
+      - name: Git Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          fetch-depth: 0
+
+      # Cache to not download the maven dependency between matrix run
+      # https://github.com/actions/cache/blob/main/examples.md#java---maven
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+
+      - name: Utility installation Windows
+        if: runner.os == 'Windows'
+        # silent = no GUI windows, progress bars, or installer dialogs
+        # force = to avoid the error: `Found an existing package already installed`
+        # https://learn.microsoft.com/en-us/windows/package-manager/winget/install
+        # Yq to query xml
+        run: winget install -e --id=MikeFarah.yq -v 4.48.1 --silent --accept-source-agreements --accept-package-agreements --force
+
+      # Homebrew is installed but not in the path
+      # https://github.com/actions/runner-images/issues/6283
+      - name: Homebrew Set up
+        if: runner.os != 'Windows'
+        run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+      - name: Homebrew Utility installation Linux/Macos
+        if: runner.os != 'Windows'
+        run: brew install yq
+
+      # Extract Properties from pom.xml
+      - name: Properties
+        id: props
+        shell: bash
+        run: |
+
+          set -TCEeuo pipefail
+
+          # Detect OS and set yq command
+          # to resolve `yq: command not found`
+          if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+            YQ_CMD="$LOCALAPPDATA/Microsoft/WinGet/Links/yq.exe"
+          else
+            YQ_CMD="yq"
+          fi
+
+          # Generate the effective pom
+          POM_EFFECTIVE="${{runner.temp}}/pom-effective.xml"
+          ./mvnw help:effective-pom "-Doutput=$POM_EFFECTIVE"
+
+          # Why yq because mvnw help:evaluate is fucking slow
+          PROJECT_VERSION=$($YQ_CMD --exit-status '.project.version' "$POM_EFFECTIVE")
+          echo "project_version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+
+          # Project effective version
+          case "$PROJECT_VERSION" in
+            *-SNAPSHOT)
+              PROJECT_EFFECTIVE_VERSION="$(yq --exit-status '.project.snapshot.label' jreleaser.yml)"
+              ;;
+            *)
+              PROJECT_EFFECTIVE_VERSION="$PROJECT_VERSION"
+              ;;
+          esac
+          echo "project_effective_version=${PROJECT_EFFECTIVE_VERSION}" >> $GITHUB_OUTPUT
+
+          ARTIFACT_ID=$($YQ_CMD --exit-status '.project.artifactId' "$POM_EFFECTIVE")
+          echo "artifact_id=$ARTIFACT_ID" >> $GITHUB_OUTPUT
+
+          JDK_VERSION=$($YQ_CMD --exit-status '.project.properties."jdk.version"' "$POM_EFFECTIVE")
+          echo "jdk_version=$JDK_VERSION" >> $GITHUB_OUTPUT
+
+          JDK_DISTRO=$($YQ_CMD --exit-status '.project.properties."jdk.distribution"' "$POM_EFFECTIVE")
+          echo "jdk_distro=$JDK_DISTRO" >> $GITHUB_OUTPUT
+
+          JDK_DOWNLOAD_DIRECTORY=$($YQ_CMD --exit-status '.project.properties."jdk.download-directory"' "$POM_EFFECTIVE")
+          echo "jdk_download_directory=$JDK_DOWNLOAD_DIRECTORY" >> $GITHUB_OUTPUT
+
+          # Runner arch normalization
+          # https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#runner-context
+          case "${{ runner.arch }}" in
+            ARM64)
+              ARCH_JRELEASER="aarch_64"
+              ARCH_ARTIFACT="arm64"
+              ;;
+            X64)
+              ARCH_JRELEASER="x86_64"
+              ARCH_ARTIFACT="x64"
+              ;;
+            *)
+              echo "Unknown arch ${{ runner.arch }}"
+              exit 1
+              ;;
+          esac
+
+          # Runner os normalization
+          # https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#runner-context
+          case "${{ runner.os }}" in
+            Windows)
+              OS_JRELEASER="windows"
+              OS_ARTIFACT="windows"
+              ;;
+            Linux)
+              OS_JRELEASER="linux"
+              OS_ARTIFACT="linux"
+              ;;
+            macOS)
+              OS_JRELEASER="osx"
+              OS_ARTIFACT="macos"
+              ;;
+            *)
+              echo "Unknown arch ${{ runner.arch }}"
+              exit 1
+              ;;
+          esac
+          echo "os_artifact=${OS_ARTIFACT}" >> $GITHUB_OUTPUT
+
+          # Platform - The os and runner id
+          # The name uses to download the jdk. It's unique by runner and unique by jdk
+          PLATFORM_JRELEASER="${OS_JRELEASER}-${ARCH_JRELEASER}";
+          echo "platform_jreleaser=${PLATFORM_JRELEASER}" >> $GITHUB_OUTPUT
+          PLATFORM_ARTIFACT="${OS_ARTIFACT}-${ARCH_ARTIFACT}";
+          echo "platform_artifact=${PLATFORM_ARTIFACT}" >> $GITHUB_OUTPUT
+
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ steps.props.outputs.jdk_version }}
+          distribution: ${{ steps.props.outputs.jdk_distro }}
+          cache: maven
+
+      # Still needed by JPackage - strange
+      # Run the jdks profile default goal with maven wrapper
+      - name: Maven Setup JDKs
+        # The shell is bash on Linux and Powershell in Windows
+        # The quotes are mandatory for Windows otherwise it will see -Djdk.name=xxx as powershell parameter
+        run: ./mvnw --no-transfer-progress --batch-mode --file pom.xml -Pjdks "-Djdk.name=${{ steps.props.outputs.platform_artifact }}"
+
+      # Build jar, still needed by Jpackage even with the jlink runtime ???
+      - name: Maven Build Jar
+        run: ./mvnw --no-transfer-progress --batch-mode --file pom.xml -DskipTests package
+
+      # Wix v3 is needed by Jpackage
+      - name: Winget Install WiX v3
+        if: runner.os == 'Windows'
+        # silent = no GUI windows, progress bars, or installer dialogs
+        # force = to avoid the error: `Found an existing package already installed`
+        # https://learn.microsoft.com/en-us/windows/package-manager/winget/install
+        run: winget install -e --id WiXToolset.WiXToolset -v 3.14.1.8722 --silent --accept-source-agreements --accept-package-agreements --force
+
+      # Download Installer created by the archive assemble workflow
+      - name: Download Jlink Artifacts
+        uses: actions/download-artifact@v4
+        continue-on-error: false
+        with:
+          pattern: jlink-${{ steps.props.outputs.project_version }}-${{ steps.props.outputs.os_artifact }}
+          merge-multiple: true # download them to the same directory
+          path: ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink
+
+      - name: Expand jlink
+        shell: bash
+        run: |
+          cd ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink
+          ls -l
+          unzip -q -d work-${{ steps.props.outputs.platform_jreleaser }} ${{ steps.props.outputs.artifact_id }}-${{ steps.props.outputs.project_effective_version }}-jre-${{ steps.props.outputs.platform_artifact }}.zip
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      # Jlink and Jpackage assembly
+      - name: JReleaser Assemble
+        uses: jreleaser/release-action@v2
+        with:
+          arguments: assemble --select-current-platform --assembler jpackage
+          setup-java: false
+        env:
+          JRELEASER_PROJECT_VERSION: ${{ steps.props.outputs.project_version }}
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_OUTPUT_DIRECTORY: ${{ env.JRELEASER_OUT_DIRECTORY }}
+          JDK_DOWNLOAD_DIRECTORY: ${{ steps.props.outputs.jdk_download_directory }}
+          JDK_VERSION: ${{ steps.props.outputs.jdk_version }}
+          JDK_DISTRO: ${{ steps.props.outputs.jdk_distro }}
+
+
+      # Upload log
+      - name: JReleaser output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1 # 90 by default
+          name: jreleaser-logs-${{env.WORKFLOW_ID}}-${{ steps.props.outputs.project_effective_version }}-${{ steps.props.outputs.platform_artifact }}
+          path: |
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/trace.log
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/output.properties
+
+      # Upload Jpackage native package
+      # Jlink artifact is not in this upload because we download them into a different directory
+      # ie JReleaser expects the Jlink and Native Package in different directory
+      - name: Upload Jpackage Native Package
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1 # 90 by default
+          name: jpackage-${{ steps.props.outputs.project_version }}-${{ steps.props.outputs.platform_artifact }}
+          path: |
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}/jpackage/*.pkg
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}/jpackage/*.msi
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}/jpackage/*.deb
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}/jpackage/*.rpm

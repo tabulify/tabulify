@@ -1,0 +1,241 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Release Assemble Archive
+# Create Jlink And Java Archive
+
+on:
+  # Trigger on button click
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag'
+        required: true
+        type: string
+  # Trigger from another workflow
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Tag'
+        required: true
+        type: string
+
+
+# Constant for entire workflow
+env:
+  COMMAND: tabulify
+  JRELEASER_JPACKAGE_ASSEMBLY_NAME: 'tabulify-installer' # The jpackage assembly name
+  JRELEASER_JLINK_ASSEMBLY_NAME: 'tabulify-jre' # The jlink assembly name
+  JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME: 'tabulify-nojre'
+  WORKFLOW_ID: release-assemble-archive # the workflow name without extension
+
+jobs:
+
+  # Assemble artifacts except installers
+  # Release all generated artifacts
+  # The name is used as path in GitHub
+  # so we get: release-assemble / assemble-archive / assemble
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+
+      # Checkout first as we do a control on the pom.xml version
+      - name: Git Checkout ${{ inputs.tag }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+
+      # Homebrew is installed but not in the path
+      # https://github.com/actions/runner-images/issues/6283
+      - name: Homebrew Setup
+        run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+      - name: Homebrew Utility Installation
+        run: brew install yq
+
+      # Extract Props from pom.xml
+      - name: Props And Version Check ${{ github.ref_name }}
+        id: props
+        shell: bash
+        run: |
+
+          set -TCEeuo pipefail
+
+          # Ref
+          REF=${{ github.ref_name }}
+          echo "ref=${REF}" >> $GITHUB_OUTPUT
+
+          # Generate the effective pom
+          POM_EFFECTIVE="${{runner.temp}}/pom-effective.xml"
+          ./mvnw help:effective-pom --quiet "-Doutput=$POM_EFFECTIVE"
+
+          # Project version and check
+          PROJECT_VERSION=$(yq --exit-status '.project.version' "$POM_EFFECTIVE")
+          echo "project_version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+
+          if [ "v$PROJECT_VERSION" != "$REF" ]; then
+            echo "Project version in pom.xml (v$PROJECT_VERSION) is not the same as the branch/tag $REF"
+            exit 1
+          fi
+
+          ARTIFACT_ID=$(yq --exit-status '.project.artifactId' "$POM_EFFECTIVE")
+          echo "artifact_id=$ARTIFACT_ID" >> $GITHUB_OUTPUT
+
+          JDK_VERSION=$(yq --exit-status '.project.properties."jdk.version"' "$POM_EFFECTIVE")
+          echo "jdk_version=$JDK_VERSION" >> $GITHUB_OUTPUT
+
+          JDK_DISTRO=$(yq --exit-status '.project.properties."jdk.distribution"' "$POM_EFFECTIVE")
+          echo "jdk_distro=$JDK_DISTRO" >> $GITHUB_OUTPUT
+
+          JDK_DOWNLOAD_DIRECTORY=$(yq --exit-status '.project.properties."jdk.download-directory"' "$POM_EFFECTIVE")
+          echo "jdk_download_directory=$JDK_DOWNLOAD_DIRECTORY" >> $GITHUB_OUTPUT
+
+          DEPENDENCY_OUTPUT_DIRECTORY=$(yq --exit-status '.project.properties."dependency.output-directory"' "$POM_EFFECTIVE")
+          echo "dependency_output_directory=$DEPENDENCY_OUTPUT_DIRECTORY" >> $GITHUB_OUTPUT
+
+          # JDK Name - The jdk and runner id
+          # The name uses to download the jdk. It's unique by runner and unique by jdk
+          # It should be lowercase, we use the bash syntax to do that
+          # Why Node and not bash subsitution, macOS has an old bash: 3.2.57(1)-release
+          JDK_NAME=$(echo 'console.log("${{ runner.os }}-${{ runner.arch }}".toLowerCase())' | node -);
+          echo "jdk_name=${JDK_NAME}" >> $GITHUB_OUTPUT
+
+
+      # Cache to not download the maven dependency between matrix run
+      # https://github.com/actions/cache/blob/main/examples.md#java---maven
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ steps.props.outputs.jdk_version }}
+          distribution: ${{ steps.props.outputs.jdk_distro }}
+          cache: maven
+
+      # Run the jdks profile default goal with maven wrapper
+      - name: Maven Setup JDKs
+        # The shell is bash on Linux and Powershell in Windows
+        run: ./mvnw --no-transfer-progress --batch-mode --file pom.xml -Pjdks
+
+      # Run the deps profile default goal with maven wrapper
+      # Jlink packaging needs them
+      - name: Maven Copy dependencies
+        run: ./mvnw --no-transfer-progress --batch-mode --quiet --file pom.xml -Pdeps
+
+      # Build jar
+      - name: Maven Build
+        run: ./mvnw --no-transfer-progress --batch-mode --file pom.xml -DskipTests package
+
+      # Create Java Archive
+      - name: Java Archive Assemble
+        uses: jreleaser/release-action@v2
+        with:
+          arguments: assemble --assembler java-archive
+          setup-java: false
+        env:
+          JRELEASER_PROJECT_VERSION: ${{ steps.props.outputs.project_version }}
+          JRELEASER_OUTPUT_DIRECTORY: ${{ env.JRELEASER_OUT_DIRECTORY }}
+          DEPENDENCY_OUTPUT_DIRECTORY: ${{ steps.props.outputs.dependency_output_directory }}
+
+      # Test Java Archive
+      - name: Java Archive Test
+        shell: bash
+        run: |
+          set -TCEeuo pipefail
+          ARCHIVE_NAME="${{ steps.props.outputs.artifact_id }}-${{ steps.props.outputs.project_version }}-nojre"
+          JAVA_ARCHIVE=${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/$ARCHIVE_NAME.zip
+          UNZIP_TARGET="${{runner.temp}}"
+          unzip "$JAVA_ARCHIVE" -d "$UNZIP_TARGET"
+          if ! OUTPUT=$($UNZIP_TARGET/${ARCHIVE_NAME}/bin/${{ env.COMMAND }} --version); then
+            echo "Error while running ${{ env.COMMAND }}"
+            exit 1
+          fi
+          if [[ ! $OUTPUT =~ "${{ steps.props.outputs.project_version }}" ]]; then
+            echo "Version output does not contains the version"
+            echo "Version output: \n$OUTPUT"
+            exit 1
+          fi
+
+      # Upload Java Archive
+      - name: Java Archive Test
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1 # 90 by default
+          name: java-archive-${{ steps.props.outputs.project_version }}
+          path: |
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/*.zip
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/*.tar.gz
+
+      # Jlink assembly
+      - name: Jlink Archive Assemble
+        uses: jreleaser/release-action@v2
+        with:
+          arguments: assemble --assembler jlink
+          setup-java: false
+        env:
+          JRELEASER_PROJECT_VERSION: ${{ steps.props.outputs.project_version }}
+          JRELEASER_OUTPUT_DIRECTORY: ${{ env.JRELEASER_OUT_DIRECTORY }}
+          JDK_DOWNLOAD_DIRECTORY: ${{ steps.props.outputs.jdk_download_directory }}
+          JDK_VERSION: ${{ steps.props.outputs.jdk_version }}
+          JDK_DISTRO: ${{ steps.props.outputs.jdk_distro }}
+          DEPENDENCY_OUTPUT_DIRECTORY: ${{ steps.props.outputs.dependency_output_directory }}
+
+      # Test Java Archive
+      # We test only the zip
+      - name: Jlink Test
+        shell: bash
+        run: |
+          set -TCEeuo pipefail
+          ARCHIVE_NAME="${{ steps.props.outputs.artifact_id }}-${{ steps.props.outputs.project_version }}-jre-linux-x64"
+          JAVA_ARCHIVE=${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/$ARCHIVE_NAME.zip
+          UNZIP_TARGET="${{runner.temp}}"
+          unzip "$JAVA_ARCHIVE" -d "$UNZIP_TARGET"
+          if ! OUTPUT=$($UNZIP_TARGET/${ARCHIVE_NAME}/bin/${{ env.COMMAND }} --version); then
+            echo "Error while running ${{ env.COMMAND }}"
+            exit 1
+          fi
+          if [[ ! $OUTPUT =~ "${{ steps.props.outputs.project_version }}" ]]; then
+            echo "Version output does not contains the version"
+            echo "Version output: \n$OUTPUT"
+            exit 1
+          fi
+
+      # Upload JLink
+      - name: Upload JLink Windows
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1 # 90 by default
+          name: jlink-${{ steps.props.outputs.project_version }}-windows
+          path: |
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/*windows*.zip
+
+      - name: Upload JLink Linux
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1 # 90 by default
+          name: jlink-${{ steps.props.outputs.project_version }}-linux
+          path: |
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/*linux*.zip
+
+      - name: Upload JLink Macos
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1 # 90 by default
+          name: jlink-${{ steps.props.outputs.project_version }}-macos
+          path: |
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/*macos*.zip
+
+      - name: JReleaser Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1
+          name: jreleaser-logs-${{env.WORKFLOW_ID}}
+          path: |
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/trace.log
+            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/output.properties

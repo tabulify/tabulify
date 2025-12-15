@@ -29,6 +29,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.logging.Logger;
 
 import static com.tabulify.tabul.TabulLog.LOGGER_TABUL;
 import static com.tabulify.tabul.TabulWords.*;
@@ -46,6 +47,14 @@ public class Tabul {
 
     public static void main(String[] args) {
 
+        // If a config file has not been applied with -Djava.util.logging.config.file=/their/custom/file.properties,
+        // set warning level to root
+        String configFile = System.getProperty("java.util.logging.config.file");
+        if (configFile == null) {
+            Logger root = Logger.getLogger("");
+            root.setLevel(Level.WARNING);
+        }
+
         // Initiate the client helper
         CliCommand rootCommand = CliCommand.createRoot(TabulWords.CLI_NAME, args)
                 .setDescription("Tabul, the tabulify command line data processing tool")
@@ -60,14 +69,14 @@ public class Tabul {
                 CliUsage.CODE_BLOCK
         );
 
-    /*
-     Initiate the library of options
-     */
+        /*
+         * Initiate the library of options
+         */
         TabulWords.initLibrary(rootCommand);
 
-    /*
-     The options for all command
-     */
+        /*
+         * The options for all command
+         */
         rootCommand.addProperty(TabulWords.CONF_PATH_PROPERTY)
                 .setDescription("The path to a configuration file")
                 .setValueName("path")
@@ -232,7 +241,6 @@ public class Tabul {
 
                 /*
                  * Check for the version
-
                  */
                 if (cliParser.getBoolean(VERSION_FLAG)) {
                     JarManifest jarManifest = null;
@@ -246,7 +254,7 @@ public class Tabul {
                     }
                     // for the compiler
                     assert jarManifest != null;
-                    String mavenVersion = jarManifest.getAttribute(JarManifestAttribute.MAVEN_VERSION);
+                    String mavenVersion = jarManifest.getAttribute(JarManifestAttribute.PACKAGE_VERSION);
                     System.out.println(mavenVersion);
                     Tabul.exit(tabular, 0, null);
                 }
