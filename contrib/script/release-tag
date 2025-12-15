@@ -90,26 +90,13 @@ fi
 echo "Tag determined to be $TAG_NAME"
 
 if [ $DRY_RUN == false ]; then
-  # Delete the tag if it exists (both locally and remotely)
-  if git tag -l | grep -q "^${TAG_NAME}$"; then
-    echo "Deleting existing local tag: $TAG_NAME"
-    git tag -d "$TAG_NAME"
-  fi
 
-  # Check if tag exists on remote and delete it
-  if git ls-remote --tags origin | grep -q "refs/tags/${TAG_NAME}$"; then
-    echo "Deleting existing remote tag: $TAG_NAME"
-    git push origin --delete "$TAG_NAME"
-  fi
-
-  echo "Creating Tag $1"
-  git tag "$1"
-  echo "Pushing Tag $1"
-  git push origin tag "$1"
-  echo "Tagging done"
+  git-tag "$1"
 
 else
+
   echo "Dry Run, no tag creation"
+
 fi
 
 

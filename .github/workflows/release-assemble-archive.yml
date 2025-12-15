@@ -8,24 +8,27 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag'
+        description: 'Tag to checkout (vx.x.x or early-access)'
         required: true
         type: string
   # Trigger from another workflow
   workflow_call:
     inputs:
       tag:
-        description: 'Tag'
+        description: 'Tag to checkout (vx.x.x or early-access)'
         required: true
         type: string
 
 
 # Constant for entire workflow
 env:
-  COMMAND: tabulify
+  COMMAND: tabul
   JRELEASER_JPACKAGE_ASSEMBLY_NAME: 'tabulify-installer' # The jpackage assembly name
   JRELEASER_JLINK_ASSEMBLY_NAME: 'tabulify-jre' # The jlink assembly name
   JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME: 'tabulify-nojre'
+  CLI_PROJECT: 'cli-tabul'
+  ARCHIVE_PREFIX: tabulify
+  TARGET_DIRECTORY: 'cli-tabul/target'
   WORKFLOW_ID: release-assemble-archive # the workflow name without extension
 
 jobs:
@@ -53,51 +56,41 @@ jobs:
         run: brew install yq
 
       # Extract Props from pom.xml
-      - name: Props And Version Check ${{ github.ref_name }}
+      - name: Props And Version Check ${{ inputs.tag }}
         id: props
         shell: bash
         run: |
 
           set -TCEeuo pipefail
 
-          # Ref
-          REF=${{ github.ref_name }}
-          echo "ref=${REF}" >> $GITHUB_OUTPUT
+          # Tag
+          TAG=${{ inputs.tag }}
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
           # Generate the effective pom
           POM_EFFECTIVE="${{runner.temp}}/pom-effective.xml"
-          ./mvnw help:effective-pom --quiet "-Doutput=$POM_EFFECTIVE"
+          ./mvnw help:effective-pom --quiet -pl "${{ env.CLI_PROJECT }}" "-Doutput=$POM_EFFECTIVE"
 
-          # Project version and check
+          # Project version and tag
           PROJECT_VERSION=$(yq --exit-status '.project.version' "$POM_EFFECTIVE")
+          PROJECT_TAG="v$PROJECT_VERSION"
+          if [[ "$PROJECT_VERSION" =~ .*-SNAPSHOT ]]; then
+            PROJECT_VERSION=early-access
+            PROJECT_TAG=early-access
+          fi
           echo "project_version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
 
-          if [ "v$PROJECT_VERSION" != "$REF" ]; then
-            echo "Project version in pom.xml (v$PROJECT_VERSION) is not the same as the branch/tag $REF"
+          # Check
+          if [ "$PROJECT_TAG" != "$TAG" ]; then
+            echo "Derived Tag from pom.xml ($PROJECT_TAG) is not the same as the workflow tag $TAG"
             exit 1
           fi
-
-          ARTIFACT_ID=$(yq --exit-status '.project.artifactId' "$POM_EFFECTIVE")
-          echo "artifact_id=$ARTIFACT_ID" >> $GITHUB_OUTPUT
 
           JDK_VERSION=$(yq --exit-status '.project.properties."jdk.version"' "$POM_EFFECTIVE")
           echo "jdk_version=$JDK_VERSION" >> $GITHUB_OUTPUT
 
           JDK_DISTRO=$(yq --exit-status '.project.properties."jdk.distribution"' "$POM_EFFECTIVE")
           echo "jdk_distro=$JDK_DISTRO" >> $GITHUB_OUTPUT
-
-          JDK_DOWNLOAD_DIRECTORY=$(yq --exit-status '.project.properties."jdk.download-directory"' "$POM_EFFECTIVE")
-          echo "jdk_download_directory=$JDK_DOWNLOAD_DIRECTORY" >> $GITHUB_OUTPUT
-
-          DEPENDENCY_OUTPUT_DIRECTORY=$(yq --exit-status '.project.properties."dependency.output-directory"' "$POM_EFFECTIVE")
-          echo "dependency_output_directory=$DEPENDENCY_OUTPUT_DIRECTORY" >> $GITHUB_OUTPUT
-
-          # JDK Name - The jdk and runner id
-          # The name uses to download the jdk. It's unique by runner and unique by jdk
-          # It should be lowercase, we use the bash syntax to do that
-          # Why Node and not bash subsitution, macOS has an old bash: 3.2.57(1)-release
-          JDK_NAME=$(echo 'console.log("${{ runner.os }}-${{ runner.arch }}".toLowerCase())' | node -);
-          echo "jdk_name=${JDK_NAME}" >> $GITHUB_OUTPUT
 
 
       # Cache to not download the maven dependency between matrix run
@@ -117,38 +110,55 @@ jobs:
           distribution: ${{ steps.props.outputs.jdk_distro }}
           cache: maven
 
+      # Build and install jars
+      - name: Install the jars
+        shell: bash
+        # maven.test.skip: skips test compilation, execution, and test dependency downloads entirely.
+        run: |
+          ./mvnw install \
+            -Dmaven.test.skip=true \
+            --batch-mode \
+            -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
+
       # Run the jdks profile default goal with maven wrapper
-      - name: Maven Setup JDKs
-        # The shell is bash on Linux and Powershell in Windows
-        run: ./mvnw --no-transfer-progress --batch-mode --file pom.xml -Pjdks
+      - name: Maven Download JDKs
+        shell: bash
+        run: |
+          ./mvnw -Pjdks \
+            -pl "${{ env.CLI_PROJECT }}" \
+            --no-transfer-progress \
+            --batch-mode \
+            -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
 
       # Run the deps profile default goal with maven wrapper
       # Jlink packaging needs them
       - name: Maven Copy dependencies
-        run: ./mvnw --no-transfer-progress --batch-mode --quiet --file pom.xml -Pdeps
-
-      # Build jar
-      - name: Maven Build
-        run: ./mvnw --no-transfer-progress --batch-mode --file pom.xml -DskipTests package
+        shell: bash
+        run: |
+          ./mvnw -Pdeps \
+            -pl "${{ env.CLI_PROJECT }}" \
+            --no-transfer-progress \
+            --batch-mode \
+            -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
 
       # Create Java Archive
       - name: Java Archive Assemble
-        uses: jreleaser/release-action@v2
-        with:
-          arguments: assemble --assembler java-archive
-          setup-java: false
-        env:
-          JRELEASER_PROJECT_VERSION: ${{ steps.props.outputs.project_version }}
-          JRELEASER_OUTPUT_DIRECTORY: ${{ env.JRELEASER_OUT_DIRECTORY }}
-          DEPENDENCY_OUTPUT_DIRECTORY: ${{ steps.props.outputs.dependency_output_directory }}
+        shell: bash
+        run: |
+          ./mvnw jreleaser:assemble \
+            -Djreleaser.assemblers=javaArchive \
+            -pl "${{ env.CLI_PROJECT }}" \
+            --no-transfer-progress \
+            --batch-mode \
+            -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
 
       # Test Java Archive
       - name: Java Archive Test
         shell: bash
         run: |
           set -TCEeuo pipefail
-          ARCHIVE_NAME="${{ steps.props.outputs.artifact_id }}-${{ steps.props.outputs.project_version }}-nojre"
-          JAVA_ARCHIVE=${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/$ARCHIVE_NAME.zip
+          ARCHIVE_NAME="${{ env.ARCHIVE_PREFIX }}-${{ steps.props.outputs.project_version }}-nojre"
+          JAVA_ARCHIVE=${{env.TARGET_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/${ARCHIVE_NAME}.zip
           UNZIP_TARGET="${{runner.temp}}"
           unzip "$JAVA_ARCHIVE" -d "$UNZIP_TARGET"
           if ! OUTPUT=$($UNZIP_TARGET/${ARCHIVE_NAME}/bin/${{ env.COMMAND }} --version); then
@@ -162,28 +172,25 @@ jobs:
           fi
 
       # Upload Java Archive
-      - name: Java Archive Test
+      - name: Java Archive Upload
         uses: actions/upload-artifact@v4
         with:
           retention-days: 1 # 90 by default
           name: java-archive-${{ steps.props.outputs.project_version }}
           path: |
-            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/*.zip
-            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/*.tar.gz
+            ${{env.TARGET_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/*.zip
+            ${{env.TARGET_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/*.tar.gz
 
       # Jlink assembly
       - name: Jlink Archive Assemble
-        uses: jreleaser/release-action@v2
-        with:
-          arguments: assemble --assembler jlink
-          setup-java: false
-        env:
-          JRELEASER_PROJECT_VERSION: ${{ steps.props.outputs.project_version }}
-          JRELEASER_OUTPUT_DIRECTORY: ${{ env.JRELEASER_OUT_DIRECTORY }}
-          JDK_DOWNLOAD_DIRECTORY: ${{ steps.props.outputs.jdk_download_directory }}
-          JDK_VERSION: ${{ steps.props.outputs.jdk_version }}
-          JDK_DISTRO: ${{ steps.props.outputs.jdk_distro }}
-          DEPENDENCY_OUTPUT_DIRECTORY: ${{ steps.props.outputs.dependency_output_directory }}
+        shell: bash
+        run: |
+          ./mvnw jreleaser:assemble \
+            -Djreleaser.assemblers=jlink \
+            -pl "${{ env.CLI_PROJECT }}" \
+            --no-transfer-progress \
+            --batch-mode \
+            -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
 
       # Test Java Archive
       # We test only the zip
@@ -191,8 +198,8 @@ jobs:
         shell: bash
         run: |
           set -TCEeuo pipefail
-          ARCHIVE_NAME="${{ steps.props.outputs.artifact_id }}-${{ steps.props.outputs.project_version }}-jre-linux-x64"
-          JAVA_ARCHIVE=${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/$ARCHIVE_NAME.zip
+          ARCHIVE_NAME="${{ env.ARCHIVE_PREFIX }}-${{ steps.props.outputs.project_version }}-jre-linux-x64"
+          JAVA_ARCHIVE=${{env.TARGET_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/$ARCHIVE_NAME.zip
           UNZIP_TARGET="${{runner.temp}}"
           unzip "$JAVA_ARCHIVE" -d "$UNZIP_TARGET"
           if ! OUTPUT=$($UNZIP_TARGET/${ARCHIVE_NAME}/bin/${{ env.COMMAND }} --version); then
@@ -212,7 +219,7 @@ jobs:
           retention-days: 1 # 90 by default
           name: jlink-${{ steps.props.outputs.project_version }}-windows
           path: |
-            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/*windows*.zip
+            ${{env.TARGET_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/*windows*.zip
 
       - name: Upload JLink Linux
         uses: actions/upload-artifact@v4
@@ -220,15 +227,7 @@ jobs:
           retention-days: 1 # 90 by default
           name: jlink-${{ steps.props.outputs.project_version }}-linux
           path: |
-            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/*linux*.zip
-
-      - name: Upload JLink Macos
-        uses: actions/upload-artifact@v4
-        with:
-          retention-days: 1 # 90 by default
-          name: jlink-${{ steps.props.outputs.project_version }}-macos
-          path: |
-            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/*macos*.zip
+            ${{env.TARGET_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/*linux*.zip
 
       - name: JReleaser Logs
         if: always()
@@ -237,5 +236,5 @@ jobs:
           retention-days: 1
           name: jreleaser-logs-${{env.WORKFLOW_ID}}
           path: |
-            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/trace.log
-            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/output.properties
+            ${{env.TARGET_DIRECTORY}}/jreleaser/trace.log
+            ${{env.TARGET_DIRECTORY}}/jreleaser/output.properties

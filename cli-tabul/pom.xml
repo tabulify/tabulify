@@ -112,8 +112,10 @@
     <dependency>
       <groupId>com.combostrap</groupId>
       <artifactId>combostrap-doc-exec</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
+      <version>1.0.0</version>
       <scope>test</scope>
+      <!-- Not yet in Maven -->
+      <optional>true</optional>
     </dependency>
 
     <!-- JUL implementation (ie JUL was introduced at 1.4)-->
