@@ -13,7 +13,7 @@
   <parent>
     <groupId>com.tabulify</groupId>
     <artifactId>tabulify</artifactId>
-    <version>2.0.0</version>
+    <version>2.0.0-SNAPSHOT</version>
   </parent>
 
 
@@ -22,6 +22,8 @@
     <dependency.output.directory>${project.build.directory}/deps</dependency.output.directory>
     <!-- Name used in the brew formula to design the cli project -->
     <cli.project.name>${project.pomFile.parentFile.name}</cli.project.name>
+    <!-- Name of the cli, the script name (known as appName, commandName, ....)-->
+    <cli.name>tabul</cli.name>
   </properties>
 
   <dependencies>
@@ -108,14 +110,6 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.combostrap</groupId>
-      <artifactId>combostrap-doc-exec</artifactId>
-      <version>1.0.0</version>
-      <scope>test</scope>
-      <!-- Not yet in Maven -->
-      <optional>true</optional>
     </dependency>
 
     <!-- JUL implementation (ie JUL was introduced at 1.4)-->
@@ -276,16 +270,34 @@
             <artifactId>maven-dependency-plugin</artifactId>
             <configuration>
               <outputDirectory>${dependency.output.directory}</outputDirectory>
+              <!-- Copy runtime and transitive dependency -->
               <includeScope>runtime</includeScope>
             </configuration>
           </plugin>
         </plugins>
       </build>
-
+    </profile>
+    <!-- Local development -->
+    <!-- Not needed in CI, only in case of Adhoc test, this profile is disable in CI -->
+    <!-- See AdhocRunTabulTmpTest.md -->
+    <profile>
+      <id>adhoc</id>
+      <activation>
+        <!-- Active by default, deactivated in CI -->
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>com.combostrap</groupId>
+          <artifactId>combostrap-doc-exec</artifactId>
+          <version>1.1.0</version>
+          <scope>test</scope>
+          <!-- Not yet in Maven -->
+          <optional>true</optional>
+        </dependency>
+      </dependencies>
     </profile>
   </profiles>
-
-
 
 
 </project>

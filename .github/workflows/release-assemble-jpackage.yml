@@ -10,9 +10,10 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag'
+        description: 'Tag (vx.x.x or early-access)'
         required: true
         type: string
+        default: early-access
       runner:
         description: 'Runner'
         required: false
@@ -40,26 +41,30 @@ on:
 
 # Constant for entire workflow
 env:
-  # The assembly name. They should never change, but it's still a property
-  JRELEASER_JPACKAGE_ASSEMBLY_NAME: 'tabulify-installer'
-  JRELEASER_JLINK_ASSEMBLY_NAME: 'tabulify-jre'
-  JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME: 'tabulify-nojre'
   WORKFLOW_ID: 'release-assemble-jpackage' # the workflow name without extension
+  CLI_NAME: tabul # (ie app name)
+  MSI_INSTALL_LOG_NAME: 'msi-install.log'
+  BUILD_DIRECTORY_WINDOWS: 'cli-tabul\target'
+  # ###########################################
+  # Below are all common release workflow env
+  # ###########################################
+  COMMAND: 'tabul'
+  JRELEASER_JPACKAGE_ASSEMBLY_NAME: 'tabulify-installer' # The jpackage assembly name
+  JRELEASER_JLINK_ASSEMBLY_NAME: 'tabulify-jre' # The jlink assembly name
+  JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME: 'tabulify-nojre'
+  CLI_PROJECT: 'cli-tabul'
+  # PROJECT_NAME and not TABULIFY_NAME to avoid the tabul error: The tabular env OS environment variable (TABULIFY_NAME) is unknown.
+  PROJECT_NAME: 'tabulify'
+  BUILD_DIRECTORY: 'cli-tabul/target'
+  SNAPSHOT_TAG: 'early-access'
 
 jobs:
-
-  # Jlink archive used by Jpackage are build and tested on a Linux OS
-  assemble-archive:
-    uses: ./.github/workflows/release-assemble-archive.yml
-    with:
-      tag: ${{ inputs.tag }}
 
   # The name is used as path in GitHub
   # So we get from a release run: release-assemble / assemble-archive
   assemble-jpackage:
     # We can't put any runner context info here unfortunately
     name: 'Assemble ${{ matrix.os }}'
-    needs: [ assemble-archive ]
     strategy:
       fail-fast: false
       matrix:
@@ -72,10 +77,10 @@ jobs:
     steps:
 
       # Checkout
-      - name: Git Checkout
+      - name: Git Checkout ${{ inputs.tag }}
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          ref: ${{ inputs.tag }}
           fetch-depth: 0
 
       # Cache to not download the maven dependency between matrix run
@@ -89,23 +94,6 @@ jobs:
             ${{ runner.os }}-maven-
 
 
-      - name: Utility installation Windows
-        if: runner.os == 'Windows'
-        # silent = no GUI windows, progress bars, or installer dialogs
-        # force = to avoid the error: `Found an existing package already installed`
-        # https://learn.microsoft.com/en-us/windows/package-manager/winget/install
-        # Yq to query xml
-        run: winget install -e --id=MikeFarah.yq -v 4.48.1 --silent --accept-source-agreements --accept-package-agreements --force
-
-      # Homebrew is installed but not in the path
-      # https://github.com/actions/runner-images/issues/6283
-      - name: Homebrew Set up
-        if: runner.os != 'Windows'
-        run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
-      - name: Homebrew Utility installation Linux/Macos
-        if: runner.os != 'Windows'
-        run: brew install yq
-
       # Extract Properties from pom.xml
       - name: Properties
         id: props
@@ -114,44 +102,39 @@ jobs:
 
           set -TCEeuo pipefail
 
-          # Detect OS and set yq command
-          # to resolve `yq: command not found`
-          if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
-            YQ_CMD="$LOCALAPPDATA/Microsoft/WinGet/Links/yq.exe"
-          else
-            YQ_CMD="yq"
+          # Project version and tag
+          # Why not yq even if mvnw help:evaluate is fucking slow
+          # Because if yq install failed (ie Download request status is not success)
+          # It's more slow as we need to restart the whole archive flow and we need to install it
+          PROJECT_VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout --settings .github/cd-maven-settings.xml)
+          PROJECT_TAG="v$PROJECT_VERSION"
+          PROJECT_VERSION_NUMBER="$PROJECT_VERSION"
+          if [[ "$PROJECT_VERSION" =~ .*-SNAPSHOT ]]; then
+            PROJECT_VERSION_NUMBER="${PROJECT_VERSION%-*}"
+            PROJECT_VERSION=${{env.SNAPSHOT_TAG}}
+            PROJECT_TAG=${{env.SNAPSHOT_TAG}}
+          fi
+          echo "project_version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+          echo "project_version_number=$PROJECT_VERSION_NUMBER" >> $GITHUB_OUTPUT
+
+          # Check
+          TAG="${{ inputs.tag }}"
+          if [ "$PROJECT_TAG" != "$TAG" ]; then
+            echo "Derived Tag from pom.xml ($PROJECT_TAG) is not the same as the workflow tag $TAG"
+            exit 1
           fi
 
-          # Generate the effective pom
-          POM_EFFECTIVE="${{runner.temp}}/pom-effective.xml"
-          ./mvnw help:effective-pom "-Doutput=$POM_EFFECTIVE"
-
-          # Why yq because mvnw help:evaluate is fucking slow
-          PROJECT_VERSION=$($YQ_CMD --exit-status '.project.version' "$POM_EFFECTIVE")
-          echo "project_version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
-
-          # Project effective version
-          case "$PROJECT_VERSION" in
-            *-SNAPSHOT)
-              PROJECT_EFFECTIVE_VERSION="$(yq --exit-status '.project.snapshot.label' jreleaser.yml)"
-              ;;
-            *)
-              PROJECT_EFFECTIVE_VERSION="$PROJECT_VERSION"
-              ;;
-          esac
-          echo "project_effective_version=${PROJECT_EFFECTIVE_VERSION}" >> $GITHUB_OUTPUT
-
-          ARTIFACT_ID=$($YQ_CMD --exit-status '.project.artifactId' "$POM_EFFECTIVE")
-          echo "artifact_id=$ARTIFACT_ID" >> $GITHUB_OUTPUT
-
-          JDK_VERSION=$($YQ_CMD --exit-status '.project.properties."jdk.version"' "$POM_EFFECTIVE")
+          JDK_VERSION=$(./mvnw help:evaluate -Dexpression=jdk.version -q -DforceStdout --settings .github/cd-maven-settings.xml)
           echo "jdk_version=$JDK_VERSION" >> $GITHUB_OUTPUT
 
-          JDK_DISTRO=$($YQ_CMD --exit-status '.project.properties."jdk.distribution"' "$POM_EFFECTIVE")
+          JDK_DISTRO=$(./mvnw help:evaluate -Dexpression=jdk.distribution -q -DforceStdout --settings .github/cd-maven-settings.xml)
           echo "jdk_distro=$JDK_DISTRO" >> $GITHUB_OUTPUT
 
-          JDK_DOWNLOAD_DIRECTORY=$($YQ_CMD --exit-status '.project.properties."jdk.download-directory"' "$POM_EFFECTIVE")
-          echo "jdk_download_directory=$JDK_DOWNLOAD_DIRECTORY" >> $GITHUB_OUTPUT
+          PATH_SEP="/"
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            PATH_SEP="\\"
+          fi
+          echo "path_sep=$PATH_SEP" >> $GITHUB_OUTPUT
 
           # Runner arch normalization
           # https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#runner-context
@@ -207,16 +190,24 @@ jobs:
           distribution: ${{ steps.props.outputs.jdk_distro }}
           cache: maven
 
-      # Still needed by JPackage - strange
-      # Run the jdks profile default goal with maven wrapper
+      # Still needed by JPackage to compile the binary
       - name: Maven Setup JDKs
         # The shell is bash on Linux and Powershell in Windows
         # The quotes are mandatory for Windows otherwise it will see -Djdk.name=xxx as powershell parameter
-        run: ./mvnw --no-transfer-progress --batch-mode --file pom.xml -Pjdks "-Djdk.name=${{ steps.props.outputs.platform_artifact }}"
+        run: ./mvnw -Pjdks "-Djdk.name=${{ steps.props.outputs.jdk_distro }}-${{ steps.props.outputs.platform_artifact }}" -pl "${{ env.CLI_PROJECT }}" --no-transfer-progress --batch-mode  --settings ".github${{ steps.props.outputs.path_sep }}cd-maven-settings.xml"
 
-      # Build jar, still needed by Jpackage even with the jlink runtime ???
-      - name: Maven Build Jar
-        run: ./mvnw --no-transfer-progress --batch-mode --file pom.xml -DskipTests package
+      # Build jar, still needed by Jpackage even with the jlink zip because it just takes the runtime, not the app
+      - name: Install the jars
+        shell: bash
+        # We can't use maven.test.skip because maven needs to resolve all dependency
+        # or maven.test.skip skips test compilation that skip the creation of the test jar tabulify-tabul-jdbc
+        # To use maven.test.skip we need to move all test in a real module, not a test jar
+        # -P!adhoc avoid temporary artifact
+        run: ./mvnw install -DskipTests -P!adhoc --batch-mode --no-transfer-progress --settings ".github${{ steps.props.outputs.path_sep }}cd-maven-settings.xml" -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
+
+      # Build jar, still needed by Jpackage even with the jlink zip because it just takes the runtime, not the app
+      - name: Maven Copy dependencies
+        run: ./mvnw -Pdeps -pl "${{ env.CLI_PROJECT }}" --no-transfer-progress --batch-mode --quiet --settings ".github${{ steps.props.outputs.path_sep }}cd-maven-settings.xml"
 
       # Wix v3 is needed by Jpackage
       - name: Winget Install WiX v3
@@ -226,50 +217,53 @@ jobs:
         # https://learn.microsoft.com/en-us/windows/package-manager/winget/install
         run: winget install -e --id WiXToolset.WiXToolset -v 3.14.1.8722 --silent --accept-source-agreements --accept-package-agreements --force
 
-      # Download Installer created by the archive assemble workflow
-      - name: Download Jlink Artifacts
-        uses: actions/download-artifact@v4
-        continue-on-error: false
-        with:
-          pattern: jlink-${{ steps.props.outputs.project_version }}-${{ steps.props.outputs.os_artifact }}
-          merge-multiple: true # download them to the same directory
-          path: ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink
-
-      - name: Expand jlink
-        shell: bash
-        run: |
-          cd ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink
-          ls -l
-          unzip -q -d work-${{ steps.props.outputs.platform_jreleaser }} ${{ steps.props.outputs.artifact_id }}-${{ steps.props.outputs.project_effective_version }}-jre-${{ steps.props.outputs.platform_artifact }}.zip
-
-      - name: Display structure of downloaded files
-        run: ls -R
-
       # Jlink and Jpackage assembly
       - name: JReleaser Assemble
-        uses: jreleaser/release-action@v2
-        with:
-          arguments: assemble --select-current-platform --assembler jpackage
-          setup-java: false
-        env:
-          JRELEASER_PROJECT_VERSION: ${{ steps.props.outputs.project_version }}
-          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JRELEASER_OUTPUT_DIRECTORY: ${{ env.JRELEASER_OUT_DIRECTORY }}
-          JDK_DOWNLOAD_DIRECTORY: ${{ steps.props.outputs.jdk_download_directory }}
-          JDK_VERSION: ${{ steps.props.outputs.jdk_version }}
-          JDK_DISTRO: ${{ steps.props.outputs.jdk_distro }}
+        # The shell is bash on Linux and Powershell in Windows
+        # The quotes are mandatory for Windows otherwise it will see -Djreleaser.select as powershell parameter
+        run: ./mvnw jreleaser:assemble -pl "${{ env.CLI_PROJECT }}" "-Djreleaser.select.current.platform" --no-transfer-progress --batch-mode --settings ".github${{ steps.props.outputs.path_sep }}cd-maven-settings.xml"
 
+      - name: Test Windows MSI file installation
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
 
-      # Upload log
-      - name: JReleaser output
+          # Error handling (is fucked)
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
+          $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
+          function ExitOnFailure { if (-not $?) { exit $LASTEXITCODE } }
+
+          # Listing files to get the name of the created msi
+          ls ${{env.BUILD_DIRECTORY_WINDOWS}}\jreleaser\assemble\${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}\jpackage
+
+          # App Name is fixed, we can't change it
+          Start-Process msiexec.exe `
+            -ArgumentList '/i "${{env.BUILD_DIRECTORY_WINDOWS}}\jreleaser\assemble\${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}\jpackage\${{env.CLI_NAME}}-${{ steps.props.outputs.project_version_number }}.msi" /qn /norestart /l*v "${{env.BUILD_DIRECTORY_WINDOWS}}\${{env.MSI_INSTALL_LOG_NAME}}"' `
+            -Wait -NoNewWindow
+          ExitOnFailure
+
+          # Should contains the package
+          Write-Host ("User Path: "+ [System.Environment]::GetEnvironmentVariable("Path","User"))
+
+          # Refresh PATH for current session
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+
+          # Verify command
+          ${{env.CLI_NAME}} --version
+          ExitOnFailure
+
+      - name: Upload log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           retention-days: 1 # 90 by default
-          name: jreleaser-logs-${{env.WORKFLOW_ID}}-${{ steps.props.outputs.project_effective_version }}-${{ steps.props.outputs.platform_artifact }}
+          name: ${{env.PROJECT_NAME}}-logs-${{env.WORKFLOW_ID}}-${{ steps.props.outputs.project_version }}-${{ steps.props.outputs.platform_artifact }}
           path: |
-            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/trace.log
-            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/output.properties
+            ${{env.BUILD_DIRECTORY}}/jreleaser/trace.log
+            ${{env.BUILD_DIRECTORY}}/jreleaser/output.properties
+            ${{env.BUILD_DIRECTORY}}/${{env.MSI_INSTALL_LOG_NAME}}
 
       # Upload Jpackage native package
       # Jlink artifact is not in this upload because we download them into a different directory
@@ -278,9 +272,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           retention-days: 1 # 90 by default
-          name: jpackage-${{ steps.props.outputs.project_version }}-${{ steps.props.outputs.platform_artifact }}
+          name: ${{env.PROJECT_NAME}}-jpackage-${{ steps.props.outputs.project_version }}-${{ steps.props.outputs.platform_artifact }}
           path: |
-            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}/jpackage/*.pkg
-            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}/jpackage/*.msi
-            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}/jpackage/*.deb
-            ${{env.JRELEASER_OUT_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}/jpackage/*.rpm
+            ${{env.BUILD_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}/jpackage/*.pkg
+            ${{env.BUILD_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}/jpackage/*.msi
+            ${{env.BUILD_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}/jpackage/*.deb
+            ${{env.BUILD_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JPACKAGE_ASSEMBLY_NAME}}/jpackage/*.rpm

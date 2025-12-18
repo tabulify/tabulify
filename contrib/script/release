@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Local Release of the cli
 # Superseded by the github workflow release
-# but is still used for release development and local installation
+# but is still used for release development (jreleaser test) and local installation
 set -TCEeuo pipefail
 
 # Reset

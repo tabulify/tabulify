@@ -14,6 +14,7 @@ platform:
 
 # https://jreleaser.org/guide/latest/reference/project.html
 project:
+  # for tabul, it's {{cliName}}, set in the pom
   name: tabulify
   description: Tabulify CLI application
   longDescription: |
@@ -44,14 +45,14 @@ project:
     documentation: https://www.tabulify.com
   languages:
     java:
-      groupId: com.tabulify
-      artifactId: tabulify-cli
       mainClass: com.tabulify.tabul.Tabul
       # Java Version, you can't set it as template variable from maven, so we use the environment
       # See jdk properties in maven.
       # In Maven, compiler version seems to not have major, minor, patch, tag and build
       # You get the version in multiple projectJavaVersion template variables
       # See https://jreleaser.org/guide/latest/reference/name-templates.html#_project
+      # You can set a variable, we use our own as they are used also externally by envrc
+      # to install the jdk
       # version: '17.0.16+8'
   stereotype: CLI
 
@@ -61,7 +62,7 @@ release:
   github:
     # Release by default
     releaseName: "Release {{projectEffectiveVersion}}"
-    # We create the tag
+    # We create the tag that starts the build
     skipTag: true
     prerelease:
       # # A regex to determine if the project version is a prerelease
@@ -114,9 +115,10 @@ assemble:
     tabulify-nojre:
       active: ALWAYS
       executable:
-        name: tabul
+        # not a template value
+        name: 'tabul'
       exported: true # The artifact generated will be created as distribution with the name tabulify-nojre
-      archiveName: 'tabulify-{{projectEffectiveVersion}}-nojre'
+      archiveName: '{{projectName}}-{{projectEffectiveVersion}}-nojre'
       # Common practice is to provide both .zip and .tar.gz
       formats:
         - ZIP
@@ -133,7 +135,7 @@ assemble:
       mainJar:
         path: '{{baseOutputDirectory}}/{{projectJavaArtifactId}}-{{projectVersion}}.jar'
       jars:
-        # The dependency jars are copied via maven with the deps profile
+        # dependencyOutputDirectory is a maven property used by the java jdk maven plugin with the deps profile
         - pattern: '{{dependencyOutputDirectory}}/*.jar'
       swid:
         tagRef: swid-tag
@@ -143,9 +145,10 @@ assemble:
     # Assembly Name
     tabulify-jre:
       active: ALWAYS
-      imageName: 'tabulify-{{projectEffectiveVersion}}-jre'
+      imageName: '{{projectName}}-{{projectEffectiveVersion}}-jre'
+      # not a template variable
       executable: tabul
-      exported: true
+      exported: false
       fileSets:
         - input: '{{baseOutputDirectory}}/../..'
           includes:
@@ -158,13 +161,26 @@ assemble:
           output: resources/tpcds_query
       jdeps:
         # Specifies the version when processing multi-release JAR files. version should be an integer >=9 or base.
+        # Can not be a variable: https://github.com/jreleaser/jreleaser/issues/2030
         multiRelease: '17'
+        # Why Ignore? Not all jars are module and automatic Module name resolution does not match
+        # Example: `apfloat-1.10.1.jar` got the module name `apfloat` not `org.apfloat` required by jgrapht
         ignoreMissingDeps: true
+        # If wildcard is true, we get an error in windows
+        # the command:
+        # jdeps.exe --multi-release 11 --ignore-missing-deps --print-module-deps --class-path universal\*;windows-x86_64\*
+        # returns
+        # Exception in thread "main" java.nio.file.InvalidPathException: Illegal char <*> at index 10: universal\*
+        useWildcardInPath: false
         targets:
           # bug: baseOutputDirectory is the parent/target directory, not the project/target directory
           # see ticket: https://github.com/jreleaser/jreleaser/issues/2024
-          - '{{baseOutputDirectory}}/tabulify-tabul-cli-{{projectVersion}}.jar'
+          - '{{baseOutputDirectory}}/{{projectJavaArtifactId}}-{{projectVersion}}.jar'
       additionalModuleNames:
+        # found with: jdeps --multi-release 17 --ignore-missing-deps --print-module-deps --class-path target/deps.tabulify-*  tabulify-tabul-cli-2.0.0.jar
+        # jdeps is not working if we pass all dependencies due to missing modules, we gave then only tabulify
+        - 'java.management'
+        - 'jdk.xml.dom'
         # jdk.crypto.ec is mandatory to avoid handshake_failure on http request
         # https://stackoverflow.com/questions/55439599/sslhandshakeexception-with-jlink-created-runtime
         - 'jdk.crypto.ec'
@@ -191,20 +207,24 @@ assemble:
           platform: 'linux_musl-x86_64'
       mainJar:
         # baseOutputDirectory is the tabul cli project directory
-        path: '{{baseOutputDirectory}}/tabulify-tabul-cli-{{projectVersion}}.jar'
+        path: '{{baseOutputDirectory}}/{{projectJavaArtifactId}}-{{projectVersion}}.jar'
       jars:
+        # dependencyOutputDirectory is a maven property
         - pattern: '{{dependencyOutputDirectory}}/*.jar'
       swid:
         tagRef: swid-tag
   # https://jreleaser.org/guide/latest/reference/assemble/jpackage.html#_jlink_jpackage
   jpackage:
     tabulify-installer:
+      active: ALWAYS # default to never
+      exported: false # we don't take linux
       # jpackage tool create only native installers for the platform it's running on
       # https://github.com/jreleaser/jreleaser/blob/main/.github/workflows/step-jpackage.yml
-      active: NEVER
       jlink: tabulify-jre
       applicationPackage:
-        appName: 'tabul'
+        appName: '{{cliName}}'
+        # MSI doesn't natively support version strings like 1.2.3-SNAPSHOT or 1.2.3-beta. The version must be strictly numeric.
+        appVersion: '{{projectVersionNumber}}' # to fix: Set a compatible 'app-version' value. Valid versions are one to three integers separated by dots.
       # Windows:
       # Create the MSI on Windows Powershell:
       #     jreleaser assemble --debug --select-current-platform --assembler=jpackage
@@ -226,6 +246,9 @@ distributions:
   # Assembly tabulify-nojre is exported as distribution
   # no need to define the path
   tabulify-nojre:
+    executable:
+      # not a template
+      name: "tabul"
     # Brew: run it with
     # export BREW_FORMULA_NAME=tabulify-early-access; mvnw jreleaser:prepare -Djreleaser.packagers=brew -Djreleaser.config.file="jreleaser.yml" -pl "cli-tabul" -Djreleaser.distributions=tabulify-nojre
     # https://jreleaser.org/guide/latest/reference/packagers/homebrew.html
@@ -248,13 +271,22 @@ distributions:
   # Distributions based on JLink Archive
   # Take the default value from the `assemble` tabulify-jre node
   tabulify-jre:
+    type: JLINK
+    executable:
+      # not a template
+      name: "tabul"
+    artifacts:
+      # used by docker
+      - path: '{{baseOutputDirectory}}/jreleaser/assemble/tabulify-jre/jlink/{{projectName}}-{{projectEffectiveVersion}}-jre-alpine-x64.zip'
+        platform: 'linux_musl-x86_64'
+        active: ALWAYS
     # Run it with
     # Create the assembly
-    #    mvnw jreleaser:assemble -Djreleaser.assemblers=jlink -Djreleaser.select.platforms=linux_musl-x86_64
+    #    mvnw jreleaser:assemble -pl cli-tabul -Djreleaser.assemblers=jlink -Djreleaser.select.platforms=linux_musl-x86_64
     # Create the Dockerfile
-    #    mvnw jreleaser:prepare -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
+    #    mvnw jreleaser:prepare -pl cli-tabul -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
     # Create the image
-    #    mvnw jreleaser:package -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
+    #    mvnw jreleaser:package -pl cli-tabul -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
     #    docker run --rm -v $(pwd):/workspace ghcr.io/tabulify/tabulify-alpine:early-access tabul --version
     # Push to the registry
     #    mvnw jreleaser:publish -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
@@ -282,7 +314,8 @@ distributions:
   # Installer distributions (ie windows msi)
   tabulify-installer:
     executable:
-      name: "tabul" # used in the winget manifest, not a template
+      # used in the winget manifest, not a template
+      name: "tabul"
     # To test winget:
     # * on WSL, upload the artifacts generate the manifests:
     #    mvnw jreleaser:prepare -Djreleaser.packagers=winget
@@ -306,8 +339,8 @@ distributions:
         tagName: '{{projectName}}-{{tagName}}'
     artifacts:
       # used by winget
-      - path: '{{baseOutputDirectory}}/jreleaser/assemble/tabulify-installer/jpackage/{{projectName}}-{{projectVersionNumber}}.msi'
-        transform: '{{distributionName}}/{{projectJavaArtifactId}}-{{projectEffectiveVersion}}-jre-x64.msi'
+      - path: '{{baseOutputDirectory}}/jreleaser/assemble/tabulify-installer/jpackage/{{cliName}}-{{projectVersionNumber}}.msi'
+        transform: '{{distributionName}}/{{projectName}}-{{projectEffectiveVersion}}-jre-x64.msi'
         platform: 'windows-x86_64'
 
 # Create a software BOM (works only for non-snapshot)

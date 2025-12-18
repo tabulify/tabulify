@@ -22,14 +22,19 @@ on:
 
 # Constant for entire workflow
 env:
-  COMMAND: tabul
+  WORKFLOW_ID: 'release-assemble-archive' # the workflow name without extension
+  # ###########################################
+  # Below are all common release workflow env
+  # ###########################################
+  COMMAND: 'tabul'
   JRELEASER_JPACKAGE_ASSEMBLY_NAME: 'tabulify-installer' # The jpackage assembly name
   JRELEASER_JLINK_ASSEMBLY_NAME: 'tabulify-jre' # The jlink assembly name
   JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME: 'tabulify-nojre'
   CLI_PROJECT: 'cli-tabul'
-  ARCHIVE_PREFIX: tabulify
-  TARGET_DIRECTORY: 'cli-tabul/target'
-  WORKFLOW_ID: release-assemble-archive # the workflow name without extension
+  # PROJECT_NAME and not TABULIFY_NAME to avoid: The tabular env OS environment variable (TABULIFY_NAME) is unknown.
+  PROJECT_NAME: 'tabulify'
+  BUILD_DIRECTORY: 'cli-tabul/target'
+  SNAPSHOT_TAG: 'early-access'
 
 jobs:
 
@@ -69,16 +74,22 @@ jobs:
 
           # Generate the effective pom
           POM_EFFECTIVE="${{runner.temp}}/pom-effective.xml"
-          ./mvnw help:effective-pom --quiet -pl "${{ env.CLI_PROJECT }}" "-Doutput=$POM_EFFECTIVE"
+          ./mvnw help:effective-pom \
+            --quiet \
+            -pl "${{ env.CLI_PROJECT }}" \
+            "-Doutput=$POM_EFFECTIVE" \
+            --settings ".github/cd-maven-settings.xml"
 
           # Project version and tag
           PROJECT_VERSION=$(yq --exit-status '.project.version' "$POM_EFFECTIVE")
           PROJECT_TAG="v$PROJECT_VERSION"
+          PROJECT_VERSION_EFFECTIVE=$PROJECT_VERSION
           if [[ "$PROJECT_VERSION" =~ .*-SNAPSHOT ]]; then
-            PROJECT_VERSION=early-access
-            PROJECT_TAG=early-access
+            PROJECT_VERSION_EFFECTIVE=${{env.SNAPSHOT_TAG}}
+            PROJECT_TAG=${{env.SNAPSHOT_TAG}}
           fi
           echo "project_version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+          echo "project_version_effective=$PROJECT_VERSION_EFFECTIVE" >> $GITHUB_OUTPUT
 
           # Check
           if [ "$PROJECT_TAG" != "$TAG" ]; then
@@ -113,11 +124,16 @@ jobs:
       # Build and install jars
       - name: Install the jars
         shell: bash
-        # maven.test.skip: skips test compilation, execution, and test dependency downloads entirely.
+        # We can't use maven.test.skip because maven needs to resolve all dependency
+        # or maven.test.skip skips test compilation that skip the creation of the test jar tabulify-tabul-jdbc
+        # To use maven.test.skip we need to move all test in a real module, not a test jar
+        # -P!adhoc avoid temporary artifact
         run: |
           ./mvnw install \
-            -Dmaven.test.skip=true \
+            -DskipTests \
+            -P!adhoc \
             --batch-mode \
+            --settings ".github/cd-maven-settings.xml" \
             -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
 
       # Run the jdks profile default goal with maven wrapper
@@ -128,6 +144,7 @@ jobs:
             -pl "${{ env.CLI_PROJECT }}" \
             --no-transfer-progress \
             --batch-mode \
+            --settings ".github/cd-maven-settings.xml" \
             -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
 
       # Run the deps profile default goal with maven wrapper
@@ -139,6 +156,7 @@ jobs:
             -pl "${{ env.CLI_PROJECT }}" \
             --no-transfer-progress \
             --batch-mode \
+            --settings ".github/cd-maven-settings.xml" \
             -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
 
       # Create Java Archive
@@ -150,6 +168,7 @@ jobs:
             -pl "${{ env.CLI_PROJECT }}" \
             --no-transfer-progress \
             --batch-mode \
+            --settings ".github/cd-maven-settings.xml" \
             -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
 
       # Test Java Archive
@@ -157,17 +176,45 @@ jobs:
         shell: bash
         run: |
           set -TCEeuo pipefail
-          ARCHIVE_NAME="${{ env.ARCHIVE_PREFIX }}-${{ steps.props.outputs.project_version }}-nojre"
-          JAVA_ARCHIVE=${{env.TARGET_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/${ARCHIVE_NAME}.zip
+
+          # Unzip
+          ARCHIVE_NAME="${{ env.PROJECT_NAME }}-${{ steps.props.outputs.project_version_effective }}-nojre"
+          JAVA_ARCHIVE=${{env.BUILD_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/${ARCHIVE_NAME}.zip
           UNZIP_TARGET="${{runner.temp}}"
-          unzip "$JAVA_ARCHIVE" -d "$UNZIP_TARGET"
-          if ! OUTPUT=$($UNZIP_TARGET/${ARCHIVE_NAME}/bin/${{ env.COMMAND }} --version); then
+          unzip -q "$JAVA_ARCHIVE" -d "$UNZIP_TARGET"
+
+          # Version Check
+          APP_ROOT="${UNZIP_TARGET}/${ARCHIVE_NAME}"
+          if ! OUTPUT=$("${APP_ROOT}/bin/${{ env.COMMAND }}" --version); then
             echo "Error while running ${{ env.COMMAND }}"
             exit 1
           fi
-          if [[ ! $OUTPUT =~ "${{ steps.props.outputs.project_version }}" ]]; then
-            echo "Version output does not contains the version"
-            echo "Version output: \n$OUTPUT"
+          if [[ ! $OUTPUT =~ ${{ steps.props.outputs.project_version }} ]]; then
+            echo "Version output does not contains the version (${{ steps.props.outputs.project_version }})"
+            echo -e "Version output: $OUTPUT"
+            exit 1
+          fi
+
+          # Resource check
+          ENTITY_DIR="${APP_ROOT}/resources/entity"
+          if [ ! -d  "$ENTITY_DIR" ]; then
+            echo "Entity resources directory is missing ($ENTITY_DIR)"
+            echo "File in archives"
+            ls -R "${APP_ROOT}"
+            exit 1
+          fi
+          HOWTO_DIR="${APP_ROOT}/resources/howto"
+          if [ ! -d  "$HOWTO_DIR" ]; then
+            echo "Howto resources directory is missing ($HOWTO_DIR)"
+            echo "File in archives"
+            ls -R "${APP_ROOT}"
+            exit 1
+          fi
+          TPCDS_DIR="${APP_ROOT}/resources/tpcds_query"
+          if [ ! -d  "$TPCDS_DIR" ]; then
+            echo "TpcDsQuery resources directory is missing ($TPCDS_DIR)"
+            echo "File in archives"
+            ls -R "${APP_ROOT}"
             exit 1
           fi
 
@@ -176,10 +223,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           retention-days: 1 # 90 by default
-          name: java-archive-${{ steps.props.outputs.project_version }}
+          name: ${{env.PROJECT_NAME}}-java-archive-${{ steps.props.outputs.project_version_effective }}
           path: |
-            ${{env.TARGET_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/*.zip
-            ${{env.TARGET_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/*.tar.gz
+            ${{env.BUILD_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/*.zip
+            ${{env.BUILD_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JAVA_ARCHIVE_ASSEMBLY_NAME}}/java-archive/*.tar.gz
 
       # Jlink assembly
       - name: Jlink Archive Assemble
@@ -190,6 +237,7 @@ jobs:
             -pl "${{ env.CLI_PROJECT }}" \
             --no-transfer-progress \
             --batch-mode \
+            --settings ".github/cd-maven-settings.xml" \
             -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
 
       # Test Java Archive
@@ -198,17 +246,45 @@ jobs:
         shell: bash
         run: |
           set -TCEeuo pipefail
-          ARCHIVE_NAME="${{ env.ARCHIVE_PREFIX }}-${{ steps.props.outputs.project_version }}-jre-linux-x64"
-          JAVA_ARCHIVE=${{env.TARGET_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/$ARCHIVE_NAME.zip
+
+          # Unzip
+          ARCHIVE_NAME="${{ env.PROJECT_NAME }}-${{ steps.props.outputs.project_version_effective }}-jre-linux-x64"
+          JAVA_ARCHIVE=${{env.BUILD_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/$ARCHIVE_NAME.zip
           UNZIP_TARGET="${{runner.temp}}"
-          unzip "$JAVA_ARCHIVE" -d "$UNZIP_TARGET"
-          if ! OUTPUT=$($UNZIP_TARGET/${ARCHIVE_NAME}/bin/${{ env.COMMAND }} --version); then
+          unzip -q "$JAVA_ARCHIVE" -d "$UNZIP_TARGET"
+
+          # Version Check
+          APP_ROOT="${UNZIP_TARGET}/${ARCHIVE_NAME}"
+          if ! OUTPUT=$("${APP_ROOT}/bin/${{ env.COMMAND }}" --version); then
             echo "Error while running ${{ env.COMMAND }}"
             exit 1
           fi
-          if [[ ! $OUTPUT =~ "${{ steps.props.outputs.project_version }}" ]]; then
-            echo "Version output does not contains the version"
-            echo "Version output: \n$OUTPUT"
+          if [[ ! $OUTPUT =~ ${{ steps.props.outputs.project_version }} ]]; then
+            echo "Version output does not contains the version (${{ steps.props.outputs.project_version }})"
+            echo -e "Version output: $OUTPUT"
+            exit 1
+          fi
+
+          # Resource check
+          ENTITY_DIR="${APP_ROOT}/resources/entity"
+          if [ ! -d  "$ENTITY_DIR" ]; then
+            echo "Entity resources directory is missing ($ENTITY_DIR)"
+            echo "File in archives"
+            ls -R "${APP_ROOT}"
+            exit 1
+          fi
+          HOWTO_DIR="${APP_ROOT}/resources/howto"
+          if [ ! -d  "$HOWTO_DIR" ]; then
+            echo "Howto resources directory is missing ($HOWTO_DIR)"
+            echo "File in archives"
+            ls -R "${APP_ROOT}"
+            exit 1
+          fi
+          TPCDS_DIR="${APP_ROOT}/resources/tpcds_query"
+          if [ ! -d  "$TPCDS_DIR" ]; then
+            echo "TpcDsQuery resources directory is missing ($TPCDS_DIR)"
+            echo "File in archives"
+            ls -R "${APP_ROOT}"
             exit 1
           fi
 
@@ -217,24 +293,32 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           retention-days: 1 # 90 by default
-          name: jlink-${{ steps.props.outputs.project_version }}-windows
+          name: ${{env.PROJECT_NAME}}-jlink-${{ steps.props.outputs.project_version_effective }}-windows
           path: |
-            ${{env.TARGET_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/*windows*.zip
+            ${{env.BUILD_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/*windows*.zip
 
       - name: Upload JLink Linux
         uses: actions/upload-artifact@v4
         with:
           retention-days: 1 # 90 by default
-          name: jlink-${{ steps.props.outputs.project_version }}-linux
+          name: ${{env.PROJECT_NAME}}-jlink-${{ steps.props.outputs.project_version_effective }}-linux
           path: |
-            ${{env.TARGET_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/*linux*.zip
+            ${{env.BUILD_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/*linux*.zip
 
-      - name: JReleaser Logs
+      - name: Upload JLink Alpine
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1 # 90 by default
+          name: ${{env.PROJECT_NAME}}-jlink-${{ steps.props.outputs.project_version_effective }}-alpine
+          path: |
+            ${{env.BUILD_DIRECTORY}}/jreleaser/assemble/${{env.JRELEASER_JLINK_ASSEMBLY_NAME}}/jlink/*alpine*.zip
+
+      - name: Upload Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           retention-days: 1
-          name: jreleaser-logs-${{env.WORKFLOW_ID}}
+          name: ${{env.PROJECT_NAME}}-${{env.PROJECT_NAME}}-logs-${{env.WORKFLOW_ID}}
           path: |
-            ${{env.TARGET_DIRECTORY}}/jreleaser/trace.log
-            ${{env.TARGET_DIRECTORY}}/jreleaser/output.properties
+            ${{env.BUILD_DIRECTORY}}/jreleaser/trace.log
+            ${{env.BUILD_DIRECTORY}}/jreleaser/output.properties
