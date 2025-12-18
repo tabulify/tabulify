@@ -65,6 +65,8 @@ jobs:
   assemble-jpackage:
     # We can't put any runner context info here unfortunately
     name: 'Assemble ${{ matrix.os }}'
+    # setup-java may be in a loop - entire job times out after 15 minutes
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:

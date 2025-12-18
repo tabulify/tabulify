@@ -88,7 +88,7 @@ public class NoOpConnection extends Connection {
      * we prefer to set the string path to the fs path
      * because it should work most of the time
      */
-    NoOpLog.LOGGER.warning("Glob matching may not work fully (because StringPath is not implemented by the connection (" + getName() + ") and the the url (" + getUriAsVariable() + ").)");
+    NoOpLog.LOGGER.warning(()->"Glob matching may not work fully (because StringPath is not implemented by the connection (" + getName() + ") and the the url (" + getUriAsVariable() + ").)");
     return FsConnectionResourcePath.createOf(pathOrName, names);
 
 

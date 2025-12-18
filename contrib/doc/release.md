@@ -8,6 +8,22 @@
   * Why? TemplateDirectory in [brew](https://jreleaser.org/guide/latest/reference/packagers/homebrew.html) is relative
     to the current directory and accepts no template
 
+## How to publish when the release was created
+
+### Docker publishing
+
+Download
+https://github.com/tabulify/tabulify/releases/download/v2.0.0/tabulify-2.0.0-jre-alpine-x64.zip
+to
+`cli-tabul/target/jreleaser/assemble/tabulify-jre/jlink/tabulify-2.0.0-jre-alpine-x64.zip`
+then rerun docker publishing
+```bash
+VERSION=2.0.0
+curl -L -o cli-tabul/target/jreleaser/assemble/tabulify-jre/jlink/tabulify-$VERSION-jre-alpine-x64.zip https://github.com/tabulify/tabulify/releases/download/v$VERSION/tabulify-$VERSION-jre-alpine-x64.zip
+mvnw jreleaser:publish -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
+```
+
+
 ## Test
 
 Start the Test script

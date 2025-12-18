@@ -287,7 +287,7 @@ distributions:
     #    mvnw jreleaser:prepare -pl cli-tabul -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
     # Create the image
     #    mvnw jreleaser:package -pl cli-tabul -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
-    #    docker run --rm -v $(pwd):/workspace ghcr.io/tabulify/tabulify-alpine:early-access tabul --version
+    #    docker run --rm -v $(pwd):/workspace ghcr.io/tabulify/tabulify-alpine:latest tabul --version
     # Push to the registry
     #    mvnw jreleaser:publish -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
     docker:
@@ -299,6 +299,8 @@ distributions:
         - serverName: ghcr.io
       specs:
         tabulify-alpine:
+          # Relative path to the pwd, not the subproject
+          templateDirectory: 'cli-tabul/src/main/release/docker'
           labels: # Labels are in the specs otherwise image title is not taken into account
             org.opencontainers.image.source: "https://{{repoHost}}/{{repoOwner}}/{{repoName}}"
             org.opencontainers.image.title: "{{projectName}}"

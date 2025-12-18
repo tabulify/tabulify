@@ -44,6 +44,8 @@ jobs:
   # so we get: release-assemble / assemble-archive / assemble
   assemble:
     runs-on: ubuntu-latest
+    # setup-java may be in a loop - entire job times out after 15 minutes
+    timeout-minutes: 15
     steps:
 
       # Checkout first as we do a control on the pom.xml version
