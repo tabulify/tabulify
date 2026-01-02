@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Create a tag
+# Create a tag to start a release
 
 set -TCEeuo pipefail
 

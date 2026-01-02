@@ -55,8 +55,8 @@ tasks:
   install-cli-resources:
     cmds:
       - |
-        cp -r {{.TASKFILE_DIR}}/cli-tabul/src/main/howto $CLI_TABUL_HOME/resources
-        cp -r {{.TASKFILE_DIR}}/data-generation-entities/src/main/resources/entity $CLI_TABUL_HOME/resources
+        cp -r {{.TASKFILE_DIR}}/cli-tabul/src/main/howto /opt/tabulify/resources
+        cp -r {{.TASKFILE_DIR}}/data-generation-entities/src/main/resources/entity /opt/tabulify/resources
   # Start the documentation website
   site-start:
     cmds:
@@ -98,7 +98,7 @@ tasks:
   cp-sqlite:
     cmds:
       - |
-        cp /home/admin/.tabul/sqlite.sqlite3 /mnt/c/tmp/tabul.db
+        cp /home/tabulify/.tabul/sqlite.sqlite3 /mnt/c/tmp/tabul.db
   # Check the links on markdown. There is also a git pre-commit hooks
   links:
     cmds:
