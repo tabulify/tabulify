@@ -804,11 +804,6 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     public Connection addAttributesFromEnumAttributeClass(Class<? extends ConnectionAttributeEnum> enumClass) {
 
         UriEnhanced connectionUri = this.getUri();
-        JdbcUri jdbcUri = null;
-        String scheme = connectionUri.getScheme();
-        if (scheme != null && scheme.equals("jdbc")) {
-            jdbcUri = new JdbcUri(connectionUri.toUri());
-        }
 
         for (ConnectionAttributeEnum attribute : enumClass.getEnumConstants()) {
 

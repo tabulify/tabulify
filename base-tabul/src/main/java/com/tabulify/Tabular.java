@@ -223,7 +223,7 @@ public class Tabular implements AutoCloseable {
             Vault.VariableBuilder variableBuilder = vault.createVariableBuilderFromAttribute(attribute);
 
             // Name
-            // We don't look up without the tabli prefix because it can cause clashes
+            // We don't look up without the tabul prefix because it can cause clashes
             // for instance, name in os is the name of the computer
             KeyNormalizer envName = tabularEnvs.getNormalizedKey(attribute);
             // Sys
