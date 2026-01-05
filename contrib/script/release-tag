@@ -91,7 +91,7 @@ echo "Tag determined to be $TAG_NAME"
 
 if [ $DRY_RUN == false ]; then
 
-  git-tag "$1"
+  git-tag "$TAG_NAME"
 
 else
 
