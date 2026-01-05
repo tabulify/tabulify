@@ -3,6 +3,9 @@
 
 set -TCEeuo pipefail
 
+NC='\033[0m'     # No Color
+RED='\033[0;31m' # Red
+
 function synopsis() {
   cat << EOF
 
