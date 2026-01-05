@@ -274,7 +274,8 @@ public class ListPipelineStep extends PipelineStepIntermediateManyToManyAbs impl
             }
             Attribute attribute;
             try {
-                attribute = this.getPipeline().getTabular().getVault()
+                attribute = this.getTabular()
+                        .getVault()
                         .createVariableBuilderFromAttribute(selectArgument)
                         .setOrigin(Origin.PIPELINE)
                         .build(value);
