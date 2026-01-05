@@ -125,7 +125,7 @@ public class DataUriNode implements Comparable<DataUriNode> {
   }
 
 
-  public boolean isRuntimeSelector() {
+  public boolean isRuntime() {
 
     return this.pathDataUriNode != null;
 
@@ -139,7 +139,7 @@ public class DataUriNode implements Comparable<DataUriNode> {
   }
 
   public DataUriStringNode toDataUriStringNode() {
-    if (!isRuntimeSelector()) {
+    if (!isRuntime()) {
       return DataUriStringNode
         .builder()
         .setConnection(this.connection.toString())

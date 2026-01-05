@@ -122,10 +122,6 @@ public class FsCommand extends FsDataPathAbs {
     return null;
   }
 
-  @Override
-  public SelectStream getSelectStream() throws SelectException {
-    return execute().getSelectStream();
-  }
 
   @Override
   public boolean hasHeaderInContent() {

@@ -18,7 +18,8 @@ spec:
         template-email: true
         model-variables:
           - name: records
-            data-uri: "../data/table.csv@md"
+            # runtime resource to test for it
+            data-uri: "../data/table-runtime--csv.yml@md"
         output-type: targets
         target-type: enriched-input
         target-column-name: html

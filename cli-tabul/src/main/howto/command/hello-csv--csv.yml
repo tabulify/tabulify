@@ -2,10 +2,13 @@ kind: csv
 spec:
   # the command manifest
   data-uri: hello-csv--command.yml@md
+  # Note: if your script does not need any argument,
+  # you could also set directly the runtime resource uri as data-uri value.
+  # ie the value: (command/hello-csv@howto)@tmp
   data-def:
     # the character separator
-    delimiter-character: ;
-    # the columns to define the data type
+    delimiter-character: ';'
+    # the columns (to define the data types)
     columns:
       - name: Id
         type: integer

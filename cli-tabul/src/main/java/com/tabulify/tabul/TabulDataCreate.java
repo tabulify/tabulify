@@ -73,7 +73,7 @@ public class TabulDataCreate {
 
 
     // Not a copy of metadata
-    if (dataSelector.isRuntimeSelector()) {
+    if (dataSelector.isRuntime()) {
 
       LOGGER_TABUL.info("Starting create action for the script selector (" + dataSelector + ")");
       ArrayList<DataPath> dataPaths = new ArrayList<>(Pipeline
