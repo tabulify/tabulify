@@ -58,7 +58,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-if [ "$PROJECT_ROOT" == "" ]; then
+if [ "${PROJECT_ROOT:-}" == "" ]; then
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   PROJECT_ROOT=$(find_git_root)
 fi

@@ -41,7 +41,7 @@ PROJECT_ROOT=$(find_git_root)
 echo "Copying dependencies..."
 
 # Check if the operation was successful
-POM_FILE="$PROJECT_ROOT/tabulify-cli/pom.xml"
+POM_FILE="$PROJECT_ROOT/cli-tabul/pom.xml"
 if ! mvn -f "$POM_FILE" dependency:copy-dependencies -DoutputDirectory="$TARGET_DIR" -DincludeScope=runtime; then
   echo "Error: Failed to copy dependencies"
   exit 1
@@ -55,4 +55,3 @@ cp "$PROJECT_JAR_PATH" "$TARGET_DIR/"
 
 
 echo "Dependencies copied"
-
