@@ -226,12 +226,12 @@ public class TemplatePipelineStepStream extends PipelineStepIntermediateOneToMan
               DataUriNode dataUri = tablesVariable.getValue();
               List<Map<String, Object>> records = new ArrayList<>();
               List<DataPath> dataPaths = input.getConnection().getTabular().select(dataUri);
-              for (DataPath tableDataPath : dataPaths) {
-                try (SelectStream variableTableSelectStream = tableDataPath.getSelectStream()) {
+              for (DataPath dataPath : dataPaths) {
+                try (SelectStream variableTableSelectStream = dataPath.getSelectStream()) {
                   while (variableTableSelectStream.next()) {
                     HashMap<String, Object> record = new HashMap<>();
-                    for (ColumnDef columnDef : tableDataPath.getOrCreateRelationDef().getColumnDefs()) {
-                      Integer columnPosition = columnDef.getColumnPosition();
+                    for (ColumnDef<?> columnDef : dataPath.getOrCreateRelationDef().getColumnDefs()) {
+                      int columnPosition = columnDef.getColumnPosition();
                       record.put(columnDef.getColumnName(), variableTableSelectStream.getString(columnPosition));
                     }
                     records.add(record);

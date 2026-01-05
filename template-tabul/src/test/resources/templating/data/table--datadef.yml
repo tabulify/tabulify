@@ -1,12 +1,14 @@
-headerRowId: 1
-quoteCharacter: '"'
-Columns:
-  - name: NAME
-    Comment: A name
-  - name: PRICE
-    Type: numeric
-    Precision: 10
-    Scale: 2
-    Comment: A price
-  - name: IN_STOCK
-    Type: boolean
+kind: data-def
+spec:
+  headerRowId: 1
+  quoteCharacter: '"'
+  columns:
+    - name: NAME
+      Comment: A name
+    - name: PRICE
+      Type: numeric
+      Precision: 10
+      Scale: 2
+      Comment: A price
+    - name: IN_STOCK
+      Type: boolean
