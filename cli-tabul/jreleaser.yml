@@ -310,7 +310,8 @@ distributions:
             - "ghcr.io/{{repoOwner}}/{{dockerSpecName}}:{{tagName}}"
             - "ghcr.io/{{repoOwner}}/{{dockerSpecName}}:latest"
           preCommands:
-            - 'RUN apk add unzip bash'
+            # curl and jq to process json (for instance: known host (https://api.github.com/meta)
+            - 'RUN apk add unzip bash curl jq'
           postCommands:
             - 'VOLUME /workspace' # working directory
   # Installer distributions (ie windows msi)
