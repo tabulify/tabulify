@@ -398,19 +398,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
     public byte[] getByteDigest(String algorithm) throws NoSuchFileException {
         try {
             MessageDigest digest = MessageDigest.getInstance(algorithm);
-            SelectStream selectStream;
-            try {
-                selectStream = this.getSelectStream();
-            } catch (SelectException e) {
-                boolean isStrict = this.getConnection().getTabular().isStrictExecution();
-                String message = "Error while trying to get the byte digest";
-                if (isStrict) {
-                    throw new RuntimeException(message, e);
-                } else {
-                    DbLoggers.LOGGER_DB_ENGINE.warning(message + "\n" + e.getMessage());
-                    return new byte[]{};
-                }
-            }
+            SelectStream selectStream = this.getSelectStreamSafe();
             while (selectStream.next()) {
                 for (Object object : selectStream.getObjects()) {
                     if (object == null) {
