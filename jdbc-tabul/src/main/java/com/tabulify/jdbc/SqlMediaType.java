@@ -34,7 +34,7 @@ public enum SqlMediaType implements AttributeValue, MediaType {
   // It's a sql script with a connection, expected data
   REQUEST("A SQL request", false, true, true),
   /**
-   * The result of a request execution
+   * The result of a request execution if the result is a result set
    */
   RESULT_SET("A SQL result set", false, false, true),
   // Before we read the metadata in the database, we don't know the type of object
@@ -60,7 +60,7 @@ public enum SqlMediaType implements AttributeValue, MediaType {
   SqlMediaType(String description, boolean isContainer, boolean isRuntime, boolean anonymous) {
     this.description = description;
     this.isContainer = isContainer;
-    this.subType = this.name();
+    this.subType = this.name().toLowerCase();
     this.isRuntime = isRuntime;
     this.kind = KeyNormalizer.createSafe(SQL_TYPE + "-" + this.name().toLowerCase());
     this.anonymous = anonymous;
@@ -108,7 +108,7 @@ public enum SqlMediaType implements AttributeValue, MediaType {
   @Override
   public String toString() {
 
-    return KeyNormalizer.createSafe(super.name()).toCliLongOptionName();
+    return SQL_TYPE + "/" + subType;
 
   }
 
