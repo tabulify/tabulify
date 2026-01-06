@@ -93,7 +93,7 @@ public class TabulServiceList {
               for (Attribute attribute : service.getAttributes()) {
                 KeyNormalizer connectionAttributeNormalized = KeyNormalizer.createSafe(attribute.getAttributeMetadata());
                 if (requestedAttributeNormalized.equals(connectionAttributeNormalized)) {
-                  value = attribute.getPublicValue();
+                  value = String.valueOf(attribute.getPublicValue().orElse(null));
                   break;
                 }
               }

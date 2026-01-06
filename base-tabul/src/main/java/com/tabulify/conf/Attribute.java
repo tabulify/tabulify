@@ -12,6 +12,7 @@ import com.tabulify.type.KeyNormalizer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -356,22 +357,6 @@ public class Attribute implements Comparable<Attribute> {
         throw new NoValueException("No value found");
     }
 
-    /**
-     * @return the plain value or the provider or null
-     * It's used in templating to pass template variable
-     * without computing each attribute
-     */
-    public Object getPublicValueOrProvider() {
-        Object publicValue = this.getRawValue();
-        if (publicValue != null) {
-            return publicValue;
-        }
-        if (this.valueProvider != null) {
-            return this.valueProvider;
-        }
-        return null;
-    }
-
 
     public Object getValueOrNull() {
         try {
@@ -431,23 +416,76 @@ public class Attribute implements Comparable<Attribute> {
 
     /**
      * @return a public value, ie the value suitable for the console (ie hiding the secrets)
-     * This function will run the {@link #setValueProvider(Supplier)}
-     * See {@link #getPublicValueOrProvider()} if you want them before computation
+     * This function will run the {@link #setValueProvider(Supplier) supplier}
      */
-    public String getPublicValue() {
+    public Optional<String> getPublicValue() {
 
+        /**
+         * A provider value is not a secret
+         */
+        if (this.valueProvider != null) {
+            Object o = this.valueProvider.get();
+            if (o == null) {
+                return Optional.empty();
+            }
+            return Optional.of(toScalarString(o));
+        }
+
+        /**
+         * Raw Value
+         */
         Object rawValue = this.getRawValue();
         if (rawValue == null) {
             rawValue = this.getValueOrDefault();
         }
         if (rawValue == null) {
-            return "";
+            return Optional.empty();
         }
 
+
+        String rawString = toScalarString(rawValue);
+
+
         /**
-         * Collection
-         * (Collection does not have any secret)
+         * Scalar
          */
+        // Secret OS
+        if (this.rawValueType == RawValueType.VARIABLE && isOsVariableRawSecret()) {
+            // the variable ${SECRET_ENV}
+            return Optional.of(rawString);
+        }
+        // Secret Vault
+        if (this.rawValueType == RawValueType.VAULT) {
+            /*
+             * It may be a vault value, we return the raw
+             */
+            return Optional.of(rawString);
+        }
+        // Secret by Attribute
+        if (isTabulifySecretAttribute) {
+            return Optional.of(NOT_SHOWN_SECRET);
+        }
+
+        /*
+         * Not a secret plain value
+         * Note: if we support vault value in OS env, this may leak
+         */
+        if (this.plainValue == null) {
+            return Optional.empty();
+        }
+        return Optional.of(toScalarString(this.plainValue));
+
+
+    }
+
+    /**
+     * Collection
+     * (The assumption is that collection does not have any secret)
+     */
+    private String toScalarString(Object rawValue) {
+        if (rawValue instanceof String) {
+            return (String) rawValue;
+        }
         boolean isCollection = Collection.class.isAssignableFrom(rawValue.getClass());
         if (isCollection) {
             return String.join(", ", Casts.castToNewListSafe(rawValue, String.class));
@@ -459,38 +497,7 @@ public class Attribute implements Comparable<Attribute> {
                 throw new InternalException("The attribute " + this + " has an array value that could not be casted to an array of string. Error:" + e.getMessage(), e);
             }
         }
-
-
-        /**
-         * Scalar
-         */
-        // Secret OS
-        if (this.rawValueType == RawValueType.VARIABLE && isOsVariableRawSecret()) {
-            // the variable ${SECRET_ENV}
-            return rawValue.toString();
-        }
-        // Secret Vault
-        if (this.rawValueType == RawValueType.VAULT) {
-            /*
-             * It may be a vault value, we return the raw
-             */
-            return rawValue.toString();
-        }
-        // Secret by Attribute
-        if (isTabulifySecretAttribute) {
-            return NOT_SHOWN_SECRET;
-        }
-
-        /*
-         * Not a secret plain value
-         * Note: if we support vault value in OS env, this may leak
-         */
-        if (this.plainValue == null) {
-            return "";
-        }
-        return this.plainValue.toString();
-
-
+        return rawValue.toString();
     }
 
     private boolean isOsVariableRawSecret() {

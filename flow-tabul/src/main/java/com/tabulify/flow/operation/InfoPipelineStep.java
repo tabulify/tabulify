@@ -66,7 +66,7 @@ public class InfoPipelineStep extends PipelineStepIntermediateMapAbs {
       .getAttributes()
       .stream()
       .sorted()
-      .collect(Collectors.toList());
+      .toList();
     // They are private attributes that we don't show publicly or with the struct info
     List<AttributeEnum> privateAttribute = Arrays.asList(DataPathAttribute.COLUMNS, DataPathAttribute.PRIMARY_COLUMNS);
     try (InsertStream insertStream = propertiesDataPath.getDataPath().getInsertStream()) {
@@ -79,7 +79,7 @@ public class InfoPipelineStep extends PipelineStepIntermediateMapAbs {
         if (infoBuilder.excludedAttributes.contains(attributeNormalized)) {
           continue;
         }
-        Object attributeValue = attribute.getPublicValue();
+        Object attributeValue = attribute.getPublicValue().orElse(null);
         List<Object> row = new ArrayList<>();
 
         // Attribute name printed in a SQL format / in a CLI have the OS case (ie UPPER_SNAKE_CASE)

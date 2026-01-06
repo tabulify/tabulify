@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Generate (ie return) the value of a attribute
+ * Generate (ie return) the value of an attribute
  * ie {@link DataPath#getAttribute(KeyNormalizer)} the {@link Attribute#getPublicValue()}
  */
 public class MetaAttributeGenerator<T> extends CollectionGeneratorAbs<T> implements CollectionGenerator<T>, java.util.function.Supplier<T> {
@@ -26,7 +26,7 @@ public class MetaAttributeGenerator<T> extends CollectionGeneratorAbs<T> impleme
 
   /**
    * We cache the value
-   * (if it's a count, we don't want to perform it each time)
+   * (if it's a supplier function (count), we don't want to perform it each time)
    */
   private T actualDataResourceAttributeValue;
   private Meta meta;
@@ -41,7 +41,7 @@ public class MetaAttributeGenerator<T> extends CollectionGeneratorAbs<T> impleme
 
   /**
    * Instantiate an expression generator from the columns properties
-   * This function is called via recursion by the function {@link GenColumnDef#getOrCreateGenerator(Class)}
+   * This function is called via recursion by the function {@link GenColumnDef#createGenerator()}
    * Don't delete
    */
   public static <T> MetaAttributeGenerator<T> createFromProperties(Class<T> tClass, GenColumnDef genColumnDef) {
@@ -84,8 +84,8 @@ public class MetaAttributeGenerator<T> extends CollectionGeneratorAbs<T> impleme
     } catch (NoVariableException e) {
       return null;
     }
-    // public, we don't want any breach
-    Object value = attribute.getPublicValue();
+    // public, we don't want any data breach
+    Object value = attribute.getPublicValue().orElse(null);
     if (this.actualDataResourceAttributeValue != null) {
       return this.actualDataResourceAttributeValue;
     }
