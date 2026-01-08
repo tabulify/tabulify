@@ -142,13 +142,17 @@ This sections shows you how to publish Tabulify if it's the case.
 
 #### Docker publishing
 
-Download
-https://github.com/tabulify/tabulify/releases/download/v2.0.0/tabulify-2.0.0-jre-alpine-x64.zip
-to
-`cli-tabul/target/jreleaser/assemble/tabulify-jre/jlink/tabulify-2.0.0-jre-alpine-x64.zip`
-then rerun docker publishing
 ```bash
-VERSION=2.0.0
-curl -L -o cli-tabul/target/jreleaser/assemble/tabulify-jre/jlink/tabulify-$VERSION-jre-alpine-x64.zip https://github.com/tabulify/tabulify/releases/download/v$VERSION/tabulify-$VERSION-jre-alpine-x64.zip
-mvnw jreleaser:publish -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
+VERSION=early-access
+JLINK_DIRECTORY="cli-tabul/target/jreleaser/assemble/tabulify-jre/jlink"
+mkdir -p $JLINK_DIRECTORY
+curl -L -o $JLINK_DIRECTORY/tabulify-$VERSION-jre-alpine-x64.zip https://github.com/tabulify/tabulify/releases/download/v$VERSION/tabulify-$VERSION-jre-alpine-x64.zip
+
+# Assembly is mandatory for no reason
+# When publishing with docker: Error: Missing outputs for java-archive.tabulify-nojre. Distribution tabulify-nojre has not been assembled
+mvnw install -DskipTests -pl "cli-tabul" -Dorg.slf4j.simpleLogger.defaultLogLevel=$LEVEL
+mvnw jreleaser:assemble -pl "cli-tabul" -Djreleaser.assemblers=javaArchive
+
+# The work
+mvnw jreleaser:publish -pl "cli-tabul" -Djreleaser.packagers=docker -Djreleaser.select.platforms=linux_musl-x86_64
 ```
