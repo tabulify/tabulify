@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Runtime resource for test purpose
+
+echo '"NAME"             ,"PRICE","IN_STOCK"'
+echo '"Fresh Sweet Basil","4.99" ,"true"'
+echo '"Italian Tomato"   ,"1.25" ,"false"'

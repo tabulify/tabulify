@@ -310,7 +310,9 @@ distributions:
             - "ghcr.io/{{repoOwner}}/{{dockerSpecName}}:{{tagName}}"
             - "ghcr.io/{{repoOwner}}/{{dockerSpecName}}:latest"
           preCommands:
-            - 'RUN apk add unzip bash'
+            # curl and jq to process json (for instance: known host (https://api.github.com/meta)
+            # openssh-client is needed for git otherwise: error: cannot run ssh: No such file or directory
+            - 'RUN apk add unzip bash curl jq git openssh-client'
           postCommands:
             - 'VOLUME /workspace' # working directory
   # Installer distributions (ie windows msi)

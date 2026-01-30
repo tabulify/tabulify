@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Create a tag
+# Create a tag to start a release
 
 set -TCEeuo pipefail
 
@@ -91,15 +91,17 @@ echo "Tag determined to be $TAG_NAME"
 
 if [ $DRY_RUN == false ]; then
 
-  git-tag "$1"
+  if [[ $IS_SNAPSHOT == true ]]; then
+    git-tag --force "$TAG_NAME"
+  else
+    git-tag "$TAG_NAME"
+  fi
 
 else
 
   echo "Dry Run, no tag creation"
 
 fi
-
-
 
 # Next dev iteration
 RELEASE_VERSION=$(git cliff --unreleased --bump "minor" --context --tag-pattern "v[0-9]+\\.[0-9]+\\.[0-9]+" | jq -r '.[0].version' | tr -d "v")

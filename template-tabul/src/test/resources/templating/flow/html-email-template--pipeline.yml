@@ -1,0 +1,27 @@
+kind: pipeline
+spec:
+  comment: |
+    Test all arguments and produce an email
+  steps:
+    - operation: "define"
+      arguments:
+        data-resource:
+          data-def:
+            columns: [ "welcome" ]
+          data-records:
+            - [ "Hello World" ]
+    - operation: "template"
+      arguments:
+        granularity: record
+        template-selector: "../templates/thym*.html@md"
+        template-engine: thymeleaf
+        template-email: true
+        model-variables:
+          - name: records
+            # runtime resource to test for it
+            data-uri: "../data/table-runtime--csv.yml@md"
+        output-type: targets
+        target-type: enriched-input
+        target-column-name: html
+    - name: "Print"
+      operation: "print"

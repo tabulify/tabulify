@@ -1,0 +1,5 @@
+kind: csv
+spec:
+  data-uri: (table-runtime@md)@tmp
+  data-def:
+    delimiter-character: ','

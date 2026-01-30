@@ -53,7 +53,7 @@ public class IllegalArgumentExceptions {
 
   public static IllegalArgumentException createForArgumentValueForStep(String value, Enum<?> attribute, String step, Class<?> enumClass, Throwable cause) {
 
-    return new IllegalArgumentException("The value (" + value + ") is not a valid value for the argument (" + attribute + ") on the step (" + step + ")." + Enums.toConstantAsStringCommaSeparated(enumClass), cause);
+    return new IllegalArgumentException("The value (" + value + ") is not a valid value for the argument (" + attribute + ") on the step (" + step + "). Possible valid values: " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(enumClass), cause);
   }
 
   @SuppressWarnings("unused")

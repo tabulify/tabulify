@@ -223,7 +223,7 @@ public class Tabular implements AutoCloseable {
             Vault.VariableBuilder variableBuilder = vault.createVariableBuilderFromAttribute(attribute);
 
             // Name
-            // We don't look up without the tabli prefix because it can cause clashes
+            // We don't look up without the tabul prefix because it can cause clashes
             // for instance, name in os is the name of the computer
             KeyNormalizer envName = tabularEnvs.getNormalizedKey(attribute);
             // Sys
@@ -387,21 +387,21 @@ public class Tabular implements AutoCloseable {
 
 
     /**
-     * @param dataUri   - A data uri defining the first data path
-     * @param mediaType - The media type of the returned data path (or null if unknown, detected)
+     * @param dataUriNode - A data uri defining the first data path
+     * @param mediaType   - The media type of the returned data path (or null if unknown, detected)
      * @return the data path
      */
-    public DataPath getDataPath(DataUriNode dataUri, MediaType mediaType) {
+    public DataPath getDataPath(DataUriNode dataUriNode, MediaType mediaType) {
 
-        Connection dataUriConnection = dataUri.getConnection();
+        Connection dataUriConnection = dataUriNode.getConnection();
 
         String path;
         try {
-            path = dataUri.getPath();
+            path = dataUriNode.getPath();
         } catch (NoPathFoundException e) {
 
-            if (dataUri.isRuntimeSelector()) {
-                DataUriNode executableDataUri = dataUri.getDataUri();
+            if (dataUriNode.isRuntime()) {
+                DataUriNode executableDataUri = dataUriNode.getDataUri();
                 DataPath executableDataPath = this.getDataPath(executableDataUri, null);
                 /**
                  * Recursion
@@ -561,7 +561,7 @@ public class Tabular implements AutoCloseable {
          * Path part
          */
         // Script ? (Command or query)
-        if (dataSelector.isRuntimeSelector()) {
+        if (dataSelector.isRuntime()) {
 
             /**
              * The path part of the data uri defines a command or a query
@@ -819,7 +819,7 @@ public class Tabular implements AutoCloseable {
                 if (containsWildCard) {
 
                     String pattern;
-                    if (!dataUriSelector.isRuntimeSelector()) {
+                    if (!dataUriSelector.isRuntime()) {
                         try {
                             pattern = dataUriSelector.getPath();
                         } catch (NoPathFoundException e) {

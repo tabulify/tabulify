@@ -16,6 +16,10 @@ RED='\033[0;31m' # Red
 # example for the howto: file:///opt/tabulify/resources/howto/
 TABUL_HOME=${CLI_TABUL_HOME:-/opt/tabulify}
 CLI_PROJECT="cli-tabul"
+if [ "$1" != "" ]; then
+  # Installation may be called from ntabul that is available from everywhere
+  export PROJECT_ROOT=${1}
+fi
 
 # Check if we can move into the tabul home
 check_tabul_home() {

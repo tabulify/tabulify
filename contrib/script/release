@@ -91,8 +91,8 @@ if [ "$BUMP_TYPE" != "$NO_BUMP_TYPE" ]; then
   git push origin
   echo "Next version $RELEASE_VERSION commit done"
 else
-  echo "No bump taking the actual version"
-  RELEASE_VERSION=$(yq '.project.version' pom.xml)
+  echo "No bump taking the actual version of $PROJECT_ROOT/pom.xml"
+  RELEASE_VERSION=$(yq '.project.version' "$PROJECT_ROOT/pom.xml")
 fi
 
 IS_SNAPSHOT=false

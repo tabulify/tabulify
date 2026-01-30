@@ -144,7 +144,7 @@ public class TabulEnvAttributeList {
 
                                 insertStream.insert(
                                         KeyNormalizer.createSafe(e.getAttributeMetadata()).toCase(attributeCase),
-                                        e.getPublicValue(),
+                                        e.getPublicValue().orElse(null),
                                         capitalizedOrigin,
                                         e.getAttributeMetadata().getDescription()
                                 );

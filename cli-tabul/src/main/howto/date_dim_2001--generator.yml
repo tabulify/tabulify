@@ -1,6 +1,10 @@
 kind: generator
 spec:
   LogicalName: date_dim
+  # We generate 1000 records
+  # to be sure that we have one record by day over 2001 and 2002
+  # the default value is 100
+  max-record-count: 1000
   Columns:
     - name: d_date
       type: date

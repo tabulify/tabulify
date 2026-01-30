@@ -352,16 +352,16 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
     public SelectStream getSelectStreamSafe() {
 
         if (this.isRuntime()) {
-            DataPath execute;
+            DataPath dataPath;
             try {
-                execute = execute();
+                dataPath = execute();
             } catch (Exception e) {
                 throw new RuntimeException("Error during execution of the data path " + this + ". Error: " + e.getMessage(), e);
             }
             try {
-                return execute.getSelectStream();
+                return dataPath.getSelectStream();
             } catch (SelectException e) {
-                throw new RuntimeException("We were unable to open the result data path " + execute + " of the runtime " + this + ". Error: " + e.getMessage(), e);
+                throw new RuntimeException("We were unable to open the result data path " + dataPath + " of the runtime " + this + ". Error: " + e.getMessage(), e);
             }
         }
         try {
@@ -398,19 +398,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
     public byte[] getByteDigest(String algorithm) throws NoSuchFileException {
         try {
             MessageDigest digest = MessageDigest.getInstance(algorithm);
-            SelectStream selectStream;
-            try {
-                selectStream = this.getSelectStream();
-            } catch (SelectException e) {
-                boolean isStrict = this.getConnection().getTabular().isStrictExecution();
-                String message = "Error while trying to get the byte digest";
-                if (isStrict) {
-                    throw new RuntimeException(message, e);
-                } else {
-                    DbLoggers.LOGGER_DB_ENGINE.warning(message + "\n" + e.getMessage());
-                    return new byte[]{};
-                }
-            }
+            SelectStream selectStream = this.getSelectStreamSafe();
             while (selectStream.next()) {
                 for (Object object : selectStream.getObjects()) {
                     if (object == null) {
@@ -1011,7 +999,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
              *   * the runtime info
              *   * or the result
              */
-            throw new InternalException("The resource (" + this + ") is a runtime resource. It is virtual, you should execute it and open a select stream on the static result resource, not the runtime resource.");
+            throw new InternalException("The resource (" + this + ") is a runtime resource. It is a virtual resource, you should execute it and open a select stream on the static result resource, not the runtime resource. You can use getSelectStreamSafe for this purpose");
         }
         throw new UnsupportedOperationException("Record iteration over the resource (" + this + "/" + this.getMediaType() + ") is not implemented or not possible.");
 

@@ -100,7 +100,7 @@ public class TabulConnectionInfo {
 
               List<Object> rowAttributes = new ArrayList<>();
               rowAttributes.add(KeyNormalizer.createSafe(attribute.getAttributeMetadata()).toCase(snakeUpper));
-              rowAttributes.add(attribute.getPublicValue());
+              rowAttributes.add(attribute.getPublicValue().orElse(null));
               rowAttributes.add(attribute.getAttributeMetadata().getDescription());
               insertStream.insert(rowAttributes);
 
