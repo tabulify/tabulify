@@ -17,7 +17,7 @@ function synopsis() {
     * patch|minor|major|none : is the type of bump for the semver version (default to none - no bump)
 
   Options:
-    * --dry-run : just shows the next tag and version
+    * -ndr | --no-dry-run : run it
 
   The version is changed if the bump type is patch|minor|major
 
