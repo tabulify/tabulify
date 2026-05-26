@@ -122,6 +122,10 @@ doc-exec --no-cache howto/postgres/anonymous_code_block
 
 Create a tag to start the GitHub Workflow with [release-tag](../script/release-tag) script
 
+## Next version
+
+Once the release workflow is successful,
+
 ## Note on Distribution
 ### Distribution Test
 

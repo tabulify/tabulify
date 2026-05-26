@@ -58,12 +58,13 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")" && pwd)"
 if [[ "${PROJECT_ROOT:-}" != *tabulify/tabulify ]]; then
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   # ntabul can be called from  everywhere
   # so to avoid clash, we compute the tabul PROJECT_ROOT
   PROJECT_ROOT=$(find_git_root)
 fi
+
 
 # Tabul home is important because it will be seen in the doc
 # /opt/tabulify to have short path for the resource connection
@@ -75,12 +76,14 @@ if [ "$NEXT_TABUL_TYPE" == "$NEXT_TABUL_TYPE_DISTRIBUTION" ]; then
 
   if [ $INSTALL == true ]; then
     echo "Install distribution"
-    install "$PROJECT_ROOT"
+    # install is also a linux command, so we need to give the full path
+    "$SCRIPT_DIR/install" "$PROJECT_ROOT"
     echo "Install distribution done"
   else
     if [ ! -f "$TABUL_HOME/bin/tabul" ]; then
       echo "Tabul assembly not found at $TABUL_HOME/bin/tabul, installing" > /dev/stderr
-      install "$PROJECT_ROOT"
+      # install is also a linux command, so we need to give the full path
+      "$SCRIPT_DIR/install" "$PROJECT_ROOT"
     fi
   fi
   echo "Running tabul in $TABUL_HOME" > /dev/stderr

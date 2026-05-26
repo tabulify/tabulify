@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -TCEeuo pipefail
+
+# Next dev iteration
+RELEASE_VERSION=$(git cliff --unreleased --bump "minor" --context --tag-pattern "v[0-9]+\\.[0-9]+\\.[0-9]+" | jq -r '.[0].version' | tr -d "v")
+NEXT_SNAPSHOT_VERSION="$RELEASE_VERSION-SNAPSHOT"
+echo "Next Iteration Commit to $NEXT_SNAPSHOT_VERSION"
+
+mvnw versions:set -DgenerateBackupPoms=false -DnewVersion="$NEXT_SNAPSHOT_VERSION"
+git commit -am "chore(next): $NEXT_SNAPSHOT_VERSION"
+git push origin
+echo "Next Iteration Commit to $NEXT_SNAPSHOT_VERSION: done"

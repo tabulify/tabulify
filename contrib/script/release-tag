@@ -102,22 +102,3 @@ else
   echo "Dry Run, no tag creation"
 
 fi
-
-# Next dev iteration
-RELEASE_VERSION=$(git cliff --unreleased --bump "minor" --context --tag-pattern "v[0-9]+\\.[0-9]+\\.[0-9]+" | jq -r '.[0].version' | tr -d "v")
-NEXT_SNAPSHOT_VERSION="$RELEASE_VERSION-SNAPSHOT"
-echo "Next Iteration Commit to $NEXT_SNAPSHOT_VERSION"
-
-if [[ $IS_SNAPSHOT == true ]]; then
-  echo "Snapshot release, no next dev iteration. Exiting"
-  exit
-fi
-
-if [[ $DRY_RUN == true ]]; then
-  echo "Dry Run, no next commit"
-else
-  mvnw versions:set -DgenerateBackupPoms=false -DnewVersion="$NEXT_SNAPSHOT_VERSION"
-  git commit -am "chore(next): $NEXT_SNAPSHOT_VERSION"
-  git push origin
-  echo "Next Iteration Commit to $NEXT_SNAPSHOT_VERSION: done"
-fi

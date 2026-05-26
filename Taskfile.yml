@@ -61,6 +61,10 @@ tasks:
   site-start:
     cmds:
       - |
+        docker start site-com-combostrap
+  site-run:
+    cmds:
+      - |
         docker run \
         --name site-com-tabulify \
         --rm \
@@ -74,7 +78,6 @@ tasks:
         -e DOKU_DOCKER_BASE_URL='http://localhost:8081' \
         -v {{.TASKFILE_DIR}}/docs-tabul:/var/www/html \
         ghcr.io/combostrap/dokuwiki:php8.3-latest
-          docker start site-com-combostrap
   # Broken links
   site-broken:
     cmds:
